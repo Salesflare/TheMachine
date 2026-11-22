@@ -1,47 +1,47 @@
 ---
 title: Intercom
 area: connections
-summary: Kundengespräche in deinem Intercom-Workspace. Es antwortet erst, nachdem du sendest, in deinem Namen.
+summary: Kundengespräche in deinem Intercom-Arbeitsbereich. Antworten werden erst verschickt, wenn du sie in deinem Namen sendest.
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, More sources, Remove
 translated: 2cbee87e6d24c0a9
 ---
-## Was es liest
+## Was gelesen wird
 
-Kundenunterhaltungen in deinem Intercom-Workspace: die letzten 7 Tage beim Verbinden, danach neue, sobald sie reinkommen. Es liest auch, zu welchem Workspace und welchem Admin die Anmeldung gehört.
+Kundengespräche in deinem Intercom-Arbeitsbereich: die letzten 7 Tage beim Verbinden und danach neue Gespräche, sobald sie eingehen. Außerdem wird gelesen, zu welchem Arbeitsbereich und Teammitglied die Anmeldung gehört.
 
-## Was es tun kann
+## Was möglich ist
 
-Es liest Gespräche. Mit deinem eigenen **Mit Intercom anmelden** kann es auch in einem Gespräch in deinem Namen antworten, erst nachdem du für genau diesen Text auf **Senden** tippst. Es weist nie zu, schließt nie, vergibt keine Tags und schreibt keine Notizen. Ein Intercom, das über deine Fleet mit dir geteilt ist, liest nur.
+Mit deinem eigenen **Mit Intercom anmelden** kann deine Machine in deinem Namen auf ein Gespräch antworten, aber erst, wenn du bei genau diesem Text auf **Senden** tippst. Sie weist keine Gespräche zu, schließt sie nicht, versieht sie nicht mit Tags und schreibt keine Notizen. Ein Intercom, das über deine Fleet mit dir geteilt wird, wird nur ausgelesen.
 
 ## Aufgaben aus Intercom
 
-Eine Aufgabe aus einem Intercom-Gespräch zeigt, woher sie kommt: **Nachricht lesen** öffnet das Gespräch, mit einem Link dorthin in Intercom, und der Kunde steht auf der Aufgabe. Ihre Antwort ist eine Intercom-Antwort in diesem Gespräch, außer du bittest um eine E-Mail.
+Eine Aufgabe aus Intercom zeigt den Kunden an. Mit **Nachricht lesen** öffnest du das Gespräch samt Link dazu in Intercom. Die Antwort wird in diesem Gespräch verschickt, außer du bittest um eine E-Mail.
 
-Nur Gespräche, die dir oder noch niemandem zugewiesen sind, werden zu Aufgaben, auch solche in einem Team-Posteingang ohne Zuweisung. Übernimmt jemand aus dem Team ein Gespräch in Intercom, schließt sich die offene Aufgabe von selbst, mit **Rückgängig**. Bei einem mit dir geteilten Intercom sind deine Gespräche die, die dem Admin zugewiesen sind, als der du schreibst.
+Nur Gespräche, die dir oder noch niemandem zugewiesen sind, werden zu Aufgaben. Sobald ein Teammitglied ein Gespräch in Intercom übernimmt, wird die Aufgabe automatisch geschlossen. Du kannst sie mit **Rückgängig** wieder öffnen. Bei einem Intercom, das mit dir geteilt wird, zählen die Gespräche, die dem Teammitglied zugewiesen sind, in dessen Namen du schreibst.
 
-Eine Intercom-Aufgabe schließt sich auch, sobald jemand aus dem Team das Gespräch in Intercom schließt, oder darauf antwortet und der Kunde seitdem nicht mehr geschrieben hat, wenn die Aufgabe nur eine Antwort verlangte. Das gilt auch, wenn du kurz vor der Aufgabe geantwortet hast, bevor The Machine deine Antwort gelesen hatte. Eine Notiz, ein Zurückstellen oder die Antwort eines Bots zählt nie.
+Eine Intercom-Aufgabe wird auch automatisch geschlossen, sobald jemand im Team das Gespräch in Intercom schließt oder darauf antwortet und der Kunde danach nichts mehr geschrieben hat, wenn die Aufgabe nur eine Antwort verlangt hat. Das gilt auch, wenn du kurz vor dem Erstellen der Aufgabe geantwortet hast, bevor The Machine deine Antwort gelesen hat. Eine Notiz, ein Zurückstellen oder die Antwort eines Bots zählen nicht.
 
-Kann Intercom nicht von deiner Machine aus antworten (nur zum Lesen mit dir geteilt, Antworten nicht eingeschaltet oder nicht verbunden), geht der Entwurf per E-Mail. Die Aufgabe sagt warum, und ihre Prüfung fragt **Stattdessen per E-Mail senden?** Um selbst in Intercom zu antworten, tippe auf der Aufgabe auf **Eigenes Intercom verbinden** und melde dich an. Danach wird die Aufgabe neu als Antwort in Intercom geschrieben. Nichts geht raus, bevor du es sendest.
+Wenn deine Machine nicht in Intercom antworten kann (weil das Intercom nur zum Lesen mit dir geteilt wird, Antworten nicht aktiviert oder es nicht verbunden ist), wird der Entwurf stattdessen als E-Mail vorbereitet. In der Aufgabe steht der Grund, und du wirst gefragt: **Stattdessen per E-Mail senden?** Um in Intercom zu antworten, tippe in der Aufgabe auf **Eigenes Intercom verbinden** und melde dich an. Anschließend wird die Aufgabe als Antwort in Intercom neu erstellt. Nichts wird verschickt, bevor du es sendest.
 
-Dein eigenes Intercom und ein mit dir geteiltes für denselben Workspace lesen nicht beide: Das geteilte ruht, und seine Gespräche gehen zu deinem, jedes einmal.
+Dein eigenes Intercom und ein mit dir geteiltes Intercom für denselben Arbeitsbereich lesen nicht beide mit: Das geteilte Intercom bleibt inaktiv, und seine Gespräche werden jeweils einmal zu deinem Intercom verschoben.
 
 ## Verbinden
 
-1. Im Dashboard: **Verbindungen**, **Kunden**, Intercom. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Intercom. Auf deinem eigenen Computer koppelst du deine Machine zuerst mit deinem Konto.
+1. Öffne im Dashboard **Verbindungen**, **Kunden** und dann Intercom. Oder öffne auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup **Weitere Quellen** und dann Intercom. Auf deinem eigenen Computer musst du es zuerst mit deinem Konto koppeln.
 2. Tippe auf **Mit Intercom anmelden**.
-3. Erlaube in Intercom den Zugriff für The Machine (von Salesflare). Danach bist du wieder dort, wo du angefangen hast.
+3. Genehmige The Machine (von Salesflare) in Intercom. Du kehrst dorthin zurück, wo du begonnen hast.
 
-Eine Anmeldung bei einem anderen Workspace fügt ein zweites Intercom-Konto hinzu.
+Wenn du dich bei einem anderen Arbeitsbereich anmeldest, wird ein zweites Intercom-Konto hinzugefügt.
 
-Intercom zählt immer als Arbeit, für die Firma, die sein Workspace nennt.
+Intercom zählt immer als Arbeit, und zwar für das Unternehmen, das im Namen des Arbeitsbereichs steht.
 
 ## Entfernen
 
-- Im Dashboard: **Verbindungen**, Intercom öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.
-- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
+- Öffne im Dashboard **Verbindungen**, dann Intercom und **Details**, und tippe auf **Trennen**. Intercom wird dann nicht mehr ausgelesen. Bereits übernommene Inhalte bleiben erhalten.
+- Auf einer gehosteten Machine kannst du auf der Einrichtungsseite auch neben Intercom auf **Entfernen** tippen.
 
-## Bei Intercom deinstallieren
+## Intercom deinstallieren
 
-Öffne in Intercom Settings, Apps, Installed apps und entferne The Machine.
+Öffne in Intercom **Einstellungen**, **Apps** und **Installierte Apps**, und entferne The Machine.

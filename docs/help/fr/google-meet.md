@@ -1,48 +1,48 @@
 ---
 title: Google Meet
 area: connections
-summary: Les transcriptions et notes Gemini des réunions Meet que vous organisez. Il ne fait que lire.
+summary: Transcriptions et notes Gemini des réunions Google Meet que vous organisez. The Machine ne fait que lire.
 covers: connector:google_meet
 code: connectors/google_meet.py, onboarding.py
 site: Sign in with Google
 translated: cea7230915b5a536
 ---
-## Ce qu’il lit
+## Ce que The Machine lit
 
-Les transcriptions et notes Gemini des réunions Google Meet que vous avez organisées, dès que Meet les a créées : les 7 derniers jours quand vous le connectez, puis les nouvelles au fur et à mesure. Meet les conserve 30 jours.
+Les transcriptions et les notes Gemini des réunions Google Meet que vous avez organisées, dès que Meet les a créées : celles des 7 derniers jours au moment de la connexion, puis les nouvelles au fur et à mesure. Meet les conserve pendant 30 jours.
 
 Meet ne les crée que si les transcriptions ou les notes Gemini étaient activées pendant la réunion.
 
-Chacune est associée à la réunion de votre agenda à la même heure. Les notes Gemini apparaissent dans Notes de cette réunion et la transcription dans Transcription, marquées **De Google Meet**, à côté de ce que vous y avez ajouté ; elles ne le remplacent jamais.
+Chaque élément est ajouté à la réunion correspondante dans votre Calendar : les notes Gemini sous Notes, la transcription sous Transcript, avec la mention **De Google Meet**. Ce que vous avez ajouté vous-même reste en place.
 
-## Ce qu’il peut faire
+## Ce que The Machine peut faire
 
-Rien dans Meet, Docs ou Drive. Il ne fait que lire et n’active jamais les transcriptions lui-même.
+Rien dans Meet, Docs ou Drive. The Machine ne fait que lire et n’active jamais les transcriptions elle-même.
 
-## Ce qu’il demande
+## Ce qu’il vous demande
 
-Son propre accord, à part de votre connexion e-mail. Google demande d’autoriser The Machine à :
+Une autorisation propre à cette connexion, distincte de celle pour vos e-mails. Google vous demande d’autoriser The Machine à :
 
 - Voir vos réunions Google Meet, leurs transcriptions et leurs notes Gemini.
-- Voir vos Google Docs, pour lire le document des notes Gemini.
+- Voir vos Google Docs pour lire le document contenant les notes Gemini.
 
-Il ne demande jamais votre Drive. Vos accès à Gmail et à l’agenda restent tels quels.
+The Machine ne demande jamais l’accès à votre Drive. Vos accès à Gmail et Calendar restent inchangés.
 
-## Le connecter
+## Connecter Google Meet
 
-Gmail n’a pas besoin d’être connecté. Pour le connecter :
+Gmail n’a pas besoin d’être connecté. Pour connecter Google Meet :
 
-- Machine hébergée : dans le tableau de bord, ouvrez **Connexions**, **Réunions**, choisissez **Google Meet** et appuyez sur **Se connecter avec Google**. Google demande l’accord ci-dessus, puis vous revenez au tableau de bord.
-- Votre propre ordinateur, associé à votre compte : les mêmes étapes. La connexion s’ouvre dans un nouvel onglet.
+- Machine hébergée : dans le tableau de bord, ouvrez **Connexions**, puis **Réunions**, sélectionnez **Google Meet** et cliquez sur **Se connecter avec Google**. Autorisez l’accès ci-dessus pour revenir au tableau de bord.
+- Votre propre ordinateur, associé à votre compte : suivez les mêmes étapes. La page de connexion s’ouvre dans un nouvel onglet.
 
-Il vérifie que la connexion peut lire Meet. Sans cet accord, il n’est pas ajouté. La connexion reste valable : rien à coller ni à renouveler.
+Sans cette autorisation pour Meet, la connexion n’est pas ajoutée. Rien n’est à coller ni à renouveler.
 
-Si l’accord est retiré plus tard, la carte Google Meet vous demande de vous reconnecter.
+Si vous retirez l’autorisation plus tard, Google Meet dans **Connexions** vous demande de vous connecter à nouveau.
 
-## Le retirer
+## Supprimer Google Meet
 
-Dans le tableau de bord : **Connexions**, ouvrez Google Meet, **Détails**, puis **Déconnecter**. Ce qu’il a déjà récupéré reste.
+Dans le tableau de bord, ouvrez **Connexions**, puis Google Meet, **Détails**, et enfin **Déconnecter**. Les éléments déjà importés restent en place.
 
-## Le révoquer chez Google
+## Révoquer l’accès dans Google
 
-Ouvrez myaccount.google.com/permissions et retirez l’accès de The Machine à Google Meet. Gmail et l’agenda continuent de fonctionner.
+Ouvrez myaccount.google.com/permissions et retirez à The Machine l’accès à Google Meet. Gmail et Calendar continueront de fonctionner.

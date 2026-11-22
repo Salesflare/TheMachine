@@ -1,7 +1,7 @@
 ---
 title: Zoom
 area: connections
-summary: I riepiloghi e le trascrizioni di AI Companion delle riunioni che organizzi. Legge soltanto.
+summary: Riepiloghi e trascrizioni delle riunioni che ospiti, generati da AI Companion. Legge soltanto.
 covers: connector:zoom
 code: connectors/zoom.py, meeting_notes.py, onboarding.py
 site: Connect Zoom, More sources, Remove, Sign in with Zoom
@@ -9,35 +9,35 @@ translated: 9533caa1429fb3fc
 ---
 ## Cosa legge
 
-Il riepilogo di AI Companion di ogni riunione Zoom che organizzi, e la trascrizione quando Zoom ne ha una: gli ultimi 7 giorni quando lo colleghi, poi quelle nuove man mano che arrivano. Legge anche il tuo nome e la tua email su Zoom, per sapere di chi sono le riunioni.
+Il riepilogo di AI Companion per ogni riunione Zoom che ospiti e la relativa trascrizione, se disponibile su Zoom: gli ultimi 7 giorni al momento della connessione, poi le nuove man mano che arrivano. Legge anche il tuo nome e il tuo indirizzo email su Zoom, per sapere a chi appartengono le riunioni.
 
-I riepiloghi richiedono un piano Zoom a pagamento, AI Companion attivo durante la riunione e nessuna crittografia end-to-end.
+I riepiloghi richiedono un piano Zoom a pagamento, AI Companion attivo durante la riunione e la crittografia end-to-end disattivata.
 
 ## Cosa ne fa
 
-Ogni riepilogo viene abbinato alla riunione nel tuo calendario. Il riepilogo compare nelle **Note** di quella riunione e la trascrizione nella sua **Trascrizione**, segnati **Da Zoom**, accanto a ciò che hai aggiunto lì, senza mai sostituirlo. La tua Machine crea attività dai prossimi passi che spettano a te. Non parte nulla finché non lo invii tu.
+Abbina ogni riepilogo alla riunione corrispondente nel tuo calendario. Lo mostra nelle **Note** della riunione e la trascrizione nella **Trascrizione**, contrassegnata come **Da Zoom**, accanto a tutto ciò che hai aggiunto. La tua Machine crea attività a partire dai prossimi passi che spettano a te. Non viene inviato nulla finché non lo invii tu.
 
 ## Cosa può fare
 
-Legge soltanto. Non crea, non cambia e non elimina mai nulla in Zoom, e vede solo le tue riunioni. Il tuo accesso a Zoom resta sulla tua Machine.
+Legge soltanto le tue riunioni. Non crea, modifica né elimina mai nulla su Zoom. La sessione di accesso a Zoom resta sulla tua Machine.
 
-## Collegalo
+## Connettilo
 
 Su una Machine ospitata:
 
-1. Apri la tua pagina di configurazione su app.themachine.computer/setup e vai su **Altre fonti**.
-2. Apri Zoom, scegli lavoro o personale e premi **Collega Zoom**.
-3. Accedi a Zoom e autorizza The Machine. È fatta da Salesflare.
+1. Apri la pagina di configurazione su app.themachine.computer/setup e vai a **Altre fonti**.
+2. Apri Zoom, scegli lavoro o personale e premi **Connetti a Zoom**.
+3. Accedi a Zoom e autorizza The Machine (di Salesflare).
 
-Oppure nella dashboard: **Connessioni**, **Riunioni**, scegli Zoom e premi **Accedi con Zoom**. Quando hai finito, torni alla dashboard.
+Oppure, nella dashboard: apri **Connessioni**, poi **Riunioni**, scegli Zoom e premi **Accedi con Zoom**. Al termine, tornerai alla dashboard.
 
-Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **Riunioni**, scegli Zoom e premi **Accedi con Zoom**.
+Sul tuo computer, una volta [associata al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **Riunioni**, scegli Zoom e premi **Accedi con Zoom**.
 
 ## Rimuovilo
 
-- Nella dashboard: **Connessioni**, apri Zoom, **Dettagli**, poi **Disconnetti**. Smette di leggere. Ciò che ha già portato dentro resta.
-- Su una Machine ospitata puoi anche premere **Rimuovi** accanto a Zoom nella tua pagina di configurazione.
+- Nella dashboard: apri **Connessioni**, poi Zoom e **Dettagli**, quindi **Disconnetti**. Smetterà di leggere. I contenuti già importati restano.
+- Su una Machine ospitata puoi anche premere **Rimuovi** accanto a Zoom nella pagina di configurazione.
 
 ## Disinstallalo su Zoom
 
-Accedi su marketplace.zoom.us, apri Manage, poi Added Apps, e rimuovi The Machine. Non può più leggere nulla. Ciò che ha già portato dentro resta sulla tua Machine finché non lo elimini: vedi [Disdici o elimina](cancel-and-delete.md).
+Accedi su marketplace.zoom.us, apri Manage, poi Added Apps e rimuovi The Machine. Non potrà più leggere nulla. I contenuti già importati resteranno sulla tua Machine finché non li elimini: consulta [Annullare e eliminare](cancel-and-delete.md).

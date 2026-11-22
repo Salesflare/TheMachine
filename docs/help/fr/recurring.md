@@ -1,43 +1,43 @@
 ---
 title: Tâches récurrentes
 area: cards
-summary: Des tâches qui reviennent à un rythme, comme la paie le premier lundi. Une seule ouverte à la fois.
+summary: Des tâches qui reviennent à intervalles réguliers, comme la paie le premier lundi du mois. Une seule tâche ouverte à la fois.
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
 keywords: repeat, recurring, every week, every month, workday, business day, routine
-translated: 06752aedb0bd152d
+translated: e85f6a4499f49b50
 ---
 ## En créer une
 
-Dans **Nouvelle tâche**, choisissez **Répéter** et un rythme : **Quotidienne**, **En semaine**, chaque semaine, chaque mois à une date ou un jour comme le premier lundi, ou chaque année. **Personnalisé…** accepte vos propres mots, comme every 2 weeks ou every last Friday.
+Dans **Nouvelle tâche**, choisissez **Répéter** et une fréquence : **Quotidienne**, **En semaine**, chaque semaine, chaque mois à une date précise ou un jour de la semaine, comme le premier lundi, ou chaque année. **Personnalisé…** vous permet de décrire la fréquence avec vos propres mots, dans votre langue, par exemple « toutes les 2 semaines » ou « chaque dernier vendredi ».
 
-Les jours ouvrés aussi : « envoyer les factures le deuxième jour ouvré du mois » ou « clôturer les comptes le dernier jour ouvré du mois ». Un jour ouvré va du lundi au vendredi, sans les jours fériés de votre pays.
+Vous pouvez aussi simplement dire : « tous les premiers lundis du mois, faire la paie » dans Nouvelle tâche ou dans le chat pour créer une tâche récurrente.
 
-Si les mots ne sont pas clairs, comme « every 2nd business day » (le 2 du mois, ou un jour sur deux ?), la tâche garde tous vos mots et ne se répète pas. Choisissez **Répéter** pour la régler.
+Les jours ouvrés sont également pris en compte : « envoyer les factures chaque deuxième jour ouvré du mois » ou « clôturer les comptes le dernier jour ouvré du mois ». Un jour ouvré va du lundi au vendredi, hors jours fériés de votre pays.
 
-Ou dites-le simplement : « chaque mois faire la paie » dans Nouvelle tâche ou dans Parler crée une tâche qui se répète.
+Si la formulation n’est pas claire, comme « chaque 2e jour ouvrable » (le 2 du mois ou un jour sur deux ?), la tâche conserve votre formulation et ne se répète pas. Choisissez **Répéter** pour la configurer.
 
-Pour une tâche existante, **Répéter…** sous **…**, ou dites « repeat this every week » dans sa discussion.
+Pour une tâche existante, choisissez **Répéter…** sous **…**, ou dites « répète cette tâche chaque semaine » dans son chat.
 
-## Comment elle se répète
+## Fonctionnement
 
-La tâche affiche une courte ligne, comme « Se répète chaque semaine le lundi ». Une seule est ouverte à la fois : la suivante arrive à sa date, dans votre fuseau horaire, une fois celle-ci faite ou inutile.
+La tâche affiche une courte indication, comme « Se répète chaque semaine le lundi ». Une seule tâche est ouverte à la fois : la suivante apparaît à sa date une fois celle-ci terminée ou marquée comme pas nécessaire.
 
-Une tâche manquée ne s'empile pas. Elle reste ouverte et indique combien de dates elle a manquées, et une fois terminée, la suivante arrive à la prochaine date à partir d'aujourd'hui.
+Une tâche manquée ne s’accumule pas. Elle reste ouverte et indique le nombre de dates manquées. Une fois terminée, la suivante apparaît à la prochaine date prévue à partir d’aujourd’hui.
 
-Reporter ne déplace que celle-ci. Le rythme reste le même.
+Reporter la tâche ne décale que celle-ci. La fréquence reste la même.
 
-Faite avant sa date ? Elle compte pour ce qui est dû maintenant, et cette date arrive quand même pour la période suivante.
+Vous la terminez avant sa date ? Elle compte pour l’échéance actuelle, et la date suivante reste prévue pour la période d’après.
 
-Chacune est préparée comme toute tâche, et la préparation voit comment s'est passée la précédente et ce qui a été dit dans sa discussion.
+Chaque tâche est préparée comme n’importe quelle tâche, en tenant compte de la façon dont la précédente s’est déroulée.
 
-Elle garde aussi la façon de faire : les étapes trouvées et ce que vous avez corrigé, pour que la suivante n'en ait plus besoin. Sa discussion affiche **Enregistré comment faire la prochaine fois**, avec **Modifier** et **Annuler**. Elle n'envoie jamais rien d'elle-même.
+La façon de la réaliser est également conservée : les étapes trouvées et vos corrections, pour que la prochaine tâche n’ait pas à les refaire. Son chat affiche **Enregistré comment faire la prochaine fois**, avec **Modifier** et **Annuler**. Rien n’est jamais envoyé automatiquement.
 
-## La modifier ou l'arrêter
+## Modifier ou arrêter
 
-Appuyez sur la ligne « Répéter » de la tâche : choisissez un autre rythme, **Passer celle-ci** (elle ferme celle-ci et amène la suivante à sa date) ou **Arrêter de répéter**. « Stop repeating » dans sa discussion fonctionne aussi. Arrêter garde la tâche ouverte ; seules les suivantes ne viennent plus.
+Touchez la ligne « Répéter » de la tâche pour choisir une autre fréquence, **Passer celle-ci** (la tâche actuelle est clôturée et la suivante apparaît à sa date) ou **Arrêter de répéter**. Vous pouvez aussi écrire « Arrêter de répéter » dans son chat. L’arrêt conserve la tâche ouverte, mais les suivantes n’apparaissent plus.
 
 ## Suggestions
 
-Quand votre Machine apprend quelque chose que vous faites à un rythme, ou voit la même tâche faite à intervalles réguliers, elle demande une seule fois : **En faire une tâche récurrente ?** **La rendre récurrente** ou **Non merci**. Elle n'en crée jamais une d'elle-même, et rien n'est envoyé tout seul.
+Quand votre Machine apprend que vous faites quelque chose à intervalles réguliers, ou remarque que vous terminez la même tâche selon un rythme régulier, elle vous demande une fois : **En faire une tâche récurrente ?** Choisissez **La rendre récurrente** ou **Non merci**. Elle ne crée jamais de tâche récurrente sans votre accord, et rien n’est envoyé automatiquement.

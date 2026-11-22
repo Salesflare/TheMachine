@@ -1,43 +1,43 @@
 ---
 title: GitHub
 area: connections
-summary: Review-Anfragen, Erwähnungen, Zuweisungen und fehlgeschlagene CI-Läufe. Erstellt Issues nur, wenn du bestätigst.
+summary: Prüfe Review-Anfragen, Erwähnungen, Zuweisungen und fehlgeschlagene CI-Läufe. Issues werden nur nach deiner Bestätigung erstellt.
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
 translated: e97127e156e56f7d
 ---
-## Was es liest
+## Was gelesen wird
 
-Deine GitHub-Benachrichtigungen: Review-Anfragen, Erwähnungen, Zuweisungen, Antworten und fehlgeschlagene CI-Läufe. Es markiert nie eine Benachrichtigung als gelesen.
+Deine GitHub-Benachrichtigungen: Review-Anfragen, Erwähnungen, Zuweisungen, Antworten und fehlgeschlagene CI-Läufe. Sie werden nie als gelesen markiert.
 
-## Was es tun kann
+## Was möglich ist
 
-Lesen ändert nichts auf GitHub. Endet eine Aufgabe mit einem Schritt auf GitHub, etwa einem neuen Issue, sagt die Aufgabe das vorher, und der Schritt läuft erst, wenn du auf **Bestätigen** tippst oder genau darum in ihrem Chat bittest. Screenshots kommen über den Browser deiner Machine hinein. Ist GitHub nicht verbunden, sagt die Aufgabe, dass sie den Browser nutzt, und zeigt **GitHub verbinden**.
+Beim Lesen wird auf GitHub nichts geändert. Wenn eine Aufgabe mit einem GitHub-Schritt endet, etwa dem Erstellen eines Issues, weist die Aufgabe darauf hin. Der Schritt wird erst ausgeführt, wenn du auf **Bestätigen** tippst oder im zugehörigen Chat genau darum gebeten hast. Screenshots werden über den Browser deiner Machine hochgeladen. Wenn GitHub nicht verbunden ist, weist die Aufgabe darauf hin, dass der Browser verwendet wird, und zeigt **GitHub verbinden** an.
 
 ## Verbinden
 
 Auf einer gehosteten Machine:
 
-1. Öffne im Dashboard **Verbindungen**, dann **Projekte und Code**, und wähle GitHub.
-2. Wähle **Arbeit** oder **Privat** und tippe auf **Mit GitHub anmelden**.
-3. Es zeigt einen Code. Tippe auf **GitHub öffnen ↗**, gib den Code ein und erlaube den Zugriff. Danach geht es von selbst weiter.
+1. Öffne **Verbindungen**, dann **Projekte und Code**, und wähle GitHub aus.
+2. Wähle **Arbeit** oder **Privat** und klicke auf **Bei GitHub anmelden**.
+3. Klicke auf **GitHub öffnen ↗**, gib den angezeigten Code ein und erteile die Berechtigung. Die Verbindung wird automatisch hergestellt.
 
-Deine Einrichtungsseite unter app.themachine.computer/setup hat dieselbe Anmeldung unter **Weitere Quellen**.
+Auf deiner Einrichtungsseite unter app.themachine.computer/setup findest du dieselbe Anmeldung unter **Weitere Quellen**.
 
 Auf deinem eigenen Computer:
 
-1. Öffne im Dashboard **Verbindungen**, dann **Projekte und Code**, und wähle GitHub.
-2. Wähle **Arbeit** mit der zugehörigen Firma oder **Privat** und tippe auf **Verbinden**.
-3. Ist deine Machine noch nicht bei GitHub angemeldet, zeigt sie einen Code. Tippe auf **GitHub öffnen ↗**, gib den Code ein und erlaube den Zugriff. Danach geht es von selbst weiter.
+1. Öffne **Verbindungen**, dann **Projekte und Code**, und wähle GitHub aus.
+2. Wähle **Arbeit** mit dem zugehörigen Unternehmen oder **Privat** und klicke auf **Verbinden**.
+3. Wenn du dazu aufgefordert wirst, klicke auf **GitHub öffnen ↗**, gib den Code ein und erteile die Berechtigung. Die Verbindung wird automatisch hergestellt.
 
-Oder führe `assistant connect github` aus und bestätige dein GitHub-Login.
+Oder führe `assistant connect github` aus und bestätige deine GitHub-Anmeldung.
 
-## Entfernen
+## Verbindung trennen
 
-- Im Dashboard: **Verbindungen**, GitHub öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.
-- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
+- Öffne **Verbindungen**, dann GitHub, **Details** und **Trennen**. Die Verbindung liest dann nichts mehr. Bereits übernommene Inhalte bleiben erhalten.
+- Auf einer gehosteten Machine kannst du GitHub auch über **Entfernen** neben dem Eintrag auf deiner Einrichtungsseite entfernen.
 
 ## Auf GitHub deinstallieren
 
-Entzieh der GitHub CLI den Zugriff in GitHub, unter Settings, Applications, Authorized OAuth Apps. Auf deinem eigenen Computer meldet `gh auth logout` die CLI ebenfalls ab.
+Öffne auf GitHub Einstellungen, Anwendungen und Autorisierte OAuth-Apps und widerrufe die Berechtigung für GitHub CLI. Auf deinem eigenen Computer meldet `gh auth logout` dich ebenfalls ab.

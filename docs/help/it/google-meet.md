@@ -1,7 +1,7 @@
 ---
 title: Google Meet
 area: connections
-summary: Trascrizioni e note di Gemini delle riunioni Meet che organizzi. Legge soltanto.
+summary: Trascrizioni e note Gemini delle riunioni Meet che organizzi. La tua Machine può solo leggerle.
 covers: connector:google_meet
 code: connectors/google_meet.py, onboarding.py
 site: Sign in with Google
@@ -9,40 +9,40 @@ translated: cea7230915b5a536
 ---
 ## Cosa legge
 
-Trascrizioni e note di Gemini delle riunioni Google Meet che hai organizzato, appena Meet le ha create: gli ultimi 7 giorni quando lo colleghi, poi quelle nuove man mano che arrivano. Meet le conserva per 30 giorni.
+Le trascrizioni e le note Gemini delle riunioni Google Meet che hai organizzato, una volta disponibili: quelle degli ultimi 7 giorni al momento della connessione, poi le nuove man mano che arrivano. Meet le conserva per 30 giorni.
 
-Meet le crea solo se trascrizioni o note di Gemini erano attive durante la riunione.
+Meet le crea solo se durante la riunione erano attive le trascrizioni o le note Gemini.
 
-Ognuna viene abbinata alla riunione del tuo calendario alla stessa ora. Le note di Gemini compaiono in Note di quella riunione e la trascrizione in Trascrizione, segnate **Da Google Meet**, accanto a ciò che hai aggiunto lì; non lo sostituiscono mai.
+Ognuna viene aggiunta alla riunione corrispondente nel tuo Calendar: le note di Gemini sotto Note, la trascrizione sotto Trascrizione, contrassegnata come **Da Google Meet**. Quello che hai aggiunto tu resta.
 
 ## Cosa può fare
 
-Niente in Meet, Docs o Drive. Legge soltanto e non attiva mai le trascrizioni da sola.
+Non fa nulla in Meet, Docs o Drive. Può solo leggere e non attiva mai le trascrizioni.
 
-## Cosa chiede
+## Quali autorizzazioni richiede
 
-Un OK a parte, separato dall’accesso alla posta. Google chiede di consentire a The Machine di:
+Un’autorizzazione specifica, separata da quella per la posta. Google chiede di consentire a The Machine di:
 
-- Vedere le tue riunioni Google Meet, con trascrizioni e note di Gemini.
-- Vedere i tuoi Google Docs, per leggere il documento con le note di Gemini.
+- Vedere le tue riunioni Google Meet, le relative trascrizioni e le note Gemini.
+- Vedere i tuoi documenti Google Docs per leggere il documento con le note Gemini.
 
-Non chiede mai il tuo Drive. L’accesso a Gmail e Calendar resta com’è.
+Non chiede mai accesso a Drive. Gli accessi a Gmail e Calendar restano invariati.
 
-## Collegalo
+## Connetti
 
-Non serve avere Gmail collegato. Per collegarlo:
+Non serve che Gmail sia connesso. Per connettere Google Meet:
 
-- Machine in hosting: nella dashboard, apri **Connessioni**, **Riunioni**, scegli **Google Meet** e premi **Accedi con Google**. Google chiede l’OK qui sopra, poi torni alla dashboard.
-- Il tuo computer, associato al tuo account: gli stessi passaggi. L’accesso si apre in una nuova scheda.
+- Machine ospitata: nella dashboard, apri **Connessioni**, **Riunioni**, seleziona **Google Meet** e premi **Accedi con Google**. Concedi le autorizzazioni indicate sopra e tornerai alla dashboard.
+- Sul tuo computer, con il tuo account associato: segui gli stessi passaggi. La schermata di accesso si apre in una nuova scheda.
 
-Senza l’OK per Meet non viene aggiunto. Non c’è niente da incollare o rinnovare.
+Senza l’autorizzazione per Meet, Google Meet non viene aggiunto. Non c’è nulla da incollare o rinnovare.
 
-Se più avanti revochi l’OK, Google Meet in **Connessioni** ti chiede di accedere di nuovo.
+Se in seguito revochi l’autorizzazione, Google Meet in **Connessioni** ti chiederà di accedere di nuovo.
 
-## Rimuovilo
+## Rimuovi
 
-Nella dashboard: **Connessioni**, apri Google Meet, **Dettagli**, poi **Disconnetti**. Quello che ha già portato resta.
+Nella dashboard: apri **Connessioni**, seleziona Google Meet, poi **Dettagli** e **Disconnetti**. I contenuti già importati restano.
 
-## Revocalo in Google
+## Revoca l’accesso da Google
 
-Apri myaccount.google.com/permissions e rimuovi l’accesso di The Machine a Google Meet. Gmail e Calendar continuano a funzionare.
+Apri myaccount.google.com/permissions e rimuovi l’accesso di The Machine a Google Meet. Gmail e Calendar continueranno a funzionare.

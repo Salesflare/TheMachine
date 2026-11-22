@@ -7,33 +7,33 @@ code: install.sh, install.ps1, docs/getting-started.md
 order: 2
 translated: 73526b82818f009d
 ---
-Ejecuta The Machine gratis en tu propio ordenador. Es de código abierto (AGPL) y tus datos se quedan contigo. Para instalarla necesitas un terminal; para conectar tus cuentas, no.
+Ejecuta The Machine gratis en tu propio ordenador. Es de código abierto (AGPL) y tus datos se quedan contigo. Para instalarla necesitas usar la terminal. Para conectar tus cuentas, no.
 
-## Qué necesita
+## Requisitos
 
-- OpenClaw 2026.11.2 o posterior, el agente de código abierto sobre el que funciona The Machine. El instalador ofrece instalarlo.
-- Python 3.12 o posterior, y Node.js 24 (24.22.1 o posterior) o 26.12.1 o posterior, no 25.
-- Tailscale, para llegar a tu panel desde el teléfono.
+- OpenClaw 2026.11.2 o posterior, el agente de código abierto que usa The Machine. El instalador te ofrece instalarlo.
+- Python 3.12 o posterior y Node.js 24 (24.22.1 o posterior) o 26.12.1 o posterior, pero no la versión 25.
+- Tailscale, para acceder al panel desde el móvil.
 - Una cuenta de usuario normal, no root.
 
 ## Instálala
 
-En Linux o macOS (macOS está en beta):
+En Linux o macOS (macOS está en fase beta):
 
 1. `git clone https://github.com/Salesflare/TheMachine.git ~/.openclaw/workspace/tools/personal-assistant`
 2. `cd ~/.openclaw/workspace/tools/personal-assistant && ./install.sh`
 
-En Windows (beta), se ejecuta dentro de WSL2. En PowerShell, ejecuta `irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex`. Configura WSL2 con Ubuntu y todo lo que necesita la app, y luego ejecuta `./install.sh`.
+En Windows (beta), funciona dentro de WSL2. En PowerShell, ejecuta `irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex`. Configura WSL2 con Ubuntu y todo lo que necesita la app, y después ejecuta `./install.sh`.
 
-El instalador encuentra tus cuentas, las conecta una a una y muestra una vista previa de la semana pasada antes de activar nada.
+El instalador encuentra tus cuentas, las conecta una a una y te muestra una vista previa de la semana pasada antes de activar nada.
 
-## Después de instalar
+## Después de instalarla
 
-- Conecta tu correo: arriba en **Tareas**, pulsa **Gmail** (o **Outlook**) y luego **Vincular esta Machine** para vincularla con tu cuenta. Sin cuenta, **Usar tu propia app** está justo debajo.
-- Luego pulsa **Inicia sesión con Google** (o **Inicia sesión con Microsoft** para Outlook). El correo y el calendario se conectan juntos.
-- Otras fuentes: **Conexiones** y luego el tipo de fuente. Tu propio cliente de Google o app de Entra: `assistant connect` en una terminal.
-- Revísalo todo con `assistant doctor`. Muestra una solución para cada problema.
-- El instalador toma la versión firmada más reciente, y las actualizaciones también llegan como versiones firmadas.
-- Vincúlala con tu cuenta y la app del teléfono la abrirá cuando inicies sesión. Al desvincularla, se quita ese enlace.
+- Conecta tu correo: en la parte superior de **Tareas**, pulsa **Gmail** (o **Outlook**) y luego **Vincular esta Machine** para vincularla con tu cuenta. Si no tienes una cuenta, encontrarás **Usar tu propia app** justo debajo.
+- Después, pulsa **Iniciar sesión con Google** (o **Iniciar sesión con Microsoft** para Outlook). El correo y el calendario se conectan a la vez.
+- Otras fuentes: **Conexiones** y luego el tipo de fuente. Para usar tu propio cliente de Google o una app de Entra, ejecuta `assistant connect` en una terminal.
+- Comprueba que todo funciona con `assistant doctor`. Muestra cómo solucionar cada problema.
+- Instala la versión firmada más reciente; las actualizaciones también llegan como versiones firmadas.
+- Vincula la app con tu cuenta y, después de iniciar sesión, se abrirá en el móvil. Si la desvinculas, se elimina esa conexión.
 
 La guía completa está en el repositorio: [Primeros pasos](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

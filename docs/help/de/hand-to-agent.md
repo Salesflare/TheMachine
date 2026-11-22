@@ -1,46 +1,46 @@
 ---
-title: An Claude Code oder Codex übergeben
+title: Aufgabe an Claude Code oder Codex übergeben
 area: cards
-summary: Schick eine Programmieraufgabe an Claude Code oder Codex. Das Ergebnis kommt bei der Aufgabe zurück.
+summary: Übergib eine Programmieraufgabe an Claude Code oder Codex. Das Ergebnis erscheint wieder in der Aufgabe.
 covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
 site: Connect Codex, Add more any time, On your Machine, Other ways, On my computer
 order: 5
-translated: 333d553e80aea529
+translated: 22e1b9b950988a58
 ---
-## Eine Aufgabe übergeben
+## Aufgabe übergeben
 
-1. Öffne bei der Aufgabe **…**, dann **Übergeben…**, und wähle **Codex** oder **Claude Code**. Nur die Tools, die du eingerichtet hast, erscheinen.
-2. Prüfe die Zusammenfassung und was mitgeht, füge auf Wunsch eine Notiz hinzu und tippe auf **Übergeben**. **Ganzen Auftrag ansehen** zeigt das komplette Briefing.
+1. Öffne bei der Aufgabe **…**, dann **Übergeben…** und wähle **Codex** oder **Claude Code**. Angezeigt werden nur die Tools, die du eingerichtet hast.
+2. Prüfe die Zusammenfassung und was das Tool erhält, füge bei Bedarf eine Notiz hinzu und wähle **Übergeben**. Unter **Ganzen Auftrag ansehen** findest du die vollständige Aufgabenbeschreibung.
 
-Die Aufgabe zeigt dann, dass daran gearbeitet wird, und das Ergebnis, wenn es fertig ist, mit **Was es getan hat** und **Änderungen anzeigen**. **Änderungen anfragen** sagt dem Agenten, was er ändern soll. **Übergeben…** im **…** fängt von vorn an; **Ausblenden** legt das Ergebnis weg. Eine Aufgabe, die festhing und die du übergibst, zeigt **Läuft…** statt **Hängt fest**, solange der Auftrag läuft.
+Während der Auftrag läuft, wird bei der Aufgabe der Status angezeigt. Anschließend siehst du das Ergebnis sowie **Was es getan hat** und **Änderungen anzeigen**. Über **Änderungen anfragen** kannst du angeben, was geändert werden soll. Mit **Übergeben…** unter **…** startest du den Auftrag neu. **Ausblenden** blendet das Ergebnis aus. Bei einer festhängenden Aufgabe, die du übergibst, wird während des Auftrags **Läuft…** statt **Hängt fest** angezeigt.
 
-Ein Auftrag sendet nie etwas für dich. Lässt er dir einen Schritt zum Veröffentlichen oder Deployen übrig, führt **Ausführen** auf der Aufgabe diesen Schritt aus. Eine Antwort, die er geschrieben hat, bleibt ein Entwurf, den du selbst sendest.
+Ein Auftrag sendet niemals etwas für dich. Wenn du bei einem Schritt zum Veröffentlichen oder Bereitstellen selbst aktiv werden musst, führt **Ausführen** auf der Aufgabe diesen Schritt aus. Eine vom Auftrag verfasste Antwort bleibt ein Entwurf, den du selbst sendest.
 
 ## In der Codex-App
 
-- **In Codex öffnen** öffnet den Thread des Auftrags in der Codex-App, sobald der Auftrag fertig ist.
-- **Änderungen anfragen** geht in demselben Codex-Gespräch weiter, und die Aufgabe folgt ihm.
-- Ein Auftrag stoppt nach 30 Minuten ohne Fortschritt oder nach insgesamt 6 Stunden. Ein Neustart stoppt ihn nicht.
+- **In Codex öffnen** öffnet nach Abschluss des Auftrags den zugehörigen Thread in der Codex-App.
+- **Änderungen anfragen** setzt die Unterhaltung in derselben Codex-Konversation fort. Die Aufgabe folgt dieser Unterhaltung.
+- Ein Auftrag endet, wenn 30 Minuten lang kein Fortschritt erfolgt oder nach insgesamt 6 Stunden. Ein Neustart hält ihn nicht an.
 
 ## Einrichten
 
-In **Einstellungen**, **Modell**, unter **Codex und Claude Code**:
+Unter **Einstellungen** bei **Modell**, im Bereich **Codex und Claude Code**:
 
-- **Codex**: wo es läuft. Auf deiner Machine oder deinem Computer braucht es hier nichts weiter; **Ändern** öffnet deine Einrichtungsseite.
-- **Codex Cloud**: die Umgebungs-ID aus Codex und optional ein **Branch** als Ausgangspunkt.
-- **Claude Code**: der Link einer Sitzung in Claude Code.
+- **Codex**: Wähle aus, wo der Auftrag ausgeführt wird. Auf deiner Machine oder deinem Computer musst du hier nichts weiter einrichten. Mit **Ändern** öffnest du deine Einrichtungsseite.
+- **Codex Cloud**: Gib die Umgebungs-ID von Codex und optional einen **Branch** an, von dem aus gestartet werden soll.
+- **Claude Code**: Gib den Link zu einer Claude Code-Sitzung an.
 
-Claude schickt sein Ergebnis über den Connector von The Machine zurück. Füge ihn einmal in claude.ai hinzu, unter Settings, Connectors, Add custom connector, mit der Adresse, die unter der Sitzung steht.
+Claude sendet das Ergebnis über den Connector von The Machine zurück. Füge ihn einmalig in claude.ai unter „Einstellungen“ > „Connectors“ > „Benutzerdefinierten Connector hinzufügen“ hinzu. Verwende dafür die Adresse, die unter der Sitzung angezeigt wird.
 
 ## Wo Codex läuft
 
-Auf einer gehosteten Machine wählst du es auf deiner Einrichtungsseite, unter **Jederzeit mehr hinzufügen**, **Codex**:
+Wähle auf einer gehosteten Machine die gewünschte Option auf deiner Einrichtungsseite unter **Jederzeit mehr hinzufügen** > **Codex**:
 
-- **Auf deiner Machine** (die Voreinstellung): Tippe auf **Codex verbinden** und gib den angezeigten Code bei OpenAI ein. Es nutzt denselben ChatGPT-Tarif wie dein Modell, und Aufträge laufen auf deiner Machine. Kein Terminal nötig.
-- **Andere Wege**, **Auf meinem Computer**: Der Auftrag läuft auf deinem eigenen Computer, mit dem Codex, das dort angemeldet ist. Er wird verschlüsselt übertragen, nur für diesen Computer. Installiere The Machine auf diesem Computer, kopple ihn auf deiner Kontoseite, führe `codex login` aus und lass The Machine laufen. Das Ergebnis kommt bei der Aufgabe zurück. Ist der Computer aus, warten Aufträge.
-- **Andere Wege**, **Codex Cloud**: Der Auftrag läuft in der Cloud von OpenAI. Tippe auf **Codex verbinden**. Es nutzt denselben ChatGPT-Tarif wie dein Modell, und OpenAI fragt nach einem weiteren Code, für Codex. Gib dann die Codex-Cloud-Umgebung in den Einstellungen ein.
+- **Auf deiner Machine** (Standard): Wähle **Codex verbinden** und gib den Code ein, den Codex bei OpenAI anzeigt. Codex nutzt denselben ChatGPT-Tarif wie dein Modell, und die Aufträge laufen auf deiner Machine. Ein Terminal ist nicht nötig. Wenn du mit demselben ChatGPT-Konto angemeldet bist, kann deine Machine außerdem sehen, wann dein Nutzungslimit zurückgesetzt wird, und dieses Wissen nutzen.
+- **Andere Möglichkeiten** > **Auf meinem Computer**: Der Auftrag läuft auf deinem Computer und verwendet das dort angemeldete Codex. Die Verbindung ist verschlüsselt und gilt nur für diesen Computer. Installiere dort The Machine, verknüpfe sie auf deiner Kontoseite, führe `codex login` aus und lass The Machine laufen. Das Ergebnis erscheint wieder in der Aufgabe. Wenn der Computer ausgeschaltet ist, warten die Aufträge.
+- **Andere Möglichkeiten** > **Codex Cloud**: Der Auftrag läuft in der Cloud von OpenAI. Wähle **Codex verbinden**. Codex nutzt denselben ChatGPT-Tarif wie dein Modell. OpenAI fragt dann nach einem weiteren Code für Codex. Gib anschließend in den Einstellungen die Codex-Cloud-Umgebung an.
 
-Oder melde dich im Dashboard an: **Verbindungen**, **Projekte und Code**, **Codex**, **Code holen**. Eine selbst gehostete Machine führt dieselbe Anmeldung selbst aus.
+Du kannst dich auch über dein Dashboard anmelden: **Verbindungen** > **Projekte und Code** > **Codex** > **Code holen**. Eine selbst gehostete Machine führt dieselbe Anmeldung selbst durch.
 
-Auf einer gehosteten Machine erscheint **Codex und Claude Code** in den Einstellungen, sobald GitHub oder Codex verbunden ist. Für Entwickler: der [Agents-Leitfaden](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
+Auf einer gehosteten Machine wird **Codex und Claude Code** in den Einstellungen angezeigt, sobald GitHub oder Codex verbunden ist. Für Entwickler: der [Leitfaden zu Agents](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

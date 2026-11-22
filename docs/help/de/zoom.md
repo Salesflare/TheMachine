@@ -1,43 +1,43 @@
 ---
 title: Zoom
 area: connections
-summary: Die Zusammenfassungen und Transkripte von AI Companion für Meetings, die du hostest. Es liest nur.
+summary: Zusammenfassungen und Transkripte deiner Meetings, die du hostest. Die KI-Assistentin liest nur.
 covers: connector:zoom
 code: connectors/zoom.py, meeting_notes.py, onboarding.py
 site: Connect Zoom, More sources, Remove, Sign in with Zoom
 translated: 9533caa1429fb3fc
 ---
-## Was es liest
+## Was sie liest
 
-Die Zusammenfassung von AI Companion zu jedem Zoom-Meeting, das du hostest, und das Transkript, wenn Zoom eins hat: die letzten 7 Tage beim Verbinden, danach neue, sobald sie reinkommen. Es liest auch deinen Zoom-Namen und deine E-Mail-Adresse, um zu wissen, wessen Meetings es sind.
+Die Zusammenfassung von AI Companion zu jedem Zoom-Meeting, das du hostest, und das Transkript, sofern Zoom eins erstellt hat: die letzten 7 Tage ab dem Zeitpunkt, an dem du Zoom verbindest, danach neue Zusammenfassungen und Transkripte, sobald sie verfügbar sind. Außerdem liest sie deinen Zoom-Namen und deine E-Mail-Adresse, damit sie weiß, wem die Meetings gehören.
 
-Zusammenfassungen brauchen einen bezahlten Zoom-Tarif, eingeschaltetes AI Companion während des Meetings und keine Ende-zu-Ende-Verschlüsselung.
+Für Zusammenfassungen brauchst du einen kostenpflichtigen Zoom-Tarif. AI Companion muss während des Meetings eingeschaltet sein, und die Ende-zu-Ende-Verschlüsselung darf nicht aktiviert sein.
 
-## Was es damit macht
+## Was sie damit macht
 
-Jede Zusammenfassung wird dem Meeting in deinem Kalender zugeordnet. Die Zusammenfassung steht in den **Notizen** dieses Termins und das Transkript in seinem **Transkript**, markiert mit **Von Zoom**, neben allem, was du dort hinzugefügt hast; sie ersetzt es nie. Deine Machine macht aus den nächsten Schritten, die deine sind, Aufgaben. Nichts wird gesendet, bis du es sendest.
+Jede Zusammenfassung wird dem entsprechenden Meeting in deinem Kalender zugeordnet. Sie erscheint unter „**Notizen**“ des Meetings und das Transkript unter „**Transkript**“. Beides ist mit „**Von Zoom**“ gekennzeichnet und steht neben allem, was du hinzugefügt hast. Deine Machine erstellt aus den nächsten Schritten, die dich betreffen, Aufgaben. Nichts wird gesendet, bevor du es sendest.
 
-## Was es tun kann
+## Was sie kann
 
-Es liest nur. Es erstellt, ändert oder löscht nie etwas in Zoom und sieht nur deine eigenen Meetings. Deine Zoom-Anmeldung bleibt auf deiner eigenen Machine.
+Sie liest nur und greift nur auf deine eigenen Meetings zu. Sie erstellt, ändert oder löscht nichts in Zoom. Deine Zoom-Anmeldung bleibt auf deiner Machine.
 
 ## Verbinden
 
 Auf einer gehosteten Machine:
 
-1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und geh zu **Weitere Quellen**.
-2. Öffne Zoom, wähle Arbeit oder Privat und tippe auf **Zoom verbinden**.
-3. Melde dich bei Zoom an und erlaube den Zugriff für The Machine (von Salesflare).
+1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und gehe zu „**Weitere Quellen**“.
+2. Öffne Zoom, wähle „Arbeit“ oder „Privat“ und drücke auf „**Zoom verbinden**“.
+3. Melde dich bei Zoom an und erlaube The Machine von Salesflare.
 
-Oder im Dashboard: **Verbindungen**, **Meetings**, wähle Zoom und tippe auf **Mit Zoom anmelden**. Danach bist du zurück im Dashboard.
+Oder im Dashboard: Öffne „**Verbindungen**“, dann „**Meetings**“, wähle Zoom aus und drücke auf „**Mit Zoom anmelden**“. Danach kehrst du zum Dashboard zurück.
 
-Auf deinem eigenen Computer, sobald deine Machine [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **Meetings**, wähle Zoom und tippe auf **Mit Zoom anmelden**.
+Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt ist](friends.md#a-machine-on-your-own-computer): Öffne „**Verbindungen**“, dann „**Meetings**“, wähle Zoom aus und drücke auf „**Mit Zoom anmelden**“.
 
-## Entfernen
+## Verbindung entfernen
 
-- Im Dashboard: **Verbindungen**, Zoom öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.
-- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
+- Im Dashboard: Öffne „**Verbindungen**“, dann Zoom und „**Details**“. Wähle anschließend „**Trennen**“. Die Machine liest dann nichts mehr. Was sie bereits übernommen hat, bleibt erhalten.
+- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite neben Zoom auf „**Entfernen**“ drücken.
 
-## Bei Zoom deinstallieren
+## In Zoom deinstallieren
 
-Melde dich bei marketplace.zoom.us an, öffne Manage, dann Added Apps, und entferne The Machine. Sie kann dann nichts mehr lesen. Was sie schon reingebracht hat, bleibt auf deiner Machine, bis du es löschst: siehe [Kündigen oder löschen](cancel-and-delete.md).
+Melde dich unter marketplace.zoom.us an, öffne „Verwalten“ und dann „Hinzugefügte Apps“ und entferne The Machine. Sie kann dann nichts mehr lesen. Was sie bereits übernommen hat, bleibt auf deiner Machine, bis du es löschst. Mehr dazu unter [Kündigen und löschen](cancel-and-delete.md).

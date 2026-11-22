@@ -1,44 +1,44 @@
 ---
 title: X
 area: connections
-summary: Deine Erwähnungen, Antworten und Direktnachrichten auf X, gelesen im eigenen Browser deiner Machine. Sendet erst nach deiner Freigabe.
+summary: Deine Erwähnungen, Antworten und Direktnachrichten auf X werden im Browser deiner Machine gelesen. Gesendet wird nur nach deiner Freigabe.
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
 translated: 5cbe43055458daf4
 ---
-## Was es liest
+## Was gelesen wird
 
-Deine Erwähnungen, Antworten und Direktnachrichten auf X. Es liest sie im eigenen Browser deiner Machine, als du angemeldet. Es markiert nichts als gesehen und kann verschlüsselte X Chat-Nachrichten nicht lesen.
+Deine Erwähnungen, Antworten und Direktnachrichten auf X, im Browser deiner Machine und mit deinem Konto angemeldet. Sie markiert nichts als gelesen und kann keine verschlüsselten X Chats lesen.
 
-## Was es senden kann
+## Was gesendet werden kann
 
-Eine Antwort oder eine Direktnachricht, und nur, nachdem du sie bei der Aufgabe freigegeben hast.
+Eine Antwort oder eine Direktnachricht, und zwar nur, nachdem du sie in der Aufgabe freigegeben hast.
 
-Das läuft nicht über die offizielle API von X. Lesen und ab und zu eine Antwort, die du freigegeben hast, machen so gut wie nie Probleme; massenhaftes oder automatisches Senden kann zur Sperrung eines Kontos führen.
+Das läuft nicht über die offizielle API von X. Lesen und eine gelegentliche, von dir freigegebene Antwort führen sehr wahrscheinlich zu keinen Problemen. Massenhaftes oder automatisiertes Senden kann dazu führen, dass dein Konto gesperrt wird.
 
 ## Verbinden
 
 Auf einer gehosteten Machine:
 
-1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und geh zu **Weitere Quellen**.
-2. Öffne X, gib deinen Handle ohne @ ein, melde dich bei X im Browser deiner Machine an, wenn es danach fragt, und tippe dann auf **Verbinden**.
+1. Öffne deine Setup-Seite unter app.themachine.computer/setup und gehe zu **Weitere Quellen**.
+2. Öffne X, gib deinen Handle ohne @ ein und melde dich auf Nachfrage im Browser deiner Machine bei X an. Drücke dann **Verbinden**.
 
 Auf deinem eigenen Computer:
 
-1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle X.
-2. Wähle **Arbeit** mit der zugehörigen Firma oder **Privat**, gib deinen Handle ohne @ ein und tippe auf **Verbinden**.
-3. Tippe auf **Bei X anmelden** und melde dich im Browser deiner Machine an. Sobald du drin bist, verbindet es sich von selbst.
+1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle X aus.
+2. Wähle **Arbeit** mit dem zugehörigen Unternehmen oder **Privat**, gib deinen Handle ohne @ ein und drücke **Verbinden**.
+3. Drücke **Bei X anmelden** und melde dich im Browser deiner Machine an. Sobald du angemeldet bist, wird die Verbindung automatisch hergestellt.
 
 Oder führe `assistant connect x` in einem Terminal aus.
 
-Wenn X deine Machine abmeldet, siehe [Von einer Website abgemeldet](signed-out.md).
+Wenn X deine Machine abmeldet, lies den Artikel [Von einer Website abgemeldet](signed-out.md).
 
-## Entfernen
+## Verbindung trennen
 
-- Im Dashboard: **Verbindungen**, X öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.
-- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
+- Im Dashboard: Öffne **Verbindungen**, wähle X aus und gehe zu **Details**. Drücke dann **Trennen**. Das Lesen wird beendet. Bereits übernommene Inhalte bleiben erhalten.
+- Auf einer gehosteten Machine kannst du auf deiner Setup-Seite auch daneben auf **Entfernen** drücken.
 
-## Bei X abmelden
+## Auf X abmelden
 
-Öffne in X Einstellungen, Sicherheit und Kontozugriff, Apps und Sitzungen, Sitzungen, und melde die Sitzung des Browsers deiner Machine ab.
+Öffne in X **Einstellungen**, **Sicherheit und Kontozugriff**, **Apps und Sitzungen**, **Sitzungen** und melde die Sitzung des Browsers deiner Machine ab.

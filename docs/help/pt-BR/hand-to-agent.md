@@ -1,46 +1,46 @@
 ---
-title: Passar para o Claude Code ou o Codex
+title: Passar para Claude Code ou Codex
 area: cards
-summary: Envie uma tarefa de código para o Claude Code ou o Codex. O resultado volta na tarefa.
+summary: Envie uma tarefa de programação para Claude Code ou Codex. O resultado aparece na tarefa.
 covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
 site: Connect Codex, Add more any time, On your Machine, Other ways, On my computer
 order: 5
-translated: 333d553e80aea529
+translated: 22e1b9b950988a58
 ---
 ## Passar uma tarefa
 
-1. Na tarefa, abra **…**, depois **Passar…**, e escolha **Codex** ou **Claude Code**. Só aparecem as ferramentas que você configurou.
-2. Confira o resumo e o que ela recebe, adicione uma nota se quiser e clique em **Passar**. **Ver o trabalho completo** mostra as instruções inteiras.
+1. Na tarefa, abra **…**, depois **Passar…** e escolha **Codex** ou **Claude Code**. Só aparecem as ferramentas que você configurou.
+2. Confira o resumo e o que a ferramenta vai receber, adicione uma observação se quiser e pressione **Passar**. **Ver o trabalho completo** mostra todas as instruções.
 
-A tarefa então mostra que está em andamento e, quando terminar, o resultado, com **O que fez** e **Mostrar mudanças**. **Pedir mudanças** diz o que mudar. **Passar…** em **…** começa do zero. **Ocultar** guarda o resultado. Uma tarefa **Travada** que você passa mostra **Processando…** enquanto o trabalho roda.
+A tarefa mostra que está em andamento e, depois, exibe o resultado com **O que fez** e **Mostrar mudanças**. **Pedir mudanças** envia instruções sobre o que mudar. **Passar…** em **…** reinicia o processo. **Ocultar** esconde o resultado. Se você passar uma tarefa travada, ela mostra **Processando…** em vez de **Travada** enquanto o trabalho é executado.
 
-Um trabalho nunca envia nada por você. Quando ele deixa uma etapa de publicar ou fazer deploy para você, **Fazer** na tarefa executa essa etapa. Uma resposta que ele escreveu continua como rascunho que você mesmo envia.
+A tarefa nunca envia nada por você. Quando ela chegar a uma etapa de publicação ou implantação que você precisa fazer, **Fazer** na tarefa executa essa etapa. Uma resposta escrita pela ferramenta fica como rascunho para você enviar.
 
-## No app do Codex
+## No app Codex
 
-- **Abrir no Codex** abre a conversa do trabalho no app do Codex, depois que o trabalho termina.
-- **Pedir mudanças** continua nessa mesma conversa do Codex, e a tarefa acompanha.
-- Um trabalho para depois de 30 minutos sem progresso ou de 6 horas no total. Uma reinicialização não o interrompe.
+- **Abrir no Codex** abre a conversa do trabalho no app Codex quando ele termina.
+- **Pedir mudanças** continua na mesma conversa do Codex, e a tarefa acompanha essa conversa.
+- O trabalho é interrompido após 30 minutos sem progresso ou após 6 horas no total. Uma reinicialização não interrompe o trabalho.
 
 ## Configurar
 
-Em **Configurações**, **Modelo**, em **Codex e Claude Code**:
+Em **Configurações**, **Modelo**, na seção **Codex e Claude Code**:
 
-- **Codex**: onde ele roda. Na sua Machine ou no seu computador, não precisa de mais nada aqui; **Mudar** abre a sua página de configuração.
-- **Codex cloud**: o ID do ambiente, do Codex, e, se quiser, uma **Branch** de onde começar.
+- **Codex**: onde ele é executado. Na sua Machine ou no seu computador, não é necessário configurar mais nada aqui. **Mudar** abre a página de configuração.
+- **Codex cloud**: o ID do ambiente, disponível no Codex, e, se quiser, uma **Branch** para usar como ponto de partida.
 - **Claude Code**: o link de uma sessão do Claude Code.
 
-O Claude envia o resultado de volta pelo conector da The Machine. Adicione o conector uma vez no claude.ai, em Settings, Connectors, Add custom connector, com o endereço mostrado abaixo da sessão.
+O Claude envia o resultado de volta pelo conector da The Machine. Adicione-o uma vez em claude.ai, em Settings, Connectors, Add custom connector, usando o endereço mostrado abaixo da sessão.
 
-## Onde o Codex roda
+## Onde o Codex é executado
 
-Em uma Machine hospedada, escolha na sua página de configuração, em **Adicionar mais quando quiser**, **Codex**:
+Em uma Machine hospedada, escolha onde executá-lo na página de configuração, em **Adicionar mais quando quiser**, **Codex**:
 
-- **Na sua Machine** (o padrão): clique em **Conectar Codex** e digite na OpenAI o código que aparece. Ele usa o mesmo plano do ChatGPT que o seu modelo, e os trabalhos rodam na sua Machine. Sem terminal.
-- **Outras formas**, **No meu computador**: o trabalho roda no seu próprio computador, com o Codex conectado lá. O trabalho viaja criptografado, só para esse computador. Instale a The Machine nesse computador, pareie na sua página Conta, rode `codex login` e deixe a The Machine rodando. O resultado volta na tarefa. Quando o computador está desligado, os trabalhos esperam.
-- **Outras formas**, **Codex cloud**: o trabalho roda na nuvem da OpenAI. Clique em **Conectar Codex**. Ele usa o mesmo plano do ChatGPT que o seu modelo, e a OpenAI pede mais um código, para o Codex. Depois digite o ambiente de nuvem do Codex em Configurações.
+- **Na sua Machine** (padrão): pressione **Conectar Codex** e digite o código exibido pela OpenAI. Ele usa o mesmo plano do ChatGPT que seu modelo, e as tarefas são executadas na sua Machine. Não é preciso usar o terminal. Se você estiver conectado à mesma conta do ChatGPT, sua Machine também poderá ver e usar as redefinições do seu limite de uso.
+- **Outras opções**, **No meu computador**: a tarefa é executada no seu computador, onde o Codex está conectado. Ela é transmitida de forma criptografada e só funciona nesse computador. Instale a The Machine nele, faça o pareamento na página da sua conta, execute `codex login` e mantenha a The Machine em execução. O resultado aparece na tarefa. Quando o computador estiver desligado, as tarefas ficam aguardando.
+- **Outras opções**, **Codex cloud**: a tarefa é executada na nuvem da OpenAI. Pressione **Conectar Codex**. Ele usa o mesmo plano do ChatGPT que seu modelo, e a OpenAI solicita mais um código, para o Codex. Em seguida, informe o ambiente do Codex cloud em Configurações.
 
-Ou entre pelo painel: **Conexões**, **Projetos e código**, **Codex**, **Receber um código**. Uma Machine auto-hospedada faz esse mesmo login sozinha.
+Você também pode entrar pelo painel: **Conexões**, **Projetos e código**, **Codex**, **Receber um código**. Uma Machine auto-hospedada faz esse mesmo login por conta própria.
 
-Em uma Machine hospedada, **Codex e Claude Code** aparece em Configurações quando o GitHub ou o Codex está conectado. Para desenvolvedores: o [guia de agentes](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
+Em uma Machine hospedada, **Codex e Claude Code** aparece em Configurações quando o GitHub ou o Codex está conectado. Para desenvolvedores: [guia de agentes](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

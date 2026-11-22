@@ -1,43 +1,43 @@
 ---
 title: Tarefas recorrentes
 area: cards
-summary: Tarefas que voltam num ritmo, como a folha de pagamento na primeira segunda-feira. Só uma aberta por vez.
+summary: Tarefas que voltam em uma frequência, como pagar a folha de pagamento na primeira segunda-feira. Só uma fica aberta por vez.
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
 keywords: repeat, recurring, every week, every month, workday, business day, routine
-translated: 06752aedb0bd152d
+translated: e85f6a4499f49b50
 ---
-## Criar uma
+## Criar uma tarefa
 
-Em **Nova tarefa**, escolha **Repete** e um ritmo: **Diário**, **Dias úteis**, toda semana, todo mês numa data ou num dia como a primeira segunda-feira, ou todo ano. **Personalizado…** aceita suas próprias palavras, como a cada 2 semanas ou toda última sexta-feira.
+Em **Nova tarefa**, escolha **Repete** e uma frequência: **Diário**, **Dias úteis**, semanalmente, mensalmente em uma data ou em um dia da semana, como na primeira segunda-feira, ou anualmente. **Personalizado…** aceita instruções com suas próprias palavras, no seu idioma, como a cada 2 semanas ou toda última sexta-feira.
 
-Dias úteis também: "enviar as faturas no segundo dia útil do mês" ou "fechar as contas no último dia útil do mês". Um dia útil é de segunda a sexta, sem os feriados do seu país.
+Ou é só dizer: “pagar a folha de pagamento toda primeira segunda-feira do mês” em Nova tarefa ou no Talk para criar uma tarefa recorrente.
 
-Se as palavras não estiverem claras, como "todo 2º dia útil" (o dia 2 do mês, ou dia sim, dia não?), a tarefa mantém todas as suas palavras e não se repete. Escolha **Repete** para definir.
+Dias úteis também contam: “enviar faturas todo segundo dia útil do mês” ou “fechar os livros no último dia útil do mês”. Um dia útil vai de segunda a sexta, sem contar os feriados nacionais do seu país.
 
-Ou só diga: "toda primeira segunda-feira do mês fazer a folha de pagamento" em Nova tarefa ou em Falar cria uma tarefa que se repete.
+Quando a instrução não fica clara, como “todo segundo dia útil” (o dia 2 do mês ou dia sim, dia não?), a tarefa mantém todas as suas palavras e não se repete. Escolha **Repete** para configurar.
 
-Para uma tarefa que você já tem, **Repetir…** em **…**, ou diga "repita isso toda semana" no chat dela.
+Para uma tarefa que você já tem, escolha **Repetir…** em **…** ou diga “repita esta toda semana” no chat dela.
 
-## Como ela se repete
+## Como funciona
 
-A tarefa mostra uma linha curta, como "Repete toda semana na segunda-feira". Só existe uma aberta por vez: a próxima chega na data dela, no seu fuso horário, quando esta estiver feita ou não for necessária.
+A tarefa mostra uma linha curta, como “Repete semanalmente às segundas-feiras”. Só uma fica aberta por vez: a próxima aparece na data prevista quando esta for concluída ou marcada como não necessária.
 
-Uma perdida não se acumula. Ela continua aberta e mostra quantas datas perdeu, e quando você a termina a próxima chega na próxima data a partir de hoje.
+Uma ocorrência perdida não fica acumulada. Ela continua aberta e mostra quantas datas passaram. Quando você a conclui, a próxima aparece na próxima data a partir de hoje.
 
-Adiar move só esta. O ritmo continua o mesmo.
+Adiar muda apenas esta ocorrência. A frequência continua igual.
 
-Feita antes da data? Ela conta para o que vence agora, e essa data ainda chega para o período seguinte.
+Concluiu antes da data? A tarefa conta para o que vence agora, e a data prevista continua valendo para o período seguinte.
 
-Cada uma é preparada como qualquer tarefa, e a preparação vê como foi a anterior e o que foi dito no chat dela.
+Cada ocorrência é preparada como qualquer tarefa, levando em conta como foi a anterior.
 
-Ela também guarda como fazer: os passos que descobriu e o que você corrigiu, para a próxima não precisar deles de novo. O chat dela mostra **Salvo como fazer isso da próxima vez**, com **Editar** e **Desfazer**. Ela nunca envia nada sozinha.
+Ela também guarda como fazer: as etapas que descobriu e o que você corrigiu, para que a próxima não precise refazê-las. O chat mostra **Salvo como fazer isso da próxima vez**, com as opções **Editar** e **Desfazer**. A tarefa nunca envia nada por conta própria.
 
-## Mudar ou parar
+## Alterar ou interromper
 
-Toque na linha "Repete" da tarefa: escolha outro ritmo, **Pular esta** (fecha esta e traz a próxima na data dela) ou **Parar de repetir**. "Parar de repetir" no chat dela também funciona. Parar mantém a tarefa aberta; só as próximas deixam de vir.
+Toque na linha **Repete** da tarefa para escolher outra frequência, **Pular esta** (isso encerra esta ocorrência e traz a próxima na data prevista) ou **Parar de repetir**. Dizer “parar de repetir” no chat também funciona. Ao parar, a tarefa que está aberta continua; só as próximas deixam de aparecer.
 
 ## Sugestões
 
-Quando sua Machine aprende algo que você faz num ritmo, ou vê a mesma tarefa feita com regularidade, ela pergunta uma vez: **Transformar em tarefa recorrente?** **Tornar recorrente** ou **Não, obrigado**. Ela nunca cria uma sozinha, e nada é enviado sozinho.
+Quando sua Machine aprende sobre algo que você faz com frequência ou percebe que a mesma tarefa é concluída regularmente, ela pergunta uma vez: **Transformar em tarefa recorrente?** Escolha **Tornar recorrente** ou **Não, obrigado**. Ela nunca cria uma tarefa por conta própria, e nada é enviado automaticamente.

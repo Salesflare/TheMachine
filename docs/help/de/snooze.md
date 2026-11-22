@@ -1,26 +1,28 @@
 ---
-title: Aufgabe zurückstellen
+title: Zurückstellen
 area: cards
-summary: Lass eine Aufgabe später wieder auftauchen. An einem Arbeitstag und zu einer Uhrzeit deiner Wahl.
+summary: Lass eine Aufgabe später wieder auftauchen. An einem Arbeitstag zur gewünschten Uhrzeit.
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
-translated: e6681ab225810e81
+translated: 9d34f011c74d8119
 ---
-## Aufgabe zurückstellen
+## Eine Aufgabe zurückstellen
 
-Tippe bei einer Aufgabe auf **Zurückstellen**. Im Menü stehen einige Zeitpunkte zur Auswahl, zum Beispiel in 2 Stunden, morgen oder in einer Woche. Für einen anderen Zeitpunkt wähl **Datum wählen** und **Uhrzeit** aus und tippe dann auf **Uhrzeit speichern**. Aus Versehen zurückgestellt? Tippe in der Nachricht auf **Rückgängig**, damit die Aufgabe sofort wieder auftaucht.
+Wähle bei einer Aufgabe **Zurückstellen**. Das Menü bietet einige Zeitpunkte an, zum Beispiel in 2 Stunden, morgen oder in einer Woche. Für einen anderen Zeitpunkt wählst du **Datum wählen** und **Uhrzeit** und dann **Uhrzeit speichern**. Aus Versehen zurückgestellt? Mit **Rückgängig** in der Nachricht ist die Aufgabe sofort wieder da.
 
-Aufgaben, die du mindestens einen Tag zurückstellst, erscheinen zu der Uhrzeit, die du unter „Zurückgestelltes kommt um“ festgelegt hast. Aufgaben für die Arbeit kommen erst an einem Arbeitstag zurück. Lege beides unter [Arbeitszeiten](work-hours.md) fest.
+Zurückstellungen von mindestens einem Tag erfolgen zur Uhrzeit, die du unter „Zurückstellungen erfolgen um“ festgelegt hast. Aufgaben für die Arbeit warten bis zu einem Arbeitstag. Beides kannst du unter [Arbeitszeiten](work-hours.md) einstellen.
 
-Oder sag es über **Änderungen anfragen**, zum Beispiel: „Erinnere mich nächsten Dienstag daran“.
+Oder sag es in **Änderungen anfragen**, zum Beispiel „Erinnere mich nächsten Dienstag daran“.
 
 ## Wenn die Aufgabe wieder auftaucht
 
-Sie erscheint als Benachrichtigung auf jedem Gerät, auf dem Benachrichtigungen aktiviert sind, und auf Telegram, wenn du es nutzt, sofern **Erinnerungen** unter [Benachrichtigungen](notifications.md) das zulassen. In der Nachricht steht, wo die Aufgabe wieder auftaucht. Wenn beides nicht zutrifft, erscheint sie wieder auf dem Dashboard, zusammen mit **Benachrichtigungen einschalten**. Auf iPhone und iPad brauchst du die [Handy-App](mobile-app.md), um Benachrichtigungen zu erhalten.
+Sie erscheint als Benachrichtigung auf allen Geräten, auf denen Benachrichtigungen aktiviert sind, und bei Telegram, falls du es nutzt und **Erinnerungen** unter [Benachrichtigungen](notifications.md) erlaubst. In der Zurückstellungsnachricht steht, wo sie wieder auftaucht. Wenn beides nicht verfügbar ist, erscheint sie wieder auf dem Dashboard, wo du direkt **Benachrichtigungen einschalten** kannst. Auf iPhone und iPad brauchst du für Benachrichtigungen die [Handy-App](mobile-app.md).
 
-## Solange die Aufgabe zurückgestellt ist
+Eine Aufgabe, die The Machine bereits erledigt hat, taucht unverändert wieder auf. The Machine bearbeitet sie nur erneut, wenn während der Zurückstellung etwas Neues eingegangen ist.
 
-Die Aufgabe steht unter **Kommt später zurück** und ist am entsprechenden Tag im [Kalender](calendar.md) zu sehen. Mit **Nicht mehr zurückstellen** holst du sie sofort zurück. Über **Uhrzeit ändern** kannst du einen anderen Zeitpunkt auswählen.
+## Während die Aufgabe zurückgestellt ist
 
-In Outlook wird der E-Mail-Thread in einen Ordner für zurückgestellte E-Mails verschoben, bis die Aufgabe wieder auftaucht. Weitere Informationen findest du unter [Microsoft](microsoft.md).
+Die Aufgabe steht unter **Kommt später zurück** und am entsprechenden Tag im [Kalender](calendar.md). Mit **Nicht mehr zurückstellen** holst du sie sofort zurück. Mit **Uhrzeit ändern** wählst du einen anderen Zeitpunkt.
+
+In Outlook wird der E-Mail-Thread bis zum Wiederauftauchen der Aufgabe in einen Ordner „Zurückgestellt“ verschoben. Weitere Informationen findest du unter [Microsoft](microsoft.md).

@@ -1,76 +1,76 @@
 ---
 title: Parler en direct
 area: cards
-summary: Une conversation à voix haute avec The Machine à propos d’une tâche, avec la voix d’OpenAI. Elle travaille dans le chat de la tâche et n’envoie un brouillon qu’après votre oui.
+summary: Une conversation vocale avec The Machine au sujet d’une tâche, avec la voix d’OpenAI. Elle se déroule dans le chat de la tâche et n’envoie un brouillon qu’après votre accord.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
 keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt, gpt live
 translated: 60168384f08de74e
 ---
-## Lancer une conversation
+## Démarrer une conversation
 
-Dans le chat d’une tâche, touchez l’onde à côté du micro. Autorisez le micro si votre navigateur le demande. Quand la barre affiche **En direct**, parlez comme lors d’un appel. The Machine répond à voix haute, et vous pouvez parler par-dessus pour l’interrompre.
+Dans le chat d’une tâche, touchez l’onde à côté du micro et autorisez l’accès au micro si une demande s’affiche. Quand la barre indique **En direct**, parlez comme au téléphone. The Machine vous répond à voix haute. Parlez par-dessus pour l’interrompre.
 
-Elle connaît la tâche où vous êtes : ses messages, son brouillon et son chat. Elle peut aussi consulter vos autres tâches. Dites « marque-la comme faite », « reporte-la » ou « pas nécessaire » et elle le fait elle-même. Dites « non, pas ça » juste après pour revenir en arrière. Le report accepte n’importe quel moment, comme « dans une heure » ou « demain à 9 h », dans le fuseau horaire des [Heures de travail](work-hours.md).
+Elle connaît cette tâche : ses messages, son brouillon et son chat. Elle peut aussi consulter vos autres tâches. Dites « marque cette tâche comme terminée », « mets-la en attente jusqu’à demain à 9 h » ou « pas nécessaire », et elle s’en charge. Dites « non, pas ça » juste après pour annuler. Les heures suivent le fuseau horaire de vos [Heures de travail](work-hours.md).
 
-L’écoute se fait dans vos langues : celle de l’app et celles que votre navigateur indique. Un bruit, une toux ou un son dans une autre langue ne reçoit pas de réponse et reste hors de la transcription.
+Elle comprend la langue de l’application et celles répertoriées par votre navigateur. Les toux, les bruits et les autres langues ne reçoivent pas de réponse et n’apparaissent pas dans la transcription.
 
-La barre a **Couper le micro** et **Fin**. Dites au revoir, ou que vous avez fini, et elle s’arrête d’elle-même. Une conversation dure jusqu’à 10 minutes. Une minute avant la fin, le minuteur montre le temps restant. Relancez-la pour continuer.
+La barre comporte **Couper le micro** et **Fin**. Dites au revoir pour mettre fin à la conversation. Elle dure jusqu’à 10 minutes, avec un compte à rebours pendant la dernière minute. Recommencez pour continuer.
 
-## Passer en revue toutes vos tâches à voix haute
+## Parler de toutes vos tâches
 
-Touchez **Parler** dans la barre latérale (dans le menu sur un téléphone) pour passer en revue à la voix tout ce qui vous attend. The Machine dit combien il y en a et prend celles de **Pour vous** une par une, la plus urgente d’abord. Elle voit aussi vos autres tâches, comme celles marquées **En préparation…**, et vous prévient quand l’une est prête.
+Touchez **Parler** dans la barre latérale, ou dans le menu sur un téléphone. The Machine vous indique combien de tâches sont en attente, puis traite une par une celles de la section **Pour vous**, en commençant par les plus urgentes. Elle vous prévient quand une tâche **En préparation…** est prête.
 
-Parler a sa propre page : une conversation du début à la fin, avec en haut la tâche dont elle parle, son brouillon et **Ouvrir le chat**. Elle ne vous fait pas passer de chat en chat.
+La fonction Parler a sa propre page : la tâche en cours apparaît en haut, avec son brouillon et **Ouvrir le chat**.
 
-Demandez-lui de lire un brouillon, de le modifier, de le reporter, de le marquer comme fait ou de passer à la suivante. L’envoi fonctionne comme dans le chat d’une tâche : un brouillon par question, après un oui clair. Ce que vous dites sur une tâche va dans le chat de cette tâche. Quand une nouvelle tâche arrive, elle la mentionne lors d’une pause. Dites « ajoute une tâche pour… » et elle en crée une nouvelle, sans quitter celle en cours.
+Demandez-lui de lire un brouillon, de le modifier, de mettre une tâche en attente, de la marquer comme terminée ou de passer à la suivante. Ce que vous dites au sujet d’une tâche est ajouté à son chat. Elle vous signale les nouvelles tâches quand vous faites une pause. Dites « ajoute une tâche pour… » pour en ajouter une sans perdre votre place.
 
-Elle accède aussi au reste de The Machine. Demandez une personne, une organisation, un projet, une réunion ou une promesse, et elle la cherche et l’affiche. Elle peut reporter une tâche, la marquer comme faite, l’écarter, la renommer ou la rouvrir, même une tâche dans **Fait / écarté**. Pour tout le reste, elle crée une tâche, laisse son chat s’en charger et vous donne la réponse.
+Posez une question sur une personne, une organisation, un projet, une réunion ou une promesse : elle fera une recherche et vous montrera le résultat. Elle peut aussi écarter, renommer ou rouvrir des tâches, y compris celles dans **Fait / écarté**. Pour toute autre demande, elle transmet la question au chat d’une nouvelle tâche et vous donne la réponse.
 
-Elle se souvient aussi de vos conversations précédentes. Demandez « Qu’avais-je décidé pour le séminaire ? » ou « Qu’ai-je dit sur Acme la semaine dernière ? », et elle vous le dit, avec le moment où vous l’avez dit. Seul Parler dans la barre latérale le fait, pas Parler dans le chat d’une tâche.
+Elle se souvient de vos conversations précédentes. Demandez « qu’est-ce que j’ai décidé pour le séminaire ? » : elle vous le dira, ainsi que le moment où vous l’avez dit. Seule la fonction Parler dans la barre latérale le permet.
 
-Vous pouvez aller sur une autre page entre-temps : la barre reste en bas, et **Parler** dans la barre latérale vous y ramène. Cette conversation dure 30 minutes au plus. Elle continue en arrière-plan sur ordinateur et sur Android. Sur iPhone, elle s’arrête quand l’app quitte l’écran.
+Vous pouvez consulter d’autres pages : la barre reste en bas, et **Parler** vous ramène à la conversation. Celle-ci dure jusqu’à 30 minutes. Sur ordinateur et Android, elle continue en arrière-plan. Sur iPhone, elle s’arrête quand l’application n’est plus à l’écran.
 
-## Demandez, et envoyez d’un oui
+## Faire des demandes et envoyer après confirmation
 
-Quand vous demandez quelque chose, comme « écris une réponse pour dire que jeudi me va » ou « mets ça en attente jusqu’à lundi », The Machine le transmet au chat de la tâche, comme si vous l’aviez tapé. Le chat suit ses règles habituelles : il peut modifier le brouillon ou mettre la tâche en attente.
+Demandez quelque chose, par exemple « rédige une réponse pour dire que jeudi me convient », et The Machine transmet votre demande au chat de la tâche comme si vous l’aviez saisie. Le chat suit ses règles habituelles.
 
-Le chat peut aussi chercher des choses, comme les horaires d’un magasin sur le web. Pendant ce temps, il affiche **Je m’en occupe…**, et vous pouvez continuer à parler. Quand la réponse est prête, The Machine vous la dit, avec l’endroit où elle l’a trouvée. Si vous demandez autre chose entre-temps, cela attend son tour.
+Le chat peut aussi faire des recherches, par exemple sur les heures d’ouverture d’un magasin. Il affiche **Je m’en occupe…** et vous pouvez continuer à parler. Quand la réponse est prête, The Machine vous la donne et vous indique où elle l’a trouvée.
 
-Pour envoyer un brouillon, dites-le. The Machine demande d’abord, en précisant à qui et comment, par exemple « Envoyer cette réponse à Sam par e-mail ? ». Elle lit d’abord tout le brouillon à voix haute : à qui il va, l’objet et le texte. Ça marche donc aussi avec le téléphone dans la poche. Répondez par un oui clair, comme « oui, envoie-le », et ce brouillon part.
+Pour envoyer un brouillon, dites-le. The Machine le lit à voix haute (le destinataire, l’objet et le texte), puis vous demande, par exemple : « Envoyer cette réponse à Sam par e-mail ? ». Vous pouvez garder votre téléphone dans votre poche. Dites clairement oui, par exemple « oui, envoie », et le brouillon est envoyé.
 
-- Elle envoie exactement le brouillon qu’elle a lu. S’il change après la question, elle le relit et redemande. Une question sans réponse au bout de 3 minutes expire.
-- Si votre réponse n’est pas un oui clair, rien ne part et elle redemande. « Non » n’envoie rien.
-- Un brouillon déjà vu à l’écran, ou entendu dans cette conversation, n’est pas relu : elle demande seulement, par exemple « L’envoyer à Pat ? ».
-- Dites « envoie les deux » ou « envoie tous ceux qui sont prêts », et elle nomme tout le monde en une question. Un oui les envoie chacun.
-- Parler dit combien de secondes il vous reste et affiche **Annuler** avec le même compte à rebours. Touchez-le, ou dites « annule » ou « attends ».
-- Une fois envoyé par la Machine, Parler dit « Envoyé. » et la barre et la tâche affichent **Envoyé à** cette personne avec l’heure. Si l’envoi a échoué, Parler dit pourquoi. Demandez « c’est parti ? » à tout moment : elle vérifie, elle ne devine jamais.
+- Elle envoie exactement le brouillon qu’elle a lu. Si le brouillon change, elle le relit et vous redemande confirmation. Une question restée sans réponse pendant 3 minutes expire.
+- Sans réponse claire par l’affirmative, rien n’est envoyé.
+- Si vous avez déjà vu ou entendu un brouillon, elle ne le relit pas. Elle demande seulement, par exemple : « L’envoyer à Pat ? ».
+- Dites « envoie tous ceux qui sont prêts » : elle nomme tout le monde dans une seule question. Un oui suffit pour tout envoyer.
+- Après votre accord, Parler affiche **Annuler** avec un compte à rebours. Touchez-le, ou dites « annule » ou « attends ».
+- Une fois l’envoi effectué, Parler indique « Envoyé. » et la tâche affiche **Envoyé à** cette personne, avec l’heure. En cas d’échec, Parler vous en indique la raison. Demandez « est-ce envoyé ? » à tout moment : elle vérifie au lieu de deviner.
 
-Vous pouvez toujours appuyer sur **Approuver** à la place.
+Vous pouvez aussi toucher **Approuver**.
 
-« Fais-le » lance The Machine sur la tâche, comme **Faire**, y compris dans le navigateur. « Marque-la comme faite » la ferme. Dites « signale un bug » et elle envoie un signalement, comme **Signaler un bug** dans l’aide, en demandant d’abord si elle peut ajouter plus.
+Dites « fais-le » pour lancer The Machine sur la tâche, comme avec **Faire**. Dites « signaler un bug » pour envoyer un rapport de bug, comme avec **Signaler un bug** dans Aide.
 
 ## Choisir une voix
 
-Dans **Paramètres**, **Général**, sous **Saisie vocale**, choisissez à **Voix** comment The Machine sonne. Touchez lecture pour entendre un extrait. **Cedar** est la voix par défaut. La voix Cove de ChatGPT n’est pas disponible pour parler en direct.
+Dans **Paramètres**, sous **Général**, puis **Saisie vocale**, choisissez une **Voix** et touchez le bouton de lecture pour l’écouter. Cedar est la voix par défaut. La voix Cove de ChatGPT n’est pas disponible.
 
 ## Une trace dans le chat
 
-Ce que vous dites tous les deux est écrit dans le chat de la tâche, sous une ligne **Conversation en direct**. Vous pouvez le relire plus tard.
+Tout ce qui est dit est ajouté au chat de la tâche, sous une ligne **Conversation en direct**, pour que vous puissiez le relire plus tard.
 
-## Ce qu’il vous faut
+## Conditions requises
 
-Parler en direct utilise la voix en temps réel d’OpenAI, donc votre Machine a besoin d’OpenAI :
+Parler en direct utilise la voix d’OpenAI. Votre Machine a donc besoin de l’un des éléments suivants :
 
-- Une connexion ChatGPT : incluse dans votre forfait, si votre forfait y donne accès.
-- Une clé API OpenAI : OpenAI facture votre clé à la minute de conversation, et la barre l’indique. Quand les deux sont configurés, votre Machine utilise la clé.
+- Un compte ChatGPT : inclus dans les forfaits qui le proposent.
+- Une clé API OpenAI : OpenAI facture chaque minute d’utilisation, et la barre vous l’indique. Si vous avez les deux, votre Machine utilise la clé.
 
-**Paramètres**, **Général**, **Saisie vocale** indique si Parler en direct est prêt. Sans OpenAI, l’onde n’apparaît pas. Votre audio va directement de votre navigateur à OpenAI. Votre clé n’atteint jamais le navigateur.
+**Paramètres**, **Général**, **Saisie vocale** vous indique si Parler en direct est prêt. Sans OpenAI, l’onde ne s’affiche pas. Votre audio est envoyé directement de votre navigateur à OpenAI.
 
-## Quand ça ne marche pas
+## En cas de problème
 
-- **Le micro est bloqué** : autorisez le micro pour ce site dans les paramètres de votre navigateur.
-- **Parler en direct n’a pas pu démarrer** : vérifiez la connexion ChatGPT ou la clé OpenAI, puis réessayez.
-- **Parler en direct a perdu la connexion** : relancez-le. Ce qui a été dit jusque-là reste dans le chat.
-- Si elle dit qu’elle ne comprend pas vos mots, ce que vous avez dit n’est pas passé deux fois de suite. Vérifiez votre micro, ou écrivez dans le chat. Elle le dit une fois, puis attend de vous entendre.
+- **Le microphone est bloqué** : autorisez l’accès au micro pour ce site dans les paramètres de votre navigateur.
+- **Parler en direct n’a pas pu démarrer** : vérifiez votre compte ChatGPT ou votre clé OpenAI, puis réessayez.
+- **La connexion de Parler en direct a été interrompue** : recommencez. Ce qui a été dit reste dans le chat.
+- Si elle indique qu’elle ne comprend pas vos paroles, vérifiez votre micro ou écrivez dans le chat.

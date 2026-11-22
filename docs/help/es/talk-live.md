@@ -1,7 +1,7 @@
 ---
-title: Hablar en vivo
+title: Habla en vivo
 area: cards
-summary: Una conversación en voz alta con The Machine sobre una tarea, con la voz de OpenAI. Trabaja en el chat de la tarea y solo envía un borrador después de que digas que sí.
+summary: Una conversación hablada con The Machine sobre una tarea, con la voz de OpenAI. Funciona en el chat de la tarea y solo envía un borrador cuando das tu aprobación.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -10,67 +10,67 @@ translated: 60168384f08de74e
 ---
 ## Empieza una conversación
 
-En el chat de una tarea, toca la onda junto al micro. Permite el micro si tu navegador lo pide. Cuando la barra diga **En marcha**, habla como en una llamada. The Machine responde en voz alta, y puedes hablar encima para interrumpirla.
+En el chat de una tarea, toca la onda que aparece junto al micrófono y permite el acceso al micrófono si te lo pide. Cuando la barra indique **En marcha**, habla como si estuvieras en una llamada. The Machine responde en voz alta. Puedes interrumpirla hablando.
 
-Conoce la tarea en la que estás: sus mensajes, su borrador y su chat. También puede consultar tus otras tareas. Di "márcala como hecha", "posponla" o "no hace falta" y lo hace ella misma. Di "no, eso no" justo después para deshacerlo. Pospone para cualquier momento, como "en una hora" o "mañana a las 9", en la zona horaria de [Horario laboral](work-hours.md).
+Conoce esta tarea: sus mensajes, su borrador y su chat. También puede consultar tus otras tareas. Di «marca esto como hecho», «pospónlo hasta mañana a las 9» o «no hace falta» y lo hará. Di «no, eso no» justo después para deshacerlo. Las horas siguen la zona horaria de tu [Horario laboral](work-hours.md).
 
-Escucha en tus idiomas: el de la app y los que indica tu navegador. Un ruido, una tos o un sonido en otro idioma no recibe respuesta y no queda en la transcripción.
+Escucha en el idioma de la aplicación y en los idiomas que indica tu navegador. No responde a tos, ruidos ni a otros idiomas, y no los incluye en la transcripción.
 
-La barra tiene **Silenciar** y **Fin**. Despídete, o di que ya terminaste, y termina sola. Una conversación dura hasta 10 minutos. Un minuto antes del final, el temporizador muestra cuánto queda. Vuelve a empezarla para seguir.
+La barra tiene las opciones **Silenciar** y **Fin**. Despídete y la conversación terminará automáticamente. Puede durar hasta 10 minutos. Durante el último minuto verás una cuenta atrás. Vuelve a empezar para continuar.
 
-## Repasa todas tus tareas hablando
+## Habla sobre todas tus tareas
 
-Toca **Hablar** en la barra lateral (en el menú en un teléfono) para repasar con la voz todo lo que te espera. The Machine dice cuántas hay y toma las de **Para ti** una por una, la más urgente primero. También ve tus otras tareas, como las marcadas **Preparando…**, y te avisa cuando una está lista.
+Toca **Hablar** en la barra lateral (en el menú, si usas un móvil). The Machine te dice cuántas tareas tienes pendientes y va revisando una por una las que aparecen en **Para ti**, empezando por las más urgentes. Te avisa cuando una tarea marcada como **Preparando…** está lista.
 
-Hablar tiene su propia página: una conversación de principio a fin, con la tarea de la que habla arriba, su borrador y **Abrir el chat**. No te lleva de chat en chat.
+Hablar tiene su propia página: la tarea que estáis revisando aparece arriba, junto con su borrador y la opción **Abrir el chat**.
 
-Pídele que lea un borrador, lo cambie, lo posponga, lo marque como hecho o pase a la siguiente. Enviar funciona como en el chat de una tarea: un borrador por pregunta, tras un sí claro. Lo que dices sobre una tarea queda en el chat de esa tarea. Si llega una tarea nueva, te la menciona en una pausa. Di "añade una tarea para..." y crea una nueva sin dejar la que tienes abierta.
+Pídele que lea un borrador, lo cambie, posponga la tarea, la marque como hecha o pase a la siguiente. Lo que digas sobre una tarea se añade a su chat. Cuando haya una pausa, te hablará de las tareas nuevas. Di «añade una tarea para...» para añadir una sin perder tu sitio.
 
-También llega al resto de The Machine. Pregunta por una persona, una organización, un proyecto, una reunión o una promesa, y lo busca y te lo muestra. Puede posponer una tarea, marcarla como hecha, descartarla, cambiarle el nombre o reabrirla, también una de **Hecho / descartado**. Para todo lo demás, crea una tarea, deja que su chat se encargue y te dice la respuesta.
+Pregunta por una persona, organización, proyecto, reunión o promesa, y lo buscará y te lo mostrará. También puede descartar, cambiar el nombre o volver a abrir tareas, incluidas las que aparecen en **Hecho / descartado**. Para cualquier otra cosa, pasa la pregunta al chat de una tarea nueva y te dice la respuesta.
 
-También recuerda tus conversaciones anteriores con ella. Pregunta "¿qué decidí sobre el offsite?" o "¿qué dije de Acme la semana pasada?" y te lo dice, con cuándo lo dijiste. Solo lo hace Hablar en la barra lateral, no Hablar en el chat de una tarea.
+Recuerda las conversaciones que habéis tenido antes. Pregunta «¿qué decidí sobre la reunión fuera de la oficina?» y te lo dirá, junto con cuándo lo dijiste. Solo Hablar en la barra lateral puede hacerlo.
 
-Mientras tanto puedes ir a otra página: la barra queda abajo, y **Hablar** en la barra lateral te trae de vuelta. Esta conversación dura hasta 30 minutos. Sigue en segundo plano en ordenadores y Android. En iPhone, se detiene cuando la app sale de la pantalla.
+Mientras tanto, puedes usar otras páginas: la barra seguirá en la parte inferior y **Hablar** te llevará de vuelta. Esta conversación puede durar hasta 30 minutos. En ordenadores y Android, continúa en segundo plano. En iPhone, se detiene cuando sales de la aplicación.
 
-## Pide cosas y envía con un sí
+## Pide cosas y confirma antes de enviar
 
-Cuando pides algo, como "escribe una respuesta diciendo que el jueves me va bien" o "pospón esto hasta el lunes", The Machine se lo pasa al chat de la tarea, como si lo hubieras escrito. El chat sigue sus reglas de siempre: puede cambiar el borrador o posponer la tarea.
+Pide algo, como «escribe una respuesta diciendo que el jueves me va bien», y The Machine lo pasa al chat de la tarea como si lo hubieras escrito tú. El chat sigue sus reglas habituales.
 
-El chat también puede buscar cosas, como el horario de una tienda en la web. Mientras tanto muestra **Trabajando en ello…**, y puedes seguir hablando. Cuando la respuesta está lista, The Machine te la dice, y dónde la encontró. Si pides otra cosa mientras tanto, espera su turno.
+El chat también puede buscar información, como el horario de apertura de una tienda. Muestra **Trabajando en ello…** y puedes seguir hablando. Cuando tenga la respuesta, The Machine te la dice y te cuenta dónde la encontró.
 
-Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y cómo, por ejemplo "¿Envío esta respuesta a Sam por correo?". Primero lee el borrador entero en voz alta: a quién va, el asunto y el texto. Así funciona también con el teléfono en el bolsillo. Responde con un sí claro, como "sí, envíalo", y ese borrador se envía.
+Para enviar un borrador, díselo. The Machine lo lee en voz alta (a quién va dirigido, el asunto y el texto) y te pregunta algo como «¿Envío esta respuesta por correo a Sam?». Puedes hacerlo con el móvil en el bolsillo. Di claramente que sí, por ejemplo, «sí, envíala», y se enviará ese borrador.
 
-- Envía exactamente el borrador que leyó. Si cambia después de la pregunta, lo vuelve a leer y vuelve a preguntar. Una pregunta sin respuesta en 3 minutos caduca.
-- Si tu respuesta no es un sí claro, no se envía nada y vuelve a preguntar. "No" no envía nada.
-- Un borrador que ya viste en pantalla, o que oíste en esta conversación, no se vuelve a leer: solo pregunta, por ejemplo "¿Se lo envío a Pat?".
-- Di "envía los dos" o "envía todos los preparados" y nombra a todos en una pregunta. Un sí envía cada uno.
-- Hablar dice cuántos segundos tienes y muestra **Deshacer** con la misma cuenta atrás. Tócalo, o di "deshacer" o "espera".
-- Cuando The Machine lo envía, Hablar dice "Enviado." y la barra y la tarea muestran **Enviado a** esa persona con la hora. Si no salió, Hablar dice por qué. Pregunta "¿se envió?" cuando quieras: lo comprueba, nunca adivina.
+- Envía exactamente el borrador que ha leído. Si el borrador cambia, lo vuelve a leer y te lo pregunta de nuevo. Si no respondes en 3 minutos, la pregunta caduca.
+- Si no das un sí claro, no se envía nada.
+- Si ya has visto u oído un borrador, no lo vuelve a leer. Solo pregunta algo como «¿Se lo envío a Pat?».
+- Di «envía todos los que estén listos» y te dirá los nombres en una sola pregunta. Con un sí, los envía todos.
+- Cuando dices que sí, Talk muestra **Deshacer** junto con una cuenta atrás. Tócalo o di «deshazlo» o «espera».
+- Una vez enviado, Talk dice «Enviado.» y la tarea muestra **Enviado a** esa persona, junto con la hora. Si no se ha podido enviar, Talk te dice por qué. Pregunta «¿se ha enviado?» cuando quieras: lo comprueba, nunca lo adivina.
 
-Siempre puedes tocar **Aprobar** en su lugar.
+También puedes tocar **Aprobar**.
 
-"Hazlo" pone a The Machine con la tarea, como **Hazlo**, también en el navegador. "Márcala como hecha" la cierra. Di "informa de un error" y envía un informe, como **Informar de un error** en Ayuda, preguntando antes si puede añadir más.
+Di «hazlo» para que The Machine empiece a trabajar en la tarea, igual que con **Hazlo**. Di «informa de un error» para enviar un informe de error, igual que con **Informar de un error** en Ayuda.
 
 ## Elige una voz
 
-En **Ajustes**, **General**, en **Entrada de voz**, elige en **Voz** cómo suena The Machine. Toca reproducir para oír una muestra. **Cedar** es la voz por defecto. La voz Cove de ChatGPT no está disponible para hablar en vivo.
+En **Ajustes**, **General**, dentro de **Entrada de voz**, elige una **Voz** y toca el botón de reproducción para escucharla. **Cedar** es la opción predeterminada. La voz Cove de ChatGPT no está disponible.
 
 ## Un registro en el chat
 
-Lo que dicen los dos se escribe en el chat de la tarea, bajo una línea **Habló en vivo**. Puedes releerlo después.
+Todo lo que digas se añade al chat de la tarea, debajo de la línea **Habló en vivo**, para que puedas leerlo más tarde.
 
 ## Qué necesitas
 
-Hablar en vivo usa la voz en tiempo real de OpenAI, así que tu Machine necesita OpenAI:
+Hablar en vivo usa la voz de OpenAI, así que tu Machine necesita una de estas opciones:
 
-- Un inicio de sesión de ChatGPT: incluido en tu plan, si tu plan tiene acceso.
-- Una clave de API de OpenAI: OpenAI cobra a tu clave por minuto de conversación, y la barra lo indica. Si los dos están configurados, tu Machine usa la clave.
+- Iniciar sesión en ChatGPT: incluido en los planes que lo ofrecen.
+- Una clave de API de OpenAI: OpenAI te cobra por minuto y la barra te lo indica. Si tienes ambas opciones, tu Machine usa la clave.
 
-**Ajustes**, **General**, **Entrada de voz** muestra si Hablar en vivo está listo. Sin OpenAI, la onda no aparece. Tu audio va de tu navegador directamente a OpenAI. Tu clave nunca llega al navegador.
+En **Ajustes**, **General**, **Entrada de voz** puedes ver si Hablar en vivo está listo. Si no tienes OpenAI, no aparecerá la onda. El audio va directamente desde tu navegador a OpenAI.
 
 ## Si no funciona
 
-- **El micro está bloqueado**: permite el micro para este sitio en los ajustes de tu navegador.
-- **Hablar en vivo no pudo empezar**: revisa el inicio de sesión de ChatGPT o la clave de OpenAI e inténtalo de nuevo.
-- **Hablar en vivo perdió la conexión**: vuelve a empezarlo. Lo dicho hasta ahora sigue en el chat.
-- Si dice que no entiende lo que dices, lo que dijiste no llegó dos veces seguidas. Revisa el micrófono o escribe en el chat. Lo dice una vez y luego espera hasta oírte.
+- **El micrófono está bloqueado**: permite el acceso al micrófono para este sitio en los ajustes del navegador.
+- **No se ha podido iniciar Hablar en vivo**: comprueba que hayas iniciado sesión en ChatGPT o que la clave de OpenAI sea correcta, e inténtalo de nuevo.
+- **Se ha perdido la conexión de Hablar en vivo**: vuelve a empezar. Lo que se haya dicho seguirá en el chat.
+- Si dice que no entiende lo que dices, comprueba el micrófono o escribe en el chat.

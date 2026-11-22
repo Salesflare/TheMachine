@@ -1,7 +1,7 @@
 ---
 title: Live praten
 area: cards
-summary: Een gesproken gesprek met The Machine over een to-do, met de stem van OpenAI. Hij werkt in de chat van de to-do en verstuurt een concept pas als je er ja op zegt.
+summary: Een gesproken gesprek met The Machine over een to-do, met de stem van OpenAI. Je praat in de chat van de to-do. Er wordt pas een concept verstuurd nadat je daar ja op zegt.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
@@ -10,67 +10,67 @@ translated: 60168384f08de74e
 ---
 ## Een gesprek starten
 
-Tik in de chat van een to-do op de golf naast de microfoon. Sta de microfoon toe als je browser erom vraagt. Als de balk **Live** toont, praat je zoals bij een telefoongesprek. The Machine antwoordt hardop, en je kunt erdoorheen praten om hem te onderbreken.
+Tik in de chat van een to-do op de golf naast de microfoon en geef toegang tot je microfoon als daarom wordt gevraagd. Als de balk **Live** aangeeft, praat je alsof je aan het bellen bent. The Machine antwoordt hardop. Praat erdoorheen om hem te onderbreken.
 
-Hij kent de to-do waarin je zit: de berichten, het concept en de chat. Hij kan ook je andere to-do's opzoeken. Zeg "markeer dit als klaar", "snooze het" of "niet nodig" en hij doet het zelf. Zeg meteen daarna "nee, niet dat" om het terug te draaien. Snoozen kan voor elke tijd, zoals "over een uur" of "morgen om 9 uur", in de tijdzone uit [Werkuren](work-hours.md).
+Hij kent deze to-do: de berichten, het concept en de chat. Ook kan hij je andere to-do's opzoeken. Zeg bijvoorbeeld ‘markeer dit als gedaan’, ‘snooze het tot morgen om 9 uur’ of ‘niet nodig’ en hij voert het uit. Zeg meteen daarna ‘nee, niet die’ om het ongedaan te maken. Tijden volgen de tijdzone van je [Werkuren](work-hours.md).
 
-Er wordt geluisterd in jouw talen: die van de app en die je browser opgeeft. Een geluid, een kuch of een klank in een andere taal krijgt geen antwoord en komt niet in het verslag.
+Hij luistert in de taal van de app en in de talen die je browser vermeldt. Op hoesten, lawaai en andere talen antwoordt hij niet. Die komen ook niet in het transcript.
 
-De balk heeft **Dempen** en **Einde**. Zeg gedag, of dat je klaar bent, en hij stopt vanzelf. Een gesprek duurt hoogstens 10 minuten. Een minuut voor het einde toont de timer hoeveel tijd er nog is. Start opnieuw om verder te gaan.
+De balk bevat **Dempen** en **Einde**. Zeg gedag en het gesprek wordt vanzelf beëindigd. Een gesprek duurt maximaal 10 minuten. In de laatste minuut zie je een afteltimer. Start opnieuw om verder te gaan.
 
-## Al je to-do's doorpraten
+## Praten over al je to-do's
 
-Tik op **Praten** in de zijbalk (in het menu op een telefoon) om alles wat op je wacht met je stem te overlopen. The Machine zegt hoeveel er wachten en neemt die in **Voor jou** een voor een door, de dringendste eerst. Hij ziet ook je andere to-do's, zoals die met **Aan het voorbereiden…**, en zegt het als er een klaar is.
+Tik op **Praten** in de zijbalk, of in het menu op je telefoon. The Machine vertelt hoeveel to-do's er klaarstaan en behandelt de to-do's onder **Voor jou** één voor één, van meest naar minst dringend. Hij laat weten wanneer een to-do met de status **Aan het voorbereiden…** klaar is.
 
-Praten heeft een eigen pagina: één gesprek van begin tot einde, met bovenaan de to-do waarover hij praat, het concept en **Chat openen**. Hij springt niet van chat naar chat.
+Praten heeft een eigen pagina: de to-do waar hij mee bezig is, staat bovenaan, met het concept en **Chat openen**.
 
-Vraag hem een concept voor te lezen, aan te passen, te snoozen, als klaar te markeren of naar de volgende te gaan. Versturen werkt zoals in de chat van een to-do: één concept per vraag, na een duidelijke ja. Wat je over een to-do zegt, komt in de chat van die to-do. Komt er een nieuwe to-do binnen, dan meldt hij die bij een pauze. Zeg "maak een to-do om..." en hij maakt een nieuwe, zonder de huidige te verlaten.
+Vraag hem een concept voor te lezen of te wijzigen, een to-do te snoozen, als gedaan te markeren of naar de volgende te gaan. Wat je over een to-do zegt, komt in de chat ervan. Bij een pauze vertelt hij over nieuwe to-do's. Zeg ‘voeg een to-do toe voor...’ om er een toe te voegen zonder je plek kwijt te raken.
 
-Hij kan ook bij de rest van The Machine. Vraag naar een persoon, een organisatie, een project, een afspraak of een belofte, en hij zoekt het op en toont het. Hij kan een to-do snoozen, als klaar markeren, afwijzen, hernoemen of weer openen, ook een onder **Gedaan / afgewezen**. Voor al de rest maakt hij een to-do, laat de chat ervan het doen en zegt je het antwoord.
+Vraag naar een persoon, organisatie, project, vergadering of belofte. Hij zoekt het op en laat het zien. Hij kan ook to-do's afwijzen, hernoemen of opnieuw openen, ook to-do's onder **Gedaan / afgewezen**. Voor al het andere stuurt hij de vraag naar de chat van een nieuwe to-do en vertelt hij je het antwoord.
 
-Hij onthoudt ook jullie eerdere gesprekken. Vraag "wat had ik beslist over de offsite?" of "wat zei ik vorige week over Acme?" en hij vertelt het je, met wanneer je het zei. Alleen Praten in de zijbalk doet dit, niet Praten in de chat van een to-do.
+Hij onthoudt je eerdere gesprekken met hem. Vraag ‘wat heb ik besloten over de offsite?’ en hij vertelt het je, en wanneer je dat zei. Alleen Praten in de zijbalk kan dit.
 
-Je kunt intussen naar een andere pagina: de balk blijft onderaan, en **Praten** in de zijbalk brengt je terug. Dit gesprek duurt hoogstens 30 minuten. Op computers en Android loopt het door op de achtergrond. Op een iPhone stopt het als de app van het scherm gaat.
+Je kunt ondertussen andere pagina's bekijken: de balk blijft onderaan staan en **Praten** brengt je terug. Dit gesprek duurt maximaal 30 minuten. Op computers en Android gaat het op de achtergrond door. Op iPhone stopt het zodra de app niet meer op het scherm staat.
 
-## Vraag dingen, en verstuur met een ja
+## Vraag iets en verstuur het met je akkoord
 
-Als je iets vraagt, zoals "schrijf een antwoord dat donderdag past" of "snooze dit tot maandag", geeft The Machine het door aan de chat van de to-do, alsof je het zelf typte. De chat volgt zijn gewone regels: hij kan het concept aanpassen of de to-do snoozen.
+Vraag bijvoorbeeld ‘schrijf een antwoord waarin je zegt dat donderdag goed uitkomt’. The Machine stuurt dit naar de chat van de to-do, alsof je het zelf had getypt. De chat volgt de gebruikelijke regels.
 
-De chat kan ook dingen opzoeken, zoals de openingsuren van een winkel op het web. Intussen toont hij **Ermee bezig…**, en je kan gewoon verder praten. Als het antwoord klaar is, zegt The Machine het je, en waar hij het vond. Vraag je intussen iets anders, dan wacht dat zijn beurt af.
+De chat kan ook dingen opzoeken, zoals de openingstijden van een winkel. Je ziet **Ermee bezig…** en kunt gewoon blijven praten. Zodra het antwoord klaar is, vertelt The Machine je het antwoord en waar hij het heeft gevonden.
 
-Wil je een concept versturen, zeg het dan. The Machine vraagt het eerst, met wie het krijgt en hoe, zoals "Dit antwoord per e-mail naar Sam sturen?". Eerst leest hij het hele concept voor: naar wie het gaat, het onderwerp en de tekst. Zo werkt het ook met je telefoon in je zak. Antwoord met een duidelijke ja, zoals "ja, verstuur maar", en dat concept gaat weg.
+Zeg dat je een concept wilt versturen. The Machine leest het hardop voor, met de ontvanger, het onderwerp en de tekst, en vraagt bijvoorbeeld: ‘Dit antwoord per e-mail naar Sam versturen?’ Je telefoon kan gewoon in je zak blijven. Zeg duidelijk ja, bijvoorbeeld ‘ja, verstuur het’, en het concept wordt verstuurd.
 
-- Hij verstuurt precies het concept dat hij voorlas. Verandert het na de vraag, dan leest hij het opnieuw voor en vraagt hij het opnieuw. Een vraag die je niet binnen 3 minuten beantwoordt, vervalt.
-- Is je antwoord geen duidelijke ja, dan gaat er niets weg en vraagt hij het opnieuw. "Nee" verstuurt niets.
-- Een concept dat je al op het scherm zag, of in dit gesprek hoorde, leest hij niet opnieuw voor: hij vraagt het alleen, zoals "Naar Pat sturen?".
-- Zeg "verstuur ze allebei" of "verstuur alle klare" en hij noemt iedereen in één vraag. Eén ja verstuurt ze allemaal.
-- Praten zegt hoeveel seconden je hebt en toont **Ongedaan maken** met dezelfde aftelling. Tik erop, of zeg "ongedaan maken" of "wacht".
-- Zodra de Machine het verstuurd heeft, zegt Praten "Verstuurd." en tonen de balk en de to-do **Verstuurd naar** die persoon met het uur. Ging het niet weg, dan zegt Praten waarom. Vraag gerust "is het verstuurd?": Praten kijkt het na en gokt nooit.
+- Hij verstuurt precies het concept dat hij heeft voorgelezen. Als het concept verandert, leest hij het opnieuw voor en vraagt hij opnieuw om je akkoord. Als je niet binnen 3 minuten antwoordt, verloopt de vraag.
+- Zonder een duidelijk ja wordt er niets verstuurd.
+- Een concept dat je al hebt gezien of gehoord, wordt niet opnieuw voorgelezen. Hij vraagt alleen bijvoorbeeld: ‘Naar Pat versturen?’.
+- Zeg ‘verstuur alle klaargezette’ en hij noemt iedereen in één vraag. Met één keer ja verstuurt hij ze allemaal.
+- Na je akkoord toont Praten **Ongedaan maken** met een afteltimer. Tik erop of zeg ‘ongedaan maken’ of ‘wacht’.
+- Na het versturen zegt Praten ‘Verstuurd.’ en toont de to-do **Verstuurd naar** die persoon, met het tijdstip. Als het versturen niet is gelukt, vertelt Praten waarom. Vraag op elk moment ‘is het verstuurd?’: hij controleert het en raadt nooit.
 
-Je kunt altijd ook op **Goedkeuren** tikken.
+Je kunt ook op **Goedkeuren** tikken.
 
-"Doe het" laat The Machine aan de to-do beginnen, zoals **Doe het**, ook in de browser. "Markeer als klaar" sluit hem af. Zeg "meld een bug" en hij stuurt een bugmelding, zoals **Een bug melden** in Help, en vraagt eerst of er meer bij mag.
+Zeg ‘doe het’ om The Machine aan de to-do te laten beginnen, net als met **Doe het**. Zeg ‘een bug melden’ om een bugrapport te versturen, net als met **Een bug melden** in Help.
 
-## Kies een stem
+## Een stem kiezen
 
-Kies in **Instellingen**, **Algemeen**, onder **Spraakinvoer**, bij **Stem** hoe The Machine klinkt. Tik op afspelen om een voorbeeld te horen. **Cedar** is de standaard. De stem Cove van ChatGPT is niet beschikbaar voor Live praten.
+Kies onder **Instellingen**, **Algemeen** en **Spraakinvoer** een **Stem**. Tik op afspelen om die te horen. **Cedar** is de standaardstem. De Cove-stem van ChatGPT is niet beschikbaar.
 
 ## Een verslag in de chat
 
-Wat jullie allebei zeggen, wordt in de chat van de to-do geschreven, onder een regel **Live gepraat**. Je kunt het later teruglezen.
+Alles wat er wordt gezegd, komt onder een regel met **Live gepraat** in de chat van de to-do te staan, zodat je het later kunt teruglezen.
 
 ## Wat je nodig hebt
 
-Live praten gebruikt de realtime stem van OpenAI, dus je Machine heeft OpenAI nodig:
+Live praten gebruikt de stem van OpenAI. Je Machine heeft daarom een van deze dingen nodig:
 
-- Een ChatGPT-login: inbegrepen in je abonnement, als je abonnement er toegang toe heeft.
-- Een OpenAI API-sleutel: OpenAI rekent je sleutel per gespreksminuut aan, en de balk zegt dat. Als beide zijn ingesteld, gebruikt je Machine de sleutel.
+- Een ChatGPT-account: inbegrepen bij abonnementen waarbij dit beschikbaar is.
+- Een OpenAI API-sleutel: OpenAI rekent kosten per minuut en de balk vermeldt dat. Als je beide hebt, gebruikt je Machine de sleutel.
 
-**Instellingen**, **Algemeen**, **Spraakinvoer** toont of Live praten klaar is. Zonder OpenAI verschijnt de golf niet. Je audio gaat van je browser rechtstreeks naar OpenAI. Je sleutel komt nooit in de browser.
+Onder **Instellingen**, **Algemeen** en **Spraakinvoer** zie je of Live praten klaar is. Zonder OpenAI wordt de golf niet weergegeven. Je audio gaat rechtstreeks vanuit je browser naar OpenAI.
 
 ## Als het niet werkt
 
-- **De microfoon is geblokkeerd**: sta de microfoon toe voor deze site in de instellingen van je browser.
-- **Live praten kon niet starten**: controleer de ChatGPT-login of OpenAI-sleutel en probeer opnieuw.
-- **Live praten verloor de verbinding**: start opnieuw. Wat tot nu toe gezegd is, blijft in de chat.
-- Zegt hij dat hij je niet verstaat, dan kwam wat je zei twee keer na elkaar niet door. Controleer je microfoon, of typ in de chat. Hij zegt dit één keer en wacht dan tot hij je hoort.
+- **De microfoon is geblokkeerd**: geef deze site toegang tot je microfoon in de browserinstellingen.
+- **Live praten kon niet starten**: controleer je ChatGPT-account of OpenAI API-sleutel en probeer het opnieuw.
+- **De verbinding met Live praten is verbroken**: start opnieuw. Wat er is gezegd, blijft in de chat staan.
+- Hij zegt dat hij je niet kan verstaan: controleer je microfoon of typ in de chat.

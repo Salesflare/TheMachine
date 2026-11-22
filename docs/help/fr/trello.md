@@ -1,31 +1,31 @@
 ---
 title: Trello
 area: connections
-summary: Modifications de cartes, commentaires et activité sur un tableau Trello. Il se contente de lire.
+summary: Modifications de cartes, commentaires et activité sur un tableau Trello. Accès en lecture seule.
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
 translated: 7fc2a596ef58bd93
 ---
-## Ce qu’il lit
+## Ce que The Machine lit
 
-Les modifications de cartes, les commentaires et l’activité sur un tableau Trello par connexion. Il ne marque jamais un tableau comme vu.
+Les modifications de cartes, les commentaires et l’activité sur un tableau Trello par connexion. Elle ne marque jamais un tableau comme consulté.
 
-## Ce qu’il peut faire
+## Ce que The Machine peut faire
 
-Rien dans Trello. Il se contente de lire.
+Rien dans Trello. Elle ne fait que lire.
 
-## Le connecter
+## Connecter Trello
 
-1. Dans le tableau de bord : **Connexions**, **Projets et code**, Trello. Ou sur la page de configuration d’une Machine hébergée, sur app.themachine.computer/setup : **Plus de sources**, Trello. Sur votre propre ordinateur, associez-le d’abord à votre compte.
-2. Appuyez sur **Se connecter avec Trello** et autorisez l’accès en lecture dans Trello. The Machine est créée par Salesflare.
-3. Choisissez le tableau à suivre et appuyez sur **Se connecter**. Pour un autre tableau, ajoutez Trello à nouveau.
+1. Dans le tableau de bord : **Connexions**, **Projets et code**, Trello. Ou, sur la page de configuration d’une Machine hébergée, à app.themachine.computer/setup : **Plus de sources**, Trello. Sur votre propre ordinateur, associez d’abord votre Machine à votre compte.
+2. Cliquez sur **Se connecter avec Trello** et autorisez l’accès en lecture. Trello indique que l’application est créée par Salesflare.
+3. Choisissez le tableau à suivre, puis cliquez sur **Se connecter**. Pour suivre un autre tableau, ajoutez Trello à nouveau.
 
-## Le retirer
+## Supprimer Trello
 
-- Dans le tableau de bord : **Connexions**, ouvrez le tableau, **Détails**, puis **Déconnecter**. Ce qu’il a déjà récupéré reste.
-- Sur une Machine hébergée, vous pouvez aussi appuyer sur **Retirer** à côté de lui sur votre page de configuration.
+- Dans le tableau de bord : **Connexions**, ouvrez le tableau, cliquez sur **Détails**, puis sur **Déconnecter**. Les données déjà importées sont conservées.
+- Sur une Machine hébergée, vous pouvez aussi cliquer sur **Retirer** à côté de Trello sur la page de configuration.
 
-## Le révoquer dans Trello
+## Révoquer l’accès dans Trello
 
-Révoquez The Machine dans les paramètres de votre compte Trello, sous Applications.
+Révoquez l’accès de The Machine dans les paramètres de votre compte Trello, sous Applications.

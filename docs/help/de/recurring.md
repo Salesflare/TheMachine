@@ -1,43 +1,43 @@
 ---
 title: Wiederkehrende Aufgaben
 area: cards
-summary: Aufgaben, die in einem Rhythmus wiederkommen, wie die Gehaltsabrechnung am ersten Montag. Immer nur eine offen.
+summary: Aufgaben, die regelmäßig wiederkommen, etwa die Gehaltsabrechnung am ersten Montag. Immer nur eine ist offen.
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
 keywords: repeat, recurring, every week, every month, workday, business day, routine
-translated: 06752aedb0bd152d
+translated: e85f6a4499f49b50
 ---
-## Eine anlegen
+## Erstellen
 
-Wähle in **Neue Aufgabe** **Wiederholt sich** und einen Rhythmus: **Täglich**, **Werktags**, wöchentlich, monatlich an einem Datum oder an einem Wochentag wie dem ersten Montag, oder jährlich. **Eigene…** nimmt deine eigenen Worte, etwa „alle 2 Wochen“ oder „jeden letzten Freitag“.
+Wähle unter **Neue Aufgabe** **Wiederholt sich** und einen Rhythmus: **Täglich**, **Werktags**, wöchentlich, monatlich an einem bestimmten Datum oder Wochentag wie dem ersten Montag oder jährlich. Mit **Eigene…** kannst du den Rhythmus in eigenen Worten festlegen, zum Beispiel alle 2 Wochen oder jeden letzten Freitag.
 
-Oder sag es einfach: „jeden ersten Montag im Monat Gehaltsabrechnung machen“ in **Neue Aufgabe** oder in **Sprechen** legt eine Aufgabe an, die sich wiederholt.
+Oder sag einfach: „Mach jeden ersten Montag im Monat die Gehaltsabrechnung“ in **Neue Aufgabe** oder im **Chat**. Dadurch wird eine wiederkehrende Aufgabe erstellt.
 
-Auch Werktage gehen: „Rechnungen senden am zweiten Werktag des Monats“ oder „Buchhaltung abschließen am letzten Werktag des Monats“. Ein Werktag ist Montag bis Freitag, ohne die Feiertage deines Landes.
+Auch Arbeitstage kannst du angeben: „Verschick jeden zweiten Arbeitstag des Monats Rechnungen“ oder „Schließ am letzten Arbeitstag des Monats die Bücher ab“. Ein Arbeitstag ist Montag bis Freitag, ohne die gesetzlichen Feiertage deines Landes.
 
-Sind die Worte nicht klar, etwa „jeden 2. Werktag“ (der 2. Werktag des Monats oder jeder zweite Tag?), behält die Aufgabe alle deine Worte und wiederholt sich nicht. Wähle **Wiederholt sich**, um es festzulegen.
+Sind die Worte nicht eindeutig, etwa „jeder 2. Geschäftstag“ (der 2. des Monats oder jeden zweiten Tag?), behält die Aufgabe deinen gesamten Wortlaut bei und wiederholt sich nicht. Wähle **Wiederholt sich**, um den Rhythmus festzulegen.
 
-Für eine vorhandene Aufgabe: **Wiederholen…** unter **…**, oder sag „wiederhole das jede Woche“ in ihrem Chat.
+Für eine bestehende Aufgabe wählst du unter **…** die Option **Wiederholen…**. Oder sag im Chat der Aufgabe: „Wiederhol das jede Woche“.
 
-## Wie sie sich wiederholt
+## So funktioniert die Wiederholung
 
-Die Aufgabe zeigt eine kurze Zeile, wie „Wiederholt sich wöchentlich am Montag“. Es ist immer nur eine offen: Die nächste kommt an ihrem Datum, sobald diese erledigt oder nicht nötig ist.
+Die Aufgabe zeigt eine kurze Zeile an, zum Beispiel „Wiederholt sich wöchentlich am Montag“. Es ist immer nur eine Aufgabe offen: Die nächste erscheint am jeweiligen Datum, sobald diese **Erledigt** oder **Nicht nötig** ist.
 
-Eine verpasste wird nicht gestapelt. Sie bleibt offen und zeigt, wie viele Termine sie verpasst hat, und wenn du sie erledigst, kommt die nächste am nächsten Termin ab heute.
+Eine verpasste Aufgabe wird nicht mehrfach angelegt. Sie bleibt offen und zeigt, wie viele Termine verpasst wurden. Wenn du sie erledigst, erscheint die nächste Aufgabe am nächsten Termin ab heute.
 
-Zurückstellen verschiebt nur diese. Der Rhythmus bleibt gleich.
+Wenn du nur diese eine Aufgabe auf später verschiebst, bleibt der Rhythmus unverändert.
 
-Vor ihrem Datum erledigt? Sie zählt für das, was jetzt fällig ist, und das Datum kommt trotzdem für den Zeitraum danach.
+Erledigst du die Aufgabe vor ihrem Datum? Sie zählt für den aktuell fälligen Termin. Der Termin für den darauffolgenden Zeitraum bleibt trotzdem bestehen.
 
-Jede wird wie jede andere Aufgabe vorbereitet und weiß, wie die vorige lief.
+Jede Aufgabe wird wie alle anderen vorbereitet und berücksichtigt dabei, wie die letzte gelaufen ist.
 
-Sie merkt sich auch, wie es geht: die Schritte, die sie herausgefunden hat, und was du korrigiert hast, damit die nächste sie nicht noch einmal braucht. Im Chat steht **Gespeichert, wie das nächstes Mal geht**, mit **Bearbeiten** und **Rückgängig**. Sie sendet nie etwas von selbst.
+Auch die Vorgehensweise bleibt gespeichert: die erarbeiteten Schritte und deine Korrekturen, damit sie beim nächsten Mal nicht noch einmal nötig sind. Im Chat steht dann **Gespeichert, wie das nächstes Mal geht**, mit **Bearbeiten** und **Rückgängig**. Die Aufgabe sendet nie selbst etwas.
 
 ## Ändern oder beenden
 
-Tippe bei der Aufgabe auf die Zeile „Wiederholt sich“: Wähl einen anderen Rhythmus, **Diese überspringen** (das schließt diese und bringt die nächste an ihrem Datum) oder **Nicht mehr wiederholen**. „Nicht mehr wiederholen“ in ihrem Chat geht auch. Beenden behält die offene Aufgabe; nur die nächsten kommen nicht mehr.
+Tippe in der Aufgabe auf die Zeile **Wiederholt sich**: Wähle einen anderen Rhythmus, **Diese überspringen** (die aktuelle Aufgabe wird geschlossen, die nächste erscheint am jeweiligen Datum) oder **Nicht mehr wiederholen**. Du kannst auch im Chat **Nicht mehr wiederholen** sagen. Wenn du die Wiederholung beendest, bleibt die offene Aufgabe bestehen. Nur die nächsten Aufgaben werden nicht mehr angelegt.
 
 ## Vorschläge
 
-Wenn deine Machine etwas lernt, das du in einem Rhythmus tust, oder dieselbe Aufgabe regelmäßig erledigt sieht, fragt sie einmal: **Eine wiederkehrende Aufgabe daraus machen?** **Wiederkehrend machen** oder **Nein danke**. Sie legt nie selbst eine an, und nichts wird von selbst gesendet.
+Wenn deine Machine erfährt, dass du etwas regelmäßig erledigst, oder sieht, dass dieselbe Aufgabe nach einem festen Zeitplan erledigt wird, fragt sie einmal: **Eine wiederkehrende Aufgabe daraus machen?** Wähle **Wiederkehrend machen** oder **Nein danke**. Sie erstellt nie selbst eine wiederkehrende Aufgabe und sendet auch nichts von allein.

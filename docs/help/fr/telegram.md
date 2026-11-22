@@ -1,38 +1,38 @@
 ---
 title: Telegram
 area: connections
-summary: Recevez vos tâches sur Telegram, avec les mêmes boutons que dans le tableau de bord, via votre propre bot. Facultatif.
+summary: Recevez vos tâches dans Telegram avec les mêmes boutons que sur le tableau de bord, grâce à votre propre bot. Facultatif.
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
 translated: a2b74e4831832977
 ---
-## Ce qu’il fait
+## Fonctionnement
 
-Ce Telegram est un moyen de recevoir vos tâches. Pour que The Machine lise vos propres discussions Telegram, voir [Discussions Telegram](telegram-chats.md). Votre propre bot envoie chaque tâche pendant vos [heures de travail](work-hours.md), avec les mêmes boutons que dans le tableau de bord : **Faire**, **Mettre en attente**, **Demander des modifications**, **Marquer comme fait**, **Pas nécessaire**, et **Envoyer** pour un message préparé.
+Recevez vos tâches dans Telegram, depuis votre propre bot et pendant vos [Heures de travail](work-hours.md). Chaque tâche comporte les mêmes boutons que sur le tableau de bord : **Faire**, **Mettre en attente**, **Demander des modifications**, **Marquer comme fait**, **Pas nécessaire** et **Envoyer** pour un message préparé. Pour que The Machine lise plutôt vos chats Telegram, consultez [Chats Telegram](telegram-chats.md).
 
-Telegram est facultatif. Le tableau de bord en app sur téléphone envoie les mêmes tâches en notifications.
+C’est facultatif : l’application mobile envoie les mêmes tâches sous forme de notifications.
 
-## Ce qu’il peut envoyer
+## Ce qui peut être envoyé
 
-Seulement des messages pour vous, depuis votre propre bot. Un message à quelqu’un d’autre demande toujours votre accord sur la tâche.
+Uniquement des messages qui vous sont destinés, depuis votre propre bot. Tout message destiné à quelqu’un d’autre doit encore être approuvé dans la tâche.
 
-## Le connecter
+## Connecter Telegram
 
 Sur une Machine hébergée :
 
-1. Dans Telegram, écrivez à @BotFather et envoyez /newbot. Copiez le jeton qu’il vous donne.
-2. Sur votre page de configuration, sous **Ajoutez-en d’autres à tout moment**, ouvrez Telegram, collez le jeton et appuyez sur **Ajouter mon bot**.
+1. Dans Telegram, envoyez un message à @BotFather, puis envoyez /newbot. Copiez le jeton qu’il vous donne.
+2. Sur votre page de configuration, sous **Ajouter d’autres intégrations à tout moment**, ouvrez Telegram, collez le jeton et appuyez sur **Ajouter mon bot**.
 
-Il ne fait pas partie de la configuration : ajoutez-le quand vous voulez. Votre tableau de bord le suggère dès qu’une tâche mise en attente ne pourrait revenir que là.
+Vous pouvez l’ajouter quand vous le souhaitez.
 
-Sur votre propre ordinateur, l’installateur le demande, ou lancez `assistant telegram on` avec votre identifiant d’utilisateur Telegram.
+Sur votre propre ordinateur, l’installateur vous le demande. Vous pouvez aussi exécuter `assistant telegram on` avec votre identifiant utilisateur Telegram.
 
-## Le retirer
+## Supprimer la connexion
 
-- Sur une Machine hébergée : appuyez sur **Déconnecter Telegram** sur votre page de configuration. Votre bot et son jeton sont retirés de votre Machine.
-- Sur votre propre ordinateur : `assistant telegram off`. Ajoutez `--remove-bot` pour oublier aussi le bot.
+- Sur une Machine hébergée : appuyez sur **Déconnecter Telegram** sur votre page de configuration. Votre bot et son jeton sont supprimés de votre Machine.
+- Sur votre propre ordinateur : `assistant telegram off`. Ajoutez `--remove-bot` pour supprimer aussi le bot.
 
 ## Supprimer le bot dans Telegram
 
-Écrivez à @BotFather, envoyez /deletebot et choisissez votre bot.
+Envoyez un message à @BotFather, puis envoyez /deletebot et sélectionnez votre bot.

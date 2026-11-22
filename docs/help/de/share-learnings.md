@@ -1,7 +1,7 @@
 ---
 title: Erkenntnisse mit dem Team teilen
 area: security
-summary: Höchstens einmal am Tag bietet sie dem Team von The Machine ein paar allgemeine Erkenntnisse an und stimmt über Erkenntnisse anderer Machines ab. Nichts Persönliches.
+summary: Höchstens einmal am Tag schlägt sie dem Team von The Machine einige allgemeine Erkenntnisse vor und stimmt über Erkenntnisse anderer Machines ab. Keine persönlichen Inhalte.
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
@@ -9,52 +9,52 @@ translated: 8a7418cb4cb27e7b
 ---
 ## Was das ist
 
-Höchstens einmal am Tag, wenn es etwas Neues gibt, macht deine Machine aus dem, was sie von dir gelernt hat, ein paar allgemeine Erkenntnisse, die The Machine für alle besser machen könnten. Zum Beispiel: „Entwürfe für Personen, die den Kontext noch nicht kennen, sollten ihn zuerst erklären.“ Sie bietet nie dieselbe Erkenntnis zweimal an.
+Höchstens einmal am Tag verwandelt deine Machine, wenn es etwas Neues gibt, das, was sie von dir gelernt hat, in einige allgemeine Erkenntnisse, die The Machine für alle verbessern könnten. Zum Beispiel: „Entwürfe für Menschen, die den Kontext noch nicht kennen, sollten ihn zuerst erklären.“ Dieselbe Erkenntnis schlägt sie nie zweimal vor.
 
-Jede Erkenntnis kommt mit 1 bis 3 Anwendungsfällen: eine Situation, was du tust und was passieren soll. Zum Beispiel: eine erste Antwort an einen Kunden, der noch nie von dir gehört hat. Du öffnest den Entwurf. Er sagt, wer du bist, bevor er um etwas bittet. Das Team entwickelt anhand dieser Fälle.
+Zu jeder Erkenntnis gehören 1 bis 3 Anwendungsfälle: eine Situation, was du tust und was passieren sollte. Zum Beispiel: eine erste Antwort an einen Kunden, der noch nichts von dir gehört hat; du öffnest den Entwurf; darin steht vor der Bitte, wer du bist. Das Team entwickelt darauf aufbauend.
 
-## Was mitgeht und was nie
+## Was geteilt wird und was nicht
 
-- Nur das allgemeine Muster, und ein kurzes ausgedachtes Beispiel, wenn es hilft.
-- Namen, E-Mail-Adressen, Links, Telefonnummern, Daten und Beträge werden entfernt, bevor du es siehst. Jede Erkenntnis sagt, was entfernt wurde.
-- Anwendungsfälle werden strenger geprüft: keine Zitate und keine Namen. Ein Anwendungsfall, der durchfällt, wird weggelassen, auch nachdem du ihn bearbeitet hast.
-- Filter können Details übersehen: Prüfe den genauen Text vor **Senden**.
-- Ein Fehlerprotokoll geht nur mit, wenn du **Fehlerprotokoll anhängen** anhakst. Prüfe auch diesen Auszug.
+- Nur das allgemeine Muster, bei Bedarf mit einem kurzen erfundenen Beispiel.
+- Namen, E-Mail-Adressen, Links, Telefonnummern, Daten und Beträge werden entfernt, bevor du die Erkenntnis siehst. Bei jeder Erkenntnis steht, was entfernt wurde.
+- Anwendungsfälle werden strenger geprüft: keine Zitate und keine Namen. Anwendungsfälle, die diese Prüfung nicht bestehen, werden weggelassen, auch nachdem du sie bearbeitet hast.
+- Beim Filtern können Details durchrutschen. Lies deshalb den genauen Text, bevor du auf „**Senden**“ tippst.
+- Ein Fehlerprotokoll wird nur angehängt, wenn du **Fehlerprotokoll anhängen** aktivierst. Lies auch diesen Auszug.
 
 ## Wenn sie fragt
 
-Erkenntnisse gehen von selbst, außer du hast das ausgeschaltet (siehe unten). Wenn sie fragt, steht unter **Lernen**, **Geteilt** ein Hinweis: „3 Erkenntnisse mit dem Team von The Machine teilen?“ Tippe auf **Prüfen**, um genau zu sehen, was gesendet würde. Bearbeite oder entferne jede Erkenntnis oder jeden Anwendungsfall (jede Erkenntnis behält mindestens einen Anwendungsfall) und dann **Senden**. Oder wähle **Nicht jetzt** oder **Nie fragen**. Ein neueres Angebot ersetzt eines, das du noch nicht beantwortet hast.
+Erkenntnisse werden automatisch geteilt, sofern du das nicht deaktiviert hast (siehe unten). Wenn sie nachfragt, erscheint unter „**Lernen**“ und „**Geteilt**“ ein Hinweis: „3 Erkenntnisse mit dem Team von The Machine teilen?“ Tippe auf „**Prüfen**“, um genau zu sehen, was geteilt wird. Bearbeite oder entferne einzelne Erkenntnisse oder Anwendungsfälle (zu jeder Erkenntnis bleibt mindestens einer erhalten) und tippe dann auf „**Senden**“. Oder wähle „**Nicht jetzt**“ oder „**Nie fragen**“. Ein neueres Angebot ersetzt ein Angebot, auf das du noch nicht geantwortet hast.
 
-Es ist für das Team versiegelt und kommt unter einem ausgedachten Namen, außer du hakst **Meine E-Mail-Adresse anhängen, damit das Team antworten kann** an.
+Deine Identität bleibt dem Team verborgen und die Erkenntnisse werden unter einem erfundenen Namen gesendet, außer du aktivierst **Meine E-Mail-Adresse anhängen, damit das Team antworten kann**.
 
-Andere Machines können über eine Erkenntnis abstimmen, die du geteilt hast, ohne zu wissen, wer sie geschickt hat.
+Andere Machines können über eine von dir geteilte Erkenntnis abstimmen, ohne zu wissen, von wem sie stammt.
 
 ## Automatisch senden
 
-**Erkenntnisse automatisch senden** in Einstellungen, Sicherheit ist standardmäßig an. Neue Erkenntnisse gehen ohne Nachfrage, genauso geprüft. Schalte es aus, damit sie jedes Mal fragt. Hast du es schon einmal ausgeschaltet, bleibt es aus.
+**Erkenntnisse automatisch senden** ist in Einstellungen unter Sicherheit standardmäßig aktiviert. Neue Erkenntnisse werden ohne Nachfrage gesendet und genauso geprüft. Deaktiviere die Option, damit sie jedes Mal nachfragt. Wenn du sie zuvor deaktiviert hast, bleibt sie deaktiviert.
 
-Bei Erkenntnissen aus deinen Aufgaben unter Privat fragt sie weiterhin zuerst. Hattest du es vorher selbst eingeschaltet, gehen auch sie von selbst, wie du es gewählt hast.
+Für Erkenntnisse aus deinen persönlichen Aufgaben fragt sie weiterhin zuerst. Wenn du das zuvor selbst aktiviert hattest, werden sie ebenfalls automatisch gesendet, wie von dir festgelegt.
 
-Jede gesendete Erkenntnis steht unter Einstellungen, **Aktivität**, und unter Fleet, **Aktivität**, genau so, wie sie ging. Tippe auf **Zurückziehen**, und das Team sieht sie nicht mehr.
+Jede gesendete Erkenntnis wird genau so, wie sie verschickt wurde, unter Einstellungen, **Aktivität** und in Fleet, **Aktivität** aufgeführt. Tippe auf „**Zurückziehen**“, damit das Team sie nicht mehr sieht.
 
-Deine E-Mail-Adresse und Fehlerprotokolle gehen nie von selbst mit. **Vorsichtig**, eine vorsichtige Work Fleet oder das Ausschalten von **Anbieten, Erkenntnisse zu teilen** stoppt das automatische Senden. Wieder eingeschaltet, fragt sie wieder jedes Mal.
+Deine E-Mail-Adresse und Fehlerprotokolle werden nie automatisch gesendet. Wenn du **Vorsichtig** aktivierst, deine Work Fleet auf „**Vorsichtig**“ stellst oder **Anbieten, Erkenntnisse zu teilen** deaktivierst, werden Erkenntnisse nicht mehr automatisch gesendet. Wenn du die Option wieder aktivierst, fragt sie jedes Mal erneut.
 
-## Ausschalten
+## Deaktivieren
 
-Schalte **Anbieten, Erkenntnisse zu teilen** in Einstellungen, Sicherheit aus. Siehe [Sicherheitsstufen](security-levels.md). Teilen braucht [The Machine Network](/network).
+Deaktiviere **Anbieten, Erkenntnisse zu teilen** in Einstellungen unter Sicherheit. Weitere Infos findest du unter [Sicherheitsstufen](security-levels.md). Zum Teilen ist [The Machine Network](/network) erforderlich.
 
-Derselbe Schalter schaltet die [Erkenntnisse des Teams](fleet.md#team-learnings) für deine Work Fleet aus und nimmt die zurück, die deine Machine geteilt hat.
+Mit demselben Schalter deaktivierst du [Team-Erkenntnisse](fleet.md#team-learnings) für deine Work Fleet und ziehst die Erkenntnisse zurück, die deine Machine geteilt hat.
 
 ## Abstimmen
 
-Erkenntnisse, die andere Machines geteilt haben, kommen auch zu deiner. Einmal am Tag stellt eine kurze Prüfung eine Frage: Hätte das in der letzten Woche etwas auf deiner Machine geändert? Nur die Stimme geht zurück. Deine eigenen Erkenntnisse werden dir nie zur Abstimmung zurückgeschickt.
+Auch deine Machine erhält Erkenntnisse anderer Machines. Einmal am Tag fragt eine kurze Abfrage: Hätte das in der vergangenen Woche etwas an deiner Machine verändert? Nur deine Stimme wird zurückgesendet. Deine eigenen Erkenntnisse werden dir nie wieder angezeigt.
 
-Eine Stimme für nützlich oder nicht relevant braucht einen konkreten Fall aus deiner letzten Woche: eine Aufgabe oder etwas, worum du in ihrem Chat gebeten hast, allgemein erzählt und wie ein Anwendungsfall geprüft. Ohne ihn enthält sich deine Machine, und die Stimme zählt nicht. In einer Woche ganz ohne Aktivität stimmt sie gar nicht ab.
+Für eine Stimme für „nützlich“ oder „nicht relevant“ brauchst du einen konkreten Fall aus der vergangenen Woche: eine Aufgabe oder etwas, wonach du in ihrem Chat gefragt hast. Der Fall wird allgemein beschrieben und wie ein Anwendungsfall geprüft. Ohne konkreten Fall enthält sich deine Machine und die Stimme zählt nicht. Wenn du eine Woche lang nicht aktiv warst, wird gar nicht abgestimmt.
 
-Das Team ordnet die Erkenntnisse nach Stimmen für „nützlich“ und wählt aus, was für alle in The Machine kommt. Nichts ändert sich von selbst.
+Das Team ordnet Erkenntnisse nach der Zahl der hilfreichen Stimmen und wählt aus, was in The Machine für alle aufgenommen wird. Nichts ändert sich automatisch.
 
-**Über Erkenntnisse anderer Machines abstimmen** in Einstellungen, Sicherheit hat drei Optionen:
+**Über Erkenntnisse anderer Machines abstimmen** hat in Einstellungen unter Sicherheit drei Optionen:
 
-- **An**, die Standardeinstellung: Sie stimmt von selbst ab.
-- **Erst fragen**: Stimmen warten unter **Lernen**, **Geteilt** auf dich, jeweils mit der Erkenntnis und der Stimme. Sende oder überspringe sie einzeln oder alle auf einmal. Keine Aufgabe und keine Benachrichtigung. Stimmen, die du liegen lässt, verfallen nach 14 Tagen.
-- **Aus**: keine Abstimmung, und nichts Wartendes geht raus.
+- **An**, die Standardeinstellung: Sie stimmt automatisch ab.
+- **Erst fragen**: Die Stimmen warten unter „**Lernen**“ und „**Geteilt**“ auf dich. Zu jeder siehst du die Erkenntnis und die Stimme. Sende sie einzeln oder alle auf einmal oder überspringe sie. Es wird keine Aufgabe erstellt und keine Benachrichtigung gesendet. Stimmen, die du nicht sendest, verfallen nach 14 Tagen.
+- **Aus**: Es wird nicht abgestimmt und ausstehende Stimmen werden nicht gesendet.

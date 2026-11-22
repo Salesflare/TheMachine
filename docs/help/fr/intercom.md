@@ -1,47 +1,47 @@
 ---
 title: Intercom
 area: connections
-summary: Les conversations clients de votre espace de travail Intercom. Elle ne répond qu’après votre envoi, en votre nom.
+summary: Les conversations clients de votre espace de travail Intercom. Elle répond en votre nom uniquement après votre envoi.
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, More sources, Remove
 translated: 2cbee87e6d24c0a9
 ---
-## Ce qu’il lit
+## Ce qu’elle lit
 
-Les conversations clients de votre espace de travail Intercom : les 7 derniers jours au moment de la connexion, puis les nouvelles au fur et à mesure. Il lit aussi à quel espace de travail et à quel admin appartient la connexion.
+Les conversations clients de votre espace de travail Intercom : celles des 7 derniers jours au moment de la connexion, puis les nouvelles au fur et à mesure. Elle lit aussi l’espace de travail et le nom du coéquipier associés à la connexion.
 
-## Ce qu’il peut faire
+## Ce qu’elle peut faire
 
-Elle lit les conversations. Avec votre propre **Se connecter avec Intercom**, elle peut aussi répondre dans une conversation en votre nom, uniquement après que vous avez appuyé sur **Envoyer** pour ce texte précis. Elle n’assigne, ne ferme, n’étiquette et n’écrit jamais de notes. Un Intercom partagé avec vous via votre Fleet ne fait que lire.
+Avec votre propre connexion **Se connecter avec Intercom**, elle peut répondre en votre nom dans une conversation, uniquement après que vous avez appuyé sur **Envoyer** pour ce texte précis. Elle n’attribue, ne clôture et ne balise jamais les conversations, et n’y ajoute pas de notes. Une connexion Intercom partagée avec vous via votre Fleet ne fait que lire.
 
-## Tâches venues d’Intercom
+## Tâches issues d’Intercom
 
-Une tâche venue d’une conversation Intercom montre son origine : **Lire le message** ouvre la conversation, avec un lien vers elle dans Intercom, et le client figure sur la tâche. Sa réponse est une réponse Intercom dans cette conversation, sauf si vous demandez un e-mail.
+Une tâche issue d’Intercom indique le client. **Lire le message** ouvre la conversation et contient un lien vers celle-ci dans Intercom. La réponse est envoyée dans cette conversation, sauf si vous demandez un e-mail.
 
-Seules les conversations attribuées à vous, ou encore à personne, deviennent des tâches, y compris celles d’une boîte d’équipe sans personne attribué. Quand un membre de l’équipe prend une conversation dans Intercom, sa tâche ouverte se ferme d’elle-même, avec **Annuler**. Sur un Intercom partagé avec vous, vos conversations sont celles attribuées à l’admin sous lequel vous écrivez.
+Seules les conversations qui vous sont attribuées, ou qui ne le sont encore à personne, deviennent des tâches. Lorsqu’un coéquipier en prend une dans Intercom, la tâche se ferme automatiquement et vous pouvez utiliser **Annuler**. Sur une connexion Intercom partagée avec vous, vos conversations sont celles attribuées au coéquipier au nom duquel vous écrivez.
 
-Une tâche Intercom se ferme aussi d’elle-même quand un membre de l’équipe ferme la conversation dans Intercom, ou y répond sans que le client ait réécrit depuis, si la tâche ne demandait qu’une réponse. Cela compte aussi quand vous avez répondu juste avant la tâche, avant que The Machine ait lu votre réponse. Une note, une mise en attente ou la réponse d’un bot ne comptent jamais.
+Une tâche Intercom se ferme aussi automatiquement dès qu’un membre de l’équipe clôture la conversation dans Intercom, ou y répond et que le client n’a pas écrit depuis, si la tâche demandait uniquement une réponse. C’est aussi le cas si vous avez répondu juste avant la création de la tâche, avant que The Machine ne lise votre réponse. Une note, une mise en attente ou la réponse d’un bot ne compte jamais.
 
-Quand Intercom ne peut pas répondre depuis votre Machine (partagé avec vous en lecture seule, réponses non activées, ou non connecté), le brouillon part par e-mail. La tâche dit pourquoi, et sa revue demande **Envoyer plutôt par e-mail ?** Pour répondre vous-même dans Intercom, appuyez sur **Connectez votre propre Intercom** sur la tâche et connectez-vous. La tâche est alors réécrite comme réponse dans Intercom. Rien ne part avant que vous l’envoyiez.
+Lorsque votre Machine ne peut pas répondre dans Intercom (connexion partagée en lecture seule, réponses désactivées ou absence de connexion), le brouillon est envoyé par e-mail à la place. La tâche en indique la raison et vous demande **Envoyer plutôt par e-mail ?** Pour répondre dans Intercom, appuyez sur **Connectez votre propre Intercom** dans la tâche et connectez-vous. La tâche est alors recréée sous forme de réponse dans Intercom. Rien n’est envoyé avant que vous l’envoyiez.
 
-Votre propre Intercom et un Intercom partagé avec vous pour le même espace de travail ne lisent pas tous les deux : le partagé se met en pause, et ses conversations passent au vôtre, chacune une seule fois.
+Votre propre connexion Intercom et une connexion partagée avec vous pour le même espace de travail ne lisent pas toutes les deux : la connexion partagée reste inactive et ses conversations passent dans la vôtre, sans doublons.
 
-## Le connecter
+## Connecter Intercom
 
-1. Dans le tableau de bord : **Connexions**, **Clients**, Intercom. Ou sur la page de configuration d’une Machine hébergée, sur app.themachine.computer/setup : **Plus de sources**, Intercom. Sur votre propre ordinateur, associez-le d’abord à votre compte.
+1. Dans le tableau de bord : **Connexions**, **Clients**, Intercom. Ou, sur la page de configuration d’une Machine hébergée, à l’adresse app.themachine.computer/setup : **Plus de sources**, Intercom. Sur votre propre ordinateur, associez d’abord la Machine à votre compte.
 2. Appuyez sur **Se connecter avec Intercom**.
-3. Approuvez The Machine dans Intercom. Elle est créée par Salesflare. Une fois terminé, vous revenez là où vous avez commencé.
+3. Autorisez The Machine (créée par Salesflare) dans Intercom. Vous reviendrez à la page de départ.
 
-Se connecter à un autre espace de travail ajoute un second compte Intercom.
+La connexion à un autre espace de travail ajoute un deuxième compte Intercom.
 
-Intercom compte toujours comme travail, pour l’entreprise que nomme son espace de travail.
+Intercom est toujours considéré comme professionnel, pour l’entreprise indiquée par le nom de son espace de travail.
 
-## Le retirer
+## Supprimer Intercom
 
-- Dans le tableau de bord : **Connexions**, ouvrez Intercom, **Détails**, puis **Déconnecter**. Il arrête de lire. Ce qu’il a déjà récupéré reste.
-- Sur une Machine hébergée, vous pouvez aussi appuyer sur **Retirer** à côté de lui sur votre page de configuration.
+- Dans le tableau de bord : **Connexions**, ouvrez Intercom, puis **Détails** et **Déconnecter**. La lecture s’arrête. Les éléments déjà importés restent.
+- Sur une Machine hébergée, vous pouvez aussi appuyer sur **Retirer** à côté d’Intercom sur la page de configuration.
 
-## Le désinstaller dans Intercom
+## Désinstaller l’application dans Intercom
 
-Dans Intercom, ouvrez Settings, Apps, Installed apps, et retirez The Machine.
+Dans Intercom, ouvrez **Paramètres**, **Applications**, **Applications installées**, puis supprimez The Machine.
