@@ -39,7 +39,7 @@ table is in the control plane's glossary (cloud/i18n/glossary.md) for the site a
 | zh-CN | none | No gender: say The Machine again, or 它 when a pronoun can't be left out. Never 他 or 她. Machine stays Machine, never 机器: your Machine is 你的Machine, never 你的The Machine. Assistant: 助手. No space between Chinese and a Latin word or number, “” quotes, one … for an ellipsis, menu paths as “设置”>“通知”. Words: thread or conversation 对话 (never 线程 or 讨论串 outside Slack); plan (ChatGPT, ours) 套餐; deal 商机, won 赢单, lost 丢单; Linear issue and Shortcut story 事项; newsletter 新闻邮件; Activity 动态; For you 待你处理; learning 心得 (never 学习心得); setup code 设置码; payment card 银行卡; Sign out 退出登录; pair 配对. |
 | ja | none | No gender or pronoun: say The Machine again or leave the subject out. Assistant: アシスタント. |
 | ko | none | No gender or pronoun: say The Machine again or leave the subject out. Assistant: 어시스턴트. |
-| ru | feminine | она, её, and feminine agreement (готова, подключена, сама), after машина: "The Machine прочитала почту. Она ...". Never он or его for it. Speaking for itself: "Я застряла". Assistant: ассистентка, ваша ассистентка. |
+| ru | feminine | она, её, and feminine agreement (готова, подключена, сама), after машина: "The Machine прочитала почту. Она ...". Never он or его for it. Speaking for itself: "Я застряла". Assistant: ассистентка, ваша ассистентка. An owner's or someone else's Machine is Machine, never The Machine (ваша Machine, Machine коллеги); several are Machine too (ваши Machine), never Machines or машины. Fleet and Graph are masculine: ваш Fleet, рабочий Fleet, семейный Fleet, этот Fleet. A person in a placeholder takes both forms: {} подтвердил(а). |
 
 `tests/test_i18n.py` checks the forms that are always wrong (a masculine article before Machine or assistant, a
 masculine "I" in French, Spanish and Italian); the rest is for the translator to keep.
@@ -89,6 +89,7 @@ English strings the check skips, with why:
 - `Signal` names the Signal app, not a signal.
 - `Signal message sent.` names the Signal app, not a signal.
 - `Signal message sent at {}.` names the Signal app, not a signal.
+- `Settings file` is a configuration file, not the Settings screen.
 - `Signal unlinked this Machine` names the Signal app, not a signal.
 - `Update The Machine for Signal` names the Signal app, not a signal.
 - `In Signal on your phone: Settings, Linked devices, Link new device. Then scan this code:` names the Signal app, not a signal.
