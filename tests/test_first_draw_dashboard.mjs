@@ -66,5 +66,11 @@ try{
  // A reload (the browser takes the page back to where it was, further down) draws For you whole at once
  await page.evaluate(()=>{window.seen=null});await page.reload();await page.waitForFunction(()=>window.seen);
  assert.equal((await page.evaluate(()=>window.seen)).at.foryou,12,'a reload draws all of For you at once');
+ // A phone's screen holds fewer: its first drawing has four, the rest right after, in the same order
+ await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{window.seen=null});
+ await page.goto('http://127.0.0.1:'+server.address().port+'/?phone');await page.waitForFunction(()=>window.seen?.after);
+ const phone=await page.evaluate(()=>window.seen);
+ assert.deepEqual([phone.at.foryou,phone.at.foryouCount,phone.after.foryou],[4,'12',12],'a phone draws four first: '+JSON.stringify(phone));
+ assert.equal(await order(),drawn,'For you in the same order on a phone');
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
