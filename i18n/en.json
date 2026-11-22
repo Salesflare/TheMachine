@@ -321,6 +321,7 @@
  "Add to {}?": "Add to {}?",
  "Add transcript": "Add transcript",
  "Add your name first, in Settings": "Add your name first, in Settings",
+ "Add your other address too? Mail to it shows up here.": "Add your other address too? Mail to it shows up here.",
  "Add {}": "Add {}",
  "Add {} as personal contacts": {
   "one": "Add {} as a personal contact",
@@ -1151,6 +1152,10 @@
  "Connect Stripe": "Connect Stripe",
  "Connect Stripe ↗": "Connect Stripe ↗",
  "Connect WhatsApp": "Connect WhatsApp",
+ "Connect WhatsApp? {} emails mention it.": {
+  "one": "Connect WhatsApp? {} email mentions it.",
+  "other": "Connect WhatsApp? {} emails mention it."
+ },
  "Connect a channel that can send first.": "Connect a channel that can send first.",
  "Connect a mailbox that can send first.": "Connect a mailbox that can send first.",
  "Connect a source first": "Connect a source first",
@@ -1165,6 +1170,18 @@
  "Connect your calendar": "Connect your calendar",
  "Connect your mail to get your first to-dos.": "Connect your mail to get your first to-dos.",
  "Connect your own Intercom": "Connect your own Intercom",
+ "Connect {0}? {1} emails from {0} this month.": {
+  "one": "Connect {0}? {1} email from {0} this month.",
+  "other": "Connect {0}? {1} emails from {0} this month."
+ },
+ "Connect {0}? {1} meetings use it this month.": {
+  "one": "Connect {0}? {1} meeting uses it this month.",
+  "other": "Connect {0}? {1} meetings use it this month."
+ },
+ "Connect {0}? {1} messages link to it this month.": {
+  "one": "Connect {0}? {1} message links to it this month.",
+  "other": "Connect {0}? {1} messages link to it this month."
+ },
  "Connect {}": "Connect {}",
  "Connected": "Connected",
  "Connected AIs": "Connected AIs",
@@ -6450,6 +6467,8 @@
  "Try it": "Try it",
  "Try now": "Try now",
  "Try part of a name, an address or a company.": "Try part of a name, an address or a company.",
+ "Try {} again? The code ran out.": "Try {} again? The code ran out.",
+ "Try {} again? The sign-in didn’t finish.": "Try {} again? The sign-in didn’t finish.",
  "Try: {}": "Try: {}",
  "Trying again": "Trying again",
  "Trying again around {}.": "Trying again around {}.",

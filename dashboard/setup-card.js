@@ -8,7 +8,8 @@
 // account only on a hosted Machine (their sign-in runs there). From the first visit, once the first look is done; never
 // in a frame, except the site's demo (setup_card.demo: fixed rows, buttons that do nothing).
 // After the first day with to-dos (setup_card.since), it folds into one quiet line above Ready, "2 steps left · Continue",
-// which opens the card on a tap (and its chevron folds it again), so a daily owner sees their to-dos first.
+// which opens the card on a tap (and its chevron folds it again), so a daily owner sees their to-dos first. In the first
+// two weeks, on a day with few to-dos, one suggestion with its reason (setup_card.nudge) leads the card and is the line.
 // Loaded before settings-device.js, whose deviceRender() draws it (setupRender).
 const SETUP_MAX=5;
 const SETUP_DAY=864e5;
@@ -36,19 +37,21 @@ let setupQR=false;
 // The phone's own store on a phone's browser; null where there is none (a phone that is neither iPhone nor Android)
 const setupStore=()=>{const p=state?.phone_app_store||{},u=DEV.ios?p.ios:DEV.android?p.android:'';return /^https:\/\//.test(u||'')?u:null};
 // [{id, done, hint?}] in order, the rows that apply here and aren't closed (all: closed ones too, before the cut to SETUP_MAX)
-function setupRows(all=false){const s=state?.setup_card;if(!s)return [];const closed=new Set(all?[]:s.dismissed||[]);
- if(s.demo){const rows=(s.rows||[]).filter(r=>SETUP_ICON[r?.id]&&!closed.has(r.id)).map(r=>({id:r.id,done:!!r.done}));return all?rows:rows.slice(0,SETUP_MAX)}
- const hosted=!!state.manage_url,p=state.phone_app_store,rows=[];
+// The suggestion with its reason (s.nudge, setup_nudge.py) leads, in the place of the row it is about (n.replaces).
+function setupRows(all){const s=state?.setup_card;if(!s)return [];const closed=new Set(all?[]:s.dismissed||[]),n=s.nudge,rep=n?.replaces,rows=[];
  const add=(id,applies,done,hint)=>{if(applies&&!closed.has(id))rows.push({id,done:!!done,...(hint?{hint}:{})})};
+ if(n?.id)add('hint-'+n.id,1,0,n);
+ if(s.demo){for(const r of s.rows||[])add(r?.id,SETUP_ICON[r?.id]&&r.id!==rep,r.done);return all?rows:rows.slice(0,SETUP_MAX)}
+ const hosted=!!state.manage_url,p=state.phone_app_store;
  add('calendar',s.mail_accounts>0,s.calendar);
- add('memory',true,s.memory);
+ add('memory',1,s.memory);
  add('phone',!!p&&!DEV.phoneApp&&(DEV.mobile?!!setupStore():!!(p.ios||p.android)),s.phones>0);
  add('push',!DEV.phoneApp&&(pushOn()||pushOK&&devicePush.checked&&devicePush.perm!=='denied'&&devStore.get('push-off')!=='1'),pushOn());
- add('whatsapp',hosted,s.whatsapp);
+ add('whatsapp',hosted&&rep!=='whatsapp',s.whatsapp);
  add('install',!onPhone()&&!DEV.phoneApp&&nudgeable&&(appInstalled()||!!installEvt||DEV.macSafari),appInstalled());
- add('account',hosted,s.mail_accounts>=2);
- add('connect',true,s.more);
- for(const h of state.setup_hints||[])if(h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id))add('hint-'+h.id,true,false,h);
+ add('account',hosted&&rep!=='account',s.mail_accounts>=2);
+ add('connect',rep!=='connect',s.more);
+ for(const h of state.setup_hints||[])if(h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id))add('hint-'+h.id,1,0,h);
  if(all)return rows;
  // Open steps first: a done row only fills a slot no open step needs, so the tool hints after the base rows show
  const open=rows.filter(r=>!r.done).slice(0,SETUP_MAX),keep=new Set([...open,...rows.filter(r=>r.done).slice(0,SETUP_MAX-open.length)]);
@@ -83,9 +86,11 @@ const setupMailHTML=()=>html`<div class="setup-head"><strong>${t('Connect your m
 const SETUP_CHEVRON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 14 5-5 5 5"/></svg>';
 // On a phone with a known store (setupStore), Get it is a plain link to that store: straight there, no code, no popup.
 function setupHTML(rows,quiet){const desk=!DEV.mobile,hidden=setupHidden(),store=DEV.mobile&&!state.setup_card?.demo?setupStore():null;
- if(quiet&&!setupOpen)return html`<button type="button" class="setup-line" data-setup-open aria-expanded="false">${setupSvg('hint')}<span>${t(['{} step left','{} steps left'],rows.length)}</span><span class="setup-sep" aria-hidden="true">·</span><span class="setup-continue">${t('Continue')}</span></button>`;
+ // folded: the suggestion when there is one, else how many steps are left
+ const n=rows[0]?.hint?.nudge&&rows[0].hint;
+ if(quiet&&!setupOpen)return html`<button type="button" class="setup-line" data-setup-open aria-expanded="false">${setupSvg(n?.icon)}<span>${n?n.title:t(['{} step left','{} steps left'],rows.length)}</span>${n?'':html`<span class="setup-sep" aria-hidden="true">·</span><span class="setup-continue">${t('Continue')}</span>`}</button>`;
  return html`<div class="setup-head"><strong>Get more out of The Machine</strong><span class="setup-count">${t(['{} step left','{} steps left'],rows.length)}</span>${quiet?html`<button type="button" class="setup-x setup-fold" data-setup-fold aria-expanded="true" aria-label="Show less" title="Show less">${raw(SETUP_CHEVRON)}</button>`:''}<button type="button" class="setup-x" data-setup-close aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div><ul class="setup-rows">${
-  rows.map(r=>html`<li class="setup-row" data-step="${r.id}">${setupSvg(r.hint?(r.hint.scope?'scope':'hint'):r.id)}<span class="setup-label">${setupLabel(r)}</span>${html`${r.id==='phone'&&store?html`<a class="setup-go btn-link" href="${safeHref(store)}" target="_blank" rel="noopener" data-setup-go="phone">${setupButton(r)}</a>`:html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button>`}<button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
+  rows.map(r=>html`<li class="setup-row" data-step="${r.id}">${setupSvg(r.hint?(r.hint.scope?'scope':r.hint.icon):r.id)}<span class="setup-label">${setupLabel(r)}</span>${html`${r.id==='phone'&&store?html`<a class="setup-go btn-link" href="${safeHref(store)}" target="_blank" rel="noopener" data-setup-go="phone">${setupButton(r)}</a>`:html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button>`}<button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
    r.id==='phone'&&desk&&setupQR?setupQRHTML():''}</li>`)}</ul>${hidden?html`<button type="button" class="setup-more" data-setup-restore="all">${t(['Show {} hidden','Show {} hidden'],hidden)}</button>`:''}`}
 // The card is in the page from the start (shell-main.html), at the top of To-dos, so its place can be kept while loading
 let setupWired=false;
@@ -148,8 +153,7 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
  if(step==='phone'){const u=setupStore();if(u)window.open(u,'_blank','noopener');return}
  if(step==='whatsapp'){location.hash='#connect=whatsapp';return}
  // the picker, with Google and Microsoft
- if(step==='account'){location.hash='#connections=add';return}
- if(step==='connect'){location.hash='#connections=add';return}
+ if(step==='account'||step==='connect'){location.hash='#connections=add';return}
  if(step==='memory'){memoryImportOpen();return}
  // the calendar of the mail they have
  if(step==='calendar'){connectOpen(s.add==='microsoft'?'outlook_calendar':'calendar');return}

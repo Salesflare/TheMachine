@@ -434,6 +434,10 @@ class StatusApp:
         result['phone_app_store'] = phone_app_nudge(self.store)
         try:  # the setup to-do at the top of To-dos (setup_card)
             result['setup_card'] = setup_card(self.store, self.config)
+            # its one suggestion with a reason (setup_nudge.py), which takes the place of that source's setup hint
+            nudge = result['setup_card']['nudge'] = self.setup_nudge_view(result['setup_card'])
+            if nudge:
+                result['setup_hints'] = [h for h in result['setup_hints'] if h.get('id') != 'source-' + nudge['id'].rpartition('-')[2]]
         except sqlite3.Error as error:
             LOG.warning('setup card error=%s', type(error).__name__); result['setup_card'] = None
         try:  # the hello on a new owner's first views, with who has waited longest on them (Store.greeting)
