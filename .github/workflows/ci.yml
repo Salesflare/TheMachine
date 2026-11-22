@@ -125,6 +125,12 @@ jobs:
         if: github.event_name == 'pull_request'
         continue-on-error: true
         run: git diff --name-only HEAD^1 HEAD | python3 scripts/help_check.py --changed
+      - name: Help translation stamps move only with a new translation
+        # A translation's translated: stamp says which English it was made from. A pull request that changes a stamp
+        # but not the article's text hides a stale translation from the daily translator, so it fails. The translator's
+        # own pull requests (github-actions[bot], .github/workflows/translate.yml) are left out.
+        if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'github-actions[bot]'
+        run: python3 scripts/help_check.py --stamps HEAD^1
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         # what this run tests, in the artifact's name (scripts/ci_runs.py); a pull request's or merge group's run proves
         # no commit of main

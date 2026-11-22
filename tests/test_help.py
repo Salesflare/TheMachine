@@ -101,6 +101,24 @@ class HelpArticles(unittest.TestCase):
                          'a file many articles name says nothing about one of them')
         self.assertEqual(seen(['onboarding.py'], found), {'gmail': ['onboarding.py'], 'slack': ['onboarding.py']})
 
+    def test_a_stamp_moved_without_a_new_translation_fails(self):
+        # the stamp is the hash of the English the body was made from; moved by hand, it hides a stale translation
+        tr = '---\ntitle: Gmail\nsummary: Leest je mail.\ntranslated: {}\n---\nOpen **Verbindingen**.\n'
+        moved = help_check.restamped
+        self.assertTrue(moved(tr.format('aaaa'), tr.format('bbbb')), 'only the stamp changed')
+        self.assertTrue(moved(tr.replace('translated: {}\n', ''), tr.format('bbbb')), 'a stamp added to an old body')
+        self.assertTrue(moved(tr.format('aaaa'), tr.format('bbbb').replace('Leest', 'Lees')),
+                        'a front matter edit is not a new translation')
+        self.assertFalse(moved(tr.format('aaaa'), tr.format('bbbb').replace('Open', 'Ga naar')), 'a new translation')
+        self.assertFalse(moved(tr.format('aaaa'), tr.format('aaaa').replace('Open', 'Ga naar')), 'a hand fix')
+        self.assertFalse(moved(tr.format('aaaa'), tr.replace('translated: {}\n', '')), 'a removed stamp marks it stale')
+
+    def test_ci_checks_stamps_on_pull_requests_except_the_translators(self):
+        ci = (HERE / '.github' / 'workflows' / 'ci.yml').read_text(encoding='utf-8')
+        step = ci[ci.index('python3 scripts/help_check.py --stamps') - 600:ci.index('python3 scripts/help_check.py --stamps')]
+        self.assertIn("github.event.pull_request.user.login != 'github-actions[bot]'", step)
+        self.assertNotIn('continue-on-error', step.split('- name:')[-1])
+
     def test_a_site_text_the_article_does_not_use_fails(self):
         # the site's daily help sync checks this too, and stops on it
         self.assertIn('lists "Connect it now" under site: but does not use it',
