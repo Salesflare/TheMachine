@@ -14,10 +14,12 @@ import enrichment
 import error_feed
 import fleet
 import help_topics
+import load_speed
 import locale_prefs
 from machine import ai_training
 from machine.app.card_chat import save_hours
 from machine.config import LOG
+from machine.faults import code_version, running_release
 from machine.delivery.push import setup_hints
 from machine.sources.scope_check import scope_hints
 from machine.model_usage import telegram_on, usage_status, use_model_reset
@@ -50,12 +52,14 @@ def hours_settings(config, changes):
 def activity_report(db, timezone=None, current=None):
     """Per local day, the last 7 days: plain counts of what the owner did (to-dos shown and opened, Do it, Send,
     sent, Mark done, Not needed, snoozed, chat messages, visits, active hours), for the hosted health report next to
-    first_cards_report. Counts only, never content (activity.py). `db`: a plain sqlite3 connection to the events database."""
+    first_cards_report. Counts only, never content (activity.py). With them, `load`: how fast the dashboard opened per
+    day and kind, as count, median and p90 (load_speed.py). `db`: a plain sqlite3 connection to the events database."""
     try:
         tz = ZoneInfo(timezone) if timezone else local_tz()
     except (ValueError, KeyError):
         tz = local_tz()
-    return activity.report(db, tz, current or now())
+    current = current or now()
+    return {**activity.report(db, tz, current), 'load': load_speed.report(db, activity.local(current, tz).date().isoformat())}
 
 
 class SettingsActionsApp:
@@ -64,6 +68,7 @@ class SettingsActionsApp:
                'security_setting': 'security_action', 'own_address': 'own_address_action',
                'own_domain': 'own_domain_action', 'set_people_lookup': 'set_people_lookup_action',
                'set_agents': 'set_agents_action', 'tip_done': 'tip_done_action', 'whats_new_seen': 'whats_new_seen_action', 'done_milestone_seen': 'done_milestone_seen_action',
+               'load_speed': 'load_speed_action',
                'set_locale': 'set_locale_action',
                'connector_sync': 'connector_sync_action', 'connector_contact_sync': 'connector_sync_action', 'set_work_hours': 'set_work_hours_action',
                'model_usage_refresh': 'model_usage_action', 'model_reset': 'model_usage_action',
@@ -136,6 +141,17 @@ class SettingsActionsApp:
         if not owner_dashboard:
             raise OwnerError('Only the owner closes What’s new, on the dashboard')
         return self.store.whats_new_seen()
+
+    def load_speed_action(self, name, args, owner_dashboard=False):
+        """How fast the owner's dashboard opened, a few loads at a time (load_speed.py). Only the owner's own dashboard
+        counts; anything else is dropped without a word, as a measure never costs a page."""
+        if not owner_dashboard:
+            return {'kept': 0}
+        version = running_release() or code_version()
+        with self.store.connect() as db:
+            load_speed.ensure(db)
+            day = activity.local(now(), local_tz()).date().isoformat()
+            return {'kept': load_speed.note(db, (args or {}).get('loads'), day, version)}
 
     def done_milestone_seen_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:

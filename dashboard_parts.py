@@ -39,7 +39,7 @@ KINDS = ('js', 'css', 'html')
 # tests/test_lazy_parts_dashboard.mjs checks the page with them held back and with them refused.
 # The page fetches them in this order: what a tap on To-dos opens comes first (New to-do, Search, Send, a sign-in).
 LAZY = {
-    'newtodo': ('new-todo-dialog.js',),
+    'newtodo': ('new-todo-dialog.js', 'shell-speed.js'),  # shell-speed.js: first in line, so it runs soon after the page is quiet
     'palette': ('shell-palette.js',),
     'compose': ('todos-send.js', 'todos-compose.js'),
     'signin': ('connections-signin-dialog.js',),

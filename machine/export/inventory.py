@@ -90,7 +90,7 @@ _BY_PART = {
         team_files team_mail team_pending team_records team_sources team_wants team_learnings team_learning_votes
         contact_shares contact_marks family_invite_log family_invite_offers ai_clients ai_codes ai_connections ai_tokens
         ai_folded ai_writes ai_activity'''),
-    'activity': _names('''activity_accounts activity_blocks activity_seen faults fault_versions error_feed retention_runs
+    'activity': _names('''activity_accounts activity_blocks activity_seen load_speed faults fault_versions error_feed retention_runs
         store_fixes plain_key_pass data_stamps profile_runs notify_queue notify_digests notify_app_lines notify_app_devices push_subscriptions'''),
     'index': _names('event_search event_vectors event_passages event_vector_skips event_vector_changes fact_vectors fact_search'),
 }

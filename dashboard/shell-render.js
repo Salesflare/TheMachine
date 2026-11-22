@@ -89,7 +89,9 @@ fleetSoon();graphCountsSet(state.graph_counts);
 // A page's first drawing on To-dos (the device's copy, else the Machine's first answer): the to-dos, the sidebar and a chat now,
 // and the rest (the Done list, Learning, Connections, Settings, the other tabs' parts) just after that first paint, not before it.
 // A link to another tab or part (#settings/notify) draws it all at once, since that part is the one it opens on
-if(first){const later=()=>{if(drawnWhole)return;try{render('whole')}catch(e){errCaught(e);console.error(e)}};  // caught as in refresh, where it ran before
+// Its marks, for how fast the page opens (shell-speed.js): just after that paint, tm-warm (drawn from this device's copy)
+// or tm-cold (from the Machine's answer); tm-tap once all of it is drawn and the page answers taps
+if(first){const later=()=>{if(drawnWhole)return;performance.mark(shownCached?'tm-warm':'tm-cold');try{render('whole')}catch(e){errCaught(e);console.error(e)}performance.mark('tm-tap')};  // caught as in refresh, where it ran before
 requestAnimationFrame(()=>setTimeout(later));setTimeout(later,300);return}
 if(view==='view'&&drawnWhole===state)return;drawnWhole=state;lazySoon();  // the parts that load when first needed come after (shell-core.js)
 const choiceTone={accept:'mint',complete:'mint',reject:'muted',snooze:'lavender',other:'amber',reopen:'lavender',undo:'lavender',retry:'lavender',update:'lavender'};

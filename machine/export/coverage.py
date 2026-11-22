@@ -76,7 +76,7 @@ LEFT_OUT = {
         'board_suggestions', 'skill_clusters', 'skill_hints', 'team_learning_votes', 'team_learnings', 'board_fits', 'tool_approval_proposals',
     },
     'how The Machine runs: queues, runs, logs, caches and checks': {
-        'action_jobs', 'activity_accounts', 'activity_blocks', 'activity_seen', 'agent_jobs', 'agent_relayed', 'agent_result_receipts',
+        'action_jobs', 'activity_accounts', 'activity_blocks', 'activity_seen', 'load_speed', 'agent_jobs', 'agent_relayed', 'agent_result_receipts',
         'ai_activity', 'ai_writes', 'analyses', 'android_feed_health', 'android_receipts', 'board_backfill_asks', 'board_backfills',
         'board_backfills_queued', 'board_fit_undo', 'board_offers', 'bring_in_items', 'bring_in_lines', 'bring_in_state', 'calendar_clashes', 'calendar_writes', 'card_moves', 'card_uses', 'todo_moves', 'decision_asks', 'data_stamps', 'chat_fast_sessions',
         'chat_stops', 'checkpoints', 'signal_state', 'decision_annotations', 'decisions', 'deliveries', 'draft_edits', 'draft_saves', 'draft_seen',
