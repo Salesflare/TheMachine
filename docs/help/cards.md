@@ -95,7 +95,7 @@ Under **…**:
 - **Repeat…**: it [comes back on a rhythm](recurring.md).
 - **Not needed**: it goes away. Optionally pick why: **Not relevant**, **Wrong facts** or **Already handled**. Your Machine learns from it.
 
-Tap the title, or **Name** under **Details**, to rename it. Your title stays.
+Tap the title, or **Name** under **Details**, to rename it, or ask in its chat, like "Rename it to …". Your title stays.
 
 **Reopen** brings a closed to-do back. It also comes back by itself when something new happens, like a new message from them, but not for your own reply. It then shows when it came back, and sorts as new. Its chat carries on where it left off, also after weeks.
 
