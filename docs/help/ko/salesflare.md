@@ -9,7 +9,7 @@ translated: 3d6041d568843d96
 ---
 ## 읽어 오는 정보
 
-Salesflare의 계정, 연락처, 거래 정보와 각 계정의 피드를 읽어요. 피드에는 내가 포함되지 않은 동료의 이메일과 메모가 있는 회의가 포함돼요.
+Salesflare의 계정, 연락처, 거래 정보와 각 계정의 피드를 읽어요. 피드에는 내가 포함되지 않은 팀원의 이메일과 메모가 있는 회의가 포함돼요.
 
 ## 변경할 수 있는 정보
 
@@ -18,7 +18,7 @@ Salesflare의 계정, 연락처, 거래 정보와 각 계정의 피드를 읽어
 ## 연결하기
 
 1. Salesflare에서 [설정, API 키](https://app.salesflare.com/#/settings/apikeys)를 열고 키를 만들어요.
-2. 내 호스팅 Machine을 사용하는 경우: app.themachine.computer/setup에서 설정 페이지를 열고 **추가 소스**로 이동한 다음 Salesflare CRM을 열어요. 키를 붙여 넣고 **연결**을 눌러요.
+2. 내 호스팅 Machine을 사용하는 경우: app.themachine.computer/setup에서 설정 페이지를 열고 **소스 더 보기**로 이동한 다음 Salesflare CRM을 열어요. 키를 붙여 넣고 **연결**을 눌러요.
 3. 대시보드에서 **연결**, **고객**, Salesflare CRM을 차례로 열어요. 키를 붙여 넣고 **연결**을 눌러요. 그러면 카드에 진행 상황이 표시돼요.
 
 ## 동기화 세부 정보

@@ -18,7 +18,7 @@ AI 요금제는 OpenAI 같은 제공업체에서 청구해요. 저희는 추가 
 ## Network에서
 
 - 친구 및 가족: 어떤 Machine이든 무료예요. 가족 Fleet에서는 호스팅 Machine 두 대까지 합쳐서 {price.family_pair}, 그 이후에는 각 Machine당 {price.family_seat}예요. 부가가치세는 별도예요.
-- 업무 Fleet: 시트당 월 {price.seat}, 더 큰 Machine은 시트당 월 {price.seat_big}예요. 부가가치세는 별도예요. 직접 Machine을 운영하는 팀원은 월 {price.network}예요. 이미 호스팅 Machine 요금을 내는 팀원은 Fleet에 가입할 때 Fleet에 시트로 인계해 달라고 요청해요. 소유자가 확인하면 기존 요금제가 중지돼요. 확인 전이거나 소유자가 요청을 거절하면 기존대로 계속 결제해요. Fleet마다 별도의 카드와 청구서가 있으며, 요금이 청구되기 전에 소유자가 금액을 확인해요.
+- 업무 Fleet: 시트당 월 {price.seat}, 더 큰 Machine은 시트당 월 {price.seat_big}예요. 부가가치세는 별도예요. 직접 Machine을 운영하는 팀원은 월 {price.network}예요. 이미 호스팅 Machine 요금을 내는 팀원은 Fleet에 가입할 때 Fleet에서 시트로 넘겨받아 달라고 요청해요. 소유자가 확인하면 기존 요금제가 중지돼요. 확인 전이거나 소유자가 요청을 거절하면 기존대로 계속 결제해요. Fleet마다 별도의 카드와 청구서가 있으며, 요금이 청구되기 전에 소유자가 금액을 확인해요.
 
 모든 가격은 월 기준이며 부가가치세는 별도예요. [가격](/pricing)을 확인하세요.
 

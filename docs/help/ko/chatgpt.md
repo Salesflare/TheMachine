@@ -9,7 +9,7 @@ translated: fc97be60c0b68336
 ---
 ## 용도
 
-ChatGPT로 로그인하면 Machine이 ChatGPT를 사용해 읽고 초안을 작성해요. 개인 ChatGPT 요금제가 적용돼요. The Machine에는 자체 AI가 없어요. 요청은 계정과 OpenAI 이용 약관에 따라 OpenAI로 직접 전송돼요.
+ChatGPT로 로그인하면 내 Machine이 ChatGPT를 사용해 읽고 초안을 작성해요. 개인 ChatGPT 요금제가 적용돼요. The Machine에는 자체 AI가 없어요. 요청은 계정과 OpenAI 이용 약관에 따라 OpenAI로 직접 전송돼요.
 
 ## 로그인
 

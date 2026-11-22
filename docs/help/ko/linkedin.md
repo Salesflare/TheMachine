@@ -31,9 +31,9 @@ LinkedIn은 이 작업을 공식적으로 지원하는 방법을 제공하지 �
 2. **업무**(회사 정보 포함) 또는 **개인**을 선택한 다음 **연결**을 눌러요.
 3. LinkedIn에 **로그인**을 누르고 내 Machine의 브라우저에서 로그인해요. 로그인하면 자동으로 연결돼요.
 
-내 호스팅 Machine을 사용하는 경우 app.themachine.computer/setup의 설정 페이지에서도 연결할 수 있어요. **더 많은 소스**로 이동해 LinkedIn을 열고, 안내가 나오면 로그인한 다음 **연결**을 눌러요. 내 컴퓨터에서는 터미널에서 `assistant connect linkedin` 명령을 실행해도 똑같이 연결돼요.
+내 호스팅 Machine을 사용하는 경우 app.themachine.computer/setup의 설정 페이지에서도 연결할 수 있어요. **소스 더 보기**로 이동해 LinkedIn을 열고, 안내가 나오면 로그인한 다음 **연결**을 눌러요. 내 컴퓨터에서는 터미널에서 `assistant connect linkedin` 명령을 실행해도 똑같이 연결돼요.
 
-두 번째 LinkedIn 계정에는 별도의 브라우저가 제공돼요. LinkedIn에서 내 Machine의 로그아웃을 처리했다면 [사이트에서 로그아웃됨](signed-out.md)을 참고하세요.
+두 번째 LinkedIn 계정에는 별도의 브라우저가 제공돼요. LinkedIn에서 내 Machine이 로그아웃되었다면 [사이트에서 로그아웃됨](signed-out.md)을 참고하세요.
 
 ## LinkedIn에서 코드를 요청하는 경우
 

@@ -26,7 +26,7 @@ Granola의 개인 API 키가 필요해요. Granola의 Business 및 Enterprise �
 ## 연결하기
 
 1. Granola 데스크톱 앱에서 **설정**, **커넥터**, **API 키**를 선택해요. 개인 메모 액세스 권한이 있는 키를 만들고 복사해요.
-2. 대시보드에서 **연결**, **회의**, Granola를 선택해요. 호스팅된 Machine의 설정 페이지(app.themachine.computer/setup)에서는 **추가 소스**, Granola를 선택해요. 내 컴퓨터에서는 `assistant connect granola`에서도 키를 입력하라는 메시지가 표시돼요.
+2. 대시보드에서 **연결**, **회의**, Granola를 선택해요. 호스팅된 Machine의 설정 페이지(app.themachine.computer/setup)에서는 **소스 더 보기**, Granola를 선택해요. 내 컴퓨터에서는 `assistant connect granola`에서도 키를 입력하라는 메시지가 표시돼요.
 3. 키를 붙여 넣고 **업무** 또는 **개인**을 선택한 다음 **연결**을 눌러요.
 
 키는 바로 확인돼요. 나중에 Granola에서 키를 더 이상 허용하지 않으면 **연결**에서 Granola를 열어 새 키를 입력하라는 메시지가 표시돼요.

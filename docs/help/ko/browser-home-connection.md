@@ -1,14 +1,14 @@
 ---
 title: 브라우저의 홈 인터넷 연결
 area: troubleshooting
-summary: Tailscale을 사용해 호스팅된 Machine의 브라우저가 집의 인터넷으로 연결되게 하면 사이트에서 로그인을 허용해요.
+summary: Tailscale을 사용해 내 호스팅 Machine의 브라우저가 집의 인터넷으로 연결되게 하면 사이트에서 로그인을 허용해요.
 code: browser_login.py
 site: Tailscale, Sign in to Tailscale, Use this exit node, Open it in Tailscale, Test it, Sign in again, Stop using it, Sign it out of Tailscale too
 keywords: tailscale, exit node, home internet, ip address, cloudflare, linkedin
 order: 4
 translated: 9935ac3c09fa5c00
 ---
-LinkedIn, X, Cloudflare 확인 절차가 있는 사이트처럼 클라우드의 브라우저에서는 로그인을 허용하지 않는 사이트가 있어요. 설정 페이지에서 Tailscale을 사용하면 호스팅된 Machine의 브라우저가 집의 인터넷을 통해 연결되게 할 수 있어요. 무료이고 10분 정도 걸리며, 대부분의 과정은 자동으로 진행돼요.
+LinkedIn, X, Cloudflare 확인 절차가 있는 사이트처럼 클라우드의 브라우저에서는 로그인을 허용하지 않는 사이트가 있어요. 설정 페이지에서 Tailscale을 사용하면 내 호스팅 Machine의 브라우저가 집의 인터넷을 통해 연결되게 할 수 있어요. 무료이고 10분 정도 걸리며, 대부분의 과정은 자동으로 진행돼요.
 
 ## 설정하기
 
@@ -21,7 +21,7 @@ LinkedIn, X, Cloudflare 확인 절차가 있는 사이트처럼 클라우드의 
 
 ## 확인하기
 
-**테스트**를 누르세요. 웹에서 브라우저가 연결된 위치를 보여 줘요. 도시와 인터넷 제공업체가 표시돼요.
+**테스트하기**를 누르세요. 웹에서 브라우저가 연결된 위치를 보여 줘요. 도시와 인터넷 제공업체가 표시돼요.
 
 ## 집 컴퓨터가 꺼져 있을 때
 
@@ -29,4 +29,4 @@ LinkedIn, X, Cloudflare 확인 절차가 있는 사이트처럼 클라우드의 
 
 ## 사용 중지하기
 
-**사용 중지**를 누르면 다시 직접 연결돼요. **Tailscale에서도 로그아웃**을 누르면 Machine의 브라우저에서도 Tailscale이 로그아웃돼요. 그러면 Tailscale의 관리 콘솔에 만료됨으로 표시되고, 그곳에서 삭제할 수 있어요.
+**사용 중지**를 누르면 다시 직접 연결돼요. **Tailscale에서도 로그아웃해요**를 누르면 Machine의 브라우저에서도 Tailscale이 로그아웃돼요. 그러면 Tailscale의 관리 콘솔에 만료됨으로 표시되고, 그곳에서 삭제할 수 있어요.

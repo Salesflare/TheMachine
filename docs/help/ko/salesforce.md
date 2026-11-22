@@ -21,7 +21,7 @@ translated: eee5e084bac6dbd1
 
 호스팅 버전의 내 Machine에서:
 
-1. app.themachine.computer/setup에서 설정 페이지를 열고 **추가 소스**로 이동해요.
+1. app.themachine.computer/setup에서 설정 페이지를 열고 **소스 더 보기**로 이동해요.
 2. Salesforce를 열고 **Salesforce 연결**을 눌러요.
 3. Salesforce에 로그인하고 The Machine(Salesflare 제작)을 허용해요.
 

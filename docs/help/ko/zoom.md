@@ -25,13 +25,13 @@ translated: 9533caa1429fb3fc
 
 내 호스팅 Machine에서는:
 
-1. app.themachine.computer/setup에서 설정 페이지를 열고 **더 많은 소스**로 이동해요.
-2. Zoom을 열고 업무용 또는 개인용을 선택한 다음 **Zoom 연결**을 눌러요.
+1. app.themachine.computer/setup에서 설정 페이지를 열고 **소스 더 보기**로 이동해요.
+2. Zoom을 열고 **업무** 또는 **개인**을 선택한 다음 **Zoom 연결**을 눌러요.
 3. Zoom에 로그인하고 The Machine(Salesflare에서 제작)에 권한을 허용해요.
 
 대시보드에서도 연결할 수 있어요. **연결**, **회의**로 이동해 Zoom을 선택하고 **Zoom으로 로그인**을 눌러요. 완료하면 대시보드로 돌아와요.
 
-자신의 컴퓨터에서는 [계정과 페어링한 후](friends.md#a-machine-on-your-own-computer) **연결**을 열고 **회의**로 이동해 Zoom을 선택한 다음 **Zoom으로 로그인**을 눌러요.
+내 컴퓨터에서는 [계정과 페어링한 후](friends.md#a-machine-on-your-own-computer) **연결**을 열고 **회의**로 이동해 Zoom을 선택한 다음 **Zoom으로 로그인**을 눌러요.
 
 ## 연결 해제하기
 

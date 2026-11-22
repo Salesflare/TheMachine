@@ -20,7 +20,7 @@ Telegram Desktop처럼 내 Telegram 계정에 로그인한 기기로 비공개 �
 
 이미 있는 채팅에 텍스트를 보내요. 할 일에서 승인한 뒤에만 전송돼요. 한 번에 하나씩 보내고, 전송 사이에 잠시 간격을 둬요.
 
-할 일이 이메일로 들어왔지만 Telegram에서 그 사람과 대화한다면, 할 일의 채팅에 알려 주세요. The Machine이 그 사람과의 기존 채팅을 찾아 초안을 Telegram으로 바꿔요. 내용을 검토하고 보내면 돼요. 새 채팅을 시작하지는 않아요.
+할 일이 이메일로 들어왔지만 Telegram에서 그 사람과 대화한다면, 할 일의 채팅에 알려 주세요. 내 Machine이 그 사람과의 기존 채팅을 찾아 초안을 Telegram으로 바꿔요. 내용을 검토하고 보내면 돼요. 새 채팅을 시작하지는 않아요.
 
 ## 연결하기
 
@@ -31,7 +31,7 @@ Telegram Desktop처럼 내 Telegram 계정에 로그인한 기기로 비공개 �
 
 휴대폰에서는 같은 화면에서 QR 코드를 스캔할 수 없으므로 양식에 **전화번호로 코드 받기**가 먼저 표시돼요. Telegram에서 코드를 보낸 곳도 안내해요. 다른 기기의 Telegram 앱, SMS 또는 로그인 이메일일 수 있어요. 코드가 오지 않나요? **코드 다시 보내기**를 눌러요.
 
-직접 사용하는 컴퓨터에서는 개인 Telegram 앱 ID도 필요해요. [my.telegram.org](https://my.telegram.org)의 API development tools에서 앱 ID를 만든 다음 양식에 api_id와 api_hash를 입력해요.
+내 컴퓨터에서는 개인 Telegram 앱 ID도 필요해요. [my.telegram.org](https://my.telegram.org)의 API development tools에서 앱 ID를 만든 다음 양식에 api_id와 api_hash를 입력해요.
 
 또는 터미널에서 `assistant connect telegram` 명령을 실행하고 화면에 표시된 코드를 스캔해요.
 
@@ -48,6 +48,6 @@ The Machine은 Graph에 있는 사람 중 프로필 사진이 없는 사람의 �
 
 ## 연결 해제
 
-**연결**에서 Telegram 채팅을 열고 **세부정보**를 선택한 다음 **연결 해제**를 눌러요. 내 Machine이 Telegram에서 로그아웃하고 Telegram 관련 데이터를 삭제해요.
+**연결**에서 Telegram 채팅을 열고 **세부 정보**를 선택한 다음 **연결 해제**를 눌러요. 내 Machine이 Telegram에서 로그아웃하고 Telegram 관련 데이터를 삭제해요.
 
 또는 휴대폰에서 세션을 종료할 수 있어요. Telegram에서 설정, 기기를 차례로 열고 The Machine을 누른 다음 세션을 종료해요.

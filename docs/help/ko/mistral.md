@@ -9,7 +9,7 @@ translated: 5d782f28fb69efef
 ---
 ## 용도
 
-Mistral은 유럽의 AI 제공업체예요. Mistral API 키를 연결하면 The Machine에서 Mistral 모델로 읽고 초안을 작성해요. The Machine 자체 AI는 없어요. 요청은 계정과 Mistral의 이용 약관에 따라 Mistral로 바로 전송돼요.
+Mistral은 유럽의 AI 제공업체예요. Mistral API 키를 연결하면 내 Machine이 Mistral 모델로 읽고 초안을 작성해요. The Machine에는 자체 AI가 없어요. 요청은 계정과 Mistral의 이용 약관에 따라 Mistral로 바로 전송돼요.
 
 ## API 키 발급
 
@@ -17,7 +17,7 @@ Mistral은 다른 앱에서 로그인할 수 없어서 API 키를 사용해요. 
 
 ## 연결
 
-호스팅된 Machine에서는 설정 페이지를 열고 Your AI로 이동한 다음 **Other AI services**를 여세요. 제공업체로 Mistral을 선택하고 키를 붙여 넣은 다음 **키 저장**을 누르세요. 내 Machine에서 먼저 아주 작은 요청을 보내 키를 확인해요. 키가 잘못되면 바로 표시되고, 아무것도 저장되지 않아요.
+호스팅된 Machine에서는 설정 페이지를 열고 **내 AI**로 이동한 다음 **기타 AI 서비스**를 여세요. 제공업체로 Mistral을 선택하고 키를 붙여 넣은 다음 **키 저장**을 누르세요. 내 Machine에서 먼저 아주 작은 요청을 보내 키를 확인해요. 키가 잘못되면 바로 표시되고, 아무것도 저장되지 않아요.
 
 Mistral Large가 기본 모델이 돼요. 더 저렴한 옵션인 Mistral Small도 있어요. 채팅에 사용하거나 대체 모델로 설정할 수 있어요.
 
@@ -29,4 +29,4 @@ Mistral Large가 기본 모델이 돼요. 더 저렴한 옵션인 Mistral Small�
 
 ## 연결 해제
 
-설정 페이지의 Your AI에서 **키** 아래에 있는 Mistral 옆의 **삭제**를 누르세요. 내 Machine에서 키가 삭제되고, Mistral이 기본 모델이었다면 연결된 다른 모델이 대신 사용돼요. API 키 자체를 취소하려면 Mistral 콘솔에서 삭제하세요.
+설정 페이지의 **내 AI**에서 **키** 아래에 있는 Mistral 옆의 **삭제**를 누르세요. 내 Machine에서 키가 삭제되고, Mistral이 기본 모델이었다면 연결된 다른 모델이 대신 사용돼요. API 키 자체를 취소하려면 Mistral 콘솔에서 삭제하세요.

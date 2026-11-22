@@ -83,6 +83,8 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailsca
 English strings the check skips, with why:
 
 - `Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector:` names claude.ai's own menus, which read in English.
+- `kind is fact (true about the world), draft (how a kind of task is done) or voice (how the owner writes on one channel, with channel)` is read by the model, which takes draft as a literal value.
+- `when is "now", "digest" or a date/time like 2026-10-12 or 2026-10-12T09:00` is read by the model, which takes digest as a literal value.
 - `Zoom in` is the browser viewer's zoom button, not the Zoom app.
 - `Zoom out` is the browser viewer's zoom button, not the Zoom app.
 - `Signal chats` names the Signal app, not a signal.
