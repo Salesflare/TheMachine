@@ -41,7 +41,7 @@ Per aggiungere un’altra area di lavoro, aggiungi di nuovo Linear. Scegli **Lav
 
 ## Incolla invece una chiave API
 
-In **Oppure incolla una chiave API**, premi **Recupera il tuo token**. Linear apre **Impostazioni**, **Sicurezza e accesso**: crea una chiave API personale, copiala, incollala e premi **Collegati**. Anche sul tuo computer, `assistant connect linear` te la chiede.
+In **Oppure incolla una chiave API**, premi **Recupera il tuo token**. Linear apre **Impostazioni**, **Sicurezza e accesso**: crea una chiave API personale, copiala, incollala e premi **Collega**. Anche sul tuo computer, `assistant connect linear` te la chiede.
 
 ## Rimuovilo
 

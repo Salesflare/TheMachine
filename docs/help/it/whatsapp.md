@@ -41,7 +41,7 @@ Su una Machine ospitata:
 
 Stai configurando WhatsApp sul telefono e non hai un altro schermo da cui scansionare il codice? Apri **Sei sul telefono? Collega con un codice**, inserisci il tuo numero e premi **Ricevi un codice**. WhatsApp ti chiederà di inserire quel codice.
 
-Sul tuo computer: apri **Connessioni**, poi **Chat**, scegli WhatsApp, inserisci il tuo numero di telefono con il prefisso internazionale e premi **Collegati**. Verrà mostrato un codice. Sul telefono, apri WhatsApp, vai su Impostazioni, Dispositivi collegati, Collega un dispositivo, poi **Collega invece con il numero di telefono** e inserisci il codice.
+Sul tuo computer: apri **Connessioni**, poi **Chat**, scegli WhatsApp, inserisci il tuo numero di telefono con il prefisso internazionale e premi **Collega**. Verrà mostrato un codice. Sul telefono, apri WhatsApp, vai su Impostazioni, Dispositivi collegati, Collega un dispositivo, poi **Collega invece con il numero di telefono** e inserisci il codice.
 
 In alternativa, esegui `assistant connect whatsapp` e scansiona il codice mostrato nel terminale. La prima volta ti verrà proposto di installare il connettore WhatsApp, una versione fissata e verificata con il relativo checksum ([fonte](https://github.com/Salesflare/wacli)).
 

@@ -6,11 +6,11 @@ covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
 keywords: repeat, recurring, every week, every month, workday, business day, routine
-translated: 06752aedb0bd152d
+translated: e85f6a4499f49b50
 ---
 ## Crearne una
 
-In **Nuova attività**, scegli **Si ripete** e un ritmo: **Giornaliero**, **Giorni feriali**, ogni settimana, ogni mese in una data o in un giorno come il primo lunedì, o ogni anno. **Personalizzato…** accetta parole tue, come every 2 weeks o every last Friday.
+In **Nuova attività**, scegli **Si ripete** e un ritmo: **Giornaliero**, **Giorni feriali**, ogni settimana, ogni mese in una data o in un giorno come il primo lunedì, o ogni anno. **Personalizzato…** accetta parole tue, nella tua lingua, come ogni 2 settimane o ogni ultimo venerdì.
 
 Anche i giorni lavorativi: "inviare le fatture il secondo giorno lavorativo del mese" o "chiudere i conti l’ultimo giorno lavorativo del mese". Un giorno lavorativo va dal lunedì al venerdì, senza le festività del tuo paese.
 

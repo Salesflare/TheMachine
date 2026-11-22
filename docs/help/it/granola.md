@@ -27,7 +27,7 @@ Una chiave API personale di Granola. Granola offre le chiavi API nei piani Busin
 
 1. Nell’app desktop di Granola: **Impostazioni**, **Connectors**, **API keys**. Crea una chiave con accesso alle note personali e copiala.
 2. Nella dashboard: **Connessioni**, **Riunioni**, Granola. Oppure, nella pagina di configurazione di una Machine ospitata, su app.themachine.computer/setup: **Altre fonti**, Granola. Sul tuo computer, `assistant connect granola` te lo chiede a sua volta.
-3. Incolla la chiave, scegli **Lavoro** o **Personale** e premi **Collegati**.
+3. Incolla la chiave, scegli **Lavoro** o **Personale** e premi **Collega**.
 
 La chiave viene verificata subito. Se in seguito Granola la rifiuta, Granola in **Connessioni** ti chiederà una nuova chiave.
 

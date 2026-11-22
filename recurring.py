@@ -251,6 +251,60 @@ _WORLD = [
     (r'\b(?:elke|iedere) week\b|\bwekelijks\b|\bchaque semaine\b|\btoutes les semaines\b|\bjede woche\b|\bw[öo]chentlich\b|\bcada semana\b|\btodas las semanas\b|\bogni settimana\b|\btodas as semanas\b|\btoda semana\b|\bsemanalmente\b', 'week'),
     (r'\b(?:elke|iedere) maand\b|\bmaandelijks\b|\bchaque mois\b|\btous les mois\b|\bjeden monat\b|\bmonatlich\b|\bcada mes\b|\btodos los meses\b|\bogni mese\b|\btodos os meses\b|\btodo m[êe]s\b|\bmensalmente\b|\bmensualmente\b', 'month'),
     (r'\b(?:elk|ieder) jaar\b|\bjaarlijks\b|\bchaque ann[ée]e\b|\btous les ans\b|\bjedes jahr\b|\bj[äa]hrlich\b|\bcada a[ñn]o\b|\btodos los a[ñn]os\b|\bogni anno\b|\btodos os anos\b|\btodo ano\b|\banualmente\b', 'year'),
+    (r'по будням|каждый будний день|毎平日|평일마다|매 평일|每个工作日', 'weekday'),
+    (r'каждый день|ежедневно|毎日|매일|每天|每日', 'day'),
+    (r'каждую неделю|еженедельно|毎週|매주|每周|每星期|每个星期', 'week'),
+    (r'каждый месяц|ежемесячно|毎月|매달|매월|每个?月', 'month'),
+    (r'каждый год|ежегодно|毎年|매년|매해|每年', 'year'),
+]
+# The rest of what Custom… and New to-do read in every language the app speaks, like the English above: "every 2
+# weeks", "every Friday" and "every last Friday (of the month)". Each list is in order: Monday..Sunday, first..fourth
+# and last, day/week/month/year; an entry is that one's words in nl, fr, de, es, it, pt-BR, ru, zh, ja and ko.
+_W_DAYS = (r'maandag|lundi|montag|lunes|luned[iì]|segunda(?:-feira)?|понедельник\w*|星期一|周一|月曜日?|월요일',
+           r'dinsdag|mardi|dienstag|martes|marted[iì]|ter[çc]a(?:-feira)?|вторник\w*|星期二|周二|火曜日?|화요일',
+           r'woensdag|mercredi|mittwoch|mi[ée]rcoles|mercoled[iì]|quarta(?:-feira)?|сред\w*|星期三|周三|水曜日?|수요일',
+           r'donderdag|jeudi|donnerstag|jueves|gioved[iì]|quinta(?:-feira)?|четверг\w*|星期四|周四|木曜日?|목요일',
+           r'vrijdag|vendredi|freitag|viernes|venerd[iì]|sexta(?:-feira)?|пятниц\w*|星期五|周五|金曜日?|금요일',
+           r'zaterdag|samedi|samstag|s[áa]bado|sabato|суббот\w*|星期六|周六|土曜日?|토요일',
+           r'zondag|dimanche|sonntag|domingo|domenica|воскресень\w*|星期[日天]|周日|日曜日?|일요일')
+_W_NTH = ((1, r'eerste|premi[eè]re?|erste[nrs]?|primer[oa]?|prim[oa]|primeir[oa]|перв\w*|第[1一]个?|最初の|첫(?:째| ?번째)?'),
+          (2, r'tweede|deuxi[eè]me|seconde?|zweite[nrs]?|segund[oa]|second[oa]|втор\w*|第[2二]个?|둘째|두 ?번째'),
+          (3, r'derde|troisi[eè]me|dritte[nrs]?|tercer[oa]?|terz[oa]|terceir[oa]|трет\w*|第[3三]个?|셋째|세 ?번째'),
+          (4, r'vierde|quatri[eè]me|vierte[nrs]?|cuart[oa]|quart[oa]|четв[её]рт\w*|第[4四]个?|넷째|네 ?번째'),
+          (-1, r'laatste|derni[eè]re?|letzte[nrs]?|[úu]ltim[oa]|последн\w*|最后一个|最終|最後の|마지막'))
+_W_UNITS = (('day', r'dagen|dag|jours?|tage?n?|d[íi]as?|giorn[oi]|день|дн(?:я|ей)|天|日|일'),
+            ('week', r'weken|week|semaines?|wochen?|semanas?|settiman[ae]|недел\w*|周|星期|週間|週|주'),
+            ('month', r'maanden|maand|mois|monate?n?|mes(?:es)?|m[êe]s|mes[ei]|месяц\w*|个月|月|か月|ヶ月|カ月|ヵ月|개월|달'),
+            ('year', r'jaren|jaar|ann[ée]es?|ans?|jahre?n?|a[ñn]os?|ann[oi]|anos?|год(?:а)?|лет|年|년'))
+_W_EVERY = r'(?:elke|iedere|chaque|tous les|toutes les|jede[nrs]?|cada|todos los|todas las|ogni|tutti i|tutte le|tod[oa]s?(?: [ao]s)?|кажд\w*)'
+_W_THE = r'(?:de|het|le|la|der|den|am|el|il|o|a|в)'
+_W_MONTH = (r'(?:del|di ogni) mese|van (?:de|elke|iedere) maand|(?:du|de chaque) mois|(?:des|im|jedes) monats?'
+            r'|(?:del|de cada) mes|(?:do|de cada) m[êe]s|(?:каждого )?месяца')
+_W_ALL = '|'.join
+
+
+def _which(options, word):
+    """The value whose words read word: options is ((value, words), ...)."""
+    return next(value for value, words in options if re.fullmatch(words, word))
+
+
+_W_DAY_OF = tuple(enumerate(_W_DAYS))
+_W_END = r'(?![a-zà-ÿа-яё])'
+_W_TRIES = [
+    # "ogni ultimo venerdì", "jeden letzten Freitag des Monats", "il primo lunedì del mese", 毎月最終金曜日, 매달 마지막 금요일
+    (rf'(?:{_W_EVERY} ({_W_ALL(w for _, w in _W_NTH)}) ({_W_ALL(_W_DAYS)})s?{_W_END}(?: {_W_MONTH})?'
+     rf'|{_W_THE} ({_W_ALL(w for _, w in _W_NTH)}) ({_W_ALL(_W_DAYS)}) {_W_MONTH}'
+     rf'|(?:毎月|매(?:달|월) ?|每个?月的?)({_W_ALL(w for _, w in _W_NTH)}) ?({_W_ALL(_W_DAYS)}))',
+     lambda m: (lambda nth, day: ({'unit': 'month', 'n': 1, 'nth': nth}, {'weekday': day, 'nth': nth}))(
+         _which(_W_NTH, next(g for g in m.groups()[0::2] if g)), _which(_W_DAY_OF, next(g for g in m.groups()[1::2] if g)))),
+    # "ogni 2 settimane", "alle 3 Tage", "om de 2 weken", "каждые 2 недели", 2週間ごと, 2주마다, 每2周
+    (rf'(?:{_W_EVERY}|om de|alle|a cada|раз в) (\d{{1,2}}) ({_W_ALL(w for _, w in _W_UNITS)}){_W_END}'
+     rf'|(\d{{1,2}}) ?({_W_ALL(w for _, w in _W_UNITS)}) ?(?:ごと|毎|마다)|每 ?(\d{{1,2}}) ?({_W_ALL(w for _, w in _W_UNITS)})',
+     lambda m: (lambda n, unit: ({'unit': unit, 'n': int(n)}, {}) if 1 <= int(n) <= N_MAX else None)(
+         next(g for g in m.groups()[0::2] if g), _which(_W_UNITS, next(g for g in m.groups()[1::2] if g)))),
+    # "ogni venerdì", "tous les lundis", "jeden Montag", 毎週金曜日, 매주 금요일, 每周五
+    (rf'(?:{_W_EVERY} |毎週|매주 ?|每个?)({_W_ALL(_W_DAYS)})s?{_W_END}(?! ?(?:{_W_ALL(w for _, w in _W_UNITS)}))',
+     lambda m: ({'unit': 'week', 'n': 1}, {'weekday': _which(_W_DAY_OF, m.group(1))})),
 ]
 
 
@@ -297,6 +351,7 @@ def parse(text, today, region=None):
         (r'\bevery (?:morning|evening|night)\b', lambda m: ({'unit': 'day', 'n': 1}, {})),
         (r'\b(?:on a |on an )?(daily|weekly|monthly|yearly|annually|annual) basis\b|[\s,(-]+(daily|weekly|monthly|yearly|annually)\W*$',
          lambda m: ({'unit': {'daily': 'day', 'weekly': 'week', 'monthly': 'month', 'yearly': 'year', 'annually': 'year', 'annual': 'year'}[m.group(1) or m.group(2)], 'n': 1}, {})),
+        *_W_TRIES,
         *[(pattern, (lambda u: lambda m: ({'unit': u, 'n': 1}, {}))(unit)) for pattern, unit in _WORLD],
     ]
     for pattern, read in tries:
@@ -317,7 +372,7 @@ def parse(text, today, region=None):
     anchor = anchor_for(rule, today, **hints)
     rest = (s[:start] + ' ' + s[end:])
     rest = re.sub(r'\s+([,.;:!?])', r'\1', ' '.join(rest.split())).strip(' ,;:-')
-    rest = re.sub(r'^(?:and|to|please|remind me to)\s+', '', rest, flags=re.I)
+    rest = re.sub(r'^(?:and|to|please|remind me to)\s+|^[にはで、，]+', '', rest, flags=re.I)
     rest = rest[:1].upper() + rest[1:]
     return {'rule': rule, 'anchor': anchor, 'rest': rest}
 
@@ -626,4 +681,10 @@ def offer_view(db):
 
 
 # "stop repeating", "don't repeat this any more": the to-do chat's way to stop
-STOP = re.compile(r"\b(?:stop|no longer|don'?t|do not|never)\b.{0,20}\b(?:repeat|repeating|recur|recurring)\b|\bonly (?:this )?once\b", re.I)
+STOP = re.compile(r"\b(?:stop|no longer|don'?t|do not|never)\b.{0,20}\b(?:repeat|repeating|recur|recurring)\b|\bonly (?:this )?once\b"
+                  # the same in the other languages: stop/no more + repeat
+                  r"|\b(?:stop|niet meer|niet langer)\b.{0,12}herha|\b(?:arr[êe]te|ne)\b.{0,15}r[ée]p[ée]t"
+                  r"|\b(?:nicht mehr|h[öo]r auf|beende|stopp)\w*.{0,15}wiederhol|\b(?:deja|dejar|no)\b.{0,15}rep[ei]t"
+                  r"|\b(?:smetti|non|basta|interrompi)\b.{0,15}ripet|\b(?:pare|parar|n[ãa]o)\b.{0,15}repet"
+                  r"|(?:не|хватит|перестань|прекрати)\s.{0,15}повтор|繰り返し.{0,4}(?:止め|やめ|停止)|반복.{0,4}(?:중지|그만|멈|하지)"
+                  r"|(?:停止|不要|别|不再)重复", re.I)

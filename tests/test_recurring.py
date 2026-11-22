@@ -62,6 +62,27 @@ class Words(unittest.TestCase):
         self.assertEqual(self.read('every last Friday review the pipeline')[0], {'unit': 'month', 'n': 1, 'nth': -1})
         self.assertEqual(self.read('Elke maand facturen sturen')[0], {'unit': 'month', 'n': 1})
 
+    def test_plain_words_in_every_app_language(self):
+        """The rhythms the translated Custom… hint suggests ("every 2 weeks or every last Friday") read in each language."""
+        two_weeks = {'unit': 'week', 'n': 2}
+        last_friday = {'unit': 'month', 'n': 1, 'nth': -1}
+        for every_2_weeks, every_last_friday in (
+                ('elke 2 weken', 'elke laatste vrijdag'), ('toutes les 2 semaines', 'chaque dernier vendredi'),
+                ('alle 2 Wochen', 'jeden letzten Freitag'), ('cada 2 semanas', 'cada último viernes'),
+                ('ogni 2 settimane', 'ogni ultimo venerdì'), ('a cada 2 semanas', 'toda última sexta'),
+                ('каждые 2 недели', 'каждую последнюю пятницу'), ('2週間ごと', '毎月最終金曜日'),
+                ('2주마다', '매달 마지막 금요일'), ('每2周', '每月最后一个星期五')):
+            self.assertEqual(self.read(every_2_weeks)[0], two_weeks, every_2_weeks)
+            self.assertEqual(self.read(every_last_friday)[:2], (last_friday, D(2026, 11, 27)), every_last_friday)
+        self.assertEqual(self.read('Buste paga il primo lunedì del mese'), ({'unit': 'month', 'n': 1, 'nth': 1}, D(2026, 11, 2), 'Buste paga'))
+        self.assertEqual(self.read('Fatture ogni venerdì'), ({'unit': 'week', 'n': 1}, D(2026, 11, 6), 'Fatture'))
+        self.assertEqual(self.read('毎週金曜日にゴミ出し'), ({'unit': 'week', 'n': 1}, D(2026, 11, 6), 'ゴミ出し'))
+        for text in ('Giovedì chiama Sam', 'la prima domenica', 'cada segunda semana'):
+            self.assertIsNone(r.parse(text, self.today), text)
+        for text in ('smetti di ripetere', 'stop met herhalen', 'arrête de répéter', 'nicht mehr wiederholen',
+                     'deja de repetir', 'pare de repetir', 'не повторяй', '繰り返しを止めて', '반복 중지', '不要重复'):
+            self.assertTrue(r.STOP.search(text), text)
+
     def test_no_rhythm_no_repeat(self):
         for text in ('Send the weekly report', 'Monthly numbers to Sam by Friday', 'Call Sam about every detail', 'Book the trip'):
             self.assertIsNone(r.parse(text, self.today), text)
@@ -183,6 +204,9 @@ class Series(unittest.TestCase):
         self.assertEqual(len(self.series()), 1)
         # Custom… in Repeats reads it too, with the owner's holidays
         self.assertEqual(self.act('repeat_read', text='every last workday of the month')['rule'], {'unit': 'month', 'n': 1, 'workday': -1, 'region': 'BE'})
+        # ... as typed in any language; English may leave out its "every"
+        self.assertEqual(self.act('repeat_read', text='ogni 2 settimane')['rule'], {'unit': 'week', 'n': 2})
+        self.assertEqual(self.act('repeat_read', text='last Friday')['rule'], {'unit': 'month', 'n': 1, 'nth': -1})
 
     def test_more_repeat_change_skip_and_stop(self):
         made = self.act('card_new', text='Water the plants', due='2026-11-02')

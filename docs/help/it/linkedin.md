@@ -28,10 +28,10 @@ LinkedIn non offre un modo ufficiale per farlo. Leggere i messaggi e inviarne og
 ## Collegalo
 
 1. Nella dashboard, apri **Connessioni**, poi **Chat**, e scegli LinkedIn.
-2. Scegli **Lavoro** (con la relativa azienda) oppure **Personale**, poi premi **Collegati**.
+2. Scegli **Lavoro** (con la relativa azienda) oppure **Personale**, poi premi **Collega**.
 3. Premi **Accedi a LinkedIn** e accedi dal browser della tua Machine. La connessione si attiva automaticamente quando hai effettuato l’accesso.
 
-Se usi una Machine ospitata, puoi anche andare alla pagina di configurazione su app.themachine.computer/setup: apri **Altre fonti**, seleziona LinkedIn, accedi quando richiesto, poi premi **Collegati**. Sul tuo computer, `assistant connect linkedin` fa la stessa cosa da terminale.
+Se usi una Machine ospitata, puoi anche andare alla pagina di configurazione su app.themachine.computer/setup: apri **Altre fonti**, seleziona LinkedIn, accedi quando richiesto, poi premi **Collega**. Sul tuo computer, `assistant connect linkedin` fa la stessa cosa da terminale.
 
 Se colleghi un secondo account LinkedIn, avrà un browser dedicato. Se LinkedIn disconnette la tua Machine, consulta [Disconnessione da un sito](signed-out.md).
 

@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import logging
 import os
+import re
 import secrets
 import threading
 from zoneinfo import ZoneInfo
@@ -182,8 +183,12 @@ class RecurringApp:
             return {'id': sid, 'method': recurring.method_item(db, sid)}
 
     def repeat_read_action(self, name, args, owner_dashboard):
-        """Custom… in Repeats: the rhythm in the owner's words, read as a rule (nothing is saved)."""
-        got = recurring.parse(str(args.get('text') or '')[:200], self.recurring_today(), self.recurring_region())
+        """Custom… in Repeats: the rhythm in the owner's words, in any language the app speaks, read as a rule (nothing
+        is saved). English may leave out its "every": "2 weeks", "last Friday"."""
+        text, today, region = str(args.get('text') or '')[:200].strip(), self.recurring_today(), self.recurring_region()
+        got = recurring.parse(text, today, region)
+        if not got and not re.match(r'(?:every|each)\b', text, re.I):
+            got = recurring.parse('every ' + text, today, region)
         return {'rule': got['rule'], 'anchor': got['anchor'].isoformat()} if got else {'rule': None}
 
     def recurring_offer_action(self, name, args, owner_dashboard):

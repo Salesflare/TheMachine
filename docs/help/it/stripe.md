@@ -27,7 +27,7 @@ Sul tuo computer, puoi anche incollare una chiave limitata:
 
 1. In Stripe, crea una chiave limitata con accesso in lettura a Events, Customers e Account e nessun accesso a tutto il resto.
 2. Trova l’ID del tuo account (acct_...) in Impostazioni, Dettagli aziendali.
-3. Apri Stripe come descritto sopra (oppure esegui `assistant connect stripe`), apri **Oppure incolla una chiave limitata**, incolla l’ID dell’account e la chiave, poi premi **Collegati**.
+3. Apri Stripe come descritto sopra (oppure esegui `assistant connect stripe`), apri **Oppure incolla una chiave limitata**, incolla l’ID dell’account e la chiave, poi premi **Collega**.
 
 Sul tuo computer, se l’opzione Accedi con Stripe non è ancora disponibile, Connessioni te lo segnala e apre direttamente questo modulo.
 

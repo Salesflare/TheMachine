@@ -23,7 +23,7 @@ Inserisci prima il tuo indirizzo. Se è su Microsoft 365, il modulo te lo segnal
 
 1. Nella dashboard, apri **Connessioni**, poi **Calendario** e scegli **Exchange Server**.
 2. Inserisci il tuo indirizzo email di lavoro e la password di Windows.
-3. Premi **Collegati**.
+3. Premi **Collega**.
 
 Il server viene individuato dal tuo indirizzo (Autodiscover). Non viene trovato? Apri **Impostazioni del server** e inserisci il server che ti indica il team IT per Outlook, ad esempio `mail.example.com`. Se accedi con un nome diverso dal tuo indirizzo, inseriscilo in **Nome utente** come `DOMAIN\name`.
 

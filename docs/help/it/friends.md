@@ -21,7 +21,7 @@ In **Fleet**, sotto **Network**:
 
 Entrambe le opzioni sono attive per impostazione predefinita e disattivate al livello di sicurezza Prudente. Puoi disattivarle quando vuoi; la tua scelta viene salvata. Le persone possono trovarti usando l’email con cui accedi (sempre attiva) e gli indirizzi che hai collegato, ognuno con il proprio interruttore sotto **Trovabile da**, tranne quelli condivisi, come info@, che restano disattivati finché non li attivi.
 
-Quando attivi questa opzione, le persone che conosci compaiono subito come attività, e così anche quelle che si iscrivono in seguito. Per ognuna puoi scegliere **Amico** e **Famiglia** (**Collegati** per un collega), **Non ora** e **Non suggerire mai** nel menu ⋯. Una volta diventati amici, non ti verranno più suggeriti. **Lascia il Network** ti rimuove dal Network.
+Quando attivi questa opzione, le persone che conosci compaiono subito come attività, e così anche quelle che si iscrivono in seguito. Per ognuna puoi scegliere **Amico** e **Famiglia** (**Collega** per un collega), **Non ora** e **Non suggerire mai** nel menu ⋯. Una volta diventati amici, non ti verranno più suggeriti. **Lascia il Network** ti rimuove dal Network.
 
 Le persone che trova vengono indicate con **Ha una Machine** nell’elenco Persone. La ricerca controlla gli indirizzi nei tuoi messaggi e quelli che hai aggiunto alla scheda di una persona con **Modifica**: se qualcuno si è iscritto con un altro indirizzo, aggiungilo alla sua scheda. Nella pagina di una persona trovata, **Aggiungi come amico** invia la stessa richiesta di Collegati (**Aggiungi come famiglia** si trova nel menu ⋯).
 

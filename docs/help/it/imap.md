@@ -21,7 +21,7 @@ Invia email solo dopo che premi **Invia**, attraverso il server di posta del tuo
 
 1. Nella dashboard, apri **Connessioni**, poi **Email** e scegli **Altra email**.
 2. Inserisci il tuo indirizzo email e la password.
-3. Premi **Collegati**.
+3. Premi **Collega**.
 
 Molti provider richiedono una password per app di posta, non la password normale. Creane una nelle impostazioni del tuo account:
 
