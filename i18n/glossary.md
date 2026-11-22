@@ -77,6 +77,9 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailsca
 | error report | foutrapport, foutrapporten | rapport d’erreur, rapports d’erreur | Fehlerbericht, Fehlerberichte | informe de errores, informes de errores | segnalazione di errore, segnalazioni di errore | relatório de erro, relatórios de erro | 错误报告 | エラーレポート | 오류 보고서 | отчёт об ошибке, отчёты об ошибках, отчёта об ошибке, отчётов об ошибках, отчёт об ошибках, отчет об ошибке |
 | routine | routine, routines | routine, routines | Routine, Routinen | rutina, rutinas | routine | rotina, rotinas | 例行程序 | ルーティン | 루틴 | сценарий, сценарии, сценария, сценариев, сценарию, сценарием, сценариям, сценариями, сценариях, сценарии |
 | Stay in touch | Contact houden | Garder le contact | In Kontakt bleiben | Mantenerse en contacto | Restare in contatto | Manter contato | 保持联系 | 連絡を保つ | 연락 유지 | Оставаться на связи, Остаться на связи |
+| Work Fleet | Werk-Fleet | Fleet Travail, Fleets Travail | Work Fleet | Fleet de trabajo, Fleets de trabajo | Fleet di lavoro | Fleet de Trabalho, Fleets de Trabalho | 工作Fleet | Work Fleet | 업무 Fleet | рабочий Fleet, рабочего Fleet, рабочем Fleet, рабочему Fleet, рабочим Fleet, рабочие Fleet, рабочих Fleet |
+| Family Fleet | Familie-Fleet | Fleet Famille, Fleets Famille | Family Fleet | Fleet familiar, Fleets familiares | Fleet di famiglia | Fleet da Família, Fleets da Família | 家庭Fleet | 家族Fleet | 가족 Fleet | семейный Fleet, семейного Fleet, семейном Fleet, семейному Fleet, семейным Fleet, семейные Fleet, семейных Fleet |
+| team Graph | Team-Graph | Graph d’équipe, Graph de l’équipe | Team Graph | Graph del equipo | Graph del team | Graph da equipe | Team Graph | チームのGraph | 팀 Graph | Graph команды |
 
 ## Exceptions
 

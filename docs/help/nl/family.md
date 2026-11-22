@@ -37,4 +37,4 @@ Als jullie allebei dezelfde e-mail, rekening of hetzelfde formulier krijgen en e
 
 Standaard worden vrije en bezette momenten gedeeld, en wordt eerst om je toestemming gevraagd voor to-do's en plannen. Pas dit aan via het tabblad **Delen**: bekijk [Deelregels](sharing-rules.md).
 
-Een Familie-Fleet is gratis. Gehoste Machines daarin kosten {price.family_pair} per maand voor de eerste twee samen, daarna {price.family_seat} per Machine, exclusief btw. Bekijk [Abonnementen en facturering](plans-and-billing.md).
+Een Familie-Fleet is gratis. Gehoste Machines daarin kosten {price.family_pair} per maand voor de eerste twee samen, daarna {price.family_seat} per Machine, exclusief btw. Bekijk [Abonnementen en facturatie](plans-and-billing.md).

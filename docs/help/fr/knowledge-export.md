@@ -33,6 +33,6 @@ Les contacts et les tâches sont aussi fournis sous forme de feuilles de calcul 
 
 ## Éléments exclus
 
-Les mots de passe, clés et identifiants de connexion ne sont jamais inclus. Les données, paramètres et photos de vos collègues sont également exclus. Pour déplacer toute votre Machine, consultez [Passer à un autre ordinateur](moving.md).
+Les mots de passe, clés et identifiants de connexion ne sont jamais inclus. Les données, paramètres et photos de vos collègues sont également exclus. Pour déplacer toute votre Machine, consultez [Passer sur un autre ordinateur](moving.md).
 
 Pour les développeurs : [le format de fichier](https://github.com/Salesflare/TheMachine/blob/main/docs/knowledge-export.md).

@@ -34,7 +34,7 @@ translated: e636b2a2fbbc714d
 
 ## 帮助
 
-帮助功能在你自己的Machine上运行，无法查看你的数据。只有每个问题的主题会发送给The Machine团队，不会发送你的原话。请参阅[咨询帮助](help-chat.md#what-the-team-sees)。
+帮助功能在你自己的Machine上运行，无法查看你的数据。只有每个问题的主题会发送给The Machine团队，不会发送你的原话。请参阅[向帮助提问](help-chat.md#what-the-team-sees)。
 
 ## 更多信息
 

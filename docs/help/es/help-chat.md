@@ -31,4 +31,4 @@ Ayuda responde preguntas. No puede ver tus datos ni cambiar nada: te indica dón
 
 Si lo que describes parece un problema, y no una pregunta sobre cómo hacer algo, la respuesta termina con **Informar de este error**. Se abre **Informar de un error** con un breve resumen de lo que hiciste, lo que esperabas y lo que ocurrió, y con el informe de soporte marcado. Puedes cambiar lo que quieras. No se envía nada hasta que pulses **Enviar**.
 
-**Informar de un error** también tiene su propia pestaña en el mismo panel. Consulta [Obtener ayuda](get-support.md#report-a-bug).
+**Informar de un error** también tiene su propia pestaña en el mismo panel. Consulta [Contactar con soporte](get-support.md#report-a-bug).

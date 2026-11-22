@@ -1,7 +1,7 @@
 ---
 title: 每周回顾
 area: weekly
-summary: 每周回顾一次The Machine的工作情况：待办、承诺、人员和项目，以及它发现的情况。默认开启。
+summary: 每周回顾一次你的Machine的工作情况：待办、承诺、人员和项目，以及它发现的情况。默认开启。
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1

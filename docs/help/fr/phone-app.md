@@ -9,7 +9,7 @@ translated: 3c10a121b1cfb06d
 ---
 Installez The Machine comme une appli sur votre téléphone ou votre ordinateur pour recevoir une notification pour chaque tâche, résultat et rappel, pendant vos [heures de travail](work-hours.md). Choisissez ce qu’elle envoie dans **Notifications** ([Notifications](notifications.md)).
 
-La tâche **Tirez le meilleur de The Machine**, en haut de la liste Tâches, comporte une ligne pour chaque option : **Télécharger l’app mobile** (voir [L’application mobile](mobile-app.md)), **Activer les notifications** et **Installer sur cet ordinateur**. Seules les options qui ne sont pas encore disponibles sur cet appareil s’affichent. Le × sur une ligne la ferme. Ces mêmes options restent disponibles dans **Paramètres**, **Général**, **Cet appareil**.
+La tâche **Tirez le meilleur de The Machine**, en haut de la liste Tâches, comporte une ligne pour chaque option : **Télécharger l’app mobile** (voir [L’app mobile](mobile-app.md)), **Activer les notifications** et **Installer sur cet ordinateur**. Seules les options qui ne sont pas encore disponibles sur cet appareil s’affichent. Le × sur une ligne la ferme. Ces mêmes options restent disponibles dans **Paramètres**, **Général**, **Cet appareil**.
 
 Dans l’application mobile, le message **Recevez une alerte quand quelque chose a besoin de vous.** s’affiche lorsque les notifications sont désactivées. **Activer** demande l’autorisation au téléphone ou ouvre ses paramètres. **×** masque le message pendant 7 jours.
 

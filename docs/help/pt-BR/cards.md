@@ -15,7 +15,7 @@ A página **Tarefas** organiza tudo:
 
 - **Feito agora**: no topo, uma última etapa que você confirmou, como um formulário ou uma issue, foi concluída enquanto você estava ausente. Ela fica lá até você tocar em **Entendi**, por no máximo um dia, e também aparece no seu celular.
 - **Para você**: tudo o que está esperando por você, começando pelo mais urgente. Cada tarefa mostra **Preparada** (um rascunho ou resultado está pronto, e **Fazer** ou **Enviar** conclui a ação), **Precisa de você** (primeiro, ela precisa da sua decisão ou resposta; quando o trabalho parou em algo que só você tem, como uma informação, um login ou uma escolha, uma linha abaixo do título diz o quê), **Preparando…** (sua Machine está trabalhando nela) ou **Para ler** (um resumo ou informe, sem nada para decidir).
-- **Mais antigas**: tarefas recolhidas sem nada novo há uma semana (veja abaixo).
+- **Mais antigos**: tarefas recolhidas sem nada novo há uma semana (veja abaixo).
 - **Aguardando outras pessoas**: tarefas recolhidas em que a próxima etapa depende de outra pessoa (veja abaixo).
 - **Volta mais tarde**: tarefas adiadas e tarefas sem resposta a **Ainda precisa?** (veja abaixo).
 - **Promessas**: o que você prometeu e o que outras pessoas prometeram a você. Veja [Promessas](promises.md).
@@ -33,9 +33,9 @@ Uma tarefa que ainda depende de outra pessoa, como uma revisão ou resposta, ind
 
 Quando a tarefa depende de algo que outra pessoa vai entregar, como um contrato assinado, **Detalhes** mostra isso em **Concluído quando**. Enviar a sua parte não encerra a tarefa: ela fica em **Aguardando outras pessoas** até uma mensagem indicar que o resultado chegou. Depois, é encerrada automaticamente, com a opção **Desfazer**. Se nada chegar até a hora de cobrar a pessoa, a tarefa volta com **Escreva um lembrete curto** no chat. Diga no chat o que conta como concluído para mudar isso.
 
-Uma tarefa sem nada novo há uma semana sai de Para você e vai para **Mais antigas**, para que as novas apareçam primeiro depois de alguns dias fora. Nada novo significa nenhuma mensagem nova sobre ela e nada que você tenha feito nela, como uma mensagem no chat, uma edição ou um adiamento. Só olhar não conta.
+Uma tarefa sem nada novo há uma semana sai de Para você e vai para **Mais antigos**, para que as novas apareçam primeiro depois de alguns dias fora. Nada novo significa nenhuma mensagem nova sobre ela e nada que você tenha feito nela, como uma mensagem no chat, uma edição ou um adiamento. Só olhar não conta.
 
-As urgentes, as que vencem em breve e as que têm um envio a caminho ficam em Para você. **Descartar todas** marca todas as tarefas de Mais antigas como desnecessárias depois de uma confirmação, como **Não precisa** faz uma a uma, com **Desfazer**. Qualquer novidade em uma delas a traz de volta para Para você.
+As urgentes, as que vencem em breve e as que têm um envio a caminho ficam em Para você. **Descartar tudo** marca todas as tarefas de Mais antigas como desnecessárias depois de uma confirmação, como **Não precisa** faz uma a uma, com **Desfazer**. Qualquer novidade em uma delas a traz de volta para Para você.
 
 Uma tarefa que ninguém mexeu por uma semana pergunta uma vez: **Ainda precisa?** **Não precisa** encerra a tarefa, com a opção **Desfazer**. **Manter** mantém a tarefa, e ela não pergunta de novo. Se não houver resposta por mais uma semana, ela fica recolhida em Volta mais tarde, e deixa de ser contabilizada no ícone do app e no resumo da manhã. Abrir a tarefa, enviar uma mensagem no chat, editar ou adiar a tarefa, ou receber uma nova mensagem, faz com que ela volte.
 

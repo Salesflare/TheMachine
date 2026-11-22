@@ -42,7 +42,7 @@ function noteHead(o,shown){const app=o.app_name||o.app||kindLabel(o.kind);
  return html`<div class="email-meta"><div class="email-from"><span class="msg-app">${srcIcon(o)}${sameText(app,shown)?'':html`<strong translate="no">${app}</strong>`}</span>${msgWhen(o)}</div>${o.title&&!sameText(o.title,shown)?html`<div class="msg-note-title" translate="no">${o.title}</div>`:''}</div>`}
 // GitHub's reasons a notification came (message_view.GITHUB_REASONS)
 const GH_REASON={author:'You opened it',mention:'Mentioned',team_mention:'Your team was mentioned',review_requested:'Review requested',assign:'Assigned to you',comment:'You commented',state_change:'You changed its state',subscribed:'You follow it',security_alert:'Security alert',invitation:'Invitation',ci_activity:'CI activity'};
-const GH_STATE={open:'Open',closed:'Closed',merged:'Merged',draft:'Draft'};
+const GH_STATE={open:'Open (a state)',closed:'Closed',merged:'Merged',draft:'Draft'};
 const botTag=bot=>bot?html` <span class="msg-bot">${t('Bot')}</span>`:'';
 // An item with a state (an issue, a deal, a payment, a doc comment): where it is, its state, who, why, the time
 function cardHead(o,shown){const c=o.card||{},state=GH_STATE[c.state];

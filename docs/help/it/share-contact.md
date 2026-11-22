@@ -29,7 +29,7 @@ In **Su di te**, scegli **Condividi il mio contatto**. Scegli quali indirizzi e 
 
 ## Quando qualcuno condivide con te
 
-Il contatto aspetta in **Condivisi con te** in cima a Persone, con chi l’ha inviato e la sua nota. Scegli **Aggiungi** per metterlo nel tuo Graph, oppure **Ignora**.
+Il contatto aspetta in **Condivisi con te** in cima a Persone, con chi l’ha inviato e la sua nota. Scegli **Aggiungi** per metterlo nel tuo Graph, oppure **Scarta**.
 
 - Se conosci già quella persona (stessa email o stesso numero), Aggiungi aggiunge solo ciò che è nuovo. Il nome, il ruolo e il lato restano i tuoi.
 - Da un collega, la persona arriva come Lavoro, segnata "Condiviso da" lui o lei. Da un amico o dalla Famiglia, è un suggerimento da aggiungere, e il lato si decide come per chiunque altro.

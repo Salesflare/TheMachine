@@ -21,7 +21,7 @@ Ga in **Fleet** naar **Network**:
 
 Beide opties staan standaard aan en zijn uitgeschakeld bij het beveiligingsniveau Voorzichtig. Je kunt ze op elk moment uitzetten. Je keuze blijft bewaard. Mensen kunnen je vinden via het e-mailadres waarmee je inlogt (altijd aan) en je gekoppelde adressen. Elk adres heeft een eigen schakelaar onder **Vindbaar voor**, behalve gedeelde adressen zoals info@. Die blijven uit tot je ze aanzet.
 
-Zodra je deze optie aanzet, verschijnen bekenden meteen als to-do. Nieuwe bekenden verschijnen zodra ze lid worden. Bij elke persoon kun je kiezen voor **Vriend** en **Familie** (**Verbinden** voor een collega), **Niet nu** of **Nooit voorstellen** in het ⋯-menu. Zodra jullie vrienden zijn, worden ze niet meer voorgesteld. Met **Het Network verlaten** haal je jezelf eruit.
+Zodra je deze optie aanzet, verschijnen bekenden meteen als to-do. Nieuwe bekenden verschijnen zodra ze lid worden. Bij elke persoon kun je kiezen voor **Vriend** en **Familie** (**Koppelen** voor een collega), **Niet nu** of **Nooit voorstellen** in het ⋯-menu. Zodra jullie vrienden zijn, worden ze niet meer voorgesteld. Met **Het Network verlaten** haal je jezelf eruit.
 
 Mensen die je Machine vindt, krijgen de aanduiding **Heeft een Machine** in je lijst met personen. Er wordt gekeken naar de adressen in je berichten en de adressen die je aan een persoon hebt toegevoegd met **Bewerken**. Heeft iemand zich met een ander adres aangemeld, voeg dat dan toe aan die persoon. Op de pagina van iemand die je Machine heeft gevonden, stuurt **Toevoegen als vriend** hetzelfde verzoek als Verbinden. **Toevoegen als familie** staat in het ⋯-menu.
 

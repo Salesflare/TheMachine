@@ -38,7 +38,7 @@ translated: da17aef29a380002
 ## 连接中断时
 
 - **已退出Telegram**：Telegram结束了此设备的登录，或者你在手机上将它退出。前往**连接**，点击**重新连接**。
-- **Telegram不再接受此应用ID**：Telegram不再接受此The Machine使用的应用ID。在你点击**重新连接**并添加自己的应用ID之前，不会读取或发送任何内容。
+- **Telegram不再接受此应用ID**：Telegram不再接受此Machine使用的应用ID。在你点击**重新连接**并添加自己的应用ID之前，不会读取或发送任何内容。
 
 Telegram可能会限制或结束来自The Machine等应用的登录。
 

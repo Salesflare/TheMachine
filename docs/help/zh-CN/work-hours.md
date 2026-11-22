@@ -1,13 +1,13 @@
 ---
 title: 工作时间
 area: settings
-summary: 设置The Machine何时可以联系你、推迟的待办何时返回，以及早间和晚间摘要何时发送。
+summary: 设置你的Machine何时可以联系你、推迟的待办何时返回，以及早间和晚间摘要何时发送。
 code: dashboard.html, assistant.py
 order: 3
 keywords: quiet hours, weekend, evening, night, do not disturb, time zone
 translated: 062ccef1310f228a
 ---
-选择The Machine可以联系你的时间。在**设置**中的**通知**下，找到**工作时间**：
+选择你的Machine可以联系你的时间。在**设置**中的**通知**下，找到**工作时间**：
 
 - **工作日**：工作待办和推迟的工作待办会等到工作日。
 - **来自**和**直到**：在这些时间之外，你不会收到任何消息，包括通知、Telegram或邮件。

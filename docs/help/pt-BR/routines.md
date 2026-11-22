@@ -82,7 +82,7 @@ Se o site pedir que você entre na sua conta, mostrar um teste de verificação 
 
 **Alterar busca** no cartão da rotina permite usar um novo endereço ou filtros. **Mudar quando** define outra frequência, como "a cada 6 horas".
 
-**Reordenações** lê as confirmações de pedidos de lojas online no seu e-mail e percebe o que você compra repetidamente, como café, ração ou vitaminas. Quando provavelmente chegar a hora de comprar algo de novo, a rotina cria uma tarefa com o produto, a loja, o último preço e a data da última compra. **Abrir na loja** leva você à página do produto para comprá-lo. Nada é comprado por você.
+**Recompras** lê as confirmações de pedidos de lojas online no seu e-mail e percebe o que você compra repetidamente, como café, ração ou vitaminas. Quando provavelmente chegar a hora de comprar algo de novo, a rotina cria uma tarefa com o produto, a loja, o último preço e a data da última compra. **Abrir na loja** leva você à página do produto para comprá-lo. Nada é comprado por você.
 
 A rotina precisa encontrar pelo menos três pedidos do mesmo produto em intervalos regulares. Por isso, uma compra isolada ou um intervalo fora do normal não cria uma tarefa. Por enquanto, ela lê pedidos de lojas que usam Shopify. A sua IA lê somente novos e-mails de pedido dessas lojas, com uma pergunta curta por execução. Essas tarefas nunca enviam notificações. Quando você pede o produto de novo, a tarefa aberta é encerrada.
 

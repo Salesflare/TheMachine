@@ -17,7 +17,7 @@ Alleen die to-do wordt gedeeld, verder niets van je Machine. De to-do vermeldt n
 
 ## Een review doen voor iemand anders
 
-Het verzoek verschijnt als een eigen to-do: ‘Review: Sam antwoorden over prijzen’. Bewerk het concept daar, voeg een opmerking toe en kies **Goedkeuren**, **Wijzigingen sturen**, **Opmerking sturen** of **Weigeren**.
+Het verzoek verschijnt als een eigen to-do: ‘Review: Sam antwoorden over prijzen’. Bewerk het concept daar, voeg een opmerking toe en kies **Goedkeuren**, **Wijzigingen versturen**, **Opmerking versturen** of **Weigeren**.
 
 Je Machine kan helpen in de chat van de to-do, maar met een review-to-do wordt nooit iets verstuurd. Je review gaat terug naar de eigenaar van de to-do. Die beslist wat er wordt verstuurd.
 

@@ -1,7 +1,7 @@
 ---
 title: ChatGPT
 area: connections
-summary: 使用ChatGPT登录，即可按你的ChatGPT套餐运行The Machine，并导入ChatGPT技能。
+summary: 使用ChatGPT登录，即可按你的ChatGPT套餐运行你的Machine，并导入ChatGPT技能。
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
@@ -9,7 +9,7 @@ translated: fc97be60c0b68336
 ---
 ## 用途
 
-使用ChatGPT登录后，The Machine会使用你的ChatGPT套餐来读取和撰写内容。The Machine本身没有AI：请求会直接发送给OpenAI，并遵循你的账号条款和OpenAI的条款。
+使用ChatGPT登录后，你的Machine会使用你的ChatGPT套餐来读取和撰写内容。The Machine本身没有AI：请求会直接发送给OpenAI，并遵循你的账号条款和OpenAI的条款。
 
 ## 登录
 

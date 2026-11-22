@@ -28,7 +28,7 @@ async function evAnswer(q){const n=++evAsked,box=$('#ev-answer');box.hidden=true
  let r;try{r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'search_ask',args:{query:q,area:'all'}})})}catch{r=null}
  if(n!==evAsked)return;const src=Array.isArray(r?.sources)?r.sources:[],text=typeof r?.answer==='string'?r.answer.trim():'';
  box.hidden=!text||!src.length&&!r.memory?.length;if(box.hidden){box.textContent='';return}
- setHTML(box,html`<h3 class="ge-day">${t('Answer')}</h3><p dir="auto" translate="no">${text}</p>${src.map((m,i)=>html`<button type="button" class="ev-src" data-src="${i}" translate="no">${[m.title||m.from,m.at?humanTime(m.at):''].filter(Boolean).join(' · ')}</button>`)}`);
+ setHTML(box,html`<h3 class="ge-day">${t('Answer (a heading)')}</h3><p dir="auto" translate="no">${text}</p>${src.map((m,i)=>html`<button type="button" class="ev-src" data-src="${i}" translate="no">${[m.title||m.from,m.at?humanTime(m.at):''].filter(Boolean).join(' · ')}</button>`)}`);
  box.onclick=e=>{const b=e.target.closest('[data-src]');if(b)msgOpen(src[+b.dataset.src])}}
 $('#results').onclick=e=>{const m=e.target.closest('[data-ev-soon]');if(m){for(const a of m.parentElement.querySelectorAll('article[hidden]'))a.hidden=false;m.remove();return}openEventFrom(e)};
 // Any collected message opens in the same reader as a card's originals: the full email, the WhatsApp text, the Slack thread.

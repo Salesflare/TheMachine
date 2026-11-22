@@ -18,4 +18,4 @@ Vem ativado por padrão em um navegador ou no app de desktop desse computador, e
 
 Só o arquivo de cores que o Omarchy grava para o tema atual. Nada muda nas configurações do próprio Omarchy, e em um computador sem Omarchy a opção não aparece.
 
-Instale o painel como app para tê-lo no lançador do Omarchy com seus outros apps. Veja [Instalar o app e ativar as notificações](phone-app.md).
+Instale o painel como app para tê-lo no lançador do Omarchy com seus outros apps. Veja [Instale o app e ative as notificações](phone-app.md).

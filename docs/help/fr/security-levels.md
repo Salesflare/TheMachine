@@ -23,7 +23,7 @@ Un niveau sert de point de départ. Modifiez ensuite n’importe quel réglage e
 - **Rechercher les contacts pro**, **Proposer de partager des apprentissages** et **Partager ce qu’on demande à l’aide** désactivés.
 - **Vérifier lesquels de mes contacts ont une Machine** et **Laisser les personnes qui ont mon e-mail me trouver** désactivés.
 - **Garder les détails de Faire 90 jours** désactivé : ils sont conservés pendant 30 jours.
-- **Ce que d’autres Machines peuvent demander à la mienne** réglé sur **Désactivé** : aucune planification avec d’autres Machines. Consultez [Amis et le Network](friends.md#scheduling-with-other-machines).
+- **Ce que d’autres Machines peuvent demander à la mienne** réglé sur **Désactivé** : aucune planification avec d’autres Machines. Consultez [Les amis et le Network](friends.md#scheduling-with-other-machines).
 - Dans une famille, le partage de vos disponibilités vous demande d’abord votre accord. Avec des amis, le contexte des réunions est refusé.
 
 ## Le niveau d’une Fleet Travail

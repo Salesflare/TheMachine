@@ -35,7 +35,7 @@ Signal은 QR 코드로만 기기를 연결하므로, 코드를 스캔하려면 �
 비공식 Signal 클라이언트인 signal-cli를 사용해요. 내 Machine은 고정된 버전을 다운로드하고 체크섬을 확인한 후 실행해요. Signal은 언제든 이 클라이언트의 사용을 중단시킬 수 있어요.
 
 - **Signal에서 이 Machine의 연결이 해제됨**: 휴대폰에서 연결을 해제했거나 Signal이 연결을 종료했어요. **연결**에서 **다시 연결**을 누르고 새 코드를 스캔해요.
-- **Signal을 사용하려면 The Machine 업데이트**: Signal이 더 이상 이 Machine의 Signal 클라이언트를 허용하지 않아요. The Machine을 업데이트해요.
+- **Signal용 The Machine 업데이트**: Signal이 더 이상 이 Machine의 Signal 클라이언트를 허용하지 않아요. The Machine을 업데이트해요.
 
 ## 연결 해제하기
 

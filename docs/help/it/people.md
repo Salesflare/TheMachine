@@ -6,7 +6,7 @@ code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
 translated: 5e808343918f7f47
 ---
-Tutte le persone con cui sei in contatto, a partire da quelle più vicine, dai tuoi messaggi e dalle riunioni. Newsletter, ricevute e altre comunicazioni non aggiungono nessuno finché non rispondi. Si trovano in Mittenti nascosti, sotto l’elenco: Mostra come persona aggiunge una persona all’elenco. Campi, tag e importazione funzionano allo stesso modo in tutti e tre gli elenchi, e ognuno ha i propri filtri: vedi [The Graph](graph.md).
+Tutte le persone con cui sei in contatto, a partire da quelle più vicine, dai tuoi messaggi e dalle riunioni. Newsletter, ricevute e altre comunicazioni non aggiungono nessuno finché non rispondi. Si trovano in Mittenti nascosti, sotto l’elenco: Mostra come persona aggiunge una persona all’elenco. Campi, tag e importazione funzionano allo stesso modo in tutti e tre gli elenchi, e ognuno ha i propri filtri: vedi [Il Graph](graph.md).
 
 Una casella condivisa (info@, assistenza clienti, il nome del negozio) viene associata alla sua organizzazione, non a una persona, anche dopo che le scrivi.
 
@@ -14,7 +14,7 @@ Una casella condivisa (info@, assistenza clienti, il nome del negozio) viene ass
 
 Inizia con foto, nome, titolo, organizzazione e località, e una riga che spiega come siete in contatto ("Parlate ogni giorno · ultimo contatto ieri · prossima riunione mar 27 ott"). Il contatto più recente è indicato con formule come "proprio ora", "3 ore fa", "ieri" o "3 giorni fa"; per i contatti meno recenti viene mostrata una data. Passaci sopra con il puntatore per vedere la data esatta. Sotto trovi:
 
-- **Contatto**: numeri di telefono e indirizzi email. Tocca un elemento per chiamare o scrivere, oppure **Copia**. Qui trovi anche il **Compleanno**, con l’indicazione della fonte (Contatti Google, Google Calendar, Facebook, le tue note o tu): vedi [The Graph](graph.md#birthday).
+- **Contatto**: numeri di telefono e indirizzi email. Tocca un elemento per chiamare o scrivere, oppure **Copia**. Qui trovi anche il **Compleanno**, con l’indicazione della fonte (Contatti Google, Google Calendar, Facebook, le tue note o tu): vedi [Il Graph](graph.md#birthday).
 - **Con te**: il ruolo che ha per te, se è un contatto di lavoro o personale, e se fa parte della tua famiglia o di Fleet, con **Vedi in Fleet**.
 - **Anche su**: gli altri luoghi in cui parli con questa persona. **Slack** apre la persona in Slack o la tua chat più recente con lei.
 - **Persone** e **Progetti** di cui fa parte, **In sospeso tra voi** (promesse da entrambe le parti, con **Segna come fatto** e **Lascia perdere**) e la sua **Cronologia**.
@@ -107,7 +107,7 @@ Nel [Graph del team](team-graph.md) di una Fleet di lavoro, una piccola copia de
 
 I tuoi indirizzi e numeri, compresi gli alias, appartengono sempre a te e mai a qualcuno nel tuo Graph. Se cerchi il tuo nome o aggiungi una persona con uno dei tuoi indirizzi, si apre **Su di te**; durante un’importazione, la tua riga viene ignorata.
 
-La pagina Su di te elenca i tuoi indirizzi e la relativa fonte; puoi modificarli in **Impostazioni**, alla voce Account. Per inviare il tuo contatto a un collega o a un amico, scegli **Condividi il mio contatto**. Vedi [Condividere un contatto](share-contact.md).
+La pagina Su di te elenca i tuoi indirizzi e la relativa fonte; puoi modificarli in **Impostazioni**, alla voce Account. Per inviare il tuo contatto a un collega o a un amico, scegli **Condividi il mio contatto**. Vedi [Condividi un contatto](share-contact.md).
 
 ## Il suo ruolo per te
 
@@ -127,7 +127,7 @@ Le informazioni su una persona si trovano sulla sua pagina, sotto **Cosa si sa s
 
 Se una riga è sbagliata, il menu **⋯** ti permette di correggerla subito: **Modifica**, **Rimuovi**, **Non riguarda** quella persona oppure **Annulla** per ripristinare la posizione precedente di un progetto. Vengono mostrate tre righe; **Mostra altro** mostra le altre.
 
-Una persona aggiornata oggi dalla tua Machine ha un puntino accanto al nome nell’elenco Persone, e in cima all’elenco compare **4 persone aggiornate oggi** con i loro nomi. Vedi [The Graph](graph.md).
+Una persona aggiornata oggi dalla tua Machine ha un puntino accanto al nome nell’elenco Persone, e in cima all’elenco compare **4 persone aggiornate oggi** con i loro nomi. Vedi [Il Graph](graph.md).
 
 ## Un’attività su una persona
 

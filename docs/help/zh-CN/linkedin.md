@@ -1,7 +1,7 @@
 ---
 title: LinkedIn
 area: connections
-summary: 在The Machine自己已登录的浏览器中读取你的LinkedIn消息。只有经你批准后才会回复。
+summary: 在你的Machine自己已登录的浏览器中读取你的LinkedIn消息。只有经你批准后才会回复。
 covers: connector:linkedin
 code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
@@ -9,7 +9,7 @@ translated: bc67fbc21c77a97a
 ---
 ## 读取的内容
 
-你的LinkedIn消息。The Machine会在自己的浏览器中以你的身份登录，并在你醒着时不时读取消息。不会将任何消息标为已读。已归档对话中的回复和消息请求也会读取，垃圾消息则不会。
+你的LinkedIn消息。你的Machine会在自己的浏览器中以你的身份登录，并在你醒着时不时读取消息。不会将任何消息标为已读。已归档对话中的回复和消息请求也会读取，垃圾消息则不会。
 
 ## 职位和公司
 
@@ -29,17 +29,17 @@ LinkedIn没有提供官方方式来实现这些功能。读取消息和偶尔发
 
 1. 在控制面板中打开**连接**，再打开**聊天**，然后选择LinkedIn。
 2. 选择**工作**（及其公司）或**个人**，然后点击**连接**。
-3. 点击**登录LinkedIn**，并在The Machine的浏览器中登录。登录后会自动连接。
+3. 点击**登录LinkedIn**，并在你的Machine的浏览器中登录。登录后会自动连接。
 
 如果使用托管版Machine，也可以前往app.themachine.computer/setup打开设置页面：转到**更多来源**，打开LinkedIn，按提示登录，然后点击**连接**。如果使用自己的电脑，在终端中运行`assistant connect linkedin`也能完成相同操作。
 
-第二个LinkedIn账号会使用独立的浏览器。如果LinkedIn让The Machine退出登录，请参阅[网站已退出登录](signed-out.md)。
+第二个LinkedIn账号会使用独立的浏览器。如果LinkedIn让你的Machine退出登录，请参阅[已退出网站](signed-out.md)。
 
 ## 如果LinkedIn要求输入验证码
 
-The Machine首次登录时，LinkedIn通常会通过电子邮件发送验证码。在登录对话框的**代码**下输入验证码，然后点击**登录**。输入时，页面会保持不动。
+你的Machine首次登录时，LinkedIn通常会通过电子邮件发送验证码。在登录对话框的**代码**下输入验证码，然后点击**登录**。输入时，页面会保持不动。
 
-如果LinkedIn返回起始页面，或两分钟内没有任何反应，请等待一分钟，然后点击**重试**。如果LinkedIn显示机器人验证，请在The Machine的浏览器中完成验证。
+如果LinkedIn返回起始页面，或两分钟内没有任何反应，请等待一分钟，然后点击**重试**。如果LinkedIn显示机器人验证，请在你的Machine的浏览器中完成验证。
 
 ## 移除
 
@@ -48,4 +48,4 @@ The Machine首次登录时，LinkedIn通常会通过电子邮件发送验证码�
 
 ## 在LinkedIn中让它退出登录
 
-在LinkedIn中，打开“设置”>“登录和安全”>“你登录的位置”，然后让The Machine浏览器的会话退出登录。
+在LinkedIn中，打开“设置”>“登录和安全”>“你登录的位置”，然后让你的Machine浏览器的会话退出登录。

@@ -33,6 +33,6 @@ I contatti e le attività sono inclusi anche in fogli di calcolo (CSV). Un READM
 
 ## Cosa non è incluso
 
-Password, chiavi e dati di accesso non vengono mai inclusi. Anche i dati, le impostazioni e le foto dei tuoi colleghi restano esclusi. Per trasferire tutta la tua Machine, consulta [Passare a un altro computer](moving.md).
+Password, chiavi e dati di accesso non vengono mai inclusi. Anche i dati, le impostazioni e le foto dei tuoi colleghi restano esclusi. Per trasferire tutta la tua Machine, consulta [Passa a un altro computer](moving.md).
 
 Per gli sviluppatori: [il formato dei file](https://github.com/Salesflare/TheMachine/blob/main/docs/knowledge-export.md).

@@ -27,7 +27,7 @@ Dort findest du deine ersten Aufgaben: Deine Machine prüft zuerst die neuesten 
 
 Bei der Einrichtung wirst du nach nichts gefragt, was optional ist. Danach findest du auf der Einrichtungsseite unter **Jederzeit mehr hinzufügen** den Punkt **Weitere Quellen**, zum Beispiel Slack, WhatsApp, GitHub, [Telegram](telegram.md) und [Codex](hand-to-agent.md). Dein Dashboard schlägt dir ebenfalls eine Quelle vor, wenn es sinnvoll ist, zum Beispiel GitHub, sobald regelmäßig E-Mails dazu eingehen.
 
-Wenn deine Machine bereit ist, wird oben **Dein Dashboard öffnen** angezeigt. Mit **Zu Claude hinzufügen** kannst du Claude Fragen zu deinen E-Mails und Aufgaben stellen. Für Benachrichtigungen kannst du The Machine zum Startbildschirm deines Handys hinzufügen. Siehe [App installieren und Benachrichtigungen aktivieren](phone-app.md).
+Wenn deine Machine bereit ist, wird oben **Dein Dashboard öffnen** angezeigt. Mit **Zu Claude hinzufügen** kannst du Claude Fragen zu deinen E-Mails und Aufgaben stellen. Für Benachrichtigungen kannst du The Machine zum Startbildschirm deines Handys hinzufügen. Siehe [App installieren und Benachrichtigungen einschalten](phone-app.md).
 
 ## Eine Quelle anfragen
 

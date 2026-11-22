@@ -17,7 +17,7 @@ Elle utilise le modèle de votre Machine dans un chat court et séparé. Sous la
 
 Les réponses s’adaptent à votre niveau : elles utilisent des mots simples pour la plupart des gens et donnent plus de détails si vos questions sont techniques. L’aide estime votre niveau à partir de votre configuration, de votre rôle et de votre façon de poser vos questions. Seule cette estimation est utilisée.
 
-Elle vous indique d’abord ce que The Machine peut déjà faire et ne suggère une compétence que si aucune fonction intégrée ne convient. Voir [Personnaliser The Machine](personalize.md).
+Elle vous indique d’abord ce que The Machine peut déjà faire et ne suggère une compétence que si aucune fonction intégrée ne convient. Voir [Personnaliser](personalize.md).
 
 ## Ce que l’équipe voit
 
@@ -31,4 +31,4 @@ L’aide répond à vos questions. Elle ne peut pas voir vos données et ne modi
 
 Si ce que vous décrivez ressemble à un problème plutôt qu’à une question sur la marche à suivre, la réponse se termine par **Signaler ce bug**. Ce bouton ouvre **Signaler un bug** avec un bref compte rendu de ce que vous avez fait, de ce à quoi vous vous attendiez et de ce qui s’est passé. Le rapport d’assistance est également sélectionné. Vous pouvez modifier ce que vous voulez. Rien n’est envoyé avant que vous appuyiez sur **Envoyer**.
 
-**Signaler un bug** est aussi un onglet à part dans le même panneau. Voir [Obtenir de l’aide](get-support.md#report-a-bug).
+**Signaler un bug** est aussi un onglet à part dans le même panneau. Voir [Contacter le support](get-support.md#report-a-bug).

@@ -34,7 +34,7 @@ O artigo de cada conexão explica o que ela lê e o que pode enviar. Você pode 
 
 ## Ajuda
 
-A Ajuda funciona na sua própria Machine e não consegue ver seus dados. Só o assunto de cada pergunta é enviado à equipe da The Machine, nunca o que você escreveu. Veja [Perguntar à Ajuda](help-chat.md#what-the-team-sees).
+A Ajuda funciona na sua própria Machine e não consegue ver seus dados. Só o assunto de cada pergunta é enviado à equipe da The Machine, nunca o que você escreveu. Veja [Pergunte à Ajuda](help-chat.md#what-the-team-sees).
 
 ## Mais
 

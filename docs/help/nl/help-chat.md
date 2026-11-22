@@ -17,7 +17,7 @@ Help gebruikt het eigen model van je Machine in een korte, aparte chat. Onder he
 
 De assistent stemt het antwoord af op jouw niveau: begrijpelijke taal voor de meeste mensen, met meer uitleg als je vragen technisch zijn. Hij schat je niveau in op basis van je instellingen, je rol en hoe je je vragen stelt. Alleen die inschatting wordt meegestuurd.
 
-Help wijst eerst op wat The Machine al kan en stelt alleen een skill voor als geen ingebouwde functie geschikt is. Zie [Maak het persoonlijk](personalize.md).
+Help wijst eerst op wat The Machine al kan en stelt alleen een skill voor als geen ingebouwde functie geschikt is. Zie [Personaliseren](personalize.md).
 
 ## Wat het team ziet
 
@@ -31,4 +31,4 @@ De assistent beantwoordt vragen. Hij kan je gegevens niet zien en verandert niet
 
 Als je beschrijving klinkt als iets wat kapot is in plaats van een vraag over hoe iets werkt, eindigt het antwoord met **Deze bug melden**. Daarmee open je **Een bug melden**, met een korte beschrijving van wat je hebt gedaan, wat je verwachtte en wat er gebeurde. De ondersteuningsmelding is alvast aangevinkt. Je kunt alles daar aanpassen. Er wordt niets verstuurd totdat je op **Versturen** drukt.
 
-**Een bug melden** is ook een eigen tabblad in hetzelfde paneel. Zie [Ondersteuning krijgen](get-support.md#report-a-bug).
+**Een bug melden** is ook een eigen tabblad in hetzelfde paneel. Zie [Hulp krijgen](get-support.md#report-a-bug).

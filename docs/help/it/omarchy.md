@@ -18,4 +18,4 @@ Quando la tua Machine gira su un computer con [Omarchy](https://omarchy.org), l�
 
 Solo il file dei colori che Omarchy scrive per il tema attuale. Nelle impostazioni di Omarchy non cambia nulla, e su un computer senza Omarchy l’opzione non compare.
 
-Installa la dashboard come app per averla nel launcher di Omarchy con le altre app. Vedi [Installare l’app e attivare le notifiche](phone-app.md).
+Installa la dashboard come app per averla nel launcher di Omarchy con le altre app. Vedi [Installa l’app e attiva le notifiche](phone-app.md).

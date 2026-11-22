@@ -91,7 +91,7 @@ Fleet 탭의 **공유**에서 **팀 브리프**를 **매일** 또는 **매주**�
 
 Fleet에서 구성원을 삭제하면 모든 곳에서 로그아웃돼요.
 
-Fleet에 참여하거나, Fleet을 시작하거나, 내 컴퓨터에서 Machine을 페어링하려면 [요금제 및 결제](plans-and-billing.md)와 [친구 및 Network](friends.md)를 참고하세요.
+Fleet에 참여하거나, Fleet을 시작하거나, 내 컴퓨터에서 Machine을 페어링하려면 [요금제 및 결제](plans-and-billing.md)와 [친구와 Network](friends.md)를 참고하세요.
 
 ## 소유자 및 관리자
 

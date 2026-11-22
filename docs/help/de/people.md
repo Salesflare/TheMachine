@@ -17,7 +17,7 @@ Oben stehen Foto, Name, Titel, Organisation und Ort sowie eine Zeile dazu, wie i
 - **Kontakt**: Telefonnummern und E-Mail-Adressen. Tippe auf eine Nummer oder Adresse, um anzurufen oder zu schreiben, oder **Kopieren**, um sie zu kopieren. Hier steht auch der **Geburtstag** und woher die Angabe stammt (Google-Kontakte, Google Calendar, Facebook, deine Notizen oder von dir): siehe [The Graph](graph.md#birthday).
 - **Mit dir**: welche Rolle die Person für dich hat, ob es sich um einen Arbeits- oder Privatkontakt handelt und ob sie zu deiner Familie oder Fleet gehört. Hier findest du auch **In Fleet ansehen**.
 - **Auch auf**: andere Orte, an denen ihr miteinander kommuniziert. Über **Slack** öffnest du die Person in Slack oder euren neuesten Slack-Thread.
-- **Personen** und **Projekte**, zu denen sie gehört, **Offen zwischen euch** (Versprechen in beide Richtungen, mit **Als erledigt markieren** und **Fallen lassen**) sowie ihr **Verlauf**.
+- **Personen** und **Projekte**, zu denen sie gehört, **Offen zwischen euch** (Versprechen in beide Richtungen, mit **Als erledigt markieren** und **Entfernen**) sowie ihr **Verlauf**.
 
 Adressen und Chats einer Person werden automatisch zusammengeführt, wenn klar ist, dass sie zu derselben Person gehören, zum Beispiel eine geschäftliche E-Mail-Adresse, bei der die private Adresse in CC steht.
 
@@ -107,7 +107,7 @@ Im [Team Graph](team-graph.md) einer Work Fleet wird eine kleine Kopie eines ges
 
 Deine eigenen Adressen und Telefonnummern, einschließlich Aliasse, gehören immer zu dir und nie zu einer Person in deinem Graph. Wenn du nach dir selbst suchst oder eine Person mit einer deiner Adressen hinzufügst, wird **Über dich** geöffnet. Beim Import wird dein eigener Eintrag übersprungen.
 
-Unter „Über dich“ werden deine Adressen und ihre jeweilige Quelle aufgeführt. Du kannst sie unter **Einstellungen** im Bereich „Konto“ ändern. Um deinen Kontakt an ein Teammitglied oder einen Freund zu senden, wähle **Meinen Kontakt teilen**. Siehe [Kontakt teilen](share-contact.md).
+Unter „Über dich“ werden deine Adressen und ihre jeweilige Quelle aufgeführt. Du kannst sie unter **Einstellungen** im Bereich „Konto“ ändern. Um deinen Kontakt an ein Teammitglied oder einen Freund zu senden, wähle **Meinen Kontakt teilen**. Siehe [Einen Kontakt teilen](share-contact.md).
 
 ## Welche Rolle die Person für dich hat
 

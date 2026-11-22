@@ -27,7 +27,7 @@ Suas primeiras tarefas aparecem ali: sua Machine verifica primeiro os e-mails ma
 
 A configuração não solicita informações opcionais. Depois, em **Adicionar mais quando quiser**, na página de configuração, você encontra **Mais fontes**, como Slack, WhatsApp, GitHub, [Telegram](telegram.md) e [Codex](hand-to-agent.md). Seu painel também sugere uma fonte quando isso é útil, como GitHub quando você recebe e-mails dele com frequência.
 
-Quando sua Machine estiver pronta, **Abrir seu painel** aparece na parte superior. **Adicionar ao Claude** permite perguntar ao Claude sobre seus e-mails e tarefas. Para receber notificações, adicione a The Machine à tela inicial do celular: veja [Instalar o app e ativar as notificações](phone-app.md).
+Quando sua Machine estiver pronta, **Abrir seu painel** aparece na parte superior. **Adicionar ao Claude** permite perguntar ao Claude sobre seus e-mails e tarefas. Para receber notificações, adicione a The Machine à tela inicial do celular: veja [Instale o app e ative as notificações](phone-app.md).
 
 ## Pedir uma fonte
 

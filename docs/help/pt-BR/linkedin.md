@@ -33,7 +33,7 @@ O LinkedIn não oferece uma forma oficial de fazer isso. Ler mensagens e enviar 
 
 Em uma Machine hospedada, você também pode usar a página de configuração em app.themachine.computer/setup: acesse **Mais fontes**, abra o LinkedIn, entre na sua conta quando solicitado e pressione **Conectar**. No seu próprio computador, `assistant connect linkedin` faz o mesmo em um terminal.
 
-Uma segunda conta do LinkedIn tem um navegador próprio. Se o LinkedIn desconectar sua Machine, consulte [Saiu de um site](signed-out.md).
+Uma segunda conta do LinkedIn tem um navegador próprio. Se o LinkedIn desconectar sua Machine, consulte [Um site desconectou sua Machine](signed-out.md).
 
 ## Se o LinkedIn pedir um código
 

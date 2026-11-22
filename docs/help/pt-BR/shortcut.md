@@ -25,7 +25,7 @@ Tem mais de um espaço de trabalho no Shortcut? Primeiro, mude para o espaço de
 
 ## Cole um token
 
-Em **Ou cole um token de API**, pressione **Gerar seu token**. O Shortcut abre a página API Tokens em uma nova guia: crie um token, copie, cole e pressione **Conectar**. No seu computador, `assistant connect shortcut` também solicita o token. Ele dá acesso total à sua conta, mas The Machine só o usa para leitura.
+Em **Ou cole um token de API**, pressione **Criar seu token**. O Shortcut abre a página API Tokens em uma nova guia: crie um token, copie, cole e pressione **Conectar**. No seu computador, `assistant connect shortcut` também solicita o token. Ele dá acesso total à sua conta, mas The Machine só o usa para leitura.
 
 ## Remover
 

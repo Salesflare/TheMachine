@@ -9,9 +9,9 @@ translated: 4b0cf1cc99529e64
 ---
 Open **Instellingen** via het tandwiel bovenaan. De tabbladen:
 
-- **Account**: bovenaan vind je **Je adressen** (de adressen die als die van jou tellen) en **Uitloggen**. Op een gehoste Machine vind je hier ook je abonnement, facturen, Fleet, vrienden, inloggegevens en gegevens, met helemaal onderaan **Abonnement opzeggen** en **Account verwijderen**. Op een Machine op je eigen computer die is gekoppeld aan het Network vind je hier je Fleet, gebruikersnaam, vrienden en inloggegevens, elk met een link naar dat deel van je account (log daar in), en onderaan **Account verwijderen**. Nog niet gekoppeld? Bovenaan staat **Word lid van het Network**. Zie [Abonnementen en facturering](plans-and-billing.md).
+- **Account**: bovenaan vind je **Je adressen** (de adressen die als die van jou tellen) en **Uitloggen**. Op een gehoste Machine vind je hier ook je abonnement, facturen, Fleet, vrienden, inloggegevens en gegevens, met helemaal onderaan **Abonnement opzeggen** en **Account verwijderen**. Op een Machine op je eigen computer die is gekoppeld aan het Network vind je hier je Fleet, gebruikersnaam, vrienden en inloggegevens, elk met een link naar dat deel van je account (log daar in), en onderaan **Account verwijderen**. Nog niet gekoppeld? Bovenaan staat **Word lid van het Network**. Zie [Abonnementen en facturatie](plans-and-billing.md).
 - **Algemeen**: taal en regio, dit apparaat, spraakinvoer, de browser van je Machine, je Fleet, exporteren en importeren, en de versie die erop draait. Als er geen tabblad Account is, staat **Word lid van het Network** onderaan.
-- **Beveiliging**: Standaard of Voorzichtig. Zie [Beveiligingsniveaus](security-levels.md). Ook **Toegang voor support**, zolang die is ingeschakeld: zie [Support krijgen](get-support.md#support-access).
+- **Beveiliging**: Standaard of Voorzichtig. Zie [Beveiligingsniveaus](security-levels.md). Ook **Toegang voor support**, zolang die is ingeschakeld: zie [Hulp krijgen](get-support.md#support-access).
 - **Activiteit**: alles wat The Machine voor je heeft gedaan, met het nieuwste bovenaan. Zie [Activiteit](activity.md).
 - **Meldingen**: welke meldingen je waar ontvangt, en je werkuren. Zie [Meldingen](notifications.md) en [Werkuren](work-hours.md).
 - **Schrijven**: handtekeningen en je schrijfstijl. Zie [Schrijven](writing.md).
@@ -25,7 +25,7 @@ Een tabblad zonder inhoud is verborgen.
 
 - **Taal en regio**: met **Regio** bepaal je hoe datums, tijden en getallen worden weergegeven (24 okt of okt 24). Met **Tijdnotatie** kies je voor 12-uursnotatie (2:05 PM) of 24-uursnotatie (14:05). To-do's, Telegram, het overzicht en Fleet-berichten volgen beide instellingen. Een gehoste Machine gebruikt standaard de tijdzone die je bij het aanmelden hebt gekozen.
 - **Taal**: English, Nederlands, Français, Deutsch, Español, Italiano, Português (Brasil), 简体中文, 日本語, 한국어 of Русский. Standaard wordt de taal van je browser gebruikt. Het dashboard, Help, meldingen, Telegram, het wekelijkse overzicht en de to-do's die je Machine schrijft, veranderen zodra je een taal kiest. Oudere teksten blijven zoals ze waren. Je teamgenoten krijgen vragen uit de Fleet en de Familie in hun eigen taal. Concepten voor anderen blijven in de taal van hun gesprek.
-- **Dit apparaat**: **App installeren**, **Meldingen** met **Test versturen** en **Lichte modus**, alleen voor deze browser of telefoon. Zie [De app installeren en meldingen inschakelen](phone-app.md). Op [Omarchy](omarchy.md) staat ook **Omarchy-thema**.
+- **Dit apparaat**: **App installeren**, **Meldingen** met **Test versturen** en **Lichte modus**, alleen voor deze browser of telefoon. Zie [De app installeren en meldingen aanzetten](phone-app.md). Op [Omarchy](omarchy.md) staat ook **Omarchy-thema**.
 - **Spraakinvoer**: hoe je gesproken woorden worden omgezet in tekst, en welke stem Live praten gebruikt. Zie [Spraakinvoer](voice-input.md) en [Live praten](talk-live.md).
 - **De browser van je Machine openen ↗**: de browser die je Machine gebruikt voor sites zoals LinkedIn.
 - **Fleet-regels**: zie [Deelregels](sharing-rules.md).
@@ -37,7 +37,7 @@ Een tabblad zonder inhoud is verborgen.
 
 De versie die je Machine gebruikt. Updates worden automatisch geïnstalleerd. Als er een nieuwere versie klaarstaat op een gehoste Machine, installeert **Nu bijwerken** die meteen. Dit duurt een paar minuten en je gegevens blijven behouden.
 
-Op je eigen computer installeert een dagelijkse timer elke nieuwe, ondertekende release op Linux. Zie [Draaien op je eigen computer](self-hosted-setup.md).
+Op je eigen computer installeert een dagelijkse timer elke nieuwe, ondertekende release op Linux. Zie [Op je eigen computer draaien](self-hosted-setup.md).
 
 ## Zoeken op betekenis
 

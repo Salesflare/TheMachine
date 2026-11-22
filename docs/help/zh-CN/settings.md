@@ -15,23 +15,23 @@ translated: 4b0cf1cc99529e64
 - **动态**：The Machine为你完成的所有操作，最新的排在最前面。参阅[动态](activity.md)。
 - **通知**：通知会发到哪里，以及你的工作时间。参阅[通知](notifications.md)和[工作时间](work-hours.md)。
 - **写作**：签名和写作风格。参阅[写作](writing.md)。
-- **技能**：The Machine会遵循的操作指南。参阅[技能](skills.md)。
+- **技能**：你的Machine会遵循的操作指南。参阅[技能](skills.md)。
 - **应用**：The Machine的手机和电脑应用，接着是你连接的Claude、ChatGPT和其他AI，以及它们各自能执行的操作。参阅[手机应用](mobile-app.md)和[连接其他AI](ai-connections.md)。
-- **模型**：为你阅读和撰写内容的AI，以及它的限制。参阅[模型](model.md)。此外还有**Codex和Claude Code**，参阅[交给Claude Code或Codex处理](hand-to-agent.md)。还有下方的**按含义搜索**。
+- **模型**：为你阅读和撰写内容的AI，以及它的限制。参阅[模型](model.md)。此外还有**Codex和Claude Code**，参阅[转交给Claude Code或Codex](hand-to-agent.md)。还有下方的**按含义搜索**。
 
 没有内容可显示的标签页会隐藏。
 
 ## 常规
 
 - **语言和地区**：**地区**决定日期、时间和数字的显示格式（Oct 24或24 Oct）。**时间格式**可选择12小时制（2:05 PM）或24小时制（14:05）。待办、Telegram、摘要和Fleet消息都会使用这两项设置。托管版Machine会使用你注册时选择的时区。
-- **语言**：可选English、Nederlands、Français、Deutsch、Español、Italiano、Português (Brasil)、简体中文、日本語、한국어或Русский。默认使用浏览器的语言。切换语言后，控制面板、帮助中心、通知、Telegram、每周回顾，以及The Machine撰写的待办会立即切换。旧文本保持原样。队友收到的Fleet和家庭问题会使用各自的语言；写给其他人的草稿则会使用对应对话的语言。
+- **语言**：可选English、Nederlands、Français、Deutsch、Español、Italiano、Português (Brasil)、简体中文、日本語、한국어或Русский。默认使用浏览器的语言。切换语言后，控制面板、帮助中心、通知、Telegram、每周回顾，以及你的Machine撰写的待办会立即切换。旧文本保持原样。队友收到的Fleet和家庭问题会使用各自的语言；写给其他人的草稿则会使用对应对话的语言。
 - **此设备**：仅对当前浏览器或手机生效的**安装应用**、**通知**（可**发送测试**）和**浅色模式**。参阅[安装应用并开启通知](phone-app.md)。使用[Omarchy](omarchy.md)时，还可以设置**Omarchy主题**。
-- **语音输入**：设置语音转文字的方式，以及实时通话的声音。参阅[语音输入](voice-input.md)和[实时通话](talk-live.md)。
-- **打开The Machine的浏览器 ↗**：The Machine用于访问LinkedIn等网站的浏览器。
+- **语音输入**：设置语音转文字的方式，以及实时通话的声音。参阅[语音输入](voice-input.md)和[实时对话](talk-live.md)。
+- **打开Machine的浏览器 ↗**：The Machine用于访问LinkedIn等网站的浏览器。
 - **Fleet规则**：参阅[分享规则](sharing-rules.md)。
 - **导出**：
-  - **全部**：将The Machine掌握的所有内容放进一个加密文件，方便迁移或保存；也可以用**导入**导入文件。参阅[迁移到另一台电脑](moving.md)。
-  - **给另一个AI的知识**：将The Machine学到的内容导出为任何AI都能读取的文件。参阅[给另一个AI的知识](knowledge-export.md)。
+  - **全部**：将你的Machine掌握的所有内容放进一个加密文件，方便迁移或保存；也可以用**导入**导入文件。参阅[迁移到另一台电脑](moving.md)。
+  - **给另一个AI的知识**：将你的Machine学到的内容导出为任何AI都能读取的文件。参阅[给另一个AI的知识](knowledge-export.md)。
 
 ## 版本
 
@@ -47,7 +47,7 @@ The Machine当前运行的版本。更新会自动安装。托管版Machine有�
 
 ## 在这台Machine上
 
-如果The Machine在自己的电脑上运行，以下操作会在终端中完成：
+如果你的Machine在自己的电脑上运行，以下操作会在终端中完成：
 
 - 设置文件`config.json`：所有设置都集中在这里。更改后请重启Machine。
 - `assistant connect`：添加来源，例如`assistant connect gmail`或`assistant connect outlook`。

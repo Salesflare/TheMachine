@@ -75,7 +75,7 @@ Um quadro novo, ou um quadro sugerido que você salva, analisa todo o seu histó
 
 ## Concluído quando
 
-**Concluído quando**, em **Editar** em qualquer projeto, esteja ele em um quadro ou não, descreve em palavras simples o que significa concluir o projeto e qual é a comprovação: **Uma página no ar** (The Machine abre o link da mensagem da outra pessoa e verifica se ele leva até você) ou **A mensagem deles**. As verificações sugerem uma opção para anúncios de parceiros.
+**Concluído quando**, em **Editar** em qualquer projeto, esteja ele em um quadro ou não, descreve em palavras simples o que significa concluir o projeto e qual é a comprovação: **Uma página no ar** (The Machine abre o link da mensagem da outra pessoa e verifica se ele leva até você) ou **A mensagem da pessoa**. As verificações sugerem uma opção para anúncios de parceiros.
 
 Uma verificação só move um projeto para a última etapa quando encontra a comprovação, que fica vinculada à página do projeto. Se o projeto não estiver em um quadro, ele será marcado como concluído. Você pode usar **Desfazer** no menu **⋯**, em Mudanças recentes.
 

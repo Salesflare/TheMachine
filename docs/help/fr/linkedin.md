@@ -33,7 +33,7 @@ LinkedIn ne propose pas de méthode officielle pour cela. La lecture et l’envo
 
 Sur une Machine hébergée, vous pouvez aussi utiliser votre page de configuration sur app.themachine.computer/setup : accédez à **Plus de sources**, ouvrez LinkedIn, connectez-vous quand la page vous le demande, puis appuyez sur **Connecter**. Sur votre propre ordinateur, `assistant connect linkedin` fait la même chose dans un terminal.
 
-Un deuxième compte LinkedIn dispose de son propre navigateur. Si LinkedIn déconnecte votre Machine, consultez [Déconnectée d’un site](signed-out.md).
+Un deuxième compte LinkedIn dispose de son propre navigateur. Si LinkedIn déconnecte votre Machine, consultez [Déconnexion d’un site](signed-out.md).
 
 ## Si LinkedIn demande un code
 

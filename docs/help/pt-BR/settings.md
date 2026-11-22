@@ -25,7 +25,7 @@ Uma guia sem conteúdo fica oculta.
 
 - **Idioma e região**: sua **Região** define como datas, horários e números aparecem (24 de out. ou 24 out.). **Formato de hora** permite escolher entre 12 horas (2:05 PM) e 24 horas (14:05). As tarefas, mensagens do Telegram, o resumo e as mensagens do Fleet seguem essas configurações. Uma Machine hospedada usa o fuso horário escolhido no cadastro.
 - **Idioma**: English, Nederlands, Français, Deutsch, Español, Italiano, Português (Brasil), 简体中文, 日本語, 한국어 ou Русский. O idioma inicial é o do seu navegador. O painel, a Ajuda, as notificações, o Telegram, o resumo semanal e as tarefas que sua Machine escreve mudam assim que você escolhe outro idioma. Os textos antigos não mudam. Os colegas de equipe recebem as perguntas do Fleet e da Família no próprio idioma, e os rascunhos para outras pessoas continuam no idioma da conversa.
-- **Este dispositivo**: **Instalar app**, **Notificações**, com **Enviar um teste**, e **Modo claro**, só para este navegador ou celular. Veja [Instalar o app e ativar as notificações](phone-app.md). No [Omarchy](omarchy.md), também há **Tema do Omarchy**.
+- **Este dispositivo**: **Instalar app**, **Notificações**, com **Enviar um teste**, e **Modo claro**, só para este navegador ou celular. Veja [Instale o app e ative as notificações](phone-app.md). No [Omarchy](omarchy.md), também há **Tema do Omarchy**.
 - **Entrada por voz**: como o que você diz vira texto e qual voz é usada no Falar ao vivo. Veja [Entrada por voz](voice-input.md) e [Falar ao vivo](talk-live.md).
 - **Abrir o navegador da Machine ↗**: o navegador que sua Machine usa para sites como o LinkedIn.
 - **Regras do Fleet**: veja [Regras de compartilhamento](sharing-rules.md).

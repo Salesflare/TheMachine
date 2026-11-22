@@ -6,7 +6,7 @@ code: graph.py, crm.py, enrichment.py, dashboard.html
 order: 3
 translated: a69ae21b14edaf94
 ---
-메시지에 나온 주소와 이름을 바탕으로 회사 정보를 확인해요. 업종, 규모, 위치, 로고도 찾아봐요. [조직 정보](organization-data.md)를 참고하세요.
+메시지에 나온 주소와 이름을 바탕으로 회사 정보를 확인해요. 업종, 규모, 위치, 로고도 찾아봐요. [조직 세부 정보](organization-data.md)를 참고하세요.
 
 ## 조직 페이지
 

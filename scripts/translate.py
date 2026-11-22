@@ -230,7 +230,8 @@ def literals(key):
     field = m and (m[1] or (m[4] if DATE_FORMAT.search(key) else None))
     if field and field not in NOT_FIELDS:
         out.append(field)
-        if m[2] == 'is':
+        # "op is comment, state or create" lists values; "issue is the id or identifier (like ENG-12)" describes one
+        if m[2] == 'is' and not re.match(r'(?:the|a|an|one) ', m[3].strip()):
             out += ENUM.findall(m[3].strip().split(':')[0].split(';')[0])
         out += QUOTED.findall(key)
     return list(dict.fromkeys(out))
@@ -239,6 +240,42 @@ def literals(key):
 def literal_problems(key, text):
     missing = [w for w in literals(key) if not re.search(r'(?<![A-Za-z0-9_])' + re.escape(w) + r'(?![A-Za-z0-9_])', text)]
     return [f'keep these exactly as written, the code reads them: {", ".join(missing)}'] if missing else []
+
+
+# What a translation says the way its English means it, whatever the model made of the words: the owner's Machine is
+# Machine (never "The Machine", the product, nor the language's word for a machine), Signal is the app, and a date,
+# weekday or 15th reads the language's way. tests/test_translate.py holds every catalog and current article to it.
+MACHINE_NOUN = {'de': r'Maschine', 'es': r'\b[mM][aá]quina', 'it': r'\b[mM]acchin', 'pt-BR': r'\b[mM][aá]quina',
+                'ru': r'[мМ]ашин', 'zh-CN': r'机器(?!人|学习)', 'ja': r'マシン', 'ko': r'머신|기계', 'fr': r'\bmachine',
+                'nl': r'\bmachine'}
+OWNED_MACHINE = re.compile(r"\b(?:[Yy]our|[Tt]heir|[Tt]his|[Tt]hat|[Ee]ach|[Ee]very|[Aa]|[Aa]nother|[Hh]is|[Hh]er|[Oo]ne|[Mm]y"
+                           r"|[Ss]omeone[’']s) Machine")
+EN_DATE = re.compile(r'\b(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|June|July|August'
+                     r'|September|October|November|December)\b'
+                     r'|\b(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), )?(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec) \d{1,2}\b'
+                     r'|\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),? \d{1,2}\b|\b\d{1,2}(?::\d\d)? ?(?:am|pm|AM|PM)\b|\b\d{1,2}(?:st|nd|rd|th)\b',
+                     re.A)  # ASCII word edges: "Tuesday试点" and "November 14までに" count too
+SAME_DATE = {'de': re.compile(r'^(?:April|August|September|November)$|^\d{1,2} am$')}  # German months; "50 am Tag"
+DATE_EXAMPLES = frozenset({'2:05 PM', 'Oct 24'})  # the 12-hour and English-region examples a setting shows on purpose
+
+
+def wording_problems(english, text, lang):
+    """What a translated string or article paragraph says another way than its English means ([] when nothing)."""
+    out = []
+    if 'Machine' in english and not re.search(r'\bmachines?\b|Machinery', english):
+        noun = re.search(MACHINE_NOUN.get(lang, '(?!)'), text)
+        owned = len(OWNED_MACHINE.findall(english))
+        if noun:
+            out.append(f'Machine is a name: write Machine, not {noun[0]!r}')
+        elif owned and text.count('The Machine') > english.count('The Machine') and len(re.findall(r'(?<!The )Machine', text)) < owned:
+            out.append("someone's own Machine is Machine (\"your Machine\"), not The Machine")
+    if re.search(r'(?<![\w-])Signal(?![\w-])', english) and not re.search(r'Signal(?![a-zà-ÿ])', text):
+        out.append('Signal is the app: keep the name Signal')
+    dates = [m[0] for m in EN_DATE.finditer(text)
+             if m[0] not in DATE_EXAMPLES and not (lang in SAME_DATE and SAME_DATE[lang].search(m[0]))]
+    if dates:
+        out.append(f'write dates and weekdays the language\'s way, not {dates[0]!r}')
+    return out
 
 
 def holes_ok(key, text):
@@ -395,6 +432,7 @@ ITEM = re.compile(r'^(- |\d+\. )', re.M)
 CODE_TOKEN = re.compile(r'`§(\d+)`')
 FRONT = re.compile(r'---\n(.*?)\n---\n', re.S)
 BOLD = re.compile(r'\*\*(.+?)\*\*')
+TAIL = re.compile(r'[\s.:：。  ]*$')  # a bold label's closing colon or stop, as the language writes it
 ARTICLE_HOLE = re.compile(r'\{[a-z_.0-9]*\}')
 
 
@@ -548,18 +586,27 @@ def fix_units(en, tr, fix):
 def fix_labels(en, tr, labels):
     """Each **label** the app has a translation for, written as the app shows it: where a paragraph or list item has
     as many bold parts as its English, the one in the English's place, when the app's text is not in it yet. Cheaper
-    and surer than asking again."""
+    and surer than asking again. Only where the bold parts are known to keep the English's order: every one that
+    already reads as the app shows a label sits in that label's place, or only one label is missing and none is
+    there to go by. A sentence that puts them in another order ("**Suggested for you** at the top of
+    **Connections**") is left as it is: the English's place would swap two labels."""
     def fix(e, t):
         want, got = BOLD.findall(e), list(BOLD.finditer(t))
         if len(want) != len(got):
             return t
-        shown = {g[1].strip().rstrip('.:') for g in got}
-        for w, g in reversed(list(zip(want, got))):
-            bare = w.strip().rstrip('.:')
-            if bare in labels and labels[bare] not in shown:
-                inner = g[1]
-                tail = inner[len(inner.rstrip('.:')):]
-                t = t[:g.start()] + f'**{labels[bare]}{tail}**' + t[g.end():]
+        bare_en = [w.strip().rstrip('.:') for w in want]
+        bare_tr = [TAIL.sub('', g[1].strip()) for g in got]
+        todo = [i for i, b in enumerate(bare_en) if b in labels and labels[b] not in bare_tr]
+        shown = {labels[b] for b in bare_en if b in labels}
+        anchors = [(i, j) for i, b in enumerate(bare_en) if b in labels for j, x in enumerate(bare_tr) if x == labels[b]]
+        if not todo or any(bare_tr[i] in shown for i in todo):
+            return t
+        if not (anchors and all(i == j for i, j in anchors) or not anchors and len(todo) == 1):
+            return t
+        for i in reversed(todo):
+            g = got[i]
+            tail = TAIL.search(g[1])[0]  # "Qui :", "誰：" keep their colon as the language writes it
+            t = t[:g.start()] + f'**{labels[bare_en[i]]}{tail}**' + t[g.end():]
         return t
     return fix_units(en, tr, fix) if labels else tr
 
@@ -577,15 +624,17 @@ def link_titles(lang, folder=HELP):
 
 
 def fix_links(en, tr, titles):
-    """A link whose English text is the target article's title reads as that article's translated title."""
+    """A link whose English text is the target article's title reads as that article's translated title. Only the
+    title as written ("See [Writing](writing.md)"): words of a sentence that link to an article ("your
+    [history](history.md)") take the sentence's grammar, a case or a plural, in the language."""
     def fix(e, t):
-        want = [(m[2], m[1].strip().lower()) for m in ARTICLE_LINK.finditer(e)]
+        want = [(m[2], m[1].strip()) for m in ARTICLE_LINK.finditer(e)]
         got = list(ARTICLE_LINK.finditer(t))
         if [s for s, _ in want] != [m[2] for m in got]:
             return t
         for (slug, text), m in reversed(list(zip(want, got))):
             title = titles.get(slug)
-            if title and text == title[0].strip().lower() and m[1] != title[1]:
+            if title and text == title[0].strip() and m[1] != title[1]:
                 t = t[:m.start(1)] + title[1] + t[m.end(1):]
         return t
     return fix_units(en, tr, fix) if titles else tr
@@ -623,6 +672,8 @@ def translate_article(lang, path, words=None, ask=ask):
                     problems.append(no_em_dash(text, f' in the {k}'))
         # a label not as the app shows it is asked again once; the second time the article is kept anyway
         wrong = [f'write **{tr}** for {en}' for en, tr in labels.items() if f'**{tr}' not in got['body']]
+        pairs = [(src['title'], got.get('title')), (src['summary'], got.get('summary'))] + list(zip(units(body.strip()), units(got['body'])))
+        wrong += sorted({p for e, t in pairs if e and isinstance(t, str) for p in wording_problems(e, t, lang)})
         if not problems and (not wrong or attempt):
             return got
         notes = problems + wrong
@@ -670,16 +721,26 @@ def run_help(langs, check=False, folder=HELP, ask=ask):
                 written.append((lang, path))
             else:
                 left += 1
-    # links to an article this run translated too: its title as it now reads
-    titles = {lang: link_titles(lang, folder) for lang in {lang for lang, _ in written}}
-    for lang, path in written:
-        local = folder / lang / path.name
-        fields, body = front(local.read_text(encoding='utf-8'))
-        fixed = fix_links(front(path.read_text(encoding='utf-8'))[1].strip(), body.strip(), titles[lang])
-        if fixed != body.strip():
-            fields = dict(fields)
-            local.write_text(article_text(path, fields.get('title', ''), fields.get('summary', ''), fixed), encoding='utf-8')
+    align_help(langs, folder)
     return left
+
+
+def align_help(langs, folder=HELP):
+    """Every current translation names **labels** as the catalog now has them and links articles by their titles as
+    they now read, also those this run translated: a catalog or title change reaches the articles that use it, without
+    the model (tests/test_translate.py holds the articles to it)."""
+    for lang in langs:
+        titles = link_titles(lang, folder)
+        for path in articles(folder):
+            local = folder / lang / path.name
+            if not local.is_file() or help_state(lang, path, folder) != 'current':
+                continue
+            text = local.read_text(encoding='utf-8')
+            body = front(text)[1].strip()
+            en = front(path.read_text(encoding='utf-8'))[1].strip()
+            fixed = fix_links(en, fix_labels(en, body, app_labels(lang, en)), titles)
+            if fixed != body:
+                local.write_text(text.replace(body, fixed, 1), encoding='utf-8')
 
 
 def problems(langs=None, folder=HELP):

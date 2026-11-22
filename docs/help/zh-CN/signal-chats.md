@@ -35,7 +35,7 @@ translated: b85609009f246615
 The Machine使用signal-cli，这是非官方的Signal客户端。你的Machine会下载指定版本，并在运行前检查校验和。Signal可能随时停止接受该客户端。
 
 - **Signal已取消关联此Machine**：你在手机上移除了它，或者Signal结束了关联。按**重新连接**，然后扫描新的二维码。
-- **更新The Machine以支持Signal**：Signal不再接受此Machine的Signal客户端。请更新The Machine。
+- **为Signal更新The Machine**：Signal不再接受此Machine的Signal客户端。请更新The Machine。
 
 ## 移除
 

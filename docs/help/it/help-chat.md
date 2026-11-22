@@ -31,4 +31,4 @@ Aiuto risponde alle domande. Non può vedere i tuoi dati e non modifica nulla: t
 
 Se quello che descrivi sembra un problema, anziché una domanda su come fare qualcosa, la risposta termina con **Segnala questo bug**. Si apre **Segnala un bug** con una breve descrizione di cosa hai fatto, cosa ti aspettavi e cosa è successo, e la casella per la segnalazione all’assistenza già selezionata. Puoi modificare tutto quello che vuoi. Non viene inviato nulla finché non premi **Invia**.
 
-Anche **Segnala un bug** ha una scheda dedicata nello stesso pannello. Vedi [Ricevere assistenza](get-support.md#report-a-bug).
+Anche **Segnala un bug** ha una scheda dedicata nello stesso pannello. Vedi [Contatta l’assistenza](get-support.md#report-a-bug).

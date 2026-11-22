@@ -1,5 +1,5 @@
 ---
-title: チームGraph
+title: チームのGraph
 area: fleet
 summary: 実験的な機能です。Work Fleetで顧客対応の情報をCRMのように共有できます。共有される情報、共有されない情報、非公開にする方法をご紹介します。
 covers: team-graph

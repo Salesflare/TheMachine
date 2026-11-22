@@ -52,7 +52,7 @@ Auch E-Mails, die du in einer anderen App gesendet hast, bevor deine Machine das
 
 Das Nachfassen endet, wenn die Person antwortet, das Projekt gewonnen, verloren oder archiviert wird, in eine geschlossene Phase verschoben wird oder du eine Nachricht zurückstellst oder überspringst. Vor dem Erstellen eines Entwurfs prüft deine Machine den Gesprächsverlauf auf neue Nachrichten, damit niemand mehrmals gefragt wird, wenn die Person bereits anderswo geantwortet hat.
 
-Eine Nachfassnachricht wird auch geschlossen, wenn jemand im selben Gespräch bereits wieder geschrieben hat. Nachfassnachrichten eines anderen Projekts zählen nicht. Wenn The Machine aus einem anderen Grund meint, dass eine Nachricht nicht nötig ist, bleibt die Aufgabe offen und der Grund wird angezeigt. Du entscheidest.
+Eine Nachfassnachricht wird auch geschlossen, wenn jemand im selben Gespräch bereits wieder geschrieben hat. Nachfassnachrichten eines anderen Projekts zählen nicht. Wenn deine Machine aus einem anderen Grund meint, dass eine Nachricht nicht nötig ist, bleibt die Aufgabe offen und der Grund wird angezeigt. Du entscheidest.
 
 Mit **Pausieren** unter **Nachfassen…** kannst du ein Board oder Projekt pausieren, ohne das Nachfassen auszuschalten. Es werden keine Entwürfe erstellt oder gesendet, keine Runde endet und offene Nachfassaufgaben bleiben offen. Wähle einen Tag aus, an dem das Nachfassen fortgesetzt werden soll, oder tippe auf **Fortsetzen**, wenn du bereit bist. Die Wartezeit wird dort fortgesetzt, wo sie unterbrochen wurde. Fällige Nachrichten werden nacheinander bearbeitet. In der Zwischenzeit wird **Pausiert** angezeigt.
 

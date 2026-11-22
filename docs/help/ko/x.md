@@ -32,7 +32,7 @@ X의 공식 API를 사용하지 않아요. 내용을 읽고 승인한 답글을 
 
 또는 터미널에서 `assistant connect x` 명령을 실행해요.
 
-X에서 Machine이 로그아웃되면 [사이트에서 로그아웃됨](signed-out.md)을 참고해요.
+X에서 Machine이 로그아웃되면 [사이트에서 로그아웃됐어요](signed-out.md)을 참고해요.
 
 ## 연결 해제하기
 
