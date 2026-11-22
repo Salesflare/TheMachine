@@ -141,7 +141,9 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   automated, mail in a thread the owner wrote in or on an open to-do, a message an open to-do waits on, a signal put
   off before. Each sort is kept per signal version for 30 days in `first_pass`, without message text
   (`machine/store/first_pass.py`, `machine/app/first_pass.py`). Before the first review, and with
-  `review_worker.first_pass: false`, every signal goes to the review as before.
+  `review_worker.first_pass: false`, every signal goes to the review as before. The missed-work audit samples the
+  skips too ([intelligence](intelligence.md#missed-work-audit)); a skip the owner calls a miss is kept, and its
+  sender's signals then go to the review without the small model.
 
 - **A night pause.** In the quiet hours (`ASSISTANT_QUIET_HOURS`, 00:00 to 07:00 by default, the ones the nightly
   update uses) no review of new signals starts: they are read and stored, and reviewed together 30 minutes before the

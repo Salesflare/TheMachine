@@ -381,6 +381,41 @@ class Audit(unittest.TestCase):
             signals = [s for s in learning_loop.signals(db, '2000-01-01') if s['what'].startswith('made a to-do')]
         self.assertEqual([s['review_said'] for s in signals], ['Only an update, nothing asked'])
 
+    def test_a_first_pass_skip_is_audited_and_a_real_miss_sends_its_sender_to_the_review(self):
+        from machine.store import first_pass
+        promo = {'labels': ['INBOX', 'CATEGORY_PROMOTIONS'], 'list_unsubscribe': '<mailto:u@deals.example>'}
+        with self.store.connect() as db:
+            first_pass.ensure(db)
+            skipped = []
+            for n, body in enumerate(('Your order needs a new card by Friday, deadline tomorrow.', 'Weekly picks for you')):
+                skipped.append(db.execute(
+                    'INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,version,analyzed_version,ingested_at) '
+                    "VALUES('work',?,'gmail.message',?,'Deals',?,?,?,1,1,?)",
+                    (f'fp{n}', self.stamp, body, json.dumps({'thread_id': f'tf{n}', 'from': 'Deals <news@deals.example>', **promo}), f'hf{n}', self.stamp)).lastrowid)
+            first_pass.record(db, [(e, 1) for e in skipped], 'skip', 'openai/gpt-6-luna', self.stamp, {e: 'promotion' for e in skipped})
+            found, _ = mw.candidates(db, ACCOUNTS, '2000-01-01', frozenset({'owner@example.com'}), machine_sources_calendar.calendar_owned, machine_store_review.bulk_kind)
+            marked = {c['id'] for c in found if c.get('first_pass')}
+            self.assertEqual(marked, set(skipped))  # sampled although they look like a newsletter: no review saw them
+            audit = mw.begin(db)
+            result = mw.save(db, audit, mw.run(db, ACCOUNTS, answer_all, seed=audit, bulk=machine_store_review.bulk_kind))
+            self.assertEqual(result['patterns']['first_pass'], 1)
+            mw.label(db, skipped[0], 'real')
+            self.assertEqual(mw.miss(db, skipped[0])['why'], '(first pass, no review) set aside as promotion')
+            self.assertEqual(first_pass.missed_senders(db), {'mail:news@deals.example'})
+            first_pass.prune(db, '9999-01-01')  # a skip that turned out a miss stays; the rest goes
+            self.assertEqual({r[0] for r in db.execute('SELECT event_id FROM first_pass')}, {skipped[0]})
+            later = [db.execute(
+                'INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,version,analyzed_version,ingested_at) '
+                "VALUES('work',?,'gmail.message',?,'Deals',?,?,?,1,0,?)",
+                (f'fl{n}', self.stamp, 'More picks', json.dumps({'thread_id': f'tl{n}', 'from': f'Shop <news@{host}>', **promo}), f'hl{n}', self.stamp)).lastrowid
+                for n, host in enumerate(('deals.example', 'other-shop.example'))]
+        due = {r['id'] for r in self.store.first_pass_due()}
+        self.assertNotIn(later[0], due)  # that sender now goes to the review without the small model
+        self.assertIn(later[1], due)
+        with self.store.connect() as db:
+            signals = [s for s in learning_loop.signals(db, '2000-01-01') if s.get('review_said', '').startswith('(first pass')]
+        self.assertEqual(len(signals), 1)  # fed back to the learning loop
+
     def test_a_failed_turn_is_kept_as_failed(self):
         with self.store.connect() as db:
             audit = mw.begin(db)

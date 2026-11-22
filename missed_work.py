@@ -8,7 +8,8 @@ a reviewed signal that should have had one and got none never shows up there. Th
 Once a week (with the weekly recap's rhythm), within the usage budget like every background turn (model_budget), it:
 
 - samples up to SAMPLE reviewed signals of the last DAYS whose review left no to-do, no promise and no update to a
-  to-do in the same thread, and the ones the review set aside unjudged (set_aside): emails, messages and meetings, stratified by channel and by area (Personal, or Work at one
+  to-do in the same thread, the ones the review set aside unjudged (set_aside) and the ones the first pass set aside
+  before any review (first_passed, also when they look like a newsletter): emails, messages and meetings, stratified by channel and by area (Personal, or Work at one
   company), at least a couple from each stratum and the rest in proportion;
 - asks one separate, small model turn with its own prompt (EVALUATOR) whether there was work for the owner in each: a
   reply owed, a promise made to or by them, a deadline, a request. It never sees what the review decided, and every
@@ -223,6 +224,22 @@ def set_aside(db, since):
         'SELECT id,version FROM events WHERE history=0 AND analyzed_version<version AND deferrals>=? AND ingested_at>=?', (SET_ASIDE_AFTER, since))}
 
 
+def first_passed(db, since):
+    """{event_id: {'no_reply': False, 'first_pass': True}}: signals the first pass set aside since `since` without a review
+    (machine/store/first_pass.py). No review read them, so the audit samples them too: a wrong skip shows as a miss."""
+    if not _has(db, 'first_pass'):
+        return {}
+    return {r[0]: {'no_reply': False, 'version': r[1], 'first_pass': True} for r in db.execute(
+        "SELECT event_id,max(version) FROM first_pass WHERE verdict='skip' AND at>=? GROUP BY event_id", (since,))}
+
+
+def first_pass_said(db, event_id):
+    """The line kept with a miss on a first-pass skip, in place of a review's (review_said): None when it wasn't one."""
+    from machine.store import first_pass
+    found = first_pass.missed(db, event_id)
+    return f"(first pass, no review) set aside as {found['what']}" if found else None
+
+
 def carded(db):
     """Event ids that are evidence on a to-do or a promise, and the conversations of to-do evidence: {(kind, account, key): [times]}."""
     ids = {r[0] for r in db.execute('SELECT DISTINCT value FROM suggestions, json_each(suggestions.event_ids)')}
@@ -259,7 +276,7 @@ def candidates(db, accounts, since, own=frozenset(), owned=None, bulk=None):
     title line (assistant.calendar_owned and bulk_kind, passed in by the caller: this module never loads assistant.py).
     Returns ([{id, channel, area, no_reply}], counts of what was left out and why)."""
     by_account = {a.get('id'): a for a in accounts or ()}
-    seen = {**set_aside(db, since), **reviewed(db, since)}
+    seen = {**set_aside(db, since), **first_passed(db, since), **reviewed(db, since)}
     ids, threads = carded(db)
     out, skipped, sent = [], collections.Counter(), []
     todo = sorted(set(seen) - ids)
@@ -283,7 +300,8 @@ def candidates(db, accounts, since, own=frozenset(), owned=None, bulk=None):
             if {'SPAM', 'TRASH'} & set(m.get('labels') or ()):
                 skipped['spam_or_trash'] += 1
                 continue
-            if r['kind'] == 'gmail.message' and bulk and bulk(r['kind'], m, r['title'] or ''):
+            skip = seen[r['id']].get('first_pass')  # no review saw it at all, as a title line or otherwise
+            if r['kind'] == 'gmail.message' and bulk and not skip and bulk(r['kind'], m, r['title'] or ''):
                 skipped['bulk_mail'] += 1
                 continue
             key = thread_of(r, m)
@@ -294,7 +312,7 @@ def candidates(db, accounts, since, own=frozenset(), owned=None, bulk=None):
                 skipped['sent_again'] += 1
                 continue
             out.append({'id': r['id'], 'channel': channel, 'area': area, 'no_reply': seen[r['id']]['no_reply'],
-                        **({'set_aside': True} if seen[r['id']].get('set_aside') else {})})
+                        **({'set_aside': True} if seen[r['id']].get('set_aside') else {}), **({'first_pass': True} if skip else {})})
     return out, dict(skipped)
 
 
@@ -540,7 +558,8 @@ def patterns(items):
     return {'by_what': [{'what': w, 'channel': c, 'n': n} for (w, c), n in by_what.most_common()],
             'by_area': dict(collections.Counter(i['area'] for i in items).most_common()),
             'review_said_no_reply': sum(1 for i in items if i.get('no_reply')),
-            'set_aside': sum(1 for i in items if i.get('set_aside'))}  # the review set it aside unjudged
+            'set_aside': sum(1 for i in items if i.get('set_aside')),  # the review set it aside unjudged
+            'first_pass': sum(1 for i in items if i.get('first_pass'))}  # the first pass set it aside, no review read it
 
 
 # ------------------------------------------------------------------ one audit
@@ -644,7 +663,7 @@ def label(db, event_id, value):
         item = db.execute('SELECT what,reason FROM missed_audit_items WHERE event_id=? AND work=1 ORDER BY rowid DESC LIMIT 1', (int(event_id),)).fetchone()
         what = ': '.join(x for x in (item['what'] if item['what'] != 'none' else '', item['reason'] or '') if x)
         db.execute("INSERT INTO review_misses(event_id,at,origin,what,why) VALUES(?,?,'audit',?,?) ON CONFLICT(event_id) DO UPDATE SET "
-                   'what=excluded.what', (int(event_id), now(), what or None, review_said(db, event_id)))
+                   'what=excluded.what', (int(event_id), now(), what or None, review_said(db, event_id) or first_pass_said(db, event_id)))
         title = db.execute('SELECT title FROM events WHERE id=?', (int(event_id),)).fetchone()
         text = str(item['reason'] or (title[0] if title else '') or '').strip()
         return {'event_id': int(event_id), 'label': value, 'made': (was or {}).get('suggestion_id'), 'text': text[:1].upper() + text[1:]}
@@ -683,6 +702,7 @@ def passed_over(db, event_id, card_id):
     kept as a miss with the review's line, for the learning loop. True when kept."""
     ensure(db)
     said = review_said(db, event_id)
+    said = first_pass_said(db, event_id) if said is None else said  # a first-pass skip: no review read it
     if said is None or holder(db, event_id, card_id):
         return False
     if _has(db, 'promises') and db.execute('SELECT 1 FROM promises WHERE event_id=?', (int(event_id),)).fetchone():
