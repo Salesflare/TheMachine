@@ -18,7 +18,9 @@ function placeNote(){if(scrollY<1){place.mark=null;place.top=true;return}  // at
  place.top=false;const y=placeTop()+1,levels=[];let el=document.body;
  for(let d=0;d<40;d++){let next=null,i=0;
   for(const k of el.children){const r=k.getBoundingClientRect();if(r.height>0&&r.bottom>y&&!['SCRIPT','STYLE','DIALOG'].includes(k.tagName)){const p=getComputedStyle(k).position;if(p!=='fixed'&&p!=='sticky'){next=k;break}}i++}
-  if(!next)break;levels.push({node:next,id:next.id,idx:i,tag:next.tagName,sig:placeSig(next),top:next.getBoundingClientRect().top});el=next;if(next.getBoundingClientRect().top>=y)break}
+  if(!next)break;levels.push({node:next,id:next.id,idx:i,tag:next.tagName,sig:placeSig(next),top:next.getBoundingClientRect().top});el=next;
+  // A box that scrolls by itself (a panel's list) is the deepest mark: what is in it moves with its own scroll, not the page's
+  if(next.getBoundingClientRect().top>=y||next.scrollHeight>next.clientHeight&&/auto|scroll/.test(getComputedStyle(next).overflowY))break}
  for(const l of levels.slice(-6))l.text=placeText(l.node);
  place.mark=levels.length?{y:scrollY,levels}:null}
 // The same element, or the one drawn in its place: by id, else the same attributes and words, else the same attributes nearest its old spot
@@ -27,10 +29,12 @@ function placeChild(el,l){if(l.id){const k=document.getElementById(l.id);return 
  const worded=l.text!=null&&same.filter(([k])=>placeText(k)===l.text);const pool=worded&&worded.length?worded:same;
  return pool.reduce((a,b)=>Math.abs(b[1]-l.idx)<Math.abs(a[1]-l.idx)?b:a)[0]}
 function placeFind(levels){let at=-1;for(let i=levels.length-1;i>=0;i--)if(levels[i].node.isConnected){at=i;break}
- if(at>=0&&!placeShown(levels[at].node))return null;  // hidden on purpose: another tab, a fold
+ // hidden on purpose: another tab, a fold
+ if(at>=0&&!placeShown(levels[at].node))return null;
  let el=at>=0?levels[at].node:document.body;
  for(let j=at+1;j<levels.length;j++){const k=placeChild(el,levels[j]);if(!k||!placeShown(k))break;el=k;at=j}
- return at>0&&at>=levels.length-3?{el,top:levels[at].top}:null}  // only the same content, drawn anew: a different view (another pane) is a move
+ // only the same content, drawn anew: a different view (another pane) is a move
+ return at>0&&at>=levels.length-3?{el,top:levels[at].top}:null}
 function placeKeep(){const m=place.mark;if(!m&&place.top)return;  // still at the very top: nothing held, nothing to note
  if(!m||m.y<1||Date.now()<place.glide)return placeNote();
  const max=document.documentElement.scrollHeight-innerHeight,clamped=scrollY<m.y-.5&&scrollY>=max-1&&Date.now()>place.opened;  // a page just opened may be shorter
