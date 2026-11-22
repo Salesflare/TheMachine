@@ -248,8 +248,9 @@ class HandledFirst(unittest.TestCase):
         self.at('2026-10-22T07:00:00+00:00')
         app = self.app()
         app.config['prepare_ahead'] = True
-        self.run_step(app)
-        sid = self.promise_row(pid)['suggestion_id']
+        # Prepared ahead (on its day someone else's alone waits under Waiting on others undrafted, test_waiting_ahead.py;
+        # back on the list, a review can still prepare one ahead)
+        sid = app.promise_card(self.promise_row(pid), ahead=True)['id']
         if asked:
             self.store.decide(sid, 'other', 'Nudge Sam about it', 'd-1', 'dashboard')
         with self.store.connect() as db:

@@ -214,8 +214,12 @@ same open promise stored twice from before is kept once. Nothing shows up on Tel
   stay open for the review or the check. Their new message is reviewed as usual, so a delay can become a new promise.
   Every review prompt lists the open promises, and the review closes one (`kept` or `dropped`, with the reason) or
   moves its date when a later message shows it.
-- **The to-do:** a promise still open when it's checked becomes a to-do (`promise:<id>`), prepared ahead under the
-  usual limits: for yours the thing you promised, for theirs a short nudge. If they answer while the to-do is on its
+- **The to-do:** a promise still open when it's checked becomes a to-do (`promise:<id>`). Yours is prepared ahead
+  under the usual limits. Theirs goes straight to Waiting on others with no draft and no prepared-ahead room used
+  (`waits_on_them`), unless something of yours is open on the matter: your own promise in the same message or
+  conversation, or another open to-do there (then it stays on your list, as before). It carries "Write a short nudge"
+  in its chat; Nudge in the Promises list drafts it (the owner's Do it). It comes back as an open to-do when a new
+  message on it arrives, or after a week to chase them (`return_waiting`). If they answer while the to-do is on its
   way, it closes. At most 5 such to-dos a day. With reviews off (a new install, its first look included) a due promise
   waits: no to-do and nothing prepared until reviews are on.
 - **Where you see them:** the To-dos page has a **Promises** list (You promised, Promised to you) with Done and Drop

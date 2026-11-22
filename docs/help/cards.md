@@ -29,6 +29,8 @@ When a message comes from an address that only looks like someone you know, like
 
 A to-do still waiting on someone else, like a review or a reply, says **Waiting on:** that step. It sits in **Waiting on others**, folded above Coming back later, until a new message brings it back. The same goes after you asked a question back: it returns the morning before its deadline, at the deadline when that is later today, or the next morning once it has passed, and says whom it is still waiting on.
 
+A [promise](promises.md) someone made you that came due starts in **Waiting on others** too, unless you still owe something on it.
+
 When a to-do is for a result someone else delivers, like a signed contract, **Details** shows it as **Done when**. Sending your part doesn't close it: it waits in **Waiting on others** until a message shows the result, then closes by itself, with **Undo**. If nothing comes by the time to chase them, it comes back with **Write a short nudge** in its chat. Tell it in the chat what counts as done to change it.
 
 A to-do nobody touched for a week asks once: **Still needed?** **Not needed** closes it, with **Undo**. **Keep** keeps it, and it never asks again. With no answer for another week, it folds into Coming back later, and the number on the app icon and the morning digest stop counting it. Opening it, a chat message, an edit, a snooze or a new message brings it back.

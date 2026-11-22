@@ -15,7 +15,8 @@ import i18n
 from machine.app.follow_ups import activity_who, newer_activity, NEWER_KINDS
 from machine.config import LOG
 from machine.sources.calendar import company_domains
-from machine.store.cards import promise_closed_at, same_matter_cards, same_thread_card
+from machine.cards import looks_done, waits_on_others
+from machine.store.cards import promise_closed_at, same_matter_cards, same_thread_card, thread_keys, wait_until
 from machine.store.promises import fit_title, promise_card as promise_todo, promise_logged, promise_open_card, promise_text, promise_title, promise_who_named
 from machine.store.review import CARD_OPEN, own_message
 from machine.text import encoded
@@ -60,6 +61,51 @@ def promise_alike(db, promise):
     own = {r[0] for r in db.execute(f"SELECT id FROM suggestions WHERE id IN ({','.join('?' * len(cards))}) AND dedupe_key NOT LIKE 'promise:%'",
                                     [c['id'] for c in cards])}
     return [c for c in cards if c['id'] in own]
+
+
+def conversation_keys(rows):
+    """The conversations signals are in, for telling whether two promises are on one matter: an email or Slack thread
+    (thread_keys), else the chat or channel itself."""
+    keys = set(thread_keys(rows))
+    for r in rows:
+        m = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
+        chat = m.get('chat_id') or m.get('conversation_id') or (m.get('channel_id') if not m.get('thread_ts') else None)
+        if r['kind'] != 'gmail.message' and chat:
+            keys.add(('chat', r['account_id'], r['kind'], str(chat)))
+    return keys
+
+
+def waits_on_them(db, p):
+    """Someone else's promise came due and nothing came in: the next step is theirs, and nothing is the owner's, so its
+    to-do waits under Waiting on others (promise_card) instead of using a draft prepared ahead. Only when the review's
+    own reading of the messages says so: their promise alone (not one made together, not a step only the owner can do,
+    not a refund to chase), and nothing of the owner's still open on the matter: no open promise of theirs in the same
+    message or conversation, and no other open to-do with its message or in its conversation. A mixed thread ("I'll
+    send the deck; can you confirm the date?") stays with the owner. What the owner owes elsewhere is its own to-do."""
+    if p['direction'] != 'theirs' or p.get('together') or p.get('owner_step') or p.get('refund'):
+        return False
+    pick = 'SELECT id,account_id,kind,metadata FROM events WHERE id=?'
+    made = db.execute(pick, (p['event_id'],)).fetchone()
+    keys = conversation_keys([made]) if made else set()
+    for mine in db.execute("SELECT * FROM promises WHERE id!=? AND (direction='mine' OR together=1) AND status IN ('open','carded')", (p['id'],)):
+        if mine['status'] == 'carded' and not promise_open_card(db, dict(mine)):
+            continue
+        if mine['event_id'] == p['event_id']:
+            return False
+        event = db.execute(pick, (mine['event_id'],)).fetchone()
+        if event and keys & conversation_keys([event]):
+            return False
+    for card in db.execute(f'SELECT * FROM suggestions WHERE status IN {todo_states.sql(todo_states.OPEN)}'):
+        card = dict(card)
+        if waits_on_others(card) or looks_done(card):
+            continue  # nothing of the owner's on it either
+        ids = json.loads(card['event_ids'] or '[]')
+        if p['event_id'] in ids:
+            return False
+        if keys and ids and keys & conversation_keys([dict(e) for e in db.execute(
+                'SELECT account_id,kind,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids)]):
+            return False
+    return True
 
 
 def owner_last_word(db, watch, owner_slack_ids=()):
@@ -216,7 +262,7 @@ class PromiseChecksApp:
 
     def promise_step(self, limit=3):
         """Once a minute: close promises answered meanwhile, then turn the due ones that are still
-        open into cards, prepared ahead when allowed. At most PROMISE_CARDS_PER_DAY a day. With reviews off
+        open into cards, prepared ahead when allowed (not those that only wait on someone else). At most PROMISE_CARDS_PER_DAY a day. With reviews off
         (a new install, the first look's promises included) they wait: no card and nothing prepared until reviews are on."""
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -433,7 +479,9 @@ class PromiseChecksApp:
 
     def promise_card(self, p, _db=None, ahead=None, quiet=False):
         """A due promise's to-do (promise_step), or one the owner asked for now (promise_todo_action, ahead=False:
-        their own Do it prepares it instead). quiet: it is not sent by itself (a refund's chase)."""
+        their own Do it prepares it instead). quiet: it is not sent by itself (a refund's chase). On its day, someone
+        else's promise with nothing of the owner's on the matter (waits_on_them) waits under Waiting on others, with no
+        draft prepared ahead."""
         if _db is None:
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
@@ -456,6 +504,11 @@ class PromiseChecksApp:
             _db.execute("UPDATE promises SET status='carded',suggestion_id=?,updated_at=? WHERE id=?", (home['id'], now(), p['id']))
             promise_logged(_db, p['id'], 'carded', 'closed with its to-do')
             return {'id': home['id'], 'status': home['status'], 'duplicate': True}
+        # On its day by itself (not the owner's Do it or Nudge): someone else's promise with nothing of the owner's on the
+        # matter waits on them, with no draft prepared ahead; that room is kept for the owner's own work.
+        waits = ahead is None and waits_on_them(_db, p)
+        if waits:
+            ahead = False
         if ahead is None:
             ahead = self.config.get('prepare_ahead', True) is not False and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)), due=p['due'])
         # Waiting on them: when the owner wrote there since (a reply, a nudge), that message leads, so the to-do's source
@@ -480,6 +533,15 @@ class PromiseChecksApp:
                 # What they promised is the result: a nudge sent from it waits for that, never keeps the promise (outcomes.py)
                 named = promise_who_named(db, p)
                 outcomes.set_done_when(db, saved['id'], fit_title(outcomes.theirs_line(named['who'], named['what']), outcomes.MAX), 'promise')
+            if waits and not saved.get('duplicate') and not saved.get('attached') and saved.get('status') == todo_states.PENDING:
+                # Straight to Waiting on others, no notification. Back as an open to-do when a new message on it comes
+                # in (update_card), or after WAIT_DAYS to chase them, with the nudge one tap away in its chat.
+                row = db.execute('SELECT * FROM suggestions WHERE id=?', (saved['id'],)).fetchone()
+                stamp = now()
+                parked = outcomes.wait_for_result(db, row, promise_who_named(db, p)['who'], stamp, 'promise-wait:' + uuid.uuid4().hex,
+                                                  until=wait_until(None, self.config.get('digest_at', '08:30')), reason='waits_on_others')
+                db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (encoded([outcomes.nudge_ask()]), saved['id']))
+                saved = {**saved, 'status': todo_states.PREPARED, 'waiting_on': parked['waiting_on'], 'returns_at': parked['until']}
         return saved
 
     def promise_close_action(self, name, args, owner_dashboard=False):
@@ -492,7 +554,8 @@ class PromiseChecksApp:
         becomes a to-do now instead of on its day, the same one its day would bring (promise_card, joined to its
         matter's open to-do when there is one), and that to-do gets the owner's Do it, so its run prepares it: the
         work, or for a nudge a short follow-up where they promised it. A draft waits on the to-do; nothing sends
-        before the owner sends it. A promise that is a to-do already opens that one. Returns {'card': id}."""
+        before the owner sends it. A promise that is a to-do already opens that one; Nudge on one waiting under Waiting
+        on others (promise_card) drafts its nudge there. Returns {'card': id}."""
         if not owner_dashboard:
             raise OwnerError('Only the owner asks for a promise’s to-do, on the dashboard')
         with self.store.connect() as db:
@@ -503,18 +566,22 @@ class PromiseChecksApp:
             if not row:
                 raise ValueError('Unknown promise id')
             p = dict(row)
+            saved = None
             if p['status'] == 'carded':
                 card = promise_todo(db, p['suggestion_id'])
-                if card and card['status'] not in todo_states.CLOSED:
+                if card and p['direction'] == 'theirs' and waits_on_others(dict(db.execute('SELECT * FROM suggestions WHERE id=?', (card['id'],)).fetchone())):
+                    saved = {'id': card['id'], 'status': todo_states.PENDING, 'waiting': True}  # waiting on them: Nudge drafts it there
+                elif card and card['status'] not in todo_states.CLOSED:
                     return {'id': p['id'], 'card': card['id'], 'existing': True}
-                if card:
+                elif card:
                     raise OwnerError('This promise is no longer open')
-                # Its to-do is gone: it reads open (promise_state), so it gets a new one
-                db.execute("UPDATE promises SET status='open',suggestion_id=NULL WHERE id=?", (p['id'],))
-                p['status'] = 'open'
+                else:
+                    # Its to-do is gone: it reads open (promise_state), so it gets a new one
+                    db.execute("UPDATE promises SET status='open',suggestion_id=NULL WHERE id=?", (p['id'],))
+                    p['status'] = 'open'
             elif p['status'] != 'open':
                 raise OwnerError('This promise is no longer open')
-            saved = self.promise_card(p, _db=db, ahead=False)
+            saved = saved or self.promise_card(p, _db=db, ahead=False)
         if saved.get('duplicate') or saved.get('status') != 'pending':
             return {'id': p['id'], 'card': saved['id'], 'existing': bool(saved.get('duplicate'))}
         nudge = p['direction'] == 'theirs' and not p.get('together')

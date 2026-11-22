@@ -17,11 +17,13 @@ Under **Promises** on the To-dos page:
 
 Each one has a **⋯** menu:
 
-- **Do it** on yours: it becomes a to-do now, and your Machine prepares it. **Nudge** on theirs: your Machine drafts a short follow-up where they promised it, while you stay on the list. A short note says it's on its way, with **Open to-do**, and the promise shows "a to-do now". Nothing is sent until you send it. One that is a to-do already opens that to-do.
+- **Do it** on yours: it becomes a to-do now, and your Machine prepares it. **Nudge** on theirs: your Machine drafts a short follow-up where they promised it, while you stay on the list. A short note says it's on its way, with **Open to-do**, and the promise shows "a to-do now". Nothing is sent until you send it. One that is a to-do already opens that to-do, and **Nudge** on one under Waiting on others drafts the nudge there.
 - **Mark done**: it was kept.
 - **Not happening**: it won't happen, so your Machine stops tracking it, with no to-do.
 
 An open promise also becomes a to-do by itself around its date (yours the morning before, so there's a day to do it; theirs the morning after, if it's still open), and shows on its day in the [Calendar](calendar.md). One that is a to-do now links to it, and **Mark done** or **Not happening** closes that to-do too. When your Machine sees it done, both close, with a line saying so.
+
+Theirs goes straight to **Waiting on others**, with no draft and no notification, unless you still owe something in that conversation, like your own promise or a to-do. Its chat offers **Write a short nudge**, and **Nudge** drafts one. It comes back to your list when they write, or after a week to chase them.
 
 Already kept, like a reply you sent or a meeting that covered it? It closes by itself, with no to-do.
 

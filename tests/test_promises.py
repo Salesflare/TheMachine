@@ -257,8 +257,10 @@ class Promises(unittest.TestCase):
         self.at('2026-10-23T07:00:00+00:00')
         self.app().promise_step()
         with self.store.connect() as db:
-            rows = db.execute('SELECT id,status,title FROM suggestions').fetchall()
-        self.assertEqual([(r['id'], r['status'], r['title']) for r in rows], [(card['id'], 'accepted', 'Waiting on Sam Lee: send the signed contract')])  # back, prepared ahead
+            rows = [dict(r) for r in db.execute('SELECT * FROM suggestions')]
+        # back, and since the next step is Sam's, under Waiting on others with no draft prepared ahead
+        self.assertEqual([(r['id'], r['status'], r['title']) for r in rows], [(card['id'], 'prepared', 'Waiting on Sam Lee: send the signed contract')])
+        self.assertEqual(machine_cards.todo_state(rows[0]), 'waiting on others')
         self.assertEqual(self.row(promise)['suggestion_id'], card['id'])
 
     def test_a_step_only_the_owner_can_do_leads_with_done_never_do_it(self):
@@ -445,8 +447,11 @@ class Promises(unittest.TestCase):
 
     def test_the_machine_seeing_it_done_closes_the_promise_and_its_to_do(self):
         """The Machine saw a promise's to-do done (looks_handled): the to-do goes to Done and the promise closes, with a
-        short line saying so. Reopened by the owner, it stays theirs."""
+        short line saying so. Reopened by the owner, it stays theirs. (One still under Waiting on others closes by
+        itself at once instead: test_waiting_ahead.py.)"""
         promise, card = self.carded()
+        with self.store.connect() as db:  # back on the owner's list, as a new message on it leaves it
+            db.execute("UPDATE suggestions SET status='pending',outcome=NULL WHERE id=?", (card,))
         self.store.looks_handled(card, 'Sam sent the signed contract', [self.theirs])
         self.app().promise_step()
         self.assertEqual(self.card_status(card), 'completed')
