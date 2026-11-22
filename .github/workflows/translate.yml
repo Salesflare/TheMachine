@@ -62,7 +62,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-          fetch-depth: 0  # each help article's history: a translation from before stamps is current when its English didn't change after it
+          fetch-depth: 0  # main's history: the run rebases its commit onto main as it is then
           filter: blob:none
       - name: Translate what is missing
         id: translate

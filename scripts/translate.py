@@ -12,12 +12,16 @@ names and plural forms from i18n.py, so a new language here is the same change t
 Only what is missing or out of date is sent. A catalog key is missing when its language has no entry for it (keys are
 the English text, so new English is a new key), or an entry of another shape (a plural entry for a plain one).
 Entries English no longer has are dropped. A translated article carries the hash of the English it was made from
-(`translated:` in its front matter); an article without one, from before this script, counts as current when git shows
-no change to the English after its last change. Each answer is checked before it is written (the English's shape, a
-string or count forms, the same placeholders, names and glossary terms, the same headings, paragraphs and list items,
-link targets and code, no em dash); an answer that fails is asked again once with what was wrong, then left out, so
-the app shows English there until the next run. A translated article that fails that check is out of date whatever
-its stamp says: the next run translates it again.
+(`translated:` in its front matter), written only here: a translation without one is out of date, and a pull request
+never moves a stamp by hand (an English edit that changes no meaning still puts its translations out of date for a
+day). Each answer is checked before it is written (the English's shape, a string or count forms, the same placeholders,
+names and glossary terms, field names, values and date formats a model reads, the same headings, paragraphs and list
+items, link targets and code, no em dash); an answer that fails is asked again once with what was wrong, then left
+out, so the app shows English there until the next run. In an article, a **label** the app has reads as the app's
+translation and a link whose English text is the target's title reads as its translated title: both are put right
+in the answer itself, not asked for again. A translated article that fails that check, or whose body
+scripts/translate_stale.json lists, is out of date whatever its stamp says: the next run translates it again.
+New instructions reach only what is sent: new and changed English, never a retranslation of what is current.
 The key is read from the environment only (never a flag or a file), and never printed.
 .github/workflows/translate.yml runs `all` once a day on main as it is then, opens or replaces one pull request and
 approves its tests' run; scripts/release.py cut refuses a commit where `all --check` finds anything."""
@@ -31,7 +35,6 @@ import hashlib
 import json
 import os
 import re
-import subprocess
 import sys
 import time
 import urllib.error
@@ -49,6 +52,7 @@ MODEL = 'gpt-6-luna'
 CATALOG = ROOT / 'i18n'
 GLOSSARY = CATALOG / 'glossary.md'
 HELP = ROOT / 'docs' / 'help'
+STALE_BODIES = ROOT / 'scripts' / 'translate_stale.json'
 HOLE = re.compile(r'\{\d*\}')
 WORKERS = int(os.environ.get('TRANSLATE_WORKERS', '6'))
 PLURAL_ORDER = ('zero', 'one', 'two', 'few', 'many', 'other')
@@ -152,6 +156,11 @@ def instructions(lang, texts, what, words=None):
         'Keep exactly as they are: placeholders in braces ({}, {0}, {1}; a translation may number them {0}, {1} to '
         'reorder), text in angle brackets (<job id>), URLs, email addresses, file names, commands, code, JSON, numbers '
         'and people, company and place names.',
+        'Text that code or a model reads stays as written, also inside instructions meant for a model: field names, '
+        'keys, enum and op values (due, op, create, done) and date formats (YYYY-MM-DD). Only the words around them '
+        'are translated.',
+        'A label the app shows (in bold in help) reads exactly as the app\'s own translation of that label, and a link '
+        'to another article reads as that article\'s translated title.',
         f'The Machine, and an owner\'s Machine, in {name}: {words["gender"][lang]}' if lang in words['gender'] else '',
         'Use these terms (English = this language; when several forms are given, the first is the base form and the '
         'others are its inflections):\n' + '\n'.join(f'- {en} = {tr}' for en, tr in used) if used else '',
@@ -201,6 +210,35 @@ def ask(lang, instruction, payload, cache_key):
 # ---------------------------------------------------------------------------------------------- checks
 
 TERM_PROBLEM = ' (a glossary term)'
+# What code or a model reads in an instruction for one ("op is create, update or delete", "due must be YYYY-MM-DD",
+# "A refund needs due: ..."): translated, the model writes a field or value the code doesn't know.
+DATE_FORMAT = re.compile(r'(?<![\w-])(?:YYYY|YY|MM|DD|HH|hh|mm|ss)(?:[-/:.T]?(?:YYYY|YY|MM|DD|HH|hh|mm|ss))+(?![\w-])')
+SNAKE = re.compile(r'(?<![\w./-])[a-z][a-z0-9]*(?:_[a-z0-9]+)+(?![\w-])')
+FIELD = re.compile(r'^([a-z]+) (is|must|needs)\b(.*)|\bneeds ([a-z]+):')
+ENUM = re.compile(r'(?:^|, |,? or )([a-z]+)(?= \(|,| or |$)')
+QUOTED = re.compile(r'["\']([a-z]+)["\']')
+NOT_FIELDS = frozenset('it there this that nothing everything something someone none'.split())
+
+
+def literals(key):
+    """The words of an English entry that stay as written: date formats and snake_case names anywhere; in an
+    instruction about a field (an entry that starts "<field> is" or "<field> must", or says "needs <field>:" next to a
+    date format), the field, its listed values and the quoted ones. "A new board needs stages: ..." is the owner's
+    message, so "needs" alone doesn't make a field: a false hit would leave the string in English."""
+    out = DATE_FORMAT.findall(key) + SNAKE.findall(key)
+    m = FIELD.search(key)
+    field = m and (m[1] or (m[4] if DATE_FORMAT.search(key) else None))
+    if field and field not in NOT_FIELDS:
+        out.append(field)
+        if m[2] == 'is':
+            out += ENUM.findall(m[3].strip().split(':')[0].split(';')[0])
+        out += QUOTED.findall(key)
+    return list(dict.fromkeys(out))
+
+
+def literal_problems(key, text):
+    missing = [w for w in literals(key) if not re.search(r'(?<![A-Za-z0-9_])' + re.escape(w) + r'(?![A-Za-z0-9_])', text)]
+    return [f'keep these exactly as written, the code reads them: {", ".join(missing)}'] if missing else []
 
 
 def holes_ok(key, text):
@@ -221,6 +259,7 @@ def string_problems(key, text, lang, words):
         out.append('keep every placeholder ({}, or {0} {1} to reorder) exactly as many times as in the English')
     if '—' in text:
         out.append(no_em_dash(text))
+    out += literal_problems(key, text)
     out += [f'keep the name "{n}"' for n in words['names'] if re.search(r'(?<![\w-])' + re.escape(n) + r'(?![\w-])', key) and n not in text]
     if key not in words['exceptions']:
         out += [f'"{term}" must read one of: {", ".join(forms[lang])}' + TERM_PROBLEM for term, forms in words['checked'].items()
@@ -428,43 +467,26 @@ def articles(folder=HELP):
     return sorted(p for p in folder.glob('*.md') if re.fullmatch(r'[a-z0-9-]+', p.stem))
 
 
-class History:
-    """When each file under docs/help last changed, in main's order (squash merges keep it a line): a translation
-    without a stamp is current when its English didn't change after it. None without git history (a shallow clone)."""
-
-    def __init__(self, folder=HELP):
-        self.order = None
-        try:
-            shallow = subprocess.run(['git', '-C', str(folder), 'rev-parse', '--is-shallow-repository'],
-                                     capture_output=True, text=True, timeout=60)
-            if shallow.returncode or shallow.stdout.strip() != 'false':
-                return
-            log = subprocess.run(['git', '-C', str(folder), 'log', '--format=@%H', '--name-only', '--', '.'],
-                                 capture_output=True, text=True, timeout=600)
-            top = subprocess.run(['git', '-C', str(folder), 'rev-parse', '--show-toplevel'], capture_output=True, text=True, timeout=60)
-        except (OSError, subprocess.SubprocessError):
-            return
-        if log.returncode or top.returncode:
-            return
-        root, self.order, n = Path(top.stdout.strip()), {}, 0
-        for line in log.stdout.splitlines():
-            if line.startswith('@'):
-                n += 1
-            elif line.strip():
-                self.order.setdefault(str((root / line.strip()).resolve()), n)  # newest first: the first one is the last change
-
-    def changed_after(self, english, translation):
-        """True when the English changed after the translation; None when git can't tell."""
-        if self.order is None:
-            return None
-        e, t = self.order.get(str(english.resolve())), self.order.get(str(translation.resolve()))
-        if e is None or t is None:
-            return None
-        return e < t
+def body_hash(body):
+    return hashlib.sha256(body.strip().encode('utf-8')).hexdigest()[:16]
 
 
-def help_state(lang, path, folder=HELP, history=None):
-    """'missing', 'stale', 'current' or 'unstamped' (current, made before stamps) for one article in lang."""
+@functools.lru_cache(maxsize=None)
+def stale_bodies():
+    """{"<lang>/<article>": the hash of a body} from STALE_BODIES: translations that carry the stamp of their current
+    English without being made from it. Until 2026-11-22 an article without a stamp counted as current when git showed
+    no change to its English after the translation's last change; a later edit to the translation (a renamed label in
+    every language) made one that never followed the English look newer, and it was stamped current. A body listed here
+    is out of date; a translation or hand fix changes the body, and then its entry no longer applies."""
+    try:
+        return json.loads(STALE_BODIES.read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return {}
+
+
+def help_state(lang, path, folder=HELP):
+    """'missing', 'stale' or 'current' for one article in lang. Current is made from this English: its stamp is the
+    English's hash. Without a stamp it is out of date: a hand-made translation goes through the translator too."""
     local = folder / lang / path.name
     if not local.is_file():
         return 'missing'
@@ -472,24 +494,16 @@ def help_state(lang, path, folder=HELP, history=None):
     found = dict(fields).get('translated')
     english = front(path.read_text(encoding='utf-8'))[1]
     # Out of step with the English (its sections, paragraphs and list items, link targets, code and code blocks), it is
-    # out of date whatever its stamp or history says: a stamp added to an older translation, or one from before these
-    # checks. The site's help refuses the same ones, so the next run translates them again.
-    in_step = not article_problems(english, body)
-    if found:
-        return 'current' if found == stamp(path) and in_step else 'stale'
-    after = history.changed_after(path, local) if history else None
-    if after is None:  # no history to go by: current while it still has the English's headings
-        after = HEADING.findall(english) != HEADING.findall(body)
-    return 'stale' if after or not in_step else 'unstamped'
+    # out of date whatever its stamp says: a stamp moved onto an older translation, or one from before these checks.
+    # The site's help refuses the same ones, so the next run translates them again.
+    if not found or found != stamp(path) or article_problems(english, body):
+        return 'stale'
+    return 'stale' if stale_bodies().get(f'{lang}/{path.name}') == body_hash(body) else 'current'
 
 
-def help_todo(langs, folder=HELP, history=None):
+def help_todo(langs, folder=HELP):
     """{lang: [(path, state)]} for every article that is not current in lang."""
-    history = history if history is not None else History(folder)
-    out = {}
-    for lang in langs:
-        out[lang] = [(p, s) for p in articles(folder) for s in [help_state(lang, p, folder, history)] if s != 'current']
-    return out
+    return {lang: [(p, s) for p in articles(folder) for s in [help_state(lang, p, folder)] if s != 'current'] for lang in langs}
 
 
 def app_labels(lang, body):
@@ -506,6 +520,77 @@ def app_labels(lang, body):
     return out
 
 
+ARTICLE_LINK = re.compile(r'\[([^\]]+)\]\(([a-z0-9-]+)\.md(?:#[^)\s]*)?\)')
+
+
+def units(body):
+    """The article's paragraphs and list items, in order: a translation has the same ones (article_problems)."""
+    out = []
+    for block in re.split(r'\n\s*\n', body.strip()):
+        out += block.splitlines() if re.match(r'(- |\d+\. )', block) else [block]
+    return out
+
+
+def fix_units(en, tr, fix):
+    """tr with fix(english unit, translated unit) applied to each pair; tr as it is when the units don't pair up."""
+    a, b = units(en), units(tr)
+    if len(a) != len(b):
+        return tr
+    out, at = tr, 0
+    for e, t in zip(a, b):
+        at = out.index(t, at)
+        new = fix(e, t)
+        out = out[:at] + new + out[at + len(t):]
+        at += len(new)
+    return out
+
+
+def fix_labels(en, tr, labels):
+    """Each **label** the app has a translation for, written as the app shows it: where a paragraph or list item has
+    as many bold parts as its English, the one in the English's place, when the app's text is not in it yet. Cheaper
+    and surer than asking again."""
+    def fix(e, t):
+        want, got = BOLD.findall(e), list(BOLD.finditer(t))
+        if len(want) != len(got):
+            return t
+        shown = {g[1].strip().rstrip('.:') for g in got}
+        for w, g in reversed(list(zip(want, got))):
+            bare = w.strip().rstrip('.:')
+            if bare in labels and labels[bare] not in shown:
+                inner = g[1]
+                tail = inner[len(inner.rstrip('.:')):]
+                t = t[:g.start()] + f'**{labels[bare]}{tail}**' + t[g.end():]
+        return t
+    return fix_units(en, tr, fix) if labels else tr
+
+
+def link_titles(lang, folder=HELP):
+    """{slug: (English title, its title in lang)} for each article translated from its current English."""
+    out = {}
+    for path in articles(folder):
+        local = folder / lang / path.name
+        if local.is_file():
+            fields = dict(front(local.read_text(encoding='utf-8'))[0])
+            if fields.get('title') and fields.get('translated') == stamp(path):
+                out[path.stem] = (dict(front(path.read_text(encoding='utf-8'))[0]).get('title', ''), fields['title'])
+    return out
+
+
+def fix_links(en, tr, titles):
+    """A link whose English text is the target article's title reads as that article's translated title."""
+    def fix(e, t):
+        want = [(m[2], m[1].strip().lower()) for m in ARTICLE_LINK.finditer(e)]
+        got = list(ARTICLE_LINK.finditer(t))
+        if [s for s, _ in want] != [m[2] for m in got]:
+            return t
+        for (slug, text), m in reversed(list(zip(want, got))):
+            title = titles.get(slug)
+            if title and text == title[0].strip().lower() and m[1] != title[1]:
+                t = t[:m.start(1)] + title[1] + t[m.end(1):]
+        return t
+    return fix_units(en, tr, fix) if titles else tr
+
+
 def translate_article(lang, path, words=None, ask=ask):
     words = words or glossary()
     fields, body = front(path.read_text(encoding='utf-8'))
@@ -514,6 +599,7 @@ def translate_article(lang, path, words=None, ask=ask):
     src = {'title': fields.get('title', ''), 'summary': fields.get('summary', ''), 'body': sent}
     what = 'a help article (Markdown)'
     labels = app_labels(lang, body)
+    titles = link_titles(lang, path.parent)
     base = ('Return one JSON object {"title": "...", "summary": "...", "body": "..."}: the article translated. The body is '
             'Markdown: keep its structure exactly (the same ## and ### headings in the same order, the same paragraphs and '
             'list items, **bold**, `code` unchanged, links as [translated text](unchanged target)). Inside `code` nothing is '
@@ -526,7 +612,7 @@ def translate_article(lang, path, words=None, ask=ask):
         payload = base + (f'\nLast time it was wrong: {"; ".join(notes)}' if notes else '') + '\n' + json.dumps(src, ensure_ascii=False)
         got = ask(lang, instructions(lang, [src['title'], src['summary'], sent], what, words), payload, f'machine-app-help:{lang}') or {}
         answer = got.get('body') if isinstance(got.get('body'), str) else ''
-        got['body'] = restore_code(answer, spans)
+        got['body'] = fix_links(body.strip(), fix_labels(body.strip(), restore_code(answer, spans).strip(), labels), titles)
         problems = article_problems(sent, answer) or article_problems(body.strip(), got['body'].strip())
         for k in ('title', 'summary'):
             if src[k]:
@@ -555,34 +641,24 @@ def article_text(path, title, summary, body):
     return '---\n' + '\n'.join(lines) + '\n---\n' + body.strip() + '\n'
 
 
-def add_stamp(lang, path, folder=HELP):
-    """A current translation from before stamps gets the English's hash, nothing else changes."""
-    local = folder / lang / path.name
-    fields, body = front(local.read_text(encoding='utf-8'))
-    fields = dict(fields)
-    local.write_text(article_text(path, fields.get('title', ''), fields.get('summary', ''), body), encoding='utf-8')
-
-
-def run_help(langs, check=False, folder=HELP, ask=ask, history=None):
-    todo = help_todo(langs, folder, history)
+def run_help(langs, check=False, folder=HELP, ask=ask):
+    todo = help_todo(langs, folder)
     left = 0
     for lang in langs:
         gone = sorted(p for p in (folder / lang).glob('*.md') if not (folder / p.name).is_file()) if (folder / lang).is_dir() else []
-        counts = {s: sum(1 for _, x in todo[lang] if x == s) for s in ('missing', 'stale', 'unstamped')}
+        counts = {s: sum(1 for _, x in todo[lang] if x == s) for s in ('missing', 'stale')}
         print(f'{lang}: {counts["missing"]} help articles to translate, {counts["stale"]} out of date'
-              + (f', {counts["unstamped"]} to stamp' if counts['unstamped'] else '') + (f', {len(gone)} no longer in English' if gone else ''))
+              + (f', {len(gone)} no longer in English' if gone else ''))
         if check:
             left += counts['missing'] + counts['stale'] + len(gone)
             continue
         for old in gone:
             old.unlink()
-        for path, state in todo[lang]:
-            if state == 'unstamped':
-                add_stamp(lang, path, folder)
     if check:
         return left
     words = glossary()
-    jobs = [(lang, path) for lang in langs for path, state in todo[lang] if state != 'unstamped']
+    jobs = [(lang, path) for lang in langs for path, _ in todo[lang]]
+    written = []
     with concurrent.futures.ThreadPoolExecutor(WORKERS) as pool:
         futures = {pool.submit(translate_article, lang, path, words, ask): (lang, path) for lang, path in jobs}
         for future in concurrent.futures.as_completed(futures):
@@ -591,22 +667,31 @@ def run_help(langs, check=False, folder=HELP, ask=ask, history=None):
             if got:
                 (folder / lang).mkdir(exist_ok=True)
                 (folder / lang / path.name).write_text(article_text(path, got['title'], got['summary'], got['body']), encoding='utf-8')
+                written.append((lang, path))
             else:
                 left += 1
+    # links to an article this run translated too: its title as it now reads
+    titles = {lang: link_titles(lang, folder) for lang in {lang for lang, _ in written}}
+    for lang, path in written:
+        local = folder / lang / path.name
+        fields, body = front(local.read_text(encoding='utf-8'))
+        fixed = fix_links(front(path.read_text(encoding='utf-8'))[1].strip(), body.strip(), titles[lang])
+        if fixed != body.strip():
+            fields = dict(fields)
+            local.write_text(article_text(path, fields.get('title', ''), fields.get('summary', ''), fixed), encoding='utf-8')
     return left
 
 
 def problems(langs=None, folder=HELP):
     """What a release would ship untranslated, as lines ([] when everything is translated): for scripts/release.py."""
     langs = langs or languages()
-    out, en, history = [], load('en'), History(folder)
+    out, en = [], load('en')
     for lang in langs:
         todo = catalog_todo(lang, en)
         if todo:
             out.append(f'{lang}: {len(todo)} catalog keys not translated (first: {todo[0][:60]!r})')
-        for path, state in help_todo([lang], folder, history)[lang]:
-            if state != 'unstamped':
-                out.append(f'{lang}: docs/help/{path.name} {"not translated" if state == "missing" else "out of date with its English"}')
+        for path, state in help_todo([lang], folder)[lang]:
+            out.append(f'{lang}: docs/help/{path.name} {"not translated" if state == "missing" else "out of date with its English"}')
     return out
 
 

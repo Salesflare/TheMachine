@@ -169,6 +169,19 @@ class Checks(unittest.TestCase):
         self.assertTrue(T.string_problems('Done', 'Fait — oui', 'fr', words), 'no em dash')
         self.assertTrue(T.string_problems('Your Machine is ready', 'Le Machine est prêt', 'fr', words), 'The Machine is she')
 
+    def test_what_code_or_a_model_reads_stays_as_written(self):
+        # field names, op values and date formats in an instruction for a model: translated, the code can't read them
+        words = T.glossary()
+        self.assertEqual(T.string_problems('op is create, update or delete', 'op ist create, update oder delete', 'de', words), [])
+        self.assertEqual(T.string_problems('op is create, update or delete', 'op: aanmaken, bijwerken of verwijderen', 'nl', words),
+                         ['keep these exactly as written, the code reads them: create, update, delete'])
+        self.assertTrue(T.string_problems('due is YYYY-MM-DD', 'due is JJJJ-MM-DD', 'nl', words))
+        self.assertTrue(T.string_problems('A refund needs due: the last day, as YYYY-MM-DD', 'Un reembolso necesita una fecha: el último día, en YYYY-MM-DD', 'es', words))
+        self.assertEqual(T.string_problems('due must be YYYY-MM-DD', 'dueはYYYY-MM-DD形式です', 'ja', words), [], 'next to CJK text')
+        self.assertEqual(T.literals('A new board needs stages: 2 to 7 names'), [], "the owner's message, not a field")
+        self.assertEqual(T.literals('it is a key'), [])
+        self.assertEqual(T.literals('Use salesforce_broker in config.json'), ['salesforce_broker'])
+
 
 class Help(unittest.TestCase):
     def setUp(self):
@@ -177,7 +190,11 @@ class Help(unittest.TestCase):
         self.help = Path(self.dir.name) / 'help'
         (self.help / 'nl').mkdir(parents=True)
         (self.help / 'projects.md').write_text(ARTICLE, encoding='utf-8')
-        self.history = mock.Mock(changed_after=lambda en, tr: None)
+        patcher = mock.patch.object(T, 'STALE_BODIES', Path(self.dir.name) / 'stale.json')
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        T.stale_bodies.cache_clear()
+        self.addCleanup(T.stale_bodies.cache_clear)
 
     def answer(self, body=None):
         def ask(lang, instruction, payload, cache_key):
@@ -192,29 +209,29 @@ class Help(unittest.TestCase):
             self.assertEqual(T.app_labels('de', '- **Stop**: nothing comes in until you press **Start**.'), {'Stop': 'Stoppen'})
 
     def test_a_missing_article_is_translated_with_the_english_front_matter_and_a_stamp(self):
-        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'missing')
-        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer(), history=self.history), 0)
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), 'missing')
+        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer()), 0)
         text = (self.help / 'nl' / 'projects.md').read_text(encoding='utf-8')
         self.assertTrue(text.startswith('---\ntitle: Projecten\narea: graph\nsummary: Wat er speelt.\ncode: graph.py\norder: 4\n'
                                         f'translated: {T.stamp(self.help / "projects.md")}\n---\nJe Machine'), text)
         self.assertIn('`assistant projects`', text, 'code is put back as it was')
-        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'current')
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), 'current')
         # the English changes: out of date until translated again
         (self.help / 'projects.md').write_text(ARTICLE.replace('names projects', 'names your projects'), encoding='utf-8')
-        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'stale')
-        self.assertEqual(T.run_help(['nl'], check=True, folder=self.help, ask=no_model, history=self.history), 1)
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), 'stale')
+        self.assertEqual(T.run_help(['nl'], check=True, folder=self.help, ask=no_model), 1)
 
     def test_an_empty_front_matter_value_is_written_without_a_trailing_space(self):
         # "covers: " broke the site's whitespace check, which copies these files byte for byte
         (self.help / 'projects.md').write_text(ARTICLE.replace('code: graph.py', 'covers:\ncode: graph.py'), encoding='utf-8')
-        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer(), history=self.history), 0)
+        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer()), 0)
         text = (self.help / 'nl' / 'projects.md').read_text(encoding='utf-8')
         self.assertIn('\ncovers:\ncode: graph.py\n', text)
         self.assertEqual([line for line in text.split('\n---\n')[0].split('\n') if line != line.rstrip()], [])
 
     def test_an_answer_that_loses_structure_is_left_out(self):
         broken = 'Je Machine.\n\n## Een project\n\n- Een regel.'
-        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer(broken), history=self.history), 1)
+        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer(broken)), 1)
         self.assertFalse((self.help / 'nl' / 'projects.md').exists())
 
     def test_an_em_dash_is_asked_again_with_where_it_is(self):
@@ -227,32 +244,72 @@ class Help(unittest.TestCase):
             src = json.loads(payload[payload.index('\n{'):])
             body = src['body'].replace('Your Machine names', 'Je Machine — benoemt' if len(payloads) == 1 else 'Je Machine benoemt')
             return {'title': 'Projecten', 'summary': 'Wat er speelt.', 'body': body}
-        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=ask, history=self.history), 0)
+        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=ask), 0)
         self.assertEqual(len(payloads), 2)
         self.assertIn('"Je Machine — benoemt projects.', payloads[1])
         self.assertIn('a colon, a comma or two sentences', payloads[1])
         self.assertNotIn('—', (self.help / 'nl' / 'projects.md').read_text(encoding='utf-8'))
 
-    def test_a_translation_from_before_stamps_counts_by_history(self):
+    def test_a_translation_without_a_stamp_is_out_of_date(self):
+        # A run once stamped these current when git showed the translation changed after its English; an edit to the
+        # translation alone (a label renamed in every language) made one that never followed the English look newer.
         old = ARTICLE.replace('title: Projects', 'title: Projecten')
         (self.help / 'nl' / 'projects.md').write_text(old, encoding='utf-8')
-        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'unstamped', 'no history: same headings')
-        later = mock.Mock(changed_after=lambda en, tr: True)
-        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, later), 'stale')
-        # a run stamps it without asking the model
-        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=no_model, history=self.history), 0)
-        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'current')
-        self.assertIn('title: Projecten', (self.help / 'nl' / 'projects.md').read_text(encoding='utf-8'))
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), 'stale')
+        self.assertEqual(T.run_help(['nl'], check=True, folder=self.help, ask=no_model), 1)
+        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer()), 0)
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), 'current')
+
+    def test_a_body_listed_as_stale_is_out_of_date_until_it_changes(self):
+        T.run_help(['nl'], folder=self.help, ask=self.answer())
+        local = self.help / 'nl' / 'projects.md'
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), 'current')
+        T.STALE_BODIES.write_text(json.dumps({'nl/projects.md': T.body_hash(T.front(local.read_text(encoding='utf-8'))[1])}))
+        T.stale_bodies.cache_clear()
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), 'stale', 'its stamp is current, its body is not')
+        # translated again (or fixed by hand), the body is another one: current
+        def again(lang, instruction, payload, cache_key):
+            return {**self.answer()(lang, instruction, payload, cache_key), 'title': 'Projecten opnieuw'}
+        T.run_help(['nl'], folder=self.help, ask=lambda *a: {**again(*a), 'body': again(*a)['body'].replace('Je', 'Jouw')})
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), 'current')
+
+    def test_labels_and_link_texts_are_put_right_in_the_answer(self):
+        # the model wrote its own word for a label and for a linked article's title: fixed without asking again
+        (self.help / 'graph.md').write_text('---\ntitle: Graph\narea: graph\nsummary: People.\n---\nPeople.\n', encoding='utf-8')
+        (self.help / 'nl' / 'graph.md').write_text('---\ntitle: Grafiek\narea: graph\nsummary: Mensen.\ntranslated: '
+                                                    + T.stamp(self.help / 'graph.md') + '\n---\nMensen.\n', encoding='utf-8')
+        calls = []
+
+        def ask(lang, instruction, payload, cache_key):
+            calls.append(payload)
+            src = json.loads(payload[payload.index('\n{'):])
+            body = src['body'].replace('Your', 'Je').replace('**Settings**', '**Opties**').replace('[Graph]', '[Netwerk]')
+            return {'title': 'Projecten', 'summary': 'Wat er speelt.', 'body': body}
+        with mock.patch.object(T, 'load', lambda lang: {'Settings': 'Instellingen'}):
+            self.assertEqual(T.run_help(['nl'], folder=self.help, ask=ask), 0)
+        text = (self.help / 'nl' / 'projects.md').read_text(encoding='utf-8')
+        self.assertIn('**Instellingen**', text)
+        self.assertIn('[Grafiek](graph.md)', text)
+        self.assertEqual(len(calls), 1, 'no second ask')
+
+    def test_fixes_leave_other_bold_and_link_text_alone(self):
+        en = 'Open **Settings**, then **Save**. See [the graph page](graph.md).'
+        tr = 'Open **Opties** en daarna **Bewaar**. Zie [de grafiekpagina](graph.md).'
+        self.assertEqual(T.fix_labels(en, tr, {'Settings': 'Instellingen'}),
+                         'Open **Instellingen** en daarna **Bewaar**. Zie [de grafiekpagina](graph.md).')
+        self.assertEqual(T.fix_links(en, tr, {'graph': ('Graph', 'Grafiek')}), tr, 'the link text is not the title')
+        self.assertEqual(T.fix_labels(en, 'Open **Opties**.', {'Settings': 'Instellingen'}), 'Open **Opties**.',
+                         'another number of bold parts: not guessed')
 
     def test_a_translation_out_of_step_with_the_english_is_out_of_date_whatever_its_stamp(self):
         # a list item short of the English: stamped or not, the next run translates it again
         short = ARTICLE.replace('title: Projects', 'title: Projecten').replace('\n- ', '\n', 1)
         self.assertNotEqual(T.blocks(T.front(short)[1]), T.blocks(T.front(ARTICLE)[1]))
         (self.help / 'nl' / 'projects.md').write_text(short, encoding='utf-8')
-        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'stale')
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), 'stale')
         stamped = short.replace('\n---\n', f'\ntranslated: {T.stamp(self.help / "projects.md")}\n---\n', 1)
         (self.help / 'nl' / 'projects.md').write_text(stamped, encoding='utf-8')
-        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'stale')
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), 'stale')
         self.assertEqual(T.problems(['nl'], self.help)[-1], 'nl: docs/help/projects.md out of date with its English')
 
     def test_a_translation_with_other_links_or_code_is_out_of_date_whatever_its_stamp(self):
@@ -266,8 +323,8 @@ class Help(unittest.TestCase):
                                   ('an extra code span', extra_code, 'stale'), ('an extra code block', extra_block, 'stale')):
             with self.subTest(name):
                 (self.help / 'nl' / 'projects.md').write_text(text.replace('\n---\n', stamp, 1), encoding='utf-8')
-                self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), state)
-                self.assertEqual(T.run_help(['nl'], check=True, folder=self.help, ask=no_model, history=self.history),
+                self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help), state)
+                self.assertEqual(T.run_help(['nl'], check=True, folder=self.help, ask=no_model),
                                  int(state == 'stale'))
         both = dropped_link.replace('Open **Settings**', 'Open **Settings** (`assistant settings`)')
         problems = T.article_problems(T.front(ARTICLE)[1], T.front(both)[1])
@@ -275,7 +332,7 @@ class Help(unittest.TestCase):
 
     def test_an_article_english_no_longer_has_goes(self):
         (self.help / 'nl' / 'gone.md').write_text(ARTICLE, encoding='utf-8')
-        T.run_help(['nl'], folder=self.help, ask=self.answer(), history=self.history)
+        T.run_help(['nl'], folder=self.help, ask=self.answer())
         self.assertFalse((self.help / 'nl' / 'gone.md').exists())
 
     def test_the_help_check_accepts_the_stamp(self):
@@ -283,7 +340,7 @@ class Help(unittest.TestCase):
         spec = importlib.util.spec_from_file_location('help_check', ROOT / 'scripts' / 'help_check.py')
         help_check = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(help_check)
-        T.run_help(['nl'], folder=self.help, ask=self.answer(), history=self.history)
+        T.run_help(['nl'], folder=self.help, ask=self.answer())
         found = {'projects': help_check.front(ARTICLE), 'graph': ({}, '')}
         self.assertEqual([p for p in help_check.check_translations(found, self.help) if p.startswith('docs/help/nl/')], [])
 
