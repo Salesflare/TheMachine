@@ -185,6 +185,12 @@ class Help(unittest.TestCase):
             return {'title': 'Projecten', 'summary': 'Wat er speelt.', 'body': body if body is not None else src['body'].replace('Your', 'Je')}
         return ask
 
+    def test_a_label_with_two_meanings_in_the_catalog_is_not_forced(self):
+        # "Start" is a time field's label, "Start (a button)" the button: the bare key must not name the button
+        cat = {'Start': 'Beginn', 'Start (a button)': 'Starten', 'Stop': 'Stoppen'}
+        with mock.patch.object(T, 'load', lambda lang: cat):
+            self.assertEqual(T.app_labels('de', '- **Stop**: nothing comes in until you press **Start**.'), {'Stop': 'Stoppen'})
+
     def test_a_missing_article_is_translated_with_the_english_front_matter_and_a_stamp(self):
         self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'missing')
         self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer(), history=self.history), 0)

@@ -29,7 +29,7 @@ Los mosaicos cuentan las cuentas que pudo abrir y los correos y reuniones que im
 
 Si Salesflare no ha habilitado el acceso a la actividad mediante claves de API para tu equipo, la tarjeta te lo indicará: no se importarán correos ni reuniones hasta que el equipo de soporte de Salesflare lo habilite. Lo comprobará cada 10 minutos durante el primer día y después aproximadamente cada hora. Cuando funcione, continuará por su cuenta.
 
-- **Detener**: no se importarán datos nuevos hasta que pulses **Inicio**. Continuará desde donde se quedó.
+- **Detener**: no se importarán datos nuevos hasta que pulses **Empezar**. Continuará desde donde se quedó.
 - **Reiniciar sincronización**: empieza de nuevo y vuelve a leer la última semana. No se pierde nada de lo que ya importó.
 - **Claves de API**: abre la página de claves de API de Salesflare para crear una nueva.
 
