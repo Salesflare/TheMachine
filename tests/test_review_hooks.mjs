@@ -148,7 +148,7 @@ console.log('Review hooks: private scope, host-bound run, retry hint, redacted e
 
 const prepCtx={...ctx,sessionKey:'agent:main:assistant-review-preparation-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'};
 const previousCount=calls.length;const prep=await hooks.before_prompt_build({},prepCtx);
-assert.ok(prep.prependSystemContext.startsWith('## About the owner (USER.md)'));assert.ok(prep.prependSystemContext.includes('## Preparation rules')&&prep.prependSystemContext.includes('then tap Continue'));assert.ok(!prep.prependSystemContext.includes('analysis_page'));
+assert.ok(prep.prependSystemContext.includes('\n\n## About the owner (USER.md)'));assert.ok(prep.prependSystemContext.includes('## Preparation rules')&&prep.prependSystemContext.includes('then tap Continue'));assert.ok(!prep.prependSystemContext.includes('analysis_page'));
 // The rules go in the system prompt, never the turn's message: a message is saved into the session, so every later turn
 // (Do it after a prepare-ahead, a to-do chat) added one more copy. The same rules on each turn, so the cached prefix holds.
 assert.equal(prep.prependContext,undefined);
@@ -174,7 +174,8 @@ assert.equal(calls.length,previousCount);  // a preparation is not a review
  // Without the workspace files, OpenClaw tells a run on a new install to read BOOTSTRAP.md first; a sandbox review did.
  const {NOT_FIRST_CHAT}=await import('../openclaw-plugin/review-recovery.ts');
  assert.ok(reviewContext.includes(NOT_FIRST_CHAT));assert.ok(profileTurn.prependContext.startsWith(NOT_FIRST_CHAT));
- assert.ok(!prep.prependSystemContext.includes('BOOTSTRAP.md'));  // a preparation gets the workspace files as before
+ // A preparation and its to-do chat have no workspace files either (preparation-run.mjs): USER.md comes with its rules.
+ assert.ok(prep.prependSystemContext.startsWith(NOT_FIRST_CHAT+'\n\n## About the owner (USER.md)'));
  const skillsTurn=await hooks.before_prompt_build({},embedded(skillsCtx));
  assert.ok(skillsTurn.toolsAllow.includes('browser'));assert.ok(!skillsTurn.toolsAllow.includes('exec'));assert.ok(skillsTurn.prependContext.startsWith(NOT_FIRST_CHAT));
  const routineTurn=await hooks.before_prompt_build({},embedded({...ctx,sessionKey:'agent:main:assistant-review-routine-'+'e'.repeat(32),runId:'routine-run'}));

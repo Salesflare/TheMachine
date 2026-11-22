@@ -23,6 +23,8 @@ The quickest way to teach it: edit a draft before sending. It learns from what y
 
 It learns only from what you wrote yourself. A draft sent as is never counts as your writing.
 
+Used OpenClaw before? Drafts read its `USER.md`, not `AGENTS.md` or `SOUL.md`. Keep rules on how drafts come out in `USER.md`, or say them with **Ask for changes**.
+
 ### It keeps learning
 
 About twice a day, when there's enough new, it looks at drafts you changed, to-dos you dismissed or snoozed, and corrections in a to-do's chat. Then it makes a few small updates to how you write, your rules and facts. These checks wait when your plan's limits run low.

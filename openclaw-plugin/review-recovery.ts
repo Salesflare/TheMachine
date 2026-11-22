@@ -291,13 +291,14 @@ export const embeddedRuntime = (ctx: any) => Array.isArray(ctx?.activeProjectKey
 // The tools a read-only Machine run's turn sees on the embedded runtime: the ones before_tool_call lets it call, plus the
 // tool search runners (Code Mode's exec and wait stay by themselves while the catalog has an allowed tool). The rest,
 // skills_read, write tools and other plugins' tools included, leave the turn's tool list and its prompt, so the model
-// stops trying them (they were refused and each refusal cost a step). None for a preparation: it keeps every tool.
+// stops trying them (they were refused and each refusal cost a step). None for a preparation: it keeps the smaller prompt
+// every Machine run has (preparation-run.mjs), but every tool and skill, since Do it changes things.
 export function turnTools(sessionKey: string): string[] | undefined {
   const tools = reviewSession(sessionKey) ? reviewTools() : profileSession(sessionKey) ? REVIEW_TOOLS
     : skillsSession(sessionKey) ? SKILLS_TOOLS : routineSession(sessionKey) ? [...reviewTools(), ...ROUTINE_READ_TOOLS] : undefined;
   return tools && [...new Set([...tools, ...TOOL_SEARCH_TOOLS])];
 }
-// A read-only run gets none of the workspace's own files (preparation-run.mjs), and on a new install OpenClaw then tells it
+// A Machine run gets none of the workspace's own files (preparation-run.mjs), and on a new install OpenClaw then tells it
 // to read BOOTSTRAP.md (the owner's first-chat setup) before anything else: a sandbox review did, every time, and carried
 // the file on each later step. That setup is for the owner's own chat.
 export const NOT_FIRST_CHAT = 'This is a background run, not the owner\'s first chat: leave BOOTSTRAP.md (the first-chat setup) alone and do not read it.';
@@ -419,8 +420,9 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
       if (ctx.runId) sessionRuns.set(ctx.sessionKey,ctx.runId);
       // In the system prompt, like a review's: it is there once on every turn of the session. In the turn's message it
       // was saved into the session each turn, so a Do it after a prepare-ahead, or a to-do chat after it, carried two,
-      // three or more copies (about 18,000 tokens each) on every step until compaction.
-      const context = ((await ownerContext()) + (await preparationRules())).trim();
+      // three or more copies (about 18,000 tokens each) on every step until compaction. It has none of the workspace's
+      // own files (preparation-run.mjs), so USER.md, where the owner's rules on how drafts come out live, comes from here.
+      const context = (NOT_FIRST_CHAT + (await ownerContext()) + (await preparationRules())).trim();
       return context ? {prependSystemContext: context} : undefined;
     }
     // These get none of the workspace's files (preparation-run.mjs), so USER.md comes from here, as it did for a profile
