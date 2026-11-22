@@ -16,7 +16,7 @@ Open **Instellingen** via het tandwiel bovenaan. De tabbladen:
 - **Meldingen**: welke meldingen je waar ontvangt, en je werkuren. Zie [Meldingen](notifications.md) en [Werkuren](work-hours.md).
 - **Schrijven**: handtekeningen en je schrijfstijl. Zie [Schrijven](writing.md).
 - **Skills**: handleidingen die je Machine volgt. Zie [Skills](skills.md).
-- **Apps**: eerst de apps van The Machine voor je telefoon en computer, daarna Claude, ChatGPT en andere AI's die je hebt gekoppeld, en wat elke app mag doen. Zie [De mobiele app](mobile-app.md) en [Andere AI's koppelen](ai-connections.md).
+- **Apps**: eerst de apps van The Machine voor je telefoon en computer, daarna Claude, ChatGPT en andere AI's die je hebt gekoppeld, en wat elke app mag doen. Zie [De mobiele app](mobile-app.md) en [Andere AI’s koppelen](ai-connections.md).
 - **Model**: de AI die je berichten leest en concepten schrijft, en de beperkingen ervan. Zie [Model](model.md). Ook **Codex en Claude Code**: zie [Overdragen aan Claude Code of Codex](hand-to-agent.md). En hieronder **Zoeken op betekenis**.
 
 Een tabblad zonder inhoud is verborgen.

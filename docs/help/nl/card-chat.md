@@ -1,61 +1,63 @@
 ---
-title: Chat over een to-do
+title: Chat bij een to-do
 area: cards
-summary: Stel vragen over een to-do of wijzig het concept in een chat die bij die to-do hoort.
+summary: Stel vragen over een to-do of pas het concept aan in een chat die bij die to-do hoort.
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
-translated: 340b9cfc0e3a424d
+translated: 64a15c6ce46c6679
 ---
 ## Openen
 
-Tik op je telefoon op de titel van de to-do. Druk op een computer op **Bekijk in chat ›** of op de chatlink van de to-do. Als je op een computer op de titel klikt, wijzig je de naam van de to-do.
+Tik op je telefoon op de titel van de to-do. Druk op een computer op **Bekijk in chat ›** of op de chatlink van de to-do. Als je op een computer op de titel klikt, krijgt de to-do een andere naam.
 
 ## E-mails in de chat
 
-Elke e-mail toont alleen wat er nieuw in staat. Eerdere berichten die erin worden geciteerd, zijn ingeklapt onder **Eerdere berichten**. Met **Lees de thread** open je de volledige e-mails.
+Elke e-mail toont alleen wat er nieuw in is. Eerdere berichten waarnaar de e-mail verwijst, staan ingeklapt onder **Eerdere berichten**. Met **Lees de thread** open je de volledige e-mails.
 
-## Wat er is gedaan
+## Wat hij heeft gedaan
 
-Elke uitvoering verschijnt als één subtiele regel, zoals "12 dingen nagekeken". Open de regel om elk soort stap één keer te zien, met het aantal keer dat die is uitgevoerd: "Browser gebruikt op example.com · 7". De regel vermeldt de website, nooit het adres, een opdracht of een bestand.
+Terwijl The Machine aan je bericht werkt, zie je de laatste stap boven de typstipjes, bijvoorbeeld ‘De e-mail lezen’. Net als bij de to-do zie je dit terwijl hij zich voorbereidt. Als hij de browser gebruikt, zie je ook een kleine afbeelding van de pagina.
 
-Als de uitvoering is gestopt om je iets te vragen, verschijnt de vraag ook als een subtiele regel, zoals "Gevraagd: vandaag of maandag versturen?". Je bericht eronder bevat alleen je antwoord.
+Elke afgeronde uitvoering verschijnt als één subtiele regel, bijvoorbeeld ‘12 dingen gecontroleerd’. Open die regel om elke soort stap één keer te zien, met het aantal keer dat die is uitgevoerd: ‘Browser gebruikt op example.com · 7’. Hij noemt de site, nooit het adres, een opdracht of een bestand.
+
+Als hij is gestopt om je iets te vragen, verschijnt de vraag ook als een subtiele regel, bijvoorbeeld ‘Gevraagd: Vandaag versturen of maandag?’. Je bericht eronder bevat alleen je antwoord.
 
 ## Wat je kunt vragen
 
-Voordat je iets schrijft, kan de chat maximaal drie suggesties tonen op basis van deze to-do, zoals "Stel dinsdag om 10:00 voor". Tik op een suggestie om die in het berichtveld te zetten. Je kunt die daarna versturen of aanpassen. Als er geen passende suggesties zijn, worden er geen getoond.
+Voordat je iets schrijft, kan de chat maximaal drie suggesties tonen op basis van deze to-do, zoals ‘Stel dinsdag 10:00 voor’. Als je erop tikt, komt de suggestie in het berichtveld te staan. Je kunt die versturen of aanpassen. Als er niets specifieks past, verschijnen er geen suggesties.
 
-- Over de thread, de mensen of de achtergrond: "Wat vroegen ze de vorige keer?"
-- Om het concept aan te passen: "Maak het korter" of "Vermeld de nieuwe datum".
+- Over de thread, de mensen of de achtergrond: ‘Wat vroegen ze de vorige keer?’
+- Om het concept aan te passen: ‘Maak het korter’ of ‘Noem de nieuwe datum’.
 
-Een vraag wordt beantwoord zonder het concept aan te passen. Je verstuurt het concept via de knoppen van de to-do. De chat verstuurt nooit een concept in hetzelfde antwoord waarin hij het schrijft. Een wijziging die je vraagt en die niemand anders bereikt, zoals een document opruimen, wordt meteen uitgevoerd, zonder extra bevestiging. Voor alles wat je niet hebt gevraagd, wordt eerst op je akkoord gewacht. Een to-do met meer dan één stap blijft open totdat elke stap is afgerond.
+Een vraag wordt beantwoord zonder het concept aan te passen. Je verstuurt het concept via de knoppen van de to-do. De chat verstuurt nooit een concept in hetzelfde antwoord waarin hij het heeft geschreven. Een wijziging die je vraagt en die niemand anders bereikt, zoals een opschoning in een document, gebeurt meteen, zonder extra bevestiging. Voor alles wat verder gaat dan wat je hebt gevraagd, wacht hij op je akkoord. Een to-do met meerdere stappen blijft open totdat elke stap is afgerond.
 
-Op een computer verstuur je een bericht met Enter of Ctrl+Enter (Cmd+Enter op een Mac). Met Shift+Enter begin je een nieuwe regel. Gebruik op je telefoon de verzendknop.
+Op een computer verstuur je het bericht met Enter of Ctrl+Enter (Cmd+Enter op een Mac). Met Shift+Enter begin je een nieuwe regel. Gebruik op een telefoon de verstuurknop.
 
 ## Als er iets niet klopt
 
-Zeg dat in de chat, bijvoorbeeld: "Die persoon is niet de CEO" of "Die persoon werkt niet meer bij het bedrijf". The Machine corrigeert de informatie bij de bron: een rol, bedrijf, titel, projectfase, het project van de to-do of een regel die hij heeft geleerd. In de chat zie je wat er is gewijzigd, bijvoorbeeld: "Gecorrigeerd: Sam is Head of Sales, op basis van de e-mailhandtekening", met **Ongedaan maken**. Met Ongedaan maken wordt de oude waarde teruggezet, tenzij die intussen is gewijzigd.
+Zeg het in de chat, bijvoorbeeld ‘Ze zijn niet de CEO’ of ‘Ze werken niet meer bij het bedrijf’. The Machine corrigeert het bij de bron: een rol, een bedrijf, een titel, de fase van een project, het project van de to-do of een regel die hij heeft geleerd. In de chat zie je wat er is gewijzigd, bijvoorbeeld ‘Gecorrigeerd: Sams rol is Head of Sales, volgens de e-mailhandtekening’, met **Ongedaan maken**. Met Ongedaan maken wordt de oude waarde teruggezet, tenzij die ondertussen is gewijzigd.
 
-Andere concepten die op de onjuiste waarde zijn gebaseerd, worden één voor één opnieuw opgesteld. In de chat daarvan staat **Concept wordt opnieuw gemaakt na een correctie**. Concepten die je hebt bewerkt of goedgekeurd, en concepten die worden verstuurd, blijven ongewijzigd. In het antwoord staat hoeveel concepten er van elk soort zijn.
+Andere concepten die zijn gebaseerd op de onjuiste waarde, worden één voor één opnieuw opgesteld. In de chat staat **Concept opnieuw maken na een correctie**. Concepten die je hebt bewerkt of goedgekeurd, en concepten die worden verstuurd, blijven zoals ze zijn. In het antwoord staat hoeveel concepten er van elk soort zijn.
 
-Op een GBrain-pagina wordt alleen de eigen sectie van The Machine aangepast. Wat je daar hebt geschreven, blijft staan. Als niet duidelijk is waar iets vandaan komt, gebruikt The Machine je opmerking om ervan te leren.
+Op een GBrain-pagina wordt alleen de eigen sectie van The Machine gewijzigd. Wat je daar hebt geschreven, blijft staan. Als hij niet kan achterhalen waar iets vandaan komt, leert hij in plaats daarvan van je opmerking.
 
 ## Model en denkwerk
 
-Onder het berichtveld zie je welk model en welk niveau van denkwerk de chat gebruikt, bijvoorbeeld "GPT-6.2 Sol" en "Weinig denkwerk". Tik op een van beide om alleen voor deze chat iets anders te kiezen. Nieuwe chats gebruiken wat je hebt ingesteld bij **Instellingen**, **Model** (zie [Model](model.md)).
+Onder het berichtveld toont de chat het model en het denkwerkniveau, bijvoorbeeld ‘GPT-6.2 Sol’ en ‘Weinig denkwerk’. Tik op een van beide om voor alleen deze chat iets anders te kiezen. Nieuwe chats gebruiken wat je hebt ingesteld in **Instellingen**, **Model** (zie [Model](model.md)).
 
-Met **Snel** onderaan het modelmenu reageren chats over to-do's sneller, tegen ongeveer twee keer de kosten (of twee keer zoveel van je abonnement). Dit geldt voor de berichten die je verstuurt en voor **Doe het**, in al je chats over to-do's. Achtergrondwerk valt er niet onder. Deze optie staat standaard uit en is grijs weergegeven voor modellen die deze optie niet ondersteunen.
+Met **Snel**, onderaan het modelmenu, reageren chats voor to-do's sneller. Dat kost ongeveer twee keer zoveel (of twee keer zoveel van je abonnement). Het geldt voor de berichten die je verstuurt en voor Doe het, in al je chats voor to-do's, maar nooit voor werk op de achtergrond. De functie staat standaard uit en is grijs als het model deze niet ondersteunt.
 
 ## Een antwoord stoppen
 
-Terwijl een antwoord wordt geschreven, verandert de verzendknop in **Stoppen**. Hiermee stop je het antwoord meteen en bewaar je wat er al is geschreven, met de status **Gestopt**. Schrijf een nieuw bericht om verder te gaan of tik op **Opnieuw proberen**.
+Terwijl een antwoord wordt geschreven, verandert de verstuurknop in **Stoppen**. Stoppen beëindigt het antwoord meteen en bewaart wat hij tot dan toe heeft geschreven, met de status **Gestopt**. Schrijf een nieuw bericht om verder te gaan, of tik op **Opnieuw proberen**.
 
 ## Bestanden toevoegen
 
-Tik op de paperclip, plak een screenshot of sleep bestanden naar de chat. Elk bestand verschijnt boven het berichtveld. Tik op × om het weer te verwijderen. Een bericht mag alleen uit bestanden bestaan.
+Tik op de paperclip, plak een screenshot of sleep bestanden naar de chat. Elk bestand verschijnt boven het berichtveld. Met × verwijder je het weer. Een bericht mag alleen uit bestanden bestaan.
 
 - Afbeeldingen (PNG, JPEG, GIF, WebP) van maximaal 5 MB worden als afbeeldingen naar het model gestuurd.
-- Pdf's, tekstbestanden, spreadsheets (CSV) en Office-bestanden van maximaal 10 MB: The Machine leest ze en kan ze aan een concept toevoegen.
+- PDF's, tekstbestanden, spreadsheets (CSV) en Office-bestanden van maximaal 10 MB: The Machine leest ze en kan ze aan een concept toevoegen.
 - Maximaal 5 bestanden per bericht.
 
-Bestanden blijven op je Machine en worden net als je berichten versleuteld. Bestanden die je toevoegt maar nooit verstuurt, worden na een dag verwijderd. Je kunt ook bestanden toevoegen aan een nieuwe to-do via **Nieuwe to-do** (zie [Zelf een to-do maken](cards.md#make-one-yourself)).
+Bestanden blijven op je Machine staan en zijn versleuteld, net als je berichten. Bestanden die je toevoegt maar nooit verstuurt, worden na een dag verwijderd. Je kunt ook bestanden toevoegen aan een nieuwe to-do, via **Nieuwe to-do** (zie [Zelf een to-do maken](cards.md#make-one-yourself)).
