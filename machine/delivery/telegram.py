@@ -46,7 +46,7 @@ def telegram(config, row, action, message_id=None):
         signin=not ready and (row.get('preparation_browser') or {}).get('signin_url')
         lead=row.get('_lead','Ready') if ready else 'Needs you to sign in' if signin else 'Needs your help' if ask_blocked(row) or (row.get('preparation_browser') and not row.get('preparation_error')) else 'Stuck'
         message=i18n.t(lead+': {}', '**'+title+'**') if lead else '**'+title+'**'
-        message+='\n\n['+(i18n.t('View result') if ready else i18n.t('View task'))+']('+notify.todo_link(root,row['id'])+')'  # the to-do in the list, not its chat
+        message+='\n\n['+(i18n.t('View result') if ready and not row.get('needs_owner') else i18n.t('View task'))+']('+notify.todo_link(root,row['id'])+')'  # the to-do in the list, not its chat
         # A sign-in blocker opens the dashboard's sign-in for this task; once in, the task carries on by itself.
         # Its quick buttons, as the phone's (push.QUICK): the first opens (the draft, the sign-in), the second is a
         # Snooze (2 hours) or Mark done the plugin takes from this message too (openclaw-plugin/index.ts, notice taps).

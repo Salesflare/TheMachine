@@ -10,7 +10,7 @@ import clear_pace
 import i18n
 import locale_prefs
 from machine.app.recap import recap_escape, recap_meetings
-from machine.cards import looks_done, NOT_FOR_OWNER_SQL, waits_on_others
+from machine.cards import looks_done, needs_owner, NOT_FOR_OWNER_SQL, waits_on_others
 from machine.config import LOG
 from machine.delivery.push import (app_wake, cloud_target, mail_ready, phone_app, push_reach, push_send, quick_web,
                                    reply_waits, waiting_count)
@@ -185,13 +185,16 @@ class NotificationsApp:
             # what an earlier part already listed (notify.compose), so a pile still gets one
             later = still_needed.folded(db, utc(current), local_tz())  # a Still needed? left unanswered waits in Later
             top = notify.open_order([dict(r) for r in db.execute(
-                f"SELECT id,title,status,due,due_at,created_at,event_ids,next_action,outcome,origin FROM suggestions WHERE status IN {todo_states.sql(todo_states.WAITING_ON_OWNER)} AND NOT " + NOT_FOR_OWNER_SQL + " "
+                f"SELECT id,title,status,due,due_at,created_at,event_ids,next_action,outcome,origin,body,handled_hint FROM suggestions WHERE status IN {todo_states.sql(todo_states.WAITING_ON_OWNER)} AND NOT " + NOT_FOR_OWNER_SQL + " "
                 "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)
-            ready = [r for r in top if r['status'] == 'prepared']
+            stuck = {r[0] for r in db.execute("SELECT suggestion_id FROM preparations WHERE status='blocked'")}
+            # Ready for their OK: prepared with something to approve. One whose run ended with nothing ready, only a need
+            # of the owner's (needs_owner), isn't: it waits on them like a question
+            needing = {r['id'] for r in top if r['status'] == 'prepared' and r['id'] not in stuck and needs_owner(r, db)}
+            ready = [r for r in top if r['status'] == 'prepared' and r['id'] not in needing]
             # The ones that wait on the owner's answer (a run that stopped to ask, a result that asks): in the count, not
             # in the time to clear, as in the dashboard's header (crKind)
-            stuck = {r[0] for r in db.execute("SELECT suggestion_id FROM preparations WHERE status='blocked'")}
-            asking = [r['id'] for r in top if r['id'] in stuck or notify.asks(r.get('outcome'))]
+            asking = [r['id'] for r in top if r['id'] in stuck or r['id'] in needing or notify.asks(r.get('outcome'))]
             total = waiting_count(db)
             per = clear_pace.seconds(db, current)  # the owner's pace: "12 more can wait, about 5 min to clear."
             show = security_levels.notify_text(db, False)

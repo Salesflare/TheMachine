@@ -13,7 +13,7 @@ Your Machine reads everything new and makes a to-do only when something needs yo
 The **To-dos** page groups them:
 
 - **Just done**: at the top, a last step you confirmed, like a form or an issue, went through while you were away. It stays until you tap **Got it**, for a day at most, and your phone hears of it too.
-- **For you**: everything waiting on you, most urgent first. Each says **Prepared** (the work is done, and **Do it** or **Send** carries it out), **Needs you** (it needs your decision or an answer first), **Preparing…** (your Machine is working on it) or **To read** (a digest or brief, nothing to decide).
+- **For you**: everything waiting on you, most urgent first. Each says **Prepared** (a draft or result is ready, and **Do it** or **Send** carries it out), **Needs you** (it needs your decision or an answer first; when the work stopped on something only you have, like a fact, a sign-in or a choice, a line under the title says what), **Preparing…** (your Machine is working on it) or **To read** (a digest or brief, nothing to decide).
 - **Older**: folded, to-dos with nothing new on them for a week (below).
 - **Waiting on others**: folded, to-dos where the next step is someone else's (below).
 - **Coming back later**: snoozed to-dos, and ones with no answer to **Still needed?** (below).

@@ -3,6 +3,7 @@ state (todo_state, looks_done) and the snooze, hand-off and title helpers. Moved
 import datetime as dt
 import json
 import re
+import sqlite3
 
 import i18n
 import locale_prefs
@@ -572,6 +573,42 @@ def ask_question(row, actions):
         return ''
 
 
+RESULT_FILE = re.compile(r'memory/assistant/[^\s<>"\)]+')  # a file the run made, linked in its result (Store.suggestion_result)
+
+
+def needs_owner(row, db=None):
+    """What a prepared to-do needs from the owner when its run ended with nothing ready to approve, or ''. Prepared is
+    only for a ready draft, step, file or skill. A run that saved outcome needs_you with none of those (a fact only the
+    owner has, a sign-in, a choice), or with only links beside its question to them, isn't: it reads Needs you, with its
+    needs as the reason, everywhere the to-do's state shows (card, list, notifications, digests, chat). Taken from the
+    run's own outcome, never from words. db: look up the file and skill a light row doesn't carry (a digest's)."""
+    if row.get('status') != 'prepared' or row.get('handled_hint') or row.get('preparation_status') == 'blocked':
+        return ''
+    try:
+        outcome = row.get('outcome') or {}
+        outcome = json.loads(outcome) if isinstance(outcome, str) else outcome
+        needs = str(outcome.get('needs') or '').strip()
+        steps = row['next_actions'] if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
+    except (ValueError, TypeError, AttributeError, KeyError):
+        return ''
+    if outcome.get('state') != 'needs_you' or not needs or any(a.get('kind') != 'open' or not needs.endswith('?') for a in steps):
+        return ''
+    files = row['result_files'] if 'result_files' in row else RESULT_FILE.search(str(row.get('body') or ''))
+    skill = row.get('proposed_skill') if 'proposed_skill' in row or db is None else proposed_skill(db, row.get('id'))
+    return '' if files or skill else needs
+
+
+def proposed_skill(db, task):
+    """Whether this to-do's run proposed a skill (skills.for_task: one still to decide, or decided): a result to approve."""
+    for query in ("SELECT 1 FROM skills WHERE task=? AND status='proposed' AND origin='proposed'", 'SELECT 1 FROM skill_task_decided WHERE task=?'):
+        try:
+            if db.execute(query, (task,)).fetchone():
+                return True
+        except sqlite3.OperationalError:  # before that table or column: nothing was proposed from a to-do yet
+            pass
+    return False
+
+
 def handoff_redirect(row):
     """A new handoff draft to someone other than who has the card now (the owner asked to hand it on)."""
     acts = row.get('next_actions')
@@ -731,9 +768,10 @@ def waits_on_others(row):
     return row['status'] == 'prepared' and not row.get('handled_hint') and outcome_state(row) == 'waiting'
 
 
-def todo_state(row):
+def todo_state(row, db=None):
     """An open to-do's state in plain words (talk_live.STATES, or LOOKS_DONE), as the dashboard's lists place it: looksDone,
-    waitsOnOthers and placeOf in dashboard.html. A closed one is 'done' or 'dismissed' (Done / dismissed)."""
+    waitsOnOthers and placeOf in dashboard.html. A closed one is 'done' or 'dismissed' (Done / dismissed). A prepared one
+    with nothing ready, only a need of the owner's (needs_owner), is 'needs you'."""
     if row['status'] in todo_states.CLOSED:
         return 'done' if row['status'] == 'completed' else 'dismissed'
     if looks_done(row):
@@ -742,7 +780,7 @@ def todo_state(row):
         return 'snoozed'
     if waits_on_others(row):
         return 'waiting on others'
-    if row['status'] == 'pending' or row.get('preparation_status') == 'blocked':
+    if row['status'] == 'pending' or row.get('preparation_status') == 'blocked' or needs_owner(row, db):
         return 'needs you'
     return 'prepared' if row['status'] == 'prepared' else 'preparing'
 

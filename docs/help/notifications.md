@@ -68,7 +68,7 @@ Tapping a notification, or Open in an email or on Telegram, shows the to-do in y
 
 It comes on work days at your **Morning digest** time, unless there's nothing to say. When that's earlier than **Snoozes land at**, it waits until 5 minutes after, so the to-dos coming back that morning are in it. **Preview** shows it without sending it. By default it's a push and an email, short enough to read at a glance:
 
-- a greeting with what matters today, like "Morning Sam, 2 replies are ready to send" or, for one to-do, "Morning Sam, ready for your OK: Send the order form";
+- a greeting with what matters today, like "Morning Sam, 2 replies are ready to send" or, for one to-do, "Morning Sam, ready for your OK: Send the order form". Only to-dos with a draft or result to approve count as ready; one that needs your answer first doesn't;
 - the to-dos the greeting counts, each with an Open link, and what's due today; otherwise at most three things to do;
 - to-dos you added yourself that wait on you, up to five, whatever the greeting counts;
 - how many more can wait, and how long they take at your pace, like "12 more can wait, about 5 min to clear." To-dos that wait on your answer aren't in that time, and one that's due today but snoozed until later, or that The Machine is still working on, isn't counted until it waits on you. The count matches the to-dos waiting in your list.

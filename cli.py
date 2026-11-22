@@ -52,6 +52,11 @@ LABELS = {'pending': 'Needs you', 'accepted': 'Accepted', 'instructions': 'Chang
           'prepared': 'Prepared', 'snoozed': 'Later', 'completed': 'Done', 'rejected': 'Not needed'}
 
 
+def state_label(task):
+    """A task's state as the dashboard says it: a prepared one with nothing ready, only a need of yours, is Needs you."""
+    return LABELS['pending'] if task.get('needs_owner') else LABELS.get(task['status'], task['status'])
+
+
 class CliError(Exception):
     pass
 
@@ -168,7 +173,7 @@ def cmd_tasks(config, args):
         print(f'{group.capitalize()} ({len(rows)})')
         for s in rows:
             extra = f" until {local(s['snoozed_until'])}" if s.get('snoozed_until') else ''
-            print(f"  {s['id']}  {LABELS.get(s['status'], s['status'])}{extra} · {local(s['created_at'])}")
+            print(f"  {s['id']}  {state_label(s)}{extra} · {local(s['created_at'])}")
             print(f"    {s['title']}")
         print()
 
@@ -201,8 +206,10 @@ def cmd_show(config, args):
     evidence = [] if args.no_evidence else evidence_for(config, task)
     if args.json:
         return out_json({'task': task, 'decisions': decisions, 'evidence': evidence})
-    print(f"{task['title']}\n  {task['id']} · {LABELS.get(task['status'], task['status'])} · created {local(task['created_at'])}"
+    print(f"{task['title']}\n  {task['id']} · {state_label(task)} · created {local(task['created_at'])}"
           + (f" · until {local(task['snoozed_until'])}" if task.get('snoozed_until') else ''))
+    if task.get('needs_owner'):
+        print(f"  Needs you: {task['needs_owner']}")
     print(f"  Accounts: {', '.join(loads(task.get('account_ids'), []))}\n")
     print(wrap(task['body'], '  '))
     if task.get('latest_feedback'):
