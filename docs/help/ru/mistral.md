@@ -1,7 +1,7 @@
 ---
 title: Mistral
 area: connections
-summary: Запустите The Machine на моделях Mistral с API-ключом Mistral. В Le Chat Pro включены API-кредиты.
+summary: Запустите Machine на моделях Mistral с API-ключом Mistral. В Le Chat Pro включены API-кредиты.
 covers: mistral
 code: docs/models.md, dashboard/settings-models.js
 site: Other AI services, Save key, Keys, Remove

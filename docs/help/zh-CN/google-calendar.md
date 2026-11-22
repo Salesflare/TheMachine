@@ -26,7 +26,7 @@ translated: 7ff20ade2206d43f
 
 在自己的电脑上，完成[与账号配对](friends.md#a-machine-on-your-own-computer)后，打开**连接**，然后打开**日历**，选择Google日历，再点击**使用Google登录**。它会与Gmail一起连接。
 
-使用自己的应用时，运行`assistant connect calendar`，或在那里打开**使用自己的应用**。系统会询问要读取哪个日历。
+使用自己的应用时，运行`assistant connect calendar`，或在那里打开**使用你自己的应用**。系统会询问要读取哪个日历。
 
 ## 移除连接
 

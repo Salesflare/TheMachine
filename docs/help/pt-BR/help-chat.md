@@ -17,7 +17,7 @@ Ela funciona com o modelo da sua Machine, em um chat separado e curto. Abaixo da
 
 Ela responde de acordo com o seu nível: usa palavras simples para a maioria das pessoas e dá mais detalhes quando suas perguntas são técnicas. Ela estima seu nível com base na sua configuração, na sua função e na forma como você pergunta. Só a estimativa é usada.
 
-Ela primeiro indica o que a The Machine já faz e só sugere uma habilidade quando nenhum recurso integrado atende à necessidade. Consulte [Personalize](personalize.md).
+Ela primeiro indica o que a The Machine já faz e só sugere uma habilidade quando nenhum recurso integrado atende à necessidade. Consulte [Personalizar](personalize.md).
 
 ## O que a equipe vê
 

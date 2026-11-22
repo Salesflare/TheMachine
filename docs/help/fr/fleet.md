@@ -91,7 +91,7 @@ Les collègues qui se connectent avec le domaine de l’entreprise voient **Dema
 
 Retirer une personne de la Fleet la déconnecte partout.
 
-Pour rejoindre une Fleet, en créer une ou jumeler une Machine sur votre propre ordinateur, consultez [Forfaits et facturation](plans-and-billing.md) et [Amis et Network](friends.md).
+Pour rejoindre une Fleet, en créer une ou jumeler une Machine sur votre propre ordinateur, consultez [Forfaits et facturation](plans-and-billing.md) et [Les amis et le Network](friends.md).
 
 ## Pour les propriétaires et les administrateurs
 

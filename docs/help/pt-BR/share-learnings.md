@@ -41,7 +41,7 @@ Seu e-mail e os logs de erros nunca são enviados automaticamente. O modo **Cuid
 
 ## Desativar
 
-Desative **Oferecer compartilhar aprendizados** em Configurações, Segurança. Consulte [Níveis de segurança](security-levels.md). O compartilhamento precisa da [The Machine Network](/network).
+Desative **Oferecer para compartilhar aprendizados** em Configurações, Segurança. Consulte [Níveis de segurança](security-levels.md). O compartilhamento precisa da [The Machine Network](/network).
 
 O mesmo controle desativa os [aprendizados da equipe](fleet.md#team-learnings) do seu Fleet de Trabalho e retira os que sua Machine compartilhou.
 

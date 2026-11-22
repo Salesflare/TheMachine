@@ -42,7 +42,7 @@ Jedes Handy mit der App wird unter **Einstellungen**, **Benachrichtigungen** als
 
 Tippe in einer beliebigen App auf „Teilen“ und wähle The Machine aus. Daraufhin öffnet sich **Neue Aufgabe** mit dem Text, Link oder den Dateien, die du geteilt hast. Überprüfe den Inhalt, füge bei Bedarf ein Datum hinzu und speichere die Aufgabe. Bis dahin wird nichts hinzugefügt.
 
-Auch eine einzelne Datei reicht, zum Beispiel eine Rechnung oder ein Brief. The Machine liest den Text einer PDF-Datei und ergänzt die Aufgabe um den Inhalt, den nächsten Schritt und das Datum. Die Datei wird direkt an deine Machine gesendet und bleibt dort.
+Auch eine einzelne Datei reicht, zum Beispiel eine Rechnung oder ein Brief. Deine Machine liest den Text einer PDF-Datei und ergänzt die Aufgabe um den Inhalt, den nächsten Schritt und das Datum. Die Datei wird direkt an deine Machine gesendet und bleibt dort.
 
 Das Dashboard, das auf Android als App installiert ist, kann ebenfalls Inhalte empfangen: Wähle es wie gewohnt im Teilen-Menü aus.
 

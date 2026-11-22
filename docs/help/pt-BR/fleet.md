@@ -50,7 +50,7 @@ Sua Machine registra como sua equipe trabalha, com base nas conversas com client
 
 Sua Machine usa os aprendizados relevantes ao preparar uma tarefa de trabalho para esta empresa. Seus dados, regras e habilidades vêm primeiro, e tarefas pessoais nunca usam esses aprendizados. Uma tarefa que usou um deles informa isso, por exemplo: “Usou um aprendizado da equipe: os reembolsos são enviados pela caixa de entrada de suporte.” Toque em **Remover** para excluir esse aprendizado de todo o Fleet.
 
-Qualquer pessoa no Fleet pode **Remover** um aprendizado. Ele desaparece para todos e não é criado novamente. Para impedir isso, desative **Oferecer compartilhar aprendizados** em Configurações, Segurança. Fleets de Trabalho no nível Cuidadoso não recebem aprendizados.
+Qualquer pessoa no Fleet pode **Remover** um aprendizado. Ele desaparece para todos e não é criado novamente. Para impedir isso, desative **Oferecer para compartilhar aprendizados** em Configurações, Segurança. Fleets de Trabalho no nível Cuidadoso não recebem aprendizados.
 
 ## Resumo da equipe
 
@@ -91,7 +91,7 @@ Os colegas que entrarem com o domínio da empresa verão **Pedir para entrar**, 
 
 Remover alguém do Fleet desconecta essa pessoa de todos os lugares.
 
-Para entrar em um Fleet, criar um ou parear uma Machine no seu próprio computador, veja [Planos e cobrança](plans-and-billing.md) e [Amigos e Network](friends.md).
+Para entrar em um Fleet, criar um ou parear uma Machine no seu próprio computador, veja [Planos e cobrança](plans-and-billing.md) e [Amigos e a Network](friends.md).
 
 ## Para proprietários e administradores
 

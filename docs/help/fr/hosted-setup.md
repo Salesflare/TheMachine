@@ -27,7 +27,7 @@ Vos premières tâches s’affichent alors : votre Machine vérifie d’abord vo
 
 La configuration ne vous demande rien de facultatif. Ensuite, **Ajouter à tout moment** sur la page de configuration vous donne accès à **Plus de sources**, comme Slack, WhatsApp, GitHub, [Telegram](telegram.md) et [Codex](hand-to-agent.md). Votre tableau de bord vous en suggère aussi une lorsque c’est utile, par exemple GitHub si ses e-mails continuent d’arriver.
 
-Quand votre Machine est prête, **Ouvrir votre tableau de bord** s’affiche en haut de la page. **Ajouter à Claude** vous permet de poser des questions à Claude sur vos e-mails et vos tâches. Pour recevoir des notifications, ajoutez The Machine à l’écran d’accueil de votre téléphone : consultez [Installer l’application et activer les notifications](phone-app.md).
+Quand votre Machine est prête, **Ouvrir votre tableau de bord** s’affiche en haut de la page. **Ajouter à Claude** vous permet de poser des questions à Claude sur vos e-mails et vos tâches. Pour recevoir des notifications, ajoutez The Machine à l’écran d’accueil de votre téléphone : consultez [Installer l’app et activer les notifications](phone-app.md).
 
 ## Demander une source
 

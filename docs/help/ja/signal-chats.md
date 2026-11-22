@@ -35,7 +35,7 @@ Machineはリンク済みデバイスのキーを自身に保存します。キ�
 signal-cliという非公式のSignalクライアントを使用します。Machineは固定バージョンをダウンロードし、実行前にチェックサムを確認します。Signalはいつでもこのクライアントを受け付けなくなる可能性があります。
 
 - **SignalがこのMachineのリンクを解除しました**：スマートフォンでリンクを解除したか、Signalがリンクを終了しました。**接続**で**再接続**を押し、新しいコードをスキャンしてください。
-- **Signalを使うにはThe Machineの更新が必要です**：SignalがこのMachineのSignalクライアントを受け付けなくなりました。The Machineを更新してください。
+- **Signal用にThe Machineを更新**：SignalがこのMachineのSignalクライアントを受け付けなくなりました。The Machineを更新してください。
 
 ## 削除する
 

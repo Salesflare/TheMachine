@@ -38,7 +38,7 @@ Hasta entonces, **Automático** usa el reconocimiento de voz propio del navegado
 - **Precisión** (solo en tu Machine): **Más preciso** funciona mejor con la mayoría de los idiomas. **Más rápido** tarda menos, pero comete más errores, y es la opción predeterminada en una Machine Estándar.
 - **Idioma**: **Detectar** funciona con todos los idiomas de la aplicación. Si eliges el tuyo, será un poco más rápido.
 
-Para hablar en voz alta con The Machine, consulta [Hablar en vivo](talk-live.md).
+Para hablar en voz alta con The Machine, consulta [Habla en vivo](talk-live.md).
 
 ## Si no funciona
 

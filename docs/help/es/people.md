@@ -6,7 +6,7 @@ code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
 translated: 5e808343918f7f47
 ---
-Todas las personas con las que estás en contacto, empezando por las más cercanas, a partir de tus mensajes y reuniones. Los boletines, recibos y otros envíos no añaden a nadie hasta que respondes. Aparecen en Remitentes ocultos, debajo de la lista: **Mostrar como persona** añade a alguien. Los campos, las etiquetas y la importación funcionan igual en las tres listas, y cada una tiene sus propios filtros: consulta [The Graph](graph.md).
+Todas las personas con las que estás en contacto, empezando por las más cercanas, a partir de tus mensajes y reuniones. Los boletines, recibos y otros envíos no añaden a nadie hasta que respondes. Aparecen en Remitentes ocultos, debajo de la lista: **Mostrar como persona** añade a alguien. Los campos, las etiquetas y la importación funcionan igual en las tres listas, y cada una tiene sus propios filtros: consulta [Graph](graph.md).
 
 Una bandeja de entrada compartida (info@, atención al cliente, el nombre de una tienda) cuenta para su organización, no como una persona, incluso después de que le escribas.
 
@@ -14,7 +14,7 @@ Una bandeja de entrada compartida (info@, atención al cliente, el nombre de una
 
 Empieza con su foto, nombre, cargo, organización y ubicación, y una línea sobre cómo estáis en contacto ("Habláis a diario · último contacto ayer · próxima reunión mar., 27 oct."). El contacto reciente aparece como «ahora mismo», «hace 3 horas», «ayer» o «hace 3 días», y el contacto más antiguo, como una fecha. Pasa el cursor por encima para ver la fecha exacta. Debajo encontrarás:
 
-- **Contacto**: sus teléfonos y correos electrónicos. Toca uno para llamar o escribir, o **Copiar** para copiarlo. Aquí también aparece su **Cumpleaños**, junto con la fuente (Contactos de Google, Google Calendar, Facebook, tus notas o tú): consulta [The Graph](graph.md#birthday).
+- **Contacto**: sus teléfonos y correos electrónicos. Toca uno para llamar o escribir, o **Copiar** para copiarlo. Aquí también aparece su **Cumpleaños**, junto con la fuente (Contactos de Google, Google Calendar, Facebook, tus notas o tú): consulta [Graph](graph.md#birthday).
 - **Contigo**: qué relación tiene contigo, si es un contacto de Trabajo o Personal y si pertenece a tu familia o a tu Fleet, con la opción **Ver en Fleet**.
 - **También en**: los otros lugares donde habláis. **Slack** abre su perfil en Slack o el chat más reciente que tienes con esa persona en Slack.
 - **Personas** y **Proyectos** de los que forma parte, **Pendiente entre ambos** (promesas en ambos sentidos, con las opciones **Marcar como hecha** y **Descartar**) y su **Cronología**.
@@ -127,7 +127,7 @@ Los datos sobre una persona aparecen en su página, en **Lo que se sabe de** esa
 
 Si una línea es incorrecta, usa **⋯** para corregirla ahí mismo: **Editar**, **Quitar**, **No trata de** esa persona o **Deshacer** para devolver un proyecto a su ubicación anterior. Se muestran tres líneas; **Mostrar más** muestra el resto.
 
-Una persona cuya información haya actualizado tu Machine hoy tiene un punto pequeño en la lista de Personas, y **4 personas actualizadas hoy** aparece en la parte superior de la lista con sus nombres. Consulta [The Graph](graph.md).
+Una persona cuya información haya actualizado tu Machine hoy tiene un punto pequeño en la lista de Personas, y **4 personas actualizadas hoy** aparece en la parte superior de la lista con sus nombres. Consulta [Graph](graph.md).
 
 ## Una tarea sobre alguien
 

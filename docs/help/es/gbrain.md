@@ -17,7 +17,7 @@ Tu Machine decide qué se incluye: personas y proyectos de tu Graph con un enlac
 
 Las comprobaciones pueden consultar tu memoria (buscar y leer páginas, nunca escribir en ellas) para crear mejores tareas. Tu Machine escribe su parte de cada página entre marcadores claros. Si editas o eliminas esa parte, la deja tal como la has dejado. Las notas que escribas sobre una persona en GBrain vuelven a tu Machine, para que las comprobaciones y el chat las vean junto a esa persona. Se quedan en tu Machine.
 
-Las personas y empresas de Trabajo solo se incluyen si marcas **Incluir personas y empresas de Trabajo**. Los datos del Graph de equipo de tus compañeros nunca se incluyen.
+Las personas y empresas de Trabajo solo se incluyen si marcas **Incluir personas y empresas de Trabajo**. Los datos del Graph del equipo de tus compañeros nunca se incluyen.
 
 ## Desactivarlo
 

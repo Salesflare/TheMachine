@@ -17,7 +17,7 @@ translated: 7fc2a596ef58bd93
 
 ## 连接
 
-1. 在控制面板中依次选择：**连接**、**项目和代码**、Trello。或者，在托管版Machine的设置页面app.themachine.computer/setup中选择：**更多来源**、Trello。在自己的电脑上使用时，请先将它与你的账号配对。
+1. 在控制面板中依次选择：**连接**、**项目与代码**、Trello。或者，在托管版Machine的设置页面app.themachine.computer/setup中选择：**更多来源**、Trello。在自己的电脑上使用时，请先将它与你的账号配对。
 2. 点击**使用Trello登录**并授予读取权限。Trello会显示该应用由Salesflare开发。
 3. 选择要关注的看板，然后点击**连接**。如需连接另一个看板，请再次添加Trello。
 

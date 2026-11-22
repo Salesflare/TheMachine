@@ -6,7 +6,7 @@ code: graph.py, crm.py, enrichment.py, dashboard.html
 order: 3
 translated: a69ae21b14edaf94
 ---
-Les entreprises détectées à partir des adresses et des noms présents dans vos messages. Leur secteur, leur taille, leur localisation et leur logo sont recherchés automatiquement : consultez [Détails sur les organisations](organization-data.md).
+Les entreprises détectées à partir des adresses et des noms présents dans vos messages. Leur secteur, leur taille, leur localisation et leur logo sont recherchés automatiquement : consultez [Détails de l’organisation](organization-data.md).
 
 ## Page d’une organisation
 

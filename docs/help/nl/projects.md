@@ -71,7 +71,7 @@ Controles blijven passende projecten toevoegen en plaatsen ze in een fase. Als z
 
 Een nieuw bord of een opgeslagen voorgesteld bord doorzoekt je volledige geschiedenis één keer. Het maakt één project per passende organisatie en plaatst elk project in een fase. In de kop staat ‘Je geschiedenis doorzoeken…’ terwijl dit gebeurt. Daarna zie je hoeveel projecten zijn toegevoegd en hoeveel er op jou wachten. Bij een bord Alleen voor jou blijven de gevonden projecten alleen voor jou zichtbaar.
 
-**Opvolging…** in het **⋯**-menu van een bord zorgt automatisch voor opvolging als iemand niet antwoordt. Zie [Opvolging](follow-ups.md).
+**Opvolging…** in het **⋯**-menu van een bord zorgt automatisch voor opvolging als iemand niet antwoordt. Zie [Opvolgingen](follow-ups.md).
 
 ## Klaar als
 

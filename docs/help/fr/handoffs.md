@@ -9,7 +9,7 @@ translated: acb60a24ef374625
 ---
 ## Transférer une tâche
 
-1. Dans la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Un collègue**.
+1. Dans la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Un coéquipier**.
 2. Choisissez la personne, vérifiez ce qui est inclus (× exclut une partie) et ajoutez une note. Rien provenant d’un compte personnel ou d’une autre entreprise n’est transmis.
 3. Envoyez la tâche. Sa Machine la lui présente comme une tâche.
 

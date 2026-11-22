@@ -17,7 +17,7 @@ Die Hilfe läuft auf dem Modell deiner Machine als kurzer, separater Chat. Unter
 
 Die Antwort passt sich deinem Kenntnisstand an: Sie ist für die meisten leicht verständlich und enthält mehr Details, wenn deine Fragen technisch sind. Die Hilfe schätzt deinen Kenntnisstand anhand deiner Einrichtung, deiner Rolle und deiner Fragen ein. Nur diese Einschätzung wird weitergegeben.
 
-Zuerst zeigt sie dir, was The Machine bereits kann. Einen Skill schlägt sie nur vor, wenn keine integrierte Funktion dafür geeignet ist. Siehe [Mach es zu deinem](personalize.md).
+Zuerst zeigt sie dir, was The Machine bereits kann. Einen Skill schlägt sie nur vor, wenn keine integrierte Funktion dafür geeignet ist. Siehe [Anpassen](personalize.md).
 
 ## Was das Team sieht
 

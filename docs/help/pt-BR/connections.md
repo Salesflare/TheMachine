@@ -79,6 +79,6 @@ Um login salvo só é usado no endereço web ao qual pertence: no mesmo site, `h
 
 ## Verificações
 
-**Verificações** mostra como sua Machine lê o que chega: as verificações recentes e o que cada uma encontrou. Consulte [Sem novas tarefas](reviews-paused.md).
+**Verificações** mostra como sua Machine lê o que chega: as verificações recentes e o que cada uma encontrou. Consulte [Nenhuma tarefa nova](reviews-paused.md).
 
 Cada conexão tem um artigo nesta seção com informações sobre o que ela lê e o que pode enviar.

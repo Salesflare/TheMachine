@@ -345,5 +345,78 @@ class Help(unittest.TestCase):
         self.assertEqual([p for p in help_check.check_translations(found, self.help) if p.startswith('docs/help/nl/')], [])
 
 
+class Wording(unittest.TestCase):
+    def test_labels_in_another_order_than_the_english_are_left_alone(self):
+        # "**Suggested for you** at the top of **Connections**" put the other way round: the English's place would swap them
+        en = '**Suggested for you** at the top of **Connections**.'
+        tr = 'Oben unter **Verbindungen** steht **Vorschläge**.'
+        labels = {'Suggested for you': 'Für dich vorgeschlagen', 'Connections': 'Verbindungen'}
+        self.assertEqual(T.fix_labels(en, tr, labels), tr)
+        self.assertEqual(T.fix_labels('**Who:** their name.', '**Wer :** ihr Name.', {'Who': '誰'}), '**誰 :** ihr Name.',
+                         'the colon as the language writes it')
+
+    def test_a_link_in_running_text_keeps_the_sentences_grammar(self):
+        en = 'See your [history](history.md) or [History](history.md).'
+        tr = 'Смотрите в вашей [истории](history.md) или [История](history.md).'
+        self.assertEqual(T.fix_links(en, tr, {'history': ('History', 'История писем')}),
+                         'Смотрите в вашей [истории](history.md) или [История писем](history.md).')
+
+    def test_a_field_described_not_listed_keeps_only_its_name(self):
+        self.assertEqual(T.literals('issue is the id or identifier (like ENG-12) of a Linear issue'), ['issue'])
+        self.assertEqual(T.literals('op is comment, state, assign or create'), ['op', 'comment', 'state', 'assign', 'create'])
+
+    def test_machine_signal_and_dates_read_as_the_english_means_them(self):
+        ok = T.wording_problems
+        self.assertTrue(ok('Your Machine reads it.', 'The Machine liest es.', 'de'), "someone's own Machine")
+        self.assertEqual(ok('Your Machine reads it.', 'Deine Machine liest es.', 'de'), [])
+        self.assertEqual(ok('The Machine has no AI of its own.', 'The Machine hat keine eigene KI.', 'de'), [], 'the product')
+        self.assertTrue(ok('Your Machine reads it.', 'Твоя машина читает.', 'ru'), 'the common noun')
+        self.assertTrue(ok('Dana asked on Signal.', 'Dana ha chiesto su Segnale.', 'it'))
+        self.assertEqual(ok('Signal chats', 'Signal-Chats', 'de'), [])
+        self.assertTrue(ok('Pay by November 14', 'November 14までに支払う', 'ja'))
+        self.assertTrue(ok('Pilot call Tuesday', 'Tuesday试点通话', 'zh-CN'))
+        self.assertEqual(ok('Pay by November 14', 'Bis 14. November bezahlen', 'de'), [], 'the same word in German')
+        self.assertEqual(ok('Like 2:05 PM', 'Wie 2:05 PM', 'de'), [], "a setting's example")
+
+
+
+class Translations(unittest.TestCase):
+    """The catalogs and every current help article, in every language: what code reads stays as written, the owner's
+    Machine, Signal and dates read as the English means them, and labels and article links read as the app and the
+    linked article's title do (scripts/translate.py align_help keeps them so after a catalog change)."""
+
+    langs = T.languages()
+    maxDiff = None
+
+    def test_catalogs(self):
+        en, wrong = T.load('en'), []
+        for lang in self.langs:
+            for key, value in T.load(lang).items():
+                english = en.get(key, key)
+                english = ' '.join(english.values()) if isinstance(english, dict) else english
+                for form in value.values() if isinstance(value, dict) else [value]:
+                    if isinstance(form, str):
+                        wrong += [f'{lang}: {key[:60]!r}: {p}' for p in T.literal_problems(key, form) + T.wording_problems(english, form, lang)]
+        self.assertEqual(wrong, [])
+
+    def test_current_help_articles(self):
+        wrong = []
+        for lang in self.langs:
+            titles = T.link_titles(lang)
+            for path in T.articles():
+                local = T.HELP / lang / path.name
+                if not local.is_file() or T.help_state(lang, path) != 'current':
+                    continue
+                ef, en = T.front(path.read_text(encoding='utf-8'))
+                tf, tr = T.front(local.read_text(encoding='utf-8'))
+                en, tr, ef, tf = en.strip(), tr.strip(), dict(ef), dict(tf)
+                where = f'docs/help/{lang}/{path.name}'
+                fixed = T.fix_links(en, T.fix_labels(en, tr, T.app_labels(lang, en)), titles)
+                wrong += [f'{where}: {a[:80]!r} should read {b[:80]!r}' for a, b in zip(T.units(tr), T.units(fixed)) if a != b]
+                pairs = [(ef.get(k, ''), tf.get(k, '')) for k in ('title', 'summary')] + list(zip(T.units(en), T.units(tr)))
+                wrong += [f'{where}: {t[:80]!r}: {p}' for e, t in pairs if e for p in T.wording_problems(e, t, lang)]
+        self.assertEqual(wrong, [])
+
+
 if __name__ == '__main__':
     unittest.main()

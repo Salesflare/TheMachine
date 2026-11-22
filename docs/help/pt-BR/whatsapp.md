@@ -39,7 +39,7 @@ Em uma Machine hospedada:
 4. Em até um minuto, o WhatsApp aparece como conectado. Seu histórico de chats continua sendo carregado depois disso, e o cartão mostra a quantidade de mensagens recebidas durante esse processo.
    Se a conexão demorar demais, uma mensagem será exibida após alguns minutos. Toque em **Tentar de novo** para continuar de onde parou.
 
-Está configurando no celular, sem uma segunda tela para escanear o código? Abra **Está no celular? Vincule com um código**, digite seu número e toque em **Receber um código**. O WhatsApp vai pedir esse código.
+Está configurando no celular, sem uma segunda tela para escanear o código? Abra **No celular? Conecte com um código**, digite seu número e toque em **Receber um código**. O WhatsApp vai pedir esse código.
 
 No seu próprio computador: abra **Conexões**, depois **Chat**, escolha WhatsApp, digite seu número de celular com o código do país e toque em **Conectar**. Um código será exibido. No celular, abra o WhatsApp, vá para Configurações, Dispositivos conectados, Conectar um dispositivo, toque em **Conectar com número de telefone** e digite o código.
 

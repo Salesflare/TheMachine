@@ -91,7 +91,7 @@ Teamgenoten die inloggen met dat bedrijfsdomein zien **Vragen om lid te worden**
 
 Als je iemand uit de Fleet verwijdert, wordt diegene overal uitgelogd.
 
-Bekijk [Abonnementen en facturering](plans-and-billing.md) en [Vrienden en het Network](friends.md) om deel te nemen aan een Fleet, er een te starten of een Machine op je eigen computer te koppelen.
+Bekijk [Abonnementen en facturatie](plans-and-billing.md) en [Vrienden en het Network](friends.md) om deel te nemen aan een Fleet, er een te starten of een Machine op je eigen computer te koppelen.
 
 ## Voor eigenaren en beheerders
 

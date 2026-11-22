@@ -11,13 +11,13 @@ Ouvrez **Paramètres** avec la roue dentée en haut. Les onglets disponibles :
 
 - **Compte** : **Vos adresses** (celles qui sont considérées comme les vôtres) et **Se déconnecter**, en haut. Sur une Machine hébergée, vous trouverez aussi votre forfait, vos factures, Fleet, vos amis, vos informations de connexion et vos données, avec **Résilier le forfait** et **Supprimer le compte** tout en bas. Sur une Machine installée sur votre ordinateur et associée au Network : votre Fleet, votre nom d’utilisateur, vos amis et vos informations de connexion, chacun avec un lien vers la section correspondante de votre compte (connectez-vous sur cette page), ainsi que **Supprimer le compte** tout en bas. Si elle n’est pas encore associée : **Rejoindre le Network**, en haut. Consultez [Forfaits et facturation](plans-and-billing.md).
 - **Général** : la langue et la région, cet appareil, la saisie vocale, le navigateur de votre Machine, votre Fleet, l’exportation et l’importation, ainsi que la version utilisée. Si l’onglet Compte n’apparaît pas, **Rejoindre le Network** se trouve à la fin.
-- **Sécurité** : Standard ou Prudent. Consultez [Niveaux de sécurité](security-levels.md). Vous trouverez aussi **Accès du support** tant qu’il est activé : consultez [Obtenir de l’aide](get-support.md#support-access).
+- **Sécurité** : Standard ou Prudent. Consultez [Niveaux de sécurité](security-levels.md). Vous trouverez aussi **Accès du support** tant qu’il est activé : consultez [Contacter le support](get-support.md#support-access).
 - **Activité** : tout ce que The Machine a fait pour vous, du plus récent au plus ancien. Consultez [Activité](activity.md).
 - **Notifications** : où vous recevez vos notifications et vos heures de travail. Consultez [Notifications](notifications.md) et [Heures de travail](work-hours.md).
 - **Rédaction** : vos signatures et votre façon d’écrire. Consultez [Rédaction](writing.md).
 - **Compétences** : les guides que suit votre Machine. Consultez [Compétences](skills.md).
-- **Applis** : les applis de The Machine pour votre téléphone et votre ordinateur, puis Claude, ChatGPT et les autres IA que vous avez connectées, et ce que chacune peut faire. Consultez [L’application mobile](mobile-app.md) et [Connecter d’autres IA](ai-connections.md).
-- **Modèle** : l’IA qui lit et rédige pour vous, et ses limites. Consultez [Modèle](model.md). Vous trouverez aussi **Codex et Claude Code** : consultez [Transmettre à Claude Code ou Codex](hand-to-agent.md). Et **Recherche par le sens**, plus bas.
+- **Applis** : les applis de The Machine pour votre téléphone et votre ordinateur, puis Claude, ChatGPT et les autres IA que vous avez connectées, et ce que chacune peut faire. Consultez [L’app mobile](mobile-app.md) et [Connecter d’autres IA](ai-connections.md).
+- **Modèle** : l’IA qui lit et rédige pour vous, et ses limites. Consultez [Modèle](model.md). Vous trouverez aussi **Codex et Claude Code** : consultez [Transférer à Claude Code ou Codex](hand-to-agent.md). Et **Recherche par le sens**, plus bas.
 
 Un onglet sans contenu est masqué.
 
@@ -30,14 +30,14 @@ Un onglet sans contenu est masqué.
 - **Ouvrir le navigateur de la Machine ↗** : le navigateur utilisé par votre Machine pour des sites comme LinkedIn.
 - **Règles Fleet** : consultez [Règles de partage](sharing-rules.md).
 - **Exporter** :
-  - **Tout** : tout ce que votre Machine sait, dans un seul fichier chiffré, à transférer ou à conserver, et **Importer** pour en importer un. Consultez [Passer à un autre ordinateur](moving.md).
+  - **Tout** : tout ce que votre Machine sait, dans un seul fichier chiffré, à transférer ou à conserver, et **Importer** pour en importer un. Consultez [Passer sur un autre ordinateur](moving.md).
   - **Connaissances pour une autre IA** : ce que votre Machine a appris, dans des fichiers lisibles par n’importe quelle IA. Consultez [Connaissances pour une autre IA](knowledge-export.md).
 
 ## Version
 
 La version utilisée par votre Machine. Les mises à jour s’installent automatiquement. Quand une nouvelle version est disponible sur une Machine hébergée, **Mettre à jour** l’installe immédiatement. L’opération prend quelques minutes et vos données sont conservées.
 
-Sur votre propre ordinateur, une tâche quotidienne installe chaque nouvelle version signée sous Linux. Consultez [Installer sur votre propre ordinateur](self-hosted-setup.md).
+Sur votre propre ordinateur, une tâche quotidienne installe chaque nouvelle version signée sous Linux. Consultez [Lancer The Machine sur votre propre ordinateur](self-hosted-setup.md).
 
 ## Recherche par le sens
 

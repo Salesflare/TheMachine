@@ -31,4 +31,4 @@ El número que aparece en **Conexiones** solo cuenta las fuentes que necesitan t
 
 En tu propio ordenador, `assistant doctor` comprueba todas las fuentes e indica cómo solucionar cada problema.
 
-¿Sigues con problemas? Consulta [Obtener ayuda](get-support.md).
+¿Sigues con problemas? Consulta [Contactar con soporte](get-support.md).

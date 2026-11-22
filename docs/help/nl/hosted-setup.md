@@ -27,7 +27,7 @@ Daar verschijnen je eerste to-do's: je Machine controleert eerst je nieuwste e-m
 
 Tijdens de installatie wordt niets optioneels gevraagd. Daarna vind je op de installatiepagina onder **Voeg altijd meer toe** de optie **Meer bronnen**, zoals Slack, WhatsApp, GitHub, [Telegram](telegram.md) en [Codex](hand-to-agent.md). Je dashboard stelt ook een bron voor als dat handig is, bijvoorbeeld GitHub zodra daar steeds e-mail van binnenkomt.
 
-Als je Machine klaar is, verschijnt **Je dashboard openen** bovenaan. Met **Toevoegen aan Claude** kun je Claude vragen stellen over je e-mail en to-do's. Wil je meldingen ontvangen? Zet The Machine dan op het beginscherm van je telefoon. Zie [De app installeren en meldingen aanzetten](phone-app.md).
+Als je Machine klaar is, verschijnt **Open je dashboard** bovenaan. Met **Toevoegen aan Claude** kun je Claude vragen stellen over je e-mail en to-do's. Wil je meldingen ontvangen? Zet The Machine dan op het beginscherm van je telefoon. Zie [De app installeren en meldingen aanzetten](phone-app.md).
 
 ## Een bron aanvragen
 

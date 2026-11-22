@@ -6,7 +6,7 @@ code: graph.py, crm.py, enrichment.py, dashboard.html
 order: 3
 translated: a69ae21b14edaf94
 ---
-Bedrijven op basis van de adressen en namen in je berichten. Branche, omvang, locatie en logo worden opgezocht. Zie [Gegevens over organisaties](organization-data.md).
+Bedrijven op basis van de adressen en namen in je berichten. Branche, omvang, locatie en logo worden opgezocht. Zie [Organisatiegegevens](organization-data.md).
 
 ## De pagina van een organisatie
 

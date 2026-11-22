@@ -13,7 +13,7 @@ Mit einer Fleet kann deine Machine über The Machine Network mit den Machines de
 ## Fleet-Arten
 
 - **Work Fleet**: dein Team. Übergib Aufgaben, frag, wer jemanden kennt, lass dir Kontakte vermitteln und bekomm ein Team-Briefing.
-- **Family Fleet**: bis zu 6 Personen. Gemeinsame Aufgaben und Pläne, wenn alle Zeit haben. Kostenlos. Für gehostete Machines in der Fleet gilt ein Familienpreis. Siehe [Family](family.md).
+- **Family Fleet**: bis zu 6 Personen. Gemeinsame Aufgaben und Pläne, wenn alle Zeit haben. Kostenlos. Für gehostete Machines in der Fleet gilt ein Familienpreis. Siehe [Familie](family.md).
 - **Freunde**: einzelne Personen auf The Machine. Kostenlos. Siehe [Friends](friends.md).
 
 ## Der Fleet-Tab
@@ -91,7 +91,7 @@ Teammitglieder, die sich mit der Domain der Firma anmelden, sehen **Um Beitritt 
 
 Wenn du jemanden aus der Fleet entfernst, wird die Person überall abgemeldet.
 
-Informationen zum Beitreten oder Starten einer Fleet oder zum Koppeln einer Machine auf deinem eigenen Computer findest du unter [Tarife und Abrechnung](plans-and-billing.md) und [Freunde und Network](friends.md).
+Informationen zum Beitreten oder Starten einer Fleet oder zum Koppeln einer Machine auf deinem eigenen Computer findest du unter [Tarife und Abrechnung](plans-and-billing.md) und [Freunde und das Network](friends.md).
 
 ## Für Inhaber und Admins
 

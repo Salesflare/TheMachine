@@ -41,7 +41,7 @@ A opção **Retomar de** Pat fica ativada por padrão. Desative-a para que as du
 
 ## Quando a pessoa recusar
 
-Ela pode explicar o motivo: a tarefa não é dela, já foi concluída ou não tem tempo nesta semana. Depois, escolha **Eu mesmo faço**, **Passar para outra pessoa** ou **Marcar como feita**. O mesmo acontece se ela não responder a tempo. **Eu mesmo faço** torna a tarefa sua novamente, em Para você.
+Ela pode explicar o motivo: a tarefa não é dela, já foi concluída ou não tem tempo nesta semana. Depois, escolha **Eu faço**, **Passar para outra pessoa** ou **Marcar como feita**. O mesmo acontece se ela não responder a tempo. **Eu faço** torna a tarefa sua novamente, em Para você.
 
 ## Alguém fora da Network
 

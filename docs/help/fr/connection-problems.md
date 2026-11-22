@@ -31,4 +31,4 @@ Le nombre affiché sur **Connexions** compte uniquement les sources qui nécessi
 
 Sur votre ordinateur, `assistant doctor` vérifie chaque source et indique comment résoudre chaque problème.
 
-Vous êtes toujours bloqué ? Consultez [Obtenir de l’aide](get-support.md).
+Vous êtes toujours bloqué ? Consultez [Contacter le support](get-support.md).

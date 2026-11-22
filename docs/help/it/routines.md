@@ -20,9 +20,9 @@ Quando tocchi **Aggiungi**, prima viene eseguita una prova, così puoi vedere il
 
 Nella sezione **Modelli**, in fondo a Routine, **Aggiungi** attiva una routine già pronta. Viene eseguita subito una volta, poi ogni mattina alle 7:30 (Pulizia spam ogni ora, Occasioni di seconda mano ogni 3 ore, Abbonamenti e prove una volta al mese). La sua scheda mostra le parole che la descrivono, come per qualsiasi routine, e **Modifica** permette di cambiarle o di darle un altro nome.
 
-Quando arrivano molte newsletter e Pulizia newsletter è disattivata (almeno 25 in una settimana, da almeno 5 mittenti), sopra le attività compare un messaggio che indica quante ne sono arrivate e cosa farebbe la routine, con le opzioni **Attivala** e **No, grazie**.
+Quando arrivano molte newsletter e Pulizia newsletter è disattivata (almeno 25 in una settimana, da almeno 5 mittenti), sopra le attività compare un messaggio che indica quante ne sono arrivate e cosa farebbe la routine, con le opzioni **Attiva** e **No, grazie**.
 
-Pulizia spam viene proposta allo stesso modo quando in una settimana hai spostato manualmente nello spam almeno 5 email. **Attivala** la aggiunge, proprio come **Aggiungi** qui. Se tocchi **No, grazie**, non verrà più proposta. Nemmeno un modello che avevi già usato verrà riproposto.
+Pulizia spam viene proposta allo stesso modo quando in una settimana hai spostato manualmente nello spam almeno 5 email. **Attiva** la aggiunge, proprio come **Aggiungi** qui. Se tocchi **No, grazie**, non verrà più proposta. Nemmeno un modello che avevi già usato verrà riproposto.
 
 **Pulizia newsletter** crea un’attività per ogni area, lavoro e personale, con le newsletter arrivate nell’ultimo giorno. Per ciascuna puoi scegliere **Tieni** o **Disiscriviti**. Per disiscriverti, la routine usa il link per la disiscrizione con un solo clic oppure invia un’email di disiscrizione dal tuo indirizzo, se l’invio è attivo. Altrimenti, la tua Machine si disiscrive dalla pagina della mailing list nel suo browser. Se per accedere serve un login, un captcha o una scelta, devi occupartene tu: la riga spiega perché e mostra **Apri la pagina di disiscrizione**.
 
@@ -92,7 +92,7 @@ Pulizia newsletter e Pulizia spam continuano a creare un’unica attività con u
 
 ## Cosa fa una routine
 
-All’orario previsto, la tua Machine legge ciò che serve, come i tuoi messaggi, le riunioni e il Graph, poi mostra il risultato nella pagina Routine. Ogni risultato indica **Pronta**, **Niente di nuovo** con una spiegazione oppure **Non è andato** con una spiegazione. Se un’esecuzione termina senza risultato, viene considerata non riuscita, mai completata.
+All’orario previsto, la tua Machine legge ciò che serve, come i tuoi messaggi, le riunioni e il Graph, poi mostra il risultato nella pagina Routine. Ogni risultato indica **Pronta**, **Niente di nuovo** con una spiegazione oppure **Non ha funzionato** con una spiegazione. Se un’esecuzione termina senza risultato, viene considerata non riuscita, mai completata.
 
 Le routine si limitano a leggere: i tuoi messaggi, le pagine web, GitHub e siti come X nel browser. Non inviano messaggi, non rispondono, non pubblicano e non modificano nulla. Aprono le pagine trovate in ciò che leggono o in una ricerca, gli indirizzi di pagine semplici e i siti più noti. Non aprono mai un indirizzo creato apposta per contenere ciò che hanno letto. Solo un modello può modificare la posta, e solo dopo che hai confermato nell’attività.
 
@@ -132,7 +132,7 @@ Non serve scrivere script: descrivi a parole tue cosa deve fare una routine e la
 
 Per chi ha più esperienza, una routine può anche eseguire comandi personalizzati sulla tua Machine. Dal menu ⋯, scegli **Avanzate: passaggi di script**. **Modifica** mostra i passaggi solo se la routine ne ha già. **Recupera dati** esegue prima un comando, nella sua cartella o, se non ne indichi una, nella cartella Home. Il comando può durare al massimo il numero di secondi impostato. Ciò che stampa viene passato all’esecuzione per essere elaborato. Se non ci sono istruzioni, il risultato è quello che stampa il comando.
 
-**Verifica** riceve il risultato come input al termine dell’esecuzione. Se il comando termina con un errore, l’esecuzione mostra **Non è andato** e il messaggio restituito dal controllo. Anche un comando di Recupera dati non riuscito viene segnalato allo stesso modo.
+**Verifica** riceve il risultato come input al termine dell’esecuzione. Se il comando termina con un errore, l’esecuzione mostra **Non ha funzionato** e il messaggio restituito dal controllo. Anche un comando di Recupera dati non riuscito viene segnalato allo stesso modo.
 
 I comandi devono stare su una riga e vengono eseguiti senza una shell: non puoi usare pipe o variabili. I passaggi di script sono tuoi e si impostano solo dalla dashboard. Anche un’esecuzione di prova e **Provalo** eseguono Recupera dati e lo indicano. Non inviano né conservano comunque nulla. Una routine non invia mai nulla, quindi un passaggio di script deve limitarsi a leggere.
 

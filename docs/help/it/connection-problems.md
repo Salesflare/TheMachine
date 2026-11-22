@@ -31,4 +31,4 @@ Il numero su **Connessioni** conta solo le fonti che richiedono il tuo aiuto.
 
 Sul tuo computer, `assistant doctor` controlla ogni fonte e indica come risolvere ciascun problema.
 
-Hai ancora problemi? Consulta [Ricevere assistenza](get-support.md).
+Hai ancora problemi? Consulta [Contatta l’assistenza](get-support.md).

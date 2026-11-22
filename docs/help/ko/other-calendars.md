@@ -27,11 +27,11 @@ translated: 0ff916ed2bb877e1
 
 Fastmail, Yahoo, Zoho 및 서버 정보를 제공하는 서버는 자동으로 찾아요. 서버를 찾을 수 없나요? **서버 설정**을 열고 CalDAV 주소를 입력해요. 예: `nextcloud.example.com/remote.php/dav`. **이 캘린더만**을 선택하면 이름으로 지정한 캘린더 하나만 읽어요.
 
-Google 또는 Microsoft 캘린더를 연결하려면 **Google Calendar** 또는 **Outlook Calendar**를 선택해요.
+Google 또는 Microsoft 캘린더를 연결하려면 **Google Calendar** 또는 **Outlook 캘린더**를 선택해요.
 
 ## 연결이 중단되면
 
-- **캘린더 서버에서 암호를 거부했어요**: 암호를 변경했거나 앱 암호가 삭제됐어요. 새 암호로 다시 연결해요.
+- **캘린더 서버에서 비밀번호를 거부했어요**: 암호를 변경했거나 앱 암호가 삭제됐어요. 새 암호로 다시 연결해요.
 - **캘린더 서버에 연결할 수 없어요**: 자동으로 다시 시도해요. 계속 실패하면 서버 설정에서 주소를 확인해요.
 
 ## 연결 해제

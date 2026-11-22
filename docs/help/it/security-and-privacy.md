@@ -17,7 +17,7 @@ translated: e636b2a2fbbc714d
 - Apprendimenti per il team, a meno che tu non li disattivi: ogni tanto condividiamo alcuni consigli generali, niente di personale, e li controlliamo prima di inviarli. Vedi [Condividi gli apprendimenti](share-learnings.md).
 - Segnalazioni di errore, a meno che tu non le disattivi: quando qualcosa si rompe, includono il tipo di errore e il punto del codice in cui si è verificato. Mai i tuoi messaggi, nomi o indirizzi. Vedi [Segnalazioni di errore](error-reports.md).
 - Conteggi di utilizzo su una Machine ospitata: conteggi giornalieri delle tue attività, come le attività aperte o le email inviate, mai il loro contenuto.
-- Porta i tuoi dati con te o eliminali: esporta tutto da **Impostazioni** › **Generale**, oppure elimina la tua Machine e i relativi backup con un solo pulsante. Vedi [Annullare o eliminare](cancel-and-delete.md).
+- Porta i tuoi dati con te o eliminali: esporta tutto da **Impostazioni** › **Generale**, oppure elimina la tua Machine e i relativi backup con un solo pulsante. Vedi [Disdici o elimina](cancel-and-delete.md).
 - I nostri accessi vengono registrati: ogni volta che il nostro team legge il report o i log della tua Machine ospitata. I proprietari e gli amministratori della Fleet li vedono in **Movimenti**. Vedi [Fleet](fleet.md).
 
 ## Livelli di sicurezza
@@ -34,7 +34,7 @@ L’articolo di ogni connessione spiega cosa legge e cosa può inviare. Puoi dis
 
 ## Assistenza
 
-L’assistenza funziona sulla tua Machine e non può vedere i tuoi dati. Al team di The Machine viene inviato solo l’argomento di ogni domanda, mai le tue parole. Vedi [Chiedi all’assistenza](help-chat.md#what-the-team-sees).
+L’assistenza funziona sulla tua Machine e non può vedere i tuoi dati. Al team di The Machine viene inviato solo l’argomento di ogni domanda, mai le tue parole. Vedi [Chiedi aiuto](help-chat.md#what-the-team-sees).
 
 ## Altro
 

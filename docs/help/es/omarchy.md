@@ -18,4 +18,4 @@ Está activado por defecto en un navegador o la app de escritorio de ese ordenad
 
 Solo el archivo de colores que Omarchy escribe para el tema actual. Nada cambia en los ajustes de Omarchy, y en un ordenador sin Omarchy la opción no aparece.
 
-Instala el panel como app para tenerlo en el lanzador de Omarchy con tus otras apps. Consulta [Instalar la app y activar las notificaciones](phone-app.md).
+Instala el panel como app para tenerlo en el lanzador de Omarchy con tus otras apps. Consulta [Instala la app y activa las notificaciones](phone-app.md).

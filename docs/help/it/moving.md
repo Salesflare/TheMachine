@@ -33,4 +33,4 @@ L’importazione sostituisce i dati presenti sulla Machine, dopo averne conserva
 
 Se Impostazioni non riesce a riavviare The Machine sul tuo computer, ti mostra i comandi da eseguire.
 
-Su un nuovo computer, [installa The Machine](self-hosted-setup.md) prima. Poi annulla il tuo piano ospitato se non ti serve più: consulta [Annulla o elimina](cancel-and-delete.md).
+Su un nuovo computer, [installa The Machine](self-hosted-setup.md) prima. Poi annulla il tuo piano ospitato se non ti serve più: consulta [Disdici o elimina](cancel-and-delete.md).

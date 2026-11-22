@@ -7,7 +7,7 @@ code: dashboard.html, assistant.py
 order: 3
 translated: c3456770809873dd
 ---
-待办来自检查：The Machine会查看最近约15分钟内收到的内容。
+待办来自检查：你的Machine会查看最近约15分钟内收到的内容。
 
 ## 刚注册
 

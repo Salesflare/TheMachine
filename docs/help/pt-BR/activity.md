@@ -27,7 +27,7 @@ Cada mensagem, alteração em documento ou no calendário, ação na web e corre
 - **Aprovado por voz**: você disse sim no Talk
 - **“Fazer” tocado**: você tocou em Fazer na tarefa
 - **Pedido no chat**: você pediu em palavras, e o início da sua mensagem aparece entre aspas. A citação só aparece enquanto essas palavras ainda estiverem na sua mensagem.
-- **Follow-up que ela enviou sozinha**, **Pequena correção, mesclada sozinha**, **Novo documento privado, criado sozinha** ou **Preparada com antecedência, sozinha**: a ação foi permitida por uma configuração sua ou por uma regra da própria The Machine
+- **Follow-up que ela enviou sozinha**, **Pequena correção, mesclada sozinha**, **Novo documento privado, criado por ela mesma** ou **Preparada com antecedência, sozinha**: a ação foi permitida por uma configuração sua ou por uma regra da própria The Machine
 - **Nenhuma aprovação registrada**: nada foi registrado para essa ação. Ela também aparece nos nossos [relatórios de erro](error-reports.md), para podermos encontrar o caminho que não foi registrado.
 
 As ações na web também mostram a execução de uma tarefa que clicou ou digitou em uma página, junto com o que permitiu essa execução. O trabalho que continua depois de ser adiado mantém a permissão que tinha antes do adiamento.

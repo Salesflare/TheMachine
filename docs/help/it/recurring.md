@@ -14,7 +14,7 @@ In **Nuova attività**, scegli **Si ripete** e un ritmo: **Giornaliero**, **Gior
 
 Anche i giorni lavorativi: "inviare le fatture il secondo giorno lavorativo del mese" o "chiudere i conti l’ultimo giorno lavorativo del mese". Un giorno lavorativo va dal lunedì al venerdì, senza le festività del tuo paese.
 
-Se le parole non sono chiare, come "every 2nd business day" (il 2 del mese, o un giorno sì e uno no?), l’attività tiene tutte le tue parole e non si ripete. Scegli **Si ripete** per impostarlo.
+Se le parole non sono chiare, come "ogni 2° giorno lavorativo" (il 2 del mese, o un giorno sì e uno no?), l’attività tiene tutte le tue parole e non si ripete. Scegli **Si ripete** per impostarlo.
 
 Oppure dillo e basta: "ogni mese fare le buste paga" in Nuova attività o in Parla crea un’attività che si ripete.
 

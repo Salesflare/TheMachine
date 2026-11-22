@@ -1,7 +1,7 @@
 ---
 title: ChatGPT
 area: connections
-summary: Войдите через ChatGPT, чтобы пользоваться The Machine по своему тарифу ChatGPT и импортировать навыки ChatGPT.
+summary: Войдите через ChatGPT, чтобы пользоваться Machine по своему тарифу ChatGPT и импортировать навыки ChatGPT.
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
@@ -9,7 +9,7 @@ translated: fc97be60c0b68336
 ---
 ## Для чего это нужно
 
-Войдите через ChatGPT, и The Machine будет читать и составлять черновики с помощью ChatGPT, используя ваш тариф. У The Machine нет собственного ИИ: запросы отправляются напрямую в OpenAI от вашего имени и регулируются условиями OpenAI.
+Войдите через ChatGPT, и ваша Machine будет читать и составлять черновики с помощью ChatGPT, используя ваш тариф. У The Machine нет собственного ИИ: запросы отправляются напрямую в OpenAI от вашего имени и регулируются условиями OpenAI.
 
 ## Вход
 

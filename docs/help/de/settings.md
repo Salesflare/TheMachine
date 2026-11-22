@@ -17,7 +17,7 @@ translated: 4b0cf1cc99529e64
 - **Schreiben**: Signaturen und dein Schreibstil. Weitere Informationen findest du unter [Schreiben](writing.md).
 - **Skills**: Anleitungen, an die sich deine Machine hält. Weitere Informationen findest du unter [Skills](skills.md).
 - **Apps**: Zuerst die Apps von The Machine für dein Handy und deinen Computer, dann Claude, ChatGPT und andere KIs, die du verbunden hast, und was sie jeweils tun dürfen. Weitere Informationen findest du unter [Die mobile App](mobile-app.md) und [Andere KIs verbinden](ai-connections.md).
-- **Modell**: Die KI, die für dich liest und Entwürfe erstellt, und ihre Grenzen. Weitere Informationen findest du unter [Modell](model.md). Außerdem **Codex und Claude Code**: siehe [An Claude Code oder Codex übergeben](hand-to-agent.md). Und weiter unten **Suche nach Bedeutung**.
+- **Modell**: Die KI, die für dich liest und Entwürfe erstellt, und ihre Grenzen. Weitere Informationen findest du unter [Modell](model.md). Außerdem **Codex und Claude Code**: siehe [Aufgabe an Claude Code oder Codex übergeben](hand-to-agent.md). Und weiter unten **Suche nach Bedeutung**.
 
 Ein Tab ohne Inhalte wird ausgeblendet.
 
@@ -26,7 +26,7 @@ Ein Tab ohne Inhalte wird ausgeblendet.
 - **Sprache und Region**: Mit **Region** legst du fest, wie Datumsangaben, Uhrzeiten und Zahlen angezeigt werden (Oct 24 oder 24. Okt.). Unter **Zeitformat** wählst du zwischen 12-Stunden-Format (2:05 PM) und 24-Stunden-Format (14:05). Aufgaben, Telegram, die Zusammenfassung und Fleet-Nachrichten richten sich nach beiden Einstellungen. Bei einer gehosteten Machine wird zunächst die Zeitzone verwendet, die du bei der Anmeldung ausgewählt hast.
 - **Sprache**: English, Nederlands, Français, Deutsch, Español, Italiano, Português (Brasil), 简体中文, 日本語, 한국어 oder Русский. Standardmäßig wird die Sprache deines Browsers verwendet. Das Dashboard, die Hilfe, Benachrichtigungen, Telegram, der Wochenrückblick und die Aufgaben, die deine Machine erstellt, wechseln ab dem Zeitpunkt deiner Auswahl zur neuen Sprache. Ältere Texte bleiben unverändert. Deine Teammitglieder erhalten Fleet- und Family-Anfragen in ihrer eigenen Sprache. Entwürfe an andere bleiben in der Sprache des jeweiligen Gesprächs.
 - **Dieses Gerät**: **App installieren**, **Benachrichtigungen** mit **Test senden** und **Heller Modus**, nur für diesen Browser oder dieses Handy. Weitere Informationen findest du unter [App installieren und Benachrichtigungen einschalten](phone-app.md). Unter [Omarchy](omarchy.md) gibt es außerdem **Omarchy-Theme**.
-- **Spracheingabe**: Wie deine gesprochenen Worte zu Text werden und wie Talk live klingt. Weitere Informationen findest du unter [Spracheingabe](voice-input.md) und [Talk live](talk-live.md).
+- **Spracheingabe**: Wie deine gesprochenen Worte zu Text werden und wie Talk live klingt. Weitere Informationen findest du unter [Spracheingabe](voice-input.md) und [Live sprechen](talk-live.md).
 - **Browser der Machine öffnen ↗**: Der Browser, den deine Machine für Websites wie LinkedIn verwendet.
 - **Fleet-Regeln**: Weitere Informationen findest du unter [Freigaberegeln](sharing-rules.md).
 - **Exportieren**:
@@ -37,7 +37,7 @@ Ein Tab ohne Inhalte wird ausgeblendet.
 
 Die Version, die deine Machine ausführt. Updates werden automatisch installiert. Wenn auf einer gehosteten Machine eine neuere Version bereitsteht, wird sie mit **Jetzt aktualisieren** sofort installiert. Das dauert ein paar Minuten. Deine Daten bleiben erhalten.
 
-Auf deinem eigenen Computer installiert ein täglicher Timer jede neue signierte Version unter Linux. Weitere Informationen findest du unter [Auf dem eigenen Computer ausführen](self-hosted-setup.md).
+Auf deinem eigenen Computer installiert ein täglicher Timer jede neue signierte Version unter Linux. Weitere Informationen findest du unter [Auf deinem eigenen Computer ausführen](self-hosted-setup.md).
 
 ## Suche nach Bedeutung
 

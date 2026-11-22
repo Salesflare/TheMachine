@@ -38,7 +38,7 @@ In einer Work Fleet verbindet ein Owner oder Admin Stripe einmal und teilt die V
 1. Verbinde Stripe mit deiner eigenen Machine (siehe oben). Im Feld **Geteilte Verbindungen** auf dem Fleet-Tab findest du auch **Stripe verbinden**.
 2. Öffne auf dem Fleet-Tab **Stripe teilen**. Alle sind ausgewählt. Entferne die Auswahl für alle, die keinen Zugriff erhalten sollen. Klicke auf **Teilen**.
 
-Die Machines deiner Teammitglieder können Stripe dann ebenfalls lesen. Unter **Verbindungen** siehst du, wer die Verbindung geteilt hat. Nur die Admins der Fleet können sie ändern oder beenden. Deine Machine erneuert den Zugriff für die anderen stündlich. Ist sie ausgeschaltet, wird der Stripe-Zugriff für sie pausiert. Niemand erhält deine Anmeldedaten. Weitere Informationen: [Fleet](fleet.md).
+Die Machines deiner Teammitglieder können Stripe dann ebenfalls lesen. Unter **Verbindungen** siehst du, wer die Verbindung geteilt hat. Nur die Admins der Fleet können sie ändern oder beenden. Deine Machine erneuert den Zugriff für die anderen stündlich. Ist sie ausgeschaltet, wird der Stripe-Zugriff für sie pausiert. Niemand erhält deine Anmeldedaten. Weitere Informationen: [Fleets](fleet.md).
 
 Wenn ein Teammitglied dasselbe Stripe-Konto selbst verbindet, wird es nur einmal gelesen. Die geteilte Verbindung bleibt ungenutzt.
 

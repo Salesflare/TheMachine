@@ -38,7 +38,7 @@ Fino ad allora, **Automatico** usa il riconoscimento vocale integrato nel browse
 - **Precisione** (solo sulla tua Machine): **Più preciso** funziona meglio per la maggior parte delle lingue. **Più veloce** è più rapido, ma fa più errori ed è l’impostazione predefinita su una Machine standard.
 - **Lingua**: **Rileva** funziona con tutte le lingue dell’app. Selezionare la tua lingua è un po’ più veloce.
 
-Per parlare a voce alta con The Machine, consulta [Parlare dal vivo](talk-live.md).
+Per parlare a voce alta con The Machine, consulta [Parla dal vivo](talk-live.md).
 
 ## Se non funziona
 

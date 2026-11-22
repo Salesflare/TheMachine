@@ -32,7 +32,7 @@ translated: 5cbe43055458daf4
 
 或者，在终端中运行`assistant connect x`。
 
-如果X让你的Machine退出登录，请参阅[网站已退出登录](signed-out.md)。
+如果X让你的Machine退出登录，请参阅[已退出网站](signed-out.md)。
 
 ## 移除连接
 
