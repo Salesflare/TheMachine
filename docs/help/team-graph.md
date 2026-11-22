@@ -76,7 +76,7 @@ Your first share goes by itself an hour after your Machine tells you. In that ho
 
 **Fleet** › **What's shared** shows it all: counts per kind, each shared thread and why it went, the ones under **Share these?**, and what you keep private. Tap a subject to read it. **Settings** and each thread's label link here too.
 
-A new client thread waits an hour before it goes, so there's time to change your mind.
+A new client thread waits an hour before it goes, so there's time to change your mind. It goes within half an hour after that. Unsharing and **Keep private** reach your team within 5 minutes.
 
 ## Unshare
 

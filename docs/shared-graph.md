@@ -468,8 +468,18 @@ onto another blob.
 
 ### Publishing and receiving
 
-Each Machine publishes every few minutes when something changed and fetches with a cursor. The Network's inbox reports
-the newest wrap cursor (`graph=`), so a Machine fetches only when there is something new for it.
+A round runs every 5 minutes (`ROUND_EVERY`): the directory, keys, an admin's remove or pause, and fetching what
+teammates sent. Reading every shared thread and publishing runs every 30 minutes (`PUBLISH_EVERY`,
+`shared_graph_since.publish`), since a new client thread waits out its hour anyway. It runs at the next round instead
+when:
+
+- the round is forced: a member OK, **Share now**, an admin's remove, an opt-out;
+- the owner chose something: a thread's Team or Only you, **Keep private**, a sharing rule, who a board or thread is
+  shared with, an Only-you board or project and its messages, a connection, who is Personal, Family or Friends;
+- a thread that went is now kept back: Only you by hand, or the review's call is no longer client.
+
+So taking something back still reaches teammates within a round. Each Machine fetches with a cursor. The Network's
+inbox reports the newest wrap cursor (`graph=`), so a Machine fetches only when there is something new for it.
 
 A round reads its messages and graph again only when something it reads could have changed since a round that sent
 everything (`shared_graph_since.py`):

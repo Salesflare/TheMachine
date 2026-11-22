@@ -1487,7 +1487,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
             if not me:
                 continue
             try:
-                self._graph_fleet(group, me)
+                self._graph_fleet(group, me, force)
             except Exception as error:  # noqa: BLE001 - away, or a Network from before: the next round tries again
                 LOG.warning('shared graph round fleet=%s error=%s', group['id'], type(error).__name__)
         try:
@@ -1495,7 +1495,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         except Exception as error:  # noqa: BLE001
             LOG.warning('shared graph fetch error=%s', type(error).__name__)
 
-    def _graph_fleet(self, group, me):
+    def _graph_fleet(self, group, me, force=True):
         found, trusted, waiting = self.confirmed(group)
         members = {m['member_id']: m for m in group.get('members', []) if m.get('member_id')}
         self.graph_purge(group, trusted)
@@ -1521,7 +1521,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         else:
             if set(found) - {me['member_id']} and not self._started(group['id']):
                 self._start_notice(group)
-            self.graph_publish(group, me, found)
+            incremental.publish(self, group, me, found, force)  # graph_publish: every PUBLISH_EVERY, sooner on a choice or take-back
         self._graph_want_round(group, me, found)  # catching up: with what is left of this hour's budget
         try:
             self._graph_serve(group, me, found, trusted)

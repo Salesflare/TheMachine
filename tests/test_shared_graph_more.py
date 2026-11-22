@@ -420,6 +420,89 @@ class SharedGraphMore(base.SharedGraph):
         self.assertNotIn('Quiet deal', json.dumps(self.team(self.mem)))
 
     # -- what goes, judged per thread: when unsure, not
+    # -- a round every five minutes; reading and publishing every half hour (shared_graph_since.publish)
+    def tick(self):
+        """One round of each Machine as the Fleet loop runs it every five minutes: not forced."""
+        for box in self.boxes:
+            box.last['graph'] = -1e9
+            box.directory(refresh=True)
+            box.graph_round()
+
+    def later(self, minutes):
+        for box in self.boxes:
+            box.__dict__['_graph_published'] = {f: (at - minutes * 60, *rest) for f, (at, *rest) in box.__dict__.get('_graph_published', {}).items()}
+
+    def test_new_threads_go_every_half_hour_and_take_backs_within_a_round(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        reads, publish = [], self.own.graph_publish
+        self.own.graph_publish = lambda *args: reads.append(1) or publish(*args)
+        self.new_thread(20, 'Second order', 'Forty more seats, please.')
+        self.tick()
+        self.assertEqual(reads, [])  # five minutes on, nothing chosen: no read of every thread
+        self.assertNotIn('Forty more seats', self.received(self.mem))
+        self.later(31)
+        self.tick()
+        self.assertIn('Forty more seats', self.received(self.mem))
+        self.tick()
+        self.assertEqual(len(reads), 1)
+        with self.own.store.connect() as db:  # the owner's Only you on a thread that went: back within a round
+            sg.set_hand(db, self.event_id(self.own, 'work-1'), 'private')
+        self.tick()
+        self.assertNotIn(BODY, self.received(self.mem))
+        self.judge(self.own, ('work-20', 'personal', 'Family after all'))  # the review's call no longer client: the same
+        self.tick()
+        self.assertNotIn('Forty more seats', self.received(self.mem))
+        self.add(self.own, mail('work', 21, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Third order', 'Ten more seats.', 0, 't-third'))
+        self.judge(self.own, ('work-21', 'client', 'Lee wrote'))
+        self.tick()
+        self.assertNotIn('Ten more seats', self.received(self.mem))
+        with self.own.store.connect() as db:  # Keep private on a person: all of theirs comes back within a round
+            sg.keep_private(db, 'email:lee@client.example')
+        self.later(31)
+        self.tick()
+        self.assertNotIn('Ten more seats', self.received(self.mem))  # kept private before its half hour came
+        self.assertEqual(len(reads), 4)
+
+    def test_an_admins_remove_and_pause_reach_every_machine_within_a_round(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        time.sleep(1.1)  # statements and blobs carry whole seconds: the removal comes after the blobs
+        self.adm.graph_pause(FLEET, True, remove=True)  # no forced round on the other Machines
+        self.tick()
+        for box in self.boxes:
+            self.assertEqual(self.team(box, 'team_mail'), [], box.member_id)
+        self.adm.graph_pause(FLEET, False)
+        self.own.graph_start(FLEET)
+        self.rounds(3)
+        self.assertIn(BODY, self.received(self.mem))
+        self.adm.graph_pause(FLEET, True)
+        self.new_thread(22, 'Paused order', 'Sent while sharing is paused.')
+        self.later(31)
+        self.tick()
+        self.assertNotIn('Sent while sharing is paused', self.received(self.mem))
+        self.adm.graph_pause(FLEET, False)
+        self.adm.graph_remove(FLEET, 'mem3')  # forces the admin's round only
+        self.tick()
+        self.assertEqual(self.from_others(self.mem), {})  # gone from Mo's Machine at its next round
+
+    def test_the_hour_holds_also_when_the_half_hour_comes(self):
+        sg.HOLD = 3600
+        self.olive_mail()
+        self.rounds()
+        self.later(31)
+        self.tick()
+        self.assertNotIn(BODY, self.received(self.mem))  # a publish read it, and the thread is still in its hour
+        with self.own.store.connect() as db:
+            db.execute('UPDATE share_threads SET sorted_at=?', (ago(0, 2),))
+        self.tick()
+        self.assertNotIn(BODY, self.received(self.mem))  # out of the hour: it goes with the next half hour, not sooner
+        self.later(31)
+        self.tick()
+        self.assertIn(BODY, self.received(self.mem))
+
     def test_a_new_client_thread_waits_an_hour_first(self):
         sg.HOLD = 3600
         self.olive_mail()

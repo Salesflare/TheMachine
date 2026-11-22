@@ -2989,7 +2989,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             except (ValueError, OSError, KeyError, TypeError, Off) as error:  # Off: a Network from before, without shared connectors
                 LOG.error('shared connectors error=%s', type(error).__name__)
             try:
-                self.timed('graph', self.graph_round)  # the Shared Graph (shared_graph.py): confirm members, keys, publish and take, at most every 5 minutes
+                self.timed('graph', self.graph_round)  # the Shared Graph (shared_graph.py): confirm members, keys, take back and take, at most every 5 minutes; publish every 30
             except (ValueError, OSError, KeyError, TypeError, Off) as error:
                 LOG.error('shared graph error=%s', type(error).__name__)
         with self.connect() as db:  # a question still to tell the owner about: come back sooner
