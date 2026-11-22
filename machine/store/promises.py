@@ -555,8 +555,8 @@ class PromisesStore:
             promise_logged(db, row['id'], 'seen', card['id'])
 
     def settle_promises(self, db):
-        """Someone else's email promise closes when that sender replies in the same thread (address only
-        when the original has no thread): their new message is reviewed as usual. A promise whose message was deleted is dropped."""
+        """Someone else's email promise notes when that sender replies in the same thread (address only when the
+        original has no thread) and stays open: their new message is reviewed as usual. A promise whose message was deleted is dropped."""
         db.execute("UPDATE promises SET status='dropped',note='The message was deleted',updated_at=? WHERE status='open' "
                    "AND event_id IN (SELECT id FROM events WHERE deleted=1)", (now(),))
         # The same open promise twice (stored before promise() caught it): keep one, the owner's when both sides said it
@@ -576,14 +576,15 @@ class PromisesStore:
                 if r['id'] != keep['id']:
                     db.execute("UPDATE promises SET status='dropped',note=?,updated_at=? WHERE id=?", (f"The same as promise {keep['id']}", now(), r['id']))
                     promise_logged(db, r['id'], 'merged', keep['id'])
-        for row in db.execute("SELECT id,watch FROM promises WHERE status='open' AND watch IS NOT NULL").fetchall():
+        # Their reply is no sign it was kept ("Sure", an auto-reply, part of it): it is logged once and the promise stays
+        # open, for the review that reads the reply (kept or a new date) or else the check when due, which reads it too
+        for row in db.execute("SELECT id,watch FROM promises WHERE status='open' AND watch IS NOT NULL "
+                              "AND id NOT IN (SELECT promise_id FROM promise_log WHERE kind='replied')").fetchall():
             watch = {**json.loads(row['watch']), 'promise': True}
             answer = next((e for e in db.execute('SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE account_id=? AND kind=? AND occurred_at>? AND deleted=0 ORDER BY occurred_at',
                                                  (watch['account_id'], watch['kind'], watch['since'])) if awaiting_match(watch, dict(e), self.owner_user_ids)), None)
             if answer:
-                db.execute("UPDATE promises SET status='answered',note=?,updated_at=? WHERE id=?",
-                           (f"They wrote again: {answer['title'][:150]}", now(), row['id']))
-                promise_logged(db, row['id'], 'answered', answer['id'])
+                promise_logged(db, row['id'], 'replied', answer['id'])
         # A to-do with a deadline that came to hold someone else's promise after it was made: checked before that deadline
         for row in db.execute("SELECT id,event_id,check_at FROM promises WHERE status='open' AND direction='theirs'").fetchall():
             sooner = before_blocked(db, row['event_id'], row['check_at'], thread=False)
