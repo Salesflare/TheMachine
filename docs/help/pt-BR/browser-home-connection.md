@@ -25,8 +25,8 @@ Toque em **Testar**. A página mostra onde a web vê seu navegador: sua cidade e
 
 ## Quando o computador de casa está desligado
 
-Seu navegador então sai direto da sua Machine, e volta a passar pela sua casa assim que o computador liga de novo. Saiu do Tailscale? Toque em **Entrar de novo**. O Tailscale desconecta os dispositivos depois de 6 meses, a não ser que key expiry esteja desligado. A página de configuração mostra a data.
+Seu navegador então sai direto da sua Machine, e volta a passar pela sua casa assim que o computador liga de novo. Saiu do Tailscale? Toque em **Entrar de novo**. O Tailscale desconecta os dispositivos depois de 6 meses, a não ser que key expiry esteja desativado. A página de configuração mostra a data.
 
 ## Parar de usar
 
-Toque em **Parar de usar** para voltar a ir direto. **Sair também do Tailscale** também tira o navegador da sua Machine do Tailscale. O console de administração do Tailscale mostra ele então como Expired, e você pode removê-lo lá.
+Toque em **Parar de usar** para voltar a ir direto. **Sair também do Tailscale** também tira o navegador da sua Machine do Tailscale. O console de administração do Tailscale passa a mostrá-lo como Expired, e você pode removê-lo lá.

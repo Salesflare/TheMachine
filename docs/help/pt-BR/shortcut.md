@@ -17,15 +17,15 @@ Nada no Shortcut. Ela só lê.
 
 ## Conectar
 
-1. No painel: **Conexões**, **Projetos e código**, Shortcut. Ou, na página de configuração de uma Machine hospedada, em app.themachine.computer/setup: **Mais fontes**, Shortcut. No seu computador, primeiro conecte sua conta a ela.
-2. Pressione **Fazer login com Shortcut** e permita o acesso de leitura. Ela pede ao Shortcut somente acesso de leitura.
-3. Ao voltar para The Machine, ela verifica o login na hora e mostra com qual conta se conectou e em qual espaço de trabalho.
+1. No painel: **Conexões**, **Projetos e código**, Shortcut. Ou, na página de configuração de uma Machine hospedada, em app.themachine.computer/setup: **Mais fontes**, Shortcut. No seu computador, primeiro pareie a Machine com a sua conta.
+2. Pressione **Entrar com o Shortcut** e permita o acesso de leitura. Ela pede ao Shortcut somente acesso de leitura.
+3. Ao voltar para a The Machine, ela verifica o login na hora e mostra com qual conta se conectou e em qual espaço de trabalho.
 
-Tem mais de um espaço de trabalho no Shortcut? Primeiro, mude para o espaço desejado no Shortcut. Para outro espaço de trabalho, adicione Shortcut novamente.
+Tem mais de um espaço de trabalho no Shortcut? Primeiro, mude para o espaço desejado no Shortcut. Para outro espaço de trabalho, adicione o Shortcut novamente.
 
 ## Cole um token
 
-Em **Ou cole um token de API**, pressione **Pegue seu token**. O Shortcut abre a página API Tokens em uma nova guia: crie um token, copie, cole e pressione **Conectar**. No seu computador, `assistant connect shortcut` também solicita o token. Ele dá acesso total à sua conta, mas The Machine só o usa para leitura.
+Em **Ou cole um token de API**, pressione **Gerar seu token**. O Shortcut abre a página API Tokens em uma nova guia: crie um token, copie, cole e pressione **Conectar**. No seu computador, `assistant connect shortcut` também solicita o token. Ele dá acesso total à sua conta, mas The Machine só o usa para leitura.
 
 ## Remover
 

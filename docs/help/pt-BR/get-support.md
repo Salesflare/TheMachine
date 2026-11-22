@@ -1,5 +1,5 @@
 ---
-title: Obter suporte
+title: Falar com o suporte
 area: troubleshooting
 summary: Relate um bug pelo seu painel, escreva para nós ou deixe nossa equipe olhar sua Machine por um dia.
 covers: support-bundle, support-access
@@ -20,18 +20,18 @@ Abra **Ajuda** e depois **Relatar um bug**. Uma mensagem de erro também tem um 
 
 1. Diga o que deu errado.
 2. Adicione uma captura de tela, se ajudar: **Tirar uma captura de tela** do painel, ou **Anexar uma imagem**.
-3. Deixe **Incluir um relatório de suporte** ativado, a menos que prefira não incluir. Ele adiciona versões, verificações e erros recentes, sem mensagens, chaves ou endereços, e deixa nossa equipe ler os logs e as configurações da sua Machine por 24 horas. Veja [Acesso de suporte](get-support.md#support-access). Desmarcado, só vão o que você escreveu e o seu screenshot.
-4. Toque em **Enviar**. O formulário fecha na hora. A sua Machine adiciona o relatório de suporte sozinha; uma verificação lenta nunca segura o seu relato.
+3. Deixe **Incluir um relatório de suporte** ativado, a menos que prefira não incluir. Ele adiciona versões, verificações e erros recentes, sem mensagens, chaves ou endereços, e deixa nossa equipe ler os logs e as configurações da sua Machine por 24 horas. Veja [Acesso de suporte](get-support.md#support-access). Desmarcado, só vão o que você escreveu e a sua captura de tela.
+4. Toque em **Enviar**. O formulário fecha na hora, e o relatório de suporte vai em seguida, sozinho.
 
 A partir daí é com a gente. Uma Machine auto-hospedada pode enviar um relatório quando está na Network. Se não estiver, escreva para nós.
 
-Você também pode dizer à sua Machine no chat que algo nela está errado. Ela oferece enviar um relato e te dá um link que abre **Relatar um bug** com as suas palavras e um resumo curto já preenchidos. Nada sai até você tocar em **Enviar**. Sem uma conta para onde enviar, ela diz onde escrever.
+Ou simplesmente diga à sua Machine no chat que algo está errado. Ela abre **Relatar um bug** para você, com as suas palavras e um resumo curto já preenchidos. Nada sai até você tocar em **Enviar**.
 
 Quando corrigimos um bug que você relatou e sua Machine já tem a correção, avisamos uma vez: uma linha curta no seu painel e um e-mail curto. Uma Machine auto-hospedada fica sabendo quando está na Network.
 
 A linha pergunta se agora funciona mesmo. Toque em **Funciona agora**, ou em **Ainda não está certo** para dizer o que ainda não está certo, com uma imagem se ajudar. Isso chega para nós como um novo relato, ligado ao primeiro. **×** fecha a linha sem responder.
 
-Se um relatório não puder sair na hora (você está offline ou enviou muitos em pouco tempo), ele não se perde. A sua Machine guarda o relatório, avisa quando ele vai sair e envia sozinha. Relatórios que ainda estão esperando aparecem em **Aguardando envio**.
+Se um relatório não puder sair na hora (você está offline ou enviou muitos em pouco tempo), ele não se perde. A sua Machine guarda o relatório e o envia sozinha mais tarde. Até lá, ele aparece em **Aguardando envio**.
 
 ## Acesso de suporte
 

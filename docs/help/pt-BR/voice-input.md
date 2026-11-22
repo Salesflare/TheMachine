@@ -30,19 +30,19 @@ A gravação é apagada assim que o texto fica pronto.
 
 Para transcrever a fala, sua Machine primeiro baixa um modelo de reconhecimento de fala (150 a 500 MB) em segundo plano, quando está ociosa. Enquanto isso, **Preparando (em segundo plano)** aparece em Configurações. Esse download não acontece quando a OpenAI está em uso.
 
-Até lá, **Automático** usa o reconhecimento de fala do próprio navegador, se ele tiver esse recurso, e informa isso abaixo da caixa. Alguns navegadores enviam o áudio ao fabricante. Se **Nesta Machine** estiver selecionado, sua gravação fica aguardando, e a caixa mostra “Preparando a entrada por voz…” com o tempo restante.
+Até lá, **Automático** usa o reconhecimento de fala do próprio navegador, se ele tiver esse recurso, e informa isso abaixo da caixa. Alguns navegadores enviam o áudio ao fabricante. Se **Nesta Machine** estiver selecionado, sua gravação fica aguardando, e a caixa mostra “Preparando a voz…” com o tempo restante.
 
 ## Configurações
 
 - **Transcrito**: **Automático**, **Nesta Machine** ou **Com a OpenAI**.
-- **Precisão** (somente na sua Machine): **Mais preciso** funciona melhor para a maioria dos idiomas. **Mais rápido** é mais ágil, mas comete mais erros, e é a opção padrão em uma Machine padrão.
+- **Precisão** (somente na sua Machine): **Mais preciso** funciona melhor para a maioria dos idiomas. **Mais rápido** é mais ágil, mas comete mais erros, e é a opção padrão em uma Machine Padrão.
 - **Idioma**: **Detectar** funciona com todos os idiomas do app. Escolher o seu idioma é um pouco mais rápido.
 
-Para conversar com The Machine em voz alta, veja [Converse ao vivo](talk-live.md).
+Para conversar com a The Machine em voz alta, veja [Falar ao vivo](talk-live.md).
 
 ## Quando não funciona
 
 - **O microfone está bloqueado**: permita o acesso ao microfone para este site nas configurações do navegador. No app para celular, essa opção fica nas permissões do app.
 - **Nenhum microfone encontrado**: conecte um e tente novamente.
 - **Não foi possível conectar à sua Machine**: sua gravação será mantida e transcrita quando sua Machine voltar a ficar disponível. Para tentar antes, toque em **Tentar agora**.
-- **Não consegui captar nada**: fale mais perto do microfone ou por um pouco mais de tempo.
+- **Não entendi nada**: fale mais perto do microfone ou por um pouco mais de tempo.

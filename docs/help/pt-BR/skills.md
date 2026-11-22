@@ -41,7 +41,7 @@ Quando muitas das suas anotações tratam do mesmo tipo de tarefa, uma tarefa su
 
 ## A partir de uma tarefa
 
-Peça uma habilidade em uma tarefa e sua Machine a escreverá ali. Abra **Ler a habilidade** e pressione **Criar habilidade** (ou **Atualizar habilidade** para uma que você já tem). Nada é instalado antes disso. Você dispensou a habilidade em Configurações > Habilidades? A tarefa mostra **Habilidade dispensada** e continua aberta para você fechar.
+Peça uma habilidade em uma tarefa e sua Machine a escreverá ali. Abra **Ler a habilidade** e pressione **Criar habilidade** (ou **Atualizar habilidade** para uma que você já tem). Nada é instalado antes disso. Você descartou a habilidade em Configurações > Habilidades? A tarefa mostra **Habilidade descartada** e continua aberta para você fechar.
 
 ## Compartilhar uma habilidade
 

@@ -32,12 +32,12 @@ No seu próprio computador:
 
 Ou execute `assistant connect x` em um terminal.
 
-Se o X desconectar sua Machine, consulte [Saiu de um site](signed-out.md).
+Se o X desconectar sua Machine, consulte [Um site desconectou sua Machine](signed-out.md).
 
 ## Remover
 
 - No painel: abra **Conexões**, escolha X e acesse **Detalhes**. Depois, pressione **Desconectar**. Ela para de ler, mas o que já importou permanece.
-- Em uma Machine hospedada, você também pode pressionar **Remover** ao lado dela na página de configuração.
+- Em uma Machine hospedada, você também pode pressionar **Remover** ao lado do X na página de configuração.
 
 ## Encerrar a sessão da sua Machine no X
 

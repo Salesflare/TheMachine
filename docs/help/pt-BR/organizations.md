@@ -14,7 +14,7 @@ Ela é montada como a página de uma pessoa: logotipo, nome e o que faz, uma fra
 
 A lista de **Projetos** mostra primeiro os que estão abertos, cada um com sua etapa. A linha do tempo reúne mensagens das pessoas que trabalham nela, conversas do Intercom associadas ao domínio e mudanças nos projetos. Veja [Linha do tempo](people.md#timeline).
 
-**Pergunte à Fleet quem conhece** encontra um caminho até ela pela sua Fleet.
+**Pergunte ao Fleet quem conhece** encontra um caminho até ela pelo seu Fleet.
 
 ## Adicionar uma organização
 

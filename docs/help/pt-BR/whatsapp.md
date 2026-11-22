@@ -39,13 +39,13 @@ Em uma Machine hospedada:
 4. Em até um minuto, o WhatsApp aparece como conectado. Seu histórico de chats continua sendo carregado depois disso, e o cartão mostra a quantidade de mensagens recebidas durante esse processo.
    Se a conexão demorar demais, uma mensagem será exibida após alguns minutos. Toque em **Tentar de novo** para continuar de onde parou.
 
-Está configurando no celular, sem uma segunda tela para escanear o código? Abra **No celular? Conecte com um código**, digite seu número e toque em **Pegar um código**. O WhatsApp vai pedir esse código.
+Está configurando no celular, sem uma segunda tela para escanear o código? Abra **Está no celular? Vincule com um código**, digite seu número e toque em **Receber um código**. O WhatsApp vai pedir esse código.
 
 No seu próprio computador: abra **Conexões**, depois **Chat**, escolha WhatsApp, digite seu número de celular com o código do país e toque em **Conectar**. Um código será exibido. No celular, abra o WhatsApp, vá para Configurações, Dispositivos conectados, Conectar um dispositivo, toque em **Conectar com número de telefone** e digite o código.
 
 Ou execute `assistant connect whatsapp` e escaneie o código exibido no terminal. Na primeira vez, o sistema oferece instalar o conector do WhatsApp, uma versão fixada e verificada pelo checksum ([código-fonte](https://github.com/Salesflare/wacli)).
 
-Em Dispositivos conectados, ele aparece como The Machine. Se uma Machine já estava conectada, o nome antigo continua aparecendo até você conectá-la de novo.
+Em Dispositivos conectados, ela aparece como The Machine. Se uma Machine já estava conectada, o nome antigo continua aparecendo até você conectá-la de novo.
 
 Se o WhatsApp desconectar sua Machine, o cartão mostrará **O WhatsApp desvinculou esta Machine**. Toque em **Reconectar** e conecte-a de novo: digite seu número de telefone e, em seguida, o código exibido no WhatsApp em Dispositivos conectados, **Conectar com número de telefone**. Ela será conectada no mesmo lugar de antes, então seus chats continuarão lá. Se você configurou seu próprio serviço para manter o WhatsApp sincronizado, ele será pausado enquanto você conecta e voltará a funcionar depois.
 
@@ -57,7 +57,7 @@ The Machine solicita ao WhatsApp as fotos de perfil das pessoas no seu Graph que
 
 ## Remover
 
-- Em uma Machine hospedada: toque em **Remover** ao lado dela na página de configuração. Sua Machine se desvincula e apaga tudo o que guardou do WhatsApp.
+- Em uma Machine hospedada: toque em **Remover** ao lado do WhatsApp na página de configuração. Sua Machine se desvincula e apaga tudo o que guardou do WhatsApp.
 - No seu próprio computador: abra **Conexões**, o WhatsApp e **Detalhes**, depois toque em **Desconectar**. Em seguida, desvincule-a também no celular.
 
 ## Desvincular no WhatsApp

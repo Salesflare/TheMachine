@@ -1,13 +1,13 @@
 ---
 title: Graph da equipe
 area: fleet
-summary: **Experimental**. Compartilhe o trabalho com clientes com seu Fleet de trabalho, como em um CRM. Saiba o que é compartilhado, o que nunca é e como manter algo privado.
+summary: Experimental. Compartilhe o trabalho com clientes com seu Fleet de Trabalho, como em um CRM. Saiba o que é compartilhado, o que nunca é e como manter algo privado.
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
 translated: fc842bc761a3ab17
 ---
-Em um Fleet de trabalho, sua Machine pode compartilhar o trabalho com clientes com as Machines dos seus colegas, como em um CRM compartilhado. Esse recurso é **Experimental** e vem desativado.
+Em um Fleet de Trabalho, sua Machine pode compartilhar o trabalho com clientes com as Machines dos seus colegas, como em um CRM compartilhado. Esse recurso é **Experimental** e vem desativado.
 
 ## Ativar
 
@@ -17,7 +17,7 @@ Exigir o e-mail ou o calendário de trabalho de todos também ativa o recurso. D
 
 ## Suas conexões
 
-**Suas conexões** em **O que é compartilhado** lista cada conexão com uma chave. As conexões de trabalho no domínio do Fleet vêm ativadas. As de outro domínio de empresa vêm desativadas e mostram “Outra empresa, não compartilhada”. As conexões pessoais nunca são compartilhadas. Ao desativar uma conexão, o que foi compartilhado por ela deixa de ser compartilhado.
+**Suas conexões** em **O que é compartilhado** lista cada conexão com uma chave. As conexões de trabalho no domínio do Fleet vêm ativadas. As de outro domínio de empresa vêm desativadas e mostram “Outra empresa, não compartilhado”. As conexões pessoais nunca são compartilhadas. Ao desativar uma conexão, o que foi compartilhado por ela deixa de ser compartilhado.
 
 O calendário de outra pessoa que você acessa com sua própria conta aparece com o nome dela, como pessoal.
 
@@ -30,7 +30,7 @@ Um admin pode exigir o **E-mail de trabalho** e o **Calendário de trabalho** de
 ## O que é compartilhado com a equipe
 
 - Conversas com clientes: e-mails de trabalho com pessoas de fora da sua empresa, incluindo anexos.
-- Pessoas, organizações e projetos de trabalho, com uma linha do tempo resumida. Na **Linha do tempo** de uma página, **Equipe** mostra cada evento uma vez, no idioma em que a Machine de um colega o registrou, junto com todas as pessoas de quem veio: “via Sam, Kim e Lee”.
+- Pessoas, organizações e projetos de trabalho, com uma linha do tempo resumida. Na **Linha do tempo** de uma página, **Equipe** mostra cada evento uma vez, no seu idioma quando a Machine de um colega o registrou assim, junto com todas as pessoas de quem veio: “via Sam, Kim e Lee”.
 - Uma cópia pequena do logotipo de uma organização e da foto de trabalho de uma pessoa, obtidas em uma busca, no Slack, LinkedIn, X, Salesflare ou Microsoft. Nunca são compartilhadas imagens dos contatos do Google, WhatsApp, Telegram ou Facebook, nem imagens que você alterou ou removeu.
 - Em um quadro da equipe, as reuniões, notas do Zoom, conversas do Intercom e chats de um projeto. Conversas confidenciais, como negociações, e chats só com colegas não são compartilhados.
 - Contagens e datas do [resumo da equipe](fleet.md#brief-requests) de um colega.
@@ -57,7 +57,7 @@ Conversas pessoais e só com colegas continuam privadas. O mesmo vale para sua f
 - Se você remover alguém ou não escolher ninguém, o conteúdo deixa de ser compartilhado com essa pessoa e é removido da Machine dela.
 - Para compartilhar uma conversa com pessoas específicas, toque no marcador dela e depois em **Compartilhar com…**. Isso pode incluir e-mails de trabalho confidenciais ou automatizados, mas nunca conversas pessoais ou só com colegas.
 
-## Em caso de dúvida, aguarde
+## Na dúvida, ela espera
 
 Quando sua Machine não tem certeza, ela não compartilha. Essas conversas ficam em **Compartilhar estes?**, agrupadas por tipo, como “Conversas com parceiros e sobre anúncios”, cada uma com uma sugestão:
 

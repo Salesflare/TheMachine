@@ -55,7 +55,7 @@ O app abre mostrando suas tarefas mais recentes e depois as atualiza. Essa cópi
 
 O painel continua funcionando no avião ou no trem. Uma barra no topo mostra **Sem conexão** e quando o que você está vendo foi atualizado pela última vez. Suas tarefas, os chats delas, o Calendário e as listas do Graph abrem pelo dispositivo.
 
-- **Adiar**, **Não precisa**, **Marcar como feita**, **Reabrir** e as mensagens de chat para The Machine ficam na fila no dispositivo, com a opção **Cancelar**. Elas são enviadas automaticamente quando você volta a ficar online.
+- **Adiar**, **Não precisa**, **Marcar como feita**, **Reabrir** e as mensagens de chat para a The Machine ficam na fila no dispositivo, com a opção **Cancelar**. Elas são enviadas automaticamente quando você volta a ficar online.
 - As mensagens para outras pessoas não ficam na fila: envie de novo quando voltar a ficar online.
 - O que você digitar em um chat fica no dispositivo até enviar, mesmo se recarregar a página.
 - O app continua tentando se conectar. **Tentar agora** faz uma nova tentativa na hora.

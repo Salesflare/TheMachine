@@ -10,15 +10,15 @@ translated: 06752aedb0bd152d
 ---
 ## Criar uma
 
-Em **Nova tarefa**, escolha **Repete** e um ritmo: **Diário**, **Dias úteis**, toda semana, todo mês numa data ou num dia como a primeira segunda-feira, ou todo ano. **Personalizado…** aceita suas próprias palavras, como every 2 weeks ou every last Friday.
+Em **Nova tarefa**, escolha **Repete** e um ritmo: **Diário**, **Dias úteis**, toda semana, todo mês numa data ou num dia como a primeira segunda-feira, ou todo ano. **Personalizado…** aceita suas próprias palavras, como a cada 2 semanas ou toda última sexta-feira.
 
 Dias úteis também: "enviar as faturas no segundo dia útil do mês" ou "fechar as contas no último dia útil do mês". Um dia útil é de segunda a sexta, sem os feriados do seu país.
 
-Se as palavras não estiverem claras, como "every 2nd business day" (o dia 2 do mês, ou dia sim, dia não?), a tarefa mantém todas as suas palavras e não se repete. Escolha **Repete** para definir.
+Se as palavras não estiverem claras, como "todo 2º dia útil" (o dia 2 do mês, ou dia sim, dia não?), a tarefa mantém todas as suas palavras e não se repete. Escolha **Repete** para definir.
 
-Ou só diga: "todo mês fazer a folha de pagamento" em Nova tarefa ou em Falar cria uma tarefa que se repete.
+Ou só diga: "toda primeira segunda-feira do mês fazer a folha de pagamento" em Nova tarefa ou em Falar cria uma tarefa que se repete.
 
-Para uma tarefa que você já tem, **Repetir…** em **…**, ou diga "repeat this every week" no chat dela.
+Para uma tarefa que você já tem, **Repetir…** em **…**, ou diga "repita isso toda semana" no chat dela.
 
 ## Como ela se repete
 
@@ -36,7 +36,7 @@ Ela também guarda como fazer: os passos que descobriu e o que você corrigiu, p
 
 ## Mudar ou parar
 
-Toque na linha "Repete" da tarefa: escolha outro ritmo, **Pular esta** (fecha esta e traz a próxima na data dela) ou **Parar de repetir**. "Stop repeating" no chat dela também funciona. Parar mantém a tarefa aberta; só as próximas deixam de vir.
+Toque na linha "Repete" da tarefa: escolha outro ritmo, **Pular esta** (fecha esta e traz a próxima na data dela) ou **Parar de repetir**. "Parar de repetir" no chat dela também funciona. Parar mantém a tarefa aberta; só as próximas deixam de vir.
 
 ## Sugestões
 

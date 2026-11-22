@@ -1,7 +1,7 @@
 ---
 title: Níveis de segurança
 area: security
-summary: Um único seletor, Padrão ou Cuidadoso, define suas configurações de segurança e privacidade. O admin de uma Fleet de trabalho escolhe uma opção para a Fleet.
+summary: Um único seletor, Padrão ou Cuidadoso, define suas configurações de segurança e privacidade. O administrador de um Fleet de Trabalho escolhe um nível para o Fleet.
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
@@ -18,17 +18,17 @@ Um nível é um ponto de partida. Se depois você mudar qualquer configuração,
 
 ## O que Cuidadoso muda para você
 
-- **Texto nas notificações**: **Desligada**. A notificação diz “Nova tarefa” ou “**Pronto**”, não o conteúdo da tarefa.
-- **Oferecer para salvar logins**: **Desligada**. Os sites em que você entrou e salvou o login continuam salvos até você tocar em **Esquecer todos os logins salvos**.
-- **Buscar contatos de trabalho**, **Oferecer compartilhar aprendizados** e **Compartilhar o que se pergunta à ajuda**: **Desligada**.
-- **Verificar quais dos meus contatos têm uma Machine** e **Deixar quem tem meu e-mail me encontrar**: **Desligada**.
-- **Manter detalhes de Fazer por 90 dias**: **Desligada**. Eles ficam salvos por 30 dias.
-- **O que outras Machines podem perguntar à minha**: definido como **Desligada**. Não há agendamento com outras Machines. Consulte [Amigos e a Network](friends.md#scheduling-with-other-machines).
+- **Texto nas notificações**: **Desativado**. A notificação diz “Nova tarefa” ou “Para revisar”, não o conteúdo da tarefa.
+- **Oferecer para salvar logins**: **Desativado**. Os sites em que você entrou e salvou o login continuam salvos até você tocar em **Esquecer todos os logins salvos**.
+- **Buscar contatos de trabalho**, **Oferecer compartilhar aprendizados** e **Compartilhar o que se pergunta à ajuda**: **Desativado**.
+- **Verificar quais dos meus contatos têm uma Machine** e **Deixar quem tem meu e-mail me encontrar**: **Desativado**.
+- **Manter detalhes de Fazer por 90 dias**: **Desativado**. Eles ficam salvos por 30 dias.
+- **O que outras Machines podem perguntar à minha**: definido como **Desativado**. Não há agendamento com outras Machines. Consulte [Amigos e a Network](friends.md#scheduling-with-other-machines).
 - Em uma família, o compartilhamento dos horários em que você está livre ou ocupado pede sua confirmação. Com Amigos, o contexto da reunião é recusado.
 
-## Nível de uma Fleet de trabalho
+## Nível de um Fleet de Trabalho
 
-A pessoa responsável pela Fleet ou um admin escolhe o nível nas configurações da Fleet: em **Configurações** › **Conta**, toque em **Fleet**. Todas as pessoas da Fleet podem vê-lo. Quando está definido como Cuidadoso:
+O proprietário do Fleet ou um administrador escolhe o nível nas configurações do Fleet: em **Configurações** › **Conta**, toque em **Fleet**. Todas as pessoas do Fleet podem vê-lo. Quando está definido como Cuidadoso:
 
 - As respostas para colegas de equipe aguardam sua aprovação, sem nomes e só sobre pessoas das suas contas de trabalho.
 - Apresentações e repasses também aguardam sua aprovação.
@@ -39,7 +39,7 @@ A pessoa responsável pela Fleet ou um admin escolhe o nível nas configuraçõe
 - Todas as pessoas precisam entrar novamente a cada 7 dias.
 - Um link de convite só funciona para o e-mail para o qual foi enviado.
 
-As pessoas podem escolher configurações mais restritivas que as da Fleet, mas não menos. As escolhas pessoais são mantidas e voltam a valer se a Fleet retornar a Padrão.
+As pessoas podem escolher configurações mais restritivas que as do Fleet, mas não menos. As escolhas pessoais são mantidas e voltam a valer se o Fleet voltar para Padrão.
 
 ## O que não muda
 

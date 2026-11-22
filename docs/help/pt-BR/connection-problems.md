@@ -31,4 +31,4 @@ O número em **Conexões** conta apenas as fontes que precisam da sua ajuda.
 
 No seu próprio computador, `assistant doctor` verifica todas as fontes e informa como resolver cada problema.
 
-Ainda não conseguiu resolver? Consulte [Fale com o suporte](get-support.md).
+Ainda não conseguiu resolver? Consulte [Falar com o suporte](get-support.md).

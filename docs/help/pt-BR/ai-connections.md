@@ -1,7 +1,7 @@
 ---
 title: Conectar outras IAs
 area: connections
-summary: Permita que Claude, ChatGPT, Cursor, Codex ou GBrain leiam suas tarefas e seu Graph. Com **Ler e editar**, elas também podem fazer alterações que você pode desfazer.
+summary: Permita que Claude, ChatGPT, Cursor, Codex ou GBrain leiam suas tarefas e seu Graph. Com Ler e editar, elas também podem fazer alterações que você pode desfazer.
 covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
@@ -22,7 +22,7 @@ Um rascunho fica esperando até você ler e pressionar **Enviar**. Uma IA conect
 
 Abra **Configurações** e **Apps**. Abaixo de **Os apps da The Machine**, você encontra **Adicionar no ChatGPT** e **Adicionar no Claude**. Em **Ou adicione por endereço**, ficam o endereço do app oficial, `https://mcp.themachine.computer/mcp`, que é o mesmo para todas as Machines, e **Seu endereço**, `https://<your name>.mcp.themachine.computer/mcp`. Cada um tem a opção **Copiar**.
 
-Em uma Machine no seu próprio computador, primeiro pressione **Configurar**, abaixo de **Obter seu endereço**. Uma página da sua conta será aberta: confira se ela mostra o mesmo código, confirme e escolha um nome. O pareamento da sua Machine acontece automaticamente, sem reiniciar. É necessário fazer isso das duas formas.
+Em uma Machine no seu próprio computador, primeiro pressione **Configurar**, abaixo de **Criar seu endereço**. Uma página da sua conta será aberta: confira se ela mostra o mesmo código, confirme e escolha um nome. O pareamento da sua Machine acontece automaticamente, sem reiniciar. É necessário fazer isso das duas formas.
 
 Sua Machine configura o endereço seguro automaticamente. Isso leva alguns minutos.
 
@@ -54,7 +54,7 @@ Nos dois casos, quem decide é sua Machine. Só uma IA que você aprovou na pág
 
 ## O que ela pode ver
 
-Uma conexão só acessa a área que você autorizou. Trabalho inclui as tarefas e promessas das suas contas de trabalho, as pessoas, empresas e projetos de trabalho, além do resumo da equipe da sua Fleet de Trabalho. Pessoal inclui o restante. O texto das mensagens continua na sua Machine, a menos que você ative **Mensagens**. Sem essa opção, uma IA só vê o remetente, o assunto e a data das fontes de uma tarefa.
+Uma conexão só acessa a área que você autorizou. Trabalho inclui as tarefas e promessas das suas contas de trabalho, as pessoas, empresas e projetos de trabalho, além do resumo da equipe do seu Fleet de Trabalho. Pessoal inclui o restante. O texto das mensagens continua na sua Machine, a menos que você ative **Mensagens**. Sem essa opção, uma IA só vê o remetente, o assunto e a data das fontes de uma tarefa.
 
 Os registros do Team Graph dos seus colegas nunca são enviados a uma IA externa.
 
@@ -66,7 +66,7 @@ Ela só lê mensagens da área autorizada. Algumas mensagens nunca são comparti
 
 Cada leitura aparece em **Atividade**, com a quantidade de mensagens e as conversas acessadas, mas sem o texto. Sua Machine entrega o texto identificado como dado, para que a IA não siga instruções escritas em uma mensagem.
 
-Enquanto **Mensagens** estiver ativada, as alterações no Graph feitas por uma IA com **Ler e editar** aguardam sua aprovação. Pressione **Aplicar** ou **Dispensar** na alteração em **Atividade**.
+Enquanto **Mensagens** estiver ativada, as alterações no Graph feitas por uma IA com **Ler e editar** aguardam sua aprovação. Pressione **Aplicar** ou **Descartar** na alteração em **Atividade**.
 
 ## Nas Configurações
 

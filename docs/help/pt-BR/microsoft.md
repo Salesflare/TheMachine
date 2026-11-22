@@ -37,9 +37,9 @@ Em uma Machine hospedada:
 2. Pressione **Conectar Microsoft** e entre na sua conta.
 3. Se a Microsoft pedir aprovação do administrador, envie o link para o administrador do Microsoft 365 (**Copiar link**). Depois da aprovação, todas as pessoas da sua organização poderão conectar suas contas. Se você for o administrador, pressione **Sou o administrador: aprovar agora**.
 
-Ou, no painel: **Conexões**, **E-mail**, escolha Outlook e pressione **Entrar com Microsoft**. O link para o administrador fica logo abaixo do botão.
+Ou, no painel: **Conexões**, **E-mail**, escolha Outlook e pressione **Entrar com a Microsoft**. O link para o administrador fica logo abaixo do botão.
 
-No seu próprio computador, depois que ela estiver [conectada à sua conta](friends.md#a-machine-on-your-own-computer): abra **Conexões**, depois **E-mail**, escolha Outlook e pressione **Entrar com Microsoft**. O e-mail e o calendário são conectados juntos. Depois de passar pela Microsoft, você volta para **Conexões** no painel.
+No seu próprio computador, depois que ela estiver [pareada com sua conta](friends.md#a-machine-on-your-own-computer): abra **Conexões**, depois **E-mail**, escolha Outlook e pressione **Entrar com a Microsoft**. O e-mail e o calendário são conectados juntos. Depois de passar pela Microsoft, você volta para **Conexões** no painel.
 
 Para equipes de TI que têm seu próprio aplicativo Microsoft Entra: abra **Usar seu próprio app** nessa página ou execute `assistant connect outlook`.
 
@@ -48,7 +48,7 @@ Para equipes de TI que têm seu próprio aplicativo Microsoft Entra: abra **Usar
 - Em uma Machine hospedada: pressione **Desconectar** ao lado da conta na página de configuração. **Desconectar ↗** em Conexões leva você até lá.
 - No seu próprio computador: abra **Conexões**, selecione a conta, pressione **Detalhes** e depois **Desconectar**.
 
-## Remover no Microsoft
+## Remover na Microsoft
 
 A Microsoft não permite revogar um acesso, então remova-o também por lá:
 

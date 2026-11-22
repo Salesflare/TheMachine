@@ -10,7 +10,7 @@ translated: d2ca08e771f23228
 ## Peça para alguém revisar uma tarefa
 
 1. Na tarefa, abra **…**, depois **Passar…** e escolha **Pedir revisão**. Se essa for a única opção, ela aparece direto no menu **…**. Você pode fazer isso em qualquer etapa: antes de **Fazer**, com um rascunho pronto ou pouco antes de enviar.
-2. Escolha quem vai revisar. Uma tarefa de Trabalho só pode ser enviada para alguém da sua Fleet de Trabalho. Uma tarefa pessoal só pode ser enviada para alguém da sua Família.
+2. Escolha quem vai revisar. Uma tarefa de Trabalho só pode ser enviada para alguém do seu Fleet de Trabalho. Uma tarefa pessoal só pode ser enviada para alguém da sua Família.
 3. Confira o que será enviado: o rascunho (ou o texto da tarefa) e as fontes. Toque em × para remover uma fonte. Se quiser, adicione uma observação e escolha **Perguntar**.
 
 Só essa tarefa é enviada, nada mais da sua Machine. Agora a tarefa mostra "Aguardando a revisão de Pat", com a opção **Retirar** para cancelar o pedido.

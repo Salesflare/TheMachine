@@ -13,7 +13,7 @@ Quando alguém em um quadro para de responder, sua Machine prepara um follow-up 
 
 No quadro, toque em **⋯**, depois em **Follow-ups…** e marque **Fazer follow-up quando não houver resposta**. Isso vale para todos os projetos do quadro. Você também pode tocar em **Follow-ups desativados** abaixo do nome do quadro ou em **Fazer follow-up** em uma etapa com projetos sem resposta há mais de 10 dias.
 
-Para um único projeto, toque em **⋯** no quadro ou na página do projeto e escolha **Follow-ups…**. Em **Para este projeto**, escolha **Ativado**, **Desligada** ou a configuração do quadro. A configuração do projeto prevalece sobre a do quadro.
+Para um único projeto, toque em **⋯** no quadro ou na página do projeto e escolha **Follow-ups…**. Em **Para este projeto**, escolha **Ativado**, **Desativado** ou a configuração do quadro. A configuração do projeto prevalece sobre a do quadro.
 
 ## Configurações
 

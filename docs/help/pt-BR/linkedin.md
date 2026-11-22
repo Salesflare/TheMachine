@@ -21,7 +21,7 @@ Ela lê bem devagar: uma página por vez, com alguns minutos de intervalo, algum
 
 ## O que ela pode enviar
 
-Uma resposta a uma mensagem ou uma nova mensagem para um perfil que você indicar, e somente depois que você aprovar a tarefa. Até lá, ela só cria rascunhos.
+Uma resposta a uma mensagem ou uma nova mensagem para um perfil que você indicar, e somente depois que você aprovar na tarefa. Até lá, ela só cria rascunhos.
 
 O LinkedIn não oferece uma forma oficial de fazer isso. Ler mensagens e enviar ocasionalmente uma mensagem que você aprovou dificilmente vai causar problemas; envios em massa ou automatizados podem levar ao bloqueio da conta.
 

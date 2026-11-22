@@ -20,16 +20,16 @@ Isso é separado do [Telegram](telegram.md), em que o seu próprio bot envia sua
 
 Um texto em um chat que já existe, só depois que você aprovar na tarefa. Os envios saem um de cada vez, com uma pausa entre eles.
 
-Se uma tarefa chegou por e-mail, mas você fala com essa pessoa pelo Telegram, diga isso no chat da tarefa. A The Machine encontra a conversa que você já tem com ela e passa o rascunho para o Telegram, para você revisar e enviar. Ela nunca começa uma conversa nova.
+Se uma tarefa chegou por e-mail, mas você fala com essa pessoa pelo Telegram, diga isso no chat da tarefa. The Machine encontra a conversa que você já tem com ela e passa o rascunho para o Telegram, para você revisar e enviar. Ela nunca começa uma conversa nova.
 
 ## Conectar
 
 1. No painel, abra **Conexões**, depois **Chat**, e escolha Chats do Telegram.
-2. Escolha **Escanear um QR code no Telegram do seu celular**.
+2. Escolha **Escanear um QR code com o Telegram em outro dispositivo**.
 3. No seu celular, no Telegram, abra Configurações, Dispositivos, **Link Desktop Device**, e escaneie o código.
 4. Se a sua conta tem uma senha na nuvem, digite quando for pedida. Ela vai para o Telegram e nunca é guardada.
 
-Configurando pelo celular, sem uma segunda tela para escanear? Escolha **Receber um código no Telegram para o seu número**. O formulário diz para onde o Telegram enviou o código: para o seu app do Telegram em outro dispositivo, por SMS ou para o seu e-mail de login. Não chegou? Toque em **Enviar o código de novo**.
+No celular, o formulário começa com **Receber um código para o seu número de telefone**, já que não dá para escanear um QR code na mesma tela. Ele diz para onde o Telegram enviou o código: para o seu app do Telegram em outro dispositivo, por SMS ou para o seu e-mail de login. Não chegou? Toque em **Enviar o código de novo**.
 
 No seu próprio computador, você também precisa de um ID de app do Telegram só seu. Crie um em [my.telegram.org](https://my.telegram.org), em API development tools, e preencha o api_id e o api_hash dele no formulário.
 
@@ -37,17 +37,17 @@ Ou rode `assistant connect telegram` em um terminal e escaneie o código que apa
 
 ## Quando ela para
 
-- **Desconectada do Telegram**: o Telegram encerrou o login deste dispositivo, ou você desconectou pelo celular. Toque em **Reconectar** no cartão dela.
-- **O Telegram parou de aceitar o ID de app**: o Telegram não aceita mais o ID de app que esta Machine usa. Nada é lido nem enviado até você tocar em **Reconectar** e adicionar um ID de app seu.
+- **Desconectada do Telegram**: o Telegram encerrou o login deste dispositivo, ou você desconectou pelo celular. Toque em **Reconectar** em **Conexões**.
+- **O Telegram parou de aceitar o ID do app**: o Telegram não aceita mais o ID de app que esta Machine usa. Nada é lido nem enviado até você tocar em **Reconectar** e adicionar um ID de app seu.
 
-A The Machine usa a API do Telegram para isso. O Telegram pode limitar ou encerrar logins de apps como ela.
+O Telegram pode limitar ou encerrar logins de apps como a The Machine.
 
 ## Fotos
 
-A The Machine pede ao Telegram as fotos de perfil das pessoas no seu Graph que não têm foto, no máximo 50 por dia, pelo mesmo login que lê seus chats, e só de pessoas de chats que ela lê. Nada é enviado a elas. Quem esconde a foto de você continua sem foto.
+The Machine pede ao Telegram as fotos de perfil das pessoas no seu Graph que não têm foto, no máximo 50 por dia, pelo mesmo login que lê seus chats, e só de pessoas de chats que ela lê. Nada é enviado a elas. Quem esconde a foto de você continua sem foto.
 
 ## Remover
 
 **Conexões**, abra Chats do Telegram, **Detalhes** e depois **Desconectar**. Sua Machine sai do Telegram e exclui o que guardou do Telegram.
 
-Ou encerre pelo celular: no Telegram, abra Configurações, Dispositivos, toque em The Machine e encerre a sessão.
+Ou encerre pelo celular: no Telegram, abra Configurações, Dispositivos, toque na The Machine e encerre a sessão.

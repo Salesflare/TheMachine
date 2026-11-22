@@ -19,7 +19,7 @@ Nada. Ela só lê o feed.
 
 ## Conectar
 
-1. No painel, abra **Conexões**, depois **Outras** e selecione RSS feed. Em uma Machine hospedada, a página de configuração também tem essa opção, em **Mais fontes**. No seu computador, você também pode executar `assistant connect rss`.
+1. No painel, abra **Conexões**, depois **Outras** e selecione Feed RSS. Em uma Machine hospedada, a página de configuração também tem essa opção, em **Mais fontes**. No seu computador, você também pode executar `assistant connect rss`.
 2. Cole o endereço do feed.
 
 ## Remover

@@ -9,9 +9,9 @@ translated: 5d782f28fb69efef
 ---
 ## Para que serve
 
-A Mistral é uma provedora europeia de IA. Com uma chave de API da Mistral, sua Machine lê e escreve rascunhos com os modelos da Mistral. The Machine não tem IA própria: as solicitações vão direto para a Mistral, na sua conta e sob os termos dela.
+A Mistral é uma provedora europeia de IA. Com uma chave de API da Mistral, sua Machine lê e escreve rascunhos com os modelos da Mistral. A The Machine não tem IA própria: as solicitações vão direto para a Mistral, na sua conta e sob os termos dela.
 
-## Pegue uma chave
+## Criar uma chave
 
 A Mistral não tem login para outros apps, então funciona com uma chave de API. No [console da Mistral](https://console.mistral.ai/), abra API keys e crie uma. O Le Chat Pro inclui créditos de API todo mês; depois deles, a Mistral cobra por uso.
 

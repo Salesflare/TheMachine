@@ -34,7 +34,7 @@ No computador, Enter ou Ctrl+Enter (Cmd+Enter no Mac) envia a mensagem, e Shift+
 
 ## Quando algo está errado
 
-Avise no chat, por exemplo: "Essa pessoa não é a CEO" ou "Ela saiu da empresa". A Machine corrige a informação na origem: um cargo, uma empresa, um título, a etapa de um projeto, o projeto da tarefa ou uma regra que aprendeu. O chat mostra o que mudou, como "Corrigido: o cargo de Sam é Head of Sales, de acordo com a assinatura do e-mail", com **Desfazer**. Desfazer restaura o valor anterior, a menos que ele tenha mudado desde então.
+Avise no chat, por exemplo: "Essa pessoa não é CEO" ou "Ela saiu da empresa". A Machine corrige a informação na origem: um cargo, uma empresa, um título, a etapa de um projeto, o projeto da tarefa ou uma regra que aprendeu. O chat mostra o que mudou, como "Corrigido: o cargo de Sam é Head of Sales, de acordo com a assinatura do e-mail", com **Desfazer**. Desfazer restaura o valor anterior, a menos que ele tenha mudado desde então.
 
 Seus outros rascunhos criados com base no valor incorreto são refeitos, um de cada vez. No chat deles, aparece **Refazendo o rascunho após uma correção**. Os rascunhos que você editou ou aprovou, e os que estão sendo enviados, continuam como estão. A resposta informa quantos há de cada tipo.
 
@@ -55,7 +55,7 @@ Enquanto uma resposta está sendo escrita, o botão de enviar muda para **Parar*
 Toque no clipe de papel, cole uma captura de tela ou arraste arquivos para o chat. Cada arquivo aparece acima do campo de mensagem, e × remove o arquivo. Uma mensagem pode conter apenas arquivos.
 
 - Imagens (PNG, JPEG, GIF, WebP) de até 5 MB são enviadas ao modelo como imagens.
-- PDFs, arquivos de texto, planilhas (CSV) e arquivos do Office de até 10 MB: A Machine lê esses arquivos e pode anexá-los a um rascunho.
+- PDFs, arquivos de texto, planilhas (CSV) e arquivos do Office de até 10 MB: a Machine lê esses arquivos e pode anexá-los a um rascunho.
 - Até 5 arquivos por mensagem.
 
 Os arquivos ficam na sua Machine, criptografados como suas mensagens. Os arquivos que você adiciona, mas nunca envia, são removidos depois de um dia. Uma nova tarefa também pode incluir arquivos, em **Nova tarefa** (veja [Criar uma tarefa](cards.md#make-one-yourself)).

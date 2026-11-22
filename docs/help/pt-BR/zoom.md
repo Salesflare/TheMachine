@@ -11,11 +11,11 @@ translated: 9533caa1429fb3fc
 
 O resumo do AI Companion de cada reunião do Zoom que você organiza, e a transcrição quando o Zoom tem uma: os últimos 7 dias quando você conecta, e depois as novas conforme chegam. Ele também lê seu nome e e-mail no Zoom, para saber de quem são as reuniões.
 
-Os resumos precisam de um plano pago do Zoom, do AI Companion ativado durante a reunião e de nenhuma criptografia de ponta a ponta.
+Os resumos precisam de um plano pago do Zoom, do AI Companion ativado durante a reunião e da criptografia de ponta a ponta desativada.
 
 ## O que ele faz com eles
 
-Cada resumo é associado à reunião na sua agenda. O resumo aparece nas **Notas** dessa reunião e a transcrição na **Transcrição** dela, marcados **Do Zoom**, ao lado do que você adicionou ali, sem nunca substituir. Sua Machine cria tarefas com os próximos passos que são seus. Nada é enviado até você enviar.
+Cada resumo é associado à reunião na sua agenda. O resumo aparece nas **Notas** dessa reunião e a transcrição na **Transcrição** dela, marcados **Do Zoom**, ao lado do que você adicionou ali. Sua Machine cria tarefas com os próximos passos que são seus. Nada é enviado até você enviar.
 
 ## O que ele pode fazer
 
@@ -26,8 +26,8 @@ Ele só lê. Ele nunca cria, muda ou exclui nada no Zoom, e só vê as suas pró
 Em uma Machine hospedada:
 
 1. Abra sua página de configuração em app.themachine.computer/setup e vá em **Mais fontes**.
-2. Abra Zoom, escolha trabalho ou pessoal, e clique em **Conectar Zoom**.
-3. Entre no Zoom e autorize a The Machine. Ela é feita pela Salesflare.
+2. Abra o Zoom, escolha trabalho ou pessoal, e clique em **Conectar Zoom**.
+3. Entre no Zoom e autorize a The Machine (feita pela Salesflare).
 
 Ou no painel: **Conexões**, **Reuniões**, escolha Zoom e clique em **Entrar com Zoom**. Quando terminar, você volta para o painel.
 

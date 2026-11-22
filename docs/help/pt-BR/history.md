@@ -15,7 +15,7 @@ Cada conexão em **Conexões** informa até quando ela volta, por exemplo, **His
 
 ## O que ela acrescenta ao Graph
 
-Seu [Graph](graph.md) leva isso em conta: o quanto você é próximo das pessoas, quando conversou com elas pela última vez, quem conhece quem e as próprias pessoas e organizações. A Linha do tempo de uma pessoa ou organização também mostra essas informações, para que o último contato esteja sempre visível. As respostas da sua Fleet para "quem conhece alguém" usam esses dados das contas de trabalho, seguindo as mesmas [regras de compartilhamento](sharing-rules.md) dos e-mails novos.
+Seu [Graph](graph.md) leva isso em conta: sua proximidade com as pessoas, quando conversou com elas pela última vez, quem conhece quem e as próprias pessoas e organizações. A Linha do tempo de uma pessoa ou organização também mostra essas informações, para que o último contato esteja sempre visível. As respostas do seu Fleet para "quem conhece alguém" usam esses dados das contas de trabalho, seguindo as mesmas [regras de compartilhamento](sharing-rules.md) dos e-mails novos.
 
 ## O que ela nunca faz
 

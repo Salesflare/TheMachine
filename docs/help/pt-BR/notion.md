@@ -36,14 +36,14 @@ Ela nunca exclui, compartilha ou move uma página.
 ## Conectar
 
 1. No painel: **Conexões**, **Documentos e arquivos**, Notion. Ou, na página de configuração de uma Machine hospedada em app.themachine.computer/setup: **Mais fontes**, Notion. No seu próprio computador, primeiro conecte sua conta.
-2. Pressione **Entrar com Notion**, escolha seu espaço de trabalho e as páginas que ela pode acessar e autorize o acesso.
-3. Ao voltar para The Machine, ela verifica o login na hora e mostra o nome do espaço de trabalho.
+2. Pressione **Entrar com o Notion**, escolha seu espaço de trabalho e as páginas que ela pode acessar e autorize o acesso.
+3. De volta à The Machine, ela verifica o login na hora e mostra o nome do espaço de trabalho.
 
 Para conectar outro espaço de trabalho, adicione o Notion novamente.
 
 ## Colar um token
 
-Em **Ou cole um token de integração**, pressione **Pegue seu token**. O Notion abre a página de integrações: crie uma integração interna, permita a leitura e a inserção de conteúdo e comentários, além da leitura de informações de usuários com endereços de e-mail. Copie o token, cole-o e pressione **Conectar**.
+Em **Ou cole um token de integração**, pressione **Gerar seu token**. O Notion abre a página de integrações: crie uma integração interna, permita a leitura e a inserção de conteúdo e comentários, além da leitura de informações de usuários com endereços de e-mail. Copie o token, cole-o e pressione **Conectar**.
 
 Depois, compartilhe suas páginas com a integração no Notion, em **Conexões** em cada página. No seu próprio computador, `assistant connect notion` também solicita esse token.
 
@@ -54,4 +54,4 @@ Depois, compartilhe suas páginas com a integração no Notion, em **Conexões**
 
 ## Revogar o acesso no Notion
 
-No Notion: **Configurações**, **Conexões** e desconecte a conexão com The Machine. Se você colou um token, exclua a integração na página de integrações.
+No Notion: **Configurações**, **Conexões** e desconecte a The Machine. Se você colou um token, exclua a integração na página de integrações.

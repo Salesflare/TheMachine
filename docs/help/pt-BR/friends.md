@@ -19,7 +19,7 @@ Em **Fleet**, na seção **Network**:
 - "Ver quais contatos meus têm uma Machine" sugere pessoas que você conhece.
 - "Permitir que pessoas com meu e-mail me encontrem" permite que elas encontrem você.
 
-As duas opções ficam ativadas por padrão e desativadas no nível de segurança Cauteloso. Você pode desativar qualquer uma delas a qualquer momento; sua escolha é mantida. As pessoas podem encontrar você pelo e-mail usado para entrar (sempre ativado) e pelos endereços conectados, cada um com seu próprio controle em **Pode ser encontrado por**, com exceção de endereços compartilhados, como info@, que ficam desativados até você ativá-los.
+As duas opções ficam ativadas por padrão e desativadas no nível de segurança Cuidadoso. Você pode desativar qualquer uma delas a qualquer momento; sua escolha é mantida. As pessoas podem encontrar você pelo e-mail usado para entrar (sempre ativado) e pelos endereços conectados, cada um com seu próprio controle em **Pode ser encontrado por**, com exceção de endereços compartilhados, como info@, que ficam desativados até você ativá-los.
 
 As pessoas que você conhece aparecem como uma tarefa assim que você ativa a opção e também quando elas entram na Network. Para cada pessoa, você pode escolher **Amigo** ou **Família** (**Conectar** para um colega), **Agora não** ou **Nunca sugerir** no menu ⋯. Quando vocês se tornam amigos, essa pessoa deixa de aparecer como sugestão. **Sair da Network** remove você da Network.
 
@@ -33,7 +33,7 @@ Os números de telefone também contam: os números das suas conversas no WhatsA
 
 Quando alguém com uma Machine escreve "vamos nos encontrar na semana que vem", sua Machine consulta a Machine da outra pessoa para encontrar horários livres que funcionem para vocês dois, dentro do seu horário de trabalho. Cada um recebe uma tarefa, como "Encontrar Alex Example", com o horário logo abaixo. Toque em **Marcar**, **Outro horário** ou **Não precisa**. O convite só é enviado depois que vocês dois tocarem em Marcar.
 
-Apenas a informação de livre ou ocupado é compartilhada, com criptografia de ponta a ponta, por no máximo 14 dias e arredondada para intervalos de 15 minutos. Eventos privados contam como ocupados. Uma Machine só pode consultar a outra se vocês já trocaram e-mails nos dois sentidos. Configure essa opção em **O que outras Machines podem perguntar à minha**: **Livre/ocupado para agendar** ou **Desligada**, além da duração da reunião, do intervalo e dos horários de preferência. Cada consulta aparece em Atividade, na seção Calendário.
+Apenas a informação de livre ou ocupado é compartilhada, com criptografia de ponta a ponta, por no máximo 14 dias e arredondada para intervalos de 15 minutos. Eventos privados contam como ocupados. Uma Machine só pode consultar a outra se vocês já trocaram e-mails nos dois sentidos. Configure essa opção em **O que outras Machines podem perguntar à minha**: **Livre/ocupado para agendar** ou **Desativado**, além da duração da reunião, do intervalo e dos horários de preferência. Cada consulta aparece em Atividade, na seção Calendário.
 
 Se a outra pessoa não tiver uma Machine ou não responder, o rascunho do e-mail inclui um link para ela escolher um dos seus horários livres. A escolha dela vira uma tarefa com **Marcar**. Nada é agendado antes de você tocar nessa opção.
 

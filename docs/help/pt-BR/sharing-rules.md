@@ -10,7 +10,7 @@ translated: 1ae445260f88518d
 ---
 ## Configure as regras
 
-Decida o que sua Machine conta para sua Fleet. Na aba **Fleet**, abra **Compartilhamento**. Cada tipo de pergunta tem uma regra:
+Decida o que sua Machine conta para seu Fleet. Na aba **Fleet**, abra **Compartilhamento**. Cada tipo de pergunta tem uma regra:
 
 - **Perguntar antes**: você vê cada pergunta e decide.
 - **Sempre**: sua Machine responde por conta própria.
@@ -21,11 +21,11 @@ Sua Machine nunca compartilha o conteúdo dos seus e-mails nem o assunto das sua
 
 As regras só podem ser alteradas no painel, nunca por mensagem.
 
-## Em uma Fleet de Trabalho
+## Em um Fleet de Trabalho
 
-Em uma Fleet de Trabalho Padrão, as regras para quem conhece quem, o contexto das reuniões e quem cuida dos e-mails compartilhados têm apenas as opções **Sempre** e **Nunca**. Com **Sempre**, sua Machine responde usando apenas o que o [Graph da equipe](team-graph.md) já compartilha com sua equipe, e só menciona pessoas que ele compartilha. Uma regra salva como **Perguntar antes** funciona como **Sempre**.
+Em um Fleet de Trabalho Padrão, as regras para quem conhece quem, o contexto das reuniões e quem cuida dos e-mails compartilhados têm apenas as opções **Sempre** e **Nunca**. Com **Sempre**, sua Machine responde usando apenas o que o [Graph da equipe](team-graph.md) já compartilha com sua equipe, e só menciona pessoas que ele compartilha. Uma regra salva como **Perguntar antes** funciona como **Sempre**.
 
-Enquanto o Graph da equipe não estiver compartilhando, as opções **Perguntar antes** também continuam disponíveis para quem conhece quem e para o contexto das reuniões. O mesmo vale para uma Fleet Cautelosa. Consulte [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+Enquanto o Graph da equipe não estiver compartilhando, as opções **Perguntar antes** também continuam disponíveis para quem conhece quem e para o contexto das reuniões. O mesmo vale para um Fleet no nível Cuidadoso. Consulte [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
 
 ## Na primeira vez que alguém perguntar
 

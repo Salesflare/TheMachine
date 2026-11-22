@@ -54,7 +54,7 @@ Só **Salvar** adiciona as informações, na página de cada pessoa: o aniversá
 
 A rotina nunca lê a página de novo sozinha. Para fazer isso, toque em **Importar de novo** na tarefa. O navegador precisa estar conectado ao Facebook. Se não estiver, toque em **Entrar no Facebook** na tarefa e entre por lá. Depois que você entrar, a rotina lê a página sozinha. The Machine nunca entra na sua conta por você.
 
-A rotina conta os amigos que não estão no seu Graph e mostra alguns nomes. **Adicionar … como contatos pessoais** adiciona todos de uma vez, inclusive depois de tocar em Salvar: cada pessoa é adicionada com nome e aniversário, e nunca é compartilhada com uma Work Fleet. Uma pessoa cujo nome já existe no seu Graph, ou que você excluiu permanentemente, é ignorada. Os lembretes de aniversário continuam aparecendo somente para as pessoas com quem você conversa.
+A rotina conta os amigos que não estão no seu Graph e mostra alguns nomes. **Adicionar … como contatos pessoais** adiciona todos de uma vez, inclusive depois de tocar em Salvar: cada pessoa é adicionada com nome e aniversário, e nunca é compartilhada com um Fleet de Trabalho. Uma pessoa cujo nome já existe no seu Graph, ou que você excluiu permanentemente, é ignorada. Os lembretes de aniversário continuam aparecendo somente para as pessoas com quem você conversa.
 
 **Desfazer** na tarefa remove exatamente essas pessoas, inclusive depois de tocar em **Importar de novo**.
 
@@ -66,7 +66,7 @@ Escolha **Manter** ou **Cancelar** para cada assinatura. Uma assinatura mantida 
 
 A rotina só envia um lembrete quando faz muito mais tempo do que o normal que você não conversa com a pessoa e há algo específico para dizer: uma novidade que ela compartilhou, uma promessa ainda em aberto ou uma mensagem que você nunca respondeu. Ela cria uma tarefa com o motivo e uma mensagem curta preparada no lugar em que você costuma conversar com a pessoa, no idioma dela. A mensagem só é enviada quando você envia. Se não houver nada a dizer, nenhuma tarefa será criada.
 
-A rotina envia no máximo dois lembretes por semana e um por pessoa por mês. Ela não envia lembretes para alguém com quem você conversou recentemente. Se você tocar em **Não precisa** em um lembrete, ela esperará mais tempo antes de lembrar você daquela pessoa. O tempo de espera aumenta a cada vez. A rotina nunca envia notificações e fica sempre em Pessoal: nunca é compartilhada com uma Work Fleet.
+A rotina envia no máximo dois lembretes por semana e um por pessoa por mês. Ela não envia lembretes para alguém com quem você conversou recentemente. Se você tocar em **Não precisa** em um lembrete, ela esperará mais tempo antes de lembrar você daquela pessoa. O tempo de espera aumenta a cada vez. A rotina nunca envia notificações e fica sempre em Pessoal: nunca é compartilhada com um Fleet de Trabalho.
 
 **Achados de usados** acompanha uma busca em um site de usados, como Marktplaats, Vinted, eBay ou Facebook Marketplace. Faça a busca no site com os filtros que quiser, copie o endereço dos resultados e cole-o depois de tocar em **Adicionar**. Se quiser, adicione filtros com suas próprias palavras, como "até 300, em um raio de 30 km, sem ‘para peças’". Cada busca é uma rotina própria, então adicione outra para a próxima busca.
 

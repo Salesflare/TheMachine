@@ -1,7 +1,7 @@
 ---
 title: Teclado e paleta de comandos
 area: getting-started
-summary: Acesse tudo no dashboard pelo teclado: a paleta, os atalhos de navegação, como percorrer tarefas e os atalhos de uma tarefa.
+summary: Acesse tudo no painel pelo teclado: a paleta, os atalhos de navegação, como percorrer tarefas e os atalhos de uma tarefa.
 covers: keyboard
 code: dashboard.html
 order: 5
@@ -45,4 +45,4 @@ Os atalhos não funcionam enquanto você digita em um campo.
 
 ## Nenhuma tecla envia nada
 
-Nenhuma tecla nem opção da paleta envia, aprova ou publica algo. Opções como "Revisar o e-mail" apenas abrem o rascunho para você ler, editar e enviar pelo botão do próprio rascunho. A única exceção é [Revisar](cards.md): nessa opção, Enter envia o rascunho completo que aparece.
+Nenhuma tecla nem opção da paleta envia, aprova ou publica algo. Opções como "Revisar o e-mail" apenas abrem o rascunho para você ler, editar e enviar pelo botão do próprio rascunho. A única exceção é [Percorrer](cards.md): nele, Enter envia o rascunho completo que aparece.

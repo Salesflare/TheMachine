@@ -41,7 +41,7 @@ Para adicionar outro espaço de trabalho, adicione o Linear novamente. Escolha *
 
 ## Colar uma chave de API
 
-Em **Ou cole uma chave de API**, pressione **Pegue seu token**. O Linear abre **Configurações**, **Segurança e acesso**. Crie uma chave de API pessoal, copie e cole a chave e pressione **Conectar**. No seu próprio computador, `assistant connect linear` também pede a chave.
+Em **Ou cole uma chave de API**, pressione **Criar seu token**. O Linear abre **Configurações**, **Segurança e acesso**. Crie uma chave de API pessoal, copie e cole a chave e pressione **Conectar**. No seu próprio computador, `assistant connect linear` também pede a chave.
 
 ## Remover
 
