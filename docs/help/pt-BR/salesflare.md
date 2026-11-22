@@ -29,7 +29,7 @@ Os cartões mostram quantas contas ela conseguiu abrir e quantos e-mails e reuni
 
 Se o Salesflare ainda não tiver ativado o acesso ao feed por chaves de API para sua equipe, o cartão avisará. Nenhum e-mail ou reunião será importado até que o suporte do Salesflare ative o acesso. A Machine verifica novamente a cada 10 minutos no primeiro dia e, depois, a cada hora. Quando tudo estiver funcionando, a sincronização continua automaticamente.
 
-- **Parar**: nada novo será importado até você pressionar **Início**. A sincronização continua de onde parou.
+- **Parar**: nada novo será importado até você pressionar **Começar**. A sincronização continua de onde parou.
 - **Reiniciar sincronização**: começa de novo e lê os dados da última semana. Nada do que ela já importou será perdido.
 - **Chaves de API**: abre a página de chaves de API do Salesflare para você criar uma nova chave.
 

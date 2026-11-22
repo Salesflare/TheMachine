@@ -494,12 +494,14 @@ def help_todo(langs, folder=HELP, history=None):
 
 def app_labels(lang, body):
     """{english label: the app's translation} for every **label** in the article that lang's catalog has, so the
-    article names a button the way the app shows it."""
+    article names a button the way the app shows it. A label the catalog also has with a context ("Start" and
+    "Start (a button)") is left to the model: the bare key may be another meaning (a time field's label)."""
     catalog = load(lang)
+    ambiguous = {k[:k.index(' (')] for k in catalog if k.endswith(')') and ' (' in k}
     out = {}
     for label in BOLD.findall(body):
         bare = label.strip().rstrip('.:')
-        if isinstance(catalog.get(bare), str) and not HOLE.search(bare):
+        if isinstance(catalog.get(bare), str) and not HOLE.search(bare) and bare not in ambiguous:
             out[bare] = catalog[bare]
     return out
 

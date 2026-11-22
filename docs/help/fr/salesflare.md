@@ -29,7 +29,7 @@ Les compteurs indiquent le nombre de comptes auxquels elle a pu accéder et le n
 
 Si Salesflare n’a pas activé l’accès au fil d’activité pour les clés API de votre équipe, la carte vous l’indique : aucun e-mail ni aucune réunion n’est importé tant que le support de Salesflare ne l’a pas activé. Une nouvelle vérification a lieu toutes les 10 minutes le premier jour, puis environ toutes les heures. La synchronisation reprend automatiquement dès que l’accès fonctionne.
 
-- **Arrêter** : aucun nouvel élément n’est importé jusqu’à ce que vous cliquiez sur **Début**. La synchronisation reprend là où elle en était.
+- **Arrêter** : aucun nouvel élément n’est importé jusqu’à ce que vous cliquiez sur **Démarrer**. La synchronisation reprend là où elle en était.
 - **Relancer la synchro** : recommence la synchronisation et lit à nouveau les données de la dernière semaine. Rien de ce qui a déjà été importé n’est perdu.
 - **Clés API** : ouvre la page des clés API de Salesflare pour en créer une nouvelle.
 
