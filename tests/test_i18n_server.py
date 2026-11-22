@@ -148,7 +148,7 @@ class OwnersLanguageTest(unittest.TestCase):
             db = sqlite3.connect(':memory:')
             db.row_factory = sqlite3.Row
             db.executescript("CREATE TABLE suggestions(id,status,next_action,body,outcome);"
-                             "CREATE TABLE action_jobs(suggestion_id,revision,status);"
+                             "CREATE TABLE action_jobs(id,suggestion_id,revision,status,payload);"  # payload: a reply that only promised the work stays open
                              "CREATE TABLE decisions(id,suggestion_id,choice,feedback,source,created_at);"  # a check-in's send re-waits (checking_in)
                              "INSERT INTO suggestions VALUES('c1','prepared',NULL,'Draft ready.',NULL);")
             store = mock.Mock()
