@@ -14,6 +14,7 @@ The **To-dos** page groups them:
 
 - **Just done**: at the top, a last step you confirmed, like a form or an issue, went through while you were away. It stays until you tap **Got it**, for a day at most, and your phone hears of it too.
 - **For you**: everything waiting on you, most urgent first. Each says **Prepared** (the work is done, and **Do it** or **Send** carries it out), **Needs you** (it needs your decision or an answer first), **Preparing…** (your Machine is working on it) or **To read** (a digest or brief, nothing to decide).
+- **Older**: folded, to-dos with nothing new on them for a week (below).
 - **Waiting on others**: folded, to-dos where the next step is someone else's (below).
 - **Coming back later**: snoozed to-dos, and ones with no answer to **Still needed?** (below).
 - **Promises**: what you promised and what others promised you. See [Promises](promises.md).
@@ -30,6 +31,10 @@ When a message comes from an address that only looks like someone you know, like
 A to-do still waiting on someone else, like a review or a reply, says **Waiting on:** that step. It sits in **Waiting on others**, folded above Coming back later, until a new message brings it back. The same goes after you asked a question back: it returns the morning before its deadline, at the deadline when that is later today, or the next morning once it has passed, and says whom it is still waiting on.
 
 When a to-do is for a result someone else delivers, like a signed contract, **Details** shows it as **Done when**. Sending your part doesn't close it: it waits in **Waiting on others** until a message shows the result, then closes by itself, with **Undo**. If nothing comes by the time to chase them, it comes back with **Write a short nudge** in its chat. Tell it in the chat what counts as done to change it.
+
+A to-do with nothing new for a week moves from For you to **Older**, so fresh ones come first after a few days away. Nothing new means no new message on it and nothing you did on it, like a chat message, an edit or a snooze. Just looking at it doesn't count.
+
+Urgent ones, ones due soon and ones with a send on its way stay in For you. **Dismiss all** marks every to-do in Older not needed after one confirm, as **Not needed** does one by one, with **Undo**. Something new on one brings it back to For you.
 
 A to-do nobody touched for a week asks once: **Still needed?** **Not needed** closes it, with **Undo**. **Keep** keeps it, and it never asks again. With no answer for another week, it folds into Coming back later, and the number on the app icon and the morning digest stop counting it. Opening it, a chat message, an edit, a snooze or a new message brings it back.
 

@@ -23,7 +23,7 @@ import shared_connectors
 import work_removal
 
 
-PACKED_KEEP = 40  # compressed pages and scripts kept (packed_page): about 0.7 MB for a coding's page and scripts
+PACKED_KEEP = 48  # compressed pages and scripts kept (packed_page): about 0.7 MB for a coding's page and scripts
 
 
 class ServeApp:
@@ -32,7 +32,7 @@ class ServeApp:
     def packed_page(self, etag, coding, page):
         """The dashboard page compressed in `coding`, made once per page (its ETag) and coding: the best compression,
         since it goes to every device opening the app. Also its main script and each group of parts that loads later
-        (machine/web/serving.py dashboard_files, 15 files): enough kept for all of them in a coding or two, a page or
+        (machine/web/serving.py dashboard_files, one per dashboard_parts.LAZY group): enough kept for all of them in a coding or two, a page or
         two, so a fresh page's files are never compressed again (with 6, they pushed each other out on every load)."""
         key = (etag, coding)
         with self._packed_lock:

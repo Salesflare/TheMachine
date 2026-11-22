@@ -1398,7 +1398,12 @@
  "Disconnected. Restart the service to stop syncing it.": "Disconnected. Restart the service to stop syncing it.",
  "Disconnected. Restarting…": "Disconnected. Restarting…",
  "Dismiss": "Dismiss",
+ "Dismiss all": "Dismiss all",
  "Dismiss the rest": "Dismiss the rest",
+ "Dismiss {} to-dos?": {
+  "one": "Dismiss {} to-do?",
+  "other": "Dismiss {} to-dos?"
+ },
  "Dismissed.": "Dismissed.",
  "Do it": "Do it",
  "Do it myself": "Do it myself",
@@ -3512,6 +3517,7 @@
  "Nothing new": "Nothing new",
  "Nothing new comes in until you start it.": "Nothing new comes in until you start it.",
  "Nothing new goes. What went stays on teammates' Machines, unless you remove it. Someone may have read it already.": "Nothing new goes. What went stays on teammates' Machines, unless you remove it. Someone may have read it already.",
+ "Nothing new on these for a week.": "Nothing new on these for a week.",
  "Nothing new passed the filters and checks": "Nothing new passed the filters and checks",
  "Nothing new since {}.": "Nothing new since {}.",
  "Nothing new to add.": "Nothing new to add.",
@@ -3647,6 +3653,7 @@
  "Okay.": "Okay.",
  "Okay. Turn it on any time in the Fleet tab.": "Okay. Turn it on any time in the Fleet tab.",
  "Old job turned off": "Old job turned off",
+ "Older": "Older",
  "Oldest contact": "Oldest contact",
  "Omarchy theme": "Omarchy theme",
  "On": "On",

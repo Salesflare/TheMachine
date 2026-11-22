@@ -88,10 +88,10 @@ import timeutil
 # a quiet Machine, between polls only Connections' sync tables do), the to-dos' own rows are the same and within
 # CARD_KEEP_S (what it works out from the clock: "3 days ago", Still needed?). CARD_TABLES: all it reads (a test checks
 # that). Kept as deep copies: the status changes what it is handed, never the kept copy.
-CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'decision_annotations', 'decision_asks', 'decisions', 'digest_items', 'email_bounces',
+CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'decision_annotations', 'decision_asks', 'decisions', 'digest_items', 'draft_edits', 'email_bounces',
                'events', 'facebook_birthdays', 'facts', 'feedback_prompts', 'fleet_meta', 'fleet_out', 'graph_events', 'graph_identifiers', 'graph_nodes',
                'identity_names', 'mail_cleanup_items', 'person_facts', 'preparation_calls', 'preparation_runs', 'preparations', 'projects',
-               'promises', 'recap_items', 'recurring_series', 'reorder_todos', 'routine_changes', 'routines', 'secondhand_todos', 'skill_clusters', 'skill_task_decided', 'skills',
+               'promises', 'recap_items', 'recurring_cards', 'recurring_series', 'reorder_todos', 'routine_changes', 'routines', 'secondhand_todos', 'skill_clusters', 'skill_task_decided', 'skills',
                'slack_members', 'subs_items', 'suggestions', 'task_pages', 'thread_snoozes', 'todo_moves', 'whatsapp_photos')
 CARD_KEEP_S = 120
 CARDS = stamps.Kept(4)
@@ -825,6 +825,7 @@ class ViewsStore(ConversationStore):
             recurring.annotate(db, cards, timeutil.clock(local_tz()).date())  # "Repeats monthly" (recurring.py)
             calendar_clashes.annotate(db, cards)  # the other side of a calendar clash, for the owner only (calendar_clashes.py)
             still_needed.annotate(db, cards, now(), local_tz())  # "Still needed?" on a to-do untouched for a week (still_needed.py)
+            still_needed.older(db, cards, now(), local_tz())  # Older: nothing new on it for a week (still_needed.py)
             return
         few = len(cards) <= 200  # a Done page: only its own; the status payload: all at once
         # shown: its status as every view shows it, a stuck run that a Claude Code or Codex job took over after it is not

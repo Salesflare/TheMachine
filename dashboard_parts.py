@@ -77,6 +77,7 @@ LAZY = {
     'secondhand': ('todos-secondhand.css', 'todos-secondhand.js'),
     'subs': ('todos-subs.css', 'todos-subs.js'),
     'reorder': ('todos-reorder.css', 'todos-reorder.js'),
+    'older': ('todos-older.css', 'todos-older.js'),
     'areadigest': ('todos-area-digest.css', 'todos-area-digest.js'),
     'talk': ('todos-chat-talk-view.js', 'todos-chat-talk-live.js'),
     'whatsnew': ('shell-whats-new.css', 'shell-whats-new.js'),

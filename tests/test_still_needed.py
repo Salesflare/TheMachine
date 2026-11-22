@@ -198,6 +198,78 @@ class StillNeeded(unittest.TestCase):
             self.store.card_views(db, cards, jobs=False)
         self.assertEqual(cards[0]['still_needed']['folded'], False)
         self.assertEqual(cards[0]['id'], sid)
+        self.assertEqual(cards[0]['older'], ago(8))  # and Older, from the same week (still_needed.older)
+
+
+class Older(unittest.TestCase):
+    """Older (still_needed.older): an open to-do with nothing new for DAYS. Its age runs from what changed it (made, a new
+    message, the owner's own decision or edit, a Keep, a snooze coming back), never from a look at it."""
+    setUp, event, card, step, rows, keep = (StillNeeded.setUp, StillNeeded.event, StillNeeded.card, StillNeeded.step,
+                                            StillNeeded.rows, StillNeeded.keep)
+
+    def older(self, *ids, at=NOW):
+        with self.store.connect() as db:
+            cards = [dict(r) for r in db.execute(f"SELECT * FROM suggestions WHERE id IN ({','.join('?' * len(ids))})", ids)]
+            still_needed.older(db, cards, at, TZ)
+        return {c['id']: c.get('older') for c in cards}
+
+    def decision(self, sid, choice, days, source='dashboard'):
+        with self.store.connect() as db:
+            db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                       (f'{choice}-{sid}-{days}', sid, choice, '', source, ago(days)))
+
+    def test_a_week_with_nothing_new_is_older_and_six_days_is_not(self):
+        week, six, prepared = self.card('Send Ayla the quote', 7), self.card('Book the venue', 6), self.card('Sign the lease', 12, 'prepared')
+        self.assertEqual(self.older(week, six, prepared), {week: ago(7), six: None, prepared: ago(12)})
+        self.assertEqual(still_needed.DAYS, 7)  # the one threshold, shared with Still needed?
+        self.assertEqual(self.older(six, at=ago(-1))[six], ago(6))  # a day later it is a week old too
+
+    def test_looking_is_no_news_but_changes_are(self):
+        opened, chat, edited, message, snoozed, machine = (self.card(t, 10) for t in ('Opened', 'Chatted', 'Edited', 'New message', 'Snoozed', 'Machine'))
+        newer = self.event(2)
+        with self.store.connect() as db:
+            activity.ensure(db)
+            activity.note_opened(db, opened, ago(1), TZ)
+            db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_subject,before_body,after_subject,after_body,source,created_at) "
+                       "VALUES('e1',?,'r1','r2','email','','a','','b','dashboard',?)", (edited, ago(1)))
+            db.execute('UPDATE suggestions SET event_ids=? WHERE id=?', (json.dumps([newer]), message))
+        self.decision(chat, 'other', 3)
+        self.decision(machine, 'accept', 1, 'assistant')  # the Machine's own: no news from the owner
+        self.decision(snoozed, 'snooze', 12)  # snoozed 12 days ago, back 2 days ago: fresh from its return
+        with self.store.connect() as db:
+            db.execute("INSERT INTO todo_moves(suggestion_id,at,from_status,to_status,reason) VALUES(?,?,'snoozed','pending','snooze_over')", (snoozed, ago(2)))
+        shown = self.older(opened, chat, edited, message, snoozed, machine)
+        self.assertEqual(shown[opened], ago(10), 'an open is a look, not news')
+        self.assertEqual(shown[machine], ago(10))
+        self.assertEqual([shown[s] for s in (chat, edited, message, snoozed)], [None] * 4)
+
+    def test_keep_on_still_needed_makes_it_fresh_again(self):
+        sid = self.card('Renew the domain', 9)
+        self.step()
+        self.assertIsNotNone(self.older(sid)[sid])
+        self.keep(sid)
+        self.assertIsNone(self.older(sid)[sid])
+        self.assertIsNotNone(self.older(sid, at=ago(-7.1))[sid])  # a week after the Keep, older again
+
+    def test_not_needed_undone_leaves_it_as_old_as_it_was(self):
+        """Dismiss all's Undo (or one Not needed's) puts the to-do back where it was: in Older, not on top of For you."""
+        sid = self.card('Answer the survey', 9)
+        self.store.decide(sid, 'reject', 'No longer needed', 'drop-1', 'dashboard')
+        self.assertEqual(self.older(sid), {sid: None})  # closed: no longer an open to-do
+        self.store.decide(sid, 'undo', '', 'undo-1', 'dashboard')
+        self.assertEqual(self.older(sid), {sid: ago(9)})
+
+    def test_urgent_dated_and_self_closing_ones_never_are(self):
+        skipped = [self.card('Urgent', 10, urgent=1), self.card('Due ahead', 10, due=ago(-3)[:10]), self.card('Due today', 10, due=NOW[:10]),
+                   self.card('Before the meeting', 10, expires_at=ago(-1)), self.card('Snoozed', 10, 'snoozed'), self.card('Preparing', 10, 'accepted')]
+        with self.store.connect() as db:
+            recurring.ensure(db)
+            repeat = self.card('Weekly numbers', 10)
+            db.execute("INSERT INTO recurring_cards(suggestion_id,series_id,due,created_at) VALUES(?,'s1',?,?)", (repeat, ago(10)[:10], ago(10)))
+        overdue = self.card('Overdue', 10, due=ago(2)[:10])  # past its date: the dashboard keeps it in For you (due soon)
+        shown = self.older(*skipped, repeat, overdue)
+        self.assertEqual([shown[s] for s in skipped + [repeat]], [None] * (len(skipped) + 1))
+        self.assertEqual(shown[overdue], ago(10))
 
 
 if __name__ == '__main__':

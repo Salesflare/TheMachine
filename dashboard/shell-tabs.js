@@ -143,8 +143,8 @@ $('nav').onclick=e=>{const t=e.target.closest('button');if(!t?.dataset.tab)retur
 // starts folded) and the fold is remembered; a filter on the titles; the whole sidebar folds to icons.
 const sideStore={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}};
 const sideFolded=(()=>{try{const v=JSON.parse(sideStore.get('side-folded'));if(Array.isArray(v))return new Set(v)}catch{}return new Set(['done'])})();
-// Waiting on others starts folded like Done, also where folds were saved before it existed: its saved state is that it's open
-const sideOpen=k=>k==='waiting'?sideFolded.has(k+':open'):!sideFolded.has(k);
+// Waiting on others and Older start folded like Done, also where folds were saved before they existed: their saved state is that they're open
+const SIDE_SHUT=/^(waiting|older)$/,sideOpen=k=>SIDE_SHUT.test(k)?sideFolded.has(k+':open'):!sideFolded.has(k);
 const CHEVRON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
 let sideGroups=[],sideCounts={},sideHTML='';
 // The sidebar's groups show the first few (Done 10, an active group 8) and a quiet Show more adds 20 per tap; folding a
@@ -170,7 +170,7 @@ function doneSearch(q){if(!q||doneFound.q===q||(state?.done_counts?.[scopeFilter
   for(const c of r.cards)doneExtra.set(c.id,c);cardsMerge();doneFound.q=q;doneFound.items=r.cards;sideCards()}catch{}},250)}
 function sideCards(groups){if(groups)sideGroups=groups;const q=$('#side-find').value.trim().toLowerCase(),box=$('#side-cards');doneSearch(q);
  const parts=sideGroups.map(([items,title,key])=>{const open=!!q||sideOpen(key),cut=q?{list:sideAll(items,key,q),more:false}:sideList(items,key),count=q?cut.list.length:cut.count;if(!count)return'';
-  return html`<div class="side-group${['done','later','waiting'].includes(key)?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${raw(CHEVRON)}<span>${title}</span><span class="count">${count}</span></button>${open?[cut.list.map(x=>sideRow(x,chatId)),cut.more?sideMoreRow(key):'']:''}</div>`}).filter(Boolean);
+  return html`<div class="side-group${['done','later','waiting','older'].includes(key)?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${raw(CHEVRON)}<span>${title}</span><span class="count">${count}</span></button>${open?[cut.list.map(x=>sideRow(x,chatId)),cut.more?sideMoreRow(key):'']:''}</div>`}).filter(Boolean);
  const side=html`<div class="side-label" role="group" aria-label="To-dos">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>html`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`)}</div>${parts.length?parts:html`<p class="side-empty">${q?'No to-dos match.':'No to-dos yet.'}</p>`}`;
  if(String(side)!==sideHTML){sideHTML=String(side);const back=sideKeep(box),focus=sideFocus(box);setHTML(box,side);back();focus();requestAnimationFrame(chatFades)}}
 // A redraw (a reply from the Machine, whenever it lands) keeps the keyboard on the row or heading it was on.
@@ -187,7 +187,7 @@ function sideKeep(box){const sc=sideMoved&&[box,box.closest('.app-side')].find(x
 $('#side-find').addEventListener('input',()=>sideCards());
 $('#side-find').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';sideCards()}if(e.key==='Enter'){const a=$('#side-cards a');if(a)a.click()}});
 $('#side-cards').addEventListener('click',e=>{const f=e.target.closest('[data-side-fold]');
- if(f){const k=f.dataset.sideFold==='waiting'?f.dataset.sideFold+':open':f.dataset.sideFold;sideFolded.has(k)?sideFolded.delete(k):sideFolded.add(k);delete sideShown[k];sideStore.set('side-folded',JSON.stringify([...sideFolded]));sideCards();return}
+ if(f){const k=f.dataset.sideFold+(SIDE_SHUT.test(f.dataset.sideFold)?':open':'');sideFolded.has(k)?sideFolded.delete(k):sideFolded.add(k);delete sideShown[k];sideStore.set('side-folded',JSON.stringify([...sideFolded]));sideCards();return}
  const sc=e.target.closest('[data-scope]');if(sc){scopeSet(sc.dataset.scope);return}
  const a=e.target.closest('a[href^="#chat="]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();const id=a.getAttribute('href').slice(6);
  if(id===chatId){showTab('inbox');return}chatGo(id)});

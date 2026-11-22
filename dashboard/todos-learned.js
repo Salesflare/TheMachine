@@ -131,7 +131,7 @@ document.addEventListener('keydown',e=>{const f=e.target;if(e.key!=='Enter'||!(e
 $('#suggestions').addEventListener('keydown',e=>{const h=e.target.closest('.section-head[data-fold]');if(h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggleSection(h.dataset.fold)}});
 $('#suggestions').addEventListener('toggle',e=>{if(e.target.id==='later-list')$('[data-fold-tile="later"]')?.setAttribute('aria-expanded',e.target.open)},true);
 // A folded list's head opens it with its rows drawn at once (listShow); one opened another way draws them on its toggle
-$('#suggestions').addEventListener('click',e=>{const s=e.target.closest('#waiting-head,#later-head,#finished-head');if(!s)return;e.preventDefault();const d=s.parentElement;d.open=!d.open;listShow(d)});
+$('#suggestions').addEventListener('click',e=>{const s=e.target.closest('#waiting-head,#older-head,#later-head,#finished-head');if(!s)return;e.preventDefault();const d=s.parentElement;d.open=!d.open;listShow(d)});
 $('#suggestions').addEventListener('toggle',e=>{const d=e.target;if(d.open&&(d.id==='finished-list'?!d.querySelector(':scope>.pager'):d.children.length<2))listShow(d)},true);
 // The To-dos filter (All, Work, Personal) is kept on the Machine with the language (locale_prefs.todo_scope), so every
 // device shows the same list. A filter this browser kept from before goes to the Machine once, then this browser forgets
