@@ -45,7 +45,7 @@ Pick what it can do, **Read** or **Read & edit**. With both Work and Personal ac
 
 ## Official app or private address
 
-The official app is the easy way: one address for everyone, and your account finds your Machine. Our cloud passes requests on and stores nothing.
+The official app is the easy way: one address for everyone, and your account finds your Machine. Our cloud passes requests on and never stores what they say.
 
 With your private address, everything is encrypted all the way to your Machine. The cloud only passes it on and can't read it.
 
