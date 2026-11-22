@@ -46,9 +46,10 @@ try{
   assert.equal(await show({...week,resets:0}),null,'nothing new without resets');
   // Use a reset is Settings' own: its confirm first, never a reset on its own
   await show(week);
-  page.once('dialog',d=>{assert.match(d.message(),/^This uses 1 of your 2 resets\./);d.dismiss()});
+  const asked=new Promise(r=>page.once('dialog',d=>{r(d.message());d.dismiss()}));
   await page.click('#suggestions .reset-nudge [data-model-reset]');
-  await page.waitForTimeout(100);
+  assert.match(await asked,/^This uses 1 of your 2 resets\./);
+  assert.equal(await page.evaluate(()=>document.querySelector('#suggestions .reset-nudge [data-model-reset]').disabled),false,'a cancel leaves the button as it was');
   assert.deepEqual(posted,[],'a cancel posts nothing');
   page.once('dialog',d=>d.accept());
   await page.click('#suggestions .reset-nudge [data-model-reset]');
