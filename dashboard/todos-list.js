@@ -34,8 +34,8 @@ const movedLine=(a,to)=>{const x=(to||a?.to||[]).map(v=>String(v).toLowerCase())
 // A follow-up held because its address bounced (follow_ups.BOUNCED_HELD) reads in the owner's language like the other holds
 const heldLine=e=>{const m=/^Not sent: (\S+@\S+) bounced\.$/.exec(e||'');return m?t('Not sent: {} bounced.',m[1]):t(e)};
 // The send dialog is the lazy 'compose' part (todos-send.js): these open it once it's in, at once when it already is.
-function openSend(id,revision,step){lazyRun('compose',()=>sendOpen(id,revision,step))}
-function openSendAll(id){lazyRun('compose',()=>sendOpenAll(id))}
+function openSend(id,revision,step){toastNotAbout(id);lazyRun('compose',()=>sendOpen(id,revision,step))}
+function openSendAll(id){toastNotAbout(id);lazyRun('compose',()=>sendOpenAll(id))}
 function openSendLink(){const match=/^#send=([a-f0-9]{16})&revision=([a-f0-9]{12})(&edit=1)?$/.exec(location.hash);if(match&&state.suggestions){lazyRun('compose',()=>{openSend(match[1],match[2]);if(match[3]&&$('#send-dialog').open)editSend()});history.replaceState(null,'',location.pathname)}}
 // Edit the draft yourself: Send then sends exactly the edited text.
 // The editor shows plain text: a link reads "words (address)" and Markdown marks are gone. Saving turns those links back
@@ -60,14 +60,13 @@ document.addEventListener('click',e=>{const a=e.target.closest?.('a[href^="mailt
 // the revision the owner saw. The server sends that revision or refuses (Store.confirm_action).
 async function sendConfirmed(id,revision,kind,extra={}){await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision,approval_id:crypto.randomUUID(),...extra}})});
  if(SENT_WATCH.includes(kind))sentWatch.set(id,{revision,kind,at:Date.now()})}
-// Once a send went out, one short toast says where the to-do is now, with Open to go to it there: "Sent. Moved to
-// Done.", "Sent. Moved to Later until Mon." (handed to someone: back then unless they reply). Nothing when it failed.
+// Once its step is sent or done, a toast says where the to-do went, with Open; never over another to-do or a dialog.
 const SENT_WATCH=[...SENDS,'finish'],sentWatch=new Map();
 const sentDay=v=>{const d=new Date(v),days=(d-Date.now())/864e5;return days<6?localeDate(d,DL,{weekday:'short'}):localeDate(d,DL,{weekday:'short',day:'numeric',month:'short'})};
 function sentWhere(){for(const [id,w] of sentWatch){const s=(state?.suggestions||[]).find(x=>x.id===id),st=s&&(taskActions(s).find(a=>a.revision===w.revision)?.state||s.action_status)?.status;
  if(!s||Date.now()-w.at>6e5){sentWatch.delete(id);continue}
- if(s.status==='prepared'&&!['sent','done'].includes(st)){if(['failed','blocked','uncertain','undone'].includes(st))sentWatch.delete(id);continue}  // still going, or it didn't go (the to-do says why)
- if(chatId&&chatId!==id)continue;  // another to-do is open: said once that one closes, never over it
+ if(!['sent','done'].includes(st)&&(st||s.status==='prepared')){if(['failed','blocked','uncertain','undone'].includes(st))sentWatch.delete(id);continue}
+ if(chatId&&chatId!==id||$('dialog[open]'))continue;
  sentWatch.delete(id);const sent=w.kind!=='finish';
  const text=closed(s)||looksDone(s)?t(sent?'Sent. Moved to Done.':'Finished. Moved to Done.'):s.status==='snoozed'&&s.snoozed_until?t('Sent. Moved to Later until {}.',sentDay(s.snoozed_until)):waitsOnOthers(s)?t('Sent. Moved to Waiting on others.'):sent&&s.status==='pending'?t('Sent. Kept open.'):sent?t('Sent.'):'';
  if(text){toastOpen(text,s.status==='prepared'&&!waitsOnOthers(s)?'':id);$('#toast').dataset.about=id}}}
