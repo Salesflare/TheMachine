@@ -169,6 +169,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     longest ago.
   - `machine/app/retained_facts.py`: the `retained` block of the review, preparation and chat recalls: ended
     or replaced facts as history, that bear on the to-do or the waiting signals, in a small slice.
+  - `machine/app/prep_reads.py`: a to-do's run reads less. `review_brief` is the preparation's "What the review
+    found" block (the to-do as saved and a header line per message it came from, no text), and `RunReads` keeps
+    which messages each run got whole from `events` or `related`, so a repeat read gets `already_read` and a note.
   - `machine/app/claim_reply.py`: what a claim (`begin_analysis`) carries next to its signals: the boards with only
     the claim's own projects (`boards`), one whole board on request (`lookup`, `graph` `board`), and `fit`, which
     keeps the whole reply under the review page size and says in `left_out` what it dropped.

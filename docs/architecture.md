@@ -151,6 +151,11 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   `assistant_signals` tool, checks decisions, earlier to-dos and related evidence, saves to-dos with `when`/`due`
   timing, and finishes the analysis. Skills OpenClaw's skill workshop wrote about `assistant_signals` repeat these
   instructions, so reviews and Do it runs skip them. Your own chats still load them, and the files stay as they are.
+- **Handed on.** A to-do's preparation starts from what its review found: the job message lists the to-do as saved
+  and each message it came from with who wrote it, to whom, the subject, the thread and the time (never the text), and
+  asks the run to look up only what is still missing. Within one run, a message it already read whole comes back from
+  `events` or `related` as its id under `already_read` with a short note, instead of the whole text again;
+  `again: true` reads it anew. A tool call resends the whole session, so each read saved is a large share of a call.
 - **One at a time.** One run at a time, with a gap between runs; failed runs back off. Unfinished claims move safely
   to the next run, and the service never restarts the Gateway. A version that was deferred stays searchable; two
   deferrals set a signal aside until it changes.
