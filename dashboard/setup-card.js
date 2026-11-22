@@ -8,7 +8,8 @@
 // account only on a hosted Machine (their sign-in runs there). From the first visit, once the first look is done; never
 // in a frame, except the site's demo (setup_card.demo: fixed rows, buttons that do nothing).
 // After the first day with to-dos (setup_card.since), it folds into one quiet line above Ready, "2 steps left · Continue",
-// which opens the card on a tap (and its chevron folds it again), so a daily owner sees their to-dos first.
+// which opens the card on a tap (and its chevron folds it again), so a daily owner sees their to-dos first. In the first
+// two weeks, on a day with few to-dos, one suggestion with its reason (setup_card.nudge) leads the card and is the line.
 // Loaded before settings-device.js, whose deviceRender() draws it (setupRender).
 const SETUP_MAX=5;
 const SETUP_DAY=864e5;
@@ -36,19 +37,22 @@ let setupQR=false;
 // The phone's own store on a phone's browser; null where there is none (a phone that is neither iPhone nor Android)
 const setupStore=()=>{const p=state?.phone_app_store||{},u=DEV.ios?p.ios:DEV.android?p.android:'';return /^https:\/\//.test(u||'')?u:null};
 // [{id, done, hint?}] in order, the rows that apply here and aren't closed (all: closed ones too, before the cut to SETUP_MAX)
-function setupRows(all=false){const s=state?.setup_card;if(!s)return [];const closed=new Set(all?[]:s.dismissed||[]);
- if(s.demo){const rows=(s.rows||[]).filter(r=>SETUP_ICON[r?.id]&&!closed.has(r.id)).map(r=>({id:r.id,done:!!r.done}));return all?rows:rows.slice(0,SETUP_MAX)}
- const hosted=!!state.manage_url,p=state.phone_app_store,rows=[];
+// The suggestion with its reason (s.nudge, setup_nudge.py) leads, in the place of the row it is about (n.replaces: left
+// out like a closed one, also from what Show hidden counts).
+function setupRows(all){const s=state?.setup_card;if(!s)return [];const n=s.nudge,closed=new Set([...all?[]:s.dismissed||[],n?.replaces]),rows=[];
  const add=(id,applies,done,hint)=>{if(applies&&!closed.has(id))rows.push({id,done:!!done,...(hint?{hint}:{})})};
+ add('hint-'+n?.id,n,0,n);
+ if(s.demo){for(const r of s.rows||[])add(r?.id,SETUP_ICON[r?.id],r.done);return all?rows:rows.slice(0,SETUP_MAX)}
+ const hosted=!!state.manage_url,p=state.phone_app_store;
  add('calendar',s.mail_accounts>0,s.calendar);
- add('memory',true,s.memory);
+ add('memory',1,s.memory);
  add('phone',!!p&&!DEV.phoneApp&&(DEV.mobile?!!setupStore():!!(p.ios||p.android)),s.phones>0);
  add('push',!DEV.phoneApp&&(pushOn()||pushOK&&devicePush.checked&&devicePush.perm!=='denied'&&devStore.get('push-off')!=='1'),pushOn());
  add('whatsapp',hosted,s.whatsapp);
  add('install',!onPhone()&&!DEV.phoneApp&&nudgeable&&(appInstalled()||!!installEvt||DEV.macSafari),appInstalled());
  add('account',hosted,s.mail_accounts>=2);
- add('connect',true,s.more);
- for(const h of state.setup_hints||[])if(h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id))add('hint-'+h.id,true,false,h);
+ add('connect',1,s.more);
+ for(const h of state.setup_hints||[])add('hint-'+h?.id,h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id),0,h);
  if(all)return rows;
  // Open steps first: a done row only fills a slot no open step needs, so the tool hints after the base rows show
  const open=rows.filter(r=>!r.done).slice(0,SETUP_MAX),keep=new Set([...open,...rows.filter(r=>r.done).slice(0,SETUP_MAX-open.length)]);
@@ -83,10 +87,12 @@ const setupMailHTML=()=>html`<div class="setup-head"><strong>${t('Connect your m
 const SETUP_CHEVRON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 14 5-5 5 5"/></svg>';
 // On a phone with a known store (setupStore), Get it is a plain link to that store: straight there, no code, no popup.
 function setupHTML(rows,quiet){const desk=!DEV.mobile,hidden=setupHidden(),store=DEV.mobile&&!state.setup_card?.demo?setupStore():null;
- if(quiet&&!setupOpen)return html`<button type="button" class="setup-line" data-setup-open aria-expanded="false">${setupSvg('hint')}<span>${t(['{} step left','{} steps left'],rows.length)}</span><span class="setup-sep" aria-hidden="true">·</span><span class="setup-continue">${t('Continue')}</span></button>`;
- return html`<div class="setup-head"><strong>Get more out of The Machine</strong><span class="setup-count">${t(['{} step left','{} steps left'],rows.length)}</span>${quiet?html`<button type="button" class="setup-x setup-fold" data-setup-fold aria-expanded="true" aria-label="Show less" title="Show less">${raw(SETUP_CHEVRON)}</button>`:''}<button type="button" class="setup-x" data-setup-close aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div><ul class="setup-rows">${
-  rows.map(r=>html`<li class="setup-row" data-step="${r.id}">${setupSvg(r.hint?(r.hint.scope?'scope':'hint'):r.id)}<span class="setup-label">${setupLabel(r)}</span>${html`${r.id==='phone'&&store?html`<a class="setup-go btn-link" href="${safeHref(store)}" target="_blank" rel="noopener" data-setup-go="phone">${setupButton(r)}</a>`:html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button>`}<button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
-   r.id==='phone'&&desk&&setupQR?setupQRHTML():''}</li>`)}</ul>${hidden?html`<button type="button" class="setup-more" data-setup-restore="all">${t(['Show {} hidden','Show {} hidden'],hidden)}</button>`:''}`}
+ const row=r=>html`<li class="setup-row" data-step="${r.id}">${setupSvg(r.hint?(r.hint.scope?'scope':r.hint.icon):r.id)}<span class="setup-label">${setupLabel(r)}</span>${html`${r.id==='phone'&&store?html`<a class="setup-go btn-link" href="${safeHref(store)}" target="_blank" rel="noopener" data-setup-go="phone">${setupButton(r)}</a>`:html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button>`}<button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
+   r.id==='phone'&&desk&&setupQR?setupQRHTML():''}</li>`;
+ // folded: the suggestion as its row (its button and ×; once it is closed, the line that opens
+ // the rest comes back), else how many steps are left
+ if(quiet&&!setupOpen)return rows[0].hint?.nudge?html`<ul class="setup-rows">${row(rows[0])}</ul>`:html`<button type="button" class="setup-line" data-setup-open aria-expanded="false">${setupSvg('hint')}<span>${t(['{} step left','{} steps left'],rows.length)}</span><span class="setup-sep" aria-hidden="true">·</span><span class="setup-continue">${t('Continue')}</span></button>`;
+ return html`<div class="setup-head"><strong>Get more out of The Machine</strong><span class="setup-count">${t(['{} step left','{} steps left'],rows.length)}</span>${quiet?html`<button type="button" class="setup-x setup-fold" data-setup-fold aria-expanded="true" aria-label="Show less" title="Show less">${raw(SETUP_CHEVRON)}</button>`:''}<button type="button" class="setup-x" data-setup-close aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div><ul class="setup-rows">${rows.map(row)}</ul>${hidden?html`<button type="button" class="setup-more" data-setup-restore="all">${t(['Show {} hidden','Show {} hidden'],hidden)}</button>`:''}`}
 // The card is in the page from the start (shell-main.html), at the top of To-dos, so its place can be kept while loading
 let setupWired=false;
 function setupBox(){const el=$('#setup-card');if(!setupWired){setupWired=true;el.addEventListener('click',setupClick)}return el}
@@ -101,21 +107,17 @@ function setupRender(){const s=state?.setup_card,el=setupBox(),first=setupMailFi
  if(el.classList.contains('sk-setup')){if(!state?.suggestions||pushOK&&!devicePush.checked&&performance.now()<8000)return;el.classList.remove('sk-setup');el.style.removeProperty('height')}
  // its empty state hides (setup-card.css)el.setAttribute('aria-label',first?t('Connect mail'):'Get more out of The Machine');
  el.classList.toggle('mail-first',first);$('#inbox')?.classList.toggle('mail-first',first);
- if(first){const h=String(setupMailHTML());if(el.dataset.html!==h){setHTML(el,raw(h));el.dataset.html=h}el.hidden=false;el.classList.remove('quiet');setupSettings(false);setupShape(el);return}
+ if(first){const h=String(setupMailHTML());if(el.dataset.html!==h){setHTML(el,raw(h));el.dataset.html=h}el.hidden=false;el.classList.remove('quiet');setupSet(false);setupShape(el);return}
  const off=!s||settingUp()||(DEV.framed&&!s.demo);
  // Only what is left: a done step leaves the card (its label says what to do, so a ticked "Connect WhatsApp" read as not done)
  const closed=new Set(off?[]:s.dismissed||[]),rows=off||s.closed?[]:setupRows(true).filter(r=>!r.done&&!closed.has(r.id)).slice(0,SETUP_MAX),quiet=!off&&setupQuiet(s);
  const show=rows.length>0,h=show?String(setupHTML(rows,quiet)):'';
  if(el.dataset.html!==h){setHTML(el,show?raw(h):html``);el.dataset.html=h}el.hidden=!show;el.classList.toggle('quiet',quiet&&!setupOpen);
- setupSettings(!off&&(s.closed||!show)&&(s.closed||setupHidden()>0));setupShape(el)}
-// Settings, General, Setup to-do: while the to-do is closed, or shows nothing but has closed rows, one row brings it all back
-function setupSettings(on){let sec=$('#settings-setup');
- if(!on){if(sec)sec.hidden=true;return}
- if(!sec){const at=$('#settings-browser');if(!at)return;sec=document.createElement('div');sec.id='settings-setup';
-  setHTML(sec,html`<div class="section-head"><h2>Setup to-do</h2></div><div class="list settings-list"><div><span class="grow"><strong>Get more out of The Machine</strong><small>Bring back the steps you closed, at the top of To-dos.</small></span><button type="button" data-setup-restore="all">Show again</button></div></div>`);
-  at.before(sec);sec.addEventListener('click',setupClick)}
- sec.hidden=false}
-const setupPost=(action,step)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args:{step}})});
+ setupSet(!off&&(s.closed||!show)&&(s.closed||setupHidden()>0));setupShape(el)}
+// Settings, General, Setup to-do (setupSettings, settings-general.js): whether it shows, kept for when Settings loads
+let setupOn=false;
+const setupSet=on=>{setupOn=on;self.setupSettings?.(on)};
+const setupPost=(action,step)=>connectPost(action,{step});
 // After a ×: Undo in the toast for a while (the same as other dismissals), and where to find it again once the card is closed
 function setupUndoToast(step){if(step==='card')toastSettings('Hidden. {} can show it again.','settings-setup');else toast('Hidden.');
  $('#toast').append(htmlNodes(html` <button type="button" data-setup-undo="${step}">Undo</button>`));clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),10000)}
@@ -148,8 +150,7 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
  if(step==='phone'){const u=setupStore();if(u)window.open(u,'_blank','noopener');return}
  if(step==='whatsapp'){location.hash='#connect=whatsapp';return}
  // the picker, with Google and Microsoft
- if(step==='account'){location.hash='#connections=add';return}
- if(step==='connect'){location.hash='#connections=add';return}
+ if(step==='account'||step==='connect'){location.hash='#connections=add';return}
  if(step==='memory'){memoryImportOpen();return}
  // the calendar of the mail they have
  if(step==='calendar'){connectOpen(s.add==='microsoft'?'outlook_calendar':'calendar');return}

@@ -45,6 +45,9 @@ FIRST_DIG_HOURS = 24  # a first review that started longer ago than this digs no
 # The first look's ending on the dashboard (App.first_look_done): shown this long after it stopped digging. What its
 # reviewer sorted each signal into, by meaning (finish_analysis read), for a summary in counts only.
 FIRST_LOOK_DONE_HOURS = 24
+# A first look that found this many to-dos or fewer: once the list is empty, its ending shows with its connect offers
+# (the dashboard's firstLookEnd), not only after one that found none
+FIRST_LOOK_FEW = 1
 
 
 # While the first review digs (App.first_dig), each next review takes this many of the most promising signals of the
@@ -394,8 +397,8 @@ class FirstLookApp:
         and codes only, never a message's text: {'at', 'days', 'kinds': {email, meeting, message, other}, 'read': the
         groups its reviewer sorted them into (FIRST_LOOK_READ, finish_analysis read; empty when it gave none), 'todos',
         'acted' (the owner decided a to-do since), 'next': the setup steps that would help most ('calendar': no calendar
-        connected; 'inbox': one mailbox only), 'connect': with no to-dos, sources that mail the owner often and aren't
-        connected (first_look_connect)}. None before, after, or on an install that had no first look."""
+        connected; 'inbox': one mailbox only), 'connect': with FIRST_LOOK_FEW to-dos or fewer, sources that mail the owner
+        often and aren't connected (first_look_connect)}. None before, after, or on an install that had no first look."""
         current = current or dt.datetime.fromisoformat(now())
         with self.store.connect() as db:
             done = db.execute("SELECT at,detail FROM milestones WHERE name='first_dig_done'").fetchone()
@@ -426,12 +429,12 @@ class FirstLookApp:
         services = [a.get('service') for a in self.config.get('accounts', []) if a.get('service') not in SYSTEM_SERVICES]
         nxt = [step for step, missing in (('calendar', not any(s in CALENDAR_SERVICES for s in services)),
                                           ('inbox', sum(s in MAIL_SERVICES for s in services) == 1)) if missing]
-        connect = self.first_look_connect(services) if not todos else []
+        connect = self.first_look_connect(services) if todos <= FIRST_LOOK_FEW else []
         return {'at': done['at'], 'days': PREVIEW_DAYS, 'kinds': dict(kinds), 'read': dict(read), 'todos': todos, 'acted': acted, 'next': nxt,
                 'connect': connect}
 
     def first_look_connect(self, services):
-        """For an ending with no to-dos: the services that mail the owner often and aren't connected (mailing_sources), at
+        """For an ending with few to-dos: the services that mail the owner often and aren't connected (mailing_sources), at
         most two as [{service, label}], so it offers "Connect Slack" rather than an empty ask. Worked out at most every 10
         minutes (the dashboard asks every few seconds); connecting one drops it at once."""
         key = tuple(sorted(str(s) for s in services))

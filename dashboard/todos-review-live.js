@@ -87,7 +87,8 @@ const flImport=()=>DEV.framed||state?.setup_card?.demo||state?.setup_card?.memor
 const firstLookEmpty=i=>i?html`<div class="empty all-clear first-look-empty"></div>`:'';
 function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&firstLookInfo(state.review_live||{});if(i)box.replaceChildren(...firstLookInner(i))}
 // The first look's ending (state.first_look_done): what it read, in counts, so an empty list says what the Machine did,
-// with one or two next steps that fit this setup. With to-dos, one line above them. Counts only, never a message.
+// with one or two next steps that fit this setup: after none or one to-do (FIRST_LOOK_FEW), once the list is empty.
+// With to-dos, one line above them. Counts only, never a message.
 // Meetings are said with the kinds, so the reviewer's groups list only what the messages were.
 const FL_KINDS=[['email',['{} email','{} emails']],['meeting',['{} meeting','{} meetings']],['message',['{} message','{} messages']],['other',['{} other signal','{} other signals']]];
 const FL_READ=[['people',['{} from a person','{} from people']],['newsletters',['{} newsletter','{} newsletters']],['notifications',['{} notification','{} notifications']],['other',['{} other','{} other']]];
@@ -101,7 +102,7 @@ function flNext(d){const steps=[...(d.connect||[]).map(c=>({key:'connect',servic
  return [...steps,{key:last,label:t(FL_NEXT[last])}].slice(0,2)}
 // Where what it learned lives
 const flLearned=()=>html`<a class="link fl-learned" href="#learning=learned">${t('See what I’ve learned')}</a>`;
-function firstLookEnd(){const d=state.first_look_done;if(!d||d.todos>0)return '';const kinds=flList(d.kinds,FL_KINDS),read=flList(d.read,FL_READ);
+function firstLookEnd(){const d=state.first_look_done;if(!d||d.todos>1)return '';const kinds=flList(d.kinds,FL_KINDS),read=flList(d.read,FL_READ);
  const line=!kinds?t('Nothing came in from the past week yet.'):read?t('Read {} from the past week: {}.',kinds,read):t('Read {} from the past week.',kinds);
  return html`<div class="empty all-clear first-look-end"><img class="sticker" src="brand/wave.webp" alt=""><div><span class="fl-read">${line}</span>${state.reviews_on?html`<small>${t('New mail gets a look as it comes in.')}</small>`:''}${flLearned()}</div><div class="fl-next">${flNext(d).map((x,i)=>x.service?html`<button type="button" class="${i?'quiet':''}" data-connect-open="${x.service}">${x.label}</button>`:html`<button type="button" class="${i?'quiet':''}" data-fl-next="${x.key}">${x.label}</button>`)}</div></div>`}
 function firstLookNote(shown){const d=state.first_look_done;if(!d||!d.todos||d.acted||!shown||scopeFilter!=='all')return '';const kinds=flList(d.kinds,FL_KINDS);if(!kinds)return '';

@@ -151,11 +151,8 @@ class FirstLookDone(unittest.TestCase):
                          ['email', 'email', 'meeting', 'meeting', 'meeting', 'message', 'other', 'other'])
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-    # With no to-dos the ending offers something concrete: a service that mails the owner often and isn't connected
-    # (push.mailing_sources, the setup hints' own count), on a self-hosted Machine too.
+    # With no to-dos, or one, the ending offers something concrete: a service that mails the owner often and isn't
+    # connected (push.mailing_sources, the setup hints' own count), on a self-hosted Machine too.
 
     def test_a_service_that_mails_often_is_offered_when_it_found_nothing(self):
         slack = [dict(signal(f's{n}'), metadata={'from': 'Slack <notification@slack.com>'}) for n in range(3)]
@@ -172,3 +169,21 @@ if __name__ == '__main__':
         with self.store.connect() as db:
             db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s0','k0','Reply','','[1]','[\"work\"]',?)", (timeutil.now(),))
         self.assertEqual(self.app.first_look_done()['connect'], [])
+
+    def test_one_to_do_still_offers_a_service_that_mails_often_and_two_do_not(self):
+        slack = [dict(signal(f's{n}'), metadata={'from': 'Slack <notification@slack.com>'}) for n in range(3)]
+        self.look([signal('m0')] + slack)
+        with self.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('t0','k0','Reply','','[1]','[\"work\"]',?)", (timeutil.now(),))
+        self.done()
+        got = self.app.first_look_done()
+        self.assertEqual((got['todos'], got['connect']), (1, [{'service': 'slack', 'label': 'Slack'}]))
+        with self.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('t1','k1','Reply','','[1]','[\"work\"]',?)", (timeutil.now(),))
+        self.done()
+        got = self.app.first_look_done()
+        self.assertEqual((got['todos'], got['connect']), (2, []))
+
+
+if __name__ == '__main__':
+    unittest.main()

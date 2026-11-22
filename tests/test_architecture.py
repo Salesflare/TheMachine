@@ -388,7 +388,8 @@ OTHER_WRITERS = {
     'meeting_writes': {'machine/app/meeting_writes.py'},
     'merge_effects': {'machine/app/action_runs.py'},
     'messages': {'telegram_mirror.py'},
-    'milestones': {'machine/app/first_look.py', 'machine/app/preparation.py'},
+    'milestones': {'machine/app/first_look.py', 'machine/app/preparation.py',
+                   'machine/app/setup_nudge.py'},  # setup_nudge: today's suggestion, read and kept in one transaction
     'network_people': {'graph.py'},
     'network_request_nodes': {'network.py'},
     'org_edits': {'crm.py', 'crm_import.py'},

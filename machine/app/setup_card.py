@@ -1,10 +1,13 @@
 """The setup to-do at the top of To-dos, "Get more out of The Machine" (dashboard/setup-card.js): what the Machine knows
 about each step (setup_card), a row closed with its × (setup_dismiss) and brought back (setup_restore), and the phone
 app's store links with their QR code (phone_app_nudge). The setup hints stay in assistant.py for now: they read the
-reminder channels. A mixin of assistant.App (APP_MIXINS) for the two actions."""
+reminder channels. Its one suggestion with a reason (setup_nudge_view): machine/app/setup_nudge.py. A mixin of
+assistant.App (APP_MIXINS) for the two actions."""
 import re
 import sqlite3
+import time
 
+from machine.app import setup_nudge
 from machine.delivery.push import (
     phone_qr,
 )
@@ -21,7 +24,22 @@ class SetupCardApp:
         if not owner_dashboard:
             raise OwnerError('Only the owner closes a setup step, on the dashboard' if name == 'setup_dismiss'
                              else 'Only the owner brings back a setup step, on the dashboard')
-        return (setup_dismiss if name == 'setup_dismiss' else setup_restore)(self.store, self.config, args.get('step'))
+        out = (setup_dismiss if name == 'setup_dismiss' else setup_restore)(self.store, self.config, args.get('step'))
+        out['setup_card']['nudge'] = self.setup_nudge_view(out['setup_card'])
+        return out
+
+    def setup_nudge_view(self, card):
+        """The setup to-do's one suggestion with its reason (setup_nudge.py), or None: worked out at most every 10
+        minutes (the dashboard asks every few seconds), at once when a source connects, a row closes or a connect fails."""
+        failed = tuple(sorted(str(v.get('source')) for v in self.__dict__.get('connect_sessions', {}).values() if v.get('state') == 'failed'))
+        key = (tuple(sorted(str(a.get('service')) for a in self.config.get('accounts') or [] if isinstance(a, dict))),
+               tuple(card.get('dismissed') or ()), bool(card.get('closed')), failed)
+        cached = getattr(self, '_setup_nudge', None)
+        if cached and cached[1] == key and time.monotonic() - cached[0] < 600:
+            return cached[2]
+        found = None if card.get('closed') else setup_nudge.pick(self.store, self.config, self.started_at(), card.get('dismissed'), failed)
+        self._setup_nudge = (time.monotonic(), key, found)
+        return found
 
 
 # The mobile app (iOS and Android), live in both stores: their links, and a page with both (its help article, for the

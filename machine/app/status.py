@@ -15,6 +15,7 @@ import abilities
 import agent_jobs
 import fleet
 import graph
+from machine.app.first_look import FIRST_LOOK_FEW
 from machine.app.setup_card import phone_app_nudge, setup_card
 from machine.browser import browser_link
 from machine.cards import snooze_choices
@@ -432,18 +433,24 @@ class StatusApp:
         result['digest_row'] = self.digest_row_view()  # To-dos' Digest row: the last digest sent, or today's; None once opened or set aside
         result['setup_hints'] = self.setup_hints_view()
         result['phone_app_store'] = phone_app_nudge(self.store)
+        try:  # what the first look read and what came of it, for its ending on the list (first_look_done)
+            result['first_look_done'] = self.first_look_done()
+        except (sqlite3.Error, ValueError, TypeError) as error:
+            LOG.warning('first look done error=%s', type(error).__name__); result['first_look_done'] = None
         try:  # the setup to-do at the top of To-dos (setup_card)
             result['setup_card'] = setup_card(self.store, self.config)
+            # its one suggestion with a reason (setup_nudge.py), which takes the place of that source's setup hint; none
+            # while the first look's ending with its own next steps is on (one suggestion at a time)
+            ending = (result['first_look_done'] or {}).get('todos', FIRST_LOOK_FEW + 1) <= FIRST_LOOK_FEW
+            nudge = result['setup_card']['nudge'] = None if ending else self.setup_nudge_view(result['setup_card'])
+            if nudge:
+                result['setup_hints'] = [h for h in result['setup_hints'] if h.get('id') != 'source-' + nudge['id'].rpartition('-')[2]]
         except sqlite3.Error as error:
             LOG.warning('setup card error=%s', type(error).__name__); result['setup_card'] = None
         try:  # the hello on a new owner's first views, with who has waited longest on them (Store.greeting)
             result['greeting'] = self.store.greeting(self.config.get('owner_name'))
         except sqlite3.Error as error:
             LOG.warning('greeting error=%s', type(error).__name__); result['greeting'] = None
-        try:  # what the first look read and what came of it, for its ending on the list (first_look_done)
-            result['first_look_done'] = self.first_look_done()
-        except (sqlite3.Error, ValueError, TypeError) as error:
-            LOG.warning('first look done error=%s', type(error).__name__); result['first_look_done'] = None
         try:  # the first-use tips on a new person's first to-dos (Store.first_tips)
             result['first_tips'] = self.store.first_tips()
         except sqlite3.Error as error:
