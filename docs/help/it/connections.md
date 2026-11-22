@@ -29,7 +29,7 @@ Microsoft Teams compare due volte: sotto **Chat** per le chat e sotto **Riunioni
 
 Se hai già collegato una fonte, nell’elenco viene indicato il suo account. Selezionala per aggiungerne un’altra dello stesso tipo: il modulo lo specifica e include un link a quella già collegata.
 
-Inserisci le informazioni richieste, come una chiave o un indirizzo, scegli **Lavoro** con il nome dell’azienda o **Personale** (per email e calendari ti viene chiesto solo se l’indirizzo non è sufficiente a stabilirlo), poi premi **Collegati**. Se si tratta di un sito come LinkedIn o X, si apre la pagina di accesso nel browser della tua Machine e la procedura prosegue automaticamente quando accedi. GitHub, WhatsApp e Codex mostrano un codice da inserire; per le chat Telegram e Signal mostrano un codice QR da scansionare.
+Inserisci le informazioni richieste, come una chiave o un indirizzo, scegli **Lavoro** con il nome dell’azienda o **Personale** (per email e calendari ti viene chiesto solo se l’indirizzo non è sufficiente a stabilirlo), poi premi **Collega**. Se si tratta di un sito come LinkedIn o X, si apre la pagina di accesso nel browser della tua Machine e la procedura prosegue automaticamente quando accedi. GitHub, WhatsApp e Codex mostrano un codice da inserire; per le chat Telegram e Signal mostrano un codice QR da scansionare.
 
 Premi **Annulla** per interrompere l’aggiunta. Se esci prima di finire, riapri **Connessioni** da qualsiasi dispositivo e riprendi da dove avevi lasciato. Una volta connessa, la tua Machine inizia subito a leggerla e mostra come procede la prima sincronizzazione.
 

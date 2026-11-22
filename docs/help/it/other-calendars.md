@@ -17,13 +17,13 @@ Le tue riunioni, con invitati, sale e note: la settimana passata e il mese succe
 
 1. Crea una password specifica per l’app su [appleid.apple.com](https://appleid.apple.com), in **Accesso e sicurezza**. Va bene anche quella creata per iCloud Mail.
 2. Nella dashboard, apri **Connessioni**, poi **Calendario**, e scegli **Calendario iCloud**.
-3. Inserisci il tuo Apple ID e la password specifica per l’app, poi premi **Collegati**.
+3. Inserisci il tuo Apple ID e la password specifica per l’app, poi premi **Collega**.
 
 ## Collega un altro calendario
 
 1. Apri **Connessioni**, poi **Calendario**, e scegli **Altro calendario**.
 2. Inserisci il tuo indirizzo email e la password. Molti provider qui chiedono una password per le app, da creare nelle impostazioni dell’account.
-3. Premi **Collegati**.
+3. Premi **Collega**.
 
 Il server viene trovato per Fastmail, Yahoo, Zoho e i server che lo annunciano. Il tuo non viene trovato? Apri **Impostazioni del server** e scrivi il suo indirizzo CalDAV, come `nextcloud.example.com/remote.php/dav`. **Solo questo calendario** legge un solo calendario per nome.
 

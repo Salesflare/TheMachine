@@ -42,7 +42,7 @@ Anche le IA su un dispositivo della tua rete privata (Tailscale), come Claude Co
 
 La tua Machine mostra quale IA sta facendo la richiesta. Se non riesce a identificarla, mostra da dove proviene la richiesta: collegati solo se l’hai appena avviata tu.
 
-Scegli cosa può fare: **Leggi** oppure **Lettura e modifica**. Se hai un account di lavoro e uno personale, scegli cosa può vedere. Poi scegli per quanto tempo: **1 giorno**, **7 giorni**, **30 giorni** oppure **1 anno**. Premi **Collegati** oppure **Annulla** per rifiutare la richiesta senza concedere l’accesso.
+Scegli cosa può fare: **Leggi** oppure **Lettura e modifica**. Se hai un account di lavoro e uno personale, scegli cosa può vedere. Poi scegli per quanto tempo: **1 giorno**, **7 giorni**, **30 giorni** oppure **1 anno**. Premi **Collega** oppure **Annulla** per rifiutare la richiesta senza concedere l’accesso.
 
 ## App ufficiale o indirizzo privato
 

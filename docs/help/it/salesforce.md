@@ -22,7 +22,7 @@ Niente, finché non attivi **Aggiorna i dati di contatto**. Le credenziali di ac
 Su una Machine ospitata:
 
 1. Apri la pagina di configurazione su app.themachine.computer/setup e vai su **Altre fonti**.
-2. Apri Salesforce e premi **Connetti Salesforce**.
+2. Apri Salesforce e premi **Collega Salesforce**.
 3. Accedi a Salesforce e autorizza The Machine (creata da Salesflare).
 
 Oppure, nella dashboard: **Connessioni**, **Clienti**, seleziona Salesforce e premi **Accedi con Salesforce**. Sul tuo computer, prima associala al tuo account.

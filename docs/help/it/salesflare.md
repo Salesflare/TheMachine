@@ -18,8 +18,8 @@ Niente. (Sul tuo computer, l’impostazione `join_pipelines` può aggiungerti ag
 ## Collegalo
 
 1. In Salesflare, apri [Impostazioni, chiavi API](https://app.salesflare.com/#/settings/apikeys) e crea una chiave.
-2. Su una Machine ospitata: apri la pagina di configurazione su app.themachine.computer/setup, vai a **Altre fonti**, apri Salesflare CRM, incolla la chiave e premi **Collegati**.
-3. Nella dashboard: **Connessioni**, **Clienti**, Salesflare CRM, incolla la chiave e premi **Collegati**. La scheda mostrerà a che punto è.
+2. Su una Machine ospitata: apri la pagina di configurazione su app.themachine.computer/setup, vai a **Altre fonti**, apri Salesflare CRM, incolla la chiave e premi **Collega**.
+3. Nella dashboard: **Connessioni**, **Clienti**, Salesflare CRM, incolla la chiave e premi **Collega**. La scheda mostrerà a che punto è.
 
 ## Dettagli della sincronizzazione
 

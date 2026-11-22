@@ -9,7 +9,7 @@ keywords: repeat, recurring, every week, every month, workday, business day, rou
 ---
 ## Make one
 
-In **New to-do**, pick **Repeats** and a rhythm: **Daily**, **Weekdays**, weekly, monthly on a date or on a weekday like the first Monday, or yearly. **Custom…** takes your own words, like every 2 weeks or every last Friday.
+In **New to-do**, pick **Repeats** and a rhythm: **Daily**, **Weekdays**, weekly, monthly on a date or on a weekday like the first Monday, or yearly. **Custom…** takes your own words, in your own language, like every 2 weeks or every last Friday.
 
 Or just say it: "every first Monday of the month do payroll" in New to-do or in Talk makes a to-do that repeats.
 

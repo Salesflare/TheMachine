@@ -43,7 +43,7 @@ Per aggiungere un’altra area di lavoro, collega di nuovo Notion.
 
 ## Incollare un token
 
-In **Oppure incolla un token di integrazione**, premi **Recupera il tuo token**. Notion apre la pagina delle integrazioni: crea un’integrazione interna, consenti la lettura e l’inserimento di contenuti e commenti, e la lettura delle informazioni utente, compresi gli indirizzi email. Copia il token, incollalo e premi **Collegati**.
+In **Oppure incolla un token di integrazione**, premi **Recupera il tuo token**. Notion apre la pagina delle integrazioni: crea un’integrazione interna, consenti la lettura e l’inserimento di contenuti e commenti, e la lettura delle informazioni utente, compresi gli indirizzi email. Copia il token, incollalo e premi **Collega**.
 
 Poi, in Notion, condividi le tue pagine con l’integrazione, selezionando **Connessioni** su ogni pagina. Sul tuo computer, anche `assistant connect notion` te lo chiede.
 

@@ -28,7 +28,7 @@ La pagina di configurazione su app.themachine.computer/setup offre lo stesso acc
 Sul tuo computer:
 
 1. Apri **Connessioni**, poi **Progetti e codice**, e seleziona GitHub.
-2. Seleziona **Lavoro** con la tua azienda, oppure **Personale**, e premi **Collegati**.
+2. Seleziona **Lavoro** con la tua azienda, oppure **Personale**, e premi **Collega**.
 3. Se richiesto, premi **Apri GitHub ↗**, inserisci il codice e autorizza l’accesso. La connessione viene stabilita automaticamente.
 
 Oppure esegui `assistant connect github` e conferma il tuo accesso a GitHub.

@@ -25,7 +25,7 @@ Hai più di un workspace Shortcut? Passa prima a quello giusto in Shortcut. Per 
 
 ## In alternativa, incolla un token
 
-In **Oppure incolla un token API**, premi **Recupera il tuo token**. Shortcut apre la pagina API Tokens in una nuova scheda: crea un token, copialo e incollalo, poi premi **Collegati**. Sul tuo computer, `assistant connect shortcut` te lo chiede a sua volta. Un token dà accesso completo al tuo account, ma The Machine lo usa solo per leggere.
+In **Oppure incolla un token API**, premi **Recupera il tuo token**. Shortcut apre la pagina API Tokens in una nuova scheda: crea un token, copialo e incollalo, poi premi **Collega**. Sul tuo computer, `assistant connect shortcut` te lo chiede a sua volta. Un token dà accesso completo al tuo account, ma The Machine lo usa solo per leggere.
 
 ## Rimuovi la connessione
 

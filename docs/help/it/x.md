@@ -27,7 +27,7 @@ Su una Machine ospitata:
 Sul tuo computer:
 
 1. Nella dashboard, apri **Connessioni**, poi **Chat** e scegli X.
-2. Scegli **Lavoro** e l’azienda, oppure **Personale**. Inserisci il tuo handle senza @ e premi **Collegati**.
+2. Scegli **Lavoro** e l’azienda, oppure **Personale**. Inserisci il tuo handle senza @ e premi **Collega**.
 3. Premi **Accedi a X** e accedi nel browser della tua Machine. La connessione si attiva automaticamente appena hai effettuato l’accesso.
 
 Oppure esegui `assistant connect x` in un terminale.
