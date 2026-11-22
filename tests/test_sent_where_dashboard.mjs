@@ -21,12 +21,16 @@ const base0=()=>[
  {id:id(5),title:'Confirm the workshop date',body:'Drafted a reply.',status:'prepared',scope:'work',created_at:at(4),event_ids:[5],
   next_actions:[{kind:'email',label:'Send reply',revision:'ab12cd34ef56',to:['sam@harbor.example'],to_name:'Sam Okoro',subject:'Workshop',body:'Hi Sam, the 12th works.'}]},
  {id:id(6),title:'Thank the printer',body:'Drafted a reply.',status:'prepared',scope:'work',created_at:at(4),event_ids:[6],
-  next_actions:[{kind:'email',label:'Send reply',revision:'ba21dc43fe65',to:['kim@press.example'],to_name:'Kim Vale',subject:'Thanks',body:'Hi Kim, thanks.'}]}];
+  next_actions:[{kind:'email',label:'Send reply',revision:'ba21dc43fe65',to:['kim@press.example'],to_name:'Kim Vale',subject:'Thanks',body:'Hi Kim, thanks.'}]},
+ // A reply that only promises the work (still_owed): the to-do stays open for it, due the promised day
+ {id:id(7),title:'Send Ash the Q4 statements',body:'Drafted a reply.',status:'prepared',scope:'work',created_at:at(4),event_ids:[7],
+  next_actions:[{kind:'email',label:'Send reply',revision:'ca11ed0ff1ce',to:['ash@ledger.example'],to_name:'Ash Moore',subject:'Q4 statements',body:'Hi Ash, I’ll send them by Tuesday.',snooze_days:3,still_owed:{what:'send Ash the Q4 statements',due:'2030-01-08'}}]}];
 let cards,going;
 const reset=()=>{cards=base0();going=new Map()};reset();
 // A send takes a moment: the next status read still says sending, the one after it shows where the to-do went
 function settle(){for(const [cid,n] of going){const c=cards.find(x=>x.id===cid),a=c.next_actions[0];if(n>0){a.state={status:'sending'};going.set(cid,n-1);continue}going.delete(cid);a.state={status:'sent'};
  if(a.delegate)Object.assign(c,{status:'snoozed',snoozed_until:new Date(Date.now()+3*864e5).toISOString(),resume_status:'prepared',awaiting:JSON.stringify({delegated:true,name:a.to_name})});
+ else if(a.still_owed)Object.assign(c,{status:'pending',due:a.still_owed.due,next_actions:[],action_status:{status:'sent'}});
  else Object.assign(c,{status:'completed',closed_at:new Date().toISOString()})}}
 const state=()=>{settle();return {suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]},done_counts:{all:cards.filter(c=>c.status==='completed').length}}};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -54,8 +58,10 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-'+id(1)).waitFor();
-  // Send: while it goes, the usual line; once it went, where it is now
-  await send(page,id(1),'aa11bb22cc33');
+  // Send: while it goes, the usual line; once it went, where it is now. A reply that does the work says nothing of staying open
+  await page.locator(`#task-${id(1)} [data-smart="aa11bb22cc33"]`).click();await page.locator('#send-dialog').waitFor({state:'visible'});
+  assert.equal(await page.locator('#send-fine').textContent(),'Leaves your inbox for 3 days after sending, or until a reply.');
+  await page.locator('#send-confirm').click();
   await page.waitForFunction(()=>/Moved to/.test(document.querySelector('#toast.show')?.textContent||''),null,{timeout:15000});
   assert.equal(await toastText(page),'Sent. Moved to Done. Open');
   // Open: Done opens on it, and it leads Done though it came in two days ago
@@ -98,6 +104,14 @@ try{
   // Its own to-do opening keeps it
   await page.evaluate(i=>{location.hash='#chat='+i},id(6));await page.waitForFunction(i=>chatId===i,id(6));
   assert.equal(await toastText(page),'Sent. Moved to Done. Open');
+  // A reply that only promises the work: the review says the to-do stays open beside the mailbox line, and it does
+  await page.evaluate(()=>{location.hash=''});await page.locator('#task-'+id(7)).waitFor();
+  await page.locator(`#task-${id(7)} [data-smart="ca11ed0ff1ce"]`).click();await page.locator('#send-dialog').waitFor({state:'visible'});
+  assert.equal(await page.locator('#send-fine').textContent(),'Leaves your inbox for 3 days after sending, or until a reply. The to-do stays open for the work this promises.');
+  await page.locator('#send-confirm').click();
+  await page.waitForFunction(()=>/Kept open/.test(document.querySelector('#toast.show')?.textContent||''),null,{timeout:15000});
+  assert.equal(await toastText(page),'Sent. Kept open. Open');
+  assert.equal(cards.find(c=>c.id===id(7)).status,'pending');
   await page.evaluate(()=>{location.hash=''});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await context.close()}

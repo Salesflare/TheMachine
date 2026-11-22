@@ -2,6 +2,7 @@
 one is checked, the promises page and the ones that slipped. A mixin of Store (assistant.py), like App's mixins. Moved
 out of assistant.py as is."""
 import datetime as dt
+import email.utils
 import json
 import re
 import sqlite3
@@ -12,7 +13,7 @@ import graph
 import i18n
 import locale_prefs
 from machine.sources.slack import slack_ids_named, slack_name_table
-from machine.store import graph_identifiers
+from machine.store import graph_identifiers, todo_moves
 from machine.store.cards import awaiting_key, awaiting_match, same_thread_card
 from machine.store.review import AUTOMATED_LABELS, CARD_OPEN, own_message, ROBOT_SENDER
 from machine.store.voices import OWN_KINDS
@@ -265,6 +266,64 @@ def promise_text(p):
         if p.get('unverified'):  # a sender the owner doesn't know (unknown_sender): their word only, said first so a phone shows it
             body = t('Unverified: you haven’t written to {} before.', p['who']) + ' ' + body
     return title, body
+
+
+OWED_PREFIX = 'still-owed:'  # the decision that kept a to-do open after a reply that only promised its work
+
+
+def keep_owed(db, row, action, job_id, stamp, digest_at='08:30'):
+    """A reply went out that only answers for the owner's real work (its draft's still_owed, judged by meaning when it
+    was written): the to-do stays open for that work instead of Done, with the promised day as its due, nothing drafted
+    left on it and its line saying what was promised. The promise is kept with it (status carded: this to-do is it),
+    so the promises page shows it, a review that reads the sent reply finds it instead of making a second one, and it
+    reads kept when the to-do is done."""
+    owed = action['still_owed']
+    due = owed.get('due') or row['due']
+    ids = [i for i in json.loads(row['event_ids'] or '[]') if isinstance(i, int)]
+    events = [dict(r) for r in db.execute(f"SELECT id,account_id,metadata FROM events WHERE id IN ({','.join('?' * len(ids))}) AND deleted=0 "
+                                          'ORDER BY occurred_at DESC', ids)] if ids else []
+    who = ' '.join(str(action.get('to_name') or next(iter(action.get('to') or ()), '') or '').split())
+    who = who_named(db, who)[:80] if who else ''
+    if '@' in who:  # an address the Graph has no name for yet: the name its own email to the owner gave
+        for e in events:
+            m = e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')
+            name, address = email.utils.parseaddr(str(m.get('from') or ''))
+            if address.lower() == who.lower() and len(name.strip()) >= 2:
+                who = ' '.join(name.split())[:80]
+                break
+    body = row['body']
+    if len(who) >= 2:  # the title says what and the due chip says when, so a moved date never leaves this line stale
+        said = locale_prefs.day_text(dt.datetime.fromisoformat(stamp).astimezone(local_tz()))
+        body = i18n.t('Replied to {} on {}. The work is still to do.', who, said)[:700]
+    db.execute("UPDATE suggestions SET due=?,body=?,next_action=NULL,outcome=NULL,handled_hint=NULL,early=0,snoozed_until=NULL,"
+               'resume_status=NULL,undo_until=NULL,deliver_after=NULL,feedback_until=NULL WHERE id=?', (due, body, row['id']))
+    todo_moves.transition(db, row['id'], todo_states.PENDING, 'still_owed', at=stamp)
+    db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+               (OWED_PREFIX + job_id, row['id'], 'update', '', 'assistant', stamp))
+    db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='queued'", (row['id'],))
+    db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
+    check_at = promise_check_at('mine', owed.get('due'), stamp, digest_at)
+    known = db.execute("SELECT id FROM promises WHERE suggestion_id=? AND status='carded' AND direction='mine' ORDER BY id DESC LIMIT 1", (row['id'],)).fetchone()
+    if known:  # already a promise of the owner's (a promise to-do): the reply gives it its new date, never a second one
+        if owed.get('due'):
+            db.execute('UPDATE promises SET due=?,check_at=?,updated_at=? WHERE id=?', (owed['due'], check_at, stamp, known['id']))
+            promise_logged(db, known['id'], 'due', owed['due'])
+        return
+    event = events[0] if events else None
+    if not event or len(who) < 2:
+        return  # nothing to tie a promise to: the open to-do with its date carries it
+    cursor = db.execute("INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,status,suggestion_id,created_at,updated_at) "
+                        "VALUES('mine',?,?,?,?,?,?,'carded',?,?,?) ON CONFLICT(event_id,direction,who,what) DO NOTHING",
+                        (who, owed['what'], owed.get('due'), check_at, event['id'],
+                         event['account_id'], row['id'], stamp, stamp))
+    if cursor.rowcount:
+        promise_logged(db, cursor.lastrowid, 'carded')
+
+
+def owed_line():
+    """The to-do's chat line after a reply that only promised its work went out (keep_owed). What was promised stays
+    sealed on the to-do and its promise, never in the decision."""
+    return i18n.t('Kept open for the work the reply promised')
 
 
 def retitle_cut_promises(db):
