@@ -36,6 +36,7 @@ import graph
 import i18n
 from machine.cards import group_sender
 from machine.sources.gmail import gmail_link
+from machine.store import first_pass
 from machine.store.review_wait import People, mail_wait
 from machine import todo_states
 from machine.owner_error import OwnerError
@@ -286,8 +287,8 @@ def _item(r, m, name, address, count=1, via=''):
 def notifications(db, since):
     """Event ids the review sorted as notifications since then (finish_analysis read): a receipt, an order summary, an
     invoice, a payment notice, a service's status, judged by what the mail is. Not a newsletter, even with an
-    unsubscribe header."""
-    found = set()
+    unsubscribe header. Also what the first pass set aside as one (machine/store/first_pass.py): no review read it."""
+    found = first_pass.skipped(db, since, ('notification', 'receipt'))
     for (items,) in db.execute("SELECT items FROM analyses WHERE status='complete' AND started_at>=?", (since,)):
         try:
             found |= {int(i['id']) for i in json.loads(items or '[]') if isinstance(i, dict) and i.get('read') == 'notifications'}

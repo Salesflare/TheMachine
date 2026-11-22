@@ -138,6 +138,25 @@ def background_model(config):
     return (provider, cheaper[-1]) if not allowed or f'{provider}/*' in allowed else None
 
 
+# The first pass's small model (machine/store/first_pass.py) per provider of the main model: GPT-6 Luna on a ChatGPT
+# sign-in. On the Claude CLI route Claude Code's smallest (`haiku`, its alias for the newest Haiku) instead.
+SMALL_MODELS = {'openai': 'gpt-6-luna', 'openai-codex': 'gpt-6-luna'}
+
+
+def small_model(config):
+    """(model ref, thinking) for the first pass's small model calls, on the main model's own sign-in; None when that
+    sign-in has none here or the owner's model allowlist leaves it out: then nothing is sorted out before a review."""
+    import chat_model  # chat_model is a leaf; imported here so models.py stays importable on its own
+    main = openclaw_model(config) or ''
+    provider = main.partition('/')[0]
+    if main and chat_model.claude_code(config, main):
+        return f'{provider}/haiku', 'off'  # Claude Code's print mode: OpenClaw's allowlist doesn't apply
+    name = SMALL_MODELS.get(provider)
+    if not name or not chat_model.allowed(config, f'{provider}/{name}'):
+        return None
+    return f'{provider}/{name}', 'low'
+
+
 def has_model(config=None, wait=True, answered=None, unknown=True):
     """Whether OpenClaw has a main model to review with that can run (model_ready). When that can't be read,
     a main model set in its config is taken as one (`unknown`). wait=False: a turn the owner waits on never waits for

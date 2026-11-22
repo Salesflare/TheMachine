@@ -129,6 +129,19 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   List-Id, Precedence and Auto-Submitted headers, Gmail's categories, the sender's address and the Graph's mailings.
   The owner's own mail, every reply, someone in the Graph, chats, calendar changes, a time-sensitive title and
   anything unsure go as before.
+- **A first pass sets the clear ones aside.** While they wait, those automated signals are sorted in batches of 40 by
+  the sign-in's small model (`models.small_model`: GPT-6 Luna on a ChatGPT sign-in, Claude Code's `haiku` on the
+  Claude CLI route; none on other providers), one call a minute at most, within the same usage pacing as reviews of
+  new signals. What clearly needs nothing (a newsletter, marketing, a digest, a social network's activity, a routine
+  receipt, an app's status) is marked reviewed without a review turn: it stays stored and searchable, the Graph,
+  local embeddings and the routines read it as before (they read signals by time), and the weekly recap counts it as
+  checked. The model only names what to set aside, judged by meaning: a person writing, a bill due, a security alert,
+  a delivery problem, a sign-in code and anything unsure go to the review, and so does whatever it didn't sort (a
+  failed call, a reply that isn't one, a review's running claim). Never sent to it: anything plain code doesn't call
+  automated, mail in a thread the owner wrote in or on an open to-do, a message an open to-do waits on, a signal put
+  off before. Each sort is kept per signal version for 30 days in `first_pass`, without message text
+  (`machine/store/first_pass.py`, `machine/app/first_pass.py`). Before the first review, and with
+  `review_worker.first_pass: false`, every signal goes to the review as before.
 
 - **A night pause.** In the quiet hours (`ASSISTANT_QUIET_HOURS`, 00:00 to 07:00 by default, the ones the nightly
   update uses) no review of new signals starts: they are read and stored, and reviewed together 30 minutes before the

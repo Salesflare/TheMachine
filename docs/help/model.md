@@ -32,6 +32,8 @@ Background work leaves room for your own chats. It pauses at about 65% of the 5-
 
 Background work never runs on GPT-6 Astra. With a ChatGPT sign-in it uses GPT-6.1 Sol for now, also when your main model is GPT-6.2 Sol: on that sign-in 6.2 doesn't reuse its cached instructions yet, so it uses more of your plan. Your chats keep the model you picked.
 
+Before a check, a small model (GPT-6 Luna with ChatGPT, Haiku with Claude) sets aside newsletters, promotions and app notices that clearly need nothing, so checks use less of your plan. They stay searchable. A person writing, a bill, a security alert or a sign-in code always gets checked.
+
 ## Before a limit is reached
 
 If your ChatGPT plan has resets left, To-dos shows a short line once background work slows down: at about 65% of the 5-hour limit or 90% of the weekly limit. It says how much is used and how many resets are left. **Use a reset** starts the limits over, after you confirm. × hides the line until that limit resets. Without resets, nothing new shows.
