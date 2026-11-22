@@ -8491,6 +8491,10 @@
   "one": "{} tarea",
   "other": "{} tareas"
  },
+ "{} to-dos are being prepared.": {
+  "one": "Se está preparando {} tarea.",
+  "other": "Se están preparando {} tareas."
+ },
  "{} to-dos cleared in {}": {
   "one": "{} tarea resuelta en {}",
   "other": "{} tareas resueltas en {}"

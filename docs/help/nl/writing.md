@@ -1,41 +1,43 @@
 ---
 title: Schrijven
 area: settings
-summary: Je e-mailhandtekeningen en een paar regels per kanaal over je schrijfstijl. Concepten volgen die.
+summary: Je e-mailhandtekeningen en per kanaal een paar regels over je schrijfstijl. Concepten houden zich daaraan.
 covers: settings:writing
 code: dashboard.html, signatures.py, authorship.py, learning_loop.py
 order: 3
 keywords: tone, style, voice, write like me, sound like me, my style, wording, formal, informal
-translated: 7d5673bd3cb62735
+translated: 7115b8eb9464b0bf
 ---
 ## Handtekeningen
 
-In **Instellingen**, **Schrijven**, heeft elk mailaccount een handtekening voor de e-mails die je verstuurt. Met **Importeren uit Gmail** neem je de handtekening van Gmail over. Voor Outlook vind je die met **Zoeken in verzonden mail** in je verzonden mail. Pas hem naar wens aan en klik op **Opslaan**. Die knop verschijnt zodra je iets wijzigt.
+Onder **Instellingen** > **Schrijven** heeft elk e-mailaccount een handtekening voor de e-mails die je verstuurt. **Importeren uit Gmail** haalt de handtekening uit Gmail op. Voor Outlook zoekt **Zoeken in verzonden mail** de handtekening in je verzonden mail. Pas de handtekening aan zoals je wilt en klik op **Opslaan**. Die knop verschijnt zodra je iets wijzigt.
 
-## Hoe je schrijft
+## Zo schrijf je
 
-Een paar regels per kanaal, zoals E-mail of Slack, plus één voor alle kanalen. Concepten volgen die. Ze worden automatisch bijgewerkt op basis van je berichten, notities en bewerkingen. Pas een regel aan en klik op **Opslaan**, of **Verwijderen**.
+Per kanaal, zoals e-mail of Slack, kun je een paar regels instellen. Ook kun je regels instellen die voor alle kanalen gelden. Concepten houden zich daaraan. De regels worden vanzelf bijgewerkt op basis van je berichten, notities en wijzigingen. Pas een regel aan en klik op **Opslaan**, of **Verwijderen**.
 
-Tot The Machine weet hoe je schrijft, blijven concepten eenvoudig: korte zinnen, alledaagse woorden en ongeveer even lang als het bericht waarop ze reageren. Als je langer of formeler schrijft, krijgen jouw regels voorrang.
+Tot The Machine weet hoe je schrijft, blijven concepten eenvoudig: korte zinnen, alledaagse woorden en ongeveer even lang als het bericht waarop ze reageren. Als je langer of formeler schrijft, zijn jouw regels leidend.
 
-Een chatreactie, bijvoorbeeld op WhatsApp, Telegram, Slack of Teams, is ongeveer even lang als je eigen recente berichten daar, als je genoeg met die persoon hebt geschreven. Zonder voorbeelden blijft het bij een of twee regels.
+Een antwoord in een chat, zoals WhatsApp, Telegram, Slack of Teams, is ongeveer even lang als je recente berichten met die persoon, zodra je genoeg met die persoon hebt geschreven. Als er geen berichten zijn om op voort te bouwen, blijft het bij één of twee zinnen.
 
-De snelste manier om The Machine dit te leren: pas een concept aan voordat je het verstuurt. Hij leert van wat je hebt aangepast.
+De snelste manier om The Machine te leren hoe je schrijft: bewerk een concept voordat je het verstuurt. The Machine leert van wat je hebt gewijzigd.
 
-Hij leert alleen van teksten die je zelf hebt geschreven. Een concept dat ongewijzigd wordt verstuurd, telt nooit als jouw tekst.
+The Machine leert alleen van wat je zelf hebt geschreven. Een concept dat ongewijzigd wordt verstuurd, telt nooit mee als jouw tekst.
+
+Heb je OpenClaw eerder gebruikt? Concepten lezen de `USER.md`, niet de `AGENTS.md` of `SOUL.md`. Laat regels over hoe concepten eruit moeten zien in `USER.md` staan, of geef ze door met **Wijzigingen vragen**.
 
 ### Het blijft leren
 
-Ongeveer twee keer per dag, als er genoeg nieuwe informatie is, bekijkt hij aangepaste concepten, to-do's die je hebt afgewezen of gesnoozed, en correcties in de chat van een to-do. Daarna brengt hij een paar kleine wijzigingen aan in je schrijfstijl, regels en feiten. Deze controles worden uitgesteld als je bijna aan de limiet van je abonnement zit.
+Ongeveer twee keer per dag, als er genoeg nieuwe voorbeelden zijn, bekijkt The Machine concepten die je hebt gewijzigd, to-do's die je hebt afgewezen of gesnoozed en correcties in de chat van een to-do. Daarna brengt The Machine een paar kleine wijzigingen aan in je schrijfstijl, regels en feiten. Deze controles wachten als de limieten van je plan bijna op zijn.
 
-Bij **Leren** > **Wijzigingen** zie je elke update en waarom. Met **Ongedaan maken** maak je die ongedaan. Regels die je zelf hebt geschreven, blijven precies zoals je ze hebt geschreven.
+Onder **Leren** > **Wijzigingen** zie je elke update en waarom die is gedaan. Met **Ongedaan maken** draai je een update terug. Regels die je zelf hebt geschreven, blijven ongewijzigd.
 
 ### Als een regel niet klopt
 
-Pas hem aan waar je hem ziet:
+Pas de regel aan op de plek waar je hem ziet:
 
-- Ga naar **Instellingen**, **Schrijven**, pas de tekst aan in het vak van dat kanaal en klik op **Opslaan**. Vanaf dan blijft jouw formulering behouden.
-- Of zeg het in de chat van een to-do, bijvoorbeeld: "Ik schrijf alleen het begin van zinnen met een kleine letter, niet namen". De chat toont **Opgeslagen bij Hoe je schrijft**, met **Bewerken**.
-- Bij **Leren** > **Wat ik heb geleerd** vind je ook elke regel, met **Bewerken** erbij.
+- Ga naar **Instellingen** > **Schrijven**, pas de tekst aan in het vak van dat kanaal en klik op **Opslaan**. Die formulering blijft dan staan.
+- Of zeg het in de chat van een to-do, bijvoorbeeld: "Ik schrijf alleen het begin van zinnen met een kleine letter, niet namen." De chat toont **Opgeslagen bij Zo schrijf je**, met **Bewerken**.
+- Onder **Leren** > **Wat ik heb geleerd** staat elke regel ook, met **Bewerken**.
 
-Wees precies: concepten volgen de regels woord voor woord. Alleen "kleine letters" zorgt er ook voor dat namen kleine letters krijgen; "zinnen beginnen met een kleine letter, namen behouden hun hoofdletters" niet. Gewoontes blijven bij hun kanaal, dus een gewoonte uit een chat heeft geen invloed op je e-mails.
+Wees precies: concepten volgen de regels woord voor woord. Alleen "kleine letters" zorgt er ook voor dat namen kleine letters krijgen. "Zinnen beginnen met een kleine letter, namen behouden hun hoofdletters" doet dat niet. Gewoontes gelden alleen voor hun eigen kanaal, dus een gewoonte voor chats heeft nooit invloed op je e-mails.
