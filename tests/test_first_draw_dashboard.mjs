@@ -31,7 +31,7 @@ try{
   const look=()=>({updated:document.querySelector('#updated')?.textContent||'',done:document.querySelectorAll('#task-b2b2b2b2b2b2b2b2').length,
    later:document.querySelectorAll('#task-c3c3c3c3c3c3c3c3').length,waiting:document.querySelectorAll('#task-d4d4d4d4d4d4d4d4').length,
    foryou:document.querySelectorAll('#suggestions > article.card').length,foryouCount:document.querySelector('#section-foryou .count')?.textContent,
-   folds:[...document.querySelectorAll('#later-head .count,#waiting-head .count')].map(c=>c.textContent)});window.seen={at:look()};requestAnimationFrame(()=>setTimeout(()=>{window.seen.after=look()},50))}}).observe(document,{childList:true,subtree:true})});
+   folds:[...document.querySelectorAll('#later-head .count,#waiting-head .count')].map(c=>c.textContent)});const seen=window.seen={at:look()};requestAnimationFrame(()=>setTimeout(()=>{seen.after=look()},50))}}).observe(document,{childList:true,subtree:true})});
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor();
  await page.waitForFunction(()=>window.seen?.after);
@@ -64,7 +64,7 @@ try{
  assert.match(await page.locator('#updated').textContent(),/Updated/,'a refresh draws the rest with the to-dos');
  assert.equal(await order(),drawn,'For you in the same order as a drawing all at once');
  // A reload (the browser takes the page back to where it was, further down) draws For you whole at once
- await page.evaluate(()=>{window.seen=null});await page.reload();await page.waitForFunction(()=>window.seen);
+ await page.evaluate(()=>{window.seen=null});await page.reload();await page.waitForFunction(()=>window.seen?.after);
  assert.equal((await page.evaluate(()=>window.seen)).at.foryou,12,'a reload draws all of For you at once');
  // A phone's screen holds fewer: its first drawing has four, the rest right after, in the same order
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{window.seen=null});
