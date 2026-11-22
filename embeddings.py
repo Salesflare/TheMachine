@@ -547,17 +547,33 @@ DISTANCE = bytes(abs(b - 128) for b in range(256))  # a stored byte's |value| (b
 class Index:
     """One model and size's stored vectors (signals' and their passages') in memory, for search to score them all at
     once instead of reading each from the database: 8 bits per value (each vector in steps of its largest value / 127,
-    stored + 128), one vector after another. Per vector D bytes plus 16: 27 MB per 100k vectors at 256 dims.
+    stored + 128), kept by dimension: one run of bytes per dimension, a byte per slot. Per vector D bytes plus 16: 27 MB
+    per 100k vectors at 256 dims.
 
     lanes scores a probe against every vector in one pass of big-integer arithmetic (a lane of a few bytes per vector, a
     multiply-add per dimension), and each score has a bound on its error, so search reads and scores exactly only the
-    vectors that could still rank (close)."""
+    vectors that could still rank (close). Kept by dimension, a dimension's values spread to their lanes in one copy
+    (one vector after another, gathering them took half of a search's scoring)."""
 
     def __init__(self, ident, dims):
         self.ident, self.dims, self.seq = ident, dims, -1
         self.keys, self.free = array.array('q'), []  # per slot: its key, or -1 when free
         self.scales, self.sizes = array.array('f'), array.array('f')  # per slot: its step, and step * sum of |stored values|
-        self.rows, self.most = bytearray(), (0.0, 0.0)  # the largest step and size kept (bounds only grow until a reload)
+        self.most = (0.0, 0.0)  # the largest step and size kept (bounds only grow until a reload)
+        # per dimension: every slot's stored value; new slots wait in `added`, one vector after another, until a search
+        # (or a change) moves them over a dimension at a time (a byte at a time took seconds for a big index)
+        self.columns, self.added = [bytearray() for _ in range(dims)], bytearray()
+
+    def settle(self):
+        """The added vectors moved over to their dimensions' runs."""
+        if self.added:
+            for j, column in enumerate(self.columns):
+                column += self.added[j::self.dims]
+            self.added = bytearray()
+
+    def held(self):
+        """Bytes of stored values kept."""
+        return sum(map(len, self.columns)) + len(self.added)
 
     def refresh(self, db, model, whole=True):
         """Up to date with the database as this transaction sees it: the changed signals read again, or all of it
@@ -582,6 +598,7 @@ class Index:
         if changed is not None:
             if not changed:
                 return
+            self.settle()  # a freed slot is rewritten in its dimensions' runs
             gone = set(changed)
             for slot, key in enumerate(self.keys):
                 if key >> SHIFT in gone:
@@ -609,27 +626,37 @@ class Index:
         if self.free:
             slot = self.free.pop()
             self.keys[slot], self.scales[slot], self.sizes[slot] = key, step, size
-            self.rows[slot * self.dims:(slot + 1) * self.dims] = row
+            self.settle()
+            for column, value in zip(self.columns, row):
+                column[slot] = value
         else:
             self.keys.append(key); self.scales.append(step); self.sizes.append(size)
-            self.rows += row
+            self.added += row
 
     def lanes(self, probe):
         """(per slot: sum(q * stored) + off, off, step, |probe|_1 / 2) for the probe in steps of its own, q = probe / step
         rounded. A score is then step * scale * (lane - off), within scale * |probe|_1 / 2 + step / 2 * size: each value's
         rounding times the other's. All slots at once: per dimension, every slot's stored value spread to a lane of
-        `width` bytes in one integer, times q, summed; a lane holds |sum| <= 127 * 255 * D with its sign."""
+        `width` bytes in one integer, times q, summed; a lane holds |sum| <= 127 * 255 * D with its sign. Dimensions with
+        the same q are summed first and multiplied once."""
         dims, n = self.dims, len(self.keys)
         step = max(map(abs, probe), default=0.0) / 127
         if not step or not n:
             return None
         q = [round(x / step) for x in probe]
         width = ((127 * 255 * dims).bit_length() + 8) // 8
-        buf, total, rows = bytearray(width * n), 0, self.rows
-        for j, w in enumerate(q):
+        self.settle()
+        alike = {}
+        for column, w in zip(self.columns, q):
             if w:
-                buf[::width] = rows[j::dims]
-                total += w * int.from_bytes(buf, 'little')
+                alike.setdefault(w, []).append(column)
+        buf, total = bytearray(width * n), 0
+        for w, columns in alike.items():
+            part = 0
+            for column in columns:
+                buf[::width] = column
+                part += int.from_bytes(buf, 'little')
+            total += w * part
         half = 1 << (8 * width - 1)
         raw = (total + int.from_bytes((bytes(width - 1) + b'\x80') * n, 'little')).to_bytes(width * n, 'little')  # each lane + half
         wide = 4 if width <= 4 else 8
@@ -851,6 +878,9 @@ def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=
     scored, part = [], {}  # (margin over its floor, similarity, event_id); event_id -> (margin, similarity, start, chars) of its best later passage
     keyword, keep = None, max(limit * 3, 30)
     if probes or asked:
+        if query.strip():  # before the index is held (one search at a time): another search scores meanwhile
+            with connect() as db:
+                keyword = [i for i in fts_ids(db, accounts, query, keep, signals_only) if i not in skip]
         with connect() as db, held_index(db, connect, model, dims) as index:
             # A seed may have changed/deleted while its embedding request was running.
             versions = {r[0]: r[1] for r in db.execute('SELECT id,version FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in seeds) + ')', seeds)} if seeds else {}
@@ -864,8 +894,6 @@ def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=
             passages_from = ('FROM event_passages p CROSS JOIN events e ON e.id=p.event_id WHERE e.account_id IN (' + marks + ') '
                              'AND e.deleted=0 AND p.version=e.version AND p.model=? AND p.dims=?' + history)
             args = (*accounts, model, dims)
-            if query.strip():
-                keyword = [i for i in fts_ids(db, accounts, query, keep, signals_only) if i not in skip]
             # The in-memory index's estimates leave out what can't rank; those that can (and the keyword matches, whose
             # similarity is shown) are read and scored exactly below. Without an index every vector is.
             within = index and index.close(db, 'SELECT v.event_id ' + vectors_from, 'SELECT p.event_id,p.seq ' + passages_from, args, skip,
