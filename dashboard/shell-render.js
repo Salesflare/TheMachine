@@ -1,4 +1,4 @@
-const mailCheckSlot=()=>state?.mail_check?.read?lazyIn('mailcheck')?mailCheckBlock():(lazyRun('mailcheck',render),''):'';
+const mailCheckSlot=()=>state?.mail_check?.read||state?.reset_nudge?lazyIn('mailcheck')?mailCheckTop():(lazyRun('mailcheck',render),''):'';
 const milestoneSlot=()=>state?.done_milestone?lazyIn('milestone')?milestoneCard():(lazyRun('milestone',render),''):'';
 const SKELETON=nodeHTML($('#suggestions .skeleton'));  // the page's own loading outline
 // The kind of screen a kept outline shape is for (skeleton-head, skeleton-setup): shell-main.html reads it the same way

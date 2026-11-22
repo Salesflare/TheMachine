@@ -84,6 +84,25 @@ def pause(usage, now_s=None, first=False, signals=False):
     return None
 
 
+def held_back(usage, now_s=None):
+    """The window that holds background work back however the day goes: the 5-hour one at SHORT_PAUSE, the weekly one
+    at WEEK_CAP (the daily share alone is not it: a quiet day carries over). {'provider', 'name', 'label', 'window':
+    '5h'|'week', 'used', 'until'} for the most used one, the weekly one first; None when none is. What To-dos offers a
+    usage limit reset for (ModelPacingApp.reset_nudge)."""
+    now_s = time.time() if now_s is None else now_s
+    found = []
+    for entry in usage or []:
+        for w in entry.get('windows') or []:
+            used, reset = w.get('used'), w.get('reset')
+            if not isinstance(used, (int, float)) or (reset and reset <= now_s):
+                continue
+            short = window_kind(w.get('label')) == 'short'
+            if used >= (SHORT_PAUSE if short else WEEK_CAP):
+                found.append({'provider': entry.get('provider'), 'name': entry.get('name'), 'label': w.get('label'),
+                              'window': '5h' if short else 'week', 'used': used, 'until': reset})
+    return max(found, key=lambda f: (f['window'] == 'week', f['used']), default=None)
+
+
 def follow_up_pause(usage, now_s=None, late=False):
     """None when an automated follow-up may be drafted now; else why not, like pause. They wait first: at
     FOLLOW_UP_PAUSE in the 5-hour window and FOLLOW_UP_ROOM percent below the day's weekly share. `late`: it reached

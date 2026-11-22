@@ -132,6 +132,22 @@ class ModelPacingApp:
                     'name': self.model_name(), 'fallback': True}
         return None
 
+    def reset_nudge(self):
+        """The quiet line on To-dos that offers a usage limit reset before work stops: a window holds background work
+        back (model_budget.held_back), or a limit is reached, and the sign-in has resets left (model_status can_reset).
+        {'window': '5h'|'week'|None, 'used', 'until', 'name', 'resets', 'reached'}, else None. Only for the plan the
+        resets are for (today ChatGPT's, through the Codex CLI), and never while a working fallback carries the work.
+        Never uses a reset itself: its button is Settings' own Use a reset, with its confirm."""
+        status = getattr(self, 'model_status', None) or {}
+        if not status.get('can_reset') or model_budget.provider_of(openclaw_model(self.config)) != 'openai' or self.fallback_covers():
+            return None
+        found = model_budget.held_back(self.paced_usage())
+        reached = bool(self.model_pause())
+        if not found and not reached:
+            return None
+        return {'window': (found or {}).get('window'), 'used': (found or {}).get('used'), 'until': (found or {}).get('until'),
+                'name': self.model_name(), 'resets': status['resets']['available'], 'reached': reached}
+
     def model_name(self):
         """The sign-in's name for the owner: Claude, ChatGPT, or None when it is neither."""
         model = openclaw_model(self.config) or ''

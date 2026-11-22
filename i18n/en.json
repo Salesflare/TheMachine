@@ -7722,6 +7722,7 @@
   "other": "{} ({} lines)"
  },
  "{} 5-hour limit reached.": "{} 5-hour limit reached.",
+ "{} 5-hour limit {}% used. Preparing is slowed.": "{} 5-hour limit {}% used. Preparing is slowed.",
  "{} Check recovered and saved.": "{} Check recovered and saved.",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}",
  "{} Encrypted for their Machine only.": "{} Encrypted for their Machine only.",
@@ -8319,6 +8320,10 @@
  "{} requires your Work {}. You can still keep any thread private.": "{} requires your Work {}. You can still keep any thread private.",
  "{} requires your {}.": "{} requires your {}.",
  "{} requires your {}. They belong to the company. Threads you keep private stay private.": "{} requires your {}. They belong to the company. Threads you keep private stay private.",
+ "{} resets left.": {
+  "one": "{} reset left.",
+  "other": "{} resets left."
+ },
  "{} result": "{} result",
  "{} rows": {
   "one": "{} row",
@@ -8520,6 +8525,7 @@
  "{} wants your security key": "{} wants your security key",
  "{} was slow to answer": "{} was slow to answer",
  "{} weekly limit reached.": "{} weekly limit reached.",
+ "{} weekly limit {}% used. Preparing is slowed.": "{} weekly limit {}% used. Preparing is slowed.",
  "{} weeks": {
   "one": "{} week",
   "other": "{} weeks"
