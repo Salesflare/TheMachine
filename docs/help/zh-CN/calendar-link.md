@@ -1,7 +1,7 @@
 ---
 title: Proton Calendar和日历链接（ICS）
 area: connections
-summary: 从日历共享链接读取会议，包括Proton Calendar、已发布的日历，以及学校或体育日历。仅供读取。
+summary: 从日历分享链接读取会议，包括Proton Calendar、已发布的日历，以及学校或体育日历。仅供读取。
 covers: connector:proton_calendar, connector:ics
 code: ics_feed.py, ical.py, machine/sources/calendar_setup.py
 order: 15
@@ -15,11 +15,11 @@ translated: b3bcf33b5c027baf
 
 ## 连接Proton Calendar
 
-Proton Calendar没有其他应用接入方式，因此需要使用共享链接。
+Proton Calendar没有其他应用接入方式，因此需要使用分享链接。
 
-1. 在网页上打开Proton Calendar，网址是calendar.proton.me。无法在手机应用中创建共享链接。
+1. 在网页上打开Proton Calendar，网址是calendar.proton.me。无法在手机应用中创建分享链接。
 2. 依次打开“设置”、“所有设置”、“日历”，然后选择日历。
-3. 在“与任何人共享”下，点击“创建链接”，然后选择“完整视图”。“有限视图”只会显示你何时忙碌。
+3. 在“与任何人分享”下，点击“创建链接”，然后选择“完整视图”。“有限视图”只会显示你何时忙碌。
 4. 点击“复制链接”。
 5. 在控制面板中打开**连接**，然后打开**日历**，选择**Proton Calendar**，粘贴链接并点击**连接**。
 
@@ -29,7 +29,7 @@ Proton Calendar没有其他应用接入方式，因此需要使用共享链接�
 
 ## 保持链接私密
 
-任何拥有链接的人都能读取日历。The Machine会像保管密码一样保管链接，不会将其写入日志或显示在屏幕上。要停止共享，请在创建链接的位置删除链接，然后在这里点击**断开连接**。
+任何拥有链接的人都能读取日历。The Machine会像保管密码一样保管链接，不会将其写入日志或显示在屏幕上。要停止分享，请在创建链接的位置删除链接，然后在这里点击**断开连接**。
 
 ## 链接失效时
 

@@ -31,7 +31,7 @@ translated: 9533caa1429fb3fc
 
 也可以在控制面板中选择**连接**、**会议**，再选择Zoom并点击**使用Zoom登录**。完成后，你会回到控制面板。
 
-在自己的电脑上，先[将它与你的账户配对](friends.md#a-machine-on-your-own-computer)，然后打开**连接**，再选择**会议**，选择Zoom并点击**使用Zoom登录**。
+在自己的电脑上，先[将它与你的账号配对](friends.md#a-machine-on-your-own-computer)，然后打开**连接**，再选择**会议**，选择Zoom并点击**使用Zoom登录**。
 
 ## 移除
 

@@ -50,4 +50,4 @@ Telegram可能会限制或结束来自The Machine等应用的登录。
 
 打开**连接**，进入Telegram聊天，选择**详情**，然后点击**断开连接**。你的Machine会退出Telegram，并删除为Telegram保存的内容。
 
-或者在手机上结束会话：在Telegram中打开设置、设备，点按The Machine，然后结束会话。
+或者在手机上结束会话：在Telegram中打开设置、设备，点击The Machine，然后结束会话。

@@ -12,7 +12,7 @@ translated: f403410953e50582
 - 使用托管版Machine时，系统会免费为你查询组织详情。
 - 在自己的电脑上使用时，默认关闭查询功能。添加Apollo、People Data Labs或Hunter等查询服务的密钥后即可启用。请参阅[配置指南](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md)。
 
-系统只会发送组织的网址，不会发送你的消息，也不会发送你在该组织认识的人。托管版Machine或使用The Machine Network的Machine每天最多查询1,000个组织，其他情况每天最多查询50个。每个组织每90天更新一次。系统不会查询共享网站和邮件服务商，例如gmail.com。人员信息会单独查询，请参阅[职位和照片](people.md#job-title-and-photo)。
+系统只会发送组织的网址，不会发送你的消息，也不会发送你在该组织认识的人。托管版Machine或使用The Machine Network的Machine每天最多查询1,000个组织，其他情况每天最多查询50个。每个组织每90天更新一次。系统不会查询分享网站和邮件服务商，例如gmail.com。人员信息会单独查询，请参阅[职位和照片](people.md#job-title-and-photo)。
 
 如果查询结果中没有徽标，The Machine会使用组织官网上的图标，并将其保存在你的Machine上。徽标服务不会知道你与哪些组织有往来。如果两者都有，在待办等较小的位置会显示方形图标。
 

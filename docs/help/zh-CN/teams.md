@@ -1,7 +1,7 @@
 ---
 title: Microsoft Teams
 area: connections
-summary: 适用于工作或学校账户的Teams聊天、会议聊天和会议记录。只有你批准后才会回复。
+summary: 适用于工作或学校账号的Teams聊天、会议聊天和会议记录。只有你批准后才会回复。
 covers: connector:teams
 code: connectors/teams.py, teams_send.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
@@ -35,7 +35,7 @@ Microsoft会请求允许The Machine读取你的聊天和个人资料，并以你
 
 频道、会议转录和Copilot会议记录需要组织管理员批准一次。获批前，Teams卡片会说明目前无法读取的内容及原因。
 
-此功能仅适用于工作或学校Microsoft账户。个人账户没有可通过这种方式读取的Teams聊天。
+此功能仅适用于工作或学校Microsoft账号。个人账号没有可通过这种方式读取的Teams聊天。
 
 ## 连接
 
@@ -47,7 +47,7 @@ Microsoft会请求允许The Machine读取你的聊天和个人资料，并以你
 
 设置过程中，设置页面也会显示**连接Microsoft Teams**。
 
-在自己的电脑上，先[将Machine与你的账户配对](friends.md#a-machine-on-your-own-computer)，然后打开**连接**，再选择**聊天**或**会议**，选**Microsoft Teams**或**Teams会议**，并按下**使用Microsoft登录**。在这里，The Machine会读取你的聊天和会议聊天。目前无法读取频道和会议记录。
+在自己的电脑上，先[将Machine与你的账号配对](friends.md#a-machine-on-your-own-computer)，然后打开**连接**，再选择**聊天**或**会议**，选**Microsoft Teams**或**Teams会议**，并按下**使用Microsoft登录**。在这里，The Machine会读取你的聊天和会议聊天。目前无法读取频道和会议记录。
 
 ## 移除连接
 

@@ -9,7 +9,7 @@ translated: 5d782f28fb69efef
 ---
 ## 适用场景
 
-Mistral是一家欧洲AI服务商。添加Mistral API密钥后，你的Machine就能使用Mistral模型来阅读和起草内容。The Machine本身不提供AI服务：请求会直接发送给Mistral，并由你的账户承担，且受Mistral的条款约束。
+Mistral是一家欧洲AI服务商。添加Mistral API密钥后，你的Machine就能使用Mistral模型来阅读和起草内容。The Machine本身不提供AI服务：请求会直接发送给Mistral，并由你的账号承担，且受Mistral的条款约束。
 
 ## 获取密钥
 
