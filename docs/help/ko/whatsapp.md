@@ -43,7 +43,7 @@ WhatsApp은 이 기능을 공식적으로 지원하지 않아요. 메시지를 �
 
 내 컴퓨터에서 연결하려면 **연결**을 열고 **채팅**을 선택한 다음 WhatsApp을 선택하세요. 국가 코드를 포함한 전화번호를 입력하고 **연결**을 누르세요. 코드가 표시돼요. 휴대폰의 WhatsApp에서 설정, 연결된 기기, 기기 연결을 차례로 연 다음 **대신 전화번호로 연결**을 선택하고 코드를 입력하세요.
 
-또는 `assistant connect whatsapp`을 실행한 다음 터미널에 표시되는 코드를 스캔하세요. 처음 실행하면 체크섬을 확인한 고정 버전의 WhatsApp 연결 프로그램을 설치할지 묻는 메시지가 표시돼요([소스](https://github.com/Salesflare/wacli)).
+또는 `assistant connect whatsapp` 명령을 실행한 다음 터미널에 표시되는 코드를 스캔하세요. 처음 실행하면 체크섬을 확인한 고정 버전의 WhatsApp 연결 프로그램을 설치할지 묻는 메시지가 표시돼요([소스](https://github.com/Salesflare/wacli)).
 
 연결된 기기 목록에는 The Machine으로 표시돼요. 이전에 연결한 Machine은 다시 연결할 때까지 기존 이름으로 표시돼요.
 

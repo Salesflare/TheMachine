@@ -33,12 +33,12 @@ Telegram Desktop처럼 내 Telegram 계정에 로그인한 기기로 비공개 �
 
 직접 사용하는 컴퓨터에서는 개인 Telegram 앱 ID도 필요해요. [my.telegram.org](https://my.telegram.org)의 API development tools에서 앱 ID를 만든 다음 양식에 api_id와 api_hash를 입력해요.
 
-또는 터미널에서 `assistant connect telegram`을 실행하고 화면에 표시된 코드를 스캔해요.
+또는 터미널에서 `assistant connect telegram` 명령을 실행하고 화면에 표시된 코드를 스캔해요.
 
 ## 연결이 끊기는 경우
 
 - **Telegram에서 로그아웃됨**: Telegram에서 이 기기의 로그인을 종료했거나 휴대폰에서 로그아웃했어요. **연결**에서 **다시 연결**을 눌러요.
-- **Telegram에서 앱 ID를 더 이상 허용하지 않음**: Telegram에서 The Machine이 사용하는 앱 ID를 더 이상 허용하지 않아요. **다시 연결**을 누르고 개인 앱 ID를 추가할 때까지는 아무것도 읽거나 보내지 않아요.
+- **Telegram에서 앱 ID를 더 이상 허용하지 않음**: Telegram에서 이 Machine이 사용하는 앱 ID를 더 이상 허용하지 않아요. **다시 연결**을 누르고 개인 앱 ID를 추가할 때까지는 아무것도 읽거나 보내지 않아요.
 
 Telegram은 The Machine 같은 앱의 로그인을 제한하거나 종료할 수 있어요.
 
@@ -48,6 +48,6 @@ The Machine은 Graph에 있는 사람 중 프로필 사진이 없는 사람의 �
 
 ## 연결 해제
 
-**연결**에서 Telegram 채팅을 열고 **세부정보**를 선택한 다음 **연결 해제**를 눌러요. The Machine이 Telegram에서 로그아웃하고 Telegram 관련 데이터를 삭제해요.
+**연결**에서 Telegram 채팅을 열고 **세부정보**를 선택한 다음 **연결 해제**를 눌러요. 내 Machine이 Telegram에서 로그아웃하고 Telegram 관련 데이터를 삭제해요.
 
 또는 휴대폰에서 세션을 종료할 수 있어요. Telegram에서 설정, 기기를 차례로 열고 The Machine을 누른 다음 세션을 종료해요.

@@ -1,13 +1,13 @@
 ---
 title: 근무 시간
 area: settings
-summary: The Machine이 메시지를 보낼 수 있는 시간, 미뤄 둔 항목이 돌아오는 시간, 아침 및 저녁 요약이 도착하는 시간을 정해요.
+summary: 내 Machine이 메시지를 보낼 수 있는 시간, 미뤄 둔 항목이 돌아오는 시간, 아침 및 저녁 요약이 도착하는 시간을 정해요.
 code: dashboard.html, assistant.py
 order: 3
 keywords: quiet hours, weekend, evening, night, do not disturb, time zone
 translated: 062ccef1310f228a
 ---
-The Machine이 연락할 수 있는 시간을 선택해요. **설정**, **알림** 아래의 **근무 시간**에서 설정해요:
+내 Machine이 연락할 수 있는 시간을 선택해요. **설정**, **알림** 아래의 **근무 시간**에서 설정해요:
 
 - **근무일**: 업무 할 일과 미뤄 둔 업무 항목은 근무일까지 기다려요.
 - **다음에서 온 메시지**와 **까지**: 이 시간 외에는 알림, Telegram, 이메일이 전혀 오지 않아요.

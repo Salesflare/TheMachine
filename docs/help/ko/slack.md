@@ -25,15 +25,15 @@ translated: 23f9e98f4680d23c
 
 ## 연결하기
 
-1. **연결**, **채팅**, **Slack**을 차례로 선택한 다음 **Sign in with Slack**을 선택하고 Slack에서 권한을 허용해요. 개인 컴퓨터에서 사용하려면 먼저 themachine.computer에서 계정과 페어링해요.
+1. **연결**, **채팅**, **Slack**을 차례로 선택한 다음 **Sign in with Slack**을 선택하고 Slack에서 권한을 허용해요. 내 컴퓨터에서 사용하려면 먼저 themachine.computer에서 계정과 페어링해요.
 2. 새 메시지와 다이렉트 메시지를 먼저 가져와요. Slack에서는 앱이 대화를 1분에 한 번 정도만 읽을 수 있어 이전 메시지를 가져오는 데 몇 시간이 걸릴 수 있어요.
 
-또는 Maton API 키를 사용할 수 있어요. maton.ai에 로그인하고 Slack을 연결한 다음, 홈에서 Maton API 키를 복사해요. 그런 다음 Slack 아래의 **또는 Maton API 키를 사용해요**를 열어 키를 붙여넣거나, 개인 컴퓨터에서 `assistant connect slack`을 실행해요. Maton을 통해 연결한 Slack은 기존 방식대로 계속 작동해요.
+또는 Maton API 키를 사용할 수 있어요. maton.ai에 로그인하고 Slack을 연결한 다음, 홈에서 Maton API 키를 복사해요. 그런 다음 Slack 아래의 **또는 Maton API 키를 사용해요**를 열어 키를 붙여넣거나, 내 컴퓨터에서 `assistant connect slack` 명령을 실행해요. Maton을 통해 연결한 Slack은 기존 방식대로 계속 작동해요.
 
 ## 연결 해제하기
 
 - 대시보드에서 **연결**을 선택하고 Slack을 연 다음 **세부 정보**, **연결 해제**를 선택해요. 이미 가져온 내용은 그대로 남아요.
-- 호스팅된 The Machine에서는 설정 페이지에서 Slack 옆의 **삭제**를 눌러도 돼요.
+- 내 호스팅 Machine에서는 설정 페이지에서 Slack 옆의 **삭제**를 눌러도 돼요.
 
 ## Slack에서 제거하기
 

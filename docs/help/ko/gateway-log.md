@@ -1,7 +1,7 @@
 ---
 title: Machine 상태
 area: connections
-summary: The Machine 자체 로그를 읽어 문제를 감지해요. 읽기 전용이에요.
+summary: 내 Machine 자체 로그를 읽어 문제를 감지해요. 읽기 전용이에요.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
@@ -28,7 +28,7 @@ The Machine이 업데이트될 때 자체 수정 사항이 새 버전과 맞지 
 ## 연결하기
 
 - 호스팅된 Machine에서는 설정 페이지의 **추가 소스** 아래에 Machine 상태로 표시돼요. Machine마다 하나씩 있어요.
-- 내 컴퓨터에서는 **연결**, **기타**에서 Machine 상태를 선택하세요. 또는 `assistant connect gateway`을 실행하세요.
+- 내 컴퓨터에서는 **연결**, **기타**에서 Machine 상태를 선택하세요. 또는 `assistant connect gateway` 명령을 실행하세요.
 
 ## 삭제하기
 

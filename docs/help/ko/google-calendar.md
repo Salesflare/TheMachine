@@ -26,7 +26,7 @@ translated: 7ff20ade2206d43f
 
 내 컴퓨터에서 사용하려면 먼저 [계정과 페어링](friends.md#a-machine-on-your-own-computer)하세요. **연결**을 열고 **캘린더**를 선택한 다음 Google Calendar를 선택하고 **Google로 로그인**을 누르세요. Gmail과 함께 연결돼요.
 
-자체 앱을 사용하려면 `assistant connect calendar`을 실행하거나, 그곳에서 **자체 앱 사용**을 여세요. 읽을 캘린더를 선택하라는 메시지가 표시돼요.
+자체 앱을 사용하려면 `assistant connect calendar` 명령을 실행하거나, 그곳에서 **자체 앱 사용**을 여세요. 읽을 캘린더를 선택하라는 메시지가 표시돼요.
 
 ## 연결 해제하기
 

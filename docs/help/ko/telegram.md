@@ -26,7 +26,7 @@ translated: a2b74e4831832977
 
 원하는 때에 추가할 수 있어요.
 
-내 컴퓨터에서는 설치 프로그램에서 토큰을 요청해요. 또는 Telegram 사용자 ID와 함께 `assistant telegram on`을 실행하세요.
+내 컴퓨터에서는 설치 프로그램에서 토큰을 요청해요. 또는 Telegram 사용자 ID와 함께 `assistant telegram on` 명령을 실행하세요.
 
 ## 삭제하기
 

@@ -38,7 +38,7 @@ ChatGPT에서는 **ChatGPT에 추가**를 누르거나 [ChatGPT에서 The Machin
 
 공식 앱을 사용하면 AI에서 The Machine 계정으로 로그인하라는 메시지가 표시돼요. Machine이 여러 개라면 연결할 Machine을 선택한 다음, Machine의 페이지에서 승인해요. 비공개 주소를 사용하면 AI가 바로 Machine에 연결돼요.
 
-Claude Code나 Cursor처럼 비공개 네트워크(Tailscale)의 기기에서 사용하는 AI는 대시보드 주소 뒤에 `/mcp`을 붙여서 연결할 수도 있어요. **설정**, **계정** 아래에서 **이 Machine 연결 해제**를 누르면 자신의 컴퓨터에서 실행하는 Machine을 계정에서 다시 연결 해제할 수 있어요.
+Claude Code나 Cursor처럼 비공개 네트워크(Tailscale)의 기기에서 사용하는 AI는 대시보드 주소 뒤에 `/mcp`를 붙여서 연결할 수도 있어요. **설정**, **계정** 아래에서 **이 Machine 연결 해제**를 누르면 자신의 컴퓨터에서 실행하는 Machine을 계정에서 다시 연결 해제할 수 있어요.
 
 Machine에 연결을 요청하는 AI가 표시돼요. AI를 확인할 수 없으면 요청이 어디에서 왔는지 표시돼요. 직접 시작한 요청일 때만 연결해요.
 

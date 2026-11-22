@@ -25,13 +25,13 @@ GitHub 알림에서 검토 요청, 멘션, 할당, 답글, 실패한 CI 실행�
 
 app.themachine.computer/setup의 설정 페이지에서도 **더 많은 소스** 아래에서 같은 방식으로 로그인할 수 있어요.
 
-개인 컴퓨터에서:
+내 컴퓨터에서:
 
 1. **연결**을 연 다음 **프로젝트 및 코드**를 열고 GitHub를 선택해요.
 2. 회사와 함께 **업무용**을 선택하거나 **개인용**을 선택하고 **연결**을 눌러요.
 3. 요청이 표시되면 **GitHub 열기 ↗**를 누르고 코드를 입력한 다음 권한을 허용해요. 자동으로 연결돼요.
 
-또는 `assistant connect github`을 실행한 다음 GitHub 로그인을 확인해요.
+또는 `assistant connect github` 명령을 실행한 다음 GitHub 로그인을 확인해요.
 
 ## 연결 해제
 
@@ -40,4 +40,4 @@ app.themachine.computer/setup의 설정 페이지에서도 **더 많은 소스**
 
 ## GitHub에서 앱 삭제
 
-GitHub에서 설정, 애플리케이션, 승인된 OAuth 앱을 열고 GitHub CLI의 액세스를 취소해요. 개인 컴퓨터에서는 `gh auth logout`를 실행해도 로그아웃돼요.
+GitHub에서 설정, 애플리케이션, 승인된 OAuth 앱을 열고 GitHub CLI의 액세스를 취소해요. 내 컴퓨터에서는 `gh auth logout` 명령을 실행해도 로그아웃돼요.

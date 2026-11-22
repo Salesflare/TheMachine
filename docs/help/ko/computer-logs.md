@@ -34,14 +34,14 @@ Linux에서 systemd를 사용하는 경우, 내 Machine은 내 사용자 세션�
 
 ## 터미널에서
 
-`assistant doctor`을 실행하면 지난 하루 동안 발생한 동일한 문제를 볼 수 있어요.
+`assistant doctor` 명령을 실행하면 지난 하루 동안 발생한 동일한 문제를 볼 수 있어요.
 
 ## 다른 컴퓨터
 
 macOS, Windows, systemd가 없는 컴퓨터에서는 아무것도 읽지 않고, `assistant doctor`에서 그 사실을 알려줘요.
 
-호스팅된 Machine에서는 서버를 계속 실행하는 책임이 우리에게 있어요. 서버 문제는 할 일로 표시되지 않고 The Machine 팀에 전달돼요.
+호스팅된 Machine에서는 서버를 계속 실행하는 책임이 저희에게 있어요. 서버 문제는 할 일로 표시되지 않고 The Machine 팀에 전달돼요.
 
 ## 끄기
 
-config.json에서 `"computer_logs": false`을 설정하고 서비스를 다시 시작하세요.
+config.json에서 `"computer_logs": false`를 설정하고 서비스를 다시 시작하세요.
