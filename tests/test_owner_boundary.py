@@ -360,6 +360,11 @@ class OwnerBoundary(unittest.TestCase):
         early = re.findall(r'<link rel="preload" as="script" href="(lazy-[a-z]+-[0-9a-f]{16}\.js)" data-lazy="([a-z]+)">', page)
         self.assertEqual(early, [(lazy[group], group) for group in dashboard_parts.LAZY_EARLY])
         self.assertLess(page.index('<link rel="preload"'), page.index('<script>self.LAZY_FILES='))
+        # All asked for from the page's head, the main script first, not only once the parser reaches the page's end
+        head = page[:page.index('<title>')]
+        self.assertTrue(head.endswith(f'<link rel="preload" as="script" href="{name}" fetchpriority="high">'
+                                      + ''.join(f'<link rel="preload" as="script" href="{lazy[g]}" data-lazy="{g}">' for g in dashboard_parts.LAZY_EARLY)), head[-400:])
+        self.assertEqual(page.count(f'href="{name}"'), 1)
         for group, file in lazy.items():
             r, part = get('/' + file, owner)
             self.assertEqual((r.status, r.getheader('Cache-Control')), (200, 'private, max-age=31536000, immutable'))
