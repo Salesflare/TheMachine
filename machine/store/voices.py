@@ -94,6 +94,10 @@ VOICE_EXAMPLES = 6        # the owner's own recent messages a draft gets to matc
 CHAT_LENGTH_READ = 40     # the owner's own recent messages read for it, per conversation and per channel
 CHAT_LENGTH_MIN = 5       # fewer says too little: then the channel's, then CHAT_LENGTH_FALLBACK
 CHAT_LENGTH_FALLBACK = 160  # characters: a chat draft with none of the owner's own messages to go by
+# Short never means leaving something out: a draft that skips a question they asked is worse, not better.
+CHAT_LENGTH_COVERS = ('Still answer every question and request in their message, each as briefly as the owner would (a few words '
+                      'each is fine) but clear about which one it answers (not a bare "yes, yes"); go over the length only as far as that, or a detail they need (an address, a time, a link), '
+                      'takes, never for greetings, thanks or a recap.')
 
 
 DRAFT_EVENT_KINDS = {'email': 'gmail.message', 'slack': 'slack.message', 'whatsapp': 'whatsapp.message', 'telegram': 'telegram.message', 'signal': 'signal.message', 'linkedin': 'linkedin.message', 'x': 'x.dm'}
@@ -557,13 +561,13 @@ class VoicesStore:
             return ''
         channel = size['channel']
         if size['median'] is None:
-            return (f"Length: a {channel} draft on this to-do stays one or two short lines, under {CHAT_LENGTH_FALLBACK} characters, "
-                    'unless it must carry more (an address, times, a link the other person needs). Never an email in a chat.')
+            return (f"Length: a {channel} draft on this to-do stays one or two short lines, under {CHAT_LENGTH_FALLBACK} characters. "
+                    + CHAT_LENGTH_COVERS + ' Never an email in a chat.')
         where = 'in this conversation' if size['here'] else f'on {channel}'
         return (f"Length: the owner's own {channel} messages {where} are about {size['median']} characters long (9 in 10 at most "
                 f"{size['high']}; their last {size['count']}). A {channel} draft on this to-do aims for about {size['median']} characters "
                 f"and stays within {size['high']}, like their own replies there: a chat draft longer than theirs goes unused, because they "
-                'type their own instead. Go longer only for what the other person must have (an address, times, a link), and no further.')
+                'type their own instead. ' + CHAT_LENGTH_COVERS)
 
     def style_text(self, suggestion_id, chars=4000):
         """What a draft for this card gets about how the owner writes: a chat draft's length target (reply_length_text,

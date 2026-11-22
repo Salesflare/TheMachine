@@ -217,6 +217,8 @@ class Voices(unittest.TestCase):
     def test_a_chat_draft_gets_a_length_target_from_the_owners_own_replies_there(self):
         # No history to go by yet (one own message in the chat, a photo doesn't count): the fixed fallback.
         self.assertIn(f'under {machine_store_voices.CHAT_LENGTH_FALLBACK} characters', self.store.style_text(self.chat_sid))
+        # Short never drops a question they asked: both the fallback and the target say so.
+        self.assertIn('answer every question and request in their message', self.store.style_text(self.chat_sid))
         self.assertNotIn('Length:', self.store.style_text(self.sid))  # an email keeps its examples, no chat target
         short = ['ok top', 'ja is goed', 'haha zeker', 'top, tot zo', 'merci!', 'ik check het even']
         self.store.commit_page('phone', {}, [chat(f'r{i}', f'2026-10-02T0{i}:00:00+00:00', text, mine=True) for i, text in enumerate(short)] +
@@ -229,6 +231,7 @@ class Voices(unittest.TestCase):
         self.assertTrue(text.startswith('Length: '))  # first, so a long style block never cuts it
         self.assertIn(f"own WhatsApp messages in this conversation are about {lengths[3]} characters long", text)
         self.assertIn(f'aims for about {lengths[3]} characters and stays within {lengths[-1]}', text)
+        self.assertIn(machine_store_voices.CHAT_LENGTH_COVERS, text)
         self.assertIn('(this conversation) ik check het even', text)  # the style samples stay beside it
         prompt = machine_app_preparation.preparation_prompt({'job_id': 'j' * 16, 'suggestion_id': self.chat_sid}, style=text)
         self.assertLess(prompt.index(machine_prompts_bias.PLAIN_WRITING), prompt.index('Length: '))  # the owner's own wins
