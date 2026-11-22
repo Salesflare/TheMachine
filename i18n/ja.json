@@ -8293,6 +8293,9 @@
  "{} to-dos": {
   "other": "{}件のToDo"
  },
+ "{} to-dos are being prepared.": {
+  "other": "{}件のToDoを準備しています。"
+ },
  "{} to-dos cleared in {}": {
   "other": "{}件のToDoを{}で完了しました"
  },

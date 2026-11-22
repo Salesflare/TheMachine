@@ -8293,6 +8293,9 @@
  "{} to-dos": {
   "other": "{}项待办"
  },
+ "{} to-dos are being prepared.": {
+  "other": "正在准备{}个待办。"
+ },
  "{} to-dos cleared in {}": {
   "other": "在{1}内清除了{0}项待办"
  },

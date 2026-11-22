@@ -8491,6 +8491,10 @@
   "one": "{} Aufgabe",
   "other": "{} Aufgaben"
  },
+ "{} to-dos are being prepared.": {
+  "one": "{} Aufgabe wird vorbereitet.",
+  "other": "{} Aufgaben werden vorbereitet."
+ },
  "{} to-dos cleared in {}": {
   "one": "{} Aufgabe abgearbeitet in {}",
   "other": "{} Aufgaben abgearbeitet in {}"

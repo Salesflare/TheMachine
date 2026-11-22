@@ -1,47 +1,49 @@
 ---
 title: Versprechen
 area: cards
-summary: Was du zugesagt hast und was andere dir versprochen haben. Wird automatisch erfasst.
+summary: Was du zugesagt hast und was andere dir versprochen haben. Automatisch erfasst.
 covers: promises
 code: dashboard.html, assistant.py, refunds.py
 order: 6
-translated: 176831c86d0a382a
+translated: ba0e2190e1b8b791
 ---
 Behalte im Blick, was du versprochen hast und was andere dir versprochen haben. Deine Machine erkennt Versprechen in deinen Nachrichten automatisch.
 
 ## Wo du sie findest
 
-Unter **Versprechen** auf der Aufgabenseite:
+Auf der Aufgaben-Seite unter **Versprechen**:
 
 - Was du zugesagt hast und für wen: **Du hast versprochen**.
 - Was andere zugesagt haben: **Dir versprochen**.
 
-Zu jedem Eintrag gibt es ein Menü **⋯**:
+Jeder Eintrag hat ein Menü **⋯**:
 
-- **Ausführen** bei deinen Versprechen: Daraus wird sofort eine Aufgabe, die deine Machine vorbereitet. **Erinnern** bei den Versprechen anderer: Deine Machine entwirft eine kurze Nachfassnachricht an der Stelle, an der das Versprechen gemacht wurde. Du bleibst dabei in der Liste. Ein kurzer Hinweis sagt, dass die Nachricht unterwegs ist, und enthält **Aufgabe öffnen**. Beim Versprechen steht dann „jetzt eine Aufgabe“. Gesendet wird erst, wenn du die Nachricht sendest. Ist es bereits eine Aufgabe, öffnet sich diese.
-- **Als erledigt markieren**: Das Versprechen wurde eingehalten.
-- **Findet nicht statt**: Das Versprechen wird nicht eingehalten. Deine Machine erfasst es nicht weiter und erstellt keine Aufgabe.
+- **Ausführen** bei deinen Versprechen: Daraus wird sofort eine Aufgabe, die deine Machine vorbereitet. **Erinnern** bei den Versprechen anderer: Deine Machine entwirft eine kurze Nachfrage dort, wo die Person das Versprechen gemacht hat. Du bleibst dabei in der Liste. Ein kurzer Hinweis sagt, dass die Nachricht unterwegs ist, mit **Aufgabe öffnen**. Beim Versprechen steht „jetzt eine Aufgabe“. Nichts wird gesendet, bevor du es abschickst. Ist es bereits eine Aufgabe, wird diese geöffnet.
+- **Erledigt markieren**: Das Versprechen wurde eingehalten.
+- **Findet nicht statt**: Das Versprechen wird nicht eingehalten. Deine Machine verfolgt es nicht weiter und erstellt keine Aufgabe.
 
-Ein offenes Versprechen wird zum angegebenen Datum auch automatisch zu einer Aufgabe: bei deinen Versprechen am Morgen davor, damit du einen Tag Zeit hast, und bei den Versprechen anderer am Morgen danach, falls es noch offen ist. Es erscheint an diesem Tag auch im [Kalender](calendar.md). Ist es bereits eine Aufgabe, führt der Link direkt dorthin. **Als erledigt markieren** oder **Findet nicht statt** schließt dann auch die Aufgabe. Wenn deine Machine erkennt, dass sie erledigt ist, werden beide geschlossen und ein Hinweis dazu angezeigt.
+Ein offenes Versprechen wird um sein Datum herum automatisch zu einer Aufgabe: deine am Morgen davor, damit du einen Tag Zeit hast, und das Versprechen einer anderen Person am Morgen danach, falls es noch offen ist. Am entsprechenden Tag erscheint es auch im [Kalender](calendar.md). Ist es jetzt eine Aufgabe, führt der Link dorthin. Wenn du **Erledigt markieren** oder **Findet nicht statt** auswählst, wird auch die Aufgabe geschlossen. Erkennt deine Machine, dass das Versprechen eingehalten wurde, werden beide geschlossen und ein Hinweis sagt dir Bescheid.
 
-Eine Antwort, in der nur die Arbeit zugesagt wird, wie „Ich schicke die Dateien bis Dienstag“, erledigt die Aufgabe nicht. Die Aufgabe bleibt mit diesem Datum offen und das Versprechen ist mit ihr verknüpft. In der Prüfung vor dem Senden wird darauf hingewiesen.
+Eine Antwort, in der nur versprochen wird, die Aufgabe zu erledigen, etwa „Ich schicke die Dateien bis Dienstag“, schließt sie nicht ab. Die Aufgabe bleibt mit diesem Datum offen und das Versprechen ist mit ihr verknüpft. Bei der Versandprüfung wird darauf hingewiesen, bevor du die Nachricht sendest.
 
-Wurde das Versprechen bereits eingehalten, etwa durch eine gesendete Antwort oder ein entsprechendes Meeting? Dann wird es automatisch geschlossen, ohne dass eine Aufgabe erstellt wird.
+Wurde das Versprechen bereits eingehalten, etwa durch eine Antwort, die du gesendet hast, oder ein Meeting, in dem es erledigt wurde? Dann wird es automatisch geschlossen, ohne eine Aufgabe zu erstellen.
 
-Wird später ein neues Datum genannt, etwa „doch erst nächste Woche“? Dasselbe Versprechen wird verschoben, ebenso die zugehörige Aufgabe. Es wird keine zweite erstellt. Auf der Seite des Versprechens stehen das neue Datum und die neuere Nachricht.
+Wenn jemand auf ein eigenes Versprechen antwortet, bleibt es offen, bis aus der Antwort hervorgeht, dass es eingehalten wurde. Ein „Klar“, eine automatische Antwort oder die Erledigung eines Teils reicht nicht. War eine Nachfrage zum Senden vorgemerkt, wird sie abgebrochen. Die Aufgabe bleibt offen und es erscheint der Hinweis „Die Person hat wieder geschrieben“.
 
-Bei Versprechen ohne Datum wird ein Nachfasstermin festgelegt: drei Tage, nachdem du das Versprechen gegeben hast, oder eine Woche, nachdem andere es gegeben haben. Ist es bis dahin noch offen, wird es zu einer Aufgabe.
+Wird später ein neues Datum genannt, etwa „stattdessen nächste Woche“? Dann wird dasselbe Versprechen samt Aufgabe verschoben, ohne dass ein zweites erstellt wird. Auf der Seite dazu stehen das neue Datum und die neuere Nachricht.
+
+Bei einem Versprechen ohne Datum wird ein **Nachfasstag** festgelegt: drei Tage, nachdem du es gemacht hast, oder eine Woche, nachdem es die andere Person gemacht hat. Ist es dann noch offen, wird es zu einer Aufgabe.
 
 Bei Versprechen aus Slack wird der Name der Person angezeigt.
 
-Ein Versprechen per E-Mail von jemandem, dem du noch nie geschrieben hast, wird ebenfalls erfasst und mit **Absender nicht bestätigt** gekennzeichnet: Es basiert nur auf der Aussage dieser Person. Die Aufgabe beginnt mit „Nicht bestätigt: Du hast dieser Person noch nie geschrieben.“
+Auch ein Versprechen per E-Mail von jemandem, dem du noch nie geschrieben hast, wird erfasst. Es ist als **Absender nicht bestätigt** gekennzeichnet: Das Versprechen beruht nur auf dessen Aussage. Die Aufgabe beginnt mit „Nicht bestätigt: Du hast der Person noch nie geschrieben.“
 
 ## Rückerstattungen
 
-Wenn ein Geschäft, eine Fluggesellschaft, ein Vermieter oder ein Versicherer dir Geld zurückverspricht, etwa eine Rückerstattung für eine stornierte Bestellung oder einen genehmigten Versicherungsfall, erfasst deine Machine den Betrag, wer ihn zahlt und bis wann er eingehen soll. Das Versprechen erscheint unter **Dir versprochen**. Aber nur, wenn die Nachricht alle drei Angaben eindeutig enthält.
+Wenn ein Geschäft, eine Fluggesellschaft, ein Vermieter oder eine Versicherung dir eine Rückerstattung verspricht, etwa für eine stornierte Bestellung oder einen genehmigten Antrag, erfasst deine Machine den Betrag, wer zahlt und wann das Geld eingehen soll. Der Eintrag erscheint unter **Dir versprochen**. Das passiert nur, wenn aus der Nachricht alle drei Angaben hervorgehen.
 
-Geht das Geld zuerst ein, etwa durch eine E-Mail mit dem Hinweis „Rückerstattung bearbeitet“, eine Benachrichtigung eines Zahlungsdienstes oder eine Mitteilung deiner Banking-App auf dem Handy, wird das Versprechen automatisch geschlossen, ohne dass eine Aufgabe erstellt wird.
+Geht das Geld zuerst ein, etwa laut einer E-Mail mit „Rückerstattung bearbeitet“, einer Benachrichtigung eines Zahlungsdienstes oder einer Mitteilung deiner Banking-App auf deinem Handy, wird der Eintrag automatisch geschlossen, ohne eine Aufgabe zu erstellen.
 
-Ist das Geld bis zu diesem Tag nicht eingegangen? Dann erscheint unauffällig eine Aufgabe: „Der Rückerstattung über 42 € von … nachgehen“. Dazu wird eine kurze E-Mail an den Absender entworfen, in der die Bestell- oder Fallnummer genannt wird. Gesendet wird erst, wenn du die Nachricht sendest. Geht das Geld doch noch ein, wird die Aufgabe automatisch geschlossen. Mit **Rückgängig** kannst du sie einen Tag lang wiederherstellen.
+Ist das Geld bis zu diesem Tag nicht eingegangen? Dann erscheint eine einzelne, unaufdringliche Aufgabe: „Der Rückerstattung über 42 € von … nachgehen“, zusammen mit einer kurzen E-Mail an die zuständige Stelle, in der die Bestell- oder Fallnummer genannt wird. Nichts wird gesendet, bevor du es abschickst. Geht das Geld doch noch ein, wird die Aufgabe automatisch geschlossen. Mit **Rückgängig** kannst du sie einen Tag lang wiederherstellen.
 
-Die [Wochenrückblick](weekly-recap.md) zählt eingehaltene und offene Versprechen. Auf deinem eigenen Computer listet `assistant promises` sie in einem Terminal auf.
+Der [Wochenrückblick](weekly-recap.md) zählt die eingehaltenen und offenen Versprechen. Auf deinem eigenen Computer listet `assistant promises` sie in einem Terminal auf.

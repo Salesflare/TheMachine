@@ -8491,6 +8491,10 @@
   "one": "{} attività",
   "other": "{} attività"
  },
+ "{} to-dos are being prepared.": {
+  "one": "{} attività è in preparazione.",
+  "other": "{} attività sono in preparazione."
+ },
  "{} to-dos cleared in {}": {
   "one": "{} attività sbrigata in {}",
   "other": "{} attività sbrigate in {}"

@@ -8293,6 +8293,9 @@
  "{} to-dos": {
   "other": "할 일 {}개"
  },
+ "{} to-dos are being prepared.": {
+  "other": "{}개의 할 일을 준비하고 있어요."
+ },
  "{} to-dos cleared in {}": {
   "other": "{1} 안에 완료한 할 일 {0}개"
  },
