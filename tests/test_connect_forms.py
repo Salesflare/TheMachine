@@ -486,6 +486,28 @@ class CodeTest(unittest.TestCase):
         view = ConnectApp.connect_view(app, session)
         self.assertEqual((view['state'], view['error'], view['fix'], view['group']), ('failed', 'It took too long to answer', 'try again in a minute', 'chat'))
 
+    def test_a_failed_setup_never_shows_the_steps_that_went_well(self):
+        # "WhatsApp: linked" and "Connected. Reading your chats now." stayed above "The setup stopped unexpectedly":
+        # read together, it looked like it worked
+        import google_pair
+        from machine.app.connect import ConnectApp
+        app = types.SimpleNamespace(config_path='/nonexistent/config.json')
+        session = {'source': 'whatsapp', 'label': 'WhatsApp', 'group': 'chat', 'ui': onboarding.WebUI(wait=5), 'account_id': 'personal-whatsapp'}
+
+        def linked_then_broke(*args, **kwargs):
+            session['ui'].say('  WhatsApp: linked')
+            session['ui'].say('  Connected. Reading your chats now.')
+            session['state'] = 'running'
+            self.assertEqual(ConnectApp.connect_view(app, session)['lines'], ['WhatsApp: linked', 'Connected. Reading your chats now.'])
+            raise RuntimeError('the sync service did not start')
+        with patch.object(google_pair, 'connect', side_effect=linked_then_broke):
+            ConnectApp.connect_run(app, session)
+        view = ConnectApp.connect_view(app, session)
+        self.assertEqual((view['state'], view['error']), ('failed', 'The setup stopped unexpectedly'))
+        self.assertEqual(view['lines'], [])
+        session['state'] = 'cancelled'
+        self.assertEqual(ConnectApp.connect_view(app, session)['lines'], [])
+
     def test_whatsapp_number_must_have_its_country_code(self):
         ui = onboarding.WebUI(wait=5)
         ui.prefill({'Your WhatsApp phone number': '0470'})
