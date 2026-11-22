@@ -21,6 +21,7 @@ import urllib.request
 
 import graph
 from machine import stamps
+from machine.timing import waited
 from sources import SourceError, credential, rate_limited, transient
 from timeutil import now
 
@@ -55,6 +56,34 @@ def slack_rounds_kept(config):
 # A run waiting on its asked reads (slack_read 'reading') sleeps at most this long before it asks again, and READ_WAIT_MARGIN
 # on top of the reads it waits for: a read already under way, and the collector's turn after its pause.
 READ_WAIT_MAX, READ_WAIT_MARGIN = 300, 30
+
+
+# A to-do's run waited for its Slack reads itself: sleep with exec, poll that process every half minute, ask slack_read
+# again, and each of those calls resent the whole session (most of a run's slack_read calls were such repeats,
+# 2026-11-22). Now the call waits here instead, when the plugin says the run can (_wait, host-owned: its HTTP call
+# waits as long), at most CALL_WAIT_MAX, looking every WAIT_STEP. An older plugin sends no _wait: the call answers at once.
+CALL_WAIT_MAX, WAIT_STEP = 240, 3
+
+
+def call_wait(args):
+    """Seconds this call may wait server-side (the plugin's _wait, at most CALL_WAIT_MAX); 0 answers at once."""
+    try:
+        return max(0.0, min(CALL_WAIT_MAX, float((args or {}).get('_wait') or 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def wait_until(check, seconds, stop=None):
+    """check() every WAIT_STEP until it gives something truthy or `seconds` pass (or the service stops); its last answer."""
+    deadline, started = time.monotonic() + seconds, time.monotonic()
+    while True:
+        found = check()
+        if found or time.monotonic() + WAIT_STEP > deadline:
+            break
+        if stop.wait(WAIT_STEP) if stop is not None else time.sleep(WAIT_STEP):
+            break
+    waited(time.monotonic() - started)
+    return found
 
 
 def slack_read_wait(config, account, waiting):

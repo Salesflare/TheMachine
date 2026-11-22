@@ -6,6 +6,7 @@ group DMs too) are read first and checked, and a to-do newer messages show done 
 live calls."""
 import json
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -172,6 +173,21 @@ class HandledElsewhere(unittest.TestCase):
         with self.store.connect() as db:
             lines = [i['text'] for i in app.card_chat_service(db, sid)[0] if i['kind'] == 'event']
         self.assertIn('Closed by itself: Sam already said yes in the group chat on Monday.', lines)
+
+    def test_with_the_plugin_s_wait_the_save_waits_for_slack_itself(self):
+        """A run that slept with exec and saved again resent its whole session each time: the save waits here instead."""
+        self.addCleanup(setattr, slack_source, 'WAIT_STEP', slack_source.WAIT_STEP)
+        slack_source.WAIT_STEP = 0.02
+        sid, app = self.card(), self.app()
+        waited = app.handled_gate(sid, 'job3', self.HANDOFF, wait=0.1)  # Slack's turn doesn't come in time
+        self.assertIn('This call waited for them already: save again as it is', waited)
+        self.assertNotIn('Sleep', waited)
+        reader = threading.Timer(0.1, self.slack_reads)
+        reader.start()
+        found = app.handled_gate(sid, 'job3', self.HANDOFF, wait=5)  # one call: waited for the read, then names the yes
+        reader.join()
+        self.assertIn(f"event {self.event('U0SAM00001', TRIO, latest=True)}", found)
+        self.assertIn('already_done', found)
 
     def test_a_note_or_a_to_do_without_people_is_never_held(self):
         sid, app = self.card(), self.app()

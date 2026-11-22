@@ -20,7 +20,7 @@ import follow_ups
 import github_route
 import i18n
 from machine.app.graph_actions import account_services
-from machine.app.prep_reads import review_brief
+from machine.app.prep_reads import history_once, review_brief
 from machine.app.recall import recall
 from machine.browser import (
     browser_lease_script,
@@ -862,7 +862,8 @@ class PreparationApp:
         with self.store.connect() as db:
             if name == 'preparation_tool_intent': return preparation_state.tool_intent(db,args,now())
             if name == 'preparation_tool_result': return preparation_state.tool_result(db,args,now())
-            return preparation_state.history(db,args['job_id'],args.get('offset',0),args.get('call_ref'))
+            found=preparation_state.history(db,args['job_id'],args.get('offset',0),args.get('call_ref'))
+        return history_once(self.run_reads,args['job_id'],args,found)  # a page read before in this run: a short note
 
     def tool_approval_proposal_action(self, name, args, owner_dashboard=False):
         host = self.config.get('dashboard_host')

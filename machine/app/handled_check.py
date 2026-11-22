@@ -27,7 +27,7 @@ from machine.app.follow_ups import activity_who
 from machine.app.promise_checks import activity_since
 from machine.config import LOG
 from machine.sources.calendar import company_domains
-from machine.sources.slack import slack_limits, slack_read_asked, slack_read_drop, slack_read_now
+from machine.sources.slack import slack_limits, slack_read_asked, slack_read_drop, slack_read_now, wait_until
 from models import background_model, openclaw_model
 from timeutil import now
 from machine import todo_states
@@ -229,11 +229,11 @@ class HandledCheckApp:
                               'who': activity_who(e, m, self.store.owner_user_ids, teammates, company_domains(self.config))})
         return sorted(found, key=lambda x: x['at'])[-8:]
 
-    def handled_gate(self, suggestion_id, job_id, actions):
+    def handled_gate(self, suggestion_id, job_id, actions, wait=0):
         """Before a run's message or handoff for someone is saved for the owner: None to save, else what the run does
-        first. The Slack conversations with its people that rest are read first (the run waits), then the messages with
-        them that came after its evidence are named once, to read: done already is outcome already_done, and it closes
-        by itself (handled_close)."""
+        first. The Slack conversations with its people that rest are read first (the run waits: with `wait`, the
+        plugin's call_wait, this call waits for them itself), then the messages with them that came after its evidence
+        are named once, to read: done already is outcome already_done, and it closes by itself (handled_close)."""
         if not job_id or not any(a.get('kind') in REACHES for a in actions):
             return None
         key = 'job:' + str(job_id)
@@ -246,12 +246,21 @@ class HandledCheckApp:
             if not people:
                 return None
             names = plain_names(db, people)
-            pending = self.handled_wait(db, key, ids, row['title'], actions)
-            if pending:
-                account = next((a for a in self.config.get('accounts') or () if a.get('service') == 'slack'), {})
-                wait = max(slack_limits(account)['floor'], int(self.config.get('slack_read_seconds', slack_limits(account)['read_seconds']))) + 15
-                return (f"Before this goes to the owner: Slack reads the conversations with {names} first ({', '.join(pending)}), one "
-                        f'every few minutes, since it may be done there already. Sleep {wait} with exec, then save again as it is.')
+
+        def pending_now():
+            with self.store.connect() as db:
+                return self.handled_wait(db, key, ids, row['title'], actions)
+        pending = pending_now()
+        if pending and wait:
+            pending = [] if wait_until(lambda: not pending_now(), wait, getattr(self, 'stop', None)) else pending_now()
+        if pending:
+            account = next((a for a in self.config.get('accounts') or () if a.get('service') == 'slack'), {})
+            every = max(slack_limits(account)['floor'], int(self.config.get('slack_read_seconds', slack_limits(account)['read_seconds']))) + 15
+            return (f"Before this goes to the owner: Slack reads the conversations with {names} first ({', '.join(pending)}), one "
+                    'every few minutes, since it may be done there already. '
+                    + ('This call waited for them already: save again as it is (it waits again).' if wait else
+                       f'Sleep {every} with exec, then save again as it is.'))
+        with self.store.connect() as db:
             found = self.handled_since(db, ids, people)
             accounts = sorted({r[0] for r in db.execute(f"SELECT DISTINCT account_id FROM events WHERE id IN ({','.join('?' * len(found))})",
                                                          [x['id'] for x in found])}) if found else []

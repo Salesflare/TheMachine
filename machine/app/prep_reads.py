@@ -8,7 +8,11 @@
 - RunReads: within one run (its OpenClaw run id, which the plugin passes as _prep_run, host-owned), a message the run
   already got whole from events or related comes back as its id under already_read with a short note, not its text
   again. Every tool call resends the whole session, so each repeat costs the full context again. again:true reads it
-  anew (the text may have left the context). Kept in memory for a few hours: a restart only means a full read once more."""
+  anew (the text may have left the context). Kept in memory for a few hours: a restart only means a full read once more.
+- history_once: the same for preparation_history (a page this run already got comes back as unchanged), and
+  SyncApp.slack_read lists only the messages new since the run's last read of that conversation. A study of the
+  owner's runs found most of their status, slack_read and preparation_history calls were repeats."""
+import hashlib
 import json
 import threading
 import time
@@ -23,8 +27,8 @@ RUN_SECONDS = 4 * 3600
 
 READ_BUDGET = ('Start from this and from the blocks below: look up only what is still missing. Read the to-do\'s own messages '
                'once, all in one events call, for their exact words; search further only for a specific gap (an earlier '
-               'thread, a fact the draft needs). Re-check status only before saving. A message read again in this run '
-               'comes back as "already read above".')
+               'thread, a fact the draft needs). No status check before saving: a save that newer feedback replaced is '
+               'refused. A message read again in this run comes back as "already read above".')
 ALREADY_READ = ('Already read above in this run, so left out here: work from the text you have. Only when it is no longer '
                 'in front of you, read those ids again with again:true.')
 
@@ -121,6 +125,36 @@ class RunReads:
             return
         with self.lock:
             self._ids(run).update(v['id'] for v in views if not v.get('body_offset') and not v.get('body_matched'))
+
+    def before(self, run, keys):
+        """Of these keys (tuples: a history page, a Slack message listed), the ones this run got before; all are marked
+        now. Empty without a run."""
+        if not run:
+            return set()
+        keys = set(keys)
+        with self.lock:
+            ids = self._ids(str(run))
+            known = keys & ids
+            ids.update(keys)
+        return known
+
+
+HISTORY_UNCHANGED = ('Unchanged since you read this page earlier in this run: earlier runs\' calls do not change while '
+                     'this one goes on, so work from what you read. Only when it is no longer in front of you, ask again '
+                     'with again:true.')
+
+
+def history_once(reads, run, args, result):
+    """A preparation_history page this run already got, word for word: a short note instead of the page again (it
+    lists only earlier runs' calls, so within a run it stays the same). again:true reads it anew, and one call's exact
+    details (call_ref) always read whole: they are read on purpose, to reconcile a step."""
+    if not run or args.get('again') is True or args.get('call_ref') is not None:
+        return result
+    digest = hashlib.sha256(json.dumps(result, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
+    key = ('history', int(args.get('offset') or 0), digest)
+    if not reads.before(run, [key]):
+        return result
+    return {'unchanged': True, 'next_offset': result.get('next_offset'), 'note': HISTORY_UNCHANGED}
 
 
 def read_once(reads, args, rows):

@@ -584,7 +584,7 @@ def slack_prompt(config):
         return ''
     return (f"\n- Slack is connected ({', '.join(found)}): its messages are in events. A conversation's newest messages that "
             "aren't there yet (a quiet channel is read about once a day): assistant_signals slack_read args channel=<its id or "
-            "#name>; while status is reading, sleep its wait_seconds with exec and ask again, until it is read (Slack reads "
+            "#name>; while status is reading, do as its note says (the call waits for the read itself) and ask again, until it is read (Slack reads "
             "one conversation every few minutes, so two take twice as long); then read its event_ids with events. A read "
             "still to come is a wait, never a blocker or a question for the owner: don't ask them to paste what is in it. "
             "Only one that comes back cannot_read is: say plainly which conversation you couldn't read. Never open Slack "

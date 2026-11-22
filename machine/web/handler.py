@@ -209,7 +209,7 @@ def make_handler(app):
             close_kept(timing)  # the connections it kept between its store.connect calls
             if self.started is None or timing is None:
                 return
-            total = time.monotonic() - self.started
+            total = time.monotonic() - self.started - timing.get('waited', 0)  # a wait on purpose is not slowness
             if total < SLOW_REQUEST_SECONDS:
                 return
             path = urllib.parse.urlsplit(getattr(self, 'path', '') or '').path[:80]
