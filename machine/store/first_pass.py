@@ -16,7 +16,12 @@ Two steps, cheapest first:
 
 `first_pass` keeps one row per signal version it sorted (verdict 'skip' or 'review', what it was, by rules or which
 model), so a signal is sorted once per version, and a skip is counted (the weekly recap, mail cleanup's notifications).
-Rows go after KEEP_DAYS. No message text is kept here: `what` is one word from WHAT."""
+Rows go after KEEP_DAYS, apart from a skip that turned out a miss. No message text is kept here: `what` is one word
+from WHAT.
+
+A wrong skip comes back (missed_work.py): the weekly missed-work audit samples skips too, and a Real miss on one, or a
+to-do the owner made from one, is kept in review_misses for the learning loop like a review's miss. From then on
+(`missed_senders`) whatever that sender or app sends goes to the review without a model."""
 import json
 import re
 
@@ -151,7 +156,46 @@ def record(db, rows, verdict, by, at, what=None):
 
 
 def prune(db, before):
-    db.execute('DELETE FROM first_pass WHERE at<?', (before,))
+    """Rows older than before go; a skip that turned out a miss stays, so its sender keeps going to the review."""
+    keep = ' AND event_id NOT IN (SELECT event_id FROM review_misses)' if _has(db, 'review_misses') else ''
+    db.execute('DELETE FROM first_pass WHERE at<?' + keep, (before,))
+
+
+def _has(db, table):
+    return bool(db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone())
+
+
+ADDRESS = re.compile(r'[\w.+-]+@[\w-]+(?:\.[\w-]+)+')
+
+
+def sender(row):
+    """Who sent a signal, for the misses: a mail's address, an app's package, a bot or a source's own kind; '' unknown."""
+    m = meta(row)
+    if row['kind'] == 'android.notification':
+        app = m.get('package_name') or m.get('app_name')
+        return 'app:' + str(app).lower() if app else ''
+    found = ADDRESS.findall(str(m.get('from') or ''))
+    if found:
+        return 'mail:' + found[0].lower()
+    who = m.get('bot_id') or m.get('user') or m.get('from')
+    return f"{row['kind']}:{str(who).lower()}" if who else ''
+
+
+def missed(db, event_id):
+    """{'what': word, 'by': model} when the first pass set this signal aside (any version), else None."""
+    if not _has(db, 'first_pass'):
+        return None
+    row = db.execute("SELECT what,by FROM first_pass WHERE event_id=? AND verdict='skip' ORDER BY version DESC LIMIT 1", (int(event_id),)).fetchone()
+    return {'what': row[0] or 'other', 'by': row[1]} if row else None
+
+
+def missed_senders(db):
+    """Senders (`sender`) of skips the owner said needed a to-do (review_misses): their signals skip the model."""
+    if not (_has(db, 'first_pass') and _has(db, 'review_misses')):
+        return set()
+    rows = db.execute("SELECT e.kind,e.metadata FROM review_misses m JOIN first_pass f ON f.event_id=m.event_id AND f.verdict='skip' "
+                      'JOIN events e ON e.id=m.event_id')
+    return {s for s in (sender({'kind': k, 'metadata': md}) for k, md in rows) if s}
 
 
 def skipped(db, since, what=None):

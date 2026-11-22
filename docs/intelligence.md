@@ -1064,7 +1064,13 @@ top of Learning, What I've learned. It never blocks setup: nothing waits for it.
 
 The quality numbers only see to-dos that were made. The missed-work audit (`missed_work.py`, `missed_work_app.py`)
 looks at the other side: reviewed signals whose review left no to-do, no promise and no update to a to-do in the same
-conversation, and the ones the review set aside unjudged. It is separate from the review and never changes it.
+conversation, the ones the review set aside unjudged, and the ones the first pass set aside before any review
+([architecture](architecture.md#how-a-review-runs)). It is separate from the review and never changes it.
+
+A wrong first-pass skip comes back the same way as a review's miss: sampled (also when it looks like a newsletter, since
+no review saw it as a title line), and a **Real miss** on it, or a to-do the owner made from it, is kept for the
+learning loop with the line "set aside by the first pass". From then on, that sender's mail or that app's notices go
+to the review without the small model.
 
 <a id="set-aside"></a>
 A message the review puts off twice at the same version is set aside (`SET_ASIDE_AFTER`). One that may need the owner,

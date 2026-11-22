@@ -1468,8 +1468,9 @@ class ReviewStore:
             if not rows:
                 return []
             people, threads = review_wait.People(db), first_pass.open_threads(db)
-            waits = waiting_cards(db, rows, self.owner_user_ids)
-            picked = [r for r in rows if first_pass.candidate(r, people) and first_pass.thread_of(r) not in threads and r['id'] not in waits]
+            waits, missed = waiting_cards(db, rows, self.owner_user_ids), first_pass.missed_senders(db)
+            picked = [r for r in rows if first_pass.candidate(r, people) and first_pass.thread_of(r) not in threads and r['id'] not in waits
+                      and first_pass.sender(r) not in missed]
         tied = self.owner_threads(picked) | set(self.card_replies(picked)) if picked else set()
         picked = [r for r in picked if r['id'] not in tied]
         chosen = {r['id'] for r in picked}
