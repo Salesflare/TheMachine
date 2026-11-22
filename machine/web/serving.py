@@ -136,7 +136,12 @@ def _dashboard_files(token, owner, base):
     early = ''.join(f'<link rel="preload" as="script" href="{lazy_names[group]}" data-lazy="{group}">'
                     for group in dashboard_parts.LAZY_EARLY if group in lazy_names)
     tag = f'<script src="{name}"></script></html>'
-    return page.replace(tag, early + f'<script>self.LAZY_FILES={named}</script>' + tag), files
+    page = page.replace(tag, f'<script>self.LAZY_FILES={named}</script>' + tag)
+    # The main script and the early groups are asked for from the page's head, at once: at the page's end they were only
+    # asked for once the parser got there (on a phone at 4x CPU and 4G, ~500 ms after the page was in, the fonts and
+    # images ahead of them), and the first to-dos waited on them. The main script still runs where its tag is.
+    head = f'<link rel="preload" as="script" href="{name}" fetchpriority="high">' + early
+    return page.replace('<title>', head + '<title>', 1), files
 
 
 def served_file(files, name):
