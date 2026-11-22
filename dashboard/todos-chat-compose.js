@@ -87,7 +87,9 @@ async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
   // A read that failed while the chat was already on screen changes nothing but whether the run still goes: what was
   // shown stays (with the live answer), quietly, and the next ask catches up
   if(r.unavailable&&chat?.items?.length&&!chat.unavailable)chat={...chat,active:r.active,status:r.status,live:r.active?chat.live:null,stale:true};
-  else{const keep=r.unchanged;chat={...r,items:chatWithSaves(id,keep?chat.items:r.items),cursor:(keep?chat.cursor:r.cursor)||null}}paintChat();if(!r.unchanged&&!r.unavailable)localCache.put('chat:'+id,{...chat,items:chat.items?.filter(m=>!chatSaves.has(m)),cursor:null});if(first){requestAnimationFrame(chatScrollStart);setTimeout(chatScrollStart,150)}if(was&&!r.active){refresh();talkTurnDone()}}catch(e){errCaught(e);if(id===chatId)chatFails++;if(id===chatId&&!chat){chat={items:[],unavailable:true};paintChat()}
+  else{const keep=r.unchanged;chat={...r,items:chatWithSaves(id,keep?chat.items:r.items),cursor:(keep?chat.cursor:r.cursor)||null}}
+  // A rename the chat just saved shows in the heading and the sidebar at once, before the list's next read
+  const c=cardOf(id);if(c&&r.title&&c.title!==r.title){c.title=r.title;c.title_suggested=r.title_suggested;localEdits++;render()}paintChat();if(!r.unchanged&&!r.unavailable)localCache.put('chat:'+id,{...chat,items:chat.items?.filter(m=>!chatSaves.has(m)),cursor:null});if(first){requestAnimationFrame(chatScrollStart);setTimeout(chatScrollStart,150)}if(was&&!r.active){refresh();talkTurnDone()}}catch(e){errCaught(e);if(id===chatId)chatFails++;if(id===chatId&&!chat){chat={items:[],unavailable:true};paintChat()}
   // the to-do is gone from the Machine (a list kept from before): the fresh list closes its chat with the line, at once
   if(id===chatId&&e.status===400&&/^Unknown suggestion/.test(e.message||''))refresh()}
  if(id===chatId)chatTimer=setTimeout(chatPoll,chatWait())}

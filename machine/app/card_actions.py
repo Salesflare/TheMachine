@@ -310,6 +310,9 @@ class CardActionsApp:
             before={a.get('revision') for a in next_actions.actions(db.execute('SELECT next_action FROM suggestions WHERE id=?',(args['suggestion_id'],)).fetchone()[0] or 'null')}
             early=db.execute('SELECT early FROM suggestions WHERE id=?',(args['suggestion_id'],)).fetchone()[0]
         doable=[a for a in next_actions.actions(action) if doable_now(a)]
+        if 'rename' in args and not isinstance(args['rename'],bool):raise ValueError('rename is true or false')
+        if args.get('rename') is True and (early or not turn):  # their own title only on their own word, like the dashboard's Rename
+            raise ValueError('rename needs the owner’s own message in this turn asking for that name; leave it out (title alone is the generated title)')
         if args.get('do_now') is True:
             if not doable:raise ValueError('do_now is for a doc edit or a final step that reaches nobody; a message, invite or sharing waits for the owner')
             if early or not turn:raise ValueError('do_now needs the owner’s own message in this turn asking for this step; save without it, for their Confirm')
@@ -374,7 +377,7 @@ class CardActionsApp:
             why=self.handled_gate(args['suggestion_id'],args.get('job_id'),next_actions.actions(action))
             if why:raise ValueError(why)
         done_when=outcomes.clean(args['done_when']) if args.get('done_when') is not None else None  # checked before anything is saved
-        saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'),send_now=args.get('send_now') is True)
+        saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'),send_now=args.get('send_now') is True,rename=args.get('rename') is True)
         if done_when is not None and not saved.get('replayed'):
             # The result that counts as done ('' clears it): after the send it waits for that, not done (outcomes.py)
             with self.store.connect() as db:outcomes.set_done_when(db,args['suggestion_id'],done_when,'run')

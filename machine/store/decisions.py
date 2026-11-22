@@ -1312,11 +1312,19 @@ class DecisionsStore:
     def _not_done(self, db, row, feedback, decision_id, source):
         return _not_done(db, row, feedback, decision_id, source)
 
-    def prepare(self, suggestion_id, body, job_id=None, next_action=None, outcome=None, note_kind=None, require_note=False, finish_state=None, title=None, send_now=False):
+    def prepare(self, suggestion_id, body, job_id=None, next_action=None, outcome=None, note_kind=None, require_note=False, finish_state=None, title=None, send_now=False, rename=False):
+        """rename: the owner's own message in this turn asked for `title` (card_actions checks that): it becomes their
+        own title, as the dashboard's Rename would, and stays over later generated ones. The result always says which
+        title the to-do shows now (title_note when the given one didn't apply), so the reply never claims a rename that
+        didn't happen."""
         if not body.strip():
             raise OwnerError('A concrete local preparation is required')
-        if title is not None and title_kept(outcome, finish_state, send_now):
+        if rename and title is None:
+            raise ValueError('rename needs title: the name the owner asked for')
+        unapplied, asked = None, title
+        if title is not None and not rename and title_kept(outcome, finish_state, send_now):
             title = None  # a result that only finishes it keeps the title; the result and status line say how it ended
+            unapplied = 'a result that finishes the to-do keeps its title'
         if title is not None:
             title = ' '.join(str(title).split())
             if not title or len(title) > 90:
@@ -1326,7 +1334,7 @@ class DecisionsStore:
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             job=db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
-            row = db.execute('SELECT status,body,next_action,title,title_source FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            row = db.execute('SELECT status,body,next_action,title,title_source,title_suggested FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             action_json=encoded(next_action) if next_action else None
             if job_id and job and job['job_id']==job_id and job['status']=='done' and row and row['status']=='prepared' and row['body']==body and row['next_action']==action_json:
                 return {'status':'prepared','replayed':True}
@@ -1359,10 +1367,20 @@ class DecisionsStore:
                 note_first(db,'first_prepared','draft' if any(a['kind'] in next_actions.APPROVE_KINDS+next_actions.FINISH_KINDS for a in next_actions.visible_actions(action_json)) else 'result')
             if chosen and json.loads(chosen['payload'])['kind']=='finish' and state=='completed':
                 note_first(db,'first_verified_action','finish')  # saved only with a verified receipt or changed state (PREPARATION.md)
-            if title and current_title(row, title) != row['title']:
+            if title and rename:  # their own title, like Rename on the dashboard: the generated one waits for Reset
+                suggested = row['title'] if row['title_suggested'] is None else row['title_suggested']
+                kept = None if title == suggested else suggested
+                db.execute('UPDATE suggestions SET title=?,title_suggested=?,title_source=? WHERE id=?',
+                           (title, kept, 'auto' if kept is None else 'user', suggestion_id))
+            elif title and current_title(row, title) != row['title']:
                 db.execute('UPDATE suggestions SET title=? WHERE id=?', (title, suggestion_id))  # the new notification and the edited message carry it
             elif title and row['title_source'] == 'user':
                 db.execute('UPDATE suggestions SET title_suggested=? WHERE id=?', (title[:300], suggestion_id))  # their title stays; Reset gets this one
+                unapplied = 'the owner named this to-do themselves, so their title stays'
+            # What the to-do is called now, for the reply: it names a rename only when this says it happened
+            shown = db.execute('SELECT title FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()['title']
+            unapplied = unapplied if asked and ' '.join(str(asked).split()) != shown else None
+            named = {'title': shown, **({'title_note': f'Title not changed ({unapplied}); it still reads "{shown}". Don\'t say it was renamed.'} if unapplied else {})}
             draft_saved(db,suggestion_id,next_action)
             reply_lead(db,suggestion_id,next_action)
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
@@ -1372,7 +1390,7 @@ class DecisionsStore:
                 # Ready for you and comes back (with its notification) then; nothing is notified now.
                 done=self._decide(db,suggestion_id,'snooze','','snooze-ask:'+(job_id or uuid.uuid4().hex),'assistant',snoozed_until=outcome['until'])
                 return {'status':'snoozed','snoozed_until':done['snoozed_until'],
-                        'note':'Result saved and the card is snoozed until then. Do not also add an automation or reminder for it.'}
+                        'note':'Result saved and the card is snoozed until then. Do not also add an automation or reminder for it.',**named}
             # A new result is worth a notification, not only an invisible edit.
             db.execute("UPDATE deliveries SET status='queued',reminder=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(suggestion_id,))
             # The confirmed final step went through (a verified receipt): like a sent message, the card is done.
@@ -1380,8 +1398,8 @@ class DecisionsStore:
                 # The owner confirmed it and left it to run ("On it. I'll report back."): it never just leaves the list.
                 # Just done shows it with its result until they saw it, and the phone hears of it (App.report_done).
                 db.execute('UPDATE suggestions SET done_report=? WHERE id=?',(now(),suggestion_id))
-                return {'status':'completed','reported':True,'note':'Result saved; the confirmed step went through, so the card is done.'}
-        return {'status': 'prepared', 'note': 'Result saved. The service itself executed nothing.'}
+                return {'status':'completed','reported':True,'note':'Result saved; the confirmed step went through, so the card is done.',**named}
+        return {'status': 'prepared', 'note': 'Result saved. The service itself executed nothing.', **named}
 
     def review_body(self, suggestion_id, body):
         """An open to-do's text as the owner accepted it from a review (fleet_reviews.py): its plan or result, never a send."""

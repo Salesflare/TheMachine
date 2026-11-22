@@ -95,7 +95,8 @@ class CardChatApp:
         if cursor is not None and (not isinstance(cursor, str) or len(cursor) > 4000):
             raise ValueError('Invalid cursor')
         with self.store.connect() as db:
-            if not db.execute('SELECT 1 FROM suggestions WHERE id=?', (suggestion_id,)).fetchone():
+            card = db.execute('SELECT title,title_suggested FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            if not card:
                 raise ValueError('Unknown suggestion')
             job = db.execute('SELECT job_id,session_job_id,status FROM preparations WHERE suggestion_id=?', (suggestion_id,)).fetchone()
             owner, results = self.card_chat_service(db, suggestion_id)
@@ -109,7 +110,10 @@ class CardChatApp:
         if seen is not None and seen != digest:
             gateway_cursor = None
         active = bool(job) and job['status'] in ('queued', 'starting', 'running')
-        result = {'session': bool(job), 'active': active, 'status': job['status'] if job else None, 'model': own}
+        # The to-do's title as it is now, on every read (also an unchanged one): a rename the run saved shows in the
+        # heading and the sidebar with the reply that says so, not only once the list is read again
+        result = {'session': bool(job), 'active': active, 'status': job['status'] if job else None, 'model': own,
+                  'title': card['title'], 'title_suggested': card['title_suggested']}
         if not job or fix_only:  # fix_only: Do it ran a computer-log fix (Store.machine_fix), no AI session to read
             return {**result, 'items': chat_items([], owner, results), 'cursor': None}
         found = self.card_chat_gateway({'session_key': 'agent:main:assistant-review-preparation-' + (job['session_job_id'] or job['job_id']),

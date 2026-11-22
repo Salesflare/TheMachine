@@ -338,6 +338,8 @@ Give any to-do your own title:
 
 Enter saves, Esc cancels, an empty title keeps the old one, up to 200 characters.
 
+Or ask in the to-do's chat, like "Rename it to …" (up to 90 characters). The chat's header and the sidebar show the new title with the reply, and the reply says it renamed the to-do only when it did.
+
 Your title shows everywhere the to-do does: the dashboard, Telegram (which edits its message), notifications and a Fleet handoff. Reviews and preparations keep updating the summary and next step, but never the title. **Reset to suggested title** goes back to the latest generated one. The chat gets a quiet "Renamed" line.
 
 <a id="keyboard"></a>
