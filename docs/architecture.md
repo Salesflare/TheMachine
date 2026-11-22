@@ -184,7 +184,7 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
 - **One at a time.** One run at a time, with a gap between runs; failed runs back off. Unfinished claims move safely
   to the next run, and the service never restarts the Gateway. A version that was deferred stays searchable; two
   deferrals set a signal aside until it changes.
-- **What you see.** Connections, **Reviews of new messages**, shows a running review at the top: how far it is (12 of
+- **What you see.** Connections, **Checks**, shows a running review at the top: how far it is (12 of
   40 signals), from which accounts, and its latest step from its own tool calls ("Reading 20 emails", "Looking up
   Globex", "3 suggestions so far"), updated every few seconds. Never message text or search words. Then when the next
   one starts. Finished runs move to **Recent runs**.

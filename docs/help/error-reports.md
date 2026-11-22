@@ -3,7 +3,7 @@ title: Error reports
 area: security
 summary: When something breaks, your Machine tells The Machine team what failed and where in the code. Never your messages, names or addresses.
 covers: error-reports
-code: error_feed.py, pacing.py, dashboard.html, sw.js
+code: error_feed.py, error_words.py, pacing.py, dashboard.html, sw.js
 order: 4
 ---
 ## What it is
@@ -32,6 +32,8 @@ What your messages, to-dos, drafts or chats say. Names, email addresses, phone n
 - requests from the dashboard that fail or time out: which one, never what it sent;
 - coding agent jobs that fail: the tool and the kind of failure only;
 - your AI's short test when it fails: the AI's error, with anything specific taken out.
+
+A check that stopped at your AI plan's usage limit is not an error and isn't sent: it waits for the reset.
 
 A connector you added yourself (your own file in `connectors/`) sends only its service name and its error's label, like `notes` and `notes_http: HTTP unauthorized`, so we can help fix it. Nothing else from its code. Its connection card shows the full error.
 

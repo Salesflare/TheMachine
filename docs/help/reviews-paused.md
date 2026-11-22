@@ -3,7 +3,7 @@ title: No new to-dos
 area: troubleshooting
 summary: Checks are off, waiting, or stopped on your model's usage limit. How to tell and what to do.
 covers:
-code: dashboard.html, assistant.py
+code: dashboard.html, assistant.py, machine/app/review.py, machine/night_pause.py, model_budget.py
 order: 3
 ---
 To-dos come from checks: your Machine looks at what came in within about 15 minutes.
@@ -35,6 +35,8 @@ From 00:00 until 06:30, checks pause and new messages wait. They're checked toge
 ## A run failed
 
 **Recent runs** under **Connections**, **Checks** shows each run. A failed one is tried again by itself.
+
+A run that stopped at your AI plan's usage limit says **The AI usage limit was reached.** and when it lifts. That is a pause, not a failure: its messages wait and are checked after the reset. Nothing goes to [error reports](error-reports.md).
 
 ## Set aside
 

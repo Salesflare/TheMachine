@@ -178,7 +178,7 @@ both have it ("With <other> and <teammate> · waiting").
 to <teammate>** then leads the to-do and opens the sheet with that teammate picked and the message to them written
 already. What goes is always the message for them, never the to-do's own note of what The Machine did.
 
-**Someone not on the Network.** Pick **Someone else, by email** and give their address. The to-do gets an ordinary email
+**Someone not on the Network.** Pick **By email** and give their address. The to-do gets an ordinary email
 draft from its Gmail account instead, for you to read, change and send yourself. It says what you need from them, with
 no signature.
 
