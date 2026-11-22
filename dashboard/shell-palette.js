@@ -50,7 +50,7 @@ function palRows(){const q=pal.q.trim(),ctx=pal.ctx,recent=palRecent(),groups=[]
  const acts=actsFor(ctx).map(a=>({a,label:actLabel(a,ctx)}));
  if(!q){const rec=recent.map(id=>acts.find(x=>x.a.id===id)).filter(Boolean);rec.forEach(x=>seen.add(x.a.id));if(rec.length)groups.push(['Recent',rec]);
   for(const g of ['This to-do','Actions','Go to']){const xs=acts.filter(x=>x.a.group===g&&!seen.has(x.a.id));if(xs.length)groups.push([g,xs])}}
- else{const scored=acts.map(x=>({...x,s:palMatch(q,x.a,x.label)+(recent.includes(x.a.id)?8-recent.indexOf(x.a.id):0)})).filter(x=>x.s>8).sort((x,y)=>Math.round(y.s*10)-Math.round(x.s*10)||!!y.a.keys-!!x.a.keys||y.s-x.s);  /* a tie (or a shorter label only) goes to the one with its own key: the everyday action (New to-do before New note or New event) */
+ else{const scored=acts.map(x=>({...x,s:palMatch(q,x.a,x.label)+(recent.includes(x.a.id)?8-recent.indexOf(x.a.id):0)})).filter(x=>x.s>8).sort((x,y)=>Math.round(y.s*10)-Math.round(x.s*10)||!!y.a.keys-!!x.a.keys||y.s-x.s);  /* a tie (or a shorter label only) goes to the one with its own key: the everyday action (New to-do before New event) */
   for(const g of ['This to-do','Actions','Go to']){const xs=scored.filter(x=>x.a.group===g).slice(0,8);if(xs.length)groups.push([g,xs])}
   if(groups.length>1){const best=g=>g[1][0].s;groups.sort((x,y)=>best(y)-best(x))}
   const cards=(state.suggestions||[]).filter(s=>!closed(s)).map(s=>({s,score:palCardScore(q,s)})).filter(x=>x.score>=40)  /* words, not scattered letters */.sort((x,y)=>y.score-x.score).slice(0,5);

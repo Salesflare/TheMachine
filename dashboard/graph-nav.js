@@ -19,6 +19,6 @@ $('#graph-sub').addEventListener('click',e=>{const a=e.target.closest('a[data-gr
  if(history.state?.drawer)history.replaceState(null,'',url);else if(location.hash!=='#graph='+a.dataset.graphSub)history.pushState(null,'',url);openTabLink();graphSubSync();if(!DESK.matches)scrollTo(0,0)});
 {const fold=$('#graph-fold'),lab=fold.parentNode.querySelector('.nl'),place=()=>{const w=lab.offsetLeft+lab.offsetWidth;if(w)fold.style.setProperty('--fold-x',w+(matchMedia('(max-width:1023px)').matches?2:4)+'px')  /* just after the label, its box never under the text */};
  new ResizeObserver(place).observe(lab);  // its first report places it, before the first paint: read at once, while the page loads, it laid the page out early
- const set=open=>{fold.setAttribute('aria-expanded',String(open));fold.setAttribute('aria-label',open?'Hide People, Organizations, Projects and Notes':'Show People, Organizations, Projects and Notes');$('#graph-sub').hidden=!open};
+ const set=open=>{fold.setAttribute('aria-expanded',String(open));fold.setAttribute('aria-label',open?'Hide People, Organizations and Projects':'Show People, Organizations and Projects');$('#graph-sub').hidden=!open};
  set(sideStore.get('graph-sub')!=='closed');fold.onclick=()=>{const open=fold.getAttribute('aria-expanded')!=='true';set(open);sideStore.set('graph-sub',open?'open':'closed')}}
 
