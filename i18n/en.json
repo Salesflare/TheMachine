@@ -8491,6 +8491,10 @@
   "one": "{} to-do",
   "other": "{} to-dos"
  },
+ "{} to-dos are being prepared.": {
+  "one": "{} to-do is being prepared.",
+  "other": "{} to-dos are being prepared."
+ },
  "{} to-dos cleared in {}": {
   "one": "{} to-do cleared in {}",
   "other": "{} to-dos cleared in {}"

@@ -1,15 +1,17 @@
 // A lazy part (dashboard_parts.LAZY 'clearrun', with todos-clear.css's dialog rules): Go through's dialog, one to-do
 // at a time. todos-clear.js draws the header's Go through and opens this through lazyRun('clearrun').
-let cr=null;  // {ids, at, n, sent, done, started, busy, asking}
+let cr=null;  // {ids, at, sent, left (ids done with here, not sent), started, busy, asking}
 function crDialog(){let d=$('#clear-run');if(d)return d;d=make('dialog',{id:'clear-run',class:'clear-run','aria-label':t('Go through'),tabindex:'-1'});document.body.append(d);
  d.addEventListener('close',()=>{cr=null;d.replaceChildren();render()});
  d.addEventListener('click',crClick);d.addEventListener('keydown',crKey);return d}
-function openClearRun(key){const ids=crFuv?crList(crFuv,key).map(s=>s.id):[];if(!ids.length)return;cr={ids,at:0,sent:0,done:0,started:Date.now()};const d=crDialog();crDraw();if(!d.open)d.showModal();d.focus()}
+function openClearRun(key){const ids=crFuv?crList(crFuv,key).map(s=>s.id):[];if(!ids.length)return;cr={ids,at:0,sent:0,left:[],started:Date.now()};const d=crDialog();crDraw();if(!d.open)d.showModal();d.focus()}
 const crNow=()=>{while(cr&&cr.at<cr.ids.length&&!crKind(state.suggestions.find(s=>s.id===cr.ids[cr.at])))cr.at++;return cr&&state.suggestions.find(s=>s.id===cr.ids[cr.at])};
 const crClock=ms=>{const s=Math.round(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 function crDraw(error=''){const d=crDialog(),s=crNow();
  if(!s){const took=crClock(Date.now()-cr.started);
-  setHTML(d,html`<div class="cr-end"><p class="cr-done">${cr.sent?t(['{} reply out in {}','{} replies out in {}'],cr.sent,took):cr.done?t(['{} to-do cleared in {}','{} to-dos cleared in {}'],cr.done,took):t('Nothing cleared.')}</p><button type="button" class="primary" data-cr="close">${t('Back to the list')}</button></div>`);
+  // cleared: only the ones that closed. Do it and Ask for changes start a preparation, and a snooze brings it back
+  const left=cr.left.map(id=>state.suggestions.find(x=>x.id===id)).filter(Boolean),done=left.filter(closed).length,n=left.filter(x=>TODO.PREPARING.includes(x.status)).length,prep=n?t(['{} to-do is being prepared.','{} to-dos are being prepared.'],n):'';
+  setHTML(d,html`<div class="cr-end"><p class="cr-done">${cr.sent?t(['{} reply out in {}','{} replies out in {}'],cr.sent,took):done?t(['{} to-do cleared in {}','{} to-dos cleared in {}'],done,took):prep||t('Nothing cleared.')}</p>${prep&&(cr.sent||done)?html`<p>${prep}</p>`:''}<button type="button" class="primary" data-cr="close">${t('Back to the list')}</button></div>`);
   d.querySelector('[data-cr="close"]').focus();return}
  const kind=crKind(s),a=kind==='do'?null:crDraft(s),left=cr.ids.length;
  const go=t(kind==='do'?'Do it':CR_MSG.includes(a.kind)?'Send':sendLabel(a));
@@ -21,13 +23,13 @@ function crDraw(error=''){const d=crDialog(),s=crNow();
  <div class="cr-acts"${cr.asking?html` hidden`:''}><button type="button" class="primary" data-cr="go" data-id="${s.id}" data-rev="${a?.revision||''}">${go}${k('Enter')}</button><button type="button" data-cr="ask">${t('Ask for changes')}</button><button type="button" data-cr="snooze">${t('Snooze')}${k('S')}</button><button type="button" data-cr="skip">${t('Skip')}${k('→')}</button></div>`);
  d.querySelector('.cr-main').scrollTop=0;if(cr.asking)$('#cr-ask').focus();else d.focus()}
 function crAfter(dialog,id,sent){$(dialog).addEventListener('close',async()=>{if(!cr)return;await refresh().catch(()=>{});
- if(crKind(state.suggestions.find(s=>s.id===id))){crDraw();return}sent?cr.sent++:cr.done++;cr.at++;crDraw()},{once:true})}
+ if(crKind(state.suggestions.find(s=>s.id===id))){crDraw();return}sent?cr.sent++:cr.left.push(id);cr.at++;crDraw()},{once:true})}
 async function crAct(what){if(!cr||cr.busy)return;const s=crNow();if(!s)return;const id=s.id,kind=crKind(s);
  if(what==='skip'){cr.at++;crDraw();return}
  if(what==='snooze'){openSnooze(id);crAfter('#snooze-dialog',id,false);return}
  if(what==='ask'){cr.asking=true;crDraw();return}
  if(what==='ask-back'){cr.asking=false;crDraw();return}
- const run=async(f,sent)=>{cr.busy=true;try{await f();cr.asking=false;sent?cr.sent++:cr.done++;cr.at++;await refresh().catch(()=>{});crDraw()}catch(e){errCaught(e);crDraw(e.offline&&!e.slow?t('Offline. Send again when you’re back online.'):e.message)}finally{if(cr)cr.busy=false}};
+ const run=async(f,sent)=>{cr.busy=true;try{await f();cr.asking=false;sent?cr.sent++:cr.left.push(id);cr.at++;await refresh().catch(()=>{});crDraw()}catch(e){errCaught(e);crDraw(e.offline&&!e.slow?t('Offline. Send again when you’re back online.'):e.message)}finally{if(cr)cr.busy=false}};
  if(what==='ask-save'){const text=$('#cr-ask')?.value.trim();if(!text){$('#cr-ask')?.focus();return}return run(()=>saveDecision(id,'other',text),false)}
  if(what!=='go')return;
  if(kind==='do')return run(()=>saveDecision(id,'accept'),false);
