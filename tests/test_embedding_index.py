@@ -54,11 +54,38 @@ class Bounds(unittest.TestCase):
                     self.assertLess(error, 0.05)  # tight enough to leave out nearly everything
         self.assertIsNone(index.lanes([0.0] * DIMS))  # a probe of zeros: every cosine is 0
 
+    def test_a_slot_used_again_and_vectors_added_since_the_last_search_score_as_theirs(self):
+        # Values are kept by dimension and new vectors wait until a search: a freed slot written over, between and after
+        # searches, scores as the vector now in it
+        fake, index = Fake(4), emb.Index(None, DIMS)
+        rows = [fake.vector() for _ in range(40)]
+        for n, vector in enumerate(rows):
+            index.put(n << emb.SHIFT, emb.pack(vector))
+        probe = fake.vector()
+        index.lanes(probe)
+        for slot in (3, 17):
+            index.keys[slot] = -1
+            index.free.append(slot)
+        for n in range(6):
+            rows.append(fake.vector())
+            index.put((40 + n) << emb.SHIFT, emb.pack(rows[-1]))
+        where = {key >> emb.SHIFT: slot for slot, key in enumerate(index.keys)}
+        self.assertEqual(len(index.keys), 44)
+        values, off, step, spread = index.lanes(probe)
+        for event_id in range(46):
+            if event_id in (3, 17):
+                continue
+            slot = where[event_id]
+            exact = math.sumprod(probe, array.array('f', emb.pack(rows[event_id])))
+            scale, size = index.scales[slot], index.sizes[slot]
+            estimate, error = (values[slot] - off) * step * scale, scale * spread + step / 2 * size + emb.SLACK
+            self.assertLessEqual(abs(exact - estimate), error, event_id)
+
     def test_memory_is_the_values_at_8_bits_and_a_few_numbers_per_vector(self):
         index, fake = emb.Index(None, DIMS), Fake(2)
         for n in range(1000):
             index.put(n << emb.SHIFT, emb.pack(fake.vector()))
-        held = len(index.rows) + index.keys.itemsize * len(index.keys) + index.scales.itemsize * 2 * len(index.scales)
+        held = index.held() + index.keys.itemsize * len(index.keys) + index.scales.itemsize * 2 * len(index.scales)
         self.assertEqual(held, 1000 * (DIMS + 16))
 
 
