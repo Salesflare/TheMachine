@@ -13,8 +13,8 @@ Alles wat je Machine leert, is van jou. Geef die kennis aan een andere AI, zoals
 
 1. Ga naar **Instellingen** › **Algemeen** › **Exporteren** en kies **Exporteren** naast **Kennis voor een andere AI**.
 2. **Tekst van berichten** staat standaard uit: je ziet alleen waar elk item vandaan komt en wanneer. Schakel deze optie in om ook de tekst toe te voegen.
-3. Schakel **Privé en Voorzichtig** alleen in als je projecten die alleen voor jou zijn, privéthreads en Careful Fleet wilt toevoegen.
-4. Stel eventueel een **Wachtzin** in (minstens 10 tekens) om het bestand te versleutelen.
+3. Schakel **Privé en Voorzichtig** alleen in als je projecten die alleen voor jou zijn, privéthreads en Voorzichtige Fleets wilt toevoegen.
+4. Stel eventueel een **Wachtwoordzin** in (minstens 10 tekens) om het bestand te versleutelen.
 5. Kies **Downloaden**. Je kunt het bestand maar één keer downloaden.
 
 Dit werkt hetzelfde met een gehoste Machine en op je eigen computer.
@@ -33,6 +33,6 @@ Contacten en to-do's worden ook als spreadsheets (CSV) meegeleverd. Bovenaan sta
 
 ## Wat er niet in staat
 
-Wachtwoorden, sleutels en aanmeldgegevens worden nooit opgenomen. Ook gegevens, instellingen en foto's van teamgenoten blijven achterwege. Lees [Verplaatsen naar een andere computer](moving.md) als je je hele Machine wilt verplaatsen.
+Wachtwoorden, sleutels en logins worden nooit opgenomen. Ook gegevens, instellingen en foto's van teamgenoten blijven achterwege. Lees [Verplaatsen naar een andere computer](moving.md) als je je hele Machine wilt verplaatsen.
 
 Voor ontwikkelaars: [de bestandsindeling](https://github.com/Salesflare/TheMachine/blob/main/docs/knowledge-export.md).

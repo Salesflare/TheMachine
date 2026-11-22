@@ -7,23 +7,23 @@ code: graph.py, graph_updates.py, crm.py, crm_import.py, crm_fixes.py, crm_field
 order: 1
 translated: 9052c679e45207f7
 ---
-Je Machine maakt op basis van je berichten, vergaderingen en beslissingen een overzicht van wie je spreekt en wat er speelt. Je hoeft niets in te stellen en alles blijft op je Machine.
+Je Machine maakt op basis van je berichten, meetings en beslissingen een overzicht van wie je spreekt en wat er speelt. Je hoeft niets in te stellen en alles blijft op je Machine.
 
-- [Mensen](people.md): iedereen met wie je contact hebt, met een samenvatting en tijdlijn voor elke persoon.
+- [Personen](people.md): iedereen met wie je contact hebt, met een samenvatting en tijdlijn voor elke persoon.
 - [Organisaties](organizations.md): de bedrijven waar ze werken, met hun mensen en projecten.
 - [Projecten](projects.md): wat er speelt, op borden met fases, zoals deals in een CRM.
 
 ## Vandaag bijgewerkt
 
-Boven aan elke lijst staat een subtiele regel met wat je Machine vandaag heeft bijgewerkt, bijvoorbeeld **Vandaag 4 mensen bijgewerkt**. Tik erop om te zien wie en wat er is veranderd. Tik op een naam om de pagina te openen, met **Recente wijzigingen** open. Een kleine stip markeert elke rij en tegel op het bord die vandaag is gewijzigd. Je ziet alleen wijzigingen die je Machine zelf heeft aangebracht, vanaf middernacht.
+Boven aan elke lijst staat een subtiele regel met wat je Machine vandaag heeft bijgewerkt, bijvoorbeeld **4 personen vandaag bijgewerkt**. Tik erop om te zien wie en wat er is veranderd. Tik op een naam om de pagina te openen, met **Recente wijzigingen** open. Een kleine stip markeert elke rij en tegel op het bord die vandaag is gewijzigd. Je ziet alleen wijzigingen die je Machine zelf heeft aangebracht, vanaf middernacht.
 
 ## Filteren en sorteren
 
-Met **Filteren** naast de tabbladen beperk je de lijst. Elke lijst heeft eigen filters. Mensen: hoe goed je iemand kent, laatste contact, organisatie, eigenaar, tag en **Heeft een open project**. Organisaties: branche, specialisme, grootte, land, laatste contact, eigenaar, tag en **Heeft een open project**. Projecten: eigenaar, bord, fase, tag, organisatie, waarde, verwachte afsluitdatum en **Geen antwoord in 10+ dagen**.
+Met **Filteren** naast de tabbladen beperk je de lijst. Elke lijst heeft eigen filters. Personen: hoe goed je iemand kent, laatste contact, organisatie, eigenaar, tag en **Heeft een open project**. Organisaties: branche, specialisatie, grootte, land, laatste contact, eigenaar, tag en **Heeft een open project**. Projecten: eigenaar, bord, fase, tag, organisatie, waarde, verwachte afsluitdatum en **Geen antwoord in 10+ dagen**.
 
 De filters die je hebt gekozen, staan boven de lijst, met **Wissen**. Bij Projecten gebruiken de lijst en het bord hetzelfde filter. Op een telefoon openen filters in een paneel.
 
-Met het sorteermenu sorteer je de lijst. Mensen en Organisaties worden gesorteerd op hoe goed je iemand kent, nieuwste of oudste contact en naam. Organisaties kunnen ook op grootte worden gesorteerd. Projecten worden gesorteerd op laatste activiteit, naam, fase, **Waarde** en **Afsluitdatum**. Met **CSV downloaden** onder het sorteermenu sla je het tabblad dat je bekijkt op als spreadsheet.
+Met het sorteermenu sorteer je de lijst. Personen en Organisaties worden gesorteerd op hoe goed je iemand kent, nieuwste of oudste contact en naam. Organisaties kunnen ook op grootte worden gesorteerd. Projecten worden gesorteerd op laatste activiteit, naam, fase, **Waarde** en **Afsluitdatum**. Met **CSV downloaden** onder het sorteermenu sla je het tabblad dat je bekijkt op als spreadsheet.
 
 ## Velden en tags
 
@@ -43,7 +43,7 @@ Als er nog geen verjaardag is, voeg je die met **Verjaardag toevoegen** onder Ve
 
 ## Een spreadsheet importeren
 
-Met **CSV importeren…** onder het sorteermenu bij Mensen, Organisaties of Projecten voeg je een spreadsheet toe die is opgeslagen als CSV.
+Met **CSV importeren…** onder het sorteermenu bij Personen, Organisaties of Projecten voeg je een spreadsheet toe die is opgeslagen als CSV.
 
 1. Controleer de kolommen. Je Machine raadt op basis van de kopteksten en inhoud aan wat elke kolom bevat. Je kunt die indeling aanpassen. Als je model kan draaien, controleert het de kolommen ook en geeft het een korte reden als het ergens niet zeker van is. Het model ziet alleen de kopteksten, een paar waarden per kolom en de cellen die de regels niet konden lezen.
 2. Controleer de aanpassingen. Met **Nakijken** bekijk je ze als voor en na: extra spaties, namen in hoofdletters, telefoonnummers in internationaal formaat, typefouten in e-mailadressen (gmial.com), websites als domein, datums en waarden in elk formaat ("€12k" is 12000), meerdere tags in één cel, een anders gespelde fase en dubbele rijen. Haal het vinkje bij een type of rij weg om die ongewijzigd te laten.
@@ -54,10 +54,10 @@ Met **Ongedaan maken** direct na het importeren, of **Laatste import ongedaan ma
 
 ## Eigenaar
 
-In een Work Fleet heeft elke persoon, organisatie en elk project een eigenaar: **Eigenaar** onder Bij jou op de pagina. Jij bent de eigenaar, tenzij je iemand uit je Work Fleet kiest. Met **Eigenaar** bij Filteren toon je alleen items waarvan jij eigenaar bent. Elke wijziging staat in de tijdlijn.
+In een Werk-Fleet heeft elke persoon, organisatie en elk project een eigenaar: **Eigenaar** onder Met jou op de pagina. Jij bent de eigenaar, tenzij je iemand uit je Werk-Fleet kiest. Met **Eigenaar** bij Filteren toon je alleen items waarvan jij eigenaar bent. Elke wijziging staat in de tijdlijn.
 
 ## Team
 
-Met **Team** naast Mijn zie je wat je teamgenoten delen, met dezelfde tabbladen en hetzelfde sorteermenu. Met **Filteren** beperk je de lijst op wie iets heeft gedeeld, een organisatie (Mensen) of status (Projecten). Wat je daar toevoegt, is van jou.
+Met **Team** naast Van mij zie je wat je teamgenoten delen, met dezelfde tabbladen en hetzelfde sorteermenu. Met **Filteren** beperk je de lijst op wie iets heeft gedeeld, een organisatie (Personen) of status (Projecten). Wat je daar toevoegt, is van jou.
 
-Werk voor klanten wordt gedeeld met de Machines van je teamgenoten, inclusief eigenaar, velden en tags. Wat zij toevoegen, staat ook op jouw Machine. Bij elke thread staat **Team** of **Alleen jij**. Bekijk [Team Graph](team-graph.md).
+Werk voor klanten wordt gedeeld met de Machines van je teamgenoten, inclusief eigenaar, velden en tags. Wat zij toevoegen, staat ook op jouw Machine. Bij elke thread staat **Team** of **Alleen jij**. Zie [Team-Graph](team-graph.md).

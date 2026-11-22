@@ -9,7 +9,7 @@ translated: 0896d8f689ca9699
 ---
 ## Hoe het ermee gaat
 
-Op het tabblad **Koppelingen** staan je bronnen per soort, met **Logins** en **Checks** onder een streep. Tik op je telefoon op een soort om die te openen en op **Koppelingen** om terug te gaan. Een soort met een bron die op je wacht, wordt als eerste geopend. Elke bron staat op een rij met de status (Verbonden, Wacht op eerste synchronisatie, Opnieuw verbinden of Heeft je hulp nodig) en wat er onlangs is binnengekomen. Tik erop voor de kaart en **Details**.
+Op het tabblad **Koppelingen** staan je bronnen per soort, met **Logins** en **Checks** onder een streep. Tik op je telefoon op een soort om die te openen en op **Koppelingen** om terug te gaan. Een soort met een bron die op je wacht, wordt als eerste geopend. Elke bron staat op een rij met de status (Gekoppeld, Wacht op eerste sync, Verbindt automatisch opnieuw of Heeft je hulp nodig) en wat er onlangs is binnengekomen. Tik erop voor de kaart en **Details**.
 
 Een mislukte synchronisatie die door een latere is ingehaald, wordt grijs weergegeven. Alleen een mislukte synchronisatie die nog steeds de laatste is, wordt als probleem getoond, met de tijd waarop opnieuw wordt geprobeerd.
 
@@ -21,15 +21,15 @@ Bij elke bron staat ook in één regel wat die binnenbrengt en, als de bron acti
 
 ## Een koppeling toevoegen
 
-Open een soort (**E-mail**, **Agenda**, **Chat**, **Afspraken**, **Documenten en bestanden**, **Klanten**, **Projecten en code**, **Andere**) en kies een bron onder **Nog een toevoegen**, of onder de lijst als er nog geen bron is gekoppeld. Onderaan staan de opties voor overige bronnen: **Andere e-mail** onder E-mail, en **Agendalink (ICS)** en **Andere agenda** onder Agenda. Exchange Server haalt afspraken op en staat daarom onder Agenda.
+Open een soort (**E-mail**, **Agenda**, **Chat**, **Meetings**, **Documenten en bestanden**, **Klanten**, **Projecten en code**, **Andere**) en kies een bron onder **Nog een toevoegen**, of onder de lijst als er nog geen bron is gekoppeld. Onderaan staan de opties voor overige bronnen: **Andere e-mail** onder E-mail, en **Agendalink (ICS)** en **Andere agenda** onder Agenda. Exchange Server haalt afspraken op en staat daarom onder Agenda.
 
 **Voorgesteld voor jou** staat bovenaan **Koppelingen** als je Machine een reden ziet om een bron toe te voegen. Die reden staat er in één regel bij, zoals e-mail van Stripe, Zoom-meetings in je agenda, berichten met links naar Google Docs of een installatie die niet is afgerond. De bron blijft ook in de eigen groep staan, met de aanduiding **Voorgesteld**. Deze gegevens worden op je Machine geteld en verlaten hem niet. Een gekoppelde bron wordt nooit voorgesteld.
 
-Microsoft Teams staat op twee plekken: onder **Chat** voor chats en onder **Afspraken** als **Teams-meetings** voor aantekeningen van meetings. Beide gebruiken dezelfde Microsoft-login, dus als je de ene koppelt, wordt de andere ook gekoppeld.
+Microsoft Teams staat op twee plekken: onder **Chat** voor chats en onder **Meetings** als **Teams-meetings** voor meetingnotities. Beide gebruiken dezelfde Microsoft-login, dus als je de ene koppelt, wordt de andere ook gekoppeld.
 
 In de lijst staat bij een bron die je al hebt gekoppeld dat die is gekoppeld, samen met het account. Kies de bron om er nog een naast toe te voegen. Dat staat op het formulier, met een link naar de bron die je al hebt.
 
-Vul de gevraagde gegevens in, zoals een sleutel of adres, kies **Werk** met de bedrijfsnaam of **Privé**. Bij e-mail en agenda wordt dit alleen gevraagd als het adres het niet verraadt. Druk daarna op **Verbinden**. Bij een site zoals LinkedIn of X wordt de inlogpagina geopend in de browser van je Machine. Zodra je bent ingelogd, gaat het vanzelf verder. Bij GitHub, WhatsApp en Codex krijg je een code om in te voeren. Voor Telegram- en Signal-chats krijg je een QR-code om te scannen.
+Vul de gevraagde gegevens in, zoals een sleutel of adres, kies **Werk** met de bedrijfsnaam of **Privé**. Bij e-mail en agenda wordt dit alleen gevraagd als het adres het niet verraadt. Druk daarna op **Koppelen**. Bij een site zoals LinkedIn of X wordt de inlogpagina geopend in de browser van je Machine. Zodra je bent ingelogd, gaat het vanzelf verder. Bij GitHub, WhatsApp en Codex krijg je een code om in te voeren. Voor Telegram- en Signal-chats krijg je een QR-code om te scannen.
 
 Met **Annuleren** stop je het toevoegen. Weggegaan voordat het klaar was? Open **Koppelingen** opnieuw op een apparaat naar keuze. Je gaat dan verder vanaf dezelfde stap. Zodra de bron is gekoppeld, begint je Machine die meteen te lezen en zie je hoe de eerste synchronisatie verloopt.
 
@@ -39,11 +39,11 @@ Kies **Werk** of **Privé** en druk op de inlogknop, bijvoorbeeld **Inloggen met
 
 Op je eigen computer log je bij dezelfde bronnen in zodra je Machine aan je account is gekoppeld. Druk de eerste keer op **Koppel deze Machine**. Sommige bronnen bieden ook een andere manier, zoals je eigen app of een sleutel.
 
-Met **Opnieuw verbinden** bij een bron of onder **Wacht op jou** open je hetzelfde formulier. Op je eigen computer doet `assistant connect` hetzelfde in een terminal.
+Met **Opnieuw koppelen** bij een bron of onder **Wacht op jou** open je hetzelfde formulier. Op je eigen computer doet `assistant connect` hetzelfde in een terminal.
 
 ## Werk of privé?
 
-Elke bron is werk (voor een bedrijf dat je opgeeft) of privé. Je kunt dit wijzigen onder **Details**. **Geschat** betekent dat je Machine dit heeft afgeleid van het adres. Werk-to-do's wachten tot je werkdagen.
+Elke bron is werk (voor een bedrijf dat je opgeeft) of privé. Je kunt dit wijzigen onder **Details**. **Geraden** betekent dat je Machine dit heeft afgeleid van het adres. Werk-to-do's wachten tot je werkdagen.
 
 Bij e-mail en agenda van Google en Microsoft wordt dit afgeleid van het adres als dat duidelijk is: een e-maildienst zoals Gmail of Outlook.com betekent Privé, het domein van je team betekent Werk. Is het niet duidelijk, dan wordt het één keer gevraagd, meteen nadat je bent ingelogd. Met **Wijzigen** stel je dit zelf in. Als je e-mail later op de andere optie wijst, vraagt de to-do **Haal meer uit The Machine** één keer of je dit wilt wijzigen.
 

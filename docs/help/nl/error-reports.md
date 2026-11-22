@@ -1,7 +1,7 @@
 ---
 title: Foutrapporten
 area: security
-summary: Als er iets misgaat, laat je Machine het team van The Machine weten wat er misging en waar in de code. Nooit wat je berichten zeggen, of je namen en adressen.
+summary: Als er iets misgaat, laat je Machine het team van The Machine weten wat er misging en waar in de code. Nooit je berichten, namen of adressen.
 covers: error-reports
 code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
@@ -46,6 +46,6 @@ Als foutrapporten aanstaan, laat je Machine ons ook één keer per dag weten hoe
 
 ## Uitzetten
 
-Ga naar **Instellingen** en vervolgens naar **Beveiliging**. Zet **Foutrapporten sturen** uit. Er worden dan geen nieuwe gegevens vastgelegd of verstuurd en gegevens die klaarstonden, worden verwijderd. Fouten zijn nog wel zichtbaar op je eigen Machine, die een oplossing kan voorstellen.
+Ga naar **Instellingen** en vervolgens naar **Beveiliging**. Zet **Foutrapporten versturen** uit. Er worden dan geen nieuwe gegevens vastgelegd of verstuurd en gegevens die klaarstonden, worden verwijderd. Fouten zijn nog wel zichtbaar op je eigen Machine, die een oplossing kan voorstellen.
 
 Zie [Beveiliging en privacy](security-and-privacy.md).

@@ -56,7 +56,7 @@ Als je die toestemming later intrekt, toont Microsoft OneDrive **Wacht op je OK 
 Op een gehoste Machine of op je eigen computer, gekoppeld aan je account:
 
 - Open **Koppelingen**, daarna **Documenten en bestanden**, en kies **Microsoft OneDrive**.
-- Druk op **Aanmelden met Microsoft** en geef toestemming om je bestanden te lezen en te bewerken.
+- Druk op **Inloggen met Microsoft** en geef toestemming om je bestanden te lezen en te bewerken.
 
 Als Microsoft lezen niet toestaat, wordt de koppeling niet toegevoegd. Druk je op **Bewerken toestaan** en staat Microsoft bewerken niet toe, dan laat hij dat weten.
 
@@ -72,7 +72,7 @@ Je Machine:
 
 Hij doorzoekt je Drive niet. Hij ziet opmerkingen, gedeelde documenten en suggesties alleen in documenten die hij zelf heeft gemaakt. Voor meer toegang zou hij toegang tot je hele Drive nodig hebben, maar daar vraagt hij niet om.
 
-Op je eigen computer kan je Machine een nieuw Google-document maken in een Gmail-account dat daar is aangemeld en al toegang tot Drive heeft. Hij leest je andere Google-documenten en de opmerkingen daarin niet. Onder **Documenten en bestanden** wordt dit weergegeven als Google Docs, gekoppeld aan dat account. Hij kan daar ook een document wijzigen dat hij voor een to-do heeft gemaakt.
+Op je eigen computer kan je Machine een nieuw Google-document maken in een Gmail-account waarmee daar is ingelogd en dat al toegang tot Drive heeft. Hij leest je andere Google-documenten en de opmerkingen daarin niet. Onder **Documenten en bestanden** wordt dit weergegeven als Google Docs, gekoppeld aan dat account. Hij kan daar ook een document wijzigen dat hij voor een to-do heeft gemaakt.
 
 ## Werk of privé
 
@@ -80,4 +80,4 @@ Hij volgt het label Werk of Privé van de koppeling, net als bij mail. Werkdocum
 
 ## Ontkoppelen
 
-Open **Koppelingen**, daarna Microsoft OneDrive of Google Docs, **Details** en **Ontkoppelen**. Hij stopt met lezen. Wat hij al heeft binnengehaald, blijft staan. Op een gehoste Machine opent **Ontkoppelen ↗** je instellingenpagina, waar de aanmelding wordt bewaard.
+Open **Koppelingen**, daarna Microsoft OneDrive of Google Docs, **Details** en **Ontkoppelen**. Hij stopt met lezen. Wat hij al heeft binnengehaald, blijft staan. Op een gehoste Machine opent **Ontkoppelen ↗** je installatiepagina, waar de login staat.

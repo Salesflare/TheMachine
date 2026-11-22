@@ -22,7 +22,7 @@ In je eigen agenda kun je ook mensen uitnodigen vanuit het formulier in de [Agen
 
 ## Koppelen
 
-Op een gehoste Machine koppel je het samen met Gmail: druk op je setuppagina, onder **Mail en agenda**, op **Google koppelen**.
+Op een gehoste Machine koppel je het samen met Gmail: druk op je installatiepagina, onder **Mail en agenda**, op **Google koppelen**.
 
 Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer): open **Koppelingen**, dan **Agenda**, kies Google Calendar en druk op **Inloggen met Google**. Het koppelt samen met Gmail.
 
@@ -30,7 +30,7 @@ Met je eigen app: voer `assistant connect calendar` uit, of open daar **Je eigen
 
 ## Verwijderen
 
-- Op een gehoste Machine: druk op **Ontkoppelen** naast het adres op je setuppagina. Dat verwijdert Gmail en Agenda voor dat adres.
+- Op een gehoste Machine: druk op **Ontkoppelen** naast het adres op je installatiepagina. Dat verwijdert Gmail en Agenda voor dat adres.
 - Op je eigen computer: **Koppelingen**, open de agenda, **Details**, dan **Ontkoppelen**.
 
 ## Verwijderen bij Google

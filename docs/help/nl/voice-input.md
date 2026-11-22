@@ -28,9 +28,9 @@ Een opname wordt verwijderd zodra de tekst klaar is.
 
 ## Klaarmaken
 
-Om spraak zelf om te zetten in tekst, downloadt je Machine eerst op de achtergrond een spraakmodel (150 tot 500 MB), wanneer het rustig is. In de tussentijd staat er in Instellingen **Klaarmaken (op de achtergrond)**. Dit gebeurt niet als OpenAI wordt gebruikt.
+Om spraak zelf om te zetten in tekst, downloadt je Machine eerst op de achtergrond een spraakmodel (150 tot 500 MB), wanneer het rustig is. In de tussentijd staat er in Instellingen **Wordt klaargezet (op de achtergrond)**. Dit gebeurt niet als OpenAI wordt gebruikt.
 
-Tot die tijd gebruikt **Automatisch** de spraakherkenning van je browser, als die beschikbaar is. Dat staat onder het vak. Sommige browsers sturen je spraak naar de maker van de browser. Als **Op deze Machine** is gekozen, wacht je opname en staat er in het vak ‘Spraak wordt klaargemaakt…’ met de resterende tijd.
+Tot die tijd gebruikt **Automatisch** de spraakherkenning van je browser, als die beschikbaar is. Dat staat onder het vak. Sommige browsers sturen je spraak naar de maker van de browser. Als **Op deze Machine** is gekozen, wacht je opname en staat er in het vak ‘Spraak klaarzetten…’ met de resterende tijd.
 
 ## Instellingen
 

@@ -41,7 +41,7 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/#routines');await page.locator(`[data-rt="${ID}"]`).waitFor();
   if(lang!=='en')await page.waitForFunction(l=>document.documentElement.lang===l,lang);
   const w=page.locator('#rt-words'),at=`${width} ${scheme} ${lang} at ${dsf}x`,form=page.locator('.rt-new');
-  if(lang==='nl')await page.waitForFunction(()=>document.querySelector('#rt-words')?.placeholder==='Elke dag, vat mijn deals samen');
+  if(lang==='nl')await page.waitForFunction(()=>document.querySelector('#rt-words')?.placeholder==='Vat elke maandag mijn deals samen');
   // Empty, with its placeholder: one line, nothing to scroll
   const empty=await look(w);assert.ok(empty.over<=0&&empty.bar<2,`${at}: the empty field has no scrollbar (${JSON.stringify(empty)})`);
   if(shots&&lang==='nl'&&dsf==='1.5')await form.screenshot({path:`${shots}/routines-field-${width}-${scheme}-empty.png`});

@@ -146,7 +146,7 @@ class Compose(unittest.TestCase):
     def test_in_the_owners_language(self):
         with patch.object(locale_prefs, 'language', return_value='nl'):
             out = notify.evening_compose(self.DONE[:1], [], 0, [], [], name='Robin')
-        self.assertEqual(out['subject'], 'Goeienavond Robin, vandaag 1 to-do gedaan')
+        self.assertEqual(out['subject'], 'Goedenavond Robin, vandaag 1 to-do gedaan')
         self.assertIn('\nWerk\n', out['text'])
 
 

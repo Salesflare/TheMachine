@@ -16,13 +16,13 @@ translated: e636b2a2fbbc714d
 - Niet gebruikt om AI te trainen: we hebben geen eigen AI. Je provider werkt onder jouw account en volgens de voorwaarden van je provider.
 - Inzichten voor het team, tenzij je ze uitschakelt: af en toe een paar algemene tips, niets persoonlijks, gecontroleerd voordat ze worden gedeeld. Zie [Inzichten delen](share-learnings.md).
 - Foutrapporten, tenzij je ze uitschakelt: als er iets misgaat, het type fout en de plek in de code. Nooit je berichten, namen of adressen. Zie [Foutrapporten](error-reports.md).
-- Gebruiksgegevens op een gehoste Machine: dagelijkse aantallen van wat je hebt gedaan (zoals geopende to-do's of verzonden e-mails), nooit de inhoud ervan.
+- Gebruiksgegevens op een gehoste Machine: dagelijkse aantallen van wat je hebt gedaan (zoals geopende to-do's of verstuurde e-mails), nooit de inhoud ervan.
 - Neem alles mee of verwijder het: exporteer alles via **Instellingen** › **Algemeen**, of verwijder je Machine en de back-ups met één knop. Zie [Opzeggen of verwijderen](cancel-and-delete.md).
-- Onze toegang wordt bijgehouden: elke keer dat ons team het rapport of de logs van je gehoste Machine bekijkt. Eigenaren en beheerders van een Fleet zien dit onder **Activiteit**. Zie [Fleet](fleet.md).
+- Onze toegang wordt bijgehouden: elke keer dat ons team het rapport of de logs van je gehoste Machine bekijkt. Eigenaren en beheerders van een Fleet zien dit onder **Activiteit**. Zie [Fleets](fleet.md).
 
 ## Beveiligingsniveaus
 
-**Standaard** behoudt de huidige standaardinstellingen. **Voorzichtig** toont geen tekst in meldingen, slaat geen aanmeldingen op en bewaart minder gegevens. De beheerder van een Work Fleet kan de Fleet instellen op Voorzichtig. Zie [Beveiligingsniveaus](security-levels.md).
+**Standaard** behoudt de huidige standaardinstellingen. **Voorzichtig** toont geen tekst in meldingen, slaat geen logins op en bewaart minder gegevens. De beheerder van een Werk-Fleet kan de Fleet instellen op Voorzichtig. Zie [Beveiligingsniveaus](security-levels.md).
 
 ## Inloggen
 
@@ -30,11 +30,11 @@ Voor een gehost dashboard heb je een passkey nodig, of moet je inloggen met Goog
 
 ## Koppelingen
 
-In het artikel over elke koppeling staat wat die leest en wat die kan versturen. Je kunt elke koppeling op elk moment verbreken: zie [Koppelingen](connections.md).
+In het artikel over elke koppeling staat wat die leest en wat die kan versturen. Je kunt elke koppeling op elk moment ontkoppelen: zie [Koppelingen](connections.md).
 
-## Hulp
+## Help
 
-Hulp draait op je eigen Machine en kan je gegevens niet zien. Alleen het onderwerp van elke vraag gaat naar het team van The Machine, nooit je eigen woorden. Zie [Hulp vragen](help-chat.md#what-the-team-sees).
+Help draait op je eigen Machine en kan je gegevens niet zien. Alleen het onderwerp van elke vraag gaat naar het team van The Machine, nooit je eigen woorden. Zie [Hulp vragen](help-chat.md#what-the-team-sees).
 
 ## Meer
 

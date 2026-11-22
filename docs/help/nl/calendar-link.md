@@ -9,7 +9,7 @@ translated: b3bcf33b5c027baf
 ---
 ## Wat het leest
 
-De afspraken in de agenda achter de link, met terugkerende afspraken en tijdzones: de afgelopen week en de volgende maand, daarna elke wijziging. Ze verschijnen in Agenda en in de voorbereiding van je afspraken.
+De afspraken in de agenda achter de link, met terugkerende afspraken en tijdzones: de afgelopen week en de volgende maand, daarna elke wijziging. Ze verschijnen in Agenda en in de meetingvoorbereiding.
 
 Een link kan alleen gelezen worden, dus er verandert nooit een afspraak. De link wordt hoogstens om de 15 minuten bekeken. Volgens Proton kan het een paar uur duren voor wijzigingen in een link zitten.
 
@@ -21,7 +21,7 @@ Proton Calendar heeft geen andere toegang voor apps, dus het gebruikt een deelli
 2. Ga naar "Instellingen", "Alle instellingen", "Agenda's", en kies de agenda.
 3. Druk onder "Share with anyone" op "Create link" en kies "Full view". Limited view toont alleen wanneer je bezet bent.
 4. Druk op "Copy link".
-5. Open in het dashboard **Koppelingen**, dan **Agenda**, kies **Proton Calendar**, plak de link en druk op **Verbinden**.
+5. Open in het dashboard **Koppelingen**, dan **Agenda**, kies **Proton Calendar**, plak de link en druk op **Koppelen**.
 
 ## Een andere agendalink koppelen
 

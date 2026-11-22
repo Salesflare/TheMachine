@@ -12,7 +12,7 @@ translated: f403410953e50582
 - Op een gehoste Machine worden organisatiegegevens gratis voor je opgezocht.
 - Op je eigen computer is dit uitgeschakeld totdat je een sleutel toevoegt voor een opzoekdienst, zoals Apollo, People Data Labs of Hunter. Bekijk de [configuratiehandleiding](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Er wordt alleen het webadres van een organisatie verstuurd, nooit je berichten of wie je daar kent. Een gehoste Machine of een Machine op The Machine Network zoekt maximaal 1,000 organisaties per dag op. In andere gevallen zijn dat er maximaal 50. Elke organisatie wordt elke 90 dagen opnieuw opgezocht. Gedeelde websites en e-mailproviders, zoals gmail.com, worden nooit opgezocht. Voor mensen is er een aparte zoekfunctie: zie [Functietitel en foto](people.md#job-title-and-photo).
+Er wordt alleen het webadres van een organisatie verstuurd, nooit je berichten of wie je daar kent. Een gehoste Machine of een Machine op The Machine Network zoekt maximaal 1.000 organisaties per dag op. In andere gevallen zijn dat er maximaal 50. Elke organisatie wordt elke 90 dagen opnieuw opgezocht. Gedeelde websites en e-mailproviders, zoals gmail.com, worden nooit opgezocht. Voor mensen is er een aparte zoekfunctie: zie [Functietitel en foto](people.md#job-title-and-photo).
 
 Als er bij het opzoeken geen logo wordt gevonden, gebruikt The Machine het pictogram van de eigen website van de organisatie, opgeslagen op je Machine. Geen enkele logoservice komt te weten met wie je contact hebt. Als beide beschikbaar zijn, wordt op kleine plekken, zoals de regel van een to-do, het vierkante pictogram getoond.
 

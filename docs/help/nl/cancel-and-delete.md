@@ -13,7 +13,7 @@ translated: e02f2502bf275cde
 1. Druk in **Instellingen** › **Account** op **Abonnement opzeggen** en dan nog eens op **Abonnement opzeggen**.
 2. Bevestig. Het loopt af aan het einde van de maand die je betaald hebt. Zeg je op tijdens de gratis dagen, dan betaal je niets.
 
-Van gedachten veranderd? **Mijn abonnement houden** draait het terug. In de EU kun je je ook binnen 14 dagen terugtrekken met **Hier het contract herroepen**.
+Van gedachten veranderd? **Mijn abonnement behouden** draait het terug. In de EU kun je ook binnen 14 dagen herroepen met **Hier de overeenkomst herroepen**.
 
 ## Je gegevens na het opzeggen
 

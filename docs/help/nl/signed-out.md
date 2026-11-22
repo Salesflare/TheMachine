@@ -13,7 +13,7 @@ Sites zoals LinkedIn en X worden bekeken in de eigen browser van je Machine. Som
 
 Bij **Koppelingen** en bovenaan je to-do's zie je dat je Machine is uitgelogd. Klik op **Log hier in** en log in via het kleine venster op het dashboard.
 
-Vink **Bewaren voor de volgende keer** aan om de volgende keer met één tik weer in te loggen. Het wachtwoord blijft versleuteld op je Machine en de AI ziet het nooit. Heb je meerdere accounts op één site, dan geef je deze account met **Opslaan als** een naam (Werk, Privé). Als de to-do niet aangeeft welke account je moet gebruiken, vraagt het dialoogvenster dat.
+Vink **Bewaren voor de volgende keer** aan om de volgende keer met één tik weer in te loggen. Het wachtwoord blijft versleuteld op je Machine en de AI ziet het nooit. Heb je meerdere accounts op één site, dan geef je dit account met **Opslaan als** een naam (Werk, Privé). Als de to-do niet aangeeft welk account je moet gebruiken, vraagt het dialoogvenster dat.
 
 ## Wachtwoorden en codes
 
@@ -23,6 +23,6 @@ Opgeslagen logins vind je onder **Koppelingen** en **Logins**. Met **Vergeten** 
 
 ## Als de site je weigert of om een robotcheck vraagt
 
-LinkedIn, X en sites met een Cloudflare-check weigeren vaak inloggen via een browser in de cloud. Op een gehoste Machine verschijnt dan **Inloggen via je thuisverbinding**. Daarmee open je de instellingenpagina, waar de browser van je Machine via Tailscale of je eigen proxy verbinding kan maken via je thuisinternet. Log daarna opnieuw in.
+LinkedIn, X en sites met een Cloudflare-check weigeren vaak inloggen via een browser in de cloud. Op een gehoste Machine verschijnt dan **Inloggen via je thuisverbinding**. Daarmee open je je installatiepagina, waar de browser van je Machine via Tailscale of je eigen proxy verbinding kan maken via je thuisinternet. Log daarna opnieuw in.
 
 Op je eigen computer is dit niet nodig: de browser gebruikt al je thuisverbinding.

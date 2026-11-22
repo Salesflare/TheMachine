@@ -1,7 +1,7 @@
 ---
 title: Deelregels
 area: fleet
-summary: Wat je Machine per Fleet en per soort vraag mag beantwoorden. **Vraag het me eerst**, **Altijd** of **Nooit**, en of namen worden gedeeld.
+summary: Wat je Machine per Fleet en per soort vraag mag beantwoorden. Vraag het me eerst, Altijd of Nooit, en of namen worden gedeeld.
 covers:
 code: fleet.py, dashboard.html
 order: 2
@@ -17,15 +17,15 @@ Bepaal wat je Machine met je Fleet deelt. Open **Delen** op het tabblad **Fleet*
 - **Nooit**: hij zegt nee.
 - **Namen**: of het antwoord namen mag noemen, zoals de naam van een gast, of namen weglaat.
 
-De inhoud van e-mails of waar je vergaderingen over gaan, deelt hij nooit. Met **Anders voor iemand? Voeg een uitzondering toe** stel je een regel in voor één persoon.
+De inhoud van e-mails of waar je meetings over gaan, deelt hij nooit. Met **Anders voor iemand? Voeg een uitzondering toe** stel je een regel in voor één persoon.
 
 Je kunt regels alleen wijzigen in het dashboard, niet via een bericht.
 
-## In een Standard Work Fleet
+## In een Werk-Fleet
 
-Voor wie iemand kent, context van vergaderingen en wie gedeelde e-mails afhandelt, kun je in een Standard Work Fleet alleen **Altijd** en **Nooit** instellen. Met **Altijd** bevat het antwoord alleen informatie die de [Team Graph](team-graph.md) al met je team deelt, en noemt het alleen mensen die daarin worden gedeeld. Een regel die is ingesteld op **Vraag het me eerst**, werkt als **Altijd**.
+Voor wie iemand kent, meetingcontext en wie gedeelde e-mails afhandelt, kun je in een Werk-Fleet op Standaard alleen **Altijd** en **Nooit** instellen. Met **Altijd** bevat het antwoord alleen informatie die de [Team-Graph](team-graph.md) al met je team deelt, en noemt het alleen mensen die daarin worden gedeeld. Een regel die is ingesteld op **Vraag het me eerst**, werkt als **Altijd**.
 
-Zolang de Team Graph niets deelt, blijven **Vraag het me eerst** ook beschikbaar voor wie iemand kent en voor context van vergaderingen. Dat geldt ook voor een Careful Fleet. Bekijk [informatie over Fleet](fleet.md#answered-by-itself-in-a-work-fleet).
+Zolang de Team-Graph niets deelt, blijft **Vraag het me eerst** ook beschikbaar voor wie iemand kent en voor meetingcontext. Dat geldt ook voor een Fleet op Voorzichtig. Zie [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
 
 ## De eerste keer dat iemand iets vraagt
 

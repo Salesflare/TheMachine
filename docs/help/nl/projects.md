@@ -12,12 +12,12 @@ Je Machine geeft projecten een naam op basis van waar je berichten over gaan. Be
 
 **Nieuw project** bovenaan een bord, **+ Toevoegen** onder een fase, **Nieuw project** bovenaan de lijst, **+** in de bovenbalk op je telefoon of vanaf de pagina van een persoon of organisatie.
 
-Geef het een naam, een bord en fase, een organisatie (zoek in je Graph of **Toevoegen** een nieuwe), een waarde, een verwachte sluitingsdatum, personen en notities. Projecten in je Graph met een vergelijkbare naam worden als eerste getoond.
+Geef het een naam, een bord en fase, een organisatie (zoek in je Graph of voeg met **Toevoegen** een nieuwe toe), een waarde, een verwachte sluitingsdatum, personen en notities. Projecten in je Graph met een vergelijkbare naam worden als eerste getoond.
 
 ## Een project bewerken, winnen of verliezen
 
 - **Bewerken** op de projectpagina of **Bewerken** in het **⋯**-menu op het bord (of druk op E) wijzigt al het bovenstaande.
-- **Gewonnen** of **Verloren**, met een reden, voor een deal: een project met een waarde of verwachte sluitingsdatum, of een project op een bord waarop zo'n project staat. Gewonnen verplaatst het naar de laatste fase van het bord. Verloren verplaatst het naar Vastgelopen of Afgewezen. Andere projecten eindigen met **Gedaan**. **Heropenen** maakt dit ongedaan.
+- **Gewonnen** of **Verloren**, met een reden, voor een deal: een project met een waarde of verwachte sluitingsdatum, of een project op een bord waarop zo'n project staat. Gewonnen verplaatst het naar de laatste fase van het bord. Verloren verplaatst het naar Vastgelopen of afgewezen. Andere projecten eindigen met **Gedaan**. **Heropenen** maakt dit ongedaan.
 - **Archiveren** haalt het project van het bord en uit de lijsten. Een nieuw bericht over het project zet het terug.
 - **Verwijderen** verwijdert het definitief. De berichten en personen blijven bestaan.
 
@@ -35,7 +35,7 @@ Sleep het naar een andere fase of tik op je telefoon op **⋯** en daarna op **V
 
 Met **Fases** bovenaan een bord kies je welke fases je wilt zien, per bord. Met **Wissen** toon je ze allemaal weer.
 
-‘4 zonder antwoord in meer dan 10 dagen’ onder een fase: tik erop om alleen die projecten te tonen, op het bord en in de lijst. Tik er nog een keer op om alles te tonen.
+‘4 zonder antwoord in 10+ dagen’ onder een fase: tik erop om alleen die projecten te tonen, op het bord en in de lijst. Tik er nog een keer op om alles te tonen.
 
 ## Een project opsplitsen
 
@@ -55,7 +55,7 @@ Een keer per week zoekt je Machine naar projecten waar niets meer gebeurt: er is
 
 Elk project kan aan één organisatie worden gekoppeld. De pagina, de lijst en het bord tonen de organisatie met een link.
 
-Als niemand een organisatie heeft gekozen, stelt je Machine er een in op basis van de personen en berichten bij het project, zonder je collega's mee te tellen. Dat doet hij alleen als één organisatie duidelijk de andere partij is. Persoonlijke e-mail zoals Gmail telt nooit mee, en bij een project met meerdere bedrijven wordt geen organisatie ingesteld. In het projectformulier staat dan ‘Op basis van de personen’.
+Als niemand een organisatie heeft gekozen, stelt je Machine er een in op basis van de personen en berichten bij het project, zonder je collega's mee te tellen. Dat doet hij alleen als één organisatie duidelijk de andere partij is. Persoonlijke e-mail zoals Gmail telt nooit mee, en bij een project met meerdere bedrijven wordt geen organisatie ingesteld. In het projectformulier staat dan ‘Afgeleid van de personen’.
 
 Je Machine wacht ook totdat je iemand bij die organisatie hebt gemaild of ontmoet. Zo zorgt een bericht van een onbekende er nooit voor dat diens organisatie aan een project wordt gekoppeld.
 
@@ -65,11 +65,11 @@ Je keuze bij **Bewerken** blijft altijd staan, ook als je de organisatie verwijd
 
 ## Borden
 
-Projecten van hetzelfde type in fases, zoals een pipeline voor verkoopkansen. Met **⋯** op een bord kun je **Bord bewerken** (naam, fases en welke projecten erop staan), **Openen op dit bord** en **Nieuw bord** kiezen.
+Projecten van hetzelfde type in fases, zoals een evaluatiepipeline. Met **⋯** op een bord kun je **Bord bewerken** (naam, fases en welke projecten erop staan), **Openen op dit bord** en **Nieuw bord** kiezen.
 
-Controles blijven passende projecten toevoegen en plaatsen ze in een fase. Als ze het niet zeker weten, staat er op het bord ‘2 projecten passen hier misschien bij’: **Toevoegen** of **Weglaten**. Vink er een paar aan of kies **Alles selecteren** om dit in één keer te doen. Kies direct daarna **Ongedaan maken** als je van gedachten verandert. Een project met meerdere tegenpartijen wordt bij het toevoegen opgesplitst in één project per tegenpartij.
+Controles blijven passende projecten toevoegen en plaatsen ze in een fase. Als ze het niet zeker weten, staat er op het bord ‘2 projecten horen hier misschien bij’: **Toevoegen** of **Weglaten**. Vink er een paar aan of kies **Alles selecteren** om dit in één keer te doen. Kies direct daarna **Ongedaan maken** als je van gedachten verandert. Een project met meerdere tegenpartijen wordt bij het toevoegen opgesplitst in één project per tegenpartij.
 
-Een nieuw bord of een opgeslagen voorgesteld bord doorzoekt je volledige geschiedenis één keer. Het maakt één project per passende organisatie en plaatst elk project in een fase. In de kop staat ‘Je geschiedenis wordt doorzocht…’ terwijl dit gebeurt. Daarna zie je hoeveel projecten zijn toegevoegd en hoeveel er op jou wachten. Bij een bord Alleen voor jou blijven de gevonden projecten alleen voor jou zichtbaar.
+Een nieuw bord of een opgeslagen voorgesteld bord doorzoekt je volledige geschiedenis één keer. Het maakt één project per passende organisatie en plaatst elk project in een fase. In de kop staat ‘Je geschiedenis doorzoeken…’ terwijl dit gebeurt. Daarna zie je hoeveel projecten zijn toegevoegd en hoeveel er op jou wachten. Bij een bord Alleen voor jou blijven de gevonden projecten alleen voor jou zichtbaar.
 
 **Opvolging…** in het **⋯**-menu van een bord zorgt automatisch voor opvolging als iemand niet antwoordt. Zie [Opvolging](follow-ups.md).
 
@@ -89,14 +89,14 @@ Waarden zijn in euro's, tenzij je Machine op een andere valuta is ingesteld. Als
 
 ## Het bord van een teamgenoot
 
-Onder **Team** staan de borden die je teamgenoten met je delen naast die van jou. Bovenaan staan de borden met de meeste projecten waar jij bij betrokken bent. In de kop zie je van wie het bord is en met wie het is gedeeld: het hele team (‘Bord van Ada, gedeeld met het team’) of alleen de teamgenoten die die persoon heeft gekozen (‘Ada heeft dit bord met je gedeeld’).
+Onder **Team** staan de borden die je teamgenoten met je delen naast die van jou. Bovenaan staan de borden met de meeste projecten waar jij bij betrokken bent. In de kop zie je van wie het bord is en met wie het is gedeeld: het hele team (‘Bord van Ada, gedeeld met het team’) of alleen de teamgenoten die die persoon heeft gekozen (‘Ada heeft dit bord met jou gedeeld’).
 
 Bij elk project staat wat er het laatst is gebeurd, met de datum erbij: de nieuwste regel die met het team is gedeeld, of de laatste verplaatsing als die later was. Op een bord met projecten van meerdere teamgenoten staat aan het eind van die regel van wie het project is (‘door Ada’).
 
-Een teamgenoot kan op diens bord meer projecten zien dan jij: een privéproject of een project met een persoonlijk gesprek blijft altijd in diens Machine. Iemand die voor die teamgenoot Persoonlijk is, komt niet voor in de gedeelde projecten. Op je eigen bord staat in de kop ‘Gedeeld met het team’ en hoeveel projecten alleen voor jou zichtbaar zijn. Die projecten hebben een slotje.
+Een teamgenoot kan op diens bord meer projecten zien dan jij: een privéproject of een project met een persoonlijk gesprek blijft altijd in diens Machine. Iemand die voor die teamgenoot Privé is, komt niet voor in de gedeelde projecten. Op je eigen bord staat in de kop ‘Gedeeld met het team’ en hoeveel projecten alleen voor jou zichtbaar zijn. Die projecten hebben een slotje.
 
 Met **Van mij**, **Wacht op mij** en **Alle** kies je wat een gedeeld bord toont en welke projecten daarbij in de Team-lijst staan. Van mij toont projecten waarbij je betrokken bent: via een thread, als eigenaar van een project of via een to-do over dat project. Wacht op mij toont projecten waarvoor jij aan zet bent: er staat een open to-do over het project of het nieuwste bericht in een thread is aan jou gericht.
 
-Elk project ziet er hetzelfde uit als op het bord van de eigenaar en staat in dezelfde volgorde: de organisatie, het aantal dagen in de fase, de volgende stap en ‘Geen antwoord in N dagen’. Een volgende stap of reden uit een bericht dat privé blijft, wordt niet getoond. De rest van een fase wordt samengevouwen onder **N meer tonen**. Dit alles verandert niets aan wat er wordt gedeeld.
+Elk project ziet er hetzelfde uit als op het bord van de eigenaar en staat in dezelfde volgorde: de organisatie, het aantal dagen in de fase, de volgende stap en ‘Geen antwoord in N dagen’. Een volgende stap of reden uit een bericht dat privé blijft, wordt niet getoond. De rest van een fase wordt samengevouwen onder **Nog N tonen**. Dit alles verandert niets aan wat er wordt gedeeld.
 
 Op elk bord wordt de naam van een project dat naar het bord is vernoemd, zonder de bordnaam getoond. ‘Vermeldingen: Acme’ wordt bijvoorbeeld ‘Acme’ op het bord Vermeldingen.

@@ -14,19 +14,19 @@ Open **Routines** in de zijbalk en beschrijf in één regel wat de routine moet 
 
 Als je geen tijd opgeeft, wordt de routine om 8.00 uur uitgevoerd. De tijd is gebaseerd op de klok van je Machine. De eerste keer dat de routine wordt uitgevoerd, krijgt hij een korte naam.
 
-Met **Toevoegen** wordt eerst een test uitgevoerd, zodat je kunt zien wat de routine oplevert voordat je hem bewaart. Er wordt niets verzonden of opgeslagen. Daarna zorgt **Toevoegen** ervoor dat de routine volgens het ritme wordt uitgevoerd. Met **Wijzigen** probeer je andere woorden of een nieuwe naam. Met **Annuleren** verwijder je de routine.
+Met **Toevoegen** wordt eerst een test uitgevoerd, zodat je kunt zien wat de routine oplevert voordat je hem bewaart. Er wordt niets verstuurd of opgeslagen. Daarna zorgt **Toevoegen** ervoor dat de routine volgens het ritme wordt uitgevoerd. Met **Wijzigen** probeer je andere woorden of een nieuwe naam. Met **Annuleren** verwijder je de routine.
 
 ## Sjablonen
 
 Onder **Sjablonen** onderaan bij Routines kun je met **Toevoegen** een kant-en-klare routine inschakelen. Hij wordt meteen één keer uitgevoerd en daarna elke ochtend om 7.30 uur (Spam opruimen elk uur, Tweedehandsvondsten elke 3 uur, Abonnementen en proefperiodes één keer per maand). Op de kaart staat de tekst van de routine, net als bij andere routines. Met **Bewerken** wijzig je de tekst of de naam.
 
-Als je veel nieuwsbrieven ontvangt en Nieuwsbrieven opruimen uitstaat (25 of meer in een week, van minstens 5 afzenders), staat er boven je to-do’s hoeveel nieuwsbrieven je hebt ontvangen en wat de routine ermee zou doen. Je kunt kiezen voor **Zet het aan** of **Nee, bedankt**.
+Als je veel nieuwsbrieven ontvangt en Nieuwsbrieven opruimen uitstaat (25 of meer in een week, van minstens 5 afzenders), staat er boven je to-do's hoeveel nieuwsbrieven je hebt ontvangen en wat de routine ermee zou doen. Je kunt kiezen voor **Aanzetten** of **Nee, bedankt**.
 
-Spam opruimen wordt op dezelfde manier aangeboden als er in een week minstens 5 mails handmatig naar spam zijn verplaatst. Met **Zet het aan** voeg je de routine toe, net als met **Toevoegen** hierboven. Als je **Nee, bedankt** kiest, wordt de routine niet meer aangeboden. Een sjabloon dat je eerder hebt afgewezen, wordt nooit opnieuw aangeboden.
+Spam opruimen wordt op dezelfde manier aangeboden als er in een week minstens 5 mails handmatig naar spam zijn verplaatst. Met **Aanzetten** voeg je de routine toe, net als met **Toevoegen** hierboven. Als je **Nee, bedankt** kiest, wordt de routine niet meer aangeboden. Een sjabloon dat je al eerder had, wordt nooit aangeboden.
 
-**Nieuwsbrieven opruimen** maakt één to-do per onderdeel (werk en privé) met de nieuwsbrieven van de afgelopen dag. Bij elke nieuwsbrief kun je kiezen voor **Houden** of **Afmelden**. Afmelden gebeurt via de afmeldlink van de mailinglijst, of via een afmeldmail vanaf jouw adres als verzenden is ingeschakeld. Anders meldt The Machine zich af via de pagina van de mailinglijst in zijn eigen browser. Een eventuele login, captcha of keuze op die pagina moet je zelf afhandelen. In de regel staat waarom, met de optie **Afmeldpagina openen**.
+**Nieuwsbrieven opruimen** maakt één to-do per onderdeel (werk en privé) met de nieuwsbrieven van de afgelopen dag. Bij elke nieuwsbrief kun je kiezen voor **Houden** of **Afmelden**. Afmelden gebeurt via de afmeldlink van de mailinglijst, of via een afmeldmail vanaf jouw adres als versturen aanstaat. Anders meldt The Machine zich af via de pagina van de mailinglijst in zijn eigen browser. Een eventuele login, captcha of keuze op die pagina moet je zelf afhandelen. In de regel staat waarom, met de optie **Afmeldpagina openen**.
 
-Bonnetjes, bestellingen en betaalmeldingen worden overgeslagen. Mails die via een groepsadres zijn binnengekomen, zoals een Google Group, staan op naam van de afzender en leiden nooit tot afmelding van de groep. Als de afzender geen eigen afmeldmogelijkheid heeft, staat er **Zelf afmelden** in de regel.
+Ontvangstbewijzen, bestellingen en betaalmeldingen worden overgeslagen. Mails die via een groepsadres zijn binnengekomen, zoals een Google Group, staan op naam van de afzender en leiden nooit tot afmelding van de groep. Als de afzender geen eigen afmeldmogelijkheid heeft, staat er **Zelf afmelden** in de regel.
 
 **Spam opruimen** maakt één to-do per onderdeel met mails van onbekende afzenders die op spam lijken. Je kunt per mail kiezen voor **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail en Gmail markeert de mail als spam. De routine controleert elk uur, zodat spam er meestal al staat voordat je erbij bent. Nieuwe spam wordt toegevoegd aan dezelfde to-do zolang die openstaat.
 
@@ -34,31 +34,31 @@ Gmail dat alleen-lezen is gekoppeld, zoals op een gehoste Machine, kan geen mail
 
 Een afzender is onbekend als je die persoon nooit hebt gemaild. Een ‘Re:’ telt alleen als gesprek in een thread waarin jij zelf hebt geschreven. Als er opnieuw mail binnenkomt van een afzender die je als spam hebt gemarkeerd, op de to-do of in je mailbox, staat die op de volgende to-do met de melding **Eerder als spam gemarkeerd**. Mails die je zelf naar spam hebt verplaatst, helpen de routine ook om vergelijkbare mails te herkennen.
 
-Er verandert pas iets als je het bevestigt op de to-do. Tik op een afzender om eerst de mail te lezen: hij blijft ongelezen en er verandert niets. Bij Spam opruimen worden afbeeldingen van internet niet geladen, zodat de afzender niet kan zien dat de mail is geopend. Er wordt je niet opnieuw gevraagd wat je met afzenders hebt gedaan. Op een dag zonder nieuwsbrieven of spam wordt er geen to-do gemaakt. Deze to-do’s sturen nooit een melding.
+Er verandert pas iets als je het bevestigt op de to-do. Tik op een afzender om eerst de mail te lezen: hij blijft ongelezen en er verandert niets. Bij Spam opruimen worden afbeeldingen van internet niet geladen, zodat de afzender niet kan zien dat de mail is geopend. Er wordt je niet opnieuw gevraagd wat je met afzenders hebt gedaan. Op een dag zonder nieuwsbrieven of spam wordt er geen to-do gemaakt. Deze to-do's sturen nooit een melding.
 
-Als je voor alle afzenders een keuze hebt gemaakt, staat op de to-do dat je klaar bent en verschijnt **Markeer als gedaan**.
+Als je voor alle afzenders een keuze hebt gemaakt, staat op de to-do dat je klaar bent en verschijnt **Als gedaan markeren**.
 
-Met **Dagelijks overzicht** krijg je één keer per dag één to-do met de paar onderdelen uit nieuwsbrieven die je tijd waard zijn. Bij elk onderdeel staat in één regel waarom het voor jou belangrijk is. Tik erop om de mail te lezen of kies **Openen in je mail**. Alleen nieuwsbrieven: nooit mails van mensen, bonnetjes of afzenders waarvoor je je hebt afgemeld. Ook wat je al hebt gelezen, wordt overgeslagen. Als niets opvalt, wordt er geen to-do gemaakt.
+Met **Dagelijks overzicht** krijg je één keer per dag één to-do met de paar onderdelen uit nieuwsbrieven die je tijd waard zijn. Bij elk onderdeel staat in één regel waarom het voor jou belangrijk is. Tik erop om de mail te lezen of kies **Openen in je mail**. Alleen nieuwsbrieven: nooit mails van mensen, ontvangstbewijzen of afzenders waarvoor je je hebt afgemeld. Ook wat je al hebt gelezen, wordt overgeslagen. Als niets opvalt, wordt er geen to-do gemaakt.
 
-De routine leert waar je interesse in hebt op basis van wat je opent, met een ster markeert of als ongelezen archiveert, en van je keuzes voor **Meer zoals dit** en **Minder zoals dit** bij elk onderdeel. De onderwerpen waarop hij let, staan op de routinekaart onder **Meer over** en **Minder over**. Verwijder een onderwerp met × of voeg er zelf een toe. Gestreepte onderwerpen heeft de routine zelf geleerd. Een nieuw overzicht vervangt het overzicht dat nog openstaat. Er wordt nooit een melding verstuurd.
+De routine leert waar je interesse in hebt op basis van wat je opent, met een ster markeert of als ongelezen archiveert, en van je keuzes voor **Meer zoals dit** en **Minder zoals dit** bij elk onderdeel. De onderwerpen waarop hij let, staan op de routinekaart onder **Meer over** en **Minder over**. Verwijder een onderwerp met × of voeg er zelf een toe. Onderwerpen met een stippellijn heeft de routine zelf geleerd. Een nieuw overzicht vervangt het overzicht dat nog openstaat. Er wordt nooit een melding verstuurd.
 
 De routine leest alleen de afzender, het onderwerp en het begin van elke nieuwe nieuwsbrief. Daarna stelt hij je AI er één korte vraag over, met een dagelijkse limiet, zodat het goedkoop blijft. Met **Wanneer wijzigen** stel je het tijdstip in. Zodra je de tekst wijzigt, werkt de routine zoals elke andere routine op basis van jouw tekst.
 
 Met **Verjaardagen** wordt voor elke goede bekende die vandaag jarig is een to-do gemaakt: mensen aan wie je zelf schrijft, zoals vrienden, familie en vaste contacten. Bij elke persoon staat een korte felicitatie, opgesteld op de plek waar je meestal met diegene praat, zoals diens WhatsApp-chat of jullie e-mailthread, en in diens taal. De felicitatie wordt pas verstuurd als jij dat doet. Op een dag zonder verjaardagen wordt er geen to-do gemaakt.
 
-Verjaardagen komen uit je agenda’s (de verjaardagsevenementen en verjaardagskalender van Google, die elke ochtend worden gelezen, ook als ze niet zijn gesynchroniseerd, en de verjaardagskalender van Outlook), je Google-contacten op een zelfgehoste Machine en een datumveld met de naam Birthday bij een persoon in de Graph. Als er nog nergens een verjaardag staat, vermeldt het resultaat **Nog geen verjaardagsgegevens** en hoe je die kunt toevoegen.
+Verjaardagen komen uit je agenda’s (de verjaardagsevenementen en verjaardagskalender van Google, die elke ochtend worden gelezen, ook als ze niet zijn gesynchroniseerd, en de verjaardagskalender van Outlook), je Google-contacten op een zelf gehoste Machine en een datumveld met de naam Verjaardag bij een persoon in de Graph. Als er nog nergens een verjaardag staat, vermeldt het resultaat **Nog geen verjaardagen bekend** en hoe je die kunt toevoegen.
 
 **Verjaardagen importeren uit Facebook**: zodra Verjaardagen is ingeschakeld, biedt een to-do aan om de verjaardagenpagina van Facebook te lezen. Tik op **Importeren**. The Machine opent de pagina in zijn browser, scrolt totdat alle maanden zijn geladen en leest de namen en verjaardagen van je vrienden. Je ziet hoeveel verjaardagen zijn gevonden en wie overeenkomt met mensen in je Graph op basis van voor- en achternaam. Namen die bij meer dan één persoon horen, worden overgeslagen en vermeld.
 
 Alleen met **Opslaan** worden de gegevens bewaard, op de pagina van elke persoon: de verjaardag en de profielfoto van Facebook voor iemand die nog geen foto heeft. Een verjaardag of foto die je daar instelt, blijft staan. Een foto die iemand al heeft, wordt nooit vervangen. Er wordt niets naar Facebook geschreven.
 
-De routine leest de gegevens niet vanzelf opnieuw. Dat gebeurt wel als je op de to-do **Opnieuw importeren** kiest. In de browser moet je bij Facebook zijn aangemeld. Zo niet, tik dan op de to-do op **Aanmelden bij Facebook** en meld je daar aan. Zodra je bent aangemeld, leest de routine de pagina vanzelf. The Machine meldt je nooit zelf aan.
+De routine leest de gegevens niet vanzelf opnieuw. Dat gebeurt wel als je op de to-do **Opnieuw importeren** kiest. In de browser moet je bij Facebook zijn ingelogd. Zo niet, tik dan op de to-do op **Inloggen bij Facebook** en log daar in. Zodra je bent ingelogd, leest de routine de pagina vanzelf. The Machine logt nooit voor je in.
 
-Vrienden die niet in je Graph staan, worden geteld en er worden een paar namen getoond. Met **… als privécontacten toevoegen** voeg je ze allemaal tegelijk toe, ook nadat je op Opslaan hebt getikt. Voor elke persoon worden de naam en verjaardag opgeslagen. Ze worden nooit gedeeld met een Work Fleet. Mensen met een naam die al voorkomt in je Graph, of die je permanent hebt verwijderd, worden overgeslagen. Je krijgt alleen verjaardagsherinneringen voor mensen aan wie je zelf schrijft.
+Vrienden die niet in je Graph staan, worden geteld en er worden een paar namen getoond. Met **Voeg … toe als privécontacten** voeg je ze allemaal tegelijk toe, ook nadat je op Opslaan hebt getikt. Voor elke persoon worden de naam en verjaardag opgeslagen. Ze worden nooit gedeeld met een Werk-Fleet. Mensen met een naam die al voorkomt in je Graph, of die je definitief hebt verwijderd, worden overgeslagen. Je krijgt alleen verjaardagsherinneringen voor mensen aan wie je zelf schrijft.
 
 Met **Ongedaan maken** op de to-do verwijder je precies die mensen weer, ook nadat je **Opnieuw importeren** hebt gebruikt.
 
-**Abonnementen en proefperiodes** leest één keer per maand je bonnetjes, facturen en verlengingsberichten en zet je abonnementen bij elkaar in één to-do. Je ziet per abonnement wat het kost, wanneer het opnieuw wordt afgeschreven en een melding als een proefperiode eindigt of de prijs stijgt. Alleen abonnementen waarover de routine zeker is, worden vermeld. Als er niets wordt gevonden, wordt er geen to-do gemaakt.
+**Abonnementen en proefperiodes** leest één keer per maand je ontvangstbewijzen, facturen en verlengingsberichten en zet je abonnementen bij elkaar in één to-do. Je ziet per abonnement wat het kost, wanneer het opnieuw wordt afgeschreven en een melding als een proefperiode eindigt of de prijs stijgt. Alleen abonnementen waarover de routine zeker is, worden vermeld. Als er niets wordt gevonden, wordt er geen to-do gemaakt.
 
 Kies per abonnement **Houden** of **Opzeggen**. Je wordt niet opnieuw gevraagd naar een abonnement dat je wilt houden, tenzij de prijs verandert. Met **Opzeggen** krijg je de opzeggingspagina of een conceptbericht waarin je om opzegging vraagt. Dat bericht wordt pas verstuurd als jij dat doet. Tussen de maandelijkse controles door wordt elke dag gecontroleerd. Er wordt een to-do gemaakt als een proefperiode of verlenging binnen 7 dagen wordt afgeschreven.
 
@@ -66,7 +66,7 @@ Kies per abonnement **Houden** of **Opzeggen**. Je wordt niet opnieuw gevraagd n
 
 Je krijgt alleen een herinnering als je veel langer dan gebruikelijk geen contact hebt gehad én er iets specifieks is om te zeggen: nieuws dat iemand heeft gedeeld, een belofte die nog openstaat of een bericht waarop je nooit hebt geantwoord. De herinnering is één to-do met de reden en een kort bericht, opgesteld op de plek waar je meestal met diegene praat en in diens taal. Het bericht wordt pas verstuurd als jij dat doet. Als er niets te zeggen is, wordt er geen to-do gemaakt.
 
-Er worden hooguit twee herinneringen per week verstuurd en maximaal één per persoon per maand. Iemand met wie je onlangs contact had, krijgt geen herinnering. Met **Niet nodig** bij een herinnering wacht de routine langer voordat hij die persoon opnieuw voorstelt. Elke keer wordt die wachttijd langer. Er wordt nooit een melding verstuurd en de routine blijft privé. Hij wordt nooit gedeeld met een Work Fleet.
+Je krijgt hooguit twee herinneringen per week, maximaal één per persoon per maand, en geen over iemand met wie je onlangs contact had. Met **Niet nodig** bij een herinnering wacht de routine langer voordat hij die persoon opnieuw voorstelt. Elke keer wordt die wachttijd langer. Er wordt nooit een melding verstuurd en de routine blijft privé. Hij wordt nooit gedeeld met een Werk-Fleet.
 
 **Tweedehandsvondsten** houdt een zoekopdracht op een tweedehandssite in de gaten, zoals Marktplaats, Vinted, eBay of Facebook Marketplace. Zoek daar met de gewenste filters, kopieer het adres van de resultaten en plak het na **Toevoegen**. Voeg desgewenst filters in je eigen woorden toe, zoals ‘onder 300, binnen 30 km, geen “voor onderdelen”’. Elke zoekopdracht is een eigen routine. Voeg de routine dus opnieuw toe voor een volgende zoekopdracht.
 
@@ -78,13 +78,13 @@ Zolang de to-do openstaat, worden nieuwe vondsten bovenaan toegevoegd, loopt het
 
 De routine blijft netjes en goedkoop: één keer per uitvoering wordt de zoekopdracht gelezen, er worden maximaal 6 advertenties per uitvoering geopend met een pauze ertussen en er worden maximaal 40 advertenties per dag gecontroleerd voor al je zoekopdrachten samen. Elke controle is één korte vraag aan je AI met één foto. Bij de eerste uitvoering worden de nieuwste advertenties gecontroleerd en wordt de rest als gezien gemarkeerd, zodat volgende uitvoeringen alleen nieuwe resultaten opleveren.
 
-Als de site je vraagt om je aan te melden, een robotcontrole toont of het lezen blokkeert, meldt een to-do dat. Kies **Openen** om de site in de browser van The Machine te bekijken. Meld je daar zelf aan of voer zelf de controle uit. Bij de volgende uitvoering probeert de routine de pagina opnieuw te lezen. The Machine meldt je nooit aan en voert nooit een controle voor je uit. Hij neemt ook nooit contact op met een verkoper, biedt nooit en koopt nooit iets.
+Als de site je vraagt om in te loggen, een robotcontrole toont of het lezen blokkeert, meldt een to-do dat. Kies **Openen** om de site in de browser van The Machine te bekijken. Log daar zelf in of voer zelf de controle uit. Bij de volgende uitvoering probeert de routine de pagina opnieuw te lezen. The Machine logt nooit voor je in en voert nooit een controle voor je uit. Hij neemt ook nooit contact op met een verkoper, biedt nooit en koopt nooit iets.
 
 Met **Zoekopdracht wijzigen** op de routinekaart geef je een nieuw adres of andere filters op. Met **Wanneer wijzigen** stel je een ander ritme in, zoals ‘elke 6 uur’.
 
-**Opnieuw ordenen** leest orderbevestigingen van webwinkels in je mail en merkt op wat je steeds opnieuw koopt, zoals koffie, dierenvoer of vitamines. Als je iets waarschijnlijk binnenkort weer nodig hebt, maakt de routine een to-do met het artikel, de winkel, de laatste prijs en wanneer je het voor het laatst hebt gekocht. Met **Openen in de winkel** ga je naar de productpagina om het zelf te kopen. Er wordt niets voor je gekocht.
+**Nabestellingen** leest orderbevestigingen van webwinkels in je mail en merkt op wat je steeds opnieuw koopt, zoals koffie, dierenvoer of vitamines. Als je iets waarschijnlijk binnenkort weer nodig hebt, maakt de routine een to-do met het artikel, de winkel, de laatste prijs en wanneer je het voor het laatst hebt gekocht. Met **Openen in de winkel** ga je naar de productpagina om het zelf te kopen. Er wordt niets voor je gekocht.
 
-De routine heeft minstens drie bestellingen van hetzelfde artikel met een regelmatig interval nodig. Een eenmalige aankoop of een ongewoon lang interval leidt dus niet tot een to-do. Voorlopig leest de routine alleen webwinkels die Shopify gebruiken. Je AI leest alleen nieuwe bestelberichten van die winkels, met één korte vraag per uitvoering. Deze to-do’s sturen nooit een melding. Als je het artikel opnieuw bestelt, wordt de openstaande to-do gesloten.
+De routine heeft minstens drie bestellingen van hetzelfde artikel met een regelmatig interval nodig. Een eenmalige aankoop of een ongewoon lang interval leidt dus niet tot een to-do. Voorlopig leest de routine alleen webwinkels die Shopify gebruiken. Je AI leest alleen nieuwe bestelberichten van die winkels, met één korte vraag per uitvoering. Deze to-do's sturen nooit een melding. Als je het artikel opnieuw bestelt, wordt de openstaande to-do gesloten.
 
 Zolang een sjabloonroutine de tekst van het sjabloon gebruikt, werkt hij met eigen code, zonder je AI-abonnement. Spam opruimen vermeldt bijvoorbeeld eerst nieuwe mails van onbekende afzenders met code en stelt je AI pas één korte vraag als dat nodig is. Contact houden vraagt alleen naar de één of twee personen die de routine heeft gekozen. Als je de tekst wijzigt, werkt de routine zoals elke andere routine op basis van jouw tekst.
 
@@ -92,7 +92,7 @@ Nieuwsbrieven opruimen en Spam opruimen leveren nog steeds dezelfde to-do op, me
 
 ## Wat een routine doet
 
-Op het ingestelde tijdstip leest je Machine wat nodig is, zoals je berichten, vergaderingen en de Graph, en zet hij het resultaat op de pagina Routines. Elk resultaat heeft de status **Klaargezet**, **Niets nieuws** (met uitleg) of **Lukte niet** (met uitleg). Een uitvoering die eindigt zonder resultaat, telt als mislukt en nooit als voltooid.
+Op het ingestelde tijdstip leest je Machine wat nodig is, zoals je berichten, meetings en de Graph, en zet hij het resultaat op de pagina Routines. Elk resultaat heeft de status **Klaargezet**, **Niets nieuws** (met uitleg) of **Lukte niet** (met uitleg). Een uitvoering die eindigt zonder resultaat, telt als mislukt en nooit als voltooid.
 
 Routines lezen alleen: je berichten, webpagina’s, GitHub en sites zoals X in de browser. Ze versturen, beantwoorden of plaatsen niets en veranderen niets. Ze openen pagina’s die ze vinden in wat ze lezen of in een zoekopdracht, gewone webadressen en bekende sites. Ze openen nooit een adres dat is verzonnen om gelezen inhoud mee te sturen. Alleen een sjabloon verandert mail, en alleen wat je bevestigt op de bijbehorende to-do.
 
@@ -124,7 +124,7 @@ Met **Pauzeren** stop je de uitvoeringen totdat je op de kaart op **Hervatten** 
 
 Je kunt maximaal 20 routines hebben, inclusief gepauzeerde routines. Stop een routine om er een toe te voegen.
 
-Als je **Wijzigingen vragen** gebruikt bij de to-do van een routine, of een bericht schrijft in de chat van de routine, kan het zijn dat je opmerking voor elke uitvoering bedoeld is, zoals ‘gebruik nooit emoji’s’. In dat geval biedt de to-do, en ook de chat onder het antwoord, de optie **Ook de routine aanpassen**. Je ziet wat er in de tekst van de routine verandert. De routine wordt pas aangepast als je op **Aanpassen** tikt. Met **Laat zo** blijft alles ongewijzigd. Als je alleen het concept wilt aanpassen, wordt deze optie niet aangeboden.
+Als je **Wijzigingen vragen** gebruikt bij de to-do van een routine, of een bericht schrijft in de chat van de routine, kan het zijn dat je opmerking voor elke uitvoering bedoeld is, zoals ‘gebruik nooit emoji’s’. In dat geval biedt de to-do, en ook de chat onder het antwoord, de optie **Ook de routine aanpassen**. Je ziet wat er in de tekst van de routine verandert. De routine wordt pas aangepast als je op **Aanpassen** tikt. Met **Zo laten** blijft alles ongewijzigd. Als je alleen het concept wilt aanpassen, wordt deze optie niet aangeboden.
 
 ## Geavanceerd: scriptstappen
 
@@ -140,7 +140,7 @@ Een opdracht bestaat uit één regel en wordt zonder shell uitgevoerd. Pipes en 
 
 Als je eerder geplande taken in OpenClaw hebt gemaakt, leest je Machine die in (hij verandert ze nooit) en biedt hij passende taken als routines aan onder **Voorgesteld**. Elke taak is één keer uitgevoerd, dus je ziet een echt resultaat.
 
-Je aanpassingen aan de taak blijven behouden. Wat de taak heeft verstuurd of geplaatst, wordt weggelaten. Een taak die een script uitvoerde of gegevens las die door een scripttaak waren verzameld, neemt dat mee als Gegevens ophalen. Met **Toevoegen** maak je er een routine van. Met **Nee, bedankt** wordt er nooit meer naar die taak gevraagd. Een taak die je eraan herinnerde iets te doen, wordt in plaats daarvan als een terugkerende to-do aangeboden onder To-do’s.
+Je aanpassingen aan de taak blijven behouden. Wat de taak heeft verstuurd of geplaatst, wordt weggelaten. Een taak die een script uitvoerde of gegevens las die door een scripttaak waren verzameld, neemt dat mee als Gegevens ophalen. Met **Toevoegen** maak je er een routine van. Met **Nee, bedankt** wordt er nooit meer naar die taak gevraagd. Een taak die je eraan herinnerde iets te doen, wordt in plaats daarvan als een terugkerende to-do aangeboden onder To-do's.
 
 Voordat je een suggestie toevoegt, kun je die aanpassen zoals elke andere routine. Gebruik daarvoor **Bewerken** of **Wanneer wijzigen** in het menu ⋯. Met **Opnieuw uitvoeren** voer je de taak meteen uit met de huidige tekst, zodat je nieuwere resultaten kunt bekijken, bijvoorbeeld na een rustig weekend. De taak leest alleen, wordt één keer per tik uitgevoerd en het nieuwe resultaat vervangt het oude.
 
@@ -163,6 +163,6 @@ De routine stelt alleen iets voor als het specifiek voor jou is en duidelijk nut
 
 De routine controleert dit maximaal één keer per dag en doet maximaal één nieuwe suggestie per week, zonder melding. Met **Nee, bedankt** wordt die suggestie nooit opnieuw getoond. Doorgestuurde mails en antwoorden blijven bij het account waarmee ze zijn verstuurd, zodat Werk en Privé niet door elkaar lopen. Alles blijft op je Machine. Een to-do die je regelmatig afsluit, wordt in plaats daarvan aangeboden als terugkerende to-do.
 
-## Routines en terugkerende to-do’s
+## Routines en terugkerende to-do's
 
 Een [terugkerende to-do](recurring.md) herinnert je eraan iets te doen. Een routine is werk dat je Machine zelfstandig uitvoert en aan je laat zien. Gebruik een terugkerende to-do voor ‘huur betalen op de eerste dag van de maand’ en een routine voor ‘vertel me elke vrijdag welke deals zijn stilgevallen’.

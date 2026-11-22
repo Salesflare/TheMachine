@@ -123,6 +123,8 @@ English strings the check skips, with why:
 - `Signal, any mailbox, any calendar` names the Signal app, not a signal.
 - `WhatsApp, Telegram, Signal and other chats now look like the app they came from.` names the Signal app, not a signal.
 - `Connect Signal chats, any mailbox over IMAP, and calendars from iCloud, Proton, Exchange or any CalDAV server.` names the Signal app, not a signal.
+- `Signal message sent at {}.` names the Signal app, not a signal.
+- `Signal message sent.` names the Signal app, not a signal.
 
 ## Buttons and calls to action
 
@@ -137,7 +139,7 @@ never The Machine. The table gives each language's verbs for starting and trying
 
 | Language | Rule |
 |---|---|
-| nl | Start: Start je Machine, Aan de slag. Try: Probeer, Bekijk. Never Haal je, Krijg, Verkrijg on a button or for a feature ("Ontvang je to-do's", not "Krijg je to-do's"). Buttons are an infinitive (Opslaan, Hulp vragen) or a short je-imperative. |
+| nl | Start: Start je Machine, Aan de slag. Try: Probeer, Bekijk. Never Haal je, Krijg, Verkrijg on a button or for a feature ("Ontvang je to-do's", not "Krijg je to-do's"). Buttons are an infinitive (Opslaan, Hulp vragen) or a short je-imperative. The same word in buttons and in the text that names them: Send is Versturen (verstuurd), never Verzenden; Connect a source or account is Koppelen (Opnieuw koppelen, gekoppeld), verbinden only for a network, device or people; Sign in is Inloggen and a sign-in is een login, never aanmelden (that is unsubscribing); Accept is Accepteren; Mark done is Als gedaan markeren; your setup page is je installatiepagina. A meeting is een meeting (meetingnotities), a calendar item may be een afspraak, never vergadering. Dutch that reads well in both the Netherlands and Belgium: no Belgian-only words (gsm, aanvaarden, ingeven, nadien, opzoekwerk, overschrijving, 24 u, Goeiemorgen) or Netherlands-only ones (bonnetje, mobieltje, hoor, nou); a receipt is een ontvangstbewijs. |
 | fr | Start: Lancer votre Machine, Commencer. Try: Essayer, Découvrir. Never Obtenir for an app, a sign-up or help (Contacter le support, Télécharger l’app). Buttons are an infinitive (Enregistrer, Essayer). Always vous, never tu (only a prompt the owner types to the AI may use tu). Connect is Connecter (a connection); Sign in is Se connecter (an account). Calendar is Agenda (Google Agenda). Upload and Import are Importer. Mark done is Marquer comme fait; On / Off is Activé / Désactivé. Weekly recap is Récap hebdo; teammate is collègue; Work / Family Fleet is Fleet Travail / Fleet Famille; Team Graph is Graph d’équipe; QR code stays QR code. Write 8 h and 12 000, Mo and Go, Ctrl+Entrée and Maj+Entrée, 20 $ (amount, space, symbol). |
 | de | Start: Hol dir deine Machine, Loslegen. Try: Ausprobieren, Ansehen. Never Bekommen or Erhalten on a button (Hilfe holen, Support kontaktieren). Buttons are an infinitive or a short du-imperative. |
 | es | Start: Consigue tu Machine, Empieza. Try: Prueba, Descubre. Never Obtener on a button (Pedir ayuda, Descargar la app). Spanish from Spain: ordenador (never computadora or equipo), móvil, vosotros for a group (never ustedes), presupuesto (never cotización). Email is correo (never email); an OK that approves is visto bueno. Fleet is masculine: el Fleet, tu Fleet de trabajo, el Fleet familiar (never Work Fleet or Family Fleet in English); the Network is la Network; Team Graph is Graph del equipo. A bold label in a help article is copied exactly from the app catalog. |

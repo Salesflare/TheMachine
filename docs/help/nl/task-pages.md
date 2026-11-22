@@ -9,7 +9,7 @@ translated: f5a3d79bc2168432
 ---
 ## Een taakpagina toevoegen
 
-Als je een to-do **Per e-mail** overdraagt, druk je op **Taakpagina toevoegen** (of **Nee, bedankt**).
+Als je een to-do **Via e-mail** overdraagt, druk je op **Taakpagina toevoegen** (of **Nee, bedankt**).
 
 1. Bekijk het voorbeeld. **Weglaten** haalt een deel weg dat de ander niet mag zien; **Terugzetten** zet het terug.
 2. Kies hoe lang de link werkt: 7, 14 of 30 dagen.

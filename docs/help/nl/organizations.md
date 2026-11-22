@@ -14,7 +14,7 @@ Die is opgebouwd zoals een persoonspagina: het logo, de naam en wat de organisat
 
 Bij **Projecten** staan eerst de open projecten, elk met de huidige fase. De tijdlijn bevat berichten van de mensen die er werken, Intercom-gesprekken vanaf het domein en wijzigingen in hun projecten. Zie [Tijdlijn](people.md#timeline).
 
-Met **Vraag de Fleet wie hem kent** vind je via je Fleet een ingang.
+Met **Vraag de Fleet wie … kent** zoek je via je Fleet een ingang bij de organisatie.
 
 ## Een organisatie toevoegen
 

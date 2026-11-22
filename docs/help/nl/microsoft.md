@@ -1,7 +1,7 @@
 ---
 title: Microsoft Outlook en agenda
 area: connections
-summary: Outlook-mail en vergaderingen voor Microsoft 365 en Outlook.com. Er wordt pas een e-mail verstuurd nadat je die hebt goedgekeurd.
+summary: Outlook-mail en meetings voor Microsoft 365 en Outlook.com. Er wordt pas een e-mail verstuurd nadat je die hebt goedgekeurd.
 covers: connector:outlook, connector:outlook_calendar
 code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
@@ -10,8 +10,8 @@ translated: c10bf70a327b8ec0
 ---
 ## Wat hij leest
 
-- **Outlook**: al je e-mail. Bij het verbinden leest hij de laatste 7 dagen en daarna alle nieuwe berichten.
-- **Outlook-agenda**: je vergaderingen, alleen-lezen.
+- **Outlook**: al je e-mail. Bij het koppelen leest hij de laatste 7 dagen en daarna alle nieuwe berichten.
+- **Outlook-agenda**: je meetings, alleen-lezen.
 
 E-mail in Overige en nieuwsbrieven worden eerst kort bekeken: de afzender, het onderwerp en een paar woorden. Als een bericht belangrijk is, wordt het volledig gelezen en kan het een to-do worden.
 
@@ -27,19 +27,19 @@ De agenda wordt nooit gewijzigd.
 
 Microsoft wordt ook gevraagd om basisprofielen in je organisatie te lezen (naam, e-mailadres en foto) en je Outlook-contacten. Je Machine gebruikt deze gegevens alleen voor foto's, functietitels en bedrijven van mensen die al in je Graph staan, tot 200 foto's per dag. Van iemand zonder foto wordt na 30 dagen opnieuw gecontroleerd of er een foto is.
 
-De beheerder van je organisatie moet mogelijk toestemming geven voor foto's van collega's. Zo niet, dan wordt Outlook nog steeds verbonden, maar zonder deze foto's. Een account dat eerder is verbonden, krijgt hiervoor één to-do: druk op **Opnieuw verbinden** of op **Niet nodig** om de to-do definitief te sluiten. Een persoonlijk account (Outlook.com, Hotmail) heeft geen collega's, dus vraagt de to-do alleen om foto's van contacten.
+De beheerder van je organisatie moet mogelijk toestemming geven voor foto's van collega's. Zo niet, dan wordt Outlook nog steeds gekoppeld, maar zonder deze foto's. Een account dat eerder is gekoppeld, krijgt hiervoor één to-do: druk op **Opnieuw koppelen** of op **Niet nodig** om de to-do definitief te sluiten. Een persoonlijk account (Outlook.com, Hotmail) heeft geen collega's, dus vraagt de to-do alleen om foto's van contacten.
 
-## Verbinden
+## Koppelen
 
 Op een gehoste Machine:
 
 1. Open je installatiepagina op app.themachine.computer/setup.
-2. Druk op **Microsoft verbinden** en meld je aan.
-3. Vraagt Microsoft om toestemming van een beheerder? Stuur je Microsoft 365-beheerder dan de link (**Link kopiëren**). Zodra die toestemming geeft, kan iedereen in je organisatie verbinding maken. Ben je zelf de beheerder, druk dan op **Ik ben de beheerder: nu goedkeuren**.
+2. Druk op **Microsoft koppelen** en log in.
+3. Vraagt Microsoft om toestemming van een beheerder? Stuur je Microsoft 365-beheerder dan de link (**Link kopiëren**). Zodra die toestemming geeft, kan iedereen in je organisatie koppelen. Ben je zelf de beheerder, druk dan op **Ik ben de beheerder: nu goedkeuren**.
 
-Of ga in het dashboard naar **Koppelingen**, **E-mail**, kies Outlook en druk op **Aanmelden met Microsoft**. De link voor de beheerder staat direct onder de knop.
+Of ga in het dashboard naar **Koppelingen**, **E-mail**, kies Outlook en druk op **Inloggen met Microsoft**. De link voor de beheerder staat direct onder de knop.
 
-Op je eigen computer: zodra die [aan je account is gekoppeld](friends.md#a-machine-on-your-own-computer), open je **Koppelingen**, daarna **E-mail**, kies je Outlook en druk je op **Aanmelden met Microsoft**. Mail en agenda worden samen verbonden. Na Microsoft keer je terug naar **Koppelingen** in je dashboard.
+Op je eigen computer: zodra die [aan je account is gekoppeld](friends.md#a-machine-on-your-own-computer), open je **Koppelingen**, daarna **E-mail**, kies je Outlook en druk je op **Inloggen met Microsoft**. Mail en agenda worden samen gekoppeld. Na Microsoft keer je terug naar **Koppelingen** in je dashboard.
 
 Voor IT-teams met een eigen Microsoft Entra-app: open daar **Je eigen app gebruiken** of voer `assistant connect outlook` uit.
 
@@ -50,7 +50,7 @@ Voor IT-teams met een eigen Microsoft Entra-app: open daar **Je eigen app gebrui
 
 ## Verwijderen bij Microsoft
 
-Microsoft biedt ons geen optie om een aanmelding in te trekken, dus verwijder de koppeling daar ook:
+Microsoft biedt ons geen optie om een login in te trekken, dus verwijder de koppeling daar ook:
 
 - Werk- of schoolaccount: myapps.microsoft.com
 - Persoonlijk account: account.live.com/consent/Manage

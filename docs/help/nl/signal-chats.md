@@ -11,7 +11,7 @@ translated: b85609009f246615
 
 Je chats en groepen, als gekoppeld apparaat van je telefoon, zoals Signal Desktop. Signal geeft een nieuw gekoppeld apparaat geen oudere berichten, dus hij leest vanaf het moment dat je hem koppelt.
 
-Foto's, spraakberichten en bestanden staan er als wat ze zijn ("Stuurde een foto"), nooit met hun inhoud. Eenmalig bekijken bewaart helemaal geen inhoud. Bewerkingen en verwijderingen volgen wat er op je telefoon gebeurde, en verdwijnende berichten gaan van je Machine zodra hun tijd om is.
+Foto's, spraakberichten en bestanden staan er als wat ze zijn ("Stuurde een foto"), nooit met hun inhoud. Van media voor eenmalige weergave wordt helemaal geen inhoud bewaard. Bewerkingen en verwijderingen volgen wat er op je telefoon gebeurde, en verdwijnende berichten gaan van je Machine zodra hun tijd om is.
 
 Verhalen, reacties, oproepen en Notitie aan mezelf slaat hij over. Niets wordt als gelezen gemarkeerd.
 
@@ -32,10 +32,10 @@ Je Machine bewaart de sleutels van het gekoppelde apparaat bij zichzelf. Ze verl
 
 ## Als hij stopt
 
-Het gebruikt signal-cli, een onofficiële Signal-client. Je Machine downloadt een vaste release en controleert de checksum voor hij draait. Signal kan hem op elk moment niet meer aanvaarden.
+Hij gebruikt signal-cli, een onofficiële Signal-client. Je Machine downloadt een vaste release en controleert de checksum voordat die draait. Signal kan op elk moment stoppen met die client te accepteren.
 
-- **Signal heeft deze Machine ontkoppeld**: je hebt hem op je telefoon verwijderd, of Signal heeft de koppeling beëindigd. Tik in **Koppelingen** op **Opnieuw verbinden** en scan een nieuwe code.
-- **Werk The Machine bij voor Signal**: Signal aanvaardt de Signal-client van deze Machine niet meer. Werk The Machine bij.
+- **Signal heeft deze Machine ontkoppeld**: je hebt hem op je telefoon verwijderd, of Signal heeft de koppeling beëindigd. Tik in **Koppelingen** op **Opnieuw koppelen** en scan een nieuwe code.
+- **Werk The Machine bij voor Signal**: Signal accepteert de Signal-client van deze Machine niet meer. Werk The Machine bij.
 
 ## Verwijderen
 

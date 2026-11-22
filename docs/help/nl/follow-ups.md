@@ -18,7 +18,7 @@ Voor één project kies je **Opvolging…** in het menu **⋯** op het bord of o
 ## Instellingen
 
 - Standaard wacht je Machine 3 tot 7 dagen op een antwoord. Na de kortste wachttijd wordt een opvolging opgesteld. Uiterlijk na de langste wachttijd wordt die verstuurd, ook als je gebruikslimiet bijna bereikt is.
-- **Alleen op werkdagen**: op je vrije dagen wordt er niets opgesteld of verstuurd. Je vrije dagen stel je in via **Instellingen** > **Meldingen** > **Werkuren**. Wat dan aan de beurt is, wacht tot de eerstvolgende werkochtend. Deze optie staat aan voor Werk en uit voor Persoonlijk.
+- **Alleen op werkdagen**: op je vrije dagen wordt er niets opgesteld of verstuurd. Je vrije dagen stel je in via **Instellingen** > **Meldingen** > **Werkuren**. Wat dan aan de beurt is, wacht tot de eerstvolgende werkochtend. Deze optie staat aan voor Werk en uit voor Privé.
 - Standaard volgt je Machine 1 tot 3 keer op. Het minimum wordt altijd verstuurd; voor de rest krijg je een concept. Als je Machine denkt dat je beter kunt stoppen, staat in het concept waarom ("The Machine zou hier stoppen: sinds augustus zijn 9 e-mails onbeantwoord gebleven"). Het concept is niet aangevinkt: je kunt het versturen, overslaan of **Opvolgingen hier stoppen** kiezen. Er worden nooit meer opvolgingen verstuurd dan het maximum.
 - **Fases**: standaard **Alle open fases**, dus niet de laatste fase van het bord en ook niet Vastgelopen of afgewezen. Met **Aanpassen** zet je fases aan of uit en geef je een fase een eigen wachttijd.
 - **Kanalen**: de gekoppelde kanalen waarmee je berichten kunt versturen. Een opvolging wordt verstuurd via hetzelfde kanaal als het laatste bericht. **Ander kanaal als er geen antwoord komt** probeert het volgende toegestane kanaal.
@@ -26,7 +26,7 @@ Voor één project kies je **Opvolging…** in het menu **⋯** op het bord of o
 
 ## Eerst vragen of automatisch versturen
 
-**Vraag het me voor het versturen** is de standaardinstelling: concepten wachten in je to-do's. **Versturen zonder te vragen** betekent dat je voor dat bord of project altijd toestemming geeft. Bij iets ongebruikelijks of als er iets misgaat, wacht de opvolging alsnog op jou. Op het niveau Zorgvuldig wordt altijd om toestemming gevraagd. Een opvolging wordt nooit twee keer verstuurd. Opvolgingen geven nooit een melding via push of e-mail: de concepten wachten in je lijst en in het ochtendoverzicht.
+**Vraag het me voor het versturen** is de standaardinstelling: concepten wachten in je to-do's. **Versturen zonder te vragen** betekent dat je voor dat bord of project altijd toestemming geeft. Bij iets ongebruikelijks of als er iets misgaat, wacht de opvolging alsnog op jou. Op het niveau Voorzichtig wordt altijd om toestemming gevraagd. Een opvolging wordt nooit twee keer verstuurd. Opvolgingen geven nooit een melding via push of e-mail: de concepten wachten in je lijst en in het ochtendoverzicht.
 
 Vlak voor het versturen wordt het gesprek opnieuw gecontroleerd. Als iemand sinds het opstellen van het concept iets heeft geschreven, wordt het niet verstuurd: "Niet verstuurd: nieuw bericht in het gesprek". In de to-do zie je dat bericht, wie het heeft geschreven en wanneer, met **Lezen** en **Opnieuw voor dit bericht**. Met die laatste optie vraag je een nieuw concept aan waarin het bericht is meegenomen.
 
@@ -38,11 +38,11 @@ Met **Nakijken** zie je alle opvolgingen volledig onder elkaar, zodat je ze in �
 
 Bij elke opvolging hoort een concept. Als er geen concept kan worden geschreven, staat er wat er eerst nodig is ("Geen concept. Eerst nodig: de ontvanger."). Het concept is dan niet aangevinkt. Met **Schrijven** vraag je het concept alsnog aan. Als er meerdere mogelijke ontvangers voor een concept zijn, staat er "Ontvanger: kies bij versturen". Met **Versturen** kies je dan eerst een ontvanger.
 
-Met **Overslaan** vink je een concept uit en verplaats je het naar onderaan. Het krijgt de markering Overgeslagen en de optie **Ongedaan maken**. Het wordt definitief overgeslagen zodra je de controle sluit. Je kunt een overgeslagen opvolging terughalen met **Terughalen** bij de opvolgingen van het project of in de to-do van het project onder Gedaan, zolang er geen nieuwere opvolging is verstuurd. De opvolging van één project is een gewone to-do.
+Met **Overslaan** vink je een concept uit en verplaats je het naar onderaan. Het krijgt de markering Overgeslagen en de optie **Ongedaan maken**. Het wordt definitief overgeslagen zodra je het nakijken sluit. Je kunt een overgeslagen opvolging terughalen met **Terughalen** bij de opvolgingen van het project of in de to-do van het project onder Gedaan, zolang er geen nieuwere opvolging is verstuurd. De opvolging van één project is een gewone to-do.
 
 Met **Wijzigingen vragen…** herschrijf je alle aangevinkte concepten of alleen het huidige, zoals je aangeeft. Er wordt niets verstuurd en met **Wijziging ongedaan maken** herstel je de oude tekst. Zolang het invoerveld openstaat of een tekst wordt herschreven, kan er niets worden verstuurd. Een aangepast concept wordt opnieuw getoond voordat het kan worden verstuurd.
 
-Als er meerdere opvolgingen achter elkaar worden verstuurd, ook met **Versturen zonder te vragen**, verstuurt elke mailbox er elke 30 tot 45 seconden één. In de to-do zie je hoe ver het is: "3 van de 8 versturen…". Met **Stop met versturen** stop je de rest. Wat al onderweg is, wordt nog verstuurd. De andere opvolgingen staan weer als concepten in de controle, zodat je ze later kunt versturen ("Gestopt. 1 verstuurd, 11 als concept bewaard.").
+Als er meerdere opvolgingen achter elkaar worden verstuurd, ook met **Versturen zonder te vragen**, verstuurt elke mailbox er elke 30 tot 45 seconden één. In de to-do zie je hoe ver het is: "3 van de 8 versturen…". Met **Stop met versturen** stop je de rest. Wat al onderweg is, wordt nog verstuurd. De andere opvolgingen staan weer als concepten bij het nakijken, zodat je ze later kunt versturen ("Gestopt. 1 verstuurd, 11 als concept bewaard.").
 
 ## E-mails verstuurd voordat je Machine ze las
 
@@ -66,4 +66,4 @@ Als er geen ander e-mailadres is, gaan opvolgingen verder via LinkedIn of WhatsA
 
 In de kop van het bord staat "Opvolging aan, volgende do". Bij een project op het bord staat wanneer de volgende opvolging is, of dat er een klaarstaat. Op de projectpagina zie je welke opvolgingen zijn verstuurd, ook de opvolgingen die automatisch zijn verstuurd.
 
-Opvolgingen wachten als je Machine het druk heeft of bijna aan de gebruikslimiet zit. Later werkt hij ze bij. Op een gedeeld bord volgt alleen de Machine van de projecteigenaar op.
+Opvolgingen wachten als je Machine het druk heeft of bijna aan de gebruikslimiet zit. Later haalt hij ze in. Op een gedeeld bord volgt alleen de Machine van de projecteigenaar op.

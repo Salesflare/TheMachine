@@ -1,7 +1,7 @@
 ---
 title: GBrain
 area: connections
-summary: Optioneel. Houd het geheugen van je eigen GBrain-agent synchroon met The Machine en laat controles het lezen.
+summary: Optioneel. Houd je eigen GBrain-agentgeheugen synchroon met The Machine en laat controles het lezen.
 covers: gbrain
 code: gbrain.py, dashboard.html
 order: 90
@@ -17,7 +17,7 @@ Je Machine bepaalt wat erin komt: personen en projecten uit je Graph, met een li
 
 Controles kunnen je geheugen doorzoeken en pagina's lezen, maar nooit schrijven. Zo kunnen ze betere to-do's maken. Je Machine schrijft zijn deel van elke pagina tussen duidelijke markeringen. Pas dat deel aan of verwijder het, dan laat hij het zoals jij het hebt gemaakt. Notities die je in GBrain over iemand schrijft, komen terug op je Machine. Zo kunnen controles en chat ze bij die persoon zien. Ze blijven op je Machine.
 
-Personen en bedrijven uit Werk worden alleen toegevoegd als je **Werk-personen en -bedrijven meenemen** aanvinkt. Gegevens uit Team Graph van teamgenoten worden nooit toegevoegd.
+Personen en bedrijven uit Werk worden alleen toegevoegd als je **Werk-personen en -bedrijven meenemen** aanvinkt. Team-Graph-gegevens van teamgenoten worden nooit toegevoegd.
 
 ## Uitzetten
 
