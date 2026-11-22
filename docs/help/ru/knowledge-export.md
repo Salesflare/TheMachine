@@ -7,7 +7,7 @@ code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
 translated: db1c7f4768a71630
 ---
-Всё, чему учится ваша Machine, принадлежит вам. Передайте эти знания другой ИИ, например ChatGPT или Claude, или оставьте их себе.
+Всё, чему учится ваша Machine, принадлежит вам. Передайте эти знания другому ИИ, например ChatGPT или Claude, или оставьте их себе.
 
 ## Экспорт
 

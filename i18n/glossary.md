@@ -39,7 +39,7 @@ table is in the control plane's glossary (cloud/i18n/glossary.md) for the site a
 | zh-CN | none | No gender: say The Machine again, or 它 when a pronoun can't be left out. Never 他 or 她. Assistant: 助手. |
 | ja | none | No gender or pronoun: say The Machine again or leave the subject out. Assistant: アシスタント. |
 | ko | none | No gender or pronoun: say The Machine again or leave the subject out. Assistant: 어시스턴트. |
-| ru | feminine | она, её, and feminine agreement (готова, подключена, сама), after машина: "The Machine прочитала почту. Она ...". Never он or его for it. Speaking for itself: "Я застряла". Assistant: ассистентка, ваша ассистентка. |
+| ru | feminine | она, её, and feminine agreement (готова, подключена, сама), after машина: "The Machine прочитала почту. Она ...". Never он or его for it. Speaking for itself: "Я застряла". Assistant: ассистентка, ваша ассистентка. An owner's or someone else's Machine is Machine, never The Machine (ваша Machine, Machine коллеги); several are Machine too (ваши Machine), never Machines or машины. Fleet and Graph are masculine: ваш Fleet, рабочий Fleet, семейный Fleet, этот Fleet. A person in a placeholder takes both forms: {} подтвердил(а). |
 
 `tests/test_i18n.py` checks the forms that are always wrong (a masculine article before Machine or assistant, a
 masculine "I" in French, Spanish and Italian); the rest is for the translator to keep.
@@ -89,6 +89,7 @@ English strings the check skips, with why:
 - `Signal` names the Signal app, not a signal.
 - `Signal message sent.` names the Signal app, not a signal.
 - `Signal message sent at {}.` names the Signal app, not a signal.
+- `Settings file` is a configuration file, not the Settings screen.
 - `Signal unlinked this Machine` names the Signal app, not a signal.
 - `Update The Machine for Signal` names the Signal app, not a signal.
 - `In Signal on your phone: Settings, Linked devices, Link new device. Then scan this code:` names the Signal app, not a signal.
