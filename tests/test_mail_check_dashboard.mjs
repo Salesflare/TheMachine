@@ -35,11 +35,14 @@ const state=()=>({suggestions:[{id:'a1'.repeat(8),title:'Answer Jonah about API 
  promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{last_completed:at(-9)},review_runs:[],review_live:{runs:[]},connectors:[{id:'work-outlook',service:'outlook',email:'pat@example.com'}],
  check:{reviewed:at(-9),waiting:0},mail_check:mail,
  locale:{locale:'en-GB',region:'GB',language:'en',language_set:true,clock:'24',hour12:false,auto_hour12:false,date_locale:'en-GB',languages:{en:'English'},saveable:true}});
+const FONTS={'/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/originals'&&url.searchParams.get('event')){const id=url.searchParams.get('event');opened.push(id);
   res.end(JSON.stringify({originals:[{id:+id,kind:'whatsapp',title:'Book club',body:'Did anyone finish chapter 4?',from:'Noor Pell',occurred_at:at(-30),metadata:{chat_name:'Book club',sender_display:'Noor Pell'}}]}));return}
+ // the brand's fonts, so a line's width is the one an owner sees and not this computer's fallback font
+ if(FONTS[url.pathname]){readFile(new URL('../'+FONTS[url.pathname],import.meta.url)).then(b=>{res.setHeader('Content-Type','font/woff2');res.end(b)});return}
  if(url.pathname.startsWith('/brand/')){res.statusCode=404;res.end();return}
  res.end(url.pathname==='/api/events'?'[]':'{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -109,6 +112,7 @@ try{
   for(const form of Object.keys(was))assert.ok(now[form].length<=was[form].length,`${lang} ${form}: "${now[form]}" is longer than "${was[form]}"`);
   lines.push([lang,fill(now.other,13,'08:41')+' · '+(typeof cat['nothing needs you']==='string'?cat['nothing needs you']:'nothing needs you')]);
  }
+ await page.evaluate(()=>document.fonts.ready.then(()=>{}));
  const heights=await page.evaluate(lines=>{const span=document.querySelector('#suggestions .mc-line span'),b=span.closest('.mc-line'),kept=span.textContent;
   const out=lines.map(([lang,text])=>{span.textContent=text;return [lang,text,b.getBoundingClientRect().height]});span.textContent=kept;return out},lines);
  const one=heights[0][2];

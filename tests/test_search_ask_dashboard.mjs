@@ -56,7 +56,7 @@ const open=async(width,height,colorScheme='light',reducedMotion='no-preference')
  await page.goto(base);await page.locator('#task-'+id(1)).waitFor();return {context,page}};
 const groups=page=>page.locator('#pal-list .pal-group').allTextContents();
 const labels=page=>page.locator('#pal-list .pal-item .pal-label').allTextContents();
-const palOpenNow=async(page,width)=>{if(width<600)await page.locator('#find-open').click();else await page.keyboard.press('Control+k');await page.locator('#palette').waitFor()};
+const palOpenNow=async(page,width)=>{if(width<600)await page.locator('#find-open').click();else await page.keyboard.press('ControlOrMeta+k');await page.locator('#palette').waitFor()};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  // The flow, once at desktop size

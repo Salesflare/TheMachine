@@ -26,7 +26,10 @@ const server=createServer(async(req,res)=>{for await(const _ of req);const url=n
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/browser/',SECRET='https://example.com/p?k=hunter2-not-logged',errors=[],said=[];let browser;
 const sent=p=>p.evaluate(()=>{const s=window.sent.slice();window.sent.length=0;return s});
-const pasted=text=>[['clipboard',text],['key','ControlLeft',true],['key','KeyV',true],['key','KeyV',false]];
+// On a Mac the bridge takes Cmd+V (Ctrl means Ctrl there) and lets go of Cmd over there first: Cmd is Super on the Machine
+const MAC=process.platform==='darwin',MOD=MAC?'Meta':'Control',modKey=MAC?'metaKey':'ctrlKey';
+const ctrlV=[...(MAC?[['key','MetaLeft',false],['key','MetaLeft',false]]:[]),['key','ControlLeft',true],['key','KeyV',true],['key','KeyV',false],...(MAC?[['key','ControlLeft',false]]:[])];
+const pasted=text=>[['clipboard',text],...ctrlV];
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  // Only clipboard-write: reading the clipboard is never allowed here, as for an owner who never answered its prompt
@@ -39,8 +42,8 @@ try{
 
  // Ctrl+V on the screen: the paste event's text, then Ctrl+V over there; noVNC never sees the V, no clipboard read
  await p.locator('canvas').focus();
- await p.keyboard.press('Control+V');await p.waitForTimeout(250);
- assert.deepEqual(await sent(p),[['novnc','Control'],...pasted(SECRET)],'Ctrl+V pastes the local clipboard there');
+ await p.keyboard.press(MOD+'+V');await p.waitForTimeout(250);
+ assert.deepEqual(await sent(p),[['novnc',MOD],...pasted(SECRET)],'Ctrl+V pastes the local clipboard there');
 
  // A phone's long-press Paste in the on-screen keyboard's box: the same, and the box itself stays empty
  await p.evaluate(t=>{const d=new DataTransfer();d.setData('text/plain',t);
@@ -50,19 +53,19 @@ try{
  assert.equal(await p.inputValue('#noVNC_keyboardinput'),'');
 
  // noVNC's side panel clipboard box pastes as any text box: not taken over
- await p.locator('#noVNC_clipboard_text').focus();await p.keyboard.press('Control+V');await p.waitForTimeout(250);
+ await p.locator('#noVNC_clipboard_text').focus();await p.keyboard.press(MOD+'+V');await p.waitForTimeout(250);
  assert.deepEqual(await sent(p),[]);
  assert.equal(await p.inputValue('#noVNC_clipboard_text'),SECRET);
 
  // A browser that sends no paste event (a key press with no default action): it falls back to reading the clipboard,
  // and when that is refused still sends Ctrl+V, so the browser there pastes what it has
  await p.locator('canvas').focus();
- await p.evaluate(()=>document.querySelector('canvas').dispatchEvent(new KeyboardEvent('keydown',{key:'v',code:'KeyV',ctrlKey:true,bubbles:true,cancelable:true})));
+ await p.evaluate(modKey=>document.querySelector('canvas').dispatchEvent(new KeyboardEvent('keydown',{key:'v',code:'KeyV',[modKey]:true,bubbles:true,cancelable:true})),modKey);
  await p.waitForTimeout(300);
- assert.deepEqual(await sent(p),[['read'],['key','ControlLeft',true],['key','KeyV',true],['key','KeyV',false]],'the fallback');
+ assert.deepEqual(await sent(p),[['read'],...ctrlV],'the fallback');
  // ...and with the clipboard readable, its text goes over first
  await p.evaluate(()=>{navigator.clipboard.readText=()=>Promise.resolve('read text')});
- await p.evaluate(()=>document.querySelector('canvas').dispatchEvent(new KeyboardEvent('keydown',{key:'v',code:'KeyV',ctrlKey:true,bubbles:true,cancelable:true})));
+ await p.evaluate(modKey=>document.querySelector('canvas').dispatchEvent(new KeyboardEvent('keydown',{key:'v',code:'KeyV',[modKey]:true,bubbles:true,cancelable:true})),modKey);
  await p.waitForTimeout(300);
  assert.deepEqual(await sent(p),pasted('read text'));
 

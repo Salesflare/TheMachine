@@ -34,7 +34,7 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
- await page.locator('#needs-you li',{hasText:'Signed out of LinkedIn'}).waitFor();
+ await page.locator('#needs-you li',{hasText:'Signed out of LinkedIn'}).waitFor();await page.waitForFunction(()=>typeof drawnWhole!=='undefined'&&drawnWhole);  // the badges come after the first paint
  const top=page.locator('#needs-you a',{hasText:'Sign in again'});
  assert.equal(await top.getAttribute('href'),'https://app.example.test/open?to=browser&site=linkedin');
  assert.equal(await top.getAttribute('target'),'_blank');

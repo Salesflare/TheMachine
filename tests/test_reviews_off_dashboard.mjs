@@ -25,7 +25,8 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844}});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const open=async()=>{const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);
-  await page.locator('#needs-you').waitFor({state:on?'hidden':'visible'});return page};
+  await page.locator('#needs-you').waitFor({state:on?'hidden':'visible'});
+  await page.waitForFunction(()=>typeof drawnWhole!=='undefined'&&drawnWhole);return page};  // the live rows come after the first paint
  let page=await open();
  assert.match(await page.locator('#needs-you').textContent(),/Checks are off/);
  assert.equal(await page.locator('#needs-you a',{hasText:'Turn on checks'}).getAttribute('href'),manage+'#turn-on');

@@ -71,7 +71,8 @@ try{
   // Due: the card on top of To-dos, inside the screen, with the count, a line, Share and ×
   milestone={count:500};seen=[];
   {const {context,page}=await open(width,{counts:true});await card(page).waitFor();
-   await page.waitForFunction(()=>document.querySelector('#milestone .ms-n')?.textContent==='500');
+   // the card is drawn with 500 already: the count-up has ended once it started (data-ms-done) and let go of its width
+   await page.waitForFunction(()=>{const b=document.querySelector('#milestone .ms-n');return b?.dataset.msDone!=null&&!b.style.minWidth&&b.textContent==='500'});
    // The count-up: from 0 up to 500, never below 0, never back down, never past it, even when the first frame's
    // time is earlier than when the count was asked for (as browsers hand it)
    // (the first is the card as drawn, 500, before the count starts)

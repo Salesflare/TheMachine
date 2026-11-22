@@ -345,7 +345,7 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
   .board-head{margin-bottom:10px}
   .sub-tabs.stage-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;overflow:visible;-webkit-mask-image:none;mask-image:none}.stage-tabs button{flex:none;margin:0}  /* every stage readable at once: they wrap rather than scroll */
   .board-head:has(.board-pick) :is(.board-title,.board-chips){display:none}
-  .board-pick{display:block;max-width:100%;margin:0;padding:2px 26px 2px 0;border:0;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394918a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 2px center/16px;color:var(--text);font:var(--fw-heading) var(--fs-xl)/1.25 var(--serif);letter-spacing:-.01em;-webkit-appearance:none;appearance:none;field-sizing:content;cursor:pointer}
+  .board-pick{display:block;min-width:0;max-width:100%;margin:0;padding:2px 26px 2px 0;border:0;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394918a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 2px center/16px;color:var(--text);font:var(--fw-heading) var(--fs-xl)/1.25 var(--serif);letter-spacing:-.01em;-webkit-appearance:none;appearance:none;field-sizing:content;cursor:pointer}
   .pboard{display:block;overflow:visible}
   .lane{display:none;padding:0;background:none}.lane.on{display:block}
   .lane-h{display:none}.lane-hint,.lane-sum{padding-left:0}

@@ -28,6 +28,7 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor();
+ await page.waitForFunction(()=>typeof drawnWhole!=='undefined'&&drawnWhole);  // the first paint's own second draw is done
  // The Updated line is drawn on each whole render: its node is marked, and a redraw replaces it
  const mark=()=>page.evaluate(()=>{document.querySelector('#updated').firstChild.marked=true});
  const kept=()=>page.evaluate(()=>!!document.querySelector('#updated').firstChild?.marked);

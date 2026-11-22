@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {LINE_START} from './keys.mjs';
 import {settled} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
@@ -71,7 +72,7 @@ try{
   assert.equal(posts.filter(p=>p.action==='revise_draft').length,0);assert.equal(posts.filter(p=>p.action==='confirm_action').at(-1).revision,'v1');
   // Edited: the bold stays bold and the link goes back as a link
   await page.locator('#task-r1 [data-smart="v1"]').first().click();await page.locator('#send-dialog[open]').waitFor();
-  await rich.locator('div',{hasText:/^Alex$/}).click();await page.keyboard.press('Home');await page.keyboard.type('Thanks,');await page.keyboard.press('Enter');
+  await rich.locator('div',{hasText:/^Alex$/}).click();await page.keyboard.press(LINE_START);await page.keyboard.type('Thanks,');await page.keyboard.press('Enter');
   await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
   assert.equal(posts.filter(p=>p.action==='revise_draft').at(-1).body,'Hi Noor,\n\nThe price is **€29** a seat. See [the pricing page](https://example.com/pricing).\n\nThanks,\nAlex');
   // and what is sent is exactly the edited text: the revision saved from it, then Send now confirms that revision

@@ -25,7 +25,8 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844}});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const open=async()=>{const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);
-  await page.locator('#suggestions .first-look-empty, #suggestions .all-clear').first().waitFor();return page};
+  await page.locator('#suggestions .first-look-empty, #suggestions .all-clear').first().waitFor();
+  await page.waitForFunction(()=>typeof drawnWhole!=='undefined'&&drawnWhole);return page};  // the live rows come after the first paint
  const everything=page=>page.evaluate(()=>document.body.innerText);
  const LINE='Reading your mail, first to-dos in a few minutes';
  // Connecting and reading: no source in yet, its first page still coming, settling after it

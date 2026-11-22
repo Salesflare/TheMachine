@@ -85,7 +85,7 @@ try{
   assert.equal(await page.locator('#send-from>span').textContent(),alias);
   await page.locator('#send-rich-body').click();
   await page.keyboard.type('Hi Sam,');await page.keyboard.press('Enter');await page.keyboard.press('Enter');
-  await page.keyboard.type('Does Thursday work for ');await page.keyboard.press('Control+b');await page.keyboard.type('lunch');await page.keyboard.press('Control+b');
+  await page.keyboard.type('Does Thursday work for ');await page.keyboard.press('ControlOrMeta+b');await page.keyboard.type('lunch');await page.keyboard.press('ControlOrMeta+b');
   await page.keyboard.type('?');await page.keyboard.press('Enter');await page.keyboard.press('Enter');await page.keyboard.type('Alex');
   if(shots)await page.screenshot({path:`${shots}/compose-3-filled-${tag}.png`});
   assert.equal(posted('compose_email').length,0,'nothing goes before Send');
