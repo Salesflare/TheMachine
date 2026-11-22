@@ -225,16 +225,23 @@ def away(db, clock=wall):
     if not row:
         _stamp(db, '_visit_last', at)
         return False
-    last = max(float(row[0] or 0), last_seen(clock))
-    if at - last < AWAY_DAYS * 86400:
-        return False
-    since = dt.datetime.fromtimestamp(at - AWAY_DAYS * 86400, dt.timezone.utc).isoformat()
+    return not there_since(db, at - AWAY_DAYS * 86400, clock)
+
+
+def there_since(db, since, clock=wall):
+    """The owner was there since `since` (epoch seconds): a dashboard visit (kept by visited, or last_seen) or a
+    decision of theirs (OWNER_SOURCES: dashboard, Telegram, chat, voice). The Machine's own closings don't count."""
+    ensure(db)
+    row = db.execute("SELECT value FROM notify_prefs WHERE key='_visit_last'").fetchone()
+    if max(float(row[0] or 0) if row else 0.0, last_seen(clock)) >= since:
+        return True
+    iso = dt.datetime.fromtimestamp(since, dt.timezone.utc).isoformat()
     try:
         decided = db.execute('SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(OWNER_SOURCES)) + ') AND created_at>=? LIMIT 1',
-                             (*OWNER_SOURCES, since)).fetchone()
+                             (*OWNER_SOURCES, iso)).fetchone()
     except Exception:  # noqa: BLE001 - no decisions table (a bare test database): only the visit counts
         decided = None
-    return not decided
+    return bool(decided)
 
 
 def pushed_today(db, day):

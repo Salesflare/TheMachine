@@ -227,7 +227,7 @@ One setting for when The Machine works with you: on the dashboard under **Settin
 - **Work days** (default Monday to Friday): work to-dos (from `work:` sources) wait for a work day, and snoozed work and returning email threads come back on one. Personal to-dos keep their timing.
 - **Messages from / until** (default 08:00 to 23:00): nothing is sent outside these hours, to Telegram or the phone; it waits until they start. Reviews keep running in the background. A range like 20:00 to 04:00 wraps past midnight.
 - **Snoozes land at** (default 08:00): where Tomorrow, 3 days and 1 week land, and when a snoozed email thread comes back.
-- **Evening digest** (`evening_at`, default 15 minutes before the end of the hours): on work days, what got done today and what's open for the next work day, the ways picked in its row under **Notifications**. Nothing on a day without a to-do done or a meeting held.
+- **Evening digest** (`evening_at`, default 15 minutes before the end of the hours): on work days, what got done today and what's open for the next work day, the ways picked in its row under **Notifications**. Only on a day the owner was there (a dashboard visit, or a decision in the dashboard, Telegram, chat or voice), and nothing on a day without a to-do done or a meeting held.
 - **Morning digest** (`digest_at`, default 08:30, at least 5 minutes after **Snoozes land at** so those to-dos are in it; a time set earlier is saved as that) and **time zone** (`timezone`). The installer takes this computer's time zone, and the dashboard offers the device's when it differs.
 
 Saved from the dashboard, it takes effect at once and is written to `config.json` (the old file stays as `config.json.bak`).

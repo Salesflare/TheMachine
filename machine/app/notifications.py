@@ -339,7 +339,7 @@ class NotificationsApp:
     def evening_step(self, current=None, push=None, telegram_send=None, mail=None):
         """Send the evening digest once on a work day at its time (notify.evening_time: evening_at, or 15 minutes before
         the end of the hours), on the channels the owner picked for it (Settings, Notifications, Evening digest), unless
-        the day had nothing. Its row in notify_digests (evening:<day>) is taken before it is made, so a restart never
+        the day had nothing or the owner wasn't there that day (notify.there_since). Its row in notify_digests (evening:<day>) is taken before it is made, so a restart never
         sends it twice."""
         current = current or dt.datetime.fromisoformat(now())
         local = current.astimezone(local_tz())
@@ -358,6 +358,15 @@ class NotificationsApp:
             if not notify.digest_claim(db, key, now()):
                 return None
         digest = self.evening_digest(current, day)
+        # Only on a day the owner was there (a visit or a decision of theirs): what The Machine closed by itself alone
+        # sends nothing, so someone who drifted away doesn't get two digests a day. The row is kept: no retry.
+        with self.store.connect() as db:
+            there = notify.there_since(db, dt.datetime.combine(day, dt.time(), local_tz()).timestamp())
+        if digest and not there:
+            with self.store.connect() as db:
+                notify.digest_done(db, key, 'not_there', [])
+            LOG.info('evening digest skipped reason=not_there day=%s', day)
+            return []
         went = self.digest_send(digest, prefs, 'evening', push, telegram_send, mail) if digest else []
         with self.store.connect() as db:
             notify.digest_done(db, key, 'sent' if went else 'empty' if not digest else 'not_sent', went, digest)

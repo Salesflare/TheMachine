@@ -242,6 +242,34 @@ class Step(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual([tuple(r) for r in db.execute('SELECT day,status FROM notify_digests')], [('evening:2026-11-12', 'empty')])
 
+    def test_only_on_a_day_the_owner_was_there(self):
+        # The owner's ask: someone who drifted away gets no evening digest for what The Machine closed by itself
+        self.app.action('push_subscribe', SUB, owner_dashboard=True)
+        self.done(self.card('Close the follow-up'), at(12, 10, 0), source='assistant')
+        self.done(self.card('Archive the newsletter'), at(12, 11, 0), source='machine')
+        evening = lambda day: at(day, 17, 50).astimezone(UTC)
+        with patch_everywhere(timeutil, 'local_tz', return_value=BXL), patch_everywhere(machine_app_recap, 'recap_meetings', return_value=[]), \
+                self.assertLogs('personal-assistant', 'INFO') as logs:
+            self.assertEqual(self.app.evening_step(evening(12), push=self.sender), [])
+            self.assertIsNone(self.app.evening_step(evening(12), push=self.sender))  # kept: no retry
+            self.assertIn('evening digest skipped reason=not_there day=2026-11-12', '\n'.join(logs.output))
+            self.assertEqual(self.sent, [])
+            # a dashboard visit that day
+            self.done(self.card('Close the loop'), at(13, 10, 0), source='assistant')
+            with self.store.connect() as db:
+                notify.visited(db, clock=lambda: at(13, 9, 0).timestamp())
+            self.assertEqual(self.app.evening_step(evening(13), push=self.sender), ['push'])
+            # a decision of theirs by Telegram, the following Monday, with nothing kept from a visit since
+            self.done(self.card('Send the order form'), at(16, 10, 0), source='telegram')
+            self.assertEqual(self.app.evening_step(evening(16), push=self.sender), ['push'])
+            # the day before's decision doesn't count for this one
+            self.done(self.card('Close the thread'), at(17, 10, 0), source='assistant')
+            self.assertEqual(self.app.evening_step(evening(17), push=self.sender), [])
+        with self.store.connect() as db:
+            self.assertEqual([tuple(r) for r in db.execute('SELECT day,status FROM notify_digests ORDER BY day')],
+                             [('evening:2026-11-12', 'not_there'), ('evening:2026-11-13', 'sent'),
+                              ('evening:2026-11-16', 'sent'), ('evening:2026-11-17', 'not_there')])
+
     def test_at_a_time_of_its_own(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         self.config['evening_at'] = '16:00'
