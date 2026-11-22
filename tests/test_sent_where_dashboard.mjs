@@ -110,7 +110,7 @@ try{
   assert.equal(await page.locator('#send-fine').textContent(),'Leaves your inbox for 3 days after sending, or until a reply. The to-do stays open for the work this promises.');
   await page.locator('#send-confirm').click();
   await page.waitForFunction(()=>/Kept open/.test(document.querySelector('#toast.show')?.textContent||''),null,{timeout:15000});
-  assert.equal(await toastText(page),'Sent. Kept open for the work you promised. Open');
+  assert.equal(await toastText(page),'Sent. Kept open. Open');
   assert.equal(cards.find(c=>c.id===id(7)).status,'pending');
   await page.evaluate(()=>{location.hash=''});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
