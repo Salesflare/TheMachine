@@ -20,7 +20,7 @@ import next_actions
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
-from machine.store import review_last_look, review_saves, review_wait, todo_likely
+from machine.store import first_pass, review_last_look, review_saves, review_wait, todo_likely
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import _address, clamp, encoded
 import own_addresses
@@ -1450,6 +1450,56 @@ class ReviewStore:
         return {'status': 'complete', **({'stages': moved} if moved else {}),
                 **({'not_saved': sorted(not_saved), 'note': 'A to-do save failed for these messages: they stay unreviewed and come '
                     'back in a later review.'} if not_saved else {})}
+
+    def first_pass_due(self, limit=first_pass.BATCH, scan=first_pass.SCAN):
+        """The next signals for the first pass's small model call (machine/store/first_pass.py): waiting for a review,
+        not sorted at their version yet, and ones plain code lets it see (first_pass.candidate), apart from mail in a
+        thread the owner wrote in, an answer to a to-do's message, a message an open to-do waits on and mail in an open
+        to-do's thread. The rest of what it looked at is kept as the review's at once, without a model. [] while a
+        review's claim runs: what it claimed is its own."""
+        with self.connect() as db:
+            first_pass.ensure(db)
+            if db.execute("SELECT 1 FROM analyses WHERE status IN ('running','retryable') LIMIT 1").fetchone():
+                return []
+            rows = [dict(r) for r in db.execute(
+                'SELECT e.* FROM events e LEFT JOIN first_pass f ON f.event_id=e.id AND f.version=e.version WHERE e.history=0 '
+                'AND e.analyzed_version<e.version AND e.deferrals<? AND f.event_id IS NULL ORDER BY e.ingested_at,e.id LIMIT ?',
+                (SET_ASIDE_AFTER, scan))]
+            if not rows:
+                return []
+            people, threads = review_wait.People(db), first_pass.open_threads(db)
+            waits = waiting_cards(db, rows, self.owner_user_ids)
+            picked = [r for r in rows if first_pass.candidate(r, people) and first_pass.thread_of(r) not in threads and r['id'] not in waits]
+        tied = self.owner_threads(picked) | set(self.card_replies(picked)) if picked else set()
+        picked = [r for r in picked if r['id'] not in tied]
+        chosen = {r['id'] for r in picked}
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            first_pass.record(db, [(r['id'], r['version']) for r in rows if r['id'] not in chosen], 'review', 'rules', now())
+        return picked[:limit]
+
+    def first_pass_keep(self, rows, aside, by):
+        """Keep a first pass's sort of these rows (aside: {event_id: what}, first_pass.aside). What it set aside counts
+        as reviewed without a review's turn, unless a review claimed it meanwhile or it changed since; the rest waits for
+        the review as before. Returns how many were set aside."""
+        stamp = now()
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            first_pass.ensure(db)
+            claimed = {r[0] for r in db.execute("SELECT json_extract(j.value,'$.id') FROM analyses a, json_each(a.items) j "
+                                                "WHERE a.status IN ('running','retryable')")}
+            skips, kept = [], []
+            for row in rows:
+                if row['id'] in aside and row['id'] not in claimed and db.execute(
+                        'UPDATE events SET analyzed_version=version WHERE id=? AND version=? AND analyzed_version<version AND deferrals=0',
+                        (row['id'], row['version'])).rowcount:
+                    skips.append((row['id'], row['version']))
+                else:
+                    kept.append((row['id'], row['version']))
+            first_pass.record(db, skips, 'skip', by, stamp, aside)
+            first_pass.record(db, kept, 'review', by, stamp)
+            first_pass.prune(db, (timeutil.clock() - dt.timedelta(days=first_pass.KEEP_DAYS)).isoformat())
+        return len(skips)
 
     def project_blockers(self, db):
         """With each review: what stands in the way of each project with a success condition, and its one to-do when

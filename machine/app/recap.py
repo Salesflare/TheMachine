@@ -24,6 +24,7 @@ from machine import names as display_names
 from machine.sources.connectors import UNNAMED
 from machine.sources.exclusions import default_exclusions
 from machine.app.recap_settings import recap_settings
+from machine.store import first_pass
 from machine.store.first_look import FirstLookStore
 from machine.store.profile import recap_day
 from machine.text import encoded
@@ -260,6 +261,7 @@ def weekly_recap_message(store, config, current=None):
     with store.connect() as db:
         batches = [json.loads(r[0]) for r in db.execute("SELECT items FROM analyses WHERE status='complete' AND finished_at>=?", (since,))]
         reviewed = sum(sum(1 for i in items if not i.get('deferred') and not i.get('excluded')) for items in batches)
+        reviewed += len(first_pass.skipped(db, since))  # checked too: the first pass set them aside (machine/store/first_pass.py)
         backlog = db.execute('SELECT count(*) FROM events WHERE analyzed_version<version').fetchone()[0]
         noise = recap_noise(db, since)
         open_cards = {r['id']: dict(r) for r in db.execute(

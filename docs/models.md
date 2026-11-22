@@ -39,6 +39,11 @@ this model through the ChatGPT sign-in and leaves every other `openai/` model as
 
 Then `openclaw models set openai/gpt-6.2-sol`. Background work on this sign-in uses GPT-6.1 Sol for now (see below).
 
+The first pass before a review (automated signals that clearly need nothing are set aside,
+[architecture](architecture.md#how-a-review-runs)) runs on GPT-6 Luna with a ChatGPT sign-in, and on Claude Code's
+`haiku` on the Claude CLI route. When `agents.defaults.models` lists models and leaves `openai/gpt-6-luna` out, or on
+another provider, there is no first pass and the review reads every signal.
+
 ### Your Claude plan
 
 To use your own Claude plan (Pro, Max or Team), install Claude Code with Anthropic's installer and sign in with `claude auth login`. `openclaw models list` then shows Claude's models as `claude-cli/*`, and OpenClaw runs them through Claude Code without reading its sign-in.

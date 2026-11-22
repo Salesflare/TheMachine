@@ -904,6 +904,8 @@ class ReviewApp:
             except Exception as error:LOG.error('config follow error=%s',type(error).__name__)
             try:self.model_check_kick()  # the AI's real check when one is due (model_check.py), in a thread of its own
             except Exception as error:LOG.error('model check error=%s',type(error).__name__)
+            try:self.first_pass_step()  # automated signals sorted by a small model before a review reads them (first_pass.py)
+            except Exception as error:LOG.error('first pass error=%s',type(error).__name__)
             try:
                 # The first look's next batch as soon as one ended, not a tick later (review_tick)
                 if self.review_step() in REVIEW_TERMINAL and self.review_tick() < REVIEW_TICK_SECONDS:
