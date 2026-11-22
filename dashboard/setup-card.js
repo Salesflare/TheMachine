@@ -37,20 +37,21 @@ let setupQR=false;
 // The phone's own store on a phone's browser; null where there is none (a phone that is neither iPhone nor Android)
 const setupStore=()=>{const p=state?.phone_app_store||{},u=DEV.ios?p.ios:DEV.android?p.android:'';return /^https:\/\//.test(u||'')?u:null};
 // [{id, done, hint?}] in order, the rows that apply here and aren't closed (all: closed ones too, before the cut to SETUP_MAX)
-// The suggestion with its reason (s.nudge, setup_nudge.py) leads, in the place of the row it is about (n.replaces).
-function setupRows(all){const s=state?.setup_card;if(!s)return [];const closed=new Set(all?[]:s.dismissed||[]),n=s.nudge,rep=n?.replaces,rows=[];
+// The suggestion with its reason (s.nudge, setup_nudge.py) leads, in the place of the row it is about (n.replaces: left
+// out like a closed one, also from what Show hidden counts).
+function setupRows(all){const s=state?.setup_card;if(!s)return [];const n=s.nudge,closed=new Set([...all?[]:s.dismissed||[],n?.replaces]),rows=[];
  const add=(id,applies,done,hint)=>{if(applies&&!closed.has(id))rows.push({id,done:!!done,...(hint?{hint}:{})})};
- if(n?.id)add('hint-'+n.id,1,0,n);
- if(s.demo){for(const r of s.rows||[])add(r?.id,SETUP_ICON[r?.id]&&r.id!==rep,r.done);return all?rows:rows.slice(0,SETUP_MAX)}
+ add('hint-'+n?.id,n,0,n);
+ if(s.demo){for(const r of s.rows||[])add(r?.id,SETUP_ICON[r?.id],r.done);return all?rows:rows.slice(0,SETUP_MAX)}
  const hosted=!!state.manage_url,p=state.phone_app_store;
  add('calendar',s.mail_accounts>0,s.calendar);
  add('memory',1,s.memory);
  add('phone',!!p&&!DEV.phoneApp&&(DEV.mobile?!!setupStore():!!(p.ios||p.android)),s.phones>0);
  add('push',!DEV.phoneApp&&(pushOn()||pushOK&&devicePush.checked&&devicePush.perm!=='denied'&&devStore.get('push-off')!=='1'),pushOn());
- add('whatsapp',hosted&&rep!=='whatsapp',s.whatsapp);
+ add('whatsapp',hosted,s.whatsapp);
  add('install',!onPhone()&&!DEV.phoneApp&&nudgeable&&(appInstalled()||!!installEvt||DEV.macSafari),appInstalled());
- add('account',hosted&&rep!=='account',s.mail_accounts>=2);
- add('connect',rep!=='connect',s.more);
+ add('account',hosted,s.mail_accounts>=2);
+ add('connect',1,s.more);
  for(const h of state.setup_hints||[])if(h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id))add('hint-'+h.id,1,0,h);
  if(all)return rows;
  // Open steps first: a done row only fills a slot no open step needs, so the tool hints after the base rows show
