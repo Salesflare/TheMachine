@@ -1,7 +1,7 @@
 ---
 title: GBrain
 area: connections
-summary: Opcional. Mantenha a memória do seu agente GBrain sincronizada com The Machine e permita que as verificações a consultem.
+summary: Opcional. Mantenha a memória do seu agente GBrain sincronizada com a The Machine e permita que as verificações a consultem.
 covers: gbrain
 code: gbrain.py, dashboard.html
 order: 90

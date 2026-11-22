@@ -13,7 +13,7 @@ Seus dias a partir de hoje, com:
 
 - reuniões dos calendários que você conectou,
 - tarefas que vencem naquele dia e tarefas adiadas no dia em que voltam,
-- acompanhamentos de tarefas que você delegou,
+- acompanhamentos de tarefas que você repassou,
 - promessas com data,
 - [viagens e eventos](calendar.md#trips-and-events) das reservas e dos ingressos que chegam por e-mail.
 
@@ -47,7 +47,7 @@ Quando uma reserva de voo, hotel, casa de temporada, trem, ônibus, balsa, carro
 
 A viagem aparece como uma faixa que cobre todos os dias. Abra-a para ver cada reserva em ordem cronológica, com horários, endereço, código da reserva e assento.
 
-Ingressos para shows, jogos, festivais ou conferências criam um evento, um por evento, com o local, o código da reserva, o assento e o número de ingressos. Um segundo pedido para o mesmo evento é adicionado ao evento existente. Um ingresso reservado pelo seu e-mail de trabalho é classificado como Work. Caso contrário, é Personal. Ingressos para algo que acontece durante uma viagem são adicionados à viagem.
+Ingressos para shows, jogos, festivais ou conferências criam um evento, um por evento, com o local, o código da reserva, o assento e o número de ingressos. Um segundo pedido para o mesmo evento é adicionado ao evento existente. Um evento reservado pelo seu e-mail de trabalho é classificado como Trabalho. Caso contrário, é Pessoal. Ingressos para algo que acontece durante uma viagem são adicionados à viagem.
 
 Para uma viagem que ainda vai acontecer, sua Machine informa o que está faltando, como **Nenhuma hospedagem reservada para 2 noites** ou que não há reserva para ir do aeroporto ao hotel. Essas linhas aparecem em tom mais apagado e com a marcação **Nenhuma reserva**. Uma viagem sem hospedagem não informa nada sobre as noites.
 
@@ -74,9 +74,9 @@ Uma reunião com transcrição e sem notas tem a opção **Gerar notas**. The Ma
 
 A mensagem **Escrevendo as notas…** aparece, e o processo continua mesmo que você feche a reunião. Uma reunião longa pode levar alguns minutos e usa seu próprio modelo. As notas indicam **Escrito pela The Machine** e nunca substituem as notas que você adicionou.
 
-The Machine também pode adicioná-las. Peça em uma tarefa, por exemplo: “adicione esta transcrição à reunião de hoje do quadro”. Uma transcrição vai para Transcrição; um resumo, para Notas. No Calendário, uma reunião com esse conteúdo mostra **Notas** ou **Transcrição**.
+The Machine também pode adicioná-las. Peça em uma tarefa, por exemplo: “adicione esta transcrição à reunião do conselho de hoje”. Uma transcrição vai para Transcrição; um resumo, para Notas. No Calendário, uma reunião com esse conteúdo mostra **Notas** ou **Transcrição**.
 
-The Machine lê os dois tipos de conteúdo para identificar os acompanhamentos da reunião. Eles são classificados como Work ou Personal, assim como a reunião, e só vão para sua equipe quando a reunião também for de trabalho.
+The Machine lê os dois tipos de conteúdo para identificar os follow-ups da reunião. Eles são classificados como Trabalho ou Pessoal, assim como a reunião, e só vão para sua equipe quando a reunião também vai.
 
 A reunião abre com esses detalhes onde quer que você a encontre: em uma linha do tempo, em uma busca de mensagens ou como origem de uma tarefa. **Convite original**, na parte inferior, mostra o convite como chegou.
 
@@ -96,7 +96,7 @@ Ainda não tem reuniões? Se você não tiver um calendário conectado, **Conect
 
 Quando uma reunião de trabalho coincide com algo no seu calendário pessoal, ou vice-versa, The Machine cria uma tarefa sobre o evento mais recente. Ela pode preparar uma mensagem curta para remarcar ou sugerir que você recuse o convite. Nada é enviado até você aprovar.
 
-Eventos de dia inteiro, marcados como livre ou provisórios nunca contam, e cada conflito aparece uma única vez. Uma tarefa Work só informa que há um conflito, para que sua equipe nunca veja o evento pessoal. Só você vê o evento com o qual há conflito.
+Eventos de dia inteiro, marcados como livre ou provisórios nunca contam, e cada conflito aparece uma única vez. Uma tarefa de Trabalho só informa que há um conflito, para que sua equipe nunca veja o evento pessoal. Só você vê o evento com o qual há conflito.
 
 ## Prepare-se para suas reuniões
 

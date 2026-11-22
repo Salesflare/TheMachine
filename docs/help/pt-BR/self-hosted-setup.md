@@ -7,14 +7,14 @@ code: install.sh, install.ps1, docs/getting-started.md
 order: 2
 translated: 73526b82818f009d
 ---
-A The Machine é de código aberto (AGPL). No seu próprio computador ela é grátis, e os seus dados ficam lá.
+Rode a The Machine no seu próprio computador de graça. Ela é de código aberto (AGPL), e os seus dados ficam com você. Para instalar, você precisa de um terminal. Para conectar suas contas, não.
 
 ## O que é preciso
 
-- OpenClaw 2026.11.2 ou mais recente. O instalador oferece para instalar.
+- OpenClaw 2026.11.2 ou mais recente, o agente de código aberto em que a The Machine roda. O instalador oferece para instalar.
 - Python 3.12 ou mais recente, e Node.js 24 (24.22.1 ou mais recente) ou 26.12.1 ou mais recente, não 25.
 - Tailscale, para acessar seu painel pelo celular.
-- Sua própria conta de usuário, não root.
+- Uma conta de usuário comum, não root.
 
 ## Instalar
 
@@ -34,6 +34,6 @@ O instalador encontra suas contas, conecta uma por uma e mostra uma prévia da s
 - Outras fontes: **Conexões**, depois o tipo da fonte. Seu próprio cliente Google ou app Entra: `assistant connect` em um terminal.
 - Verifique tudo com `assistant doctor`. Ele mostra uma solução para cada problema.
 - O instalador usa a versão assinada mais recente, e as atualizações também chegam como versões assinadas.
-- Vinculada à The Machine Network, sua Machine compartilha o endereço Tailscale dela com sua conta, para que o app no celular a abra depois que você entrar. Ao desvincular, ele é apagado.
+- Pareie a Machine com a sua conta, e o app no celular a abre depois que você entrar. Ao desparear, esse vínculo é removido.
 
 O guia completo está no repositório: [Primeiros passos](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

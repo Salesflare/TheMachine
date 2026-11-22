@@ -12,7 +12,7 @@ translated: f403410953e50582
 - Em uma Machine hospedada, os detalhes da organização são consultados para você, sem custo.
 - No seu próprio computador, esse recurso fica desativado até você adicionar uma chave de um serviço de consulta, como Apollo, People Data Labs ou Hunter. Consulte o [guia de configuração](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Só o endereço do site da organização é enviado, nunca suas mensagens nem quem você conhece nela. Uma Machine hospedada ou uma no The Machine Network faz até 1,000 consultas por dia. Nos outros casos, são até 50. Os dados são atualizados a cada 90 dias. Sites compartilhados e provedores de e-mail, como gmail.com, nunca são consultados. As pessoas têm uma consulta própria: veja [Cargo e foto](people.md#job-title-and-photo).
+Só o endereço do site da organização é enviado, nunca suas mensagens nem quem você conhece nela. Uma Machine hospedada ou uma na The Machine Network faz até 1.000 consultas por dia. Nos outros casos, são até 50. Os dados são atualizados a cada 90 dias. Sites compartilhados e provedores de e-mail, como gmail.com, nunca são consultados. As pessoas têm uma consulta própria: veja [Cargo e foto](people.md#job-title-and-photo).
 
 Se a consulta não encontrar um logotipo, The Machine usa o ícone do próprio site da organização, salvo na sua Machine. Nenhum serviço de logotipos fica sabendo com quem você trabalha. Quando tem os dois, espaços pequenos, como a linha de uma tarefa, mostram o ícone quadrado.
 

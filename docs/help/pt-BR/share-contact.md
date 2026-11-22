@@ -29,7 +29,7 @@ Em **Sobre você**, escolha **Compartilhar meu contato**. Escolha quais dos seus
 
 ## Quando alguém compartilha com você
 
-O contato espera em **Compartilhados com você**, no topo de Pessoas, com quem enviou e a nota. Escolha **Adicionar** para colocá-lo no seu Graph, ou **Dispensar**.
+O contato espera em **Compartilhados com você**, no topo de Pessoas, com quem enviou e a nota. Escolha **Adicionar** para colocá-lo no seu Graph, ou **Descartar**.
 
 - Se você já conhece essa pessoa (mesmo e-mail ou número), Adicionar só acrescenta o que é novo. O nome, o cargo e o lado continuam sendo os seus.
 - De um colega, a pessoa entra como Trabalho, marcada como "Compartilhado por" ele. De um amigo ou da Família, é uma sugestão para adicionar, e o lado é decidido como para qualquer outra pessoa.

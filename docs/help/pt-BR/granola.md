@@ -26,7 +26,7 @@ Uma chave de API pessoal do Granola. O Granola oferece chaves de API nos planos 
 ## Conectar
 
 1. No app para computador do Granola: **Configurações**, Connectors, API keys. Crie uma chave com acesso a Personal notes e copie-a.
-2. No painel: **Conexões**, **Reuniões**, Granola. Ou, na página de configuração de uma Machine hospedada em app.themachine.computer/setup: More sources, Granola. No seu próprio computador, `assistant connect granola` também solicita a chave.
+2. No painel: **Conexões**, **Reuniões**, Granola. Ou, na página de configuração de uma Machine hospedada em app.themachine.computer/setup: **Mais fontes**, Granola. No seu próprio computador, `assistant connect granola` também solicita a chave.
 3. Cole a chave, escolha **Trabalho** ou **Pessoal** e pressione **Conectar**.
 
 A chave é verificada na hora. Se o Granola deixar de aceitá-la, Granola em **Conexões** solicitará uma nova chave.

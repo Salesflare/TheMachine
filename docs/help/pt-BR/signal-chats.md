@@ -19,7 +19,7 @@ Stories, reações, chamadas e Nota para mim ficam de fora. Nada é marcado como
 
 Um texto em um chat que já existe, só depois que você aprovar na tarefa. Uma resposta cita a mensagem que responde quando isso ajuda. Os envios saem um de cada vez, com uma pausa entre eles.
 
-Se uma tarefa chegou por email mas você fala com essa pessoa pelo Signal, diga isso no chat da tarefa. The Machine encontra seu chat existente com ela e passa o rascunho para o Signal, para você revisar e enviar. Ela nunca começa um chat novo.
+Se uma tarefa chegou por e-mail, mas você fala com essa pessoa pelo Signal, diga isso no chat da tarefa. The Machine encontra seu chat existente com ela e passa o rascunho para o Signal, para você revisar e enviar. Ela nunca começa um chat novo.
 
 ## Conectar
 
@@ -32,7 +32,7 @@ Sua Machine guarda as chaves do aparelho conectado com ela. Elas nunca saem dela
 
 ## Quando ela para
 
-Ele usa o signal-cli, um cliente não oficial do Signal. Sua Machine baixa uma versão fixada e confere o checksum antes de rodá-la. O Signal pode deixar de aceitá-lo a qualquer momento.
+Ela usa o signal-cli, um cliente não oficial do Signal. Sua Machine baixa uma versão fixada e confere o checksum antes de rodá-la. O Signal pode deixar de aceitá-lo a qualquer momento.
 
 - **O Signal desvinculou esta Machine**: você a removeu no celular, ou o Signal encerrou a conexão. Toque em **Reconectar** em **Conexões** e escaneie um novo código.
 - **Atualize The Machine para o Signal**: o Signal não aceita mais o cliente Signal desta Machine. Atualize The Machine.

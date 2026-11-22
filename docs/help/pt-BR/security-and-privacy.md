@@ -18,11 +18,11 @@ translated: e636b2a2fbbc714d
 - Relatórios de erro, a menos que você desative essa opção: quando algo dá errado, registramos o tipo de erro e onde ele ocorreu no código. Nunca registramos suas mensagens, nomes ou endereços. Veja [Relatórios de erro](error-reports.md).
 - Contagens de uso em uma Machine hospedada: contagens diárias do que você fez (como tarefas abertas ou e-mails enviados), nunca do conteúdo.
 - Leve seus dados com você ou exclua-os: exporte tudo em **Configurações** › **Geral**, ou exclua sua Machine e os backups dela com um botão. Veja [Cancelar ou excluir](cancel-and-delete.md).
-- Nosso acesso fica registrado: sempre que alguém da nossa equipe lê o relatório ou os registros da sua Machine hospedada. Quem é proprietário ou administra uma Fleet pode ver esses registros em **Atividade**. Veja [Fleets](fleet.md).
+- Nosso acesso fica registrado: sempre que alguém da nossa equipe lê o relatório ou os registros da sua Machine hospedada. Quem é proprietário ou administra um Fleet pode ver esses registros em **Atividade**. Veja [Fleets](fleet.md).
 
 ## Níveis de segurança
 
-**Padrão** mantém as configurações atuais. **Cuidadoso** não mostra texto nas notificações, não salva logins e guarda menos dados. Quem administra uma Work Fleet pode definir a Fleet como **Cuidadoso**. Veja [Níveis de segurança](security-levels.md).
+**Padrão** mantém as configurações atuais. **Cuidadoso** não mostra texto nas notificações, não salva logins e guarda menos dados. Quem administra um Fleet de Trabalho pode definir o Fleet como **Cuidadoso**. Veja [Níveis de segurança](security-levels.md).
 
 ## Entrar
 

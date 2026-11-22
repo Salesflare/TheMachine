@@ -13,7 +13,7 @@ Sua Machine cria um mapa de quem você conhece e do que está acontecendo, com b
 - [Organizações](organizations.md): as empresas onde elas trabalham, com suas pessoas e projetos.
 - [Projetos](projects.md): o que está acontecendo, em quadros com etapas, como negócios em um CRM.
 
-## Atualizada hoje
+## Atualizado hoje
 
 Uma linha discreta no topo de cada lista mostra o que sua Machine atualizou hoje, como **4 pessoas atualizadas hoje**. Toque nela para ver quem e o que mudou. Ao tocar em um nome, a página da pessoa abre com **Mudanças recentes**. Um pequeno ponto marca cada linha e bloco do quadro que mudou hoje. A contagem inclui apenas as mudanças feitas pela sua Machine desde a meia-noite.
 
@@ -54,7 +54,7 @@ Se a pessoa ainda não tiver uma data, **Adicionar aniversário**, em Campos, pe
 
 ## Proprietário
 
-Em uma Fleet de trabalho, cada pessoa, organização e projeto tem um proprietário: **Proprietário**, em **Com você** na página do registro. O proprietário é você, a menos que escolha alguém da sua Fleet de trabalho. **Proprietário** em Filtrar mostra apenas os seus registros. Cada alteração aparece na linha do tempo.
+Em um Fleet de Trabalho, cada pessoa, organização e projeto tem um proprietário: **Proprietário**, em **Com você** na página do registro. O proprietário é você, a menos que escolha alguém do seu Fleet de Trabalho. **Proprietário** em Filtrar mostra apenas os seus registros. Cada alteração aparece na linha do tempo.
 
 ## Equipe
 

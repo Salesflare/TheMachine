@@ -20,7 +20,7 @@ Nada no seu celular. Ela só lê notificações.
 Em uma Machine hospedada:
 
 1. Instale o OpenClaw pelo Google Play no seu celular.
-2. No painel, abra **Conexões**, depois **Outras**, escolha Android notifications e toque em **Mostrar um código de configuração**.
+2. No painel, abra **Conexões**, depois **Outras**, escolha Notificações do Android e toque em **Mostrar um código de configuração**.
 3. No app OpenClaw, adicione um Gateway e escaneie o código. Depois, volte ao painel e toque em **Aprovar**.
 4. Permita o acesso às notificações quando o app pedir. Depois, ative **Encaminhar eventos de notificação** nas configurações do app, para receber as notificações assim que chegarem, e não só durante a verificação a cada 10 minutos.
 

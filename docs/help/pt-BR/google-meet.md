@@ -21,7 +21,7 @@ Nada no Meet, no Docs ou no Drive. Ele só lê e nunca ativa transcrições sozi
 
 ## O que ele pede
 
-Um OK próprio, separado do seu login do e-mail. O Google pede para permitir que The Machine:
+Um OK próprio, separado do seu login do e-mail. O Google pede para permitir que a The Machine:
 
 - Veja suas reuniões do Google Meet, com as transcrições e notas do Gemini.
 - Veja seus Google Docs, para ler o documento com as notas do Gemini.
@@ -32,12 +32,12 @@ Ele nunca pede o seu Drive. Seu acesso ao Gmail e à Agenda continua igual.
 
 Não precisa ter o Gmail conectado. Para conectar:
 
-- Machine hospedada: no painel, abra **Conexões**, **Reuniões**, escolha **Google Meet** e clique em **Entrar com Google**. O Google pede o OK acima, e você volta para o painel.
+- Machine hospedada: no painel, abra **Conexões**, **Reuniões**, escolha **Google Meet** e clique em **Entrar com o Google**. O Google pede o OK acima, e você volta para o painel.
 - Seu próprio computador, pareado com sua conta: os mesmos passos. O login abre em uma nova aba.
 
-Ela confere se o login pode ler o Meet. Sem esse OK, ele não é adicionado. O login continua valendo: não há nada para colar nem renovar.
+Sem o OK do Meet, ele não é adicionado. Não há nada para colar nem renovar.
 
-Se você retirar o OK depois, o card do Google Meet pede para você entrar de novo.
+Se você retirar o OK depois, o Google Meet em **Conexões** pede para você entrar de novo.
 
 ## Remover
 
@@ -45,4 +45,4 @@ No painel: **Conexões**, abra o Google Meet, **Detalhes** e depois **Desconecta
 
 ## Revogar no Google
 
-Abra myaccount.google.com/permissions e remova o acesso de The Machine ao Google Meet. O Gmail e a Agenda continuam funcionando.
+Abra myaccount.google.com/permissions e remova o acesso da The Machine ao Google Meet. O Gmail e a Agenda continuam funcionando.

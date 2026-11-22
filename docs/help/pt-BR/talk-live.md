@@ -26,7 +26,7 @@ Falar tem uma página própria: uma conversa do começo ao fim, com a tarefa de 
 
 Peça para ler um rascunho, mudar, adiar, marcar como feita ou ir para a próxima. Enviar funciona como no chat de uma tarefa: um rascunho por pergunta, depois de um sim claro. O que você diz sobre uma tarefa fica no chat dessa tarefa. Quando chega uma tarefa nova, ela avisa numa pausa. Diga "crie uma tarefa para..." e ela cria uma nova, sem sair da que está aberta.
 
-Ela também alcança o resto da The Machine. Pergunte sobre uma pessoa, uma organização, um projeto, uma reunião ou uma promessa, e ela procura e mostra. Ela pode adiar uma tarefa, marcar como feita, dispensar, renomear ou reabrir, até uma em **Feito / dispensado**. Para todo o resto, ela cria uma tarefa, deixa o chat dela cuidar disso e conta a resposta.
+Ela também alcança o resto da The Machine. Pergunte sobre uma pessoa, uma organização, um projeto, uma reunião ou uma promessa, e ela procura e mostra. Ela pode adiar uma tarefa, marcar como feita, descartar, renomear ou reabrir, até uma em **Feito / descartado**. Para todo o resto, ela cria uma tarefa, deixa o chat dela cuidar disso e conta a resposta.
 
 Ela também lembra das suas conversas anteriores com ela. Pergunte "o que eu decidi sobre o offsite?" ou "o que eu disse sobre a Acme semana passada?" e ela conta, com quando você disse. Só o Falar na barra lateral faz isso, não o Falar no chat de uma tarefa.
 

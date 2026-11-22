@@ -40,6 +40,6 @@ Escolha um tipo na lista no topo, como **Mensagens** ou **Fleet**. **Recusado ou
 
 ## Outros lugares
 
-O chat de uma tarefa continua mostrando o que aconteceu nela; a Atividade tem um link para esse chat. Em Fleet, **Atividade** mostra as mesmas linhas dos seus Fleet e aprendizados, com a opção **Retirar** para um aprendizado. Em Configurações, **Segurança**, toque em **Ver cada acesso em Atividade** para abrir os acessos da nossa equipe.
+O chat de uma tarefa continua mostrando o que aconteceu nela; a Atividade tem um link para esse chat. Em Fleet, **Atividade** mostra as mesmas linhas dos seus Fleets e aprendizados, com a opção **Retirar** para um aprendizado. Em Configurações, **Segurança**, toque em **Ver cada acesso em Atividade** para abrir os acessos da nossa equipe.
 
 A Atividade mostra apenas o que aconteceu. Ela nunca muda o que a The Machine pode fazer.

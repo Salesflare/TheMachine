@@ -28,7 +28,7 @@ A promessa já foi cumprida, como quando você enviou uma resposta ou uma reuni�
 
 A promessa recebeu uma nova data, como "na semana que vem, em vez disso"? A mesma promessa é atualizada, assim como a tarefa, sem criar outra. A página mostra a nova data e a mensagem mais recente.
 
-Uma promessa sem data recebe um dia de **acompanhamento**: três dias depois de você fazê-la ou uma semana depois de outra pessoa fazê-la. Se continuar em aberto até lá, ela vira uma tarefa.
+Uma promessa sem data recebe um dia de **follow-up**: três dias depois de você fazê-la ou uma semana depois de outra pessoa fazê-la. Se continuar em aberto até lá, ela vira uma tarefa.
 
 As promessas do Slack mostram o nome da pessoa.
 

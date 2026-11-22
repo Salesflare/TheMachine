@@ -1,7 +1,7 @@
 ---
 title: Relatórios de erro
 area: security
-summary: Quando algo dá errado, sua Machine conta à equipe do The Machine o que falhou e onde no código. Nunca envia suas mensagens, nomes ou endereços.
+summary: Quando algo dá errado, sua Machine conta à equipe da The Machine o que falhou e onde no código. Nunca envia suas mensagens, nomes ou endereços.
 covers: error-reports
 code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
@@ -34,7 +34,7 @@ O conteúdo das suas mensagens, tarefas, rascunhos ou chats. Nomes, endereços d
 - tarefas de agentes de programação que falham: somente a ferramenta e o tipo de falha;
 - o teste rápido da sua IA quando falha: o erro da IA, sem informações específicas.
 
-Um conector que você adicionou por conta própria (um arquivo seu em `connectors/`) envia somente o nome do serviço e o rótulo do erro, como `notes` e `notes_http: HTTP unauthorized`, para que possamos ajudar a corrigi-lo. Nada mais do código é enviado. O cartão da conexão mostra o erro completo.
+Um conector que você adicionou por conta própria (um arquivo seu em `connectors/`) envia somente o nome do serviço e o rótulo do erro, como `notes` e `notes_http: HTTP unauthorized`, para que possamos ajudar a corrigi-lo. Nada mais do código é enviado. A própria conexão, em Conexões, mostra o erro completo.
 
 Erros repetidos são contabilizados, mas não são enviados novamente. É enviado no máximo um lote a cada 10 minutos. Guardamos esses dados por 30 dias.
 

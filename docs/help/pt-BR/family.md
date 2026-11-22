@@ -1,7 +1,7 @@
 ---
 title: Família
 area: fleet
-summary: Uma Fleet da família gratuita para até 6 pessoas, com tarefas e planos compartilhados quando todos estiverem disponíveis.
+summary: Um Fleet da Família gratuito para até 6 pessoas: quando todos estão livres, tarefas e planos compartilhados.
 covers: family
 code: family.py, dashboard.html
 order: 6
@@ -13,7 +13,7 @@ translated: 2afbe215fa387999
 - Tarefas: peça a alguém da família para fazer algo. A pessoa aceita ou recusa.
 - Planos: proponha um plano. Todos respondem "Vou" ou "Não posso". "Vou" adiciona o plano à sua agenda do Google, sem convidar ninguém; **Desfazer** remove o plano. Se não houver uma agenda que a Machine possa alterar, você recebe um link para adicionar o plano por conta própria.
 
-Nenhuma pergunta de trabalho passa por uma Fleet da família.
+Nenhuma pergunta de trabalho passa por um Fleet da Família.
 
 ## Sugestões de convite
 
@@ -37,4 +37,4 @@ Quando vocês dois recebem o mesmo e-mail, cobrança ou formulário e uma pessoa
 
 Por padrão, os horários livres e ocupados são compartilhados, e as tarefas e os planos pedem sua confirmação primeiro. Altere isso no painel Compartilhamento: veja [Regras de compartilhamento](sharing-rules.md).
 
-Uma Fleet da família é gratuita. As Machines hospedadas nela custam {price.family_pair} por mês para as duas primeiras em conjunto, depois {price.family_seat} cada, sem IVA. Veja [Planos e cobrança](plans-and-billing.md).
+Um Fleet da Família é gratuito. As Machines hospedadas nele custam {price.family_pair} por mês para as duas primeiras em conjunto, depois {price.family_seat} cada, sem impostos. Veja [Planos e cobrança](plans-and-billing.md).

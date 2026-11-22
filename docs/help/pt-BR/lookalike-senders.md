@@ -20,7 +20,7 @@ O mesmo nome com outra terminação, como `example.nl` e `example.com`, indica a
 
 Uma tarefa sobre uma mensagem assim avisa claramente, por exemplo: "Este não é o Alex. A mensagem veio de examp1e.com, não de example.com." O remetente aparece como endereço simples, sem foto nem link para a pessoa que está imitando.
 
-## O que The Machine não fará
+## O que a The Machine não fará
 
 - Ela nunca atribui uma função a um remetente impostor no seu Graph, nem define o domínio dele como organização de um projeto.
 - Ela nunca o mescla com a pessoa que ele imita, nem mesmo quando escreve na mesma conversa com o mesmo nome, e nunca o sugere em **Mesma pessoa?**.

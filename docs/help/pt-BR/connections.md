@@ -9,7 +9,7 @@ translated: 0896d8f689ca9699
 ---
 ## Como estão
 
-A guia **Conexões** lista suas fontes por tipo, com **Logins** e **Verificações** abaixo de uma linha. No celular, toque em um tipo para abrir e em **Conexões** para voltar. Se alguma fonte precisar de você, o tipo dela aparece primeiro. Cada fonte é exibida em uma linha com o status (Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda) e o que chegou recentemente. Toque nela para abrir o cartão e ver **Detalhes**.
+A guia **Conexões** lista suas fontes por tipo, com **Logins** e **Verificações** abaixo de uma linha. No celular, toque em um tipo para abrir e em **Conexões** para voltar. Se alguma fonte precisar de você, o tipo dela aparece primeiro. Cada fonte é exibida em uma linha com o status (Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda) e o que chegou recentemente. Toque nela para ver a fonte e **Detalhes**.
 
 Uma sincronização com falha que foi corrigida por uma sincronização posterior aparece em cinza. Só uma falha que ainda seja a mais recente aparece como problema, com a informação de quando haverá uma nova tentativa.
 
@@ -35,7 +35,7 @@ Preencha as informações necessárias, como uma chave ou um endereço, escolha 
 
 Em uma Machine hospedada, você entra diretamente por aqui nas fontes que têm login próprio: Google, Microsoft (Outlook, OneDrive e Teams), Google Meet, Google Docs, Slack, Zoom, Stripe, Intercom, Salesforce e Trello.
 
-Escolha **Trabalho** ou **Pessoal** e toque no botão de login, como **Entrar com Google**. Você volta ao formulário, que mostra o resultado. GitHub, WhatsApp, Codex, as conversas do Telegram e seu celular Android também mostram os códigos aqui.
+Escolha **Trabalho** ou **Pessoal** e toque no botão de login, como **Entrar com o Google**. Você volta ao formulário, que mostra o resultado. GitHub, WhatsApp, Codex, as conversas do Telegram e seu celular Android também mostram os códigos aqui.
 
 No seu próprio computador, você entra nas mesmas fontes depois que sua Machine é pareada com sua conta: na primeira vez, toque em **Parear esta Machine**. Algumas fontes também oferecem outra opção, como usar seu próprio aplicativo ou uma chave.
 

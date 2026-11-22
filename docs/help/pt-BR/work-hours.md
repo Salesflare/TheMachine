@@ -1,16 +1,16 @@
 ---
 title: Horário de trabalho
 area: settings
-summary: Quando a sua Machine pode mandar mensagens para você, quando os itens adiados voltam e quando chega o resumo da manhã.
+summary: Quando a sua Machine pode mandar mensagens para você, quando os itens adiados voltam e quando chegam os resumos da manhã e do fim do dia.
 code: dashboard.html, assistant.py
 order: 3
 keywords: quiet hours, weekend, evening, night, do not disturb, time zone
 translated: 062ccef1310f228a
 ---
-Em **Configurações**, **Notificações**, em **Horário de trabalho**:
+Escolha quando a sua Machine pode falar com você. Em **Configurações**, **Notificações**, em **Horário de trabalho**:
 
 - **Dias de trabalho**: tarefas de trabalho e itens de trabalho adiados esperam por um dia de trabalho.
-- **Mensagens das** e **Até**: nada é enviado para você fora desse horário, nem push, nem Telegram, nem e-mail.
+- **Mensagens das** e **Até**: nada é enviado para você fora desse horário, nem notificação, nem Telegram, nem e-mail.
 - **Itens adiados voltam às**: quando um item adiado por um dia ou mais volta. O resumo da manhã chega pelo menos 5 minutos depois, para incluí-los.
 - **Resumo da manhã**: quando chega o resumo da manhã. Se os itens adiados voltarem mais tarde, ele acompanha.
 - **Resumo do fim do dia**: quando chega o resumo do fim do dia. Começa 15 minutos antes de **Até** e acompanha esse horário até você escolher um seu.
@@ -20,4 +20,4 @@ Toque em **Salvar**. Por padrão, é de segunda a sexta, das 08:00 às 23:00, it
 
 O que sai dentro desse horário, e como, está em [Notificações](notifications.md).
 
-No seu próprio computador, `assistant hours` também mostra e muda esses horários.
+No seu próprio computador, `assistant hours` mostra e muda esses horários em um terminal.

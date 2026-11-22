@@ -29,7 +29,7 @@ Algumas frases curtas no início da página de uma pessoa: o que foi decidido, p
 
 Frases vagas ficam de fora. Se não houver nada específico para dizer, não há resumo. Cada frase tem um link para a fonte: mensagens do mesmo dia compartilham uma data com o número de mensagens e podem ser abertas juntas.
 
-**Editar** o resumo para deixá-lo do seu jeito. Quando há novidades, The Machine mostra uma **Atualização sugerida**, com as opções **Usar** e **Manter a minha**. **Deixar The Machine escrever** devolve o resumo para ela.
+Use **Editar** para deixar o resumo do seu jeito. Quando há novidades, The Machine mostra uma **Atualização sugerida**, com as opções **Usar** e **Manter a minha**. **Deixar The Machine escrever** devolve o resumo para ela.
 
 Os preparativos para reuniões usam o resumo, mas somente as frases relacionadas ao tipo daquela tarefa (Trabalho ou Pessoal). O resumo fica na sua Machine. Sua equipe nunca vê.
 
@@ -95,7 +95,7 @@ Essa opção também desativa a breve pesquisa na web antes da primeira reunião
 
 Quando a consulta encontra esses dados, a página da pessoa também mostra a descrição, desde quando ela ocupa o cargo atual e os dois cargos anteriores. Os preparativos também usam essas informações. A descrição só é usada quando a pessoa não tem uma biografia própria.
 
-Suas conexões ficam mais completas com informações que já aparecem em outros lugares: cargo, telefone e fuso horário do Slack; biografia e cidade do X; título e foto do LinkedIn; cargos do Google Contacts e do Salesflare; e a foto de um contato do Salesflare, se o próprio Salesflare tiver uma. Passe o cursor sobre a linha abaixo do nome para ver de onde veio a informação.
+Suas conexões completam esses dados com o que já leem: cargo, telefone e fuso horário do Slack; biografia e cidade do X; título e foto do LinkedIn; cargos do Google Contacts e do Salesflare; e a foto de um contato do Salesflare, se o próprio Salesflare tiver uma. Passe o cursor sobre a linha abaixo do nome para ver de onde veio a informação.
 
 O Outlook adiciona fotos de colegas da sua organização e dos seus contatos do Outlook, além dos cargos e das empresas dos seus contatos ([Microsoft](microsoft.md#photos-of-colleagues-and-contacts)).
 

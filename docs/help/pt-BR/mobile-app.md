@@ -1,7 +1,7 @@
 ---
 title: O app para celular
 area: getting-started
-summary: The Machine como app para iPhone e Android: notificações das suas tarefas e compartilhamento com The Machine a partir de qualquer app.
+summary: A The Machine como app para iPhone e Android: notificações das suas tarefas e compartilhamento com a The Machine a partir de qualquer app.
 covers: mobile-app
 code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, dashboard/setup-card.js, dashboard/settings-apps.js, sw.js, manifest.webmanifest
 order: 3
@@ -38,9 +38,9 @@ As notificações seguem as mesmas regras das notificações push na web: suas e
 
 Cada celular com o app aparece em **Configurações**, **Notificações**, como **Celular com o app**. **Remover** interrompe as notificações nesse celular. Uma Machine auto-hospedada precisa ter acesso à The Machine Network para enviar notificações. O app funciona sem elas.
 
-## Compartilhe com The Machine
+## Compartilhe com a The Machine
 
-Em qualquer app, toque em Compartilhar e escolha The Machine. Uma **Nova tarefa** abre com o texto, o link ou os arquivos que você compartilhou. Confira, adicione uma data se quiser e salve. Nada é adicionado até você fazer isso.
+Em qualquer app, toque em Compartilhar e escolha a The Machine. Uma **Nova tarefa** abre com o texto, o link ou os arquivos que você compartilhou. Confira, adicione uma data se quiser e salve. Nada é adicionado até você fazer isso.
 
 Você também pode compartilhar apenas um arquivo, como uma fatura ou uma carta. Sua Machine lê o texto de um PDF e preenche a tarefa com o que é, a próxima etapa e a data. O arquivo vai direto para sua Machine e fica lá.
 

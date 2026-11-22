@@ -19,8 +19,8 @@ Nada no Stripe. Ela nunca reembolsa, tenta cobrar de novo nem altera nada. Ela s
 
 Entre com sua conta Stripe, do jeito mais fácil:
 
-1. No painel: **Conexões**, **Clientes**, Stripe. Ou, na página de configuração de uma Machine hospedada, em app.themachine.computer/setup: **Mais fontes**, Stripe. No seu próprio computador, primeiro conecte sua conta à Machine.
-2. Pressione **Entrar com Stripe**. O Stripe pergunta qual conta você quer usar e mostra o que The Machine pode ler.
+1. No painel: **Conexões**, **Clientes**, Stripe. Ou, na página de configuração de uma Machine hospedada, em app.themachine.computer/setup: **Mais fontes**, Stripe. No seu próprio computador, primeiro pareie a Machine com a sua conta.
+2. Pressione **Entrar com o Stripe**. O Stripe pergunta qual conta você quer usar e mostra o que The Machine pode ler.
 3. Pressione **Instalar**. Você volta para onde estava, e o Stripe fica conectado.
 
 No seu próprio computador, você também pode colar uma chave restrita:
@@ -29,11 +29,11 @@ No seu próprio computador, você também pode colar uma chave restrita:
 2. Encontre o ID da sua conta (acct_...) em Configurações, Business details.
 3. Abra o Stripe como acima (ou execute `assistant connect stripe`), abra **Ou cole uma chave restrita**, cole o ID da conta e a chave e pressione **Conectar**.
 
-No seu próprio computador, se a opção Entrar com Stripe ainda não estiver disponível, Conexões avisa você e abre este formulário diretamente.
+No seu próprio computador, se a opção Entrar com o Stripe ainda não estiver disponível, Conexões avisa você e abre este formulário diretamente.
 
 ## Conectar uma vez para sua equipe
 
-Em um Fleet de trabalho, um proprietário ou administrador conecta o Stripe uma vez e compartilha com a equipe:
+Em um Fleet de Trabalho, um proprietário ou administrador conecta o Stripe uma vez e compartilha com a equipe:
 
 1. Conecte o Stripe na sua própria Machine (acima). A caixa **Conexões compartilhadas** da aba Fleet também tem a opção **Conectar Stripe**.
 2. Na aba Fleet, abra **Compartilhar Stripe**. Todos já vêm selecionados; desmarque quem não deve ter acesso. Pressione **Compartilhar**.

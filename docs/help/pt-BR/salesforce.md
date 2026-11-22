@@ -23,7 +23,7 @@ Em uma Machine hospedada:
 
 1. Abra sua página de configuração em app.themachine.computer/setup e acesse **Mais fontes**.
 2. Abra o Salesforce e clique em **Conectar Salesforce**.
-3. Entre no Salesforce e autorize o The Machine (feito pela Salesflare).
+3. Entre no Salesforce e autorize a The Machine (feito pela Salesflare).
 
 Ou, no painel: **Conexões**, **Clientes**, escolha Salesforce e clique em **Entrar com Salesforce**. Se estiver no seu próprio computador, primeiro vincule a Machine à sua conta.
 
@@ -43,7 +43,7 @@ O que ela leva em conta:
 - Apenas os campos que são diferentes, e nunca um campo vazio. Ela nunca altera o endereço de e-mail nem a conta.
 - Cada alteração aparece como uma linha com data na página da pessoa.
 
-Clique em **Desativar** para parar. Uma conexão compartilhada pela sua Fleet só lê os dados.
+Clique em **Desativar** para parar. Uma conexão compartilhada pelo seu Fleet só lê os dados.
 
 ## Remover
 
@@ -52,4 +52,4 @@ Clique em **Desativar** para parar. Uma conexão compartilhada pela sua Fleet s�
 
 ## Revogar o acesso no Salesforce
 
-No Salesforce, abra suas configurações pessoais e depois Acesso de OAuth a aplicativos conectados. Você também pode pedir ajuda ao administrador. Revogue o acesso do The Machine. Depois disso, ela não poderá mais ler nem alterar dados.
+No Salesforce, abra suas configurações pessoais e depois Acesso de OAuth a aplicativos conectados. Você também pode pedir ajuda ao administrador. Revogue o acesso da The Machine. Depois disso, ela não poderá mais ler nem alterar dados.

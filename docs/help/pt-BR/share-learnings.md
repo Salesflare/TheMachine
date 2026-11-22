@@ -1,5 +1,5 @@
 ---
-title: Compartilhe aprendizados com a equipe
+title: Compartilhar aprendizados com a equipe
 area: security
 summary: No máximo uma vez por dia, sua Machine oferece alguns aprendizados gerais à equipe da The Machine e vota nos aprendizados de outras Machines. Nada pessoal.
 covers: share-learnings
@@ -25,25 +25,25 @@ Cada aprendizado inclui de 1 a 3 casos de uso: uma situação, o que você faz e
 
 Os aprendizados são enviados automaticamente, a menos que você desative essa opção (veja abaixo). Quando ela pergunta, aparece uma nota em **Aprendizado**, **Compartilhado** com a mensagem "Compartilhar 3 aprendizados com a equipe da The Machine?" Toque em **Revisar** para ver exatamente o que será enviado. Edite ou remova qualquer aprendizado ou caso de uso (cada aprendizado mantém pelo menos um) e toque em **Enviar**. Ou escolha **Agora não** ou **Nunca perguntar**. Uma nova oferta substitui uma que você ainda não respondeu.
 
-O envio é sigiloso para a equipe e feito com um nome inventado, a menos que você marque **Adicionar meu e-mail para a equipe poder responder**.
+O conteúdo é criptografado para a equipe e enviado com um nome inventado, a menos que você marque **Adicionar meu e-mail para a equipe poder responder**.
 
 Outras Machines podem votar em um aprendizado que você compartilhou, sem saber quem o enviou.
 
 ## Envio automático
 
-A opção **Enviar aprendizados automaticamente**, em Configurações, Segurança, vem ativada por padrão. Os novos aprendizados são enviados sem perguntar, com a mesma verificação. Desative-a para responder a cada vez. Se você já a desativou antes, ela continua desativada.
+A opção **Enviar aprendizados automaticamente**, em Configurações, Segurança, vem ativada por padrão. Os novos aprendizados são enviados sem perguntar, com a mesma verificação. Desative-a para que ela pergunte a cada vez. Se você já a desativou antes, ela continua desativada.
 
 Para tarefas pessoais, a Machine ainda pergunta antes de enviar os aprendizados. Se você mesmo ativou essa opção antes, eles também são enviados automaticamente, conforme sua escolha.
 
 Cada aprendizado enviado aparece, exatamente como foi enviado, em Configurações, **Atividade**, e em Fleet, **Atividade**. Toque em **Retirar** para que a equipe não o veja mais.
 
-Seu e-mail e os logs de erros nunca são enviados automaticamente. O modo **Cuidadoso**, uma Work Fleet no modo **Cuidadoso** ou a desativação de **Oferecer compartilhar aprendizados** impede o envio automático. Ao reativar, ela volta a perguntar a cada vez.
+Seu e-mail e os logs de erros nunca são enviados automaticamente. O modo **Cuidadoso**, um Fleet de Trabalho no modo **Cuidadoso** ou a desativação de **Oferecer compartilhar aprendizados** impedem o envio automático. Ao reativar, ela volta a perguntar a cada vez.
 
 ## Desativar
 
 Desative **Oferecer compartilhar aprendizados** em Configurações, Segurança. Consulte [Níveis de segurança](security-levels.md). O compartilhamento precisa da [The Machine Network](/network).
 
-O mesmo controle desativa os [aprendizados da equipe](fleet.md#team-learnings) da sua Work Fleet e retira os que sua Machine compartilhou.
+O mesmo controle desativa os [aprendizados da equipe](fleet.md#team-learnings) do seu Fleet de Trabalho e retira os que sua Machine compartilhou.
 
 ## Votação
 
@@ -57,4 +57,4 @@ A opção **Votar em aprendizados de outras Machines**, em Configurações, Segu
 
 - **Ativado**, por padrão: sua Machine vota automaticamente.
 - **Perguntar antes**: os votos ficam aguardando sua aprovação em **Aprendizado**, **Compartilhado**, cada um com o aprendizado e o voto. Envie ou ignore um por um ou todos de uma vez. Não há tarefa nem notificação. Os votos que você deixar pendentes expiram após 14 dias.
-- **Desligada**: não há votação, e nada que esteja aguardando será enviado.
+- **Desativado**: não há votação, e nada que esteja aguardando será enviado.

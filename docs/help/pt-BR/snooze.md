@@ -11,7 +11,7 @@ translated: e6681ab225810e81
 
 Toque em **Adiar** em uma tarefa. O menu oferece alguns horários, como daqui a 2 horas, amanhã ou daqui a uma semana. Para outro horário, escolha **Escolher data** e **Hora**, depois **Salvar horário**. Adiou por engano? Toque em **Desfazer** na mensagem para trazer a tarefa de volta na hora.
 
-Adiamentos de um dia ou mais voltam no horário definido em “Os adiamentos voltam às”, e tarefas de trabalho aguardam até um dia útil. Defina essas duas opções em [Horário de trabalho](work-hours.md).
+Adiamentos de um dia ou mais voltam no horário definido em **Itens adiados voltam às**, e tarefas de trabalho aguardam até um dia útil. Defina essas duas opções em [Horário de trabalho](work-hours.md).
 
 Ou peça isso em **Pedir mudanças**, por exemplo: “me lembre desta tarefa na próxima terça-feira”.
 

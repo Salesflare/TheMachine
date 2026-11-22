@@ -13,7 +13,7 @@ translated: 9351ad3d0f79316b
 
 Enquanto trabalha no navegador, a tarefa e o chat mostram essa página ao vivo, inclusive entre as etapas, até que o trabalho seja concluído. Clique na imagem para abrir o navegador. Na tarefa, a imagem abre maior, com **Parar**: basta pressionar uma vez para encerrar aquela execução na hora.
 
-Antes de um acompanhamento ou repasse, ela verifica se há respostas mais recentes, inclusive de alguém da sua equipe. Se alguém já cuidou disso, a tarefa informa. Se ela alterou um documento ou uma página, a tarefa inclui um link.
+Antes de um follow-up ou repasse, ela verifica se há respostas mais recentes, inclusive de alguém da sua equipe. Se alguém já cuidou disso, a tarefa informa. Se ela alterou um documento ou uma página, a tarefa inclui um link.
 
 Quando consegue concluir uma tarefa difícil em um site ou fluxo de trabalho, sua Machine guarda as etapas como uma habilidade, sem dados de ninguém. As tarefas futuras nesse site usam essas etapas como orientação, nunca como autorização: enviar ou pagar continua dependendo de você. As habilidades aparecem em **Configurações > Habilidades**, com o rótulo **Aprendido em uma tarefa**.
 

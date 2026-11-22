@@ -28,7 +28,7 @@ Um script é identificado pelo próprio nome, como backup.py, não por python3 o
 
 Uma tarefa que explica em palavras simples o que aconteceu, por que isso importa e o que você pode fazer. Os comandos que mostram o motivo ficam em **Mostrar mais**. Pergunte no chat da tarefa e The Machine vai investigar. Qualquer alteração que ela fizer espera sua aprovação, assim como em **Fazer**.
 
-Quando há uma correção segura, a tarefa inclui **Fazer**. Se um serviço seu continua parado, ela o inicia novamente. No Omarchy, ela também restaura a barra. **Fazer** executa somente aquele comando, e o resultado aparece no chat da tarefa. Ela nunca mexe nos próprios serviços de The Machine nem no OpenClaw Gateway.
+Quando há uma correção segura, a tarefa inclui **Fazer**. Se um serviço seu continua parado, ela o inicia novamente. No Omarchy, ela também restaura a barra. **Fazer** executa somente aquele comando, e o resultado aparece no chat da tarefa. Ela nunca mexe nos próprios serviços da The Machine nem no OpenClaw Gateway.
 
 O mesmo problema gera no máximo uma tarefa a cada duas semanas e nunca enquanto a tarefa ainda estiver aberta. São criadas no máximo duas tarefas por dia. Uma tarefa sobre um serviço parado é encerrada automaticamente quando ele volta a funcionar ou o problema é resolvido.
 
@@ -40,7 +40,7 @@ O mesmo problema gera no máximo uma tarefa a cada duas semanas e nunca enquanto
 
 No macOS, Windows e em computadores sem systemd, ela não lê nada e informa isso em `assistant doctor`.
 
-Em uma Machine hospedada, nossa equipe mantém o servidor funcionando. Os problemas dele são enviados à equipe de The Machine, não aparecem para você como tarefas.
+Em uma Machine hospedada, nossa equipe mantém o servidor funcionando. Os problemas dele são enviados à equipe da The Machine, não aparecem para você como tarefas.
 
 ## Desativar
 

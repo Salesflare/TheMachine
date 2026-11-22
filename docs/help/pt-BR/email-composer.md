@@ -11,7 +11,7 @@ translated: 568ac451673bc141
 
 Clique em um endereço de e-mail, na página de uma pessoa no Graph ou como link em uma tarefa ou um chat. **Novo e-mail** abre para esse endereço, com assunto e mensagem vazios. No celular, ocupa a tela toda.
 
-**De** começa na caixa dessa pessoa: a de trabalho para um contato de trabalho, a pessoal para família e amigos. Clique para escolher outra das suas caixas, ou um alias confirmado.
+**De** começa na caixa certa para essa pessoa: a de trabalho para um contato de trabalho, a pessoal para família e amigos. Clique para escolher outra das suas caixas, ou um alias confirmado.
 
 ## Enviar
 

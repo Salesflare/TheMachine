@@ -11,7 +11,7 @@ translated: f2b98c9bd4f08dba
 
 Suas reuniões, com participantes, salas e anotações: a semana anterior e o próximo mês quando você conecta, além de cada alteração. Elas aparecem no **Calendário** e na preparação para reuniões.
 
-É somente leitura: nunca adiciona, move nem remove reuniões. Ainda não lemos emails do Exchange Server.
+É somente leitura: nunca adiciona, move nem remove reuniões. Ainda não lemos e-mails do Exchange Server.
 
 ## Microsoft 365 ou Exchange Server?
 
@@ -22,7 +22,7 @@ Digite seu endereço primeiro. Se ele estiver no Microsoft 365, o formulário va
 ## Conectar
 
 1. No painel, abra **Conexões**, depois **Calendário**, e escolha **Exchange Server**.
-2. Preencha seu email de trabalho e sua senha do Windows.
+2. Preencha seu e-mail de trabalho e sua senha do Windows.
 3. Clique em **Conectar**.
 
 O servidor é localizado pelo seu endereço (Autodiscover). Não encontrou? Abra **Configurações do servidor** e digite o servidor que sua equipe de TI informar para o Outlook, como `mail.example.com`. Se você entrar com um nome diferente do seu endereço, digite-o em **Usuário** como `DOMAIN\name`.

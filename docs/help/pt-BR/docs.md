@@ -39,7 +39,7 @@ Sua Machine pode criar um documento ou alterar um documento relacionado a uma ta
 
 Ela pode substituir e adicionar texto, parágrafos e títulos. Tabelas, imagens, alterações controladas e campos permanecem como estão.
 
-O documento de uma tarefa de Work fica na conta da empresa, nunca em uma conta pessoal. No seu próprio computador, uma conta Google conectada ao Gmail e com acesso ao Drive também pode criar novos documentos do Google. Se nenhuma conta for adequada, a tarefa informa o que você precisa conectar para Work: Microsoft OneDrive ou Google Docs, quando sua Machine puder usá-lo.
+O documento de uma tarefa de Trabalho fica na conta da empresa, nunca em uma conta pessoal. No seu próprio computador, uma conta Google conectada ao Gmail e com acesso ao Drive também pode criar novos documentos do Google. Se nenhuma conta for adequada, a tarefa informa o que você precisa conectar para Trabalho: Microsoft OneDrive ou Google Docs, quando sua Machine puder usá-lo.
 
 Quando o documento não for a última etapa, como no caso de uma resposta com o link dele, a tarefa permanece aberta e prepara essa etapa para você aprovar.
 
@@ -76,7 +76,7 @@ No seu próprio computador, sua Machine pode criar um novo documento do Google e
 
 ## Trabalho ou uso pessoal
 
-A integração segue a classificação Work ou Personal da conexão, como acontece com o e-mail. Os documentos de Work podem chegar ao Graph da sua equipe, de acordo com suas [regras de compartilhamento](sharing-rules.md). Os documentos pessoais nunca chegam lá.
+A integração segue a classificação Trabalho ou Pessoal da conexão, como acontece com o e-mail. Os documentos de Trabalho podem chegar ao Graph da sua equipe, de acordo com suas [regras de compartilhamento](sharing-rules.md). Os documentos pessoais nunca chegam lá.
 
 ## Remover
 

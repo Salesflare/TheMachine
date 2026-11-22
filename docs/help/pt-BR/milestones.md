@@ -1,7 +1,7 @@
 ---
 title: Marcos
 area: cards
-summary: A cada certo número de tarefas concluídas, uma pequena comemoração aparece em **Tarefas**, com uma imagem para compartilhar, se você quiser.
+summary: A cada certo número de tarefas concluídas, uma pequena comemoração aparece em Tarefas, com uma imagem para compartilhar, se você quiser.
 covers: milestones
 code: machine/store/done_milestones.py, dashboard/todos-milestone.js
 order: 11
@@ -9,7 +9,7 @@ translated: 352a1bbf817dde79
 ---
 ## Quando aparece
 
-Quando sua contagem de **Feito** passar de 10, 50, 100, 250, 500, 1,000, 2,500, 5,000 ou 10,000, uma pequena mensagem aparece no topo de **Tarefas**, com o número. Ela aparece uma vez: feche com × e ela desaparecerá em todos os dispositivos. Se você já tiver passado de vários marcos, só o mais recente aparece.
+Quando sua contagem de **Feito** passar de 10, 50, 100, 250, 500, 1.000, 2.500, 5.000 ou 10.000, uma pequena mensagem aparece no topo de **Tarefas**, com o número. Ela aparece uma vez: feche com × e ela desaparecerá em todos os dispositivos. Se você já tiver passado de vários marcos, só o mais recente aparece.
 
 ## Compartilhar
 

@@ -38,4 +38,4 @@ Corrija onde encontrar a linha:
 - Ou diga o que quer mudar no chat de qualquer tarefa, como "Só escrevo o início das frases com letra minúscula, não os nomes". O chat mostra **Salvo em Como você escreve**, com a opção **Editar**.
 - **Aprendizado**, **O que aprendi** também lista todas as linhas, cada uma com a opção **Editar**.
 
-Seja específica: os rascunhos seguem as orientações ao pé da letra. Só dizer "letra minúscula" também deixa os nomes em minúsculas. Já "frases começam com letra minúscula, nomes mantêm as maiúsculas" não. Os hábitos ficam no canal em que foram definidos, então um hábito de chat nunca se aplica aos seus e-mails.
+Escreva com precisão: os rascunhos seguem as orientações ao pé da letra. Só dizer "letra minúscula" também deixa os nomes em minúsculas. Já "frases começam com letra minúscula, nomes mantêm as maiúsculas" não. Os hábitos ficam no canal em que foram definidos, então um hábito de chat nunca se aplica aos seus e-mails.

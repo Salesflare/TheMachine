@@ -18,7 +18,7 @@ A página **Tarefas** organiza tudo:
 - **Aguardando outras pessoas**: tarefas recolhidas em que a próxima etapa depende de outra pessoa (veja abaixo).
 - **Volta mais tarde**: tarefas adiadas e tarefas sem resposta a **Ainda precisa?** (veja abaixo).
 - **Promessas**: o que você prometeu e o que outras pessoas prometeram a você. Veja [Promessas](promises.md).
-- **Feito / dispensado**: todas as tarefas concluídas, começando pela mais recente, com o horário em que foram concluídas, como "Concluída há 5 minutos". Tarefas que parecem já estar concluídas aparecem como **Parece feito**.
+- **Feito / descartado**: todas as tarefas concluídas, começando pela mais recente, com o horário em que foram concluídas, como "Concluída há 5 minutos". Tarefas que parecem já estar concluídas aparecem como **Parece feito**.
 
 Depois que você envia algo, uma nota curta informa para onde a tarefa foi, como "Enviado. Movido para Feito." ou "Enviado. Movido para Mais tarde até seg.". **Abrir** leva você até ela. A pesquisa encontra tarefas pelo título ou por quem as recebeu, inclusive em Mais tarde e Feito.
 
@@ -102,11 +102,11 @@ Toque no título ou em **Nome** em **Detalhes** para mudar o nome da tarefa. Voc
 
 Uma conta que você ainda precisa pagar por conta própria, de qualquer país, vira uma tarefa com o valor, o vencimento e os dados de pagamento informados na conta. Contas pagas automaticamente, como as de débito automático ou cartão cadastrado, não viram tarefas. Quando um e-mail posterior informa que ela foi paga, como uma confirmação do remetente, a tarefa é encerrada automaticamente. **Desfazer** traz a tarefa de volta por um dia.
 
-Uma tarefa que só fazia sentido até um horário determinado, como uma confirmação antes de uma reunião, é encerrada automaticamente depois desse horário. Ela vai para **Feito / dispensado** com o status "Não é mais necessária". **Desfazer** traz a tarefa de volta por um dia.
+Uma tarefa que só fazia sentido até um horário determinado, como uma confirmação antes de uma reunião, é encerrada automaticamente depois desse horário. Ela vai para **Feito / descartado** com o status "Não é mais necessária". **Desfazer** traz a tarefa de volta por um dia.
 
 Antes de uma mensagem ou de um repasse para alguém aparecer como pronto, sua Machine verifica as conversas recentes com as pessoas envolvidas, inclusive chats em grupo, e espera o Slack terminar de lê-las. Se uma mensagem posterior mostrar que a tarefa já foi resolvida, como um pedido seguido de um sim, ela é encerrada automaticamente. **Desfazer** traz a tarefa de volta por um dia.
 
-Quando uma mensagem mais recente muda os planos, como uma festa transferida para outro local ou uma reserva cancelada, The Machine atualiza as tarefas automaticamente. Uma tarefa que ainda for necessária acompanha os novos planos. Se não houver mais nada a fazer, ela vai para **Feito / dispensado** com o status "Não precisa". O chat informa "Atualizado:" e o motivo, e **Desfazer** traz a tarefa de volta por um dia.
+Quando uma mensagem mais recente muda os planos, como uma festa transferida para outro local ou uma reserva cancelada, The Machine atualiza as tarefas automaticamente. Uma tarefa que ainda for necessária acompanha os novos planos. Se não houver mais nada a fazer, ela vai para **Feito / descartado** com o status "Não precisa". O chat informa "Atualizado:" e o motivo, e **Desfazer** traz a tarefa de volta por um dia.
 
 Nas suas primeiras tarefas, uma dica curta mostra as principais opções: **Pedir mudanças** e **Não precisa**, além de avisar que nada é enviado até você tocar em **Enviar**. A dica desaparece de vez quando você usa o botão ou toca em ×.
 

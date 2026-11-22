@@ -13,7 +13,7 @@ Tudo o que sua Machine aprende é seu. Compartilhe com outra IA, como ChatGPT ou
 
 1. Em **Configurações** › **Geral** › **Exportar**, clique em **Exportar** ao lado de **Conhecimento para outra IA**.
 2. **Texto das mensagens** vem desativado por padrão: o arquivo inclui apenas a origem de cada item e a data. Ative essa opção para incluir o texto.
-3. Ative **Privado e Cuidadoso** somente se quiser incluir projetos só seus, conversas privadas e itens de Fleet no modo Cuidadoso.
+3. Ative **Privado e Cuidadoso** somente se quiser incluir projetos só seus, conversas privadas e Fleets no nível Cuidadoso.
 4. Se quiser, defina uma **Frase secreta** (com pelo menos 10 caracteres) para criptografar o arquivo.
 5. Clique em **Baixar**. Só é possível baixar o arquivo uma vez.
 

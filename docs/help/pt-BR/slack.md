@@ -7,9 +7,9 @@ code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
 translated: 23f9e98f4680d23c
 ---
-## O que ele lê
+## O que ela lê
 
-As conversas das quais você participa: canais, canais privados, mensagens diretas e mensagens em grupo. Ele lê as dos últimos 7 dias quando você conecta e, depois, tudo o que chegar de novo. Nunca entra em um canal nem abre uma conversa por conta própria. Um canal sem atividade é lido aproximadamente uma vez por dia. Quando uma tarefa precisa das mensagens mais recentes, The Machine lê o canal na hora.
+As conversas das quais você participa: canais, canais privados, mensagens diretas e mensagens em grupo. Ela lê as dos últimos 7 dias quando você conecta e, depois, tudo o que chegar de novo. Nunca entra em um canal nem abre uma conversa por conta própria. Um canal sem atividade é lido aproximadamente uma vez por dia. Quando uma tarefa precisa das mensagens mais recentes, The Machine lê o canal na hora.
 
 As mensagens antigas de cerca de um ano são carregadas depois, aos poucos, como [histórico](history.md).
 
@@ -25,7 +25,7 @@ O que The Machine lê fica na sua Machine até você excluir o conteúdo ou a Ma
 
 ## Conectar
 
-1. **Conexões**, **Chat**, **Slack** e depois **Entrar com Slack**. Em seguida, autorize o acesso no Slack. Se estiver usando seu próprio computador, primeiro pareie a Machine com sua conta em themachine.computer.
+1. **Conexões**, **Chat**, **Slack** e depois **Entrar com o Slack**. Em seguida, autorize o acesso no Slack. Se estiver usando seu próprio computador, primeiro pareie a Machine com sua conta em themachine.computer.
 2. As mensagens novas e as mensagens diretas chegam primeiro. O Slack permite que os apps leiam cerca de uma conversa por minuto, então as mensagens antigas são carregadas ao longo de algumas horas.
 
 Ou use uma chave de API do Maton: entre em maton.ai, conecte o Slack por lá e copie sua chave de API do Maton na página Home. Depois, abra **Ou use uma chave de API do Maton** em Slack e cole a chave, ou execute `assistant connect slack` no seu próprio computador. Uma conexão do Slack feita pelo Maton continua funcionando normalmente.
