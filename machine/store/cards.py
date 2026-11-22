@@ -1201,7 +1201,7 @@ class CardsStore:
     def settle_awaiting(self, db):
         """A follow-up on someone else's promise closes itself when they wrote again before it was due.
         Their new message goes through the normal review, so a delay still gets a card. A promise's own to-do
-        (awaiting.promise) stays open instead: its nudge is cancelled, and the review judges whether the reply kept it."""
+        (awaiting.promise) stays open instead: its nudge is canceled, and the review judges whether the reply kept it."""
         for row in db.execute("SELECT s.id,s.awaiting FROM suggestions s JOIN deliveries d ON d.suggestion_id=s.id WHERE s.awaiting IS NOT NULL "
                               f"AND d.message_id IS NULL AND d.status='queued' AND s.status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)}").fetchall():
             watch = json.loads(row['awaiting'])

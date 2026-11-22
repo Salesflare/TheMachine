@@ -247,7 +247,7 @@ same open promise stored twice from before is kept once. Nothing shows up on Tel
   the review leaves it, the check when it's due reads the reply text and decides.
 - **The to-do:** a promise still open when it's checked becomes a to-do (`promise:<id>`), prepared ahead under the
   usual limits: for yours the thing you promised, for theirs a short nudge. If they answer while the nudge is queued,
-  the nudge is cancelled and the to-do stays open with a "They wrote again" line: it waits for its done when, and the
+  the nudge is canceled and the to-do stays open with a "They wrote again" line: it waits for its done when, and the
   review closes it (`looks_handled`) when the reply delivers. At most 5 such to-dos a day. With reviews off (a new install, its first look included) a due promise
   waits: no to-do and nothing prepared until reviews are on.
 - **A reply that only promises the work:** the run marks a message draft that only acknowledges the ask or promises
