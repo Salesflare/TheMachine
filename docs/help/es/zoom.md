@@ -27,11 +27,11 @@ En una Machine alojada:
 
 1. Abre tu página de configuración en app.themachine.computer/setup y ve a **Más fuentes**.
 2. Abre Zoom, elige trabajo o personal, y pulsa **Conectar Zoom**.
-3. Inicia sesión en Zoom y permite The Machine. La hace Salesflare.
+3. Inicia sesión en Zoom y permite el acceso a The Machine (de Salesflare).
 
 O en el panel: **Conexiones**, **Reuniones**, elige Zoom y pulsa **Iniciar sesión con Zoom**. Cuando termines, vuelves al panel.
 
-En tu propio ordenador, una vez [vinculado con tu cuenta](friends.md#a-machine-on-your-own-computer): abre **Conexiones**, luego **Reuniones**, elige Zoom y pulsa **Iniciar sesión con Zoom**.
+En tu propio ordenador, una vez [vinculada a tu cuenta](friends.md#a-machine-on-your-own-computer): abre **Conexiones**, luego **Reuniones**, elige Zoom y pulsa **Iniciar sesión con Zoom**.
 
 ## Quítalo
 

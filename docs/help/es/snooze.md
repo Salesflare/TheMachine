@@ -11,7 +11,7 @@ translated: e6681ab225810e81
 
 Pulsa **Posponer** en una tarea. El menú ofrece varias opciones, como dentro de 2 horas, mañana o dentro de una semana. Para elegir otro momento, pulsa **Elegir fecha** y **Hora**, y luego **Guardar hora**. ¿La pospusiste por error? Pulsa **Deshacer** en el mensaje para recuperarla al instante.
 
-Las tareas pospuestas por un día o más vuelven a la hora que hayas elegido en «La hora a la que vuelven las tareas pospuestas», y las tareas de trabajo esperan hasta un día laborable. Configura ambas opciones en [Horario laboral](work-hours.md).
+Las tareas pospuestas por un día o más vuelven a la hora que elijas en **Lo pospuesto vuelve a las**, y las tareas de trabajo esperan hasta un día laborable. Configura ambas opciones en [Horario laboral](work-hours.md).
 
 También puedes pedirlo en **Pedir cambios**, por ejemplo: «recuérdame esto el próximo martes».
 

@@ -19,7 +19,7 @@ translated: 223b143a6efd5692
 
 ## Cuándo y dónde
 
-Una vez a la semana, los viernes después de las 16:00 en tu zona horaria, de forma predeterminada. Lo recibirás por [Telegram](telegram.md) o como una notificación titulada «Tu semana» desde la [aplicación para teléfono](phone-app.md) y la aplicación del panel. También lo recibirás por correo electrónico si el correo está activado para **Resumen matutino** en Ajustes › Notificaciones. Si usas [Careful](security-levels.md) o tienes desactivado **Texto en las notificaciones**, no lo recibirás por correo electrónico.
+Una vez a la semana, los viernes después de las 16:00 en tu zona horaria, de forma predeterminada. Lo recibirás por [Telegram](telegram.md) o como una notificación titulada «Tu semana» desde la [aplicación para teléfono](phone-app.md) y la aplicación del panel. También lo recibirás por correo si el correo está activado para **Resumen matutino** en Ajustes › Notificaciones. Si usas [Prudente](security-levels.md) o tienes desactivado **Texto en las notificaciones**, no lo recibirás por correo electrónico.
 
 ## Desactivarlo
 

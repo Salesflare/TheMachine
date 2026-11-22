@@ -6,7 +6,7 @@ code: graph.py, crm.py, enrichment.py, dashboard.html
 order: 3
 translated: a69ae21b14edaf94
 ---
-Empresas identificadas por las direcciones y los nombres de tus mensajes. Se buscan su sector, tamaño, ubicación y logotipo: consulta [Detalles de la organización](organization-data.md).
+Empresas identificadas por las direcciones y los nombres de tus mensajes. Se buscan su sector, tamaño, ubicación y logotipo: consulta [Datos de la organización](organization-data.md).
 
 ## La página de una organización
 
@@ -14,7 +14,7 @@ Se estructura como la página de una persona: su logotipo, nombre y actividad, u
 
 En **Proyectos** aparecen primero los proyectos abiertos, cada uno con su etapa. En la cronología aparecen los mensajes de las personas de la organización, las conversaciones de Intercom de su dominio y los cambios de sus proyectos. Consulta [Cronología](people.md#timeline).
 
-**Preguntar a Fleet quién la conoce** te ayuda a encontrar una forma de llegar a ella a través de tu Fleet.
+**Pregunta al Fleet quién la conoce** te ayuda a encontrar una forma de llegar a ella a través de tu Fleet.
 
 ## Añadir una organización
 

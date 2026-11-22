@@ -32,9 +32,9 @@ Muchos proveedores requieren una contraseña de aplicación para usar con apps d
 - Zoho Mail con la autenticación de dos factores: una contraseña específica para aplicaciones en tu cuenta de Zoho, en Seguridad.
 - Proton Mail: ejecuta Proton Mail Bridge en el mismo ordenador y usa la contraseña que muestra Bridge. Solo funciona con The Machine en ese mismo ordenador. The Machine muestra la huella digital del certificado de Bridge y solo confía en ese certificado.
 
-La mayoría de los proveedores ya tienen configurados los servidores. ¿No aparece tu proveedor? Abre **Ajustes del servidor** y escribe los datos que proporciona para apps de correo: los servidores IMAP y SMTP, sus puertos y el tipo de seguridad (SSL/TLS o STARTTLS). The Machine nunca se conecta sin TLS.
+Los ajustes del servidor se rellenan solos para la mayoría de proveedores. ¿No encuentra el tuyo? Abre **Ajustes del servidor** y escribe los datos que proporciona para apps de correo: los servidores IMAP y SMTP, sus puertos y el tipo de seguridad (SSL/TLS o STARTTLS). The Machine nunca se conecta sin TLS.
 
-¿Usas Gmail o correo de Microsoft, también con tu propio dominio? Elige **Gmail** o **Outlook**. Se conectan sin contraseña. Si escribes sus servidores en Ajustes del servidor, también se conectarán desde ahí: Microsoft ya no acepta contraseñas de apps de correo.
+¿Usas Gmail o correo de Microsoft, también con tu propio dominio? Elige **Gmail** o **Outlook**. Se conectan sin contraseña. Si escribes sus servidores en Ajustes del servidor, también te lleva ahí: Microsoft ya no acepta contraseñas de apps de correo.
 
 ¿Escribiste una dirección de Microsoft 365? El formulario lo detecta y muestra **Iniciar sesión con Microsoft** en lugar del campo de contraseña. Se abre el inicio de sesión de Outlook. Si no la detecta en unos segundos, el formulario de contraseña seguirá disponible.
 
@@ -43,7 +43,7 @@ La mayoría de los proveedores ya tienen configurados los servidores. ¿No apare
 - **El servidor de correo rechazó la contraseña**: la cambiaste o se eliminó la contraseña de aplicación. Vuelve a conectar la cuenta con la nueva contraseña.
 - **El servidor de correo rechazó la contraseña para enviar**: no se envió nada. Vuelve a conectar la cuenta; si sigue rechazándola, revisa el servidor SMTP en Ajustes del servidor. Mientras tanto, solo leerá el correo.
 - **No se pudo llegar al servidor de correo**: lo intentará de nuevo automáticamente. Si sigue sin funcionar, revisa el nombre del servidor en Ajustes del servidor.
-- El certificado del servidor de correo es para otro nombre: los servicios de alojamiento compartido suelen responder con el nombre de su propio servidor. Escribe el nombre que aparece en Ajustes del servidor. The Machine nunca omite la comprobación del certificado.
+- **El certificado del servidor de correo es para** otro nombre: los servicios de alojamiento compartido suelen responder con el nombre de su propio servidor. Escribe el nombre que aparece en Ajustes del servidor. The Machine nunca omite la comprobación del certificado.
 
 ## Desconéctalo
 

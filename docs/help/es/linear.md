@@ -1,7 +1,7 @@
 ---
 title: Linear
 area: connections
-summary: Tus incidencias, menciones, comentarios, revisiones y fechas de vencimiento de Linear. Los comentarios, los cambios de estado y de responsable, y las incidencias nuevas esperan tu aprobación.
+summary: Tus incidencias, menciones, comentarios, revisiones y fechas de vencimiento de Linear. Los comentarios, los cambios de estado y de responsable, y las incidencias nuevas esperan tu visto bueno.
 covers: connector:linear
 code: connectors/linear.py, linear_writes.py
 site: Sign in with Linear, Connect, More sources, Remove
@@ -22,7 +22,7 @@ Si quieres usarlo solo para ejecutar acciones, desactiva **Trae señales** en **
 
 ## Qué puede hacer
 
-Cada una de estas acciones queda pendiente de tu aprobación en la tarea correspondiente:
+Cada una de estas acciones espera tu visto bueno en su tarea:
 
 - Comentar en la incidencia de la tarea o responder en un hilo de comentarios. Se publica en tu nombre.
 - Cambiar el estado de esa incidencia a otro de los estados de su equipo.
@@ -33,7 +33,7 @@ Nunca elimina ni archiva incidencias, ni las mueve a otro equipo.
 
 ## Conectarla
 
-1. En el panel: **Conexiones**, **+ Añadir**, Linear. O desde la página de configuración de una Machine alojada, en app.themachine.computer/setup: **Más fuentes**, Linear. En tu propio equipo, primero vincúlala a tu cuenta.
+1. En el panel: **Conexiones**, **+ Añadir**, Linear. O desde la página de configuración de una Machine alojada, en app.themachine.computer/setup: **Más fuentes**, Linear. En tu propio ordenador, primero vincúlala a tu cuenta.
 2. Pulsa **Iniciar sesión con Linear**, elige tu espacio de trabajo y autoriza el acceso.
 3. Al volver a The Machine, comprueba el inicio de sesión de inmediato y muestra el nombre del espacio de trabajo.
 
@@ -41,7 +41,7 @@ Para conectar otro espacio de trabajo, añade Linear de nuevo. Elige **Trabajo**
 
 ## Pegar una clave de API
 
-En **O pega una clave de API**, pulsa **Obtén tu token**. Linear abre **Ajustes**, **Seguridad y acceso**: crea una clave de API personal, cópiala, pégala y pulsa **Conectar**. En tu propio equipo, `assistant connect linear` también te la pide.
+En **O pega una clave de API**, pulsa **Consigue tu token**. Linear abre **Ajustes**, **Seguridad y acceso**: crea una clave de API personal, cópiala, pégala y pulsa **Conectar**. En tu propio ordenador, `assistant connect linear` también te la pide.
 
 ## Quitarla
 

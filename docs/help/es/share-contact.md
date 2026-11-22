@@ -1,7 +1,7 @@
 ---
 title: Compartir un contacto
 area: graph
-summary: Envía el contacto de alguien, o el tuyo, a un compañero, un amigo o alguien de tu Family. Elige qué se envía y míralo antes de enviarlo.
+summary: Envía el contacto de alguien, o el tuyo, a un compañero, un amigo o alguien de tu Familia. Elige qué se envía y míralo antes de enviarlo.
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
 order: 6
@@ -9,7 +9,7 @@ translated: 66412d1dc4e965c2
 ---
 ## Comparte a alguien
 
-En la página de una persona, abre **⋯** y elige **Compartir contacto…**. Elige a quién va: un compañero de tu Work Fleet, un amigo o alguien de tu Family. Va a una persona cada vez.
+En la página de una persona, abre **⋯** y elige **Compartir contacto…**. Elige a quién va: un compañero de tu Fleet de trabajo, un amigo o alguien de tu Familia. Va a una persona cada vez.
 
 Marca lo que se envía: el nombre siempre, y además cualquiera de sus direcciones de correo y números de teléfono, su organización y su cargo. Si quieres, añade una nota breve en **Por qué deberíais hablar**.
 
@@ -31,6 +31,6 @@ En **Sobre ti**, elige **Compartir mi contacto**. Elige de la misma forma cuále
 
 Espera en **Compartidos contigo**, arriba en Personas, con quién lo envió y su nota. Elige **Añadir** para ponerlo en tu Graph, o **Descartar**.
 
-- Si ya conoces a esa persona (el mismo correo o número), Añadir solo le suma lo nuevo. Su nombre, cargo y lado siguen siendo los tuyos.
-- De un compañero, la persona entra como Trabajo, marcada como "Compartido por" él o ella. De un amigo o de la Family, es una sugerencia para añadir, y el lado se decide como para cualquier otra persona.
+- Si ya conoces a esa persona (el mismo correo o número), Añadir solo le suma lo nuevo. Su nombre, cargo y ámbito siguen siendo los tuyos.
+- De un compañero, la persona entra como Trabajo, marcada como "Compartido por" él o ella. De un amigo o de la Familia, es una sugerencia para añadir, y el ámbito se decide como para cualquier otra persona.
 - Quien lo envía ve si lo añadiste, pero nada más de tu Graph.

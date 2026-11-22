@@ -1,7 +1,7 @@
 ---
 title: Hitos
 area: cards
-summary: Cada cierto número de tareas completadas, aparece una pequeña celebración en **Tareas**, con una imagen para compartir si quieres.
+summary: Cada cierto número de tareas completadas, aparece una pequeña celebración en Tareas, con una imagen para compartir si quieres.
 covers: milestones
 code: machine/store/done_milestones.py, dashboard/todos-milestone.js
 order: 11

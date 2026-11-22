@@ -17,7 +17,7 @@ Ponle un nombre y elige un tablero y una etapa, una organización (búscala en t
 ## Editar, ganar o perder un proyecto
 
 - **Editar** en la página de un proyecto o **Editar** en su menú **⋯** en el tablero (o pulsa E) permite cambiar todo lo anterior.
-- Para una oportunidad, **Ganado** o **Perdido**, con el motivo, está disponible en proyectos con valor o fecha de cierre prevista, o en tableros que tengan una de esas opciones. Ganado mueve el proyecto a la última etapa del tablero; Perdido, a Estancado o Rechazado. Los demás proyectos terminan con **Hecho**. **Reabrir** deshace el cambio.
+- Para una oportunidad, **Ganado** o **Perdido**, con el motivo, está disponible en proyectos con valor o fecha de cierre prevista, o en un tablero donde algún proyecto los tenga. Ganado mueve el proyecto a la última etapa del tablero; Perdido, a Estancado o rechazado. Los demás proyectos terminan con **Hecho**. **Reabrir** deshace el cambio.
 - **Archivar** quita el proyecto del tablero y de las listas. Un mensaje nuevo sobre él lo vuelve a mostrar.
 - **Eliminar** lo borra definitivamente. Sus mensajes y personas se conservan.
 
@@ -25,9 +25,9 @@ Ponle un nombre y elige un tablero y una etapa, una organización (búscala en t
 
 Una o dos frases debajo del nombre del proyecto que explican qué es y en qué estado está. Tu Machine la redacta a partir de los mensajes, las tareas, las promesas, los datos y la etapa del proyecto, y la actualiza cuando algo cambia, como al llegar un mensaje nuevo, cambiar de etapa o ganar o perder una oportunidad. Si todavía no hay nada concreto que decir, no muestra ninguna.
 
-Puedes cambiarla en **Descripción**, dentro de **Editar** en el proyecto. A partir de entonces, es tuya: aparece «Editada por ti» y tu Machine no la modifica. **Mantenerla al día**, debajo de la descripción o en **Editar**, se la devuelve a tu Machine. Si la guardas vacía, no se muestra ninguna.
+Puedes cambiarla en **Descripción**, dentro de **Editar** en el proyecto. A partir de entonces, es tuya: aparece «Editado por ti» y tu Machine no la modifica. **Mantenerla al día**, debajo de la descripción o en **Editar**, se la devuelve a tu Machine. Si la guardas vacía, no se muestra ninguna.
 
-En un proyecto de Work compartido, tu equipo solo ve la descripción si también se compartió todo lo que se usó para redactarla. La versión que edites tú solo la ves tú.
+En un proyecto de Trabajo compartido, tu equipo solo ve la descripción si también se compartió todo lo que se usó para redactarla. La versión que edites tú solo la ves tú.
 
 ## Mover un proyecto
 
@@ -55,7 +55,7 @@ Una vez por semana, tu Machine busca proyectos que se hayan quedado parados: sin
 
 Cada proyecto puede estar vinculado a una organización. La organización aparece en su página, en la lista y en el tablero, con un enlace.
 
-Si nadie ha elegido una, tu Machine la asigna según las personas del proyecto y sus mensajes, sin tener en cuenta a tus compañeros. Solo lo hace cuando está claro quién es la otra parte: los correos personales, como Gmail, no cuentan, y los proyectos con varias empresas no se vinculan a ninguna organización. En ese caso, el formulario del proyecto indica «Según las personas».
+Si nadie ha elegido una, tu Machine la asigna según las personas del proyecto y sus mensajes, sin tener en cuenta a tus compañeros. Solo lo hace cuando está claro quién es la otra parte: los correos personales, como Gmail, no cuentan, y los proyectos con varias empresas no se vinculan a ninguna organización. En ese caso, el formulario del proyecto indica «De su gente».
 
 También espera a que hayas escrito a alguien de esa organización o te hayas reunido con esa persona, para que un correo de un desconocido nunca asigne su organización a un proyecto.
 
@@ -79,7 +79,7 @@ Un tablero nuevo, o uno sugerido que guardes, revisa todo tu historial una vez. 
 
 La comprobación solo mueve un proyecto a la última etapa si encuentra esa prueba, que queda vinculada en la página. Si el proyecto no está en ningún tablero, se marca como hecho y aparece **Deshacer** en su menú **⋯**, en Cambios recientes.
 
-Si más adelante cambias **Hecho cuando** y la prueba de un proyecto terminado deja de encajar, el proyecto vuelve a abrirse y su tarea se actualiza para seguir el nuevo criterio. También puedes marcarlo **Hecho** o **Ganado** manualmente. La página muestra además qué lo está bloqueando, como no recibir respuesta en más de 10 días o tener una promesa vencida, y añade una tarea para resolverlo si todavía no tiene ninguna. Lo comprueba cada día laborable, aunque no hayan llegado mensajes nuevos. No se envía nada sin que tú lo hagas.
+Si más adelante cambias **Hecho cuando** y la prueba de un proyecto terminado deja de encajar, el proyecto vuelve a abrirse y su tarea se actualiza para seguir el nuevo criterio. También puedes marcarlo **Hecho** o **Ganado** manualmente. La página muestra además qué lo está bloqueando, como no recibir respuesta en más de 10 días o tener una promesa vencida, y añade una tarea para resolverlo si todavía no tiene ninguna. Lo comprueba cada día laborable, aunque no hayan llegado mensajes nuevos. No se envía nada sin tu aprobación.
 
 ## Pipeline
 

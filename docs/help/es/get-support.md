@@ -20,18 +20,18 @@ Abre **Ayuda** y luego **Informar de un error**. Un mensaje de error también ti
 
 1. Cuenta qué falló.
 2. Añade una captura si ayuda: **Hacer una captura** del panel, o **Adjuntar una imagen**.
-3. Deja activado **Incluir un informe de soporte**, salvo que prefieras que no. Añade versiones, comprobaciones y errores recientes, sin mensajes, claves ni direcciones, y deja que nuestro equipo lea los registros y ajustes de tu Machine durante 24 horas. Consulta [Acceso de soporte](get-support.md#support-access). Sin marcar, solo se envía lo que escribiste y tu captura.
-4. Toca **Enviar**. El formulario se cierra al instante. Tu Machine añade el informe de soporte por su cuenta; una comprobación lenta nunca retrasa tu informe.
+3. Deja activado **Incluir un informe de soporte** si puedes. Añade versiones, comprobaciones y errores recientes, sin mensajes, claves ni direcciones, y deja que nuestro equipo lea los registros y ajustes de tu Machine durante 24 horas. Consulta [Acceso de soporte](get-support.md#support-access). Sin marcar, solo se envía lo que escribiste y tu captura.
+4. Toca **Enviar**. El formulario se cierra al instante y el informe de soporte se envía después, solo.
 
 Desde ahí nos encargamos nosotros. Una Machine autoalojada puede enviar uno cuando está en la Network; si no, escríbenos.
 
-También puedes decirle a tu Machine en el chat que algo en ella va mal. Te ofrece enviar un informe y te da un enlace que abre **Informar de un error** con tus palabras y un resumen corto ya escritos. Nada sale hasta que tocas **Enviar**. Sin una cuenta a la que enviarlo, te dice dónde escribir.
+O simplemente dile a tu Machine en el chat que algo va mal. Te abre **Informar de un error**, con tus palabras y un resumen corto ya escritos. Nada sale hasta que tocas **Enviar**.
 
-Cuando corregimos un error que reportaste y tu Machine ya tiene la corrección, te lo decimos una vez: una línea corta en tu panel y un correo corto. Una Machine autoalojada se entera cuando está en la Network.
+Cuando corregimos un error del que informaste y tu Machine ya tiene la corrección, te lo decimos una vez: una línea corta en tu panel y un correo corto. Una Machine autoalojada se entera cuando está en la Network.
 
-La línea pregunta si de verdad ya funciona. Toca **Ya funciona**, o **Aún no está bien** para decir qué sigue fallando, con una imagen si ayuda. Nos llega como un reporte nuevo, enlazado al primero. **×** cierra la línea sin responder.
+La línea pregunta si de verdad ya funciona. Toca **Ya funciona**, o **Aún no está bien** para decir qué sigue fallando, con una imagen si ayuda. Nos llega como un informe nuevo, enlazado al primero. **×** cierra la línea sin responder.
 
-Si un informe no puede salir enseguida (no tienes conexión o enviaste muchos en poco tiempo), no se pierde. Tu Machine lo guarda, te dice cuándo sale y lo envía sola. Los informes que aún esperan aparecen en **Esperando para salir**.
+¿Sin conexión, o enviaste muchos seguidos? Tu informe no se pierde. Tu Machine lo guarda y lo envía más tarde, sola. Mientras tanto aparece en **Esperando para salir**.
 
 ## Acceso de soporte
 

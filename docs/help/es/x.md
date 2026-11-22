@@ -24,7 +24,7 @@ En una Machine alojada:
 1. Abre tu página de configuración en app.themachine.computer/setup y ve a **Más fuentes**.
 2. Abre X, escribe tu nombre de usuario sin la @, inicia sesión en X desde el navegador de tu Machine cuando te lo pida y pulsa **Conectar**.
 
-En tu propio equipo:
+En tu propio ordenador:
 
 1. En el panel, abre **Conexiones**, luego **Chat** y elige X.
 2. Elige **Trabajo** con su empresa o **Personal**, escribe tu nombre de usuario sin la @ y pulsa **Conectar**.
@@ -32,7 +32,7 @@ En tu propio equipo:
 
 También puedes ejecutar `assistant connect x` en una terminal.
 
-Si X cierra la sesión de tu Machine, consulta [Cierre de sesión en un sitio](signed-out.md).
+Si X cierra la sesión de tu Machine, consulta [Se cerró la sesión en un sitio](signed-out.md).
 
 ## Quítalo
 

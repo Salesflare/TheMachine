@@ -12,7 +12,7 @@ translated: c1f2362cd496840e
 
 Todos tus correos: los de los últimos 7 días cuando la conectas y, a partir de entonces, todos los nuevos que recibas y envíes. También cuenta los correos que envías, para aprender cómo escribes y qué prometiste.
 
-Primero echa un vistazo rápido a los correos de Promociones, newsletters, Actualizaciones y Foros: quién los envía, el asunto y unas pocas palabras, muchos a la vez. Si alguno es importante, lo lee entero y puede convertirlo en una tarea. No se salta nada sin revisarlo.
+Primero echa un vistazo rápido a los correos de Promociones, boletines, Notificaciones y Foros: quién los envía, el asunto y unas pocas palabras, muchos a la vez. Si alguno es importante, lo lee entero y puede convertirlo en una tarea. No se salta nada sin revisarlo.
 
 ## Qué puede enviar
 
@@ -22,14 +22,14 @@ Puede enviar un correo a partir de una tarea, y solo cuando lo apruebas. **Hazlo
 
 Las respuestas se añaden al hilo del correo al que responden. Si se envían desde otro de tus buzones y no desde el que recibió ese correo, la tarea te lo indica antes de que la envíes. La respuesta se añade igualmente a ese hilo.
 
-Cuando se envía una respuesta, su hilo sale de la bandeja de entrada y queda bajo la etiqueta Pospuesto durante unos días (3, a menos que la tarea indique otra cosa). Después vuelve a la bandeja, o antes si alguien responde. La revisión te lo indica antes de que envíes la respuesta.
+Cuando se envía una respuesta, su hilo sale de la bandeja de entrada y queda bajo la etiqueta Pospuestos durante unos días (3, a menos que la tarea indique otra cosa). Después vuelve a la bandeja, o antes si alguien responde. La revisión te lo indica antes de que envíes la respuesta.
 
 ## Conectarla
 
 En una Machine alojada:
 
 1. Abre tu página de configuración en app.themachine.computer/setup.
-2. En **Correo y calendario**, pulsa **Conectar Google** e inicia sesión. En la pantalla de Google aparece Salesflare, la empresa que creó The Machine.
+2. En **Correo y Calendario**, pulsa **Conectar Google** e inicia sesión. En la pantalla de Google aparece Salesflare, la empresa que creó The Machine.
 3. Gmail y Google Calendar se conectan a la vez.
 
 ¿Te registraste con Google y diste permiso para Gmail y Calendar en esa pantalla? Se conectan automáticamente. Solo se envía cuando pulsas **Enviar**.
@@ -47,8 +47,8 @@ Es posible que un administrador de Google Workspace tenga que permitir primero l
 
 ## Desconectarla
 
-- En una Machine alojada: pulsa **Desconectar** junto a la dirección en tu página de configuración. Se desconectan Gmail y Calendar para esa dirección y tu Machine olvida los datos de inicio de sesión. Las demás Machine conservan los suyos. En el panel, **Desconectar ↗** en Conexiones te lleva a esa página. Allí, **Reconectar** te permite volver a iniciar sesión sin salir del panel.
-- En tu propio ordenador: abre **Conexiones**, selecciona Gmail, pulsa **Detalles** y luego **Desconectar**. Deja de leer tus correos. Lo que ya había importado se conserva. Si ningún otro servicio usa ese inicio de sesión de Google, lo olvida. Las demás Machine conservan los suyos.
+- En una Machine alojada: pulsa **Desconectar** junto a la dirección en tu página de configuración. Se desconectan Gmail y Calendar para esa dirección y tu Machine olvida el inicio de sesión. Tus otras Machines conservan el suyo. En el panel, **Desconectar ↗** en Conexiones te lleva a esa página. Allí, **Reconectar** te permite volver a iniciar sesión sin salir del panel.
+- En tu propio ordenador: abre **Conexiones**, selecciona Gmail, pulsa **Detalles** y luego **Desconectar**. Deja de leer tus correos. Lo que ya había importado se conserva. Si nada más en ella usa ese inicio de sesión de Google, lo olvida. Tus otras Machines conservan el suyo.
 
 ## Desinstalarla en Google
 

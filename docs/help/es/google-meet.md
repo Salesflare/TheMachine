@@ -13,7 +13,7 @@ Las transcripciones y notas de Gemini de las reuniones de Google Meet que organi
 
 Meet solo las crea si las transcripciones o las notas de Gemini estaban activadas durante la reunión.
 
-Cada una se asocia a la reunión de tu calendario a la misma hora. Las notas de Gemini aparecen en Notas de esa reunión y la transcripción en Transcripción, marcadas **De Google Meet**, junto a lo que añadiste ahí; nunca lo reemplazan.
+Cada una se añade a su reunión en tu Calendario: las notas de Gemini en Notas y la transcripción en Transcripción, marcadas **De Google Meet**. Lo que añadiste tú se conserva.
 
 ## Qué puede hacer
 
@@ -21,7 +21,7 @@ Nada en Meet, Docs o Drive. Solo lee y nunca activa las transcripciones por su c
 
 ## Qué pide
 
-Su propio OK, aparte de tu inicio de sesión del correo. Google pide permitir que The Machine:
+Su propio visto bueno, aparte del de tu correo. Google pide permitir que The Machine:
 
 - Vea tus reuniones de Google Meet, con sus transcripciones y notas de Gemini.
 - Vea tus Google Docs, para leer el documento de notas de Gemini.
@@ -32,12 +32,12 @@ Nunca pide tu Drive. Tu acceso a Gmail y Calendar sigue igual.
 
 No necesita Gmail conectado. Para conectarlo:
 
-- Machine alojada: en el panel, abre **Conexiones**, **Reuniones**, elige **Google Meet** y pulsa **Iniciar sesión con Google**. Google pide el OK de arriba y luego vuelves al panel.
+- Machine alojada: en el panel, abre **Conexiones**, **Reuniones**, elige **Google Meet** y pulsa **Iniciar sesión con Google**. Da el visto bueno de arriba y volverás al panel.
 - Tu propio ordenador, vinculado a tu cuenta: los mismos pasos. El inicio de sesión se abre en una pestaña nueva.
 
-Comprueba que el inicio de sesión puede leer Meet. Sin ese OK no se añade. El inicio de sesión sigue funcionando: no hay nada que pegar ni renovar.
+Sin el visto bueno para Meet no se añade. No hay nada que pegar ni renovar.
 
-Si más tarde retiras el OK, la tarjeta de Google Meet te pide que inicies sesión de nuevo.
+Si más tarde se retira el visto bueno, Google Meet en **Conexiones** te pide que inicies sesión de nuevo.
 
 ## Quítalo
 

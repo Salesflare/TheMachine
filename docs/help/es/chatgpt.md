@@ -13,7 +13,7 @@ Inicia sesión con ChatGPT y tu Machine leerá y redactará con ChatGPT usando t
 
 ## Iniciar sesión
 
-En una Machine alojada, pulsa **Iniciar sesión con ChatGPT** en la página de configuración e introduce en ChatGPT el código que aparece. ¿Se cierra tu sesión más adelante? Pulsa **Volver a conectar ChatGPT**.
+En una Machine alojada, pulsa **Iniciar sesión con ChatGPT** en la página de configuración e introduce en ChatGPT el código que aparece. ¿Se cierra tu sesión más adelante? Pulsa **Reconectar ChatGPT**.
 
 ¿OpenAI rechaza el código? Abre tus [ajustes de seguridad de ChatGPT](https://chatgpt.com/settings/security), desplázate hasta el final y activa la opción «**Habilitar el inicio de sesión con código de dispositivo para Codex, Excel, PowerPoint y Word**». Después, vuelve a introducir el código.
 

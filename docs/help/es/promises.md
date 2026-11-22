@@ -40,6 +40,6 @@ Cuando una tienda, aerolínea, casero o aseguradora te promete devolverte dinero
 
 Si el dinero llega antes, por ejemplo, con un correo que dice «reembolso procesado», un aviso de un servicio de pago o una notificación de la aplicación del banco en tu teléfono, la promesa se cierra automáticamente, sin crear una tarea.
 
-¿Todavía no ha llegado ese día? Se crea una tarea discreta: «Reclama el reembolso de 42 € de …», con un breve correo que menciona el número del pedido o del caso. No se envía nada hasta que lo envíes tú. Si al final recibes el dinero, la tarea se cierra automáticamente. **Deshacer** la recupera durante un día.
+¿No ha llegado para ese día? Se crea una tarea discreta: «Reclama el reembolso de 42 € de …», con un breve correo que menciona el número del pedido o del caso. No se envía nada hasta que lo envíes tú. Si al final recibes el dinero, la tarea se cierra automáticamente. **Deshacer** la recupera durante un día.
 
 El [resumen semanal](weekly-recap.md) cuenta las promesas cumplidas y las abiertas. En tu propio ordenador, `assistant promises` las muestra en un terminal.

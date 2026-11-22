@@ -13,22 +13,22 @@ translated: 333d553e80aea529
 1. En la tarea, abre **…**, luego **Pasar…**, y elige **Codex** o **Claude Code**. Solo aparecen las herramientas que has configurado.
 2. Revisa el resumen y lo que recibe, añade una nota si quieres y pulsa **Pasar**. **Ver el trabajo completo** muestra todo el encargo.
 
-Luego la tarea muestra que está trabajando, y el resultado cuando termina, con **Qué hizo** y **Mostrar cambios**. **Pedir cambios** le dice qué cambiar; **Pasar…** en **…** empieza de cero; **Ocultar** guarda el resultado. Una tarea **Atascada** que pasas muestra **Trabajando…** mientras el trabajo sigue.
+La tarea muestra que está trabajando y luego el resultado, con **Qué hizo** y **Ver cambios**. **Pedir cambios** le envía qué cambiar. **Pasar…** en **…** empieza de cero. **Ocultar** guarda el resultado. Una tarea atascada que pasas muestra **Trabajando…** en lugar de **Atascada** mientras el trabajo sigue.
 
 Un trabajo nunca envía nada por ti. Si te deja un paso de publicar o desplegar, **Hazlo** en la tarea ejecuta ese paso. Una respuesta que escribió queda como borrador que envías tú.
 
 ## En la app de Codex
 
-- **Abrir en Codex** abre el hilo del trabajo en la app de Codex. Mientras Codex trabaja en él aquí, la app todavía no puede abrirlo. Se abre cuando termina.
-- **Pedir cambios** en un hilo abierto en la app de Codex sigue en esa misma conversación allí, y la tarea la sigue.
-- Un trabajo solo se detiene si Codex no hace nada durante 30 minutos, o tras 6 horas en total. Un reinicio de The Machine no lo detiene.
+- **Abrir en Codex** abre el hilo del trabajo en la app de Codex, una vez terminado el trabajo.
+- **Pedir cambios** sigue en esa misma conversación de Codex, y la tarea la sigue.
+- Un trabajo se detiene tras 30 minutos sin avanzar, o tras 6 horas en total. Un reinicio no lo detiene.
 
 ## Configúralo
 
 En **Ajustes**, **Modelo**, en **Codex y Claude Code**:
 
 - **Codex**: dónde se ejecuta. En tu Machine o tu ordenador no necesita nada más aquí; **Cambiar** abre tu página de configuración.
-- **Otras formas**, **Codex cloud**: el ID de su entorno, de Codex, y si quieres una **Rama** desde la que empezar.
+- **Codex cloud**: el ID de su entorno, de Codex, y si quieres una **Rama** desde la que empezar.
 - **Claude Code**: el enlace de una sesión de Claude Code.
 
 Claude devuelve su resultado a través del conector de The Machine. Añádelo una vez en claude.ai, Settings, Connectors, Add custom connector, con la dirección que se muestra debajo de la sesión.
@@ -38,9 +38,9 @@ Claude devuelve su resultado a través del conector de The Machine. Añádelo un
 En una Machine alojada, elígelo en tu página de configuración, en **Añade más cuando quieras**, **Codex**:
 
 - **En tu Machine** (por defecto): pulsa **Conectar Codex** e introduce en OpenAI el código que aparece. Usa el mismo plan de ChatGPT que tu modelo, y los trabajos se ejecutan en tu Machine. Sin terminal.
-- **Otras formas**, **En mi computadora**: el trabajo se ejecuta en tu propio ordenador, con el Codex que tiene la sesión iniciada allí. Nada de Codex está en tu Machine alojada, y el trabajo va cifrado solo para ese ordenador: la Network lo pasa pero no puede leerlo. Instala The Machine en ese ordenador, vincúlalo en tu página Cuenta y ejecuta `codex login` allí. Mantén The Machine en marcha en él. El trabajo aparece como un hilo en la app de Codex de ese ordenador, y el resultado vuelve a la tarea. Cuando el ordenador está apagado, los trabajos esperan hasta que vuelva.
-- **Codex cloud**: el trabajo se ejecuta en la nube de OpenAI. Pulsa **Conectar Codex**. Usa el mismo plan de ChatGPT que tu modelo, y OpenAI pide un código más, para Codex. Luego introduce el entorno de Codex cloud en Ajustes.
+- **Otras formas**, **En mi ordenador**: el trabajo se ejecuta en tu propio ordenador, con el Codex que tiene la sesión iniciada allí. Viaja cifrado, solo para ese ordenador. Instala allí The Machine, vincúlalo en tu página Cuenta, ejecuta `codex login` y mantén The Machine en marcha. El resultado vuelve a la tarea. Cuando el ordenador está apagado, los trabajos esperan.
+- **Otras formas**, **Codex cloud**: el trabajo se ejecuta en la nube de OpenAI. Pulsa **Conectar Codex**. Usa el mismo plan de ChatGPT que tu modelo, y OpenAI pide un código más, para Codex. Luego introduce el entorno de Codex cloud en Ajustes.
 
-O inicia sesión desde tu panel: **Conexiones**, **Proyectos y código**, **Codex**, **Obtener un código**. Una Machine autoalojada hace ese mismo inicio de sesión ella misma.
+O inicia sesión desde tu panel: **Conexiones**, **Proyectos y código**, **Codex**, **Recibir un código**. Una Machine autoalojada hace ese mismo inicio de sesión ella misma.
 
-En una Machine alojada, Codex y Claude Code aparece en cuanto GitHub o Codex está conectado. También aparece en configuraciones que ejecutan trabajos en otro sitio. Más en la [guía de agentes](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
+En una Machine alojada, **Codex y Claude Code** aparece en Ajustes en cuanto GitHub o Codex está conectado. Para desarrolladores: la [guía de agentes](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

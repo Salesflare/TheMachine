@@ -7,14 +7,14 @@ code: install.sh, install.ps1, docs/getting-started.md
 order: 2
 translated: 73526b82818f009d
 ---
-The Machine es de código abierto (AGPL). En tu propio ordenador es gratis, y tus datos se quedan ahí.
+Ejecuta The Machine gratis en tu propio ordenador. Es de código abierto (AGPL) y tus datos se quedan contigo. Para instalarla necesitas un terminal; para conectar tus cuentas, no.
 
 ## Qué necesita
 
-- OpenClaw 2026.11.2 o posterior. El instalador ofrece instalarlo.
+- OpenClaw 2026.11.2 o posterior, el agente de código abierto sobre el que funciona The Machine. El instalador ofrece instalarlo.
 - Python 3.12 o posterior, y Node.js 24 (24.22.1 o posterior) o 26.12.1 o posterior, no 25.
 - Tailscale, para llegar a tu panel desde el teléfono.
-- Tu propia cuenta de usuario, no root.
+- Una cuenta de usuario normal, no root.
 
 ## Instálala
 
@@ -30,10 +30,10 @@ El instalador encuentra tus cuentas, las conecta una a una y muestra una vista p
 ## Después de instalar
 
 - Conecta tu correo: arriba en **Tareas**, pulsa **Gmail** (o **Outlook**) y luego **Vincular esta Machine** para vincularla con tu cuenta. Sin cuenta, **Usar tu propia app** está justo debajo.
-- Luego pulsa **Iniciar sesión con Google** (o **Iniciar sesión con Microsoft** para Outlook). El correo y el calendario se conectan juntos.
+- Luego pulsa **Inicia sesión con Google** (o **Inicia sesión con Microsoft** para Outlook). El correo y el calendario se conectan juntos.
 - Otras fuentes: **Conexiones** y luego el tipo de fuente. Tu propio cliente de Google o app de Entra: `assistant connect` en una terminal.
 - Revísalo todo con `assistant doctor`. Muestra una solución para cada problema.
 - El instalador toma la versión firmada más reciente, y las actualizaciones también llegan como versiones firmadas.
-- Vinculada a The Machine Network, tu Machine comparte su dirección de Tailscale con tu cuenta, para que la app del teléfono la abra después de iniciar sesión. Al desvincularla, se borra.
+- Vincúlala con tu cuenta y la app del teléfono la abrirá cuando inicies sesión. Al desvincularla, se quita ese enlace.
 
 La guía completa está en el repositorio: [Primeros pasos](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

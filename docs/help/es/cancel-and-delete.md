@@ -17,7 +17,7 @@ translated: e02f2502bf275cde
 
 ## Tus datos después de cancelar
 
-Se guardan {grace_days} días para que puedas exportarlos, y luego se eliminan, copias de seguridad incluidas. Para seguir usándolos en tu propio ordenador, consulta [Pásate a tu propio ordenador](moving.md).
+Se guardan {grace_days} días para que puedas exportarlos, y luego se eliminan, copias de seguridad incluidas. Para seguir usándolos en tu propio ordenador, consulta [Pasar a otro ordenador](moving.md).
 
 ## Eliminar todo ahora
 

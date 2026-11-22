@@ -27,7 +27,7 @@ Un plan hecho en conjunto es una sola promesa, marcada como «Con» y el nombre 
 
 - **Agenda** muestra cada día. Desplázate hacia abajo para ver los días siguientes, o hacia arriba (o toca **Mostrar días anteriores**) para ver los anteriores. Retrocede hasta una semana antes de que conectaras tu calendario; en la parte superior aparece una línea que indica desde qué día. Cuando esté disponible el [historial](history.md), podrás retroceder aproximadamente un año.
 - **Semana** muestra una cuadrícula de lunes a domingo. En el teléfono se muestran tres días.
-- **Mes** muestra el mes entero. En la computadora se muestran hasta tres elementos por día; en el teléfono aparecen puntos y, al tocar uno, se muestra la lista de ese día.
+- **Mes** muestra el mes entero. En el ordenador se muestran hasta tres elementos por día; en el teléfono aparecen puntos y, al tocar uno, se muestra la lista de ese día.
 
 **Hoy**, ‹ y ›, en la parte superior, te permiten moverte entre semanas o meses. La vista que elijas se recordará en ese dispositivo.
 
@@ -47,7 +47,7 @@ Cuando recibes por correo una reserva de vuelo, hotel, alojamiento vacacional, t
 
 El viaje aparece como una sola franja que abarca todos sus días. Ábrelo para ver cada reserva en orden cronológico, con sus horarios, dirección, código de reserva y asiento.
 
-Las entradas para un concierto, un partido, un festival o una conferencia crean un evento, uno por cada evento, con el lugar, el código de reserva, el asiento y el número de entradas. Si haces otro pedido para el mismo evento, se añade al que ya existe. Un evento reservado en tu correo de trabajo se marca como Work; de lo contrario, como Personal. Las entradas para eventos durante un viaje se añaden al viaje.
+Las entradas para un concierto, un partido, un festival o una conferencia crean un evento, uno por cada evento, con el lugar, el código de reserva, el asiento y el número de entradas. Si haces otro pedido para el mismo evento, se añade al que ya existe. Un evento reservado en tu correo de trabajo es de Trabajo; si no, es Personal. Las entradas para eventos durante un viaje se añaden al viaje.
 
 Si aún falta para el viaje, tu Machine te indica qué falta, por ejemplo, **No hay alojamiento reservado para 2 noches**, o que no hay ninguna reserva para ir del aeropuerto al hotel. Esas líneas aparecen atenuadas y marcadas como **Sin reserva**. Si el viaje no tiene ningún alojamiento, no se muestra información sobre las noches.
 
@@ -74,9 +74,9 @@ Si una reunión tiene transcripción, pero no notas, aparece **Generar notas**. 
 
 Aparece **Escribiendo notas…** y el proceso continúa aunque cierres la reunión. Si es larga, puede tardar unos minutos y utiliza tu propio modelo. Las notas indican **Redactado por The Machine** y nunca reemplazan las que añadiste.
 
-The Machine también puede añadirlas. Pídeselo en una tarea, por ejemplo: «añade esta transcripción a la reunión de hoy de la junta». La transcripción se añade a Transcripción y el resumen, a Notas. En el Calendario, las reuniones que las incluyen muestran **Notas** o **Transcripción**.
+The Machine también puede añadirlas. Pídeselo en una tarea, por ejemplo: «añade esta transcripción a la reunión del consejo de hoy». La transcripción se añade a Transcripción y el resumen, a Notas. En el Calendario, las reuniones que las incluyen muestran **Notas** o **Transcripción**.
 
-The Machine lee las dos para encontrar las tareas de seguimiento de la reunión. Son Work o Personal, igual que la reunión, y solo se comparten con tu equipo si la reunión también se comparte con él.
+The Machine lee las dos para encontrar las tareas de seguimiento de la reunión. Son de Trabajo o Personales, igual que la reunión, y solo se comparten con tu equipo si la reunión también se comparte con él.
 
 La reunión se abre con estos detalles desde cualquier lugar donde la encuentres: en una cronología, en una búsqueda de mensajes o como fuente de una tarea. **Invitación original**, en la parte inferior, muestra la invitación tal como llegó.
 
@@ -86,7 +86,7 @@ Desde aquí puedes cambiar tu propio calendario de Google. Outlook y otros calen
 
 **Dónde** sugiere lugares a medida que escribes: primero, los que usaste antes y tus organizaciones; después, direcciones de [OpenStreetMap](https://www.openstreetmap.org), un mapa gratuito. Solo se envían las palabras que escribes para buscarlas. Elige una sugerencia o conserva tu propio texto.
 
-**Invitar** añade personas de tu Graph o cualquier dirección de correo electrónico. Esta opción solo aparece en tu propio calendario. Encima del botón se indica quién recibirá una invitación, y el botón muestra cuántas personas son: **Añadir e invitar a 2**. Google envía las invitaciones cuando lo tocas, no antes. Si no hay invitados, nadie recibe una invitación ni una actualización.
+**Invitar** añade personas de tu Graph o cualquier dirección de correo. Esta opción solo aparece en tu propio calendario. Encima del botón se indica quién recibirá una invitación, y el botón muestra cuántas personas son: **Añadir e invitar a 2**. Google envía las invitaciones cuando lo tocas, no antes. Si no hay invitados, nadie recibe una invitación ni una actualización.
 
 Una tarea también puede sugerir un cambio, como añadir una recogida. Te muestra exactamente qué va a cambiar; el cambio solo se aplica si tocas **Añadir**, **Guardar** o **Eliminar**.
 
@@ -96,11 +96,11 @@ Una tarea también puede sugerir un cambio, como añadir una recogida. Te muestr
 
 Si una reunión de trabajo coincide con algo de tu calendario personal, o al revés, The Machine crea una sola tarea sobre el evento más reciente. Puede redactar una nota breve para cambiarlo u ofrecerte rechazarlo. No se envía nada hasta que lo apruebes.
 
-Los eventos de todo el día, los que aparecen como libre y los provisionales nunca cuentan, y cada conflicto aparece una sola vez. Una tarea de Work solo indica que hay un conflicto, así que tu equipo nunca ve el evento personal. Solo tú ves con qué coincide.
+Los eventos de todo el día, los que aparecen como libre y los provisionales nunca cuentan, y cada conflicto aparece una sola vez. Una tarea de Trabajo solo indica que hay un conflicto, así que tu equipo nunca ve el evento personal. Solo tú ves con qué coincide.
 
 ## Prepárate para tus reuniones
 
-Antes de una reunión con personas ajenas a tu empresa, The Machine crea una tarea: **Preparar la reunión**. Es un resumen breve:
+Antes de una reunión con personas ajenas a tu empresa, The Machine crea una tarea: **Preparar:** y el nombre de la reunión. Es un resumen breve:
 
 - **Quién:** quiénes son, según tu Graph, con información de su trayectoria si se conoce.
 - **Organización:** a qué se dedica su empresa y por qué es relevante para la reunión.

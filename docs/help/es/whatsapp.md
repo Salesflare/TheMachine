@@ -25,7 +25,7 @@ La tarea y el mensaje muestran la foto. Tócala para verla en grande.
 
 Un texto o un archivo con un texto opcional, a un chat que ya exista, y solo después de que lo apruebes en la tarea. Antes de enviarlo, la tarea muestra el archivo y puedes abrirlo. El archivo puede tener hasta 18 MB. Si se responde al mensaje de WhatsApp que originó una tarea y después de ese mensaje hubo más mensajes o se envió en un grupo, se incluye una cita del mensaje original. El borrador indica **Como respuesta**.
 
-Si recibes una tarea por correo, pero hablas con esa persona por WhatsApp, díselo en el chat de la tarea. The Machine encuentra el chat que ya tienes con esa persona y cambia el borrador a WhatsApp para que lo revises y lo envíes. Nunca inicia un chat nuevo.
+Si recibes una tarea por correo, pero hablas con esa persona por WhatsApp, dilo en el chat de la tarea. The Machine encuentra el chat que ya tienes con esa persona y cambia el borrador a WhatsApp para que lo revises y lo envíes. Nunca inicia un chat nuevo.
 
 WhatsApp no ofrece una forma oficial de hacerlo. Leer mensajes y enviar de vez en cuando una respuesta que hayas aprobado es muy poco probable que cause problemas. Los envíos masivos o automatizados pueden hacer que bloqueen una cuenta.
 
@@ -39,7 +39,7 @@ En una Machine alojada:
 4. WhatsApp aparecerá como conectado en menos de un minuto. Después, seguirá llegando tu historial de chats y la tarjeta irá contando los mensajes mientras se sincroniza.
    Si la conexión tarda demasiado, aparecerá un aviso al cabo de unos minutos. Pulsa **Reintentar** para continuar desde donde se quedó.
 
-¿Estás configurándolo en tu teléfono y no tienes otra pantalla para escanear el código? Abre **¿En tu teléfono? Vincula con un código**, introduce tu número y pulsa **Obtener un código**. WhatsApp te pedirá ese código.
+¿Estás configurándolo en tu teléfono y no tienes otra pantalla para escanear el código? Abre **¿En tu teléfono? Vincula con un código**, introduce tu número y pulsa **Recibir un código**. WhatsApp te pedirá ese código.
 
 En tu propio ordenador: abre **Conexiones**, luego **Chat**, elige WhatsApp, introduce tu número de teléfono con el prefijo del país y pulsa **Conectar**. Aparecerá un código. En tu teléfono, abre WhatsApp, ve a Configuración y luego a Dispositivos vinculados, pulsa Vincular un dispositivo y después Vincular con número de teléfono. Introduce el código.
 

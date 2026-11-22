@@ -96,6 +96,8 @@ English strings the check skips, with why:
 - `Sent to {} on Signal` names the Signal app, not a signal.
 - `the Signal message` names the Signal app, not a signal.
 - `Signal message sent` names the Signal app, not a signal.
+- `Signal message sent.` names the Signal app, not a signal.
+- `Signal message sent at {}.` names the Signal app, not a signal.
 - `Signal can’t be read right now, so I can’t find the chat. Put the message in the body and say in one line that they can send it on Signal themselves.` names the Signal app, not a signal.
 - `Your Signal chats, as a linked device.` names the Signal app, not a signal.
 - `Signal needs Java {} or later on this computer` names the Signal app, not a signal.
@@ -130,7 +132,7 @@ never The Machine. The table gives each language's verbs for starting and trying
 | nl | Start: Start je Machine, Aan de slag. Try: Probeer, Bekijk. Never Haal je, Krijg, Verkrijg on a button or for a feature ("Ontvang je to-do's", not "Krijg je to-do's"). Buttons are an infinitive (Opslaan, Hulp vragen) or a short je-imperative. |
 | fr | Start: Lancer votre Machine, Commencer. Try: Essayer, Découvrir. Never Obtenir for an app, a sign-up or help (Contacter le support, Télécharger l’app). Buttons are an infinitive (Enregistrer, Essayer). |
 | de | Start: Hol dir deine Machine, Loslegen. Try: Ausprobieren, Ansehen. Never Bekommen or Erhalten on a button (Hilfe holen, Support kontaktieren). Buttons are an infinitive or a short du-imperative. |
-| es | Start: Consigue tu Machine, Empieza. Try: Prueba, Descubre. Never Obtener on a button (Pedir ayuda, Descargar la app). |
+| es | Start: Consigue tu Machine, Empieza. Try: Prueba, Descubre. Never Obtener on a button (Pedir ayuda, Descargar la app). Spanish from Spain: ordenador (never computadora or equipo), móvil, vosotros for a group (never ustedes), presupuesto (never cotización). Email is correo (never email); an OK that approves is visto bueno. Fleet is masculine: el Fleet, tu Fleet de trabajo, el Fleet familiar (never Work Fleet or Family Fleet in English); the Network is la Network; Team Graph is Graph del equipo. A bold label in a help article is copied exactly from the app catalog. |
 | it | Start: Attiva la tua Machine, Inizia. Try: Prova, Scopri. Never Prendi or Ottieni on a button (Chiedi aiuto, Scarica l’app). |
 | pt-BR | Start: Quero minha Machine, Começar. Try: Experimente, Conheça. Never Obter or Pegue on a button (Pedir ajuda, Baixar o app). |
 | zh-CN | Start: 开通你的Machine, 开始使用. Try: 试用, 查看. Never 获取 for an app or a sign-up (获取验证码 for a code is fine; 下载手机应用 for the app). Labels are short: 查看, not 查看它们. |

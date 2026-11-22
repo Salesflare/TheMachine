@@ -16,7 +16,7 @@ Cuando algo falla en The Machine, tu Machine envía a nuestro equipo una nota br
 Solo esto, para cada tipo de error:
 
 - el tipo de error, como `KeyError`;
-- su mensaje, sin ningún dato específico: números, identificadores, texto entre comillas, direcciones de correo electrónico, enlaces, rutas de archivos, claves y cualquier palabra que pueda ser un nombre;
+- su mensaje, sin ningún dato específico: números, identificadores, texto entre comillas, direcciones de correo, enlaces, rutas de archivos, claves y cualquier palabra que pueda ser un nombre;
 - dónde ocurrió en el código de The Machine, nunca en una carpeta de tu ordenador;
 - la versión de la app, cuántas veces ocurrió y cuándo fue la primera y la última vez.
 
@@ -24,7 +24,7 @@ Por ejemplo: `IndexError`, `list index out of range`, en `machine/faults.py:faul
 
 ## Qué nunca se envía
 
-El contenido de tus mensajes, tareas, borradores o chats. Nombres, direcciones de correo electrónico, números de teléfono, enlaces o contraseñas. De qué cuenta o persona se trataba.
+El contenido de tus mensajes, tareas, borradores o chats. Nombres, direcciones de correo, números de teléfono, enlaces o contraseñas. De qué cuenta o persona se trataba.
 
 ## De dónde vienen los errores
 

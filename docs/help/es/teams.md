@@ -9,7 +9,7 @@ translated: 9ca0bb08466b4d58
 ---
 ## Qué lee
 
-Tus chats individuales, grupales y de reuniones en Teams: los últimos 7 días cuando te conectas y, después, los mensajes nuevos cada pocos minutos. Más adelante, se importa poco a poco y sin interrumpir nada el historial de chats de aproximadamente un año y de hilos de canales, con el visto bueno de tu administrador, como [historial](history.md).
+Tus chats individuales, grupales y de reuniones en Teams: los últimos 7 días al conectarlo y, después, los mensajes nuevos cada pocos minutos. Más adelante, se importa poco a poco y sin interrumpir nada el historial de chats de aproximadamente un año y de hilos de canales, con el visto bueno de tu administrador, como [historial](history.md).
 
 Con el visto bueno de tu administrador, también lee:
 

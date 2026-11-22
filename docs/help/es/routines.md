@@ -1,7 +1,7 @@
 ---
 title: Rutinas
 area: cards
-summary: Tareas que tu Machine hace por su cuenta con cierta frecuencia, como un resumen de tus oportunidades abiertas cada lunes. Solo lee.
+summary: Trabajo que tu Machine hace por su cuenta con cierta frecuencia, como un resumen de tus oportunidades abiertas cada lunes. Solo lee.
 covers: tab:routines
 code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, stay_in_touch.py, stay_in_touch_app.py, secondhand.py, secondhand_app.py, reorder.py, reorder_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js, dashboard/todos-reorder.js
 order: 10
@@ -20,9 +20,9 @@ Al pulsar **Añadir**, primero se hace una prueba para que veas el resultado ant
 
 En **Plantillas**, al final de Rutinas, pulsa **Añadir** para activar una rutina prediseñada. Se ejecuta una vez enseguida y, después, cada mañana a las 7:30 (Limpieza de spam, cada hora; Hallazgos de segunda mano, cada 3 horas; Suscripciones y pruebas, una vez al mes). Su tarjeta muestra las instrucciones, como cualquier rutina, y **Editar** permite cambiarlas o cambiar su nombre.
 
-Cuando recibes muchos newsletters y Limpieza de newsletters está desactivada (25 o más en una semana, de al menos 5 remitentes), aparece una línea encima de tus tareas con cuántos han llegado y qué haría la rutina. También aparecen **Activarla** y **No, gracias**.
+Cuando recibes muchos newsletters y Limpieza de newsletters está desactivada (25 o más en una semana, de al menos 5 remitentes), aparece una línea encima de tus tareas con cuántos han llegado y qué haría la rutina. También aparecen **Activar** y **No, gracias**.
 
-Limpieza de spam se ofrece de la misma manera cuando, en una semana, has movido a mano 5 correos o más a spam. **Activarla** la añade igual que **Añadir** aquí. Si pulsas **No, gracias**, no volverá a ofrecerse, y tampoco volverá a aparecer una plantilla que ya hayas rechazado.
+Limpieza de spam se ofrece de la misma manera cuando, en una semana, has movido a mano 5 correos o más a spam. **Activar** la añade igual que **Añadir** aquí. Si pulsas **No, gracias**, no volverá a ofrecerse, y nunca se ofrece una plantilla que ya hayas tenido antes.
 
 **Limpieza de newsletters** crea una tarea por ámbito (trabajo y personal) con los newsletters del último día. Cada uno incluye las opciones **Mantener** o **Darse de baja**. Para darse de baja, usa el enlace de un solo clic de la lista o envía un correo de baja desde tu dirección, si está habilitado el envío. Si no, The Machine se da de baja en la página de la lista desde su propio navegador. Si hace falta iniciar sesión, resolver un captcha o elegir opciones, tendrás que hacerlo tú. La fila indica el motivo y muestra **Abrir página de baja**.
 
@@ -46,7 +46,7 @@ Solo lee el remitente, el asunto y el comienzo de cada newsletter nuevo, y le ha
 
 **Cumpleaños** crea una tarea por cada persona cercana cuyo cumpleaños sea hoy: personas a las que escribes tú, como amistades, familiares y contactos habituales. Para cada una, redacta un saludo breve en el lugar donde sueles hablar con ella, como su chat de WhatsApp o el hilo de correo, y en su idioma. El mensaje solo se envía cuando lo envías tú. Si un día no hay cumpleaños, no se crea ninguna tarea.
 
-Los cumpleaños se obtienen de tus calendarios (los eventos de cumpleaños de Google y el calendario Cumpleaños, que se consulta cada mañana aunque no estén sincronizados, y el calendario Cumpleaños de Outlook), de tus contactos de Google en una Machine autohospedada y de un campo de fecha llamado Birthday en una persona de Graph. Si todavía no hay ningún cumpleaños, el resultado muestra **Aún no hay información sobre cumpleaños** y explica cómo añadirla.
+Los cumpleaños se obtienen de tus calendarios (los eventos de cumpleaños de Google y el calendario Cumpleaños, que se consulta cada mañana aunque no estén sincronizados, y el calendario Cumpleaños de Outlook), de tus contactos de Google en una Machine autoalojada y de un campo de fecha llamado Cumpleaños en una persona del Graph. Si todavía no hay ningún cumpleaños, el resultado muestra **Aún no hay cumpleaños** y explica cómo añadirla.
 
 **Importar cumpleaños de Facebook**: cuando Cumpleaños esté activada, una tarea te ofrecerá leer la página de cumpleaños de Facebook. Pulsa **Importar** y The Machine abrirá la página en su navegador, se desplazará hasta que se hayan cargado todos los meses y leerá el nombre y el cumpleaños de cada amistad. Te mostrará cuántos ha encontrado y quién coincide con personas de tu Graph por nombre y apellido. Si hay más de una persona con el mismo nombre, se omitirá y aparecerá en la lista.
 
@@ -80,7 +80,7 @@ La rutina es prudente y económica: hace una sola lectura de la búsqueda por ej
 
 Si el sitio te pide iniciar sesión, muestra una verificación para robots o bloquea la lectura, una tarea te lo indicará y mostrará **Abrir** para que lo veas en el navegador de The Machine. Inicia sesión o completa la verificación tú. En la siguiente ejecución volverá a leer la página. The Machine nunca inicia sesión ni resuelve verificaciones por ti, y nunca contacta con vendedores, puja ni compra.
 
-**Cambiar búsqueda** en la tarjeta de la rutina permite añadir una dirección o cambiar los filtros. **Cambiar cuándo** permite elegir otra frecuencia, como «cada 6 horas».
+**Cambiar búsqueda** en la tarjeta de la rutina permite indicar una dirección nueva o cambiar los filtros. **Cambiar cuándo** permite elegir otra frecuencia, como «cada 6 horas».
 
 **Reordenaciones** lee las confirmaciones de pedidos de tiendas online en tu correo y detecta lo que compras una y otra vez, como café, comida para mascotas o vitaminas. Cuando probablemente vuelva a tocar comprar algo, crea una tarea con el producto, la tienda, el último precio y la fecha de la última compra. **Ver en la tienda** abre la página del producto para que lo compres tú. No compra nada por ti.
 
@@ -96,11 +96,11 @@ A la hora indicada, tu Machine lee lo que necesita, como tus mensajes, reuniones
 
 Las rutinas solo leen: tus mensajes, páginas web, GitHub y sitios como X en el navegador. No envían mensajes, responden, publican ni cambian nada. Abren páginas que encuentran en lo que leen o en una búsqueda, direcciones de páginas sencillas y sitios conocidos. Nunca abren una dirección inventada para incluir lo que han leído. Solo una plantilla cambia el correo, y solo lo que confirmes en su tarea.
 
-Si una rutina termina con una publicación o un mensaje, hace todo hasta ese paso y muestra el borrador, por ejemplo, **Se publicaría en X:**. Después de una ejecución real, aparece como tarea para que la apruebes. Una ejecución de prueba solo lo muestra. El nombre indica de qué trata y dónde se publicaría, el botón indica el paso, como **Publícalo**, y **Desde tu rutina**, debajo, abre la rutina.
+Si una rutina termina con una publicación o un mensaje, hace todo hasta ese paso y muestra el borrador, por ejemplo, **Se publicaría en X:**. Después de una ejecución real, aparece como tarea para que la apruebes. Una ejecución de prueba solo lo muestra. El nombre indica de qué trata y dónde se publicaría, el botón indica el paso, como **Publícalo**, y **De tu rutina**, debajo, abre la rutina.
 
 La tarea empieza en el ámbito de la cuenta desde la que se enviaría, como Trabajo para la cuenta de X de tu empresa, así que nunca te pide moverla.
 
-Una ejecución puede seguir las [habilidades](skills.md) que tengas activadas, según lo que haga la rutina. Solo se leen completas las que corresponden. El resultado las enumera bajo **Usadas:**. Una habilidad nunca hace que una rutina envíe nada ni cambie nada.
+Una ejecución puede seguir las [habilidades](skills.md) que tengas activadas, según lo que haga la rutina. Solo se leen completas las que corresponden. El resultado las enumera bajo **Usado:**. Una habilidad nunca hace que una rutina envíe nada ni cambie nada.
 
 Tus rutinas aparecen en **Tus rutinas**, debajo de las sugerencias. Los resultados largos se contraen y muestran una vista previa breve. Pulsa **Mostrar más** o toca el resultado para abrirlo.
 
@@ -112,13 +112,13 @@ Después de una ejecución correcta, tu Machine puede crear por su cuenta una re
 
 Si tu Machine estaba apagada u ocupada, las ejecuciones pendientes no se acumulan: solo se ejecuta una vez la más reciente. Cada fecha se ejecuta una vez, incluso después de reiniciar.
 
-Las rutinas se ejecutan de una en una y esperan si queda poco uso en el plan de tu IA, como cualquier tarea en segundo plano. **Ejecutar ahora** la inicia enseguida. El resultado aparece en la tarjeta cuando esté listo.
+Las rutinas se ejecutan de una en una y esperan si queda poco uso en el plan de tu IA, como todo el trabajo en segundo plano. **Ejecutar ahora** la inicia enseguida. El resultado aparece en la tarjeta cuando esté listo.
 
 ## Cambiar una rutina o detenerla
 
 Estas opciones están en el menú ⋯ de la rutina. **Editar** permite cambiar el nombre y lo que hace. La hora de ejecución y los resultados anteriores se mantienen. **Cambiar cuándo** permite indicar una nueva frecuencia con tus propias palabras, como «cada día entre semana a las 8». Ambas opciones incluyen **Guardar** y **Cancelar**. En un ordenador, también puedes cancelar con Esc o haciendo clic fuera.
 
-En **Editar**, **Probarlo** ejecuta una vez las nuevas instrucciones y muestra el resultado allí. La rutina no cambia hasta que pulses **Guardar**.
+En **Editar**, **Pruébalo** ejecuta una vez las nuevas instrucciones y muestra el resultado allí. La rutina no cambia hasta que pulses **Guardar**.
 
 **Pausar** detiene las ejecuciones hasta que pulses **Reanudar** en la tarjeta. Las rutinas pausadas aparecen bajo **En pausa**, debajo de tus rutinas, y las ejecuciones que se pierdan mientras estén pausadas no se recuperan después. **Detener** termina la rutina definitivamente.
 
@@ -130,17 +130,17 @@ Si pulsas **Pedir cambios** en la tarea de una rutina o escribes en su chat, y l
 
 No hace falta escribir scripts: explica con tus propias palabras qué debe hacer una rutina y tu Machine se encargará del resto.
 
-Si tienes experiencia, también puedes ejecutar tus propios comandos en tu Machine desde una rutina. En el menú ⋯, elige **Avanzado: pasos de script**. **Editar** solo los muestra cuando la rutina ya tiene alguno. **Obtener datos** ejecuta primero un comando en su carpeta (tu carpeta personal si no indicas ninguna) durante el tiempo máximo especificado. Lo que imprima se pasa a la ejecución para que trabaje con ello. Si no hay instrucciones, lo que imprima será el resultado.
+Si tienes experiencia, también puedes ejecutar tus propios comandos en tu Machine desde una rutina. En el menú ⋯, elige **Avanzado: pasos de script**. **Editar** solo los muestra cuando la rutina ya tiene alguno. **Consultar datos** ejecuta primero un comando en su carpeta (tu carpeta personal si no indicas ninguna) durante el tiempo máximo especificado. Lo que imprima se pasa a la ejecución para que trabaje con ello. Si no hay instrucciones, lo que imprima será el resultado.
 
-**Comprobación** recibe el resultado como entrada después de la ejecución. Si termina con un error, la ejecución muestra **No funcionó** y lo que haya indicado la comprobación. Si falla un comando de Obtener datos, se muestra de la misma manera.
+**Comprobación** recibe el resultado como entrada después de la ejecución. Si termina con un error, la ejecución muestra **No funcionó** y lo que haya indicado la comprobación. Si falla un comando de Consultar datos, se muestra de la misma manera.
 
-Cada comando debe ocupar una línea y se ejecuta sin un shell: no se permiten tuberías ni variables. Los pasos de script son tuyos y solo se configuran en tu panel. Las ejecuciones de prueba y **Probarlo** también ejecutan Obtener datos y lo indican, pero no envían ni guardan nada. Una rutina nunca envía nada, así que los pasos de script solo deben leer.
+Cada comando debe ocupar una línea y se ejecuta sin un shell: no se permiten tuberías ni variables. Los pasos de script son tuyos y solo se configuran en tu panel. Las ejecuciones de prueba y **Pruébalo** también ejecutan Consultar datos y lo indican, pero no envían ni guardan nada. Una rutina nunca envía nada, así que los pasos de script solo deben leer.
 
 ## Desde tus trabajos de OpenClaw
 
 Si antes creaste trabajos programados en OpenClaw, tu Machine los lee (nunca los cambia) y ofrece los que encajan como rutinas bajo **Sugerido**. Cada uno se ha ejecutado una vez, así que puedes ver un resultado real.
 
-Conserva las correcciones que hayas hecho al trabajo y omite lo que haya enviado o publicado. Si un trabajo ejecutaba un script o leía datos recopilados por un trabajo con script, lo incluye como Obtener datos. **Añadir** lo convierte en una rutina. **No, gracias** hace que no vuelva a preguntarte por ese trabajo. Si un trabajo te recordaba hacer algo, aparecerá como una oferta de tarea periódica en Tareas.
+Conserva las correcciones que hayas hecho al trabajo y omite lo que haya enviado o publicado. Si un trabajo ejecutaba un script o leía datos recopilados por un trabajo con script, lo incluye como Consultar datos. **Añadir** lo convierte en una rutina. **No, gracias** hace que no vuelva a preguntarte por ese trabajo. Si un trabajo te recordaba hacer algo, aparecerá como una oferta de tarea recurrente en Tareas.
 
 Antes de añadir una sugerencia, puedes cambiarla como cualquier rutina con **Editar** y **Cambiar cuándo**, en su menú ⋯. **Ejecutar de nuevo** la ejecuta ahora con las instrucciones actuales para que veas resultados más recientes, por ejemplo, después de un fin de semana tranquilo. Solo lee, se ejecuta una vez por cada vez que la pulses y el resultado nuevo sustituye al anterior.
 
@@ -148,7 +148,7 @@ Puede haber como máximo tres sugerencias a la vez. Después de una semana de ej
 
 ## A partir de lo que haces
 
-Tu Machine también detecta tareas que haces con regularidad y las ofrece como rutinas bajo **Sugerido**, aunque no uses OpenClaw. Busca:
+Tu Machine también detecta trabajo que haces con regularidad y las ofrece como rutinas bajo **Sugerido**, aunque no uses OpenClaw. Busca:
 
 - la misma petición tres veces seguidas o más, como «resume los tickets de soporte abiertos» cada lunes;
 - un correo que envías con regularidad, como un informe semanal a tu equipo;
@@ -161,8 +161,8 @@ Cada sugerencia explica qué ha detectado, como «Petición repetida 4 veces seg
 
 Solo sugiere rutinas específicas para ti y que sean claramente útiles: un resumen de noticias solo incluirá tus propios newsletters, nunca será genérico. Si nada encaja, no recibirás ninguna sugerencia.
 
-Busca como máximo una vez al día y ofrece como máximo una sugerencia nueva a la semana, sin enviar notificaciones. **No, gracias** hace que no vuelva a aparecer esa sugerencia. Los reenvíos y las respuestas se mantienen en la cuenta desde la que se enviaron, así que Trabajo y Personal no se mezclan. Todo permanece en tu Machine. Si cierras una tarea con regularidad, recibirás una oferta de tarea periódica en su lugar.
+Busca como máximo una vez al día y ofrece como máximo una sugerencia nueva a la semana, sin enviar notificaciones. **No, gracias** hace que no vuelva a aparecer esa sugerencia. Los reenvíos y las respuestas se mantienen en la cuenta desde la que se enviaron, así que Trabajo y Personal no se mezclan. Todo permanece en tu Machine. Si cierras una tarea con regularidad, recibirás una oferta de tarea recurrente en su lugar.
 
-## Rutinas y tareas periódicas
+## Rutinas y tareas recurrentes
 
-Una [tarea periódica](recurring.md) te recuerda que hagas algo. Una rutina es un trabajo que tu Machine hace por su cuenta y te muestra. Usa una tarea periódica para «pagar el alquiler el día 1» y una rutina para «cada viernes, dime qué oportunidades se han quedado paradas».
+Una [tarea recurrente](recurring.md) te recuerda que hagas algo. Una rutina es un trabajo que tu Machine hace por su cuenta y te muestra. Usa una tarea recurrente para «pagar el alquiler el día 1» y una rutina para «cada viernes, dime qué oportunidades se han quedado paradas».

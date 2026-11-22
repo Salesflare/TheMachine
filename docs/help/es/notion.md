@@ -16,7 +16,7 @@ Las páginas que puede ver tu conexión de Notion. Incluye:
 - Páginas nuevas que añadan otras personas y que puedas ver.
 - Un aviso discreto cuando alguien cambia una página que pediste que modificaran. Nunca te envía una notificación sonora.
 
-La primera sincronización incluye los últimos 7 días. Las personas se vinculan a tu [Graph](graph.md) por su dirección de correo electrónico. Si Notion no comparte una, solo se vinculan cuando el nombre completo coincide exactamente con el de una sola persona de tu Graph.
+La primera sincronización incluye los últimos 7 días. Las personas se vinculan a tu [Graph](graph.md) por su dirección de correo. Si Notion no comparte una, solo se vinculan cuando el nombre completo coincide exactamente con el de una sola persona de tu Graph.
 
 Para usarla solo para hacer cosas, desactiva **Trae señales** en **Detalles**.
 
@@ -24,7 +24,7 @@ Para usarla solo para hacer cosas, desactiva **Trae señales** en **Detalles**.
 
 Cuando una tarea o una reunión necesita el texto de una página, tu Machine lee esa página solo mientras trabaja en ella.
 
-Tu asistente espera tu aprobación para cada una de estas acciones en su tarea:
+Cada una de estas acciones espera tu aprobación en su tarea:
 
 - Responder a un comentario dentro de su conversación.
 - Crear una página nueva. Es privada hasta que la compartas.
@@ -36,14 +36,14 @@ Nunca elimina, comparte ni mueve una página.
 ## Conectarla
 
 1. En el panel: **Conexiones**, **Documentos y archivos**, Notion. O, en la página de configuración de una Machine alojada en app.themachine.computer/setup: **Más fuentes**, Notion. En tu propio ordenador, primero vincúlala con tu cuenta.
-2. Pulsa **Iniciar sesión con Notion**, elige tu espacio de trabajo y las páginas que puede ver, y autoriza el acceso.
+2. Pulsa **Inicia sesión con Notion**, elige tu espacio de trabajo y las páginas que puede ver, y autoriza el acceso.
 3. Al volver a The Machine, comprobará el inicio de sesión de inmediato y mostrará el nombre del espacio de trabajo.
 
 Para conectar otro espacio de trabajo, vuelve a añadir Notion.
 
 ## Pegar un token en su lugar
 
-En **O pega un token de integración**, pulsa **Obtén tu token**. Notion abrirá su página de integraciones: crea una integración interna, permite leer e insertar contenido y comentarios, y leer información de usuarios con sus direcciones de correo electrónico. Copia el token, pégalo y pulsa **Conectar**.
+En **O pega un token de integración**, pulsa **Consigue tu token**. Notion abrirá su página de integraciones: crea una integración interna, permite leer e insertar contenido y comentarios, y leer información de usuarios con sus direcciones de correo. Copia el token, pégalo y pulsa **Conectar**.
 
 Después, comparte tus páginas con la integración en Notion, en **Conexiones** de cada página. En tu propio ordenador, `assistant connect notion` también te lo pide.
 
@@ -54,4 +54,4 @@ Después, comparte tus páginas con la integración en Notion, en **Conexiones**
 
 ## Revocar el acceso en Notion
 
-En Notion, ve a **Ajustes**, **Conexiones** y desconecta The Machine. Si usaste un token, elimina la integración en la página de integraciones.
+En Notion, ve a **Configuración**, **Conexiones** y desconecta The Machine. Si usaste un token, elimina la integración en la página de integraciones.

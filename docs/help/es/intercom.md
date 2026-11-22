@@ -9,29 +9,29 @@ translated: 2cbee87e6d24c0a9
 ---
 ## Qué lee
 
-Las conversaciones con clientes de tu espacio de trabajo de Intercom: los últimos 7 días al conectar, y luego las nuevas según llegan. También lee a qué espacio de trabajo y a qué administrador pertenece el inicio de sesión.
+Las conversaciones con clientes de tu espacio de trabajo de Intercom: los últimos 7 días al conectar, y luego las nuevas según llegan. También lee a qué espacio de trabajo y a qué compañero pertenece el inicio de sesión.
 
 ## Qué puede hacer
 
-Lee conversaciones. Con tu propio **Iniciar sesión con Intercom**, también puede responder en una conversación en tu nombre, solo después de que pulses **Enviar** en ese texto exacto. Nunca asigna, cierra, etiqueta ni escribe notas. Un Intercom compartido contigo a través de tu Fleet solo lee.
+Con tu propio **Iniciar sesión con Intercom**, también puede responder en una conversación en tu nombre, solo después de que pulses **Enviar** en ese texto exacto. Nunca asigna, cierra, etiqueta ni escribe notas. Un Intercom compartido contigo a través de tu Fleet solo lee.
 
 ## Tareas desde Intercom
 
-Una tarea de una conversación de Intercom muestra de dónde viene: **Leer mensaje** abre la conversación, con un enlace a ella en Intercom, y el cliente aparece en la tarea. Su respuesta es una respuesta de Intercom en esa conversación, salvo que pidas un correo.
+Una tarea de Intercom muestra al cliente, y **Leer mensaje** abre la conversación, con un enlace a ella en Intercom. Su respuesta sale en esa conversación, salvo que pidas un correo.
 
-Solo las conversaciones asignadas a ti, o todavía a nadie, se vuelven tareas, también las de una bandeja de equipo sin nadie asignado. Cuando alguien del equipo toma una conversación en Intercom, su tarea abierta se cierra sola, con **Deshacer**. En un Intercom compartido contigo, tus conversaciones son las asignadas al admin con el que escribes.
+Solo las conversaciones asignadas a ti, o todavía a nadie, se vuelven tareas. Cuando un compañero toma una en Intercom, su tarea se cierra sola, con **Deshacer**. En un Intercom compartido contigo, tus conversaciones son las asignadas al compañero como el que escribes.
 
 Una tarea de Intercom también se cierra sola cuando alguien del equipo cierra la conversación en Intercom, o la responde y el cliente no ha vuelto a escribir, si la tarea solo pedía una respuesta. También cuenta si respondiste justo antes de la tarea, antes de que The Machine leyera tu respuesta. Una nota, posponer o la respuesta de un bot nunca cuentan.
 
-Cuando Intercom no puede responder desde tu Machine (compartido contigo solo para leer, respuestas sin activar o sin conectar), el borrador va por correo. La tarea dice por qué y su revisión pregunta **¿Enviar por correo en su lugar?** Para responder tú en Intercom, toca **Conecta tu propio Intercom** en la tarea e inicia sesión. Después la tarea se vuelve a escribir como respuesta en Intercom. No sale nada antes de que lo envíes.
+Cuando tu Machine no puede responder en Intercom (compartido contigo solo para leer, respuestas sin activar o sin conectar), el borrador va por correo. La tarea dice por qué y su revisión pregunta **¿Enviar por correo en su lugar?** Para responder en Intercom, toca **Conecta tu propio Intercom** en la tarea e inicia sesión. Después la tarea se vuelve a escribir como respuesta en Intercom. No sale nada antes de que lo envíes.
 
-Tu propio Intercom y uno compartido contigo del mismo workspace no leen los dos: el compartido queda en pausa y sus conversaciones pasan al tuyo, cada una una vez.
+Tu propio Intercom y uno compartido contigo del mismo espacio de trabajo no leen los dos: el compartido queda en pausa y sus conversaciones pasan al tuyo, cada una una vez.
 
 ## Conéctalo
 
 1. En el panel: **Conexiones**, **Clientes**, Intercom. O en la página de configuración de una Machine alojada, en app.themachine.computer/setup: **Más fuentes**, Intercom. En tu propio ordenador, vincúlalo primero a tu cuenta.
 2. Pulsa **Iniciar sesión con Intercom**.
-3. Aprueba The Machine en Intercom. La hace Salesflare. Cuando termines, vuelves a donde empezaste.
+3. Aprueba The Machine (creada por Salesflare) en Intercom. Vuelves a donde empezaste.
 
 Iniciar sesión en otro espacio de trabajo añade una segunda cuenta de Intercom.
 

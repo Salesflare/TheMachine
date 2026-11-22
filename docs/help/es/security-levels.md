@@ -1,7 +1,7 @@
 ---
 title: Niveles de seguridad
 area: security
-summary: Un solo control, Estándar o Prudente, define tus ajustes de seguridad y privacidad. El administrador de una Fleet de trabajo elige el nivel para toda la Fleet.
+summary: Un solo control, Estándar o Prudente, define tus ajustes de seguridad y privacidad. El administrador de un Fleet de trabajo elige el nivel para todo el Fleet.
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
@@ -23,12 +23,12 @@ Un nivel es un punto de partida. Si después cambias cualquier ajuste, el nivel 
 - **Buscar contactos de trabajo**, **Ofrecer compartir aprendizajes** y **Compartir lo que se pregunta a la ayuda** desactivados.
 - **Comprobar cuáles de mis contactos tienen una Machine** y **Dejar que me encuentren quienes tienen mi correo** desactivados.
 - **Guardar los detalles de Hazlo 90 días** desactivado: se conservan durante 30 días.
-- **Qué pueden preguntar otras Machines a la mía** se establece en **Desactivada**: no se pueden programar reuniones con otras Machines. Consulta [Amigos y Network](friends.md#scheduling-with-other-machines).
+- **Qué pueden preguntar otras Machines a la mía** se establece en **Desactivado**: no se pueden programar reuniones con otras Machines. Consulta [Amigos y la Network](friends.md#scheduling-with-other-machines).
 - En una Familia, primero tienes que aprobar las solicitudes de horarios disponibles. Con Amigos, se rechaza el contexto de las reuniones.
 
-## Nivel de una Fleet de trabajo
+## Nivel de un Fleet de trabajo
 
-La persona propietaria de la Fleet o un administrador lo elige en los ajustes de la Fleet: ve a **Ajustes** › **Cuenta** y pulsa **Fleet**. Todas las personas de la Fleet pueden verlo. Cuando está en Prudente:
+El propietario del Fleet o un administrador lo elige en **Ajustes del Fleet**: ve a **Ajustes** › **Cuenta** y pulsa **Fleet**. Todas las personas del Fleet pueden verlo. Cuando está en Prudente:
 
 - Las respuestas a tus compañeros esperan tu aprobación, no incluyen nombres y solo tratan sobre personas de tus cuentas de trabajo.
 - Las presentaciones y los traspasos también esperan tu aprobación.
@@ -39,7 +39,7 @@ La persona propietaria de la Fleet o un administrador lo elige en los ajustes de
 - Todas las personas tienen que volver a iniciar sesión cada 7 días.
 - Un enlace de invitación solo funciona con la dirección de correo a la que se envió.
 
-Los miembros pueden elegir ajustes más estrictos que los de la Fleet, pero no menos estrictos. Se conservan sus propios ajustes y se restablecen si la Fleet vuelve a Estándar.
+Los miembros pueden elegir ajustes más estrictos que los del Fleet, pero no menos estrictos. Se conservan sus propios ajustes y se restablecen si el Fleet vuelve a Estándar.
 
 ## Lo mismo en ambos niveles
 
