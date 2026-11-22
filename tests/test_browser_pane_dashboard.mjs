@@ -27,8 +27,13 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base);const row=page.locator('#open-browser');await row.waitFor();
+ // The page starts without frames (each made a document of its own on every load): the pane's comes when it first opens,
+ // in its place, the pane's last element
+ assert.equal(await page.evaluate(()=>document.querySelectorAll('iframe').length),0,'no frame before one is used');
  await row.click();
  const pane=page.locator('#browser-pane');await pane.waitFor();
+ assert.equal(await page.evaluate(()=>document.querySelector('#browser-pane').lastElementChild.id),'bp-frame');
+ assert.equal(await page.evaluate(()=>document.querySelectorAll('template[data-frame="bp-frame"]').length),0);
  assert.equal(await page.locator('#bp-frame').getAttribute('src'),'/browser/');
  await page.frameLocator('#bp-frame').locator('#viewer').waitFor();
  assert.equal(await row.getAttribute('aria-current'),'page');
