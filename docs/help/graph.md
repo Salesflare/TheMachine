@@ -12,6 +12,8 @@ Your Machine builds a map of who you deal with and what's going on, from your me
 - [Organizations](organizations.md): the companies they work at, with their people and projects.
 - [Projects](projects.md): what's going on, on boards with stages, like deals in a CRM.
 
+Your own changes show at once. New people, new messages on their timelines and looked-up details show within 30 minutes.
+
 ## Updated today
 
 A quiet line on top of each list says what your Machine updated today, like **Updated 4 people today**. Tap it to see who and what changed; a name opens their page with **Recent changes** open. A small dot marks each row and board tile it changed today. It counts only your Machine's own changes, from midnight.

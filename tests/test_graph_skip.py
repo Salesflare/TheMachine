@@ -28,7 +28,7 @@ def meeting(days_ago, *emails):
 
 
 class Skip(unittest.TestCase):
-    setUp, add, build = tg.Graph.setUp, tg.Graph.add, tg.Graph.build
+    setUp, add, build, node = tg.Graph.setUp, tg.Graph.add, tg.Graph.build, tg.Graph.node
 
     def fixture(self):
         self.add(mail(30, 'Kim Lee (Initech) <kim@initech.example>', 'sam@acme.com', thread='deal'),
@@ -136,6 +136,43 @@ class Skip(unittest.TestCase):
         later = time.monotonic() + graph_actions.GRAPH_KEEP_SECONDS + 1
         with patch.object(graph_actions.time, 'monotonic', return_value=later):  # an hour on: time alone changes a graph
             self.assertIn('people', self.app.graph_build(keep=True))
+
+    def test_new_profiles_are_built_by_the_timed_rebuild(self):
+        self.fixture()
+        self.app.config = SETTINGS
+        self.app.graph_build()
+        self.assertEqual(self.app.graph_build(keep=True), {'skipped': True})
+        with self.store.connect() as db:
+            graph.enrichment.save(db, 'initech.example', 'found', {'name': 'Initech', 'industry': 'Software'}, NOW.isoformat())
+        self.assertIn('people', self.app.graph_build(keep=True))  # the enrichment worker no longer asks: the timed one shows it
+        self.assertEqual(self.node('org:initech.example')['about'].split(',')[0], 'Software')
+
+    def test_the_worker_builds_every_half_hour_and_at_once_after_an_edit(self):
+        """Timed rebuilds GRAPH_EVERY_SECONDS apart, whatever profiles come in meanwhile; an owner's edit (graph_dirty)
+        builds within the minute's check, never kept."""
+        clock, builds, edit_at = [0.0], [], 700
+
+        class Dirty:  # graph_dirty, on a clock that moves on by each wait
+            flag = False
+            def wait(self, timeout):
+                clock[0] += max(timeout, 1)
+                if clock[0] >= edit_at and not any(not k for _, k in builds):
+                    self.flag = True  # the owner edits a person at about 12 minutes
+                return self.flag
+            def set(self): self.flag = True
+            def clear(self): self.flag = False
+            def is_set(self): return self.flag
+
+        app = self.app
+        app.graph_dirty, app.stop = Dirty(), type('S', (), {'is_set': lambda s: clock[0] > 2 * graph_actions.GRAPH_EVERY_SECONDS + 200,
+                                                             'wait': lambda s, t: False})()
+        app.graph_freshness, app.own_addresses_fetch, app.history_graph_step = (lambda: 1), (lambda: None), (lambda: False)
+        app.graph_build = lambda lock_last=True, apart=False, keep=False: builds.append((clock[0], keep)) or {'people': 0}
+        with patch.object(graph_actions.time, 'monotonic', lambda: clock[0]), patch.object(graph_actions.work_removal, 'prune', lambda config: None):
+            app.graph_worker()
+        # the first build half a minute after the start, the edit's at the next minute's check, then half an hour on
+        self.assertEqual(builds, [(30, True), (750, False), (750 + graph_actions.GRAPH_EVERY_SECONDS, True)])
+        self.assertEqual(graph_actions.GRAPH_EVERY_SECONDS, 1800)
 
 
 if __name__ == '__main__':
