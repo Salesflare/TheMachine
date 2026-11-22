@@ -540,7 +540,7 @@ const waitAhead=s=>s.early&&s.status==='accepted'&&(s.preparation_status||'queue
 // disagree. A stopped run comes first: a card whose run stopped is not Preparing any more, whatever its status says.
 // Closed by itself once its moment passed (expired_at): Not needed, like a dismissed one, so it never reads as done by them
 const lapsed=s=>s.status==='completed'&&!!s.expired_at;
-const cardState=s=>lapsed(s)?'Not needed':toRead(s)?'To read':cleanupSettled(s)?label('prepared'):s.preparation_status==='working'&&!closed(s)?'Working…':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):TODO.PREPARING.includes(s.status)&&s.preparation_status!=='handed'?'Preparing…':label(s.status);
+const cardState=s=>lapsed(s)?'Not needed':toRead(s)?'To read':cleanupSettled(s)?label('prepared'):s.preparation_status==='working'&&!closed(s)?'Working…':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):waitAhead(s)?'Not started yet':TODO.PREPARING.includes(s.status)&&s.preparation_status!=='handed'?'Preparing…':label(s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
  if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
  return needsAsk(s)};
@@ -672,7 +672,8 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
  if(!hint&&stillWaiting(s))return line(stillWaiting(s),' outcome');
  if(hint)return line((handled.fleet?'Done: ':'Looks handled: ')+hint,' handled');
  if(ask&&s.preparation_status==='blocked')return askLine(s,ask);
- if(s.early&&s.status==='accepted')return line('Preparing this ahead, so it arrives ready.');
+ // Not started yet: its wait line (preparationNote) is the one line
+ if(s.early&&s.status==='accepted'&&!waitAhead(s))return line('Preparing this ahead, so it arrives ready.');
  // A send on its way or done has its own line below; the result's needs line no longer holds.
  if(smart.some(a=>sendBusy(a.state||s.action_status)&&!['local_preparation','paused'].includes((a.state||s.action_status)?.status)))return '';
  // With a teammate (and nothing new to send them): their line says where it is, not an older "Needs you".

@@ -32,7 +32,11 @@ try{
   assert.equal((await doIt(id).textContent()).trim(),'Do it');
   assert.match(await doIt(id).getAttribute('class'),/primary/,id+': Do it leads');
  }
- assert.match(await page.locator('#task-wait').textContent(),/Saving usage for now/);
+ // Waiting, it says so once: its chip isn't Preparing… yet, and only the wait line explains it
+ const wait=await page.locator('#task-wait').textContent();
+ assert.match(wait,/Saving usage for now/);assert.doesNotMatch(wait,/Preparing/);
+ assert.equal((await page.locator('#task-wait .chip').first().textContent()).trim(),'Not started yet');
+ assert.match(await page.locator('#task-run').textContent(),/Preparing this ahead, so it arrives ready/);  // once it runs, as before
  assert.equal(await doIt('run').count(),0,'a run under way has no Do it');
  await doIt('wait').click();
  await page.waitForFunction(()=>/Waiting for the usage limit to reset/.test(document.querySelector('#toast')?.textContent||''));
