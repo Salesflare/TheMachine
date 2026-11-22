@@ -3,7 +3,7 @@ let signinPages=[];
 const SIGNIN_FIELDS=['#signin-user-row','#signin-pass-row','#signin-code-row','#signin-save-row','#signin-go','#signin-saved'];
 // One state of the dialog at a time: waiting (neutral, spinner), the fields, the browser itself, or a real error (red).
 function signinMode(mode,view){for(const id of SIGNIN_FIELDS)if(mode!=='form')$(id).hidden=true;$('#signin-fine').hidden=mode!=='form';
-$('#signin-view').hidden=!(mode==='browser'&&view);if($('#signin-view').hidden)$('#signin-frame').removeAttribute('src');
+$('#signin-view').hidden=!(mode==='browser'&&view);if($('#signin-view').hidden)$('#signin-frame')?.removeAttribute('src');
 $('#signin-retry').hidden=!['browser','error'].includes(mode);$('#signin-continue').hidden=!(mode==='browser'&&(signinTask||signinAfter));
 $('#signin-browser').className=mode==='browser'&&!view?'primary':'ghost';if(mode!=='error')$('#signin-error').textContent='';if(mode==='form'||mode==='error')signinStatus('');$('#signin-home').hidden=true}
 // A site that refused the sign-in or put a robot check up, on a hosted Machine: sites often do that to a browser in the
@@ -86,7 +86,7 @@ signinBrowser(info,run)}
 function signinBrowser(info,run){const link=state.browser_link||info?.view||'';let view=false;try{view=!!link&&new URL(link,location.href).origin===location.origin}catch{}
 signinMode('browser',view);const name=info?.site||t('This site'),says=SIGNIN_SAYS[info?.kind];
 signinStatus((info?.state==='unknown'?t(view?'Finish signing in for this task below.':'Finish signing in for this task in the browser.'):says?says(name)+' '+t(view?'Finish it below.':'Finish it in the browser.'):t(view?'Finish signing in to {} below.':'Finish signing in to {} in the browser.',name))+' '+t(signinAfter?'Then press Continue.':'I carry on by myself once you’re in.'),false);
-if(info?.kind==='captcha')signinHome();if(view)$('#signin-frame').src=link;signinWatch(run)}
+if(info?.kind==='captcha')signinHome();if(view)frameOn('signin-frame').src=link;signinWatch(run)}
 async function signinWatch(run){while(run===signinRun&&$('#signin-dialog').open&&signinTask){await new Promise(r=>setTimeout(r,4000));if(run!==signinRun||!$('#signin-dialog').open)return;
 try{const p=await request('api/progress?id='+encodeURIComponent(signinTask));if(p.status!=='blocked'){$('#signin-dialog').close();toast('Signed in. Carrying on with it.');refresh();return}}catch{}}}
 // After a sign-in that stalled at the site, Try again starts LinkedIn's or X's sign-in page afresh in that tab.
@@ -109,4 +109,4 @@ $('#signin-browser').onclick=async()=>{const link=state.browser_link;if(browserP
 // Full size: the sign-in's browser over the whole window, for a small screen in the view; the same button goes back.
 const signinFull=on=>{$('#signin-dialog').classList.toggle('signin-full',on);$('#signin-full').setAttribute('aria-pressed',String(on));$('#signin-full').textContent=on?'Exit full size':'Full size'};
 $('#signin-full').onclick=()=>signinFull(!$('#signin-dialog').classList.contains('signin-full'));
-$('#signin-dialog').addEventListener('close',()=>{signinFull(false);if(signinTask)signinClosed();signinRun++;signinAfter=null;$('#signin-frame').removeAttribute('src');$('#signin-pass').value='';$('#signin-code').value='';$('#signin-user').value=''});
+$('#signin-dialog').addEventListener('close',()=>{signinFull(false);if(signinTask)signinClosed();signinRun++;signinAfter=null;$('#signin-frame')?.removeAttribute('src');$('#signin-pass').value='';$('#signin-code').value='';$('#signin-user').value=''});

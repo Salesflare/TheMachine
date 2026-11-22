@@ -43,7 +43,7 @@ const bpPhone=()=>!matchMedia('(min-width:1024px)').matches&&(DEV.mobile||matchM
   for(const x of document.querySelectorAll('main>section'))x.hidden=x!==pane;pageMarks();
   for(const b of document.querySelectorAll('nav button')){b.classList.remove('active');b.setAttribute('aria-current','false')}
   $('#open-settings').setAttribute('aria-current','false');row.setAttribute('aria-current','page');
-  const f=$('#bp-frame');if(f.dataset.src!==src){f.dataset.src=src;f.src=src}
+  const f=frameOn('bp-frame');if(f.dataset.src!==src){f.dataset.src=src;f.src=src}
   $('#bp-tab').href=row.getAttribute('href')||src;pane.dataset.shown='1';
   if(location.hash!=='#browser'){from=location.hash;history.pushState(null,'',location.pathname+location.search+'#browser');pushed=true}return true};
  browserPane=show;

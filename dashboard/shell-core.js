@@ -194,6 +194,10 @@ function lazySoon(){if(lazySoonRun||!self.LAZY_FILES)return;lazySoonRun=true;let
  if(document.readyState==='complete')go();else{addEventListener('load',go,{once:true});setTimeout(go,5000)}}
 addEventListener('popstate',e=>backPop(e));  // shell-back.js
 const lazyIn=group=>!self.LAZY_FILES?.[group]||!!lazyDone[group];
+// The browser pane's and the sign-in's frames wait in the markup as <template data-frame="<id>">, in their place, until
+// first used: each empty frame made a document and a script context of its own on every load (~50 ms of a phone's start
+// each). frameOn(id): the frame, put in its place first when it isn't there yet. Before that, $('#<id>') finds none.
+function frameOn(id){const f=document.getElementById(id);if(f)return f;const tpl=document.querySelector(`template[data-frame="${id}"]`),n=tpl.content.firstElementChild;tpl.replaceWith(n);return n}
 // Learning, Connections and Settings are drawn when they're opened, not while they're hidden (a first load drew them
 // all, some 0.9 s on a slow phone). tabDraw(section,key,draw): draw now when the section shows, else the latest draw
 // for that key waits and runs the moment it shows, before that frame paints (the observer; a tab switch asks at once).

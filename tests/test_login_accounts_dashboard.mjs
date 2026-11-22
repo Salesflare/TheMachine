@@ -137,7 +137,7 @@ try{
   // like a hosted Machine's handoff) shows right in the sheet as soon as the export tab is open, and Open the browser
   // goes. The pane's own frame lets go of the screen meanwhile (one viewer sizes it).
   browserLink='https://machine.example.invalid/open?to=browser';browserEmbed='/view/';exportReady=false;exportStep='opening';
-  await page.evaluate(async()=>{await refresh();const f=document.getElementById('bp-frame');f.dataset.src=f.src='/view/?pane'});
+  await page.evaluate(async()=>{await refresh();const f=frameOn('bp-frame');f.dataset.src=f.src='/view/?pane'});
   await page.locator('[data-li-go="bitwarden"]').click();
   await page.locator('#login-import .li-wait',{hasText:'Opening Bitwarden…'}).waitFor();
   assert.equal(await page.locator('#login-import .li-view').count(),0,'no view before the tab is open');
