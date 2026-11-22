@@ -12,7 +12,7 @@ import embeddings
 import graph
 import graph_board_reviews
 from machine import ai_training
-from machine.model_usage import model_resets, model_status, model_usage, usage_status
+from machine.model_usage import model_resets, model_status, model_usage, usage_status, with_claude_usage
 import model_budget
 import model_fallback
 from models import claude_plan_route, openclaw_model
@@ -214,7 +214,8 @@ class ModelPacingApp:
 
     def model_usage_worker(self):
         """Reads the AI sign-in's usage limits every five minutes, and a minute after a run ends (OpenClaw makes the
-        model calls, so its usage reading is the one to ask; that reading never costs model usage). A failed read
+        model calls, so its usage reading is the one to ask; that reading never costs model usage; for a Claude plan
+        through Claude Code, Claude Code's own reading, since OpenClaw has none for it). A failed read
         keeps the last one. The resets come from the Codex CLI's own sign-in when it is the same account."""
         self.model_usage_wake = getattr(self, 'model_usage_wake', None) or threading.Event()
         while not self.stop.is_set():
@@ -236,16 +237,19 @@ class ModelPacingApp:
                 self.stop.wait(1)
 
     def refresh_model_usage(self):
+        on_claude = claude_plan_route(self.config)
         reply = usage_status(self.config)
+        if on_claude:  # OpenClaw reads no usage for the Claude CLI route: Claude Code's own reading of the plan
+            reply = with_claude_usage(self.config, reply)
         if reply is None:
             return
         self.model_usage = model_usage(self.config, reply=reply) or getattr(self, 'model_usage', None)
         self.model_usage_reply = reply
         try:
-            resets = model_resets(self.config, reply) if self.config.get('codex') is not False else None
+            resets = model_resets(self.config, reply) if self.config.get('codex') is not False and not on_claude else None
         except (OSError, ValueError):
             resets = None
-        claude = ai_training.claude_plan(self.config) if claude_plan_route(self.config) else None
+        claude = ai_training.claude_plan(self.config) if on_claude else None
         self.model_status = model_status(self.config, reply, self.model_usage, resets, claude_plan=claude)
         self.ai_training = ai_training.state(self.model_status, ai_training.done_for(self.config, getattr(self, 'config_path', None)))
 

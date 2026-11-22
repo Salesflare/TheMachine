@@ -15,7 +15,8 @@ the cards they asked for keep room:
   the window's own reset, instead of trying again every few minutes.
 
 A sign-in that reports no windows (an API key, a local model) is never paused here. No model call; only labels,
-percentages and reset times from `usage.status` (assistant.model_usage)."""
+percentages and reset times from `usage.status`, or for a Claude plan through Claude Code from Claude Code's own
+`get_usage` (machine/model_usage.py)."""
 from __future__ import annotations
 
 import math

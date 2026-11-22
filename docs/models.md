@@ -110,11 +110,19 @@ A mixed setup works well: a frontier model as `primary`, a local model as the la
 
 ## Usage limits and cost
 
-**Seeing the limits.** If your provider reports usage limits (a ChatGPT sign-in has a 5-hour and a weekly window,
-depending on the plan), **Settings → Model** shows the model in use, how much of each window is used and when it resets.
+**Seeing the limits.** If your provider reports usage limits (a ChatGPT sign-in or a Claude plan has a 5-hour and a
+weekly window, depending on the plan), **Settings → Model** shows the model in use, how much of each window is used and
+when it resets.
 
 - It asks OpenClaw's running Gateway (`usage.status`) every five minutes and a minute after a review run ends, and keeps
   only the percentages and reset times. Reading it never costs model usage. `openclaw status --usage` shows the same.
+- OpenClaw reads no usage for a Claude plan through Claude Code, so then The Machine asks Claude Code itself, as often:
+  its `get_usage` control request (the numbers behind its `/usage`), in a short `claude -p` with no prompt, no model
+  call, no tools and no saved session. Claude Code uses its own sign-in; The Machine never reads it. Anthropic marks
+  that request experimental: if a Claude Code update drops it, the bars and the pacing go quiet until it's back.
+  `"claude": false` in config.json never asks it.
+- Only the main model's provider counts: a ChatGPT sign-in OpenClaw also has doesn't show while a Claude plan is the
+  main model.
 - When a review run stops on the limit, Connections says so next to the run, with when it lifts.
 
 **Pacing.** Background work paces itself on those windows (`model_budget.py`). With a fallback in
