@@ -36,7 +36,7 @@ Claude sends its result back through The Machine connector. Add it once in claud
 
 On a hosted Machine, pick it on your setup page, under **Add more any time**, **Codex**:
 
-- **On your Machine** (the default): press **Connect Codex** and enter the code it shows at OpenAI. It uses the same ChatGPT plan as your model, and jobs run on your Machine. No terminal needed.
+- **On your Machine** (the default): press **Connect Codex** and enter the code it shows at OpenAI. It uses the same ChatGPT plan as your model, and jobs run on your Machine. No terminal needed. Signed in to the same ChatGPT account, it also lets your Machine see and use your usage limit resets.
 - **Other ways**, **On my computer**: the job runs on your own computer, with the Codex signed in there. It travels encrypted, for that computer only. Install The Machine there, pair it on your Account page, run `codex login` and keep The Machine running. The result comes back on the to-do. When the computer is off, jobs wait.
 - **Other ways**, **Codex cloud**: the job runs in OpenAI's cloud. Press **Connect Codex**. It uses the same ChatGPT plan as your model, and OpenAI asks for one more code, for Codex. Then enter the Codex cloud environment in Settings.
 

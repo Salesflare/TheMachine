@@ -5,8 +5,9 @@ const untilText=t=>{let s=Math.max(60,t-Date.now()/1000|0),d=s/86400|0,h=s%86400
 const clockAt=t=>{const r=new Date(t*1000),c=fmtHM(r);return t-Date.now()/1000>86400?`${localeDate(r,DL,{weekday:'short'})} ${c}`:c};
 const windowLabel=l=>['Week','168h','7d'].includes(l)?t('Weekly limit'):['Day','24h'].includes(l)?t('Daily limit'):/^\d+h$/.test(l)?t('{}-hour limit',parseInt(l)):l;
 function resetAction(m){if(!m)return '';if(m.can_reset)return html`<button type="button" class="ghost" data-model-reset>Use a reset</button>`;
- const href=safeURL(m.usage_page);  // only a web address, never javascript:
- return href?html`<a class="head-link" href="${href}" target="_blank" rel="noopener">${m.resets?'Open ChatGPT':'See resets in ChatGPT'}</a>`:''}
+ // reset_setup: a hosted Machine's setup page, where its Codex CLI signs in to read and use them (model_usage.reset_setup)
+ const on=safeURL(m.reset_setup),href=safeURL(m.usage_page);  // only a web address, never javascript:
+ return on?html`<a class="head-link" href="${on}">Turn on resets</a>`:href?html`<a class="head-link" href="${href}" target="_blank" rel="noopener">${m.resets?'Open ChatGPT':'See resets in ChatGPT'}</a>`:''}
 // The banner for a usage limit reached (state.model_pause: window '5h', 'week' or 'limit', until, name); gone when it is null.
 // `fallback`: a working fallback model answers meanwhile (assistant.py fallback_covers), so nothing waits: one short line.
 const pauseWhen=until=>{const r=+until>Date.now()/1000?new Date(until*1000):null;return r?(r.toDateString()===new Date().toDateString()?fmtHM(r):localeDate(r,DL,{weekday:'short'})+' '+fmtHM(r)):''};

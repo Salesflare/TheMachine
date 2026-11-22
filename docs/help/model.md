@@ -36,9 +36,11 @@ Background work never runs on GPT-6 Astra. With a ChatGPT sign-in it uses GPT-6.
 
 If your ChatGPT plan has resets left, To-dos shows a short line once background work slows down: at about 65% of the 5-hour limit or 90% of the weekly limit. It says how much is used and how many resets are left. **Use a reset** starts the limits over, after you confirm. × hides the line until that limit resets. Without resets, nothing new shows.
 
+On a hosted Machine, your Machine sees and uses resets once Codex on your Machine is signed in to the same ChatGPT account. Until then, To-dos and Settings show **Turn on resets**. It opens the Codex step of your setup page, where you sign in with a code, like your ChatGPT sign-in.
+
 ## When a limit is reached
 
-The top of the dashboard says which limit was reached and when it resets. Work waits, then picks up where it left off. Nothing is lost. If your ChatGPT plan has resets, **Use a reset** starts the limits over. Otherwise **See resets in ChatGPT** opens ChatGPT's page.
+The top of the dashboard says which limit was reached and when it resets. Work waits, then picks up where it left off. Nothing is lost. If your ChatGPT plan has resets, **Use a reset** starts the limits over. On a hosted Machine without Codex signed in, **Turn on resets** opens your setup page instead. Otherwise **See resets in ChatGPT** opens ChatGPT's page.
 
 ## With a fallback
 

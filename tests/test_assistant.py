@@ -1166,6 +1166,22 @@ class ModelResets(unittest.TestCase):
         status = machine_model_usage.model_status(self.config, self.reply, machine_model_usage.model_usage({}, reply=self.reply), None)
         self.assertFalse(status['can_reset'])
         self.assertTrue(status['limit_reached'])
+        self.assertIsNone(status['reset_setup'])  # a self-hosted Machine: only ChatGPT's own page
+
+    def test_a_hosted_machine_without_the_same_codex_sign_in_links_to_its_setup_page(self):
+        """OpenClaw's sign-in can't be handed to the Codex CLI: a hosted Machine's resets need the Codex CLI's own
+        sign-in, on its setup page's Codex step. Once it is the same account, it reads them like any other."""
+        hosted = {**self.config, 'manage_url': 'https://app.example.com/setup'}
+        usage = machine_model_usage.model_usage({}, reply=self.reply)
+        os.environ['FAKE_CODEX_EMAIL'] = 'other@example.com'
+        status = machine_model_usage.model_status(hosted, self.reply, usage, machine_model_usage.model_resets(hosted, self.reply))
+        self.assertEqual((status['can_reset'], status['reset_setup']), (False, 'https://app.example.com/setup#codex'))
+        self.assertIsNone(machine_model_usage.model_status({**hosted, 'codex': False}, self.reply, usage, None)['reset_setup'])
+        self.assertIsNone(machine_model_usage.model_status(hosted, {'providers': [{'provider': 'openai', 'windows': []}]}, usage, None)['reset_setup'])  # no ChatGPT sign-in
+        os.environ.pop('FAKE_CODEX_EMAIL')
+        status = machine_model_usage.model_status(hosted, self.reply, usage, machine_model_usage.model_resets(hosted, self.reply))
+        self.assertEqual((status['can_reset'], status['reset_setup']), (True, None))
+        self.assertNotIn('account/rateLimitResetCredit/consume', self.sent())  # reading never uses one
 
     def test_using_a_reset_sends_the_idempotency_key(self):
         click = 'same-click-0001'

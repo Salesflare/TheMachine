@@ -3,10 +3,11 @@
 // line above the to-dos: "ChatGPT weekly limit 92% used. Preparing is slowed. 2 resets left." with Use a reset, which is
 // Settings' own button (settings-models.js: its confirm, then model_reset), and × to hide it until that window resets.
 // Hidden in this browser only. Part of the mailcheck group (dashboard_parts.LAZY): shell-render.js mailCheckSlot.
+// `setup` (a hosted Machine whose Codex CLI isn't signed in yet): no count, Turn on resets to its setup page instead.
 const nudgeKey=n=>`${n.window||'limit'}:${n.until||''}`;
-function resetNudgeLine(){const n=state?.reset_nudge;if(!n?.resets||chatOpen())return '';let gone='';try{gone=localStorage.getItem('reset-nudge-gone')}catch{}
+function resetNudgeLine(){const n=state?.reset_nudge,on=safeURL(n?.setup);if(!n?.resets&&!on||chatOpen())return '';let gone='';try{gone=localStorage.getItem('reset-nudge-gone')}catch{}
  if(gone===nudgeKey(n))return '';
  const held=n.reached||!n.window?'':t(n.window==='week'?'{} weekly limit {}% used. Preparing is slowed.':'{} 5-hour limit {}% used. Preparing is slowed.',n.name||'AI',+n.used|0);
- return html`<div class="reset-nudge"><span>${held} ${t(['{} reset left.','{} resets left.'],n.resets)}</span><button type="button" class="ghost" data-model-reset>${t('Use a reset')}</button><button type="button" class="fixed-close" data-reset-nudge-x aria-label="${t('Close')}" title="${t('Close')}">×</button></div>`}
+ return html`<div class="reset-nudge"><span>${held}${on?'':' '+t(['{} reset left.','{} resets left.'],n.resets)}</span>${on?html`<a class="head-link" href="${on}">${t('Turn on resets')}</a>`:html`<button type="button" class="ghost" data-model-reset>${t('Use a reset')}</button>`}<button type="button" class="fixed-close" data-reset-nudge-x aria-label="${t('Close')}" title="${t('Close')}">×</button></div>`}
 const mailCheckTop=()=>html`${resetNudgeLine()}${mailCheckBlock()}`;
 document.addEventListener('click',e=>{if(!e.target.closest('[data-reset-nudge-x]')||!state?.reset_nudge)return;try{localStorage.setItem('reset-nudge-gone',nudgeKey(state.reset_nudge))}catch{}render()});

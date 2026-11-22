@@ -143,8 +143,15 @@ signed in to the same ChatGPT account (same email and plan).
   at 65%, the weekly one at 90%, `model_budget.held_back`) or a limit is reached, with the same **Use a reset** and its
   confirm. × hides it in that browser until that window resets. Never shown without resets, nor while a working
   fallback carries the work. It never uses a reset by itself.
-- Otherwise (also on a hosted Machine, where only OpenClaw is signed in) it shows only **See resets in ChatGPT**, which
-  opens ChatGPT's Codex usage page. On a Team or Business plan, pick that workspace there.
+- On a hosted Machine, only OpenClaw is signed in at first, and its sign-in can't be handed to the Codex CLI: OpenClaw
+  doesn't report the resets (`usage.status` and the Codex plugin's `codex.accountUsage` keep only the windows, plan and
+  credit balance), and the app server's only way to take outside tokens is marked internal to OpenAI. So the Codex
+  CLI on the server gets its own device sign-in, on the setup page's Codex step. Until it is signed in to the same
+  account (`reset_setup` in the model status), Settings and the reached-limit notes show **Turn on resets**, which
+  opens that step, and To-dos shows its line (before work stops, or once a limit is reached) with **Turn on resets**
+  instead of a count.
+- Otherwise it shows only **See resets in ChatGPT**, which opens ChatGPT's Codex usage page. On a Team or Business
+  plan, pick that workspace there.
 - `"codex": false` in config.json never asks the Codex CLI; `"codex": "/path/to/codex"` uses another binary.
 
 **Prepare-ahead** (to-dos that arrive already drafted) spends tokens on to-dos you may dismiss. Turn it off with
