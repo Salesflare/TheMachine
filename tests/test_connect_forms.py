@@ -2,6 +2,8 @@
 choices, LinkedIn and X signed in right there while their connect waits, and GitHub's and WhatsApp's codes shown on the
 dashboard, so nothing asks for work:<Company> or a command in a terminal."""
 import json
+import os
+import signal
 import stat
 import subprocess
 import tempfile
@@ -451,6 +453,27 @@ class CodeTest(unittest.TestCase):
         onboarding.end_process(process, grace=0.5)
         self.assertIsNotNone(process.poll())
         self.assertLess(time.monotonic() - began, 10)
+
+    def test_a_sign_in_never_waits_on_a_child_that_still_holds_the_pipe(self):
+        # canceled, expired or ended by itself: closing the pipe waited for the tool's child (here 25 seconds)
+        child = 'sleep 25 & echo $! > {}; echo started; '
+        for how, rest, cancelled, wait, code in (('canceled', 'wait\n', True, 60, None), ('expired', 'wait\n', False, 1, None),
+                                                 ('ended by itself', 'exit 3\n', False, 60, 3)):
+            with self.subTest(how), tempfile.TemporaryDirectory() as folder:
+                pid, lines = Path(folder) / 'pid', []
+                tool = self.script(folder, 'tool', child.format(pid) + rest)
+                ui = types.SimpleNamespace(cancelled=False)
+
+                def seen(line):
+                    lines.append(line.strip())
+                    ui.cancelled = cancelled
+                began = time.monotonic()
+                with patch.object(onboarding, 'OUTPUT_WAIT', 0.5):
+                    got = onboarding.follow([tool], ui, seen, wait=wait)
+                took = time.monotonic() - began
+                self.assertLess(took, 15)
+                os.kill(int(pid.read_text()), signal.SIGTERM)  # still there: it is what would have been waited for
+                self.assertEqual((got, lines), (code, ['started']))
 
     def test_whatsapp_says_linked_only_once_it_is(self):
         with tempfile.TemporaryDirectory() as folder:
