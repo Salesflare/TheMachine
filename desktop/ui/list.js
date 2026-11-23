@@ -24,6 +24,11 @@ function stateOf(s) {
   if (PREPARING.includes(s.status) && run !== 'handed') return ['Preparing…', true];
   return [{pending: 'Needs you', accepted: 'Accepted', prepared: 'Prepared', rejected: 'Not needed', snoozed: 'Later', instructions: 'Changes requested', completed: 'Done'}[s.needs_owner ? 'pending' : s.status] || ''];
 }
+// Its row's: that, and the choices of its Snooze ([option, words]), both as the dashboard has them. Plain, whatever came.
+const more = s => {
+  const [word = '', working] = stateOf(s);
+  return {state: word, working: !!working, snooze: (Array.isArray(s.snooze_choices) ? s.snooze_choices : []).filter(c => Array.isArray(c) && c.length === 2 && c.every(x => typeof x === 'string')).slice(0, 8)};
+};
 
 // The status the Machine last gave, kept as it came: the next one is what changed since (status_delta.py)
 window.ForYou = class {
@@ -37,6 +42,7 @@ window.ForYou = class {
   }
   // The owner's first name: an older Machine only says it on their first day
   name() { return String(this.raw.first_name || this.raw.greeting?.name || ''); }
+  hour12() { return !!this.raw.locale?.hour12; }
   // Every entry of For you in order: a to-do has an id, a Fleet item and a board's follow-ups open with the dashboard.
   all() {
     state = JSON.parse(JSON.stringify(this.raw));
@@ -45,15 +51,14 @@ window.ForYou = class {
     const scope = ['work', 'personal'].includes(state.locale?.todo_scope) ? state.locale.todo_scope : 'all';
     const fleet = scope === 'personal' || !state.fleet?.on ? [] : fleetRows(this.fleet).map(r => new SafeHTML({title: r.title, mark: [r.id, 1]}));
     return todoLists(scopeShown(state.suggestions, scope), fleet, state.greeting?.line?.card).fuv.foryou
-      .map(x => (x instanceof SafeHTML ? {id: null, ...x.side} : {id: String(x.id), title: x.title, mark: mark(x)}));
+      .map(x => (x instanceof SafeHTML ? {id: null, ...x.side} : {id: String(x.id), title: x.title, mark: mark(x), ...more(x)}));
   }
   // What was just added in the box, wherever it is now
   added(ids, all) {
     return ids.flatMap(id => {
       const s = (state.suggestions || []).find(x => String(x.id) === id);
       if (!s) return [];
-      const [word, working] = stateOf(s);
-      return [{id, title: String(s.title || ''), state: word, working: !!working, listed: all.some(x => x.id === id)}];
+      return [{id, title: String(s.title || ''), ...more(s), listed: all.some(x => x.id === id)}];
     });
   }
   // A Machine whose answer these rules can't read: what is open, rather than nothing

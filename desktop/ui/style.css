@@ -58,19 +58,26 @@ svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke
 .rows button.name{display:block;width:100%;text-align:start;padding:5px 6px;border-radius:8px}
 .name,.name span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .name span{display:block}
+.sub .turning{width:9px;height:9px;border-width:1.5px;display:inline-block;margin-inline-end:6px;vertical-align:-.5px}
 .name .sub{font-size:12px;line-height:1.35;color:var(--text-3)}
 /* What was just added: marked a moment */
 li.new{animation:new 3s ease-out both}
 @keyframes new{0%,45%{background:color-mix(in srgb,var(--accent) 18%,transparent)}to{background:transparent}}
-.rows button.name:hover,.rows li:hover .name,.rows li:focus-within .name{background:var(--raised)}
+.rows button.name:hover,.rows li:hover>.name,.rows li:focus-within>.name{background:var(--raised)}
 /* A row's quick buttons, over its end, on hover and with the keys */
 .todos li{position:relative;border-radius:8px}
 .quick{position:absolute;inset-block:0;inset-inline-end:0;display:flex;align-items:center;padding-inline:20px 3px;border-radius:8px;background:linear-gradient(to left,var(--raised) 74%,transparent);opacity:0;pointer-events:none}
 li:hover>.quick,li:focus-within>.quick{opacity:1;pointer-events:auto}
 @media (hover:none){.quick{opacity:1;pointer-events:auto}}
+.open>.quick{inset-block-end:auto;height:31px}
 .quick .icon{width:26px;height:26px}
 .quick .icon:hover{background:var(--surface);color:var(--text)}
+.quick .icon:disabled{opacity:.35;cursor:default;background:none}
 li.busy{opacity:.5;pointer-events:none}
+/* Snooze's choices, under their row */
+.choices{margin:0 0 4px 14px}
+.choices .name{color:var(--text-2)}
+.choices .name:focus{background:var(--raised);color:var(--text)}
 .went{display:flex;gap:8px;padding:5px 6px;color:var(--text-2)}
 .went span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #live{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip-path:inset(50%)}
@@ -80,9 +87,18 @@ li.busy{opacity:.5;pointer-events:none}
 #answer-to{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
 #answer.looking{overflow:hidden}
 #answer.looking #answer-text{color:var(--text-2);display:flex;align-items:center;gap:8px}
-#answer.looking #answer-text::before{content:'';width:12px;height:12px;flex:none;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:turn .9s linear infinite}
+#answer.looking #answer-text::before{content:''}
+.turning,#answer.looking #answer-text::before{width:12px;height:12px;flex:none;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:turn .9s linear infinite}
 @keyframes turn{to{transform:rotate(1turn)}}
-@media (prefers-reduced-motion:reduce){#answer.looking #answer-text::before{animation-duration:4s}}
+@media (prefers-reduced-motion:reduce){.turning,#answer.looking #answer-text::before{animation-duration:4s}}
+/* One to-do: the Machine's own page lies over its place (src/card.rs), within the round corners */
+.box main.card{padding:6px 1px 11px;display:flex;flex-direction:column}
+main.card>:not(#card,#live){display:none!important}
+#card{flex:1;display:flex;flex-direction:column;min-height:0}
+.card-bar{display:flex;align-items:center;gap:2px;padding:0 7px 5px 5px;border-bottom:1px solid var(--line)}
+#card-back{display:flex;align-items:center;gap:4px;margin-inline-end:auto;padding:4px 9px 4px 5px;border-radius:8px;font-size:13px;color:var(--text-2)}
+#card-back:hover{background:var(--raised)}
+#card-place{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--text-2);font-size:13px}
 #compose{padding:8px 8px 6px;margin-top:6px}
 #compose:focus-within{border-color:var(--accent)}
 #text{display:block;width:100%;border:0;background:none;resize:none;padding:2px 4px 6px;line-height:20px;max-height:120px;overflow:auto;-webkit-user-select:text;user-select:text}

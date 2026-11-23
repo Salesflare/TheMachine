@@ -8,6 +8,7 @@ import json
 import pathlib
 import secrets
 import threading
+import time
 import urllib.parse
 
 TODOS = [('aa01', 'Answer Nora about the lunch'), ('aa02', 'Send Ravi the floor plan'), ('aa03', 'Book the van for Friday'), ('aa04', 'Pay the florist')]
@@ -26,6 +27,23 @@ if (window.launchQueue) launchQueue.setConsumer(p => { const u = p.targetURL && 
 onfocus = tell;
 tell();
 </script>'''
+# The dashboard's page of one to-do (?compact=1#card=<id>): its state in its title, a dialog of its own, links out
+COMPACT = b'''<!doctype html><title>The Machine</title><style>body{margin:0;padding:12px;background:#fff;font:14px sans-serif}</style>
+<h1></h1><p id="ipc"></p><button id="done">Done here</button> <button id="more">More</button> <a target="_blank" href="/#person=7">A person</a> <a href="/elsewhere">Away</a>
+<dialog>Something open <button>Close</button></dialog><script>
+let id, done = false;
+const draw = () => { id = (location.hash.match(/card=(\\w+)/) || [])[1]; document.querySelector('h1').textContent = 'To-do ' + id;
+  document.title = (done ? 'done' : /^gone/.test(id) ? 'gone' : 'open') + ': To-do ' + id;
+  };
+onhashchange = draw;
+document.querySelector('#done').onclick = () => { done = true; draw() };
+document.querySelector('#more').onclick = () => document.querySelector('dialog').showModal();
+const i = window.__TAURI_INTERNALS__;
+(i ? i.invoke('box_state').then(() => 'ALLOWED', () => 'refused') : Promise.resolve('none')).then(x => document.querySelector('#ipc').textContent = x);
+setTimeout(draw, 300);
+</script>'''
+SNOOZE = [['2h', '2 hours'], ['tomorrow', 'Tomorrow \u00b7 9:00'], ['3d', '3 days \u00b7 9:00'], ['1w', '1 week \u00b7 9:00']]
+HOURS = {'2h': 2, 'tomorrow': 24, '3d': 72, '1w': 168}
 
 
 class Machine(http.server.ThreadingHTTPServer):
@@ -34,9 +52,10 @@ class Machine(http.server.ThreadingHTTPServer):
     def __init__(self, port):
         super().__init__(('127.0.0.1', port), Page)
         self.port, self.actions, self.cookies, self.links, self.challenges = port, [], set(), [], {}
-        self.seen = []
+        self.seen, self.cards = [], []
         self.todos, self.name = list(TODOS), 'Sam'
         self.refuse = False
+        self.compact = False  # its dashboard has the page of one to-do
         self.no = None  # why it doesn't take a decision
         self.gone, self.status = {}, {}  # a to-do's own state
         threading.Thread(target=self.serve_forever, daemon=True).start()
@@ -84,15 +103,19 @@ class Page(http.server.BaseHTTPRequestHandler):
         if m.refuse:
             return self.answer({'error': 'Sign in'}, 403)
         if u.path == '/api/session':
-            return self.answer({'csrf': 'made-up'})
+            return self.answer({'csrf': 'made-up', **({'compact': 1} if m.compact else {})})
         if u.path == '/api/status':
             return self.answer({'first_name': m.name, 'suggestions': [{'id': i, 'title': t, 'status': 'prepared' if i != 'aa01' else 'pending', 'due': '2000-01-01' if i == 'aa01' else None,
-                                                                             'created_at': '2026-01-01T00:00:00Z', **m.status.get(i, {})} for i, t in m.todos]})
+                                                                             'created_at': '2026-01-01T00:00:00Z', 'snooze_choices': SNOOZE, **m.status.get(i, {})} for i, t in m.todos]})
         if u.path == '/api/notice':
-            first = ['prepare'] if q['tag'] == 'aa01' else ['draft']
+            own = m.status.get(q['tag'], {}).get('status', 'pending' if q['tag'] == 'aa01' else 'prepared')
+            first = {'pending': ['prepare'], 'accepted': []}.get(own, ['draft'])
             return self.answer({'title': 'x', 'actions': [*first, 'snooze2h', 'done', 'send'],
                                 'labels': {'prepare': 'Do it', 'draft': 'See draft', 'snooze2h': 'Snooze', 'done': 'Mark done', 'send': 'Send'},
                                 'events': {'prepare': 'Preparing it', 'snooze2h': 'Snoozed it', 'done': 'Marked it done', 'send': 'Sent'}})
+        if q.get('compact') == '1':
+            m.cards.append(self.headers.get('Cookie') in m.cookies)
+            return self.answer(COMPACT, kind='text/html')
         self.answer(DASHBOARD, kind='text/html')
 
     def do_POST(self):
@@ -113,7 +136,9 @@ class Page(http.server.BaseHTTPRequestHandler):
                 m.todos = [x for x in m.todos if x[0] != todo]
             elif todo in m.gone:
                 m.todos = m.gone.pop(todo)
-            until = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=2)
+            if choice == 'accept' and asked['args']['decision_id'].startswith('notify-'):  # Do it: the run is on
+                m.status[todo] = {'status': 'accepted', 'preparation_status': 'queued'}
+            until = datetime.datetime.fromtimestamp(time.time() + 3600 * HOURS[asked['args'].get('snooze_option', '2h')], datetime.timezone.utc)
             return self.answer({'status': 'ok', **({'snoozed_until': until.isoformat()} if choice == 'snooze' else {})})
         if asked['action'] == 'card_new':
             made = 'bb0' + str(len(m.actions))

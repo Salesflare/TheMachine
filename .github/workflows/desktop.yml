@@ -44,7 +44,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Use it, with a made-up Machine
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: python smoke/windows.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()

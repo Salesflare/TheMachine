@@ -54,6 +54,12 @@ pub fn peek(robot: Rect, area: Rect) -> Rect {
     Rect { y: area.y + area.h - PEEK, h: PEEK, ..robot }
 }
 
+/// How tall the box is with a to-do open in it: comfortable, in the larger space above or below the robot.
+pub fn tall(robot: Rect, area: Rect) -> f64 {
+    let (above, below) = (robot.y - area.y, area.y + area.h - robot.y - robot.h);
+    (above.max(below) - GAP - 8.0).clamp(420.0, 640.0).min(area.h - 16.0).max(200.0)
+}
+
 /// The box's window for a robot: above it, its right edge over the robot's, below it when there is no room above, and
 /// always within the area. height is the page's own, without the shadow.
 pub fn box_at(robot: Rect, area: Rect, height: f64) -> Rect {
@@ -70,6 +76,17 @@ mod tests {
     use super::*;
 
     const AREA: Rect = Rect { x: 1920.0, y: 30.0, w: 1280.0, h: 690.0 };
+
+    #[test]
+    fn a_to_do_in_the_box_fits_the_screen() {
+        for (bottom, h) in [(12.0, 690.0), (12.0, 1040.0), (12.0, 400.0), (300.0, 690.0), (602.0, 690.0)] {
+            let area = Rect { h, ..AREA };
+            let robot = Corner { right: 16.0, bottom }.robot(area);
+            let tall = tall(robot, area);
+            let r = box_at(robot, area, tall);
+            assert!(tall >= 360.0 && r.y >= area.y - SHADOW && r.y + r.h <= area.y + area.h + SHADOW, "{bottom} {h}: {tall} {r:?}");
+        }
+    }
 
     #[test]
     fn starts_bottom_right() {
