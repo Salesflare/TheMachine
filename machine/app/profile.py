@@ -162,13 +162,7 @@ class ProfileApp:
     def owner_first_names(self):
         """The owner's first name, as the config and USER.md give it ("- Name: …", "# USER.md - About …"): for
         Learning's older why lines that name them (learning_loop.to_you)."""
-        names = [str(self.config.get('owner_name') or '')]
-        try:
-            text = self.user_md().read_text(encoding='utf-8')[:4000]
-            names += re.findall(r'(?m)^- Name: *(.+)$', text) + re.findall(r'(?m)^# USER\.md - About (.+)$', text)
-        except (OSError, ValueError):
-            pass
-        return sorted({n.split()[0] for n in names if n.split() and re.fullmatch(r"[^\W\d_][\w'’-]*", n.split()[0]) and n.split()[0].lower() not in ('me', 'the', 'you')})
+        return sorted({owner_name.first_name(n) for n in (self.config.get('owner_name'), *owner_name.noted(self.config))} - {''})
 
     def learning_changes_shown(self, changes):
         """Learning, Changes: an older why line that names the owner reads "You corrected …" (the stored one stays)."""
