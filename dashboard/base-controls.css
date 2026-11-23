@@ -67,12 +67,6 @@ a.btn-link[hidden]{display:none}
 .scope-filter button{border:0;background:none;color:var(--muted);font:600 .8rem/1 inherit;padding:7px 12px;border-radius:999px;cursor:pointer;min-height:0;box-shadow:none}
 .chip.scope{--c:var(--faint);font-weight:500}
 .chip.scope::before{display:none}a.chip.who{text-decoration:none;max-width:16em;overflow:hidden;white-space:nowrap;gap:4px}a.chip.who svg{width:11px;height:11px;flex:none;opacity:.7}a.chip.who span{overflow:hidden;text-overflow:ellipsis}a.chip.who:hover{color:var(--text);text-decoration:underline}a.chip.who .who-short{display:none}a.chip.who.org{max-width:12em}@media (max-width:600px){a.chip.who .who-short{display:inline}a.chip.who .who-short~*,a.chip.who .who-full:has(+.who-short){display:none}}
-/* A to-do's project (projectChip): a link to its page and a small picker; the picker opens under the card's badges */
-.chip.project-chip{--c:var(--faint);font-weight:500;gap:2px;max-width:min(220px,55vw);padding-right:2px}
-.chip.project-chip::before{display:none}
-.chip.project-chip a{color:inherit;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.chip.project-chip a:hover{text-decoration:underline}
-.chip.project-chip .project-pick{border:0;background:none;color:inherit;padding:0 6px;min-height:0;font-size:.7rem;cursor:pointer}
 .tile-todos{margin:6px 0 0;color:var(--muted);font-size:var(--fs-sm)}
 .project-todos .done a{color:var(--muted)}
 .lead::before{content:"";flex:none;width:14px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--amber) 0 25%,transparent 25% 37.5%,var(--amber) 37.5% 62.5%,transparent 62.5% 75%,var(--amber) 75%)}

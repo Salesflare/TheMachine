@@ -1,3 +1,9 @@
+// Every dialog that scrolls keeps its × and one line of its title on top. The title row is as ever until it has scrolled
+// away but for its last line (its sticky top is that much above the edge, --head-h its height; the × sticks in it all the
+// way). Then the title takes one smaller line down there (data-line), in the same row at the same height, so nothing
+// under it moves. Behind it the dialog's color, edge to edge, and a hairline (--head-rule); on a phone the title never
+// shows through the status bar on its way. The quick add composer, the palette and the phone's Snooze sheet (menus that
+// don't scroll) have their own.
 // On a phone every dialog and sheet is the whole screen, like an app's: the title and × stay on top, the buttons stay at
 // the bottom (above the home bar), and only what is between scrolls, never the page behind. Its height is what the
 // keyboard leaves (--vv-top, --vv-h follow the visual viewport, todos-chat.js), so the buttons stay in reach while typing.
@@ -9,17 +15,29 @@
 // as tall as its rows, like a to-do's … (a tap on the dimmed page closes it). Two :not(#…) lift these over each dialog's own
 // #id rules. While one is open the page keeps no scrollbar gutter (html's stable one), so the sheet is the full width
 // where scrollbars take room (desktop browsers, Android with a mouse). Its own style sheet, after the page's (dashboard.html stays small enough to scan).
-document.head.append(Object.assign(document.createElement('style'),{id:'phone-sheets',textContent:`@media(max-width:560px){
+document.head.append(Object.assign(document.createElement('style'),{id:'phone-sheets',textContent:`dialog{--head-line:33px;--head-top:-8px}
+dialog[data-line]{--head-rule:var(--border);--head-down:-8px}
+dialog:not(#palette):not(#new-card) :is(.snooze-heading,form[method=dialog]:has(>.snooze-heading:only-child)){position:sticky;top:calc(var(--head-up,-8px) + min(0px,var(--head-line) - var(--head-h,0px)));z-index:3}
+dialog:not(#palette):not(#new-card) .snooze-heading>:not(h2){position:sticky;top:var(--head-top)}
+dialog:not(#palette):not(#new-card)[data-line] .snooze-heading{align-items:flex-end;box-sizing:border-box;min-height:var(--head-h)}
+dialog:not(#palette):not(#new-card)[data-line] .snooze-heading h2{flex:1;min-width:0;font-size:1rem;line-height:33px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(min-width:561px){
+  dialog{scroll-padding-top:72px}
+  dialog:not(#palette):not(#new-card) .snooze-heading::before{content:'';position:absolute;inset:-40px 0 var(--head-down,0px);z-index:-1;background:var(--surface-2);box-shadow:-40px 0 var(--surface-2),40px 0 var(--surface-2),0 1px var(--head-rule,transparent)}
+}
+@media(max-width:560px){
+  dialog{--head-line:calc(55px + env(safe-area-inset-top));--head-top:calc(12px + env(safe-area-inset-top));--head-up:0px;--head-rule:var(--border)}
   html.m-modal{overflow:hidden;scrollbar-gutter:auto}
-  dialog:not(#palette):not(#new-card){position:fixed;inset:var(--vv-top,0px) 0 auto;width:100%;max-width:100%;height:var(--vv-h,100dvh);max-height:var(--vv-h,100dvh);margin:0;box-sizing:border-box;padding:0 16px;border:0;border-radius:0;background:var(--surface-2);overflow:auto;overscroll-behavior:contain;scroll-padding:72px 0 96px}
+  dialog:not(#palette):not(#new-card){position:fixed;inset:var(--vv-top,0px) 0 auto;width:100%;max-width:100%;height:var(--vv-h,100dvh);max-height:var(--vv-h,100dvh);margin:0;box-sizing:border-box;padding:0 16px;border:0;border-radius:0;background:var(--surface-2);overflow:auto;overscroll-behavior:contain;scroll-padding:calc(72px + env(safe-area-inset-top)) 0 96px}
   dialog:not(#palette):not(#new-card)[open]{display:flex;flex-direction:column;gap:0}
   dialog:not(#palette):not(#new-card)[open]>:not(.fr-list){flex-shrink:0}
   dialog:not(#palette):not(#new-card):not(:has(.snooze-heading)){padding-top:calc(16px + env(safe-area-inset-top))}
+  dialog:not(#snooze-dialog):has(.snooze-heading)::before{content:'';position:sticky;top:0;flex:none;height:env(safe-area-inset-top);margin:0 -16px calc(-1*env(safe-area-inset-top));z-index:4;background:var(--surface-2)}
   dialog:not(#palette):not(#new-card)::backdrop{background:var(--surface-2)}
-  dialog:not(#palette):not(#new-card) :is(.snooze-heading,form[method=dialog]:has(>.snooze-heading:only-child)){position:sticky;top:0;z-index:3;background:var(--surface-2)}
-  dialog:not(#palette):not(#new-card) .snooze-heading{margin:0 -16px 12px;padding:calc(12px + env(safe-area-inset-top)) 16px 10px;box-shadow:0 1px 0 var(--border)}
-  dialog:not(#palette):not(#new-card)>form[method=dialog]:has(>.snooze-heading:only-child){margin:0 -16px;padding:0 16px}
-  dialog:not(#palette):not(#new-card)>form[method=dialog]:has(>.snooze-heading:only-child)>.snooze-heading{margin:0 -16px 12px}
+  dialog:not(#palette):not(#new-card) :is(.snooze-heading,form[method=dialog]:has(>.snooze-heading:only-child)){background:var(--surface-2)}
+  dialog:not(#palette):not(#new-card) .snooze-heading{margin:0 -16px 12px;padding:var(--head-top) 16px 10px;box-shadow:0 1px var(--head-rule)}
+  dialog:not(#palette):not(#new-card)>form[method=dialog]:has(>.snooze-heading:only-child){margin:0 -16px 12px;padding:0 16px}
+  dialog:not(#palette):not(#new-card)>form[method=dialog]:has(>.snooze-heading:only-child)>.snooze-heading{margin:0 -16px}
   dialog:not(#palette):not(#new-card) :is(dialog>*,dialog>form>*,dialog>*>form>*,#snooze-calendar>*):is(.actions,.send-act,.ed-actions,.snooze-footer,#send-ask):not(#send-ask *){position:sticky;bottom:0;z-index:3;margin:auto -16px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--surface-2);box-shadow:0 -1px 0 var(--border)}
   dialog:not(#palette):not(#new-card)>:last-child:not([popover]):not(:has(:is(.actions,.send-act,.ed-actions,.snooze-footer,#send-ask))):not(:is(.actions,.send-act,.ed-actions,.snooze-footer,#send-ask)){margin-bottom:calc(16px + env(safe-area-inset-bottom))}
   dialog:not(#palette):not(#new-card)>form:not([method=dialog]:has(>.snooze-heading:only-child)):has(>:is(.actions,.send-act,.ed-actions)){display:flex;flex-direction:column;flex:1 0 auto}
@@ -43,3 +61,9 @@ document.head.append(Object.assign(document.createElement('style'),{id:'phone-sh
   #snooze-dialog:not(#_):not(#_):not(#_) #snooze-calendar>.snooze-footer{position:static;margin:14px 0 0;padding:0;background:none;box-shadow:none}
   #snooze-dialog:not(#_):not(#_) #snooze-quick button{min-height:48px;padding:12px 14px;font-size:1rem}
 }`}));
+function headLine(d){const h=d.matches?.('dialog')&&d.querySelector('.snooze-heading');if(!h)return;
+ if(d.headW!==d.clientWidth)d.removeAttribute('data-line');
+ if(!d.hasAttribute('data-line')){d.headW=d.clientWidth;d.style.setProperty('--head-h',h.getBoundingClientRect().height+'px')}
+ const c=getComputedStyle(h);d.toggleAttribute('data-line',c.position==='sticky'&&d.scrollTop>-parseFloat(c.top))}
+document.addEventListener('scroll',e=>headLine(e.target),{capture:true,passive:true});
+addEventListener('resize',()=>document.querySelectorAll('dialog[open]').forEach(headLine));
