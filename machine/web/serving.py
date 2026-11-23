@@ -233,7 +233,7 @@ def dashboard_status(status):
     status, drop = dict(status), {'analyses': {'owner_session', 'owner_run'}, 'suggestions': {'dedupe_key', 'closed_state'},
                                   'deliveries': {'previous_message_ids', 'notification_message_id', 'last_notified_at',
                                                  'edit_retry_at', 'edit_failures', 'message_id', 'send_kind', 'reminder'},
-                                  'promises': {'note', 'account_id', 'event_id', 'created_at', 'updated_at', 'card_status'}}
+                                  'promises': {'note', 'account_id', 'area', 'event_id','created_at', 'updated_at', 'card_status'}}
     for name, keys in drop.items():
         if isinstance(status.get(name), list):
             status[name] = without(status[name], keys)

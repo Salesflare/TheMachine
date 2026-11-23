@@ -18,7 +18,9 @@ nothing moves to it. Mail in one company's mailbox for another company of the ow
 start (owner_companies, the review's suggest company), also one whose accounts are labeled personal.
 
 A matter of the owner's own life (family, friends, home) that came in on a work mailbox is Personal from the start
-(personal_accounts: the review's personal or family_with, or only people from the owner's own life on it). With a
+(personal_accounts: the review's personal or family_with, or only people from the owner's own life on it; that last one
+says who, not what, so the review's later company places it in Work). A promise keeps the review's word (promises.area)
+for the to-do it becomes. With a
 Personal area it gets that area's accounts, as a move does. Without one (only work accounts connected) it keeps the
 mailbox it came in on and is pinned Personal (the to-do's area column): its label, sharing and handoffs follow the pin,
 so a family matter is never offered to a Work Fleet. A move to Work takes the pin off."""
@@ -207,6 +209,23 @@ def company_accounts(company, accounts):
     if company not in {c['id'] for c in owner_companies(accounts)}:
         raise ValueError('company: one of the owner\'s companies: ' + ', '.join(c['id'] for c in owner_companies(accounts)))
     return [a['id'] for a in accounts if a.get('boundary') == company]
+
+
+def said(args, accounts):
+    """The review's word on where a matter goes (company, personal), as a to-do's area column has it: the company's id,
+    checked, 'personal', or None when it said neither."""
+    if args.get('company'):
+        company_accounts(args['company'], accounts)
+        return args['company']
+    return PERSONAL if args.get('personal') is True else None
+
+
+def placed(area, accounts):
+    """The accounts a matter the review placed in this area has (said): [] when it placed it nowhere, or when the
+    company is no longer set up. Then it follows the account it came in on."""
+    if area == PERSONAL:
+        return personal_accounts(accounts) or []
+    return company_accounts(area, accounts) if area in {c['id'] for c in owner_companies(accounts)} else []
 
 
 def personal_accounts(accounts):

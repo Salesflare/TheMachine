@@ -40,7 +40,7 @@ note_pages.area note_pages.starts note_pages.ends note_writeups.basis notify_app
 notify_queue.batch notify_queue.channel notify_queue.delivery notify_queue.ref org_aliases.alias org_aliases.target org_apart.a org_apart.b
 own_addresses.sources pacing_starts.win person_facts.field person_orgs.via person_photos.type
 preparations.use_events preparations.connect preparations.update_retry preparations.move_to
-project_org_checks.verdict project_splits.made project_success.proof projects.outcome projects.about_sources
+project_org_checks.verdict project_splits.made project_success.proof promises.area projects.outcome projects.about_sources
 projects.visibility push_subscriptions.p256dh push_subscriptions.auth purchases.price purchases.currency
 purchases.area recap_items.week recap_items.ref recaps.week record_changes.field recurring_offers.rule recurring_offers.anchor recurring_series.rule
 recurring_series.anchor recurring_series.last_done recurring_series.method recurring_series.method_prev recurring_series.method_card

@@ -347,7 +347,8 @@ class NotificationsApp:
             waiting = waiting_count(db)
             show = security_levels.notify_text(db, False)
         listed = {r['id'] for r in due}
-        due += [{'id': p.get('suggestion_id'), 'title': promise_text(p)[0], 'account_ids': [p.get('account_id')]} for p in self.store.promises()
+        due += [{'id': p.get('suggestion_id'), 'title': promise_text(p)[0], 'area': p.get('area'),  # where its to-do goes (promise_card)
+                 'account_ids': todo_areas.placed(p.get('area'), self.config.get('accounts')) or [p.get('account_id')]} for p in self.store.promises()
                 if p['direction'] == 'mine' and p.get('due') == following.date().isoformat() and p['state'] in ('open', 'card')
                 and p.get('suggestion_id') not in listed]
         # Work or Personal, the way the to-do's own label says (todo_areas.current); a meeting by its calendar's account

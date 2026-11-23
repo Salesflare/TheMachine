@@ -534,6 +534,7 @@ class CardsStore:
         if len(title) > 90 or len(body) > (meeting_prep.BODY_CHARS if meeting_prep.is_briefing(dedupe_key) else 700):
             raise OwnerError('Keep it simple: title under 90 characters; body under 700 characters, about three short sentences. Keep event IDs and internal details out of the message.')
         placed = todo_areas.company_accounts(company, getattr(self, 'accounts', None) or []) if company is not None else None
+        company_said = company is not None
         with contextlib.nullcontext(_db) as db:
             if company is None and (personal is True or own_life_evidence(db, event_ids)):
                 company, placed = todo_areas.PERSONAL, todo_areas.personal_accounts(getattr(self, 'accounts', None) or [])
@@ -609,7 +610,10 @@ class CardsStore:
             if target:
                 saved = self.update_card(db, target, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen,
                                          waiting_on=waiting_on)
-                if company and not target['area'] and not owner_placed(db, target):  # the review places it; the owner's own choice stands
+                # The review places it; the owner's own choice stands. Personal only from who is on it (own_life_evidence)
+                # is no judgment of the matter: the review's word on a company replaces it.
+                by_people = company_said and target['area'] == todo_areas.PERSONAL and own_life_evidence(db, json.loads(target['event_ids'] or '[]'))
+                if company and (by_people or not target['area']) and not owner_placed(db, target):
                     db.execute('UPDATE suggestions SET account_ids=coalesce(?,account_ids),area=? WHERE id=?', (placed and encoded(placed), company, target['id']))
                 if owner_step is not None and not saved.get('attached'):
                     db.execute('UPDATE suggestions SET owner_step=? WHERE id=?', (int(bool(owner_step)), target['id']))
