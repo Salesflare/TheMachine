@@ -207,6 +207,18 @@ class Step(unittest.TestCase):
         self.assertIn('Open for tomorrow\n• 10:00 Roadmap review\n• Due: Send the signed contract', out['text'])
         self.assertIn('2 to-dos still need you.', out['text'])
 
+    def test_the_machines_own_to_dos_are_in_neither_part(self):
+        self.config['accounts'].append({'id': 'gateway', 'service': 'gateway', 'boundary': 'owner:system'})
+        self.done(self.card('Send the order form'), at(12, 10, 0))
+        self.done(self.card('notes-app crashed', account='gateway'), at(12, 11, 0))
+        self.card('sync-notes stopped', account='gateway', due='2026-11-13')
+        with patch_everywhere(timeutil, 'local_tz', return_value=BXL), patch_everywhere(machine_app_recap, 'recap_meetings', return_value=[]):
+            out = self.app.evening_digest(at(12, 17, 45).astimezone(UTC))
+        self.assertEqual([x['area'] for x in out['sections']], ['work'])
+        self.assertIn('1 to-do done today', out['text'])
+        self.assertNotIn('notes-app', out['text'])
+        self.assertNotIn('sync-notes', out['text'])
+
     def test_once_a_day_on_its_channels_and_never_twice_after_a_restart(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         mailed = []

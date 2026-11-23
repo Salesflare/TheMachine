@@ -377,6 +377,13 @@ def recovered(failures, started, start_failed):
     return any(at > max(start_failed) for at in started)
 
 
+def program_name(comm, exe):
+    """A crashed program's name: the kernel's own (COMM), which it cuts after 15 bytes, so a cut one is its file's whole
+    name. A thread's or a renamed process's own name stays."""
+    whole = exe.removesuffix(' (deleted)')  # its file was replaced since, by an update
+    return whole if not comm or (len(comm.encode()) == 15 and whole.startswith(comm)) else comm
+
+
 def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=None, idle=()):
     """The real problems in these records, as findings: [{key, kind, name, unit, count, last_at, ...}], clearest first.
     `idle`: failed units nobody asks to run (idle_units), never reported as down (FAILED_NOW). Pure: everything it
@@ -400,7 +407,7 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
             if not exe and not row.get('COREDUMP_COMM'):
                 continue
             script = os.path.basename(script_of(cmdline, exe)[0] or '')
-            name = script or row.get('COREDUMP_COMM') or os.path.basename(exe)
+            name = script or program_name(row.get('COREDUMP_COMM') or '', os.path.basename(exe))
             item = crashes.setdefault(script or os.path.basename(exe) or name, {'name': name, 'times': [], 'known': True})
             item['times'].append(_crash_time(row))
             item['pid'] = row.get('COREDUMP_PID') or item.get('pid')

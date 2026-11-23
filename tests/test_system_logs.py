@@ -177,6 +177,16 @@ class Detection(unittest.TestCase):
         self.assertEqual(s.script_of('deno run -A main.ts', '/usr/bin/deno'), ('main.ts', False))
         self.assertEqual(s.script_of('node --test', '/usr/bin/node'), (None, True))
 
+    def test_a_program_name_the_kernel_cut_is_shown_whole(self):
+        # the kernel keeps 15 bytes of a process's name
+        [found] = detect([{**crash('/opt/notes/notes-for-the-desktop', 30, '/opt/notes/notes-for-the-desktop'), 'COREDUMP_COMM': 'notes-for-the-d'}])
+        self.assertEqual((found['key'], found['name']), ('crashed:notes-for-the-desktop', 'notes-for-the-desktop'))
+        self.assertEqual(s.card(found)[0], 'notes-for-the-desktop crashed')
+        self.assertEqual(s.program_name('notes-for-the-d', 'notes-for-the-desktop (deleted)'), 'notes-for-the-desktop')  # updated since
+        self.assertEqual(s.program_name('render-thread-1', 'notes-for-the-desktop'), 'render-thread-1')  # a name of its own
+        self.assertEqual(s.program_name('notes', 'notes-for-the-desktop'), 'notes')
+        self.assertEqual(s.program_name('', 'notes'), 'notes')
+
     def test_developer_test_and_agent_runs_stay_quiet(self):
         def run(cmdline='/usr/bin/python3 -u scripts/sync.py', exe='/usr/bin/python3.14', **fields):
             row = crash(exe, 10, cmdline)
