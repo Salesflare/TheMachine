@@ -6,7 +6,7 @@
   const t = window.MachineText, native = window.Native, {icon, when, fill} = window.Parts;
   const $ = id => document.getElementById(id);
   const MAX_FILES = 5, MAX_BYTES = 10 * 1024 * 1024, MAX_IMAGE = 5 * 1024 * 1024;
-  let kind = 'todo', busy = false, byAddress = false, files = [], draft = '', connected = false, machine = null, hidden = false, notice = false, fresh = false, written = null, snip = false, shooting = false, speaks = true;
+  let kind = 'todo', busy = false, byAddress = false, files = [], draft = '', connected = false, machine = null, hidden = false, notice = false, fresh = false, written = null, snip = false, shooting = false, speaks = 'always';
 
   for (const [id, text] of Object.entries({
     'signin-intro': t.signInIntro, 'signin-go': t.signIn, 'notice-text': t.hidden, 'notice-ok': t.ok, connect: t.connect, 'kind-todo': t.todo, 'kind-ask': t.ask,
@@ -262,19 +262,19 @@
     $('menu').hidden = !open;
     $('more').setAttribute('aria-expanded', String(open));
     if (!open) return;
-    const items = [...(machine ? ['dashboard', 'speak'] : []), hidden ? 'show' : 'hide', ...(machine ? ['signout'] : []), 'quit'];
-    const names = {dashboard: t.dashboard, speak: t.speak, hide: t.hide, show: t.show, signout: t.signOut, quit: t.quit};
+    const items = [...(machine ? ['dashboard'] : []), hidden ? 'show' : 'hide', ...(machine ? ['signout'] : []), 'quit'];
+    const names = {dashboard: t.dashboard, hide: t.hide, show: t.show, signout: t.signOut, quit: t.quit};
     const where = machine && connected ? [el('li', {className: 'where', textContent: fill(t.signedIn, new URL(machine).host)})] : [];
-    $('menu').replaceChildren(...where, ...items.map(id => el('li', {}, el('button', {type: 'button', className: 'name', id: 'menu-' + id, textContent: names[id], onclick: () => (id === 'dashboard' ? native.openDashboard().catch(fail) : id === 'speak' ? setSpeaks(!speaks) : native.menuItem(id))}))));
-    const speak = $('menu-speak');
-    if (speak) { speak.setAttribute('role', 'switch'); speak.title = t.speakHint; showSpeaks(); }
+    $('menu').replaceChildren(...where, ...items.map(id => el('li', {}, el('button', {type: 'button', className: 'name', id: 'menu-' + id, textContent: names[id], onclick: () => (id === 'dashboard' ? native.openDashboard().catch(fail) : native.menuItem(id))}))));
+    if (machine) $('menu-dashboard').parentElement.after(el('li', {id: 'menu-speak', role: 'radiogroup', ariaLabel: t.speak, title: t.speakHint}, el('span', {className: 'where', textContent: t.speak}),
+      ...Object.entries(t.speaks).map(([when, name]) => el('button', {type: 'button', className: 'name', id: 'speak-' + when, role: 'radio', onclick: () => setSpeaks(when)}, name, icon('done')))));
+    showSpeaks();
     $('menu').querySelector('button').focus();
   }
   function showSpeaks() {
-    $('menu-speak').setAttribute('aria-checked', String(speaks));
-    $('menu-speak').replaceChildren(el('span', {textContent: t.speak}), el('i', {className: 'switch'}));
+    for (const b of document.querySelectorAll('#menu-speak button')) b.setAttribute('aria-checked', String(b.id === 'speak-' + speaks));
   }
-  function setSpeaks(on) { speaks = on; native.setSpeaks(on).catch(fail); showSpeaks(); }
+  function setSpeaks(when) { speaks = when; native.setSpeaks(when).catch(fail); showSpeaks(); }
   $('more').addEventListener('click', () => menu($('menu').hidden));
 
   // Writing

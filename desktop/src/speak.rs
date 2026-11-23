@@ -4,7 +4,7 @@
 //! computer's browser doesn't get it too.
 use crate::machine::{Machine, Quick};
 use crate::{later, windows, Shared};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::VecDeque;
 use std::sync::atomic::Ordering;
@@ -41,20 +41,47 @@ pub struct Speaking {
     got: Vec<String>,
 }
 
-/// It may speak: the person sees the robot, and nothing says not to disturb them.
+/// When it speaks, as the person chose. That notifications are switched off on this computer says nothing of it: the
+/// robot is something the person put there, and its bubble makes no sound.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Speak {
+    #[default]
+    Always,
+    /// Not in Do Not Disturb.
+    Calm,
+    Never,
+}
+
+impl Speak {
+    fn now(self, disturb: impl FnOnce() -> bool) -> bool {
+        match self {
+            Speak::Always => true,
+            Speak::Calm => !disturb(),
+            Speak::Never => false,
+        }
+    }
+}
+
+/// It may speak: the person sees the robot, nothing is full screen or presented, the screen isn't locked, and they want it.
 pub fn up(app: &AppHandle) -> bool {
     let shared = app.state::<Shared>();
-    let may = showing(&shared) && !crate::front::full() && !quiet::now();
+    let may = showing(&shared) && !crate::front::full() && !quiet::away() && wants(&shared);
     #[cfg(feature = "sandbox")]
     if !may {
-        eprintln!("doesn't speak: showing {}, full screen {}, quiet {}", showing(&shared), crate::front::full(), quiet::now());
+        eprintln!("doesn't speak: showing {}, full screen {}, away {}, do not disturb {}", showing(&shared), crate::front::full(), quiet::away(), quiet::disturb());
     }
     may
 }
 
+fn wants(shared: &Shared) -> bool {
+    let when = shared.saved.lock().unwrap().speak;
+    when.now(quiet::disturb)
+}
+
 fn showing(shared: &Shared) -> bool {
     let off = [&shared.hidden, &shared.away, &shared.full, &shared.picking].iter().any(|f| f.load(Ordering::Relaxed));
-    !off && !shared.saved.lock().unwrap().quiet
+    !off && shared.saved.lock().unwrap().speak != Speak::Never
 }
 
 /// What came with a look. Asked of the Machine once more, as the phone app does: its words, and its buttons now.
@@ -193,36 +220,52 @@ pub fn follow(app: &AppHandle, marks: &[crate::seen::Mark]) {
     }
 }
 
-/// Whether the system says not to disturb, or nobody is there, where it tells without asking for a permission.
+/// What the system tells without asking for a permission. `away`: the screen is locked, something is presented, or nobody
+/// is there; it never speaks then. `disturb`: the person switched Do Not Disturb on.
 mod quiet {
     #[cfg(target_os = "linux")]
-    pub fn now() -> bool {
+    mod bus {
         use zbus::blocking::{connection::Builder, fdo::DBusProxy, Connection, Proxy};
-        let read = |bus: &Connection, service: &'static str, path: &'static str, interface: &'static str, name: &'static str| {
-            Proxy::new(bus, service, path, interface).ok().and_then(|p| p.get_property::<bool>(name).ok()).unwrap_or(false)
-        };
-        let soon = std::time::Duration::from_secs(2); // one that hangs doesn't hold up the look
-        // Locked: the sign-in manager says (GNOME, KDE, and lockers that tell it)
-        if Builder::system().and_then(|b| b.method_timeout(soon).build()).is_ok_and(|bus| read(&bus, "org.freedesktop.login1", "/org/freedesktop/login1/session/auto", "org.freedesktop.login1.Session", "LockedHint")) {
-            return true;
+
+        /// One that hangs doesn't hold up the look.
+        fn soon(builder: zbus::Result<Builder<'static>>) -> Option<Connection> {
+            builder.and_then(|b| b.method_timeout(std::time::Duration::from_secs(2)).build()).ok()
         }
-        const SHOWS: &str = "org.freedesktop.Notifications";
-        if let Ok(bus) = Builder::session().and_then(|b| b.method_timeout(soon).build()) {
+
+        fn read(bus: &Connection, service: &'static str, path: &'static str, interface: &'static str, name: &'static str) -> bool {
+            Proxy::new(bus, service, path, interface).ok().and_then(|p| p.get_property::<bool>(name).ok()).unwrap_or(false)
+        }
+
+        /// The sign-in manager says (GNOME, KDE, and lockers that tell it).
+        pub fn locked() -> bool {
+            soon(Builder::system()).is_some_and(|bus| read(&bus, "org.freedesktop.login1", "/org/freedesktop/login1/session/auto", "org.freedesktop.login1.Session", "LockedHint"))
+        }
+
+        /// KDE, then dunst, then mako. None of them running tells nothing.
+        pub fn disturb() -> bool {
+            const SHOWS: &str = "org.freedesktop.Notifications";
+            let Some(bus) = soon(Builder::session()) else { return false };
             let there = DBusProxy::new(&bus).ok().and_then(|d| d.name_has_owner(SHOWS.try_into().ok()?).ok()).unwrap_or(false); // never started by this
-            // KDE, then dunst, then mako
-            if there
+            there
                 && (read(&bus, SHOWS, "/org/freedesktop/Notifications", SHOWS, "Inhibited")
                     || read(&bus, SHOWS, "/org/freedesktop/Notifications", "org.dunstproject.cmd0", "paused")
                     || Proxy::new(&bus, SHOWS, "/fr/emersion/Mako", "fr.emersion.Mako").ok()
                         .and_then(|p| p.call::<_, _, Vec<String>>("ListModes", &()).ok())
                         .is_some_and(|modes| modes.iter().any(|m| m == "do-not-disturb" || m == "dnd")))
-            {
-                return true;
-            }
         }
-        gnome()
     }
 
+    #[cfg(target_os = "linux")]
+    pub fn away() -> bool {
+        bus::locked()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn disturb() -> bool {
+        bus::disturb() || gnome()
+    }
+
+    /// Its Do Not Disturb. That an app's own notifications are off is elsewhere, and not read.
     #[cfg(target_os = "linux")]
     fn gnome() -> bool {
         use gtk::gio::{prelude::*, Settings, SettingsSchemaSource};
@@ -232,34 +275,71 @@ mod quiet {
             && !Settings::new(SCHEMA).boolean("show-banners")
     }
 
-    /// Locked, the screen saver, a game, a presentation, or quiet time; or nothing was touched for five minutes.
+    /// Locked or the screen saver (1), an app or a game in full screen (2, 3), a presentation (4), the screen shown twice; or
+    /// nothing was touched for five minutes. That the screen is shared in a call Windows doesn't tell.
     #[cfg(windows)]
-    pub fn now() -> bool {
+    pub fn away() -> bool {
         use windows_sys::Win32::System::SystemInformation::GetTickCount;
         use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO};
-        use windows_sys::Win32::UI::Shell::{SHQueryUserNotificationState, QUNS_ACCEPTS_NOTIFICATIONS};
-        let mut state = QUNS_ACCEPTS_NOTIFICATIONS;
-        #[cfg(feature = "sandbox")]
-        if let Some(said) = std::env::var("MACHINE_SANDBOX_STATE").ok().and_then(|f| std::fs::read_to_string(f).ok()?.trim().parse::<i32>().ok()) {
-            return quiet(said);
-        }
         let mut last = LASTINPUTINFO { cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
-        // SAFETY: the one argument of each is a valid place for the answer.
-        unsafe {
-            let told = SHQueryUserNotificationState(&mut state) == 0;
-            let idle = GetLastInputInfo(&mut last) != 0 && GetTickCount().wrapping_sub(last.dwTime) > 5 * 60 * 1000;
-            told && quiet(state) || idle
+        // SAFETY: the one argument is a valid place for the answer.
+        let idle = unsafe { GetLastInputInfo(&mut last) != 0 && GetTickCount().wrapping_sub(last.dwTime) > 5 * 60 * 1000 };
+        let (state, _, doubled) = says();
+        idle || doubled || (1..=4).contains(&state)
+    }
+
+    /// Do Not Disturb (Windows 11; Focus turns it on too): only priority notifications, or only alarms. Not the switch that
+    /// turns notifications off: that one changes neither answer. Also a new person's first hour, which Windows keeps quiet.
+    #[cfg(windows)]
+    pub fn disturb() -> bool {
+        let (state, mode, _) = says();
+        state == 6 || mode != 0
+    }
+
+    /// Windows' word: SHQueryUserNotificationState, the notification mode (0 where it has none: Windows 10), and whether the
+    /// displays are duplicated.
+    #[cfg(windows)]
+    fn says() -> (i32, i32, bool) {
+        use windows::UI::Notifications::ToastNotificationManager;
+        use windows_sys::Win32::UI::Shell::{SHQueryUserNotificationState, QUNS_ACCEPTS_NOTIFICATIONS};
+        #[cfg(feature = "sandbox")]
+        if let Some(said) = std::env::var("MACHINE_SANDBOX_STATE").ok().and_then(|f| std::fs::read_to_string(f).ok()) {
+            let mut said = said.split_whitespace().filter_map(|n| n.parse().ok());
+            return (said.next().unwrap_or(5), said.next().unwrap_or(0), said.next() == Some(1));
         }
+        let mut state = QUNS_ACCEPTS_NOTIFICATIONS;
+        // SAFETY: the one argument is a valid place for the answer.
+        if unsafe { SHQueryUserNotificationState(&mut state) } != 0 {
+            state = QUNS_ACCEPTS_NOTIFICATIONS;
+        }
+        let mode = ToastNotificationManager::GetDefault().and_then(|m| m.NotificationMode()).map_or(0, |m| m.0);
+        (state, mode, doubled())
     }
 
     #[cfg(windows)]
-    fn quiet(state: i32) -> bool {
-        use windows_sys::Win32::UI::Shell::{QUNS_ACCEPTS_NOTIFICATIONS, QUNS_APP};
-        state != QUNS_ACCEPTS_NOTIFICATIONS && state != QUNS_APP
+    fn doubled() -> bool {
+        use windows_sys::Win32::Devices::Display::{
+            GetDisplayConfigBufferSizes, QueryDisplayConfig, DISPLAYCONFIG_MODE_INFO, DISPLAYCONFIG_PATH_INFO, DISPLAYCONFIG_TOPOLOGY_CLONE, QDC_DATABASE_CURRENT,
+        };
+        let (mut paths, mut modes, mut how) = (0, 0, 0);
+        // SAFETY: plain numbers and structs of numbers, in buffers of the sizes asked for.
+        unsafe {
+            if GetDisplayConfigBufferSizes(QDC_DATABASE_CURRENT, &mut paths, &mut modes) != 0 {
+                return false;
+            }
+            let mut path: Vec<DISPLAYCONFIG_PATH_INFO> = vec![std::mem::zeroed(); paths as usize];
+            let mut mode: Vec<DISPLAYCONFIG_MODE_INFO> = vec![std::mem::zeroed(); modes as usize];
+            QueryDisplayConfig(QDC_DATABASE_CURRENT, &mut paths, path.as_mut_ptr(), &mut modes, mode.as_mut_ptr(), &mut how) == 0 && how == DISPLAYCONFIG_TOPOLOGY_CLONE
+        }
     }
 
     #[cfg(not(any(windows, target_os = "linux")))]
-    pub fn now() -> bool {
+    pub fn away() -> bool {
+        false
+    }
+
+    #[cfg(not(any(windows, target_os = "linux")))]
+    pub fn disturb() -> bool {
         false
     }
 }
@@ -268,6 +348,15 @@ mod quiet {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn it_speaks_as_chosen() {
+        let says = |when: &str, disturb: bool| serde_json::from_value::<Speak>(json!(when)).unwrap().now(|| disturb);
+        assert!(says("always", true) && says("always", false));
+        assert!(!says("calm", true) && says("calm", false));
+        assert!(!says("never", true) && !says("never", false));
+        assert_eq!(Speak::default(), Speak::Always);
+    }
 
     #[test]
     fn what_it_has_already_is_not_said_again() {

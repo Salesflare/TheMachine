@@ -11,6 +11,7 @@ window.MachineText = {
   hide: 'Hide',
   speak: 'Speak up',
   speakHint: 'Shows a to-do’s notification at the robot',
+  speaks: {always: 'Always', calm: 'Not in Do Not Disturb', never: 'Never'},
   show: 'Show robot',
   hidden: 'The robot hides here, at the bottom edge of the screen. Click it to bring it back.',
   ok: 'OK',

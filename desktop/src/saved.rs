@@ -17,8 +17,8 @@ pub struct Saved {
     pub hide_told: bool,
     /// What was in For you when the person last looked. None: nothing was ever there.
     pub seen: Option<crate::seen::Seen>,
-    /// It doesn't speak up ("..." turns that off and on).
-    pub quiet: bool,
+    /// When it speaks up ("...").
+    pub speak: crate::speak::Speak,
     /// A random name for this robot, for its Machine to know which computer's it is (speak.rs).
     pub desk: String,
 }
