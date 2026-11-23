@@ -57,16 +57,21 @@ def issues_of(db, event_ids):
     return found
 
 
-def accounts(config, connector, helpers, area=None):
-    """The owner's own Linear connections in this to-do's area that may write: {account_id: {name, writes}}."""
+def accounts(config, connector, helpers, area=None, home=()):
+    """The owner's own Linear connections in this to-do's area that may write: {account_id: {name, writes}}. Those its
+    own issues came in on (home) too, wherever its area is, for those issues only (outside: never a new issue)."""
     import abilities  # noqa: PLC0415 - abilities imports next_actions, which imports this module
     out = {}
     for a in (config or {}).get('accounts') or ():
-        if a.get('service') != SERVICE or a.get('shared') or not abilities.actions_on(a) or not doc_writes.fits(a.get('boundary'), area):
+        if a.get('service') != SERVICE or a.get('shared') or not abilities.actions_on(a):
+            continue
+        inside = doc_writes.fits(a.get('boundary'), area)
+        if not inside and a['id'] not in home:
             continue
         writes = connector.writes_on(config, a, helpers) if connector else set()
         if writes:
-            out[a['id']] = {'name': str(a.get('display_name') or a.get('workspace_name') or 'Linear'), 'writes': sorted(writes)}
+            out[a['id']] = {'name': str(a.get('display_name') or a.get('workspace_name') or 'Linear'), 'writes': sorted(writes),
+                            **({} if inside else {'outside': True})}
     return out
 
 
@@ -74,7 +79,9 @@ def context(config, connector, helpers, issues, value, area=None):
     """What validate needs, read now: the to-do's issues, the connections that may write, and for the ops asked for, the
     team's states, people or teams, straight from Linear."""
     ops = [a for a in (value if isinstance(value, list) else [value]) if isinstance(a, dict) and a.get('kind') == KIND]
-    found = {'issues': issues or {}, 'accounts': accounts(config, connector, helpers, area) if ops else {}, 'states': {}, 'members': {}, 'teams': {}}
+    home = {i['account_id'] for i in (issues or {}).values()}
+    found = {'issues': issues or {}, 'accounts': accounts(config, connector, helpers, area, home) if ops else {}, 'states': {},
+             'members': {}, 'teams': {}}
     if not ops or not connector:
         return found
     sources = {}
@@ -123,12 +130,13 @@ def pick_issue(issues, wanted):
 
 
 def create_account(found, value):
+    inside = [k for k, a in found['accounts'].items() if not a.get('outside')]
     if value.get('account_id'):
-        return value['account_id'] if value['account_id'] in found['accounts'] else None
-    linked = {i['account_id'] for i in found['issues'].values() if i['account_id'] in found['accounts']}
+        return value['account_id'] if value['account_id'] in inside else None
+    linked = {i['account_id'] for i in found['issues'].values() if i['account_id'] in inside}
     if len(linked) == 1:
         return next(iter(linked))
-    return next(iter(found['accounts'])) if len(found['accounts']) == 1 else None
+    return inside[0] if len(inside) == 1 else None
 
 
 def person_of(people, wanted, owner_id=None):
@@ -171,7 +179,7 @@ def _validate(value, found, config, op):
         account_id = create_account(found, value)
         if not account_id:
             raise OwnerError('Connect Linear with permission to make changes, in this to-do’s area, to create an issue'
-                             if not found['accounts'] else 'Say which Linear connection (account_id) the new issue goes to')
+                             if all(a.get('outside') for a in found['accounts'].values()) else 'Say which Linear connection (account_id) the new issue goes to')
         _allowed(found, account_id, op)
         teams = (found.get('teams') or {}).get(account_id) or []
         wanted = _key(value.get('team'))

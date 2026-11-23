@@ -625,12 +625,12 @@ class PreparationApp:
                 facts='\n\n'.join(filter(None,(memory.text('facts'),memory.text('retained'))))  # history that bears on it (retained_facts.py)
                 request['message']=preparation_prompt(job,facts,self.config,'' if style else self.store.draft_edits_text(),
                                                       rules,style,gaps,request.get('model') or openclaw_model(self.config))
-                try:  # how to read the card's own sources (its accounts' notes only)
+                try:  # how to read the card's own sources (its accounts' notes, and those its messages came in on)
                     with self.store.connect() as db:
                         row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
-                    lines=source_notes(account_services(self.config,json.loads(row['account_ids'] or '[]') if row else []))
+                        sources,unplaced=card_sources(db,job['suggestion_id']),bool(owner_area_open(db,job['suggestion_id']))
+                    lines=source_notes(account_services(self.config,[*(json.loads(row['account_ids'] or '[]') if row else []),*(a for _,a in sources)]))
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                    with self.store.connect() as db:sources,unplaced=card_sources(db,job['suggestion_id']),bool(owner_area_open(db,job['suggestion_id']))
                     # its area, and asking to move it; a run the owner started (not prepared ahead) also reads its own sources
                     lines=area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=not job['ahead'],unplaced=unplaced)
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines

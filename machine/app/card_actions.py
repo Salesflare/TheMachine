@@ -236,8 +236,9 @@ class CardActionsApp:
         with self.store.connect() as db:
             senders=own_addresses.senders(db,self.config)
         with self.store.connect() as db:
-            threads={m['conversation_id']:m.get('chat_name') or 'LinkedIn conversation' for m in (json.loads(r[0]) for r in db.execute(
-                "SELECT e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='linkedin.message' ORDER BY e.occurred_at",(row['event_ids'],)))}
+            threads={m['conversation_id']:{'account_id':r[0],'name':m.get('chat_name') or 'LinkedIn conversation'} for r in db.execute(
+                "SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='linkedin.message' ORDER BY e.occurred_at",(row['event_ids'],))
+                for m in (json.loads(r[1]),) if m.get('conversation_id')}
             x_threads={'mentions':{},'dms':{}}
             for kind,account_id,body,m in ((r[0],r[1],r[2],json.loads(r[3])) for r in db.execute(
                 "SELECT e.kind,e.account_id,e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind IN ('x.mention','x.dm') ORDER BY e.occurred_at",(row['event_ids'],))):

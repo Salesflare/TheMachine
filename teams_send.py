@@ -10,13 +10,14 @@ FIELDS = {'kind', 'label', 'account_id', 'chat_id', 'body'}
 MAX_LENGTH = 8000  # well under what Teams takes in one message
 
 
-def check(value, config, allowed_accounts, teams_chats):
+def check(value, config, teams_chats):
     """A Teams draft as the card keeps it. The chat is one of this to-do's own Teams messages' chats (teams_chats, built
-    by the service: never a channel thread, which goes as before), on a connection that can send."""
+    by the service: never a channel thread, which goes as before), on the connection it came in on, which can send. The
+    to-do's area doesn't change where its chat lives."""
     if set(value) - FIELDS:
         raise OwnerError('Unsupported Teams fields; plain text in the task’s Teams chat only')
     account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'teams'), None)
-    if not account or account.get('shared') or account['id'] not in allowed_accounts:
+    if not account or account.get('shared'):
         raise OwnerError('Use the Teams account belonging to this task')
     chat = (teams_chats or {}).get(str(value.get('chat_id') or ''))
     if not chat or chat.get('account_id') != account['id']:
