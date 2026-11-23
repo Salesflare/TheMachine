@@ -1,8 +1,10 @@
 /*@lazy*/
 /* The message viewer's chats (events-message.js chatThreadHTML), loaded with it. The conversation's line stays on top
-   while a to-do's thread scrolls (--convo-top: under the title where that stays, events-email-frame.js), a day reads as a
+   while a to-do's thread scrolls, under the title's (--head-line, shell-sheets.js), a day reads as a
    pill, the to-do's own message under "This to-do". */
-#email-dialog .convo-chat{position:sticky;top:var(--convo-top);z-index:2;margin:-6px 0 var(--sp-2);padding:8px 0;background:var(--surface-2);box-shadow:0 1px 0 var(--border)}
+#email-dialog .convo-chat{position:sticky;top:calc(var(--head-line) - 1px);z-index:2;margin:-6px 0 var(--sp-2);padding:8px 0;background:var(--surface-2);box-shadow:0 1px 0 var(--border)}
+#email-dialog[data-line]:has(#email-content>.convo:only-child>.convo-chat){--head-rule:transparent}
+.convo-chat~:is(a,button),.convo-chat~* :is(a,button){scroll-margin-top:36px}
 .convo-chat>span[translate]{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
 .convo-chat .convo-app{flex:none;color:var(--faint);font-weight:400}.convo-chat .convo-app::before{content:"·";margin-right:8px}
 .convo .convo-day>span{display:inline-block;padding:3px 10px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--text) 6%,transparent);color:var(--muted)}

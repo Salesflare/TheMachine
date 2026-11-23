@@ -7,7 +7,7 @@ function backOpen(el,close){if(DESK.matches||backLayers.some(l=>l.el===el))retur
 const backShut=el=>{backLayers=backLayers.filter(l=>l.el!==el)};
 function backCancel(d){if(d.dispatchEvent(new Event('cancel',{cancelable:true}))&&d.open)d.close();if(d.open)backOpen(d,()=>backCancel(d))}  // as Esc
 {const show=HTMLDialogElement.prototype.showModal;
- HTMLDialogElement.prototype.showModal=function(){const was=this.open;show.call(this);if(!was&&this.open)backOpen(this,()=>backCancel(this))}}
+ HTMLDialogElement.prototype.showModal=function(){const was=this.open;show.call(this);this.removeAttribute('data-line');headLine(this);if(!was&&this.open)backOpen(this,()=>backCancel(this))}}
 document.addEventListener('close',e=>{const d=e.target;if(!d.open)backShut(d)},true);
 document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement)||!d.matches('.card .more-actions'))return;
  if(!d.open)backShut(d);else if(matchMedia('(max-width:560px)').matches)backOpen(d,()=>{d.open=false})},true);

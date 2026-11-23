@@ -209,7 +209,6 @@ dialog::backdrop{background:#15171bb3;backdrop-filter:blur(3px)}
 .month-grid>button[aria-pressed="true"]{background:var(--mint);color:var(--charcoal);font-weight:700}
 .month-grid>button.today{border-color:var(--amber)}
 .month-grid>button:disabled{opacity:.28;cursor:default;background:transparent}
-#selected-snooze-day{color:var(--cream);margin-top:12px}
 .settings-link{gap:6px;background:transparent;font:inherit;font-size:.85rem;cursor:pointer;min-height:36px;padding:6px 12px}.settings-link:hover{border-color:var(--mint)}
 .settings-link svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}.settings-link .teeth{stroke-width:2.6;stroke-dasharray:3.2 3.24}
 .settings-link[aria-current="page"]{background:var(--mint);border-color:var(--mint);color:var(--charcoal)}
