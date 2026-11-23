@@ -51,9 +51,10 @@ jobs:
     # the tests for everything changed since the newest commit under it whose full run passed (scripts/ci_runs.py
     # base; nothing when that is the commit itself, every test when there is none), with --wide: a function nearly
     # every test runs takes all of them there, where a pull request takes the quickest few. The nightly, weekly and manual runs
-    # run every one. On our runner the files are split into shards of about equal time (scripts/test_shards.py, by each
+    # run every one. The files are split into shards of about equal time (scripts/test_shards.py, by each
     # file's time in main's last full run; about 900 seconds of files each, some 2.5 minutes with 6 side by side, at
-    # most CI_SHARDS, a repository variable, 4 when unset), side by side on our runner's slots. GitHub's runners use one job.
+    # most CI_SHARDS, a repository variable, 4 when unset), side by side on our runner's slots. GitHub's runners get the
+    # same shards: as one job, the weekly run's pinned versions took 44 of the 45 minutes on a slow one of them.
     # Each run on main's commits names what it tested in an artifact (tested-full, tested-since-<sha>): what
     # scripts/ci_runs.py and scripts/release.py read.
     runs-on: ${{ (github.event_name == 'push' || github.event_name == 'merge_group' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
@@ -77,7 +78,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
           QUEUE_BASE: ${{ github.event.merge_group.base_sha }}
-          SHARDS: ${{ runner.environment == 'self-hosted' && (vars.CI_SHARDS || '4') || '1' }}
+          SHARDS: ${{ vars.CI_SHARDS || '4' }}
         run: |
           changed="$RUNNER_TEMP/changed" picked="$RUNNER_TEMP/picked" map="$RUNNER_TEMP/test-impact.json.gz" split="$RUNNER_TEMP/shards.json"
           python3 scripts/test_impact.py fetch "$map" || true

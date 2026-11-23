@@ -422,7 +422,7 @@ class Translations(unittest.TestCase):
     def test_current_help_articles(self):
         wrong = []
         for lang in self.langs:
-            titles = T.link_titles(lang)
+            titles, known = T.link_titles(lang), T.label_catalog(lang)
             for path in T.articles():
                 local = T.HELP / lang / path.name
                 if not local.is_file() or T.help_state(lang, path) != 'current':
@@ -431,7 +431,7 @@ class Translations(unittest.TestCase):
                 tf, tr = T.front(local.read_text(encoding='utf-8'))
                 en, tr, ef, tf = en.strip(), tr.strip(), dict(ef), dict(tf)
                 where = f'docs/help/{lang}/{path.name}'
-                fixed = T.fix_links(en, T.fix_labels(en, tr, T.app_labels(lang, en)), titles)
+                fixed = T.fix_links(en, T.fix_labels(en, tr, T.app_labels(lang, en, known)), titles)
                 wrong += [f'{where}: {a[:80]!r} should read {b[:80]!r}' for a, b in zip(T.units(tr), T.units(fixed)) if a != b]
                 pairs = [(ef.get(k, ''), tf.get(k, '')) for k in ('title', 'summary')] + list(zip(T.units(en), T.units(tr)))
                 wrong += [f'{where}: {t[:80]!r}: {p}' for e, t in pairs if e for p in T.wording_problems(e, t, lang)]

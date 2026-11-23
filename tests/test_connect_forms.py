@@ -466,7 +466,8 @@ class CodeTest(unittest.TestCase):
 
     def test_a_whatsapp_code_nobody_entered_says_it_expired(self):
         with tempfile.TemporaryDirectory() as folder:
-            wacli = self.script(folder, 'wacli', 'echo \'{"event":"pair_code","data":{"code":"K7P2-9QX4"}}\'; sleep 30\n')
+            # one process, as wacli is: a child of the shell would keep the pipe open after the shell is stopped
+            wacli = self.script(folder, 'wacli', 'echo \'{"event":"pair_code","data":{"code":"K7P2-9QX4"}}\'; exec sleep 30\n')
             ui = onboarding.WebUI(wait=5)
             ui.prefill({'Your WhatsApp phone number': '+32 470 12 34 56'})
             follow = onboarding.follow

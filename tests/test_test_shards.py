@@ -5,6 +5,9 @@ import gzip
 import importlib.util
 import json
 from pathlib import Path
+import re
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -52,6 +55,22 @@ class Shards(unittest.TestCase):
     def test_fewer_files_than_shards(self):
         self.assertEqual(shards.split(['test_a.py'], {}, 4), [['test_a.py']])
         self.assertEqual(shards.split([], {}, 4), [[]])
+
+    def test_ci_splits_every_run_the_same_way(self):
+        # The weekly run on GitHub's runners too: in one job it ran into the job's time limit. One plan for every version,
+        # each of its shards runs the files the plan gave it: every file once per version.
+        workflow = (ROOT / '.github' / 'workflows' / 'ci.yml').read_text(encoding='utf-8')
+        self.assertEqual(re.findall(r'^ +SHARDS: (.*vars.*)$', workflow, re.M), ["${{ vars.CI_SHARDS || '4' }}"])
+        self.assertIn('        shard: ${{ fromJSON(needs.plan.outputs.shards) }}\n', workflow)
+        self.assertIn('          FILES: ${{ fromJSON(needs.plan.outputs.files)[matrix.shard] }}\n', workflow)
+        with tempfile.TemporaryDirectory() as folder:
+            picked = Path(folder, 'picked')
+            picked.write_text('ALL\n')
+            out = subprocess.run([sys.executable, str(ROOT / 'scripts' / 'test_shards.py'), '--shards', '4', '--target', '900', str(picked)],
+                                 capture_output=True, text=True, check=True).stdout
+        plan = json.loads(out)
+        self.assertEqual(list(plan), ['1', '2', '3', '4'])
+        self.assertEqual(sorted(name for files in plan.values() for name in files.split()), sorted(shards.every_test()))
 
     def test_a_small_selection_stays_one_job(self):
         files = shards.every_test()
