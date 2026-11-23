@@ -53,7 +53,8 @@ class Salesflare:
         return token
 
     def key_fingerprint(self):
-        """Which key this is, held in memory only (salesflare_confirm): a changed key is never taken as confirmed."""
+        """Which key this is, held in memory only (salesflare_confirm): a changed key is never taken as confirmed. Its
+        first few characters mark the saved state, so another key starts afresh (salesflare_key_changed)."""
         return hashlib.sha256(self.token().encode()).hexdigest()
 
     def send(self, path, params, payload=None):
@@ -272,7 +273,7 @@ def salesflare_recent_accounts(source, field, since, mark=None, page=100, max_pa
 # An incremental round lists each field only down to the newest account the last round read (state['marks']) and reads
 # only the accounts whose date changed since their last read (state['seen']: a date in the future, a meeting planned
 # ahead, stays above the mark and would otherwise be read every round). Notes written days after a meeting leave its
-# date alone, and so may an email Salesflare takes in late, so the daily full round still rereads the whole week
+# date alone, and so may an email Salesflare takes in late, so the weekly full round still rereads the whole week
 # (emails and meetings) whatever the dates say. Seen dates older than the week are dropped.
 SALESFLARE_SEEN_FIELDS = ('last_email_date', 'last_meeting_date')
 
@@ -428,6 +429,7 @@ SALESFLARE_CONFIRMED = {}  # account id: (key fingerprint, time.monotonic() of i
 
 
 def salesflare_confirm(source, account):
+    """Fails unless the key is the owner's; its fingerprint (None for a source without one)."""
     fingerprint = getattr(source, 'key_fingerprint', lambda: None)()
     try:
         source.profile()
@@ -439,9 +441,38 @@ def salesflare_confirm(source, account):
             raise
         LOG.warning('salesflare profile check skipped account=%s error=%s route=%s confirmed=%ds ago', account['id'],
                     error, error.route or '-', round(age))
-        return
+        return fingerprint
     if fingerprint:
         SALESFLARE_CONFIRMED[account['id']] = (fingerprint, time.monotonic())
+    return fingerprint
+
+
+# Does the key open accounts at all? A round holds only the accounts that changed, and a refused one is asked again each
+# round, so a round that opens nothing is often that one account: it says nothing about the key. What does: an account
+# it opened (state['opened'], or the dates seen, which an older state has too). That stands until a full round opens
+# nothing, until this many accounts that opened before are refused with none opened in between (state['closed']), or
+# until the key changes.
+SALESFLARE_CLOSED = 10
+
+
+def salesflare_opens(state):
+    """True when the key opened an account lately: refusals are then about those accounts, not the key or the team."""
+    if (state.get('window') or {}).get('read'):
+        return True
+    return state.get('closed', 0) < SALESFLARE_CLOSED and bool(state.get('opened') or any((state.get('seen') or {}).values()))
+
+
+def salesflare_key_changed(state, fingerprint):
+    """Another key than the state's: what the old one opened or was refused says nothing about it, so it reads the week
+    afresh. A state without a mark takes the key's."""
+    mark = fingerprint[:8] if fingerprint else None
+    if not mark or state.get('key_mark') == mark:
+        return
+    if state.get('key_mark'):
+        for field in ('window', 'last_round', 'opened', 'closed', 'seen', 'marks', 'feed_off', 'inaccessible_accounts', 'skipped_accounts'):
+            state.pop(field, None)
+        state['next_full'] = 0
+    state['key_mark'] = mark
 
 
 # Salesflare refuses the feed for the whole team (a setting on its side, report s_f0d5d0200384ed92): every account of a
@@ -495,21 +526,22 @@ def salesflare_progress(account, state):
         stuck = False
     last = state.get('last_round') or None
     done = max(0, total - left)
-    # Without access: the last finished round's accounts (inaccessible_accounts, replaced when a round ends). During a
-    # round it adds this round's new ones, never more than the round has. An older Machine's list (no last_round) only
-    # ever grew, so a running round counts its own until it ends and replaces the list.
+    # Without access: the week's refused accounts (inaccessible_accounts, replaced when a full round ends) with this
+    # round's new ones, never more than a full round has. An older Machine's list (no last_round) only ever grew, so a
+    # running round counts its own until it ends and replaces the list.
     current = window.get('no_access') or []
-    if window:
-        counted = set(state.get('inaccessible_accounts') or []) if last else set()
-        no_access = min(total, len(counted | set(current)))
-    else:
-        no_access = last['no_access'] if last else len(state.get('inaccessible_accounts') or [])
-    # It opens none of them: every account of the last round (or the first 10 of this one) refused. Nothing comes in
-    # until the key changes, so the card asks for help instead of saying Connected.
-    # Unless Salesflare refuses the feed for the whole team (feed_off): another key changes nothing then, and the card
-    # says what does.
-    feed_off = bool(state.get('feed_off'))
-    if feed_off:
+    without = set(current) | set((state.get('inaccessible_accounts') if last or not window else None) or [])
+    no_access = min(total, len(without)) if window and window.get('full', True) else len(without)
+    # Accounts read: the week's (seen), not one round's, which may hold a single account.
+    accounts_read = (len({crm_id for stamps in (state.get('seen') or {}).values() for crm_id in stamps})
+                     or window.get('read') or (last or {}).get('read') or 0)
+    # It opens none of them: every account of the last round (or the first 10 of this one) refused, and none opened
+    # lately (salesflare_opens). Nothing comes in until the key changes, so the card asks for help instead of saying
+    # Connected. Unless Salesflare refuses the feed for the whole team (feed_off): another key changes nothing then, and
+    # the card says what does.
+    opens = salesflare_opens(state)
+    feed_off = bool(state.get('feed_off')) and not opens
+    if feed_off or opens:
         locked = False
     elif last:
         locked = bool(last.get('accounts')) and not last.get('read') and last.get('no_access') == last.get('accounts')
@@ -520,7 +552,7 @@ def salesflare_progress(account, state):
                       'read': window.get('read'), 'failing': len(window.get('failures') or {})} if window else None,
             'last_round': last, 'no_access_all': locked, 'feed_off': feed_off,
             'slow_accounts': len(window['set_aside']) if 'set_aside' in window else last['set_aside'] if last else len(state.get('skipped_accounts') or []),
-            'no_access': no_access,
+            'no_access': no_access, 'accounts_read': accounts_read,
             'keys_url': (account.get('app_base') or SALESFLARE_APP) + '/#/settings/apikeys'}
 
 
@@ -529,8 +561,11 @@ def sync_salesflare(store, config, account, source=None):
     if state.get('stopped'):  # the owner pressed Stop on its card: nothing is read until Start or Restart
         return {'mode': state.get('mode') or 'incremental', 'events': 0, 'stopped': True}
     source = source or Salesflare(config, account)
-    salesflare_confirm(source, account)
+    salesflare_key_changed(state, salesflare_confirm(source, account))
     stamp = timeutil.clock()
+    if state.get('feed_off') and salesflare_opens(state):  # saved for one refused account: a full round settles it
+        state.pop('feed_off')
+        state['next_full'] = 0
     if feed_off_wait(state, stamp):
         # Nothing to ask until the next re-check. The sync itself worked (the key reads its profile), so it counts.
         store.commit_page(account['id'], state, [])
@@ -626,6 +661,8 @@ def sync_salesflare(store, config, account, source=None):
             refused = window.setdefault('no_access', [])
             if crm_id not in refused:
                 refused.append(crm_id)
+            if [dates.pop(str(crm_id)) for dates in (state.get('seen') or {}).values() if str(crm_id) in dates]:
+                state['closed'] = state.get('closed', 0) + 1  # it opened before
             if error.status == 403:
                 # Refused on the feed though the key's user is part of the account: not about this account.
                 if error.route == SALESFLARE_FEED_ROUTE and part_of == 'true':
@@ -654,6 +691,10 @@ def sync_salesflare(store, config, account, source=None):
             continue
         window['pending'].remove(crm_id)
         window['read'], window['hiccups'] = window.get('read', 0) + 1, 0
+        state['opened'] = stamp.isoformat()
+        state.pop('closed', None)
+        if crm_id in (state.get('inaccessible_accounts') or []):
+            state['inaccessible_accounts'].remove(crm_id)
         seen = state.setdefault('seen', {})
         for field, listed_stamp in zip(SALESFLARE_SEEN_FIELDS, (window.get('stamps') or {}).get(str(crm_id)) or ()):
             if listed_stamp:  # read in full at this date: not read again until it changes (or a full round)
@@ -685,19 +726,25 @@ def sync_salesflare(store, config, account, source=None):
     LOG.info('salesflare batch read=%d no_access=%d left=%d', window.get('read', 0) - read_before,
              len(window.get('no_access') or []) - refused_before, len(window['pending']))
     if not window['pending']:
-        # What this round could open: the card counts it (accounts read, without access) until the next one ends.
+        # What this round could open. The accounts without access stay counted until a full round asks them all again.
         # A round with nothing changed asks no account, so it says nothing new about access: the card keeps the last
         # round that read accounts.
         no_access = window.get('no_access') or []
         state.update(mode='incremental', watermark=window['until'])
         if window.get('accounts') or not state.get('last_round'):
-            state.update(inaccessible_accounts=sorted(no_access)[-500:], skipped_accounts=sorted(window.get('set_aside') or [])[-500:],
+            known = set() if window['full'] else set(state.get('inaccessible_accounts') or [])
+            state.update(inaccessible_accounts=sorted(known | set(no_access))[-500:], skipped_accounts=sorted(window.get('set_aside') or [])[-500:],
                          last_round={'at': window['until'], 'accounts': window.get('accounts', 0), 'read': window.get('read', 0),
                                      'no_access': len(no_access), 'refused': window.get('refused', 0),
                                      'set_aside': len(window.get('set_aside') or [])})
         for key, count in sorted((window.get('refused_detail') or {}).items()):
             LOG.warning('salesflare refused account=%s count=%d %s', account['id'], count, key)
-        if window.get('accounts') and not window.get('read') and len(no_access) == window['accounts']:
+        all_refused = window.get('accounts') and not window.get('read') and len(no_access) == window['accounts']
+        if all_refused and window['full']:  # the whole week's accounts: whatever it opened before, it no longer does
+            for field in ('opened', 'closed', 'seen'):
+                state.pop(field, None)
+        all_refused = all_refused and not salesflare_opens(state)
+        if all_refused:
             # A warning, so it shows in the support report: the key reads its profile but no account's timeline.
             LOG.warning('salesflare round opened no account account=%s accounts=%d refused=%d missing=%d', account['id'],
                         window['accounts'], window.get('refused', 0), len(no_access) - window.get('refused', 0))
@@ -708,9 +755,9 @@ def sync_salesflare(store, config, account, source=None):
         # The next round lists down to what this one read. A field with nothing listed keeps its mark.
         state['marks'] = {**(state.get('marks') or {}), **salesflare_round_marks(window)}
         state['seen'] = salesflare_prune_seen(state.get('seen'), stamp - dt.timedelta(days=config.get('bootstrap_days', 7) + 1))
-        if window.get('accounts') and window.get('feed_refused', 0) == window['accounts']:
-            # Every account asked was refused on the feed while the key's user is part of it: Salesflare has the feed
-            # off for the whole team. From here one account is asked, now and then (feed_off_wait).
+        if all_refused and window.get('feed_refused', 0) == window['accounts']:
+            # Every account asked was refused on the feed while the key's user is part of it, and none opened lately:
+            # Salesflare has the feed off for the whole team. From here one account is asked, now and then (feed_off_wait).
             state['feed_off'] = {'since': stamp.isoformat(), 'checked': stamp.isoformat(), 'warned': stamp.isoformat()}
             LOG.warning('salesflare feed off for team account=%s accounts=%d: one account is re-checked every %d min for a day, '
                         'then every %d min', account['id'], window['accounts'],

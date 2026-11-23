@@ -156,7 +156,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
                 db.execute('INSERT INTO checkpoints(account_id,state) VALUES(?,?)',
                            (account['id'], json.dumps({'provider': account.get('provider'), 'replies': False, 'writes': ['create']})))
             else:
-                # The CRM's last round of accounts, as sync_salesflare leaves it: its card counts the accounts it read
+                # The CRM's last round of accounts, as sync_salesflare leaves it: with no dates seen, its card counts its reads
                 crm = {'mode': 'incremental', 'watermark': stamp(3, base), 'inaccessible_accounts': [9001],
                        'last_round': {'at': stamp(3, base), 'accounts': 18, 'read': 17, 'no_access': 1, 'refused': 1, 'set_aside': 0}}
                 db.execute('INSERT INTO checkpoints(account_id,state,last_success,last_sync_signals) VALUES(?,?,?,?)',

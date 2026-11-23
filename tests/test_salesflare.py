@@ -704,6 +704,172 @@ class SalesflareConnector(unittest.TestCase):
         self.run_to_completion(mixed)
         self.assertNotIn('feed_off', self.store.checkpoint('work-crm'))
 
+    def refuses(self, crm, *closed, status=403):
+        """crm, with the feed of these accounts refused though the key's user is part of them (not about the team)."""
+        answers = crm.get
+
+        def get(path, params=None):
+            if path.endswith('/feed') and int(path.split('/')[2]) in closed:
+                crm.calls.append((path, dict(params or {})))
+                raise a.SourceError('salesflare', status, route='/accounts/{id}/feed')
+            return answers(path, params)
+        crm.get = get
+        return crm
+
+    def more_accounts(self, crm, count, first=1000):
+        for n in range(count):
+            crm.accounts[first + n] = {'id': first + n, 'name': f'Co {n}', 'domain': f'co{n}.example',
+                                       'last_email_date': iso(1 + n / 100), 'last_meeting_date': None, 'customers': []}
+        return range(first, first + count)
+
+    def test_a_round_of_one_refused_account_is_not_a_key_that_opens_none(self):
+        # What the card showed: a lean round of one account, refused, then a full round that opens 19 of its first 20
+        state = {'watermark': iso(1), 'inaccessible_accounts': [999], 'seen': {'last_email_date': {str(n): iso(1) for n in range(19)}},
+                 'last_round': {'at': iso(1), 'accounts': 1, 'read': 0, 'no_access': 1, 'refused': 1, 'set_aside': 0},
+                 'window': {'accounts': 276, 'pending': list(range(256)), 'until': iso(0), 'full': True, 'read': 19,
+                            'no_access': [999], 'refused': 1}}
+        view = a.salesflare_progress(ACCOUNT, state)
+        self.assertEqual((view['no_access_all'], view['feed_off'], view['no_access'], view['accounts_read']), (False, False, 1, 19))
+        # Between the rounds too, and while the next one has opened nothing yet: what opened lately proves the key
+        self.assertFalse(a.salesflare_progress(ACCOUNT, {**state, 'window': None})['no_access_all'])
+        unread = {**state['window'], 'read': 0, 'no_access': list(range(12)), 'pending': list(range(264))}
+        self.assertFalse(a.salesflare_progress(ACCOUNT, {**state, 'window': unread})['no_access_all'])
+        # Nothing ever opened: it stays a key that opens none, until this round opens one
+        never = {**state, 'seen': {}}
+        self.assertTrue(a.salesflare_progress(ACCOUNT, {**never, 'window': None})['no_access_all'])
+        self.assertTrue(a.salesflare_progress(ACCOUNT, {**never, 'window': unread})['no_access_all'])
+        self.assertFalse(a.salesflare_progress(ACCOUNT, never)['no_access_all'])
+
+    def test_a_refused_account_asked_again_on_its_own_changes_nothing(self):
+        # A refused account keeps its place in the list, so the next round is that one account: refused again
+        for crm in (FakeCRM(forbidden={20}), self.refuses(self.team_off(off=False), 20), self.refuses(FakeCRM(), 20, status=404)):
+            self.store.commit_page('work-crm', {}, [], record_sync=False)
+            self.run_to_completion(crm)
+            for _ in range(3):
+                crm.calls.clear()
+                with self.assertLogs(a.LOG, 'INFO') as logged:
+                    self.run_to_completion(crm)
+                self.assertEqual(set(self.feeds_asked(crm)), {'/accounts/20/feed'})  # at the same pace, never the whole week
+                self.assertNotIn('opened no account', ' '.join(logged.output))
+                self.assertNotIn('feed off', ' '.join(logged.output))
+                state = self.store.checkpoint('work-crm')
+                self.assertNotIn('feed_off', state)
+                view = a.salesflare_progress(ACCOUNT, state)
+                self.assertEqual((view['no_access_all'], view['feed_off'], view['no_access'], view['accounts_read']), (False, False, 1, 1))
+
+    def test_many_accounts_without_access_stay_without_access(self):
+        crm = FakeCRM()
+        crm.forbidden = set(self.more_accounts(crm, 12))
+        self.run_to_completion(crm)
+        self.run_to_completion(crm)  # the 12 are asked again, and only they
+        state = self.store.checkpoint('work-crm')
+        self.assertEqual((state['last_round']['accounts'], state['last_round']['read']), (12, 0))
+        view = a.salesflare_progress(ACCOUNT, state)
+        self.assertEqual((view['no_access_all'], view['no_access'], view['accounts_read']), (False, 12, 2))
+
+    def test_without_access_outlives_a_round_that_did_not_ask_them(self):
+        crm = FakeCRM(forbidden={20})
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        state['marks'] = {field: {'at': iso(1.5), 'id': None} for field in state['marks']}  # Globex dropped below the list
+        self.store.commit_page('work-crm', state, [], record_sync=False)
+        crm.accounts[10]['last_email_date'] = iso(0)
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        self.assertEqual(state['last_round']['no_access'], 0)
+        self.assertEqual(a.salesflare_progress(ACCOUNT, state)['no_access'], 1)
+
+    def test_a_full_round_that_opens_nothing_says_so_whatever_opened_before(self):
+        for crm, feed_off in ((FakeCRM(), False), (self.team_off(off=False), True)):
+            self.store.commit_page('work-crm', {}, [], record_sync=False)
+            self.run_to_completion(crm)
+            crm.forbidden, crm.off = ({10, 20}, True) if not feed_off else (set(), True)
+            self.store.commit_page('work-crm', {**self.store.checkpoint('work-crm'), 'next_full': 0}, [], record_sync=False)
+            with self.assertLogs(a.LOG, 'WARNING') as logged:
+                self.run_to_completion(crm)
+            self.assertIn('salesflare round opened no account', ' '.join(logged.output))
+            view = a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))
+            self.assertEqual((view['no_access_all'], view['feed_off']), (not feed_off, feed_off))
+            if not feed_off:
+                self.run_to_completion(crm)  # and the small rounds after it keep saying so
+                self.assertTrue(a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))['no_access_all'])
+
+    def test_a_key_that_stops_opening_accounts_is_seen_before_the_weekly_round(self):
+        crm = FakeCRM()
+        ids = self.more_accounts(crm, 12)
+        self.run_to_completion(crm)
+        shut = list(ids)[:9]
+        crm.forbidden = set(ids) | {10, 20}
+        for n, crm_id in enumerate(ids):  # one changed account a round
+            crm.accounts[crm_id]['last_email_date'] = iso(0.5 - n / 100)
+            self.run_to_completion(crm)
+            view = a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))
+            self.assertEqual(view['no_access_all'], n >= 9, n)  # ten that opened before, none opened in between
+        crm.forbidden = set(shut)
+        self.run_to_completion(crm)
+        view = a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))
+        self.assertEqual((view['no_access_all'], view['no_access']), (False, 9))  # one opened again: the key works
+
+    def test_a_team_feed_switched_off_is_seen_before_the_weekly_round(self):
+        crm = self.team_off(off=False)
+        ids = self.more_accounts(crm, 10)
+        self.run_to_completion(crm)
+        crm.off = True
+        for n, crm_id in enumerate(ids):
+            crm.accounts[crm_id]['last_email_date'] = iso(0.5 - n / 100)
+            self.run_to_completion(crm)
+        self.assertTrue(a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))['feed_off'])
+
+    def test_a_feed_off_saved_for_one_refused_account_comes_right_by_itself(self):
+        # What an earlier version left: one account's round switched the feed off, while others were read before it
+        crm = self.refuses(self.team_off(off=False), 20)
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        state.pop('opened', None)  # a state from before this was kept
+        state['feed_off'] = {field: a.now() for field in ('since', 'checked', 'warned')}
+        state['last_round'] = {'at': iso(0), 'accounts': 1, 'read': 0, 'no_access': 1, 'refused': 1, 'set_aside': 0}
+        self.store.commit_page('work-crm', state, [], record_sync=False)
+        view = a.salesflare_progress(ACCOUNT, state)
+        self.assertEqual((view['feed_off'], view['no_access_all']), (False, False))
+        crm.accounts[10]['last_email_date'] = iso(0)
+        crm.calls.clear()
+        self.run_to_completion(crm)  # right away, not at a re-check
+        self.assertIn('/accounts/10/feed', self.feeds_asked(crm))
+        state = self.store.checkpoint('work-crm')
+        self.assertNotIn('feed_off', state)
+        # One that was real: the round it starts asks them all, and the card says it again
+        crm.off = True
+        self.store.commit_page('work-crm', {**state, 'feed_off': {field: a.now() for field in ('since', 'checked', 'warned')}}, [], record_sync=False)
+        self.run_to_completion(crm)
+        self.assertTrue(a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))['feed_off'])
+        crm.calls.clear()
+        self.run_to_completion(crm)
+        self.assertEqual(crm.calls, [])
+
+    def test_a_changed_key_starts_afresh(self):
+        crm = FakeCRM()
+        crm.key_fingerprint = lambda: 'a' * 64
+        self.run_to_completion(crm)
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        self.assertGreater(state['next_full'], 0)
+        self.assertNotIn('a' * 9, a.json.dumps(state))  # a mark, not the fingerprint
+        crm.key_fingerprint, crm.forbidden = (lambda: 'b' * 64), {10, 20}  # another key, which opens none
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        self.assertTrue(a.salesflare_progress(ACCOUNT, state)['no_access_all'])
+        crm.key_fingerprint, crm.forbidden = (lambda: 'c' * 64), set()  # and one that opens them
+        a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        self.assertFalse(a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))['no_access_all'])
+        # A state from before the mark: the key it is first seen with is the one it has
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        state.pop('key_mark')
+        self.store.commit_page('work-crm', state, [], record_sync=False)
+        crm.calls.clear()
+        self.run_to_completion(crm)
+        self.assertEqual(self.feeds_asked(crm), [])
+
     def test_one_read_after_a_team_refusal_clears_it_and_the_round_goes_on(self):
         crm = self.team_off()
         self.run_to_completion(crm)
@@ -759,7 +925,7 @@ class SalesflareConnector(unittest.TestCase):
             return sf.refusal_message(sf.urllib.error.HTTPError('https://crm.example/x', 403, 'Forbidden', {}, io.BytesIO(body)))
         self.assertEqual(refused(b'{"statusCode":403,"error":"Forbidden","message":"Forbidden"}'), 'Forbidden')
         self.assertEqual(refused(b'{"message":"User 42 is not part of account"}'), 'other')
-        self.assertEqual(refused(b'{"message":"kris@example.com"}'), 'other')
+        self.assertEqual(refused(b'{"message":"someone@example.com"}'), 'other')
         self.assertEqual(refused(b'{}'), 'none')
         self.assertEqual(refused(b'<html>'), 'unreadable')
         source = sf.Salesflare({}, {**ACCOUNT, 'credential': 'salesflare', 'credential_variable': 'K'})
