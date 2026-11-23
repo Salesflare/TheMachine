@@ -65,6 +65,8 @@ try{
   const context=await browser.newContext({viewport:{width,height},colorScheme:scheme}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
+  // The export is asked after every two seconds: the page's clock moves on to the next time instead of waiting it out
+  await page.clock.install();const poll=()=>page.clock.runFor(2000);
   // The list: one row per account, the account named where a site has several.
   await page.goto(base+'/#connections=signins');await page.locator('#saved-logins .saved-login').nth(3).waitFor();
   // one row per site; its accounts underneath; a short host is never cut short
@@ -114,22 +116,22 @@ try{
   // LastPass: its export page opens in the Machine's browser, one line says what is left for the owner while the
   // Machine clicks on to the export, and the file it downloads comes back as the review
   exportStep='signin';
-  await page.locator('[data-li-go="lastpass"]').click();
+  await page.locator('[data-li-go="lastpass"]').click();await page.locator('#login-import .li-wait').waitFor();await poll();
   await page.locator('#login-import .li-wait.li-you',{hasText:'Sign in to LastPass.'}).waitFor();
   assert.deepEqual(calls.find(([a,x])=>a==='browser_login_import'&&x.do==='export')[1],{do:'export',manager:'lastpass'});
   assert.ok(await page.locator('#login-import .li-manual').isHidden(),'no steps to do by hand while the Machine clicks');
   assert.equal(await page.locator('#login-import [data-li-browser].primary').count(),1,'no live view here: Open the browser leads');
   await clean(page,'export');await shot(page,'import-export',width,scheme);
-  exportStep='working';await page.locator('#login-import .li-wait:not(.li-you)',{hasText:'Going to the export…'}).waitFor();
+  exportStep='working';await poll();await page.locator('#login-import .li-wait:not(.li-you)',{hasText:'Going to the export…'}).waitFor();
   // the export started and LastPass waits for its email: confirm there, then Export once more
-  exportStep='email';await page.locator('#login-import .li-wait.li-you',{hasText:'If LastPass emails you, confirm there and export again.'}).waitFor();
-  exportStep='password';await page.locator('#login-import .li-wait.li-you',{hasText:'Type your master password to export.'}).waitFor();
+  exportStep='email';await poll();await page.locator('#login-import .li-wait.li-you',{hasText:'If LastPass emails you, confirm there and export again.'}).waitFor();
+  exportStep='password';await poll();await page.locator('#login-import .li-wait.li-you',{hasText:'Type your master password to export.'}).waitFor();
   await clean(page,'export password');await shot(page,'import-export-password',width,scheme);
   // the page wasn't as expected: the steps by hand, with a note
-  exportStep='manual';await page.locator('#login-import .li-manual:not([hidden])').waitFor();
+  exportStep='manual';await poll();await page.locator('#login-import .li-manual:not([hidden])').waitFor();
   assert.match(await page.locator('#login-import').innerText(),/Waiting for the export file…[\s\S]*I couldn’t find the next step\. Follow these steps:[\s\S]*Open Advanced Options, then Export\./);
   await clean(page,'export manual');await shot(page,'import-export-manual',width,scheme);
-  exportReady=true;
+  exportReady=true;await poll();
   await page.locator('#login-import [data-li-key]').nth(2).waitFor();
   assert.match(await page.locator('#login-import .li-lead').innerText(),/3 sign-ins found in LastPass\./);
   await page.locator('#login-import [data-li-back]').click();
@@ -141,7 +143,7 @@ try{
   await page.locator('[data-li-go="bitwarden"]').click();
   await page.locator('#login-import .li-wait',{hasText:'Opening Bitwarden…'}).waitFor();
   assert.equal(await page.locator('#login-import .li-view').count(),0,'no view before the tab is open');
-  exportStep='password';await page.locator('#login-import .li-view iframe').waitFor();
+  exportStep='password';await poll();await page.locator('#login-import .li-view iframe').waitFor();
   assert.ok(await page.locator('#login-import [data-li-browser]').isHidden(),'the view is there: no Open the browser');
   assert.equal(await page.evaluate(()=>document.getElementById('bp-frame').getAttribute('src')),'about:blank','the pane lets go of the screen');
   await page.frameLocator('#login-import .li-view iframe').locator('body').waitFor();

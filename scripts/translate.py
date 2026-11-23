@@ -550,12 +550,17 @@ def help_todo(langs, folder=HELP):
     return {lang: [(p, s) for p in articles(folder) for s in [help_state(lang, p, folder)] if s != 'current'] for lang in langs}
 
 
-def app_labels(lang, body):
+def label_catalog(lang):
+    """lang's catalog and its ambiguous labels: what app_labels reads, once for many articles."""
+    catalog = load(lang)
+    return catalog, {k[:k.index(' (')] for k in catalog if k.endswith(')') and ' (' in k}
+
+
+def app_labels(lang, body, known=None):
     """{english label: the app's translation} for every **label** in the article that lang's catalog has, so the
     article names a button the way the app shows it. A label the catalog also has with a context ("Start" and
-    "Start (a button)") is left to the model: the bare key may be another meaning (a time field's label)."""
-    catalog = load(lang)
-    ambiguous = {k[:k.index(' (')] for k in catalog if k.endswith(')') and ' (' in k}
+    "Start (a button)") is left to the model: the bare key may be another meaning (a time field's label). known: label_catalog(lang)."""
+    catalog, ambiguous = known or label_catalog(lang)
     out = {}
     for label in BOLD.findall(body):
         bare = label.strip().rstrip('.:')
