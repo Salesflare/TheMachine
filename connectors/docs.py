@@ -20,7 +20,8 @@ Outlook mail and calendar connectors never use:
 
 Abilities (abilities.py): Brings in signals is the sync above. Can do things is the rest: find a doc and read its text
 when a to-do needs it (find, read_text), and the writes below. Without Brings in signals it is action-only: nothing is
-synced, and refresh only checks what it may do. Google, without drive.readonly (a restricted scope), works with two
+synced, and refresh only checks what it may do. Microsoft finds files of any kind in the owner's OneDrive, and reads the
+text of Word, PDF and plain text files; what it finds is never a doc to edit (doc_write_files). Google, without drive.readonly (a restricted scope), works with two
 narrow ones instead: documents.readonly reads a Google Doc by its id (a link in a to-do's messages, or one found), and
 drive.file makes a new doc and finds, syncs and reads the docs this app made. Gmail's and gog's scopes never change.
 
@@ -79,7 +80,11 @@ DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.docu
 DOC_MIME = 'application/vnd.google-apps.document'
 EXPORT = {DOC_MIME: 'text/plain', 'application/vnd.google-apps.presentation': 'text/plain',
           'application/vnd.google-apps.spreadsheet': 'text/csv'}
+EXPORTED = {DOC_MIME: 'Google Doc', 'application/vnd.google-apps.presentation': 'Google Slides',
+            'application/vnd.google-apps.spreadsheet': 'Google Sheet'}
 WORD = ('.docx', '.docm')
+PLAIN = ('.txt', '.md', '.csv')
+MAX_PDF = 10_000_000  # a PDF's text is read from at most this much (chat_files.FILE_BYTES, the same reader)
 LOOKBACK_DAYS = 30   # docs changed this recently are checked for new comments
 OVERLAP_HOURS = 2    # each run rereads comments this far back, so one made during the last run is not missed
 MAX_FILES = 40       # docs checked per run, most recently changed first
@@ -280,7 +285,8 @@ class Google:
         wide = self.read_scope() == READ_SCOPE
         query = f"trashed = false and {'fullText' if wide else 'name'} contains '{quoted}'"
         found = self.files(query, '' if wide else 'modifiedTime desc', MAX_FOUND, 'id,name,mimeType,webViewLink,modifiedTime')
-        return [{'file_id': f['id'], 'title': f.get('name') or '', 'url': f.get('webViewLink'), 'at': f.get('modifiedTime')}
+        return [{'file_id': f['id'], 'title': f.get('name') or '', 'type': EXPORTED[f['mimeType']], 'url': f.get('webViewLink'),
+                 'at': f.get('modifiedTime')}
                 for f in found if f.get('mimeType') in EXPORT]
 
 
@@ -353,26 +359,42 @@ class Microsoft:
         return data
 
     def find(self, words):
-        """Word, text and Markdown files in the owner's OneDrive that match these words (Graph's drive search)."""
-        page = self.call('drive.search', {'q': words, '$top': 50})
+        """Files of any kind in the owner's OneDrive that match these words (Graph's drive search), folders aside. `text`
+        reads some of them; the rest are a name and a link."""
+        page = self.call('drive.search', {'q': words.replace("'", "''"), '$top': 50})  # a quote in an OData string is doubled
         out = []
         for item in page.get('value') or []:
             drive = str((item.get('parentReference') or {}).get('driveId') or '') if isinstance(item, dict) else ''
-            if drive and item.get('id') and str(item.get('name') or '').lower().endswith(WORD + ('.txt', '.md')):
-                out.append({'file_id': drive + '!' + str(item['id']), 'title': item.get('name') or '', 'url': item.get('webUrl'),
-                            'at': item.get('lastModifiedDateTime')})
+            if drive and item.get('id') and 'folder' not in item and 'deleted' not in item:
+                name = ' '.join(str(item.get('name') or '').split())[:200]
+                out.append({'file_id': drive + '!' + str(item['id']), 'title': name, 'type': file_type(name, item.get('file')),
+                            'url': item.get('webUrl'), 'at': item.get('lastModifiedDateTime')})
         return out[:MAX_FOUND]
 
     def text(self, file_id):
         drive, _, item_id = str(file_id).partition('!')
         item = self.item(drive, item_id)
-        name = str(item.get('name') or '')
+        name = str(item.get('name') or '').lower()
+        if not name.endswith(WORD + PLAIN + ('.pdf',)):
+            raise self.helpers.SourceError('docs_text_unsupported')
+        if name.endswith('.pdf') and int(item.get('size') or 0) > MAX_PDF:
+            raise self.helpers.SourceError('docs_file_too_large')
         data = self.download(item)
-        if name.lower().endswith(WORD):
-            return item, word_text(data)
-        if name.lower().endswith(('.txt', '.md', '.csv')):
+        if name.endswith(WORD):
+            return item, word_text(data)  # the document's text alone: a .docm's macros are never opened
+        if name.endswith(PLAIN):
             return item, data.decode('utf-8', 'replace')
-        raise self.helpers.SourceError('docs_text_unsupported')
+        import file_text  # noqa: PLC0415
+        text = file_text.apart(data, MAX_TEXT + 1) if len(data) <= MAX_PDF else ''
+        if not text:  # scanned, encrypted, or not really a PDF
+            raise self.helpers.SourceError('docs_text_unsupported')
+        return item, text
+
+
+def file_type(name, file=None):
+    """A found file's kind, for who reads the list: its extension, or its mime type."""
+    extension = re.search(r'\.([A-Za-z0-9]{1,8})$', name)
+    return extension[1].lower() if extension else str((file or {}).get('mimeType') or 'file')[:80]
 
 
 def source_for(config, account, helpers):

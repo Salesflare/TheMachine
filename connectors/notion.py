@@ -439,6 +439,8 @@ class Source:
                 said = rich_plain(body.get('rich_text') or body.get('text'))
                 if b.get('type') == 'child_page':
                     said = body.get('title') or ''
+                elif b.get('type') in ('file', 'pdf'):  # a file on the page: its name (Notion's own link to it runs out in an hour)
+                    said = '[file] ' + (oneline(body.get('name'), 200) or oneline(rich_plain(body.get('caption')), 200))
                 if said.strip():
                     lines.append(('  ' * depth) + said)
                 if b.get('has_children') and depth < 1 and b.get('type') not in ('child_page', 'child_database'):

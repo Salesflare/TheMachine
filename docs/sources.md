@@ -304,6 +304,7 @@ Comments, replies and @mentions on the owner's docs (`docs.comment`, `docs.menti
 
 - A to-do's preparation can read one doc's text with `assistant doc --event <id> --job <job>`, only while that job runs and only for the task's own doc events.
 - It can also find docs with `assistant doc-find '<words>' --job <job>` (Docs connections of the to-do's area) and read one by `--file <file id>`: one that search found for this run, or a Google Doc linked in the task's messages.
+- In OneDrive, `doc-find` finds files of any kind by name, type and link (the owner's own OneDrive, not SharePoint sites or files shared with them). It reads the text of Word, PDF and plain text files. A PDF is read in a process of its own with a time and memory limit, up to 10 MB; scanned and protected ones give no text. Found files are never docs to edit.
 - All of this, and the writes below, only while the connection's **Can do things** is on ([abilities](#abilities)).
 
 ### Abilities

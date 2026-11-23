@@ -285,7 +285,7 @@ def cmd_doc_find(config, args):
     if args.json:
         return out_json(result)
     for d in result.get('docs') or []:
-        print(f"{d.get('title') or 'Untitled document'}  (file {d['file_id']}, {d['account_id']})" + (f"  {d['url']}" if d.get('url') else ''))
+        print(f"{d.get('title') or 'Untitled document'}  ({d['type'] + ', ' if d.get('type') else ''}file {d['file_id']}, {d['account_id']})" + (f"  {d['url']}" if d.get('url') else ''))
     if not result.get('docs'):
         print('No docs found.')
     for error in result.get('errors') or []:
@@ -1097,7 +1097,7 @@ def parser():
     c.add_argument('--event', type=int, help="the doc event's id (a comment, mention, suggestion or share)")
     c.add_argument('--file', help="a doc's file id: one linked in the task's messages, or one doc-find gave this run")
     c.add_argument('--job', required=True, help='the preparation job id')
-    c = add('doc-find', "Find docs (Google Docs or Word) that match some words, read-only, for a preparation", cmd_doc_find)
+    c = add('doc-find', "Find docs and files that match some words, read-only, for a preparation", cmd_doc_find)
     c.add_argument('words', help='the words to look for (a title, a name, a phrase)')
     c.add_argument('--job', required=True, help='the preparation job id')
     c = add('doc-draft', 'Check a new doc or an edit for the owner to approve (never writes): the doc as it is now, or the draft',

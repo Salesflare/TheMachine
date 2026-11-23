@@ -7,10 +7,13 @@ can read it with their own tools. Plain text files are read as UTF-8. Nothing le
 the bytes it already keeps.
 
 Bounded on purpose, since a file comes from anywhere: at most INFLATE_BYTES inflated in all (STREAM_BYTES per
-stream), MAX_OBJECTS objects, and at most `limit` characters out. A file it can't read gives ''."""
+stream), MAX_OBJECTS objects, and at most `limit` characters out. A file it can't read gives ''. A file someone else
+may have put there (connectors/docs.py) is read `apart`: in a process of its own, with a time and memory limit."""
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
 import zlib
 
 INFLATE_BYTES = 24 * 1024 * 1024
@@ -18,6 +21,8 @@ STREAM_BYTES = 8 * 1024 * 1024
 MAX_OBJECTS = 20000
 MAX_TOKENS = 3_000_000
 TEXT_LIMIT = 4000
+APART_SECONDS = 10
+APART_MEMORY = 1024 * 1024 * 1024
 TEXT_TYPES = ('text/', 'application/json', 'message/rfc822')
 
 _OBJ = re.compile(rb'(?<![0-9])(\d{1,10})[ \t\r\n\f\x00]{1,8}(\d{1,5})[ \t\r\n\f\x00]{1,8}obj\b')  # bounded: no slow scan of odd bytes
@@ -39,6 +44,16 @@ def excerpt(data, mime, limit=TEXT_LIMIT):
     except Exception:  # a broken file is not an error for the to-do: it just has no text to read
         return ''
     return tidy(text, limit)
+
+
+def apart(data, limit=TEXT_LIMIT):
+    """excerpt of a PDF, read in a process of its own: one made to keep the reader busy or fill memory ends there, and
+    gives '' like any file without text."""
+    try:
+        done = subprocess.run([sys.executable, '-I', __file__, str(limit)], input=data, capture_output=True, timeout=APART_SECONDS)
+    except (subprocess.TimeoutExpired, OSError):
+        return ''
+    return done.stdout.decode('utf-8', 'replace') if done.returncode == 0 else ''
 
 
 def tidy(text, limit=TEXT_LIMIT):
@@ -97,6 +112,7 @@ def _stream(dictionary, raw, budget):
 def _objects(data, budget):
     """{object number: (dictionary bytes, decoded stream or None)}; objects in object streams too."""
     objects, packed = {}, []
+    room = 8 * len(data) + STREAM_BYTES  # bodies only overlap in odd files: all of them together, a few times the file at most
     for count, m in enumerate(_OBJ.finditer(data)):
         if count >= MAX_OBJECTS:
             break
@@ -104,6 +120,9 @@ def _objects(data, budget):
         end = data.find(b'endobj', start)
         if end < 0:
             end = len(data)
+        room -= end - start
+        if room < 0:
+            break
         body = data[start:end]
         s = re.search(rb'\bstream(?:\r\n|\n|\r)', body)
         number = int(m[1])
@@ -407,3 +426,13 @@ def pdf_text(data, limit=TEXT_LIMIT * 2):
         if not going:
             break
     return ''.join(out)
+
+
+if __name__ == '__main__':  # apart(): the PDF on stdin, its text on stdout
+    try:
+        import resource
+        resource.setrlimit(resource.RLIMIT_AS, (APART_MEMORY, APART_MEMORY))
+        resource.setrlimit(resource.RLIMIT_CPU, (APART_SECONDS, APART_SECONDS))
+    except (ImportError, OSError, ValueError):  # Windows has none of this: the time limit alone
+        pass
+    sys.stdout.buffer.write(excerpt(sys.stdin.buffer.read(), 'application/pdf', int(sys.argv[1])).encode())

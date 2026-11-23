@@ -21,7 +21,7 @@ To use it only for doing things, turn off **Brings in signals** under **Details*
 
 ## What it can do
 
-When a to-do or a meeting needs a page's text, your Machine reads that one page, only while it works on it.
+When a to-do or a meeting needs a page's text, your Machine reads that one page, only while it works on it. Of a file on that page it sees only the name. It finds pages by their title, not the files on them.
 
 Each of these waits for your OK on its to-do:
 
