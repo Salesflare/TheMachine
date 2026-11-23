@@ -156,7 +156,7 @@ class Step(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.app = object.__new__(machine_main.App); self.app.store = self.store
-        self.config = self.app.config = {'accounts': [{'id': 'home', 'boundary': 'personal:me'}, {'id': 'office', 'boundary': 'work:Acme'}], 'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/'}
+        self.config = self.app.config = {'openclaw_workspace': self.temp.name, 'accounts': [{'id': 'home', 'boundary': 'personal:me'}, {'id': 'office', 'boundary': 'work:Acme'}], 'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/'}
         timeutil.set_work_hours({'start': '08:00', 'end': '18:00'}); self.addCleanup(timeutil.set_work_hours, None)
         self.sent = []
         self.sender = lambda request: self.sent.append(request) or {'results': [{'endpoint': SUB['endpoint'], 'status': 201}]}

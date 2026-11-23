@@ -35,7 +35,7 @@ class StillNeeded(unittest.TestCase):
             p.start()
             self.addCleanup(p.stop)
         self.config = {'accounts': [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com', 'boundary': 'work:Example'}],
-                       'database': str(Path(self.tmp.name) / 'events.sqlite')}
+                       'openclaw_workspace': self.tmp.name, 'database': str(Path(self.tmp.name) / 'events.sqlite')}
         self.store = machine_main.Store(self.config['database'])
         self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, self.config
