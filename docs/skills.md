@@ -107,6 +107,8 @@ follow it. It shows in Settings > Skills with **Learned from a task**.
   separate model turn that never saw the task reads every line by what it means and drops what came from a page, email
   or file instead of from the task, and anything that would send, pay or approve by itself. It may reword a line, never
   add one. A task prepared ahead, one that didn't get done, or one that still waits for your answer teaches nothing.
+- **A restart loses none.** Until that check, the cleaned procedure waits sealed on your Machine, at most 7 days, the
+  latest one per to-do. It goes with the to-do or its account, and deleting a person clears every one that waits.
 - **On by itself, no tap.** It comes only from your own task, so it is on without Approve, and it adds no to-do or
   setting. It stays on your Machine unless you **Share** it, like any skill.
 - **Guidance, never permission.** Its SKILL.md says so: your own rules, notes and skills come first, and sending, paying

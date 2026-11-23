@@ -8,16 +8,21 @@ turn it off and the next good run replaces it. All local, made-up data; the chec
 import datetime as dt
 import itertools
 import json
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import graph
+import help_chat
 import machine.main as machine_main
 import learned_skills as p
 import memory_use
+import retention
 import skills
 import timeutil
+import work_removal
 from machine.app import retained_facts
 
 ACCOUNTS = [{'id': 'w', 'boundary': 'work:acme.example', 'email': 'owner@acme.example'}]
@@ -216,8 +221,148 @@ class LearnedSkills(unittest.TestCase):
         self.prepare(other, self.start_run(other, 'job2'), procedure={**PROCEDURE, 'steps': ['Open Statements instead.']})
         for _ in range(p.TRIES):
             self.app.learned_run(ask=lambda page: 'no idea')
-        self.assertEqual(self.app.learned_drafts, [])
+        self.assertEqual(self.drafts(), [])
         self.assertNotIn('Open Statements instead', self.learned()[0]['body'])
+
+    # What waits for the check
+
+    def drafts(self):
+        with self.store.connect() as db:
+            return [dict(r) for r in db.execute('SELECT * FROM learned_drafts ORDER BY at')]
+
+    def hand_in(self, sid=None, job='d1', **more):
+        self.prepare(sid or self.first, self.start_run(sid or self.first, job), procedure={**PROCEDURE, **more})
+
+    def restart(self):
+        app = object.__new__(machine_main.App); app.store, app.config = self.store, self.app.config
+        app.skills = skills.Skills(self.store.connect, self.workspace)
+        self.app = app
+
+    def test_a_restart_before_the_check_loses_nothing(self):
+        self.hand_in()
+        self.restart()
+        with self.store.connect() as db:
+            self.assertTrue(p.waiting(db))
+        self.assertEqual(len(self.app.learned_run(ask=judge)['written']), 1)
+        self.assertEqual((len(self.learned()), self.drafts(), self.app.learned_run(ask=judge)), (1, [], {}))
+
+    def test_a_restart_during_the_check_checks_it_again_and_writes_one_skill(self):
+        class Killed(BaseException):
+            pass
+
+        def die(page):
+            raise Killed
+        self.hand_in()
+        with self.assertRaises(Killed):
+            self.app.learned_run(ask=die)
+        self.restart()
+        self.assertEqual(self.app.learned_run(ask=judge), {})  # still that turn's, as far as anyone knows
+        with patch.object(p, 'LEASE', 0):
+            self.assertEqual(len(self.app.learned_run(ask=judge)['written']), 1)
+        self.assertEqual((len(self.learned()), self.drafts()), (1, []))
+
+    def test_a_turn_that_keeps_dying_gives_up(self):
+        class Killed(BaseException):
+            pass
+
+        def die(page):
+            raise Killed
+        self.hand_in()
+        with patch.object(p, 'LEASE', 0):
+            for _ in range(p.TRIES):
+                with self.assertRaises(Killed):
+                    self.app.learned_run(ask=die)
+            self.assertEqual((self.app.learned_run(ask=judge), self.drafts()), ({}, []))
+
+    def test_two_turns_never_write_two_skills(self):
+        self.hand_in()
+
+        def other(page):  # a second turn takes it over while this one is out
+            with patch.object(p, 'LEASE', -1):
+                self.assertEqual(len(self.app.learned_run(ask=judge)['written']), 1)
+            return judge(page)
+        self.assertEqual(self.app.learned_run(ask=other)['written'], [])
+        self.assertEqual([r['version'] for r in self.learned()], [1])
+
+    def test_the_skill_and_its_draft_go_in_one_transaction(self):
+        class Killed(BaseException):
+            pass
+
+        def die(*args):
+            raise Killed
+        self.hand_in()
+        with patch.object(skills.Skills, '_slug', die), self.assertRaises(Killed):  # it dies while it writes
+            self.app.learned_run(ask=judge)
+        self.assertEqual((self.learned(), len(self.drafts())), ([], 1))
+        with patch.object(p, 'LEASE', 0):
+            self.assertEqual(len(self.app.learned_run(ask=judge)['written']), 1)
+        self.assertEqual((len(self.learned()), self.drafts()), (1, []))
+
+    def test_a_newer_procedure_for_the_to_do_takes_the_place_of_the_one_being_checked(self):
+        def newer(page):
+            self.hand_in(job='d2', steps=['Open Billing, then Statements.'])
+            return judge(page, drop=())
+        self.hand_in()
+        self.assertEqual(self.app.learned_run(ask=newer)['written'], [])
+        self.app.learned_run(ask=lambda page: judge(page, drop=()))
+        [row] = self.learned()
+        self.assertIn('Statements', row['body'])
+
+    def test_a_model_that_was_not_there_costs_no_try(self):
+        self.hand_in()
+        for _ in range(p.TRIES + 1):
+            def away(page):
+                raise help_chat.Unavailable('off')
+            self.assertEqual(self.app.learned_run(ask=away), {'error': 'unavailable'})
+        self.assertEqual([(d['tries'], d['claim']) for d in self.drafts()], [(0, None)])
+        self.assertEqual(len(self.app.learned_run(ask=judge)['written']), 1)
+
+    def test_what_waits_is_scrubbed_bounded_and_short_lived(self):
+        self.attach(self.first, 1, 'Robin Vale <robin@supplier.example>', 'Invoice', 'Here it is')
+        self.hand_in()
+        [d] = self.drafts()
+        for word in ('Robin', 'Elm Street', '1,240.50', '48213', 'abc'):
+            self.assertNotIn(word, d['data'])
+        for n in range(p.WAITING + 3):
+            self.hand_in(self.todo(), f'b{n}')
+        self.assertEqual(len(self.drafts()), p.WAITING)
+        later = dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=p.KEEP_DAYS, hours=1)
+        report = retention.run(self.store.connect, self.store.path, later, rotate=False)
+        self.assertEqual((report['learned_drafts'], self.drafts()), (p.WAITING, []))
+
+    def test_an_old_one_is_not_checked(self):
+        self.hand_in()
+        with self.store.connect() as db:
+            db.execute("UPDATE learned_drafts SET at='2026-01-01T00:00:00+00:00'")
+            self.assertFalse(p.waiting(db))
+        self.assertEqual((self.app.learned_run(ask=judge), self.drafts()), ({}, []))
+
+    def test_it_goes_with_its_account_and_when_a_person_is_deleted_also_during_the_check(self):
+        self.attach(self.first, 1, 'Robin Vale <robin@supplier.example>', 'Invoice', 'Here it is')
+        self.app.config['database'] = str(self.store.path)
+
+        def removed(page):
+            work_removal.purge(self.app.config, ['w'], self.store)
+            return judge(page)
+        self.hand_in()
+        self.assertEqual(self.app.learned_run(ask=removed)['written'], [])
+        self.assertEqual((self.drafts(), self.learned()), ([], []))
+        self.hand_in(self.todo(), 'p1')
+
+        def deleted(page):
+            with patch.object(graph, 'delete_person', lambda *a: {'needles': ['robin@supplier.example']}), patch.object(machine_main.App, 'graph_later', lambda s: None):
+                self.app.delete_person('email:robin@supplier.example', self.workspace)
+            return judge(page)
+        self.assertEqual(self.app.learned_run(ask=deleted)['written'], [])
+        self.assertEqual((self.drafts(), self.learned()), ([], []))
+
+    def test_it_is_sealed_where_messages_are(self):
+        self.store.message_protection(True)
+        self.hand_in()
+        self.assertIn('Billing', self.drafts()[0]['data'])  # the app reads it
+        with sqlite3.connect(self.store.path) as raw:
+            self.assertNotIn('Billing', str(raw.execute('SELECT data FROM learned_drafts').fetchone()[0]))
+        self.assertEqual(len(self.app.learned_run(ask=judge)['written']), 1)
 
     # How it turns out, each from what a run leaves: its recorded calls, its save, and what then happened to the to-do
 

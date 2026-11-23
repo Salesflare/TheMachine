@@ -26,6 +26,7 @@ import graph
 import graph_boards
 import handoff_mail
 import help_topics
+import learned_skills
 import learning_loop
 from machine import action_basis
 from machine.config import LOG
@@ -542,6 +543,7 @@ class StoreCore:
             mail_cleanup.ensure(db)  # a routine template's cleanup to-dos (mail_cleanup.py): new tables only
             reading_digest.ensure(db)  # the Daily digest template's to-dos and interests (reading_digest.py): new tables only
             memory_use.ensure(db)  # what prompts read of what was learned (memory_use.py): a new table, empty
+            learned_skills.ensure(db)  # what waits for a learned skill's check (learned_skills.py): a new table, empty
             note_pages.ensure(db)  # where trips and events are kept (note_pages.py): new tables only
             trip_notes.ensure(db)  # the bookings trips are built from (trip_notes.py): new tables only
             # The question(s) a note of the owner's answered (Store._decide): its own line in the chat, the run's question
