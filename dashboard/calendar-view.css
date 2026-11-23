@@ -97,11 +97,11 @@ body.m-cal #page-head{position:sticky;top:0;z-index:30;margin:-10px -10px 16px;p
 .cal-v-notes .cal-v-retry{min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 /*@eager*/
 .cal-v-notes textarea{display:block;width:100%;box-sizing:border-box;min-height:180px;max-height:50dvh;resize:vertical;padding:10px 12px;background:var(--sunken);border:1px solid var(--border);border-radius:10px;color:var(--text);font:.92rem/1.5 var(--sans)}
-.cal-v-error{margin:6px 0 0;color:var(--danger,#e5484d);font-size:.9rem}.cal-v-error:empty{display:none}
+.cal-v-error{margin:6px 0 0;color:var(--orange);font-size:.9rem}.cal-v-error:empty{display:none}
 .cal-v-nact{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.cal-v-nact :is(button,.cal-v-file){display:inline-flex;align-items:center;min-height:36px;margin:0;padding:0 14px;border:0;border-radius:10px;background:var(--tile);color:var(--text);font-size:.92rem;font-weight:600;cursor:pointer}
 .cal-v-notes p.cal-v-writing.busy::before{content:"";display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--mint);vertical-align:1px;animation:cal-writing 1.2s ease-in-out infinite}
 @keyframes cal-writing{50%{opacity:.25}}@media (prefers-reduced-motion:reduce){.cal-v-notes p.cal-v-writing.busy::before{animation:none}}
-.cal-v-nact .primary{background:var(--mint);color:var(--charcoal)}.cal-v-nact .sure{background:var(--danger,#e5484d);color:#fff}.cal-v-file input{display:none}
+.cal-v-nact .primary{background:var(--mint);color:var(--charcoal)}.cal-v-nact .sure{background:var(--orange);color:var(--charcoal)}.cal-v-file input{display:none}
 #cal-view .send-act{display:flex;margin-top:16px}#cal-view .send-act button{flex:1 1 0;min-height:46px;border:0;border-radius:11px;background:var(--tile);color:var(--text);font-size:15px;font-weight:600}
 #cal-dialog .snooze-heading{margin-bottom:12px}#cal-dialog h2{margin:0;font-size:1.2rem}
 #cal-dialog .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:var(--r-sm);background:transparent;color:var(--muted);font-size:20px;line-height:1}
@@ -109,10 +109,10 @@ body.m-cal #page-head{position:sticky;top:0;z-index:30;margin:-10px -10px 16px;p
 #cal-dialog :is(input,select,textarea){display:block;width:100%;margin-top:5px;box-sizing:border-box;background:var(--sunken);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.98rem}
 #cal-dialog .cal-f-check{display:flex;align-items:center;gap:8px;color:var(--text)}#cal-dialog .cal-f-check input{width:auto;margin:0}
 .cal-f-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 8px}.cal-f-row>label:first-child{grid-column:1/-1}.cal-f-row:has(.cal-f-until:not([hidden]))>label:first-child{grid-column:auto}
-#cal-dialog .fine{margin:0 0 6px;font-size:.85rem;color:var(--faint)}#cal-f-error{margin:0;color:var(--danger,#e5484d);font-size:.9rem}#cal-f-error:empty{display:none}
+#cal-dialog .fine{margin:0 0 6px;font-size:.85rem;color:var(--faint)}#cal-f-error{margin:0;color:var(--orange);font-size:.9rem}#cal-f-error:empty{display:none}
 #cal-dialog .send-act{display:flex;gap:6px;margin-top:12px}
 #cal-dialog .send-act button{flex:1 1 0;min-height:46px;padding:8px 6px;border:0;border-radius:11px;background:var(--tile);color:var(--text);font-size:15px;font-weight:600}
-#cal-dialog .send-act button.primary{background:var(--mint);color:var(--charcoal)}#cal-dialog .send-act button.sure{background:var(--danger,#e5484d);color:#fff}
+#cal-dialog .send-act button.primary{background:var(--mint);color:var(--charcoal)}#cal-dialog .send-act button.sure{background:var(--orange);color:var(--charcoal)}
 .cal-f-open{display:block;margin-top:12px;text-align:center;color:var(--c-text-2);font-size:.9rem}.cal-v-foot{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 20px;margin-top:12px}.cal-v-foot .cal-f-open{width:auto;margin:0}.cal-f-notes{width:100%;min-height:0;padding:0;border:0;background:none;text-decoration:underline;cursor:pointer}
 /* Where and Invite: suggestions under the field (the owner's own first), and who gets an invite as chips */
 .cal-sug{margin:-4px 0 10px;padding:4px;border:1px solid var(--border);border-radius:10px;background:var(--surface);list-style:none}.cal-sug:empty,.cal-sug[hidden]{display:none}

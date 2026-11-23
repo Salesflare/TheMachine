@@ -196,12 +196,12 @@ body.m-chat #fixed-notice,body.m-chat #banners:not(:has(>#limit-banner:not([hidd
 .cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]):focus{outline:0}
 .cm-menu [aria-disabled="true"]{cursor:default;color:var(--c-text-3,var(--muted))}
 .cm-menu [aria-disabled="true"]:hover{background:none}
-.model-pick .cm-fast-on{flex:none;margin-left:5px;padding:0 6px;border-radius:999px;background:var(--tile);color:var(--text);font-size:var(--fs-xs,.75rem);font-weight:var(--fw-semibold,600);line-height:18px}
+.model-pick .cm-fast-on{flex:none;margin-left:5px;padding:0 6px;border-radius:999px;background:var(--tile);color:var(--text);font-size:var(--fs-xs,.75rem);font-weight:var(--fw-strong);line-height:18px}
 /* A provider: a section heading above its models, a line between providers */
 .cm-menu .cm-section{display:flex;flex-direction:column;gap:1px}
 .cm-menu .cm-section+.cm-section,.cm-menu [role="menuitemradio"]+.cm-section{margin-top:4px;padding-top:4px;border-top:1px solid var(--c-line,var(--border))}
 .cm-menu .cm-speed{display:flex;flex-direction:column;margin-top:4px;padding-top:4px;border-top:1px solid var(--c-line,var(--border))}
-.cm-menu .cm-group{margin:0;padding:6px 10px 3px 9px;color:var(--c-text-3,var(--muted));font-size:var(--fs-xs,.75rem);font-weight:var(--fw-semibold,600);letter-spacing:.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cm-menu .cm-group{margin:0;padding:6px 10px 3px 9px;color:var(--c-text-3,var(--muted));font-size:var(--fs-xs,.75rem);font-weight:var(--fw-strong);letter-spacing:.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(pointer:coarse){.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]){min-height:44px}}
 @media(max-width:520px){#model-panel .settings-list>div:first-child{flex-wrap:wrap}#model-chats .select-like{min-width:0;max-width:52%}#model-chats .select-like>span{overflow:hidden;text-overflow:ellipsis}}
 .chat-status:not(:empty){margin:0 0 12px}
@@ -235,15 +235,15 @@ body.m-chat #fixed-notice,body.m-chat #banners:not(:has(>#limit-banner:not([hidd
 .talk{display:grid;gap:6px;margin:0 0 8px}
 .talk-bar{display:flex;align-items:center;gap:8px;min-height:48px;box-sizing:border-box;padding:6px 6px 6px 14px;border:1px solid var(--c-line-strong);border-radius:24px;background:var(--surface)}
 .talk-live{flex:none;display:flex;align-items:center;gap:8px;font:500 .95rem/1.3 var(--sans);color:var(--text)}.talk-live.near .talk-time{color:var(--orange);font-weight:600}
-.talk-dot{width:10px;height:10px;border-radius:50%;background:var(--c-red,#d93025);animation:mic-pulse 1.4s ease-in-out infinite}.talk-dot.wait{background:var(--muted);animation:none}
+.talk-dot{width:10px;height:10px;border-radius:50%;background:#d93025;animation:mic-pulse 1.4s ease-in-out infinite}.talk-dot.wait{background:var(--muted);animation:none}
 .talk-time{min-width:2.4em;font-variant-numeric:tabular-nums;color:var(--muted)}
 .talk-hint{flex:1;min-width:0;overflow:hidden;color:var(--muted);font:400 .9rem/1.3 var(--sans);text-overflow:ellipsis;white-space:nowrap}
 .talk-mute,.talk-end,.talk-again-btn{flex:none;width:auto;min-height:36px;margin:0;padding:4px 14px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--text);font:500 .88rem/1.2 var(--sans);white-space:nowrap;cursor:pointer}
 .talk-mute{margin-left:auto}@media(hover:hover){.talk-again-btn:hover{background:var(--c-hover)}}.talk-mute[aria-pressed="true"]{background:color-mix(in srgb,var(--text) 8%,transparent)}
-.talk-end{border-color:transparent;background:var(--c-red,#d93025);color:#fff}
+.talk-end{border-color:transparent;background:#d93025;color:#fff}
 .talk-err{border-color:var(--orange)}.talk-err .grow{color:var(--orange);font:600 .88rem/1.3 var(--sans)}.talk-err .talk-end{background:none;border-color:var(--c-line-strong);color:var(--text)}
 .talk-cost{padding:0 14px;color:var(--muted);font-size:.8rem}
 /* A send by voice waits with Undo under the bar (tap it, or say "undo"), then says Sent for a moment */
 .talk-undo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;min-height:44px;box-sizing:border-box;padding:4px 6px 4px 14px;border:1px solid var(--c-line-strong);border-radius:22px;background:var(--surface)}.talk-undo[hidden]{display:none}
-.talk-sending{min-width:0;overflow-wrap:anywhere;font:600 .9rem/1.3 var(--sans);font-variant-numeric:tabular-nums}.talk-sending.sent{color:var(--c-green,#188038)}.talk-sending.failed{color:var(--orange)}  /* "in 5 s" never splits (talkSendingText) */
+.talk-sending{min-width:0;overflow-wrap:anywhere;font:600 .9rem/1.3 var(--sans);font-variant-numeric:tabular-nums}.talk-sending.sent{color:var(--mint)}.talk-sending.failed{color:var(--orange)}  /* "in 5 s" never splits (talkSendingText) */
 .talk-undo-btn{flex:none;width:auto;min-height:36px;margin:0;padding:4px 18px;border:0;border-radius:999px;background:var(--text);color:var(--bg);font:600 .9rem/1.2 var(--sans);cursor:pointer}

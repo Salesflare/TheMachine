@@ -50,6 +50,9 @@ Observed on claude.ai, claude.com and anthropic.com (public pages, light and dar
 | Accent tint (current tab, selected) | mint at 15% on white | a greener mint at 17% on the card | `--c-accent-tint` |
 | Attention (amber), warning (orange), Network (lavender) | `#8A5C00`, `#B0561A`, `#5E4F86` | `#FFD76B`, `#ECA45B`, `#C7B5E2` | `--c-amber`, `--c-orange`, `--c-lavender` |
 
+- **An error, or a button that deletes for good, is orange** (`--orange`; words on an orange button `--charcoal`), what
+  went well mint. There is no red token; recording alone is red, in both themes. A token nothing defines fails
+  `tests/test_css_tokens.py`: its fallback color would follow no theme.
 - **Mint is our clay.** One filled mint button per card or page (the thing to do), the live dot, the current tab's
   tint, focus rings. Not headings, not links, not hero text.
 - **Cream warms the dark text** (`#F3F0E8`) instead of coloring headings. Headings are ink in both themes.
