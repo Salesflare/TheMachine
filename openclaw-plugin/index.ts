@@ -395,7 +395,7 @@ export default definePluginEntry({
         useLanguage(config);
         dashboardRoot=config.dashboard_host?`https://${config.dashboard_host}${config.dashboard_path||'/'}`:'';
         // A Fleet question waiting for the owner. The service accepts the tap only from the message it sent for it.
-        const fleetTap = /^assistant:fleet:(q_[a-f0-9]{16}):(once|always|decline)$/.exec(ctx.callback.data);
+        const fleetTap = /^assistant:fleet:(q_[a-f0-9]{16}):(once|always|decline|stop)$/.exec(ctx.callback.data);
         if (fleetTap) {
           let result;
           try { result = await call('fleet_decide', { id: fleetTap[1], choice: fleetTap[2], source: 'telegram',

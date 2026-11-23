@@ -37,6 +37,7 @@ import meeting_notes
 import message_seal
 from sources import transient
 from timeutil import local_tz, now
+import verified_sender
 from machine.owner_error import OwnerError
 
 
@@ -301,6 +302,9 @@ class EventsStore:
                 if event['kind'] == 'calendar.event' and isinstance(event.get('metadata'), dict):
                     # Its call's link is kept beside, never a new version: a calendar read again for it is not reviewed again
                     digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items() if k != 'video'}}
+                mail = event['kind'] == 'gmail.message' and verified_sender.KEY in event['metadata']
+                if mail:  # kept with a message, never a new version of one read before it was
+                    digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items() if k != verified_sender.KEY}}
                 slack = event['kind'] == 'slack.message' and isinstance(event.get('metadata'), dict)
                 if slack:  # its title names people as they become known: the same message, not an edit (slack_raw_title)
                     digest_event = {**event, 'title': slack_raw_title(event)}
@@ -316,7 +320,7 @@ class EventsStore:
                     if slack:
                         if old['title'] != event['title']:
                             db.execute('UPDATE events SET title=? WHERE id=?', ((self.sealer.seal if self.protected else str)(event['title']), old['id']))
-                    elif digest_event is not event:
+                    elif digest_event is not event and not mail:
                         db.execute('UPDATE events SET metadata=? WHERE id=?', ((self.sealer.seal_json if self.protected else str)(encoded(event['metadata'])), old['id']))
                     continue
                 changed.add(event['source_id'])

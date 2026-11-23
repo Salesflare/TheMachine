@@ -52,12 +52,58 @@ What you can count on:
 
 - A question is at most 300 characters, an answer 600. At most 3 questions from one member wait for you, 10 a day. A
   question is at most two short model runs, for at most 6 questions a day for the whole Family, within your
-  [usage limits](usage.md); without them, the question waits with no draft.
+  [usage limits](usage.md); without them, the question waits with no draft. **Always** adds up to two.
 - The asker is told only that their question waits. Declining, **Never**, too many questions, no draft and no reply all
   look the same to them.
 - Every question, and exactly what was sent, is a line in your [Activity](activity.md).
-- A notification or Telegram only opens the question (or declines it): sending is on the dashboard, beside the sources.
+- A notification or Telegram only opens the question (or declines it, or stops one that would go by itself): sending is
+  on the dashboard, beside the sources.
 - A Machine from before this feature can't answer. The asker sees "Robin’s Machine needs an update first."
+
+### Always, for one person
+
+On the Sharing pane, **Add an exception** can set **Always** for one member: never for the whole Family, and never from a
+question itself. It means you trust them with the ordinary things of the household: plain answers on those go to them by
+themselves, also on something they didn't know of yet. Everything else is meant to ask you first, as above.
+
+**What asks you first**, whether it is in the question, the answer or a message around it: health; money and amounts
+(that a household bill came or is due can go); work; legal trouble; gifts and surprises; relationships and conflicts;
+passwords, codes and keys; anything marked private or set aside; what someone told you in confidence or wrote about
+them; another person's own affairs; what you keep to yourself or still decide; where you were or will be, unless it is a
+plan you plainly share. The runs below judge it by meaning, and when they doubt it asks you first. They can miss one, mostly
+when only another message gives it away: in two test rounds with made-up families, 12 of 1,500 tries on a sensitive matter
+were answered by themselves, and 3 of 360 with an answer that no longer held.
+
+An answer goes by itself only when all of these agree. They don't lean on each other, and anything one is unsure of waits
+for you:
+
+1. **The question**: an ordinary household matter, judged before anything was looked up. None set aside from that member
+   in the last 3 days, and at most 3 answers a day to them.
+2. **The answer**: short, no amount of money, and only from mail whose sender's address your mail service verified (Gmail
+   and Outlook say so, other mailboxes don't, and neither does mail from before this) or from a thread you wrote in
+   yourself. The name a sender gives itself never counts, nor an address that could pass for another one in your mail.
+3. **Something bought or booked** asks you first around the gift holidays and their birthday (when the Graph has it).
+4. **Everything around it** is gathered: whole threads, the order, the company's other mail, what shares its words or meaning or
+   names them, up to 400 days back, and what people wrote of late. Something on the matter that is kept private,
+   sensitive or work is enough to ask you first.
+5. **A second run** sees all that and not the first run's reasoning, and looks for a reason you should read it first. Any
+   plausible one, and it asks you first.
+6. **A third run** doesn't see the answer and only says what is in the messages. Code then asks you first when they are about
+   another home, vehicle or person than the one meant, or something only you have or do; when the answer isn't how the matter
+   stands by the newest message, may have moved since or doesn't say what was asked; and when anything kept from them touches it.
+
+Then it waits. You get a notification with **Stop**, and the to-do shows the answer with its messages: change it, **Send
+now**, **Stop** or **Decline**. It goes about 10 to 18 minutes after the notification reached you. In the evening and at
+night nothing is notified or sent until your morning, and then about half an hour later. A new message on the matter, a
+changed rule, a restart, or no notification that arrived: it asks you first. Telegram counts only once OpenClaw runs the
+plugin of this version, as an older one doesn't know Stop: until then the phone notification does, or it asks you first.
+
+The asker hears that their question waits, every time, and an answer that went by itself says so (a Machine from before
+this shows only the answer). So someone can tell which of theirs asked you first, not why.
+
+Each one is in your [Activity](activity.md) as **Answered by itself**, with the answer, the messages it came from and
+**Ask me first**, which takes Always back. What went can't be taken back, so set it only for someone you would mostly
+answer anyway.
 
 ## Invite suggestions
 
@@ -88,7 +134,7 @@ Under **Sharing**, the Family has the same rules as a Work Fleet, one per kind f
 | To-dos | Ask me first | accepted, then done when you finish it |
 | Plans | Ask me first | "is in" or "can't make it"; never your calendar |
 | To-dos you already did | Always | "done" and the day, for a to-do you both have (a code, never the to-do); Always or Never only |
-| Questions | Ask me first | the answer you send, and nothing else; Ask me first or Never only |
+| Questions | Ask me first | the answer you send, and nothing else; Ask me first or Never, and [Always for one person](#always-for-one-person) |
 
 **Always** on a to-do or plan accepts it by itself (it still only makes a to-do for you). **Never** answers "no"; a
 question gets no answer at all.
@@ -129,9 +175,10 @@ ignore, and nothing goes out until you press Send. Work to-dos never go to the F
 
 What a member sends is kept to a fixed shape (a title, a short note, a date or time, a place) and only ever shown,
 quoted, as their words. No model, tool or Do it runs on a to-do, plan or free-times request, and nothing happens until
-you accept (or set Always). A [question](#ask-someones-machine) is the one thing a model reads: as data, in runs
-without tools, files or memory, whose only result is a draft you read before anything goes. So the most a hostile
-question, or a hostile message it finds, can do is change the words of that draft.
+you accept (or set Always). A [question](#ask-someones-machine) is the one thing a model reads: as data, in runs without
+tools, files or memory, whose only result is a draft you read before anything goes. So the most a hostile question, or a
+hostile message it finds, can do is change the words of that draft. With [Always](#always-for-one-person) for one person
+it could go unread, after its hold: that is why its checks don't lean on one model run.
 Messages travel over the Network like every Fleet question, and are end-to-end encrypted where both Machines support
 it (see [Network](network.md)).
 
@@ -142,7 +189,9 @@ the same path as Work requests (`fleet_requests.STAGED`). Dashboard operations: 
 `family_event`, `family_question`, `family_invite`, `family_invite_setting` and `family_still_needed`, from the owner's dashboard only.
 Questions: `family_questions.py` is the path (taken in the Fleet's loop, which never runs a model), `family_question_sources.py`
 what a draft may come from with its prompt and checks, `family_question_check.py` the run on the question alone,
-`machine/app/family_questions.py` the search and the runs, `test_family_questions.py` the tests, and `evals/family-questions/` made-up families to run against a model. `family_invites.py` decides
+`machine/app/family_questions.py` the search and the runs. Always: `family_question_always.py` its layers and second run,
+`family_question_facts.py` the third, `family_question_links.py` what is on the same matter, `family_question_hold.py` the hold. Tests in `test_family_questions.py`
+and `test_family_question_always.py`, and `evals/family-questions/` made-up families to run against a model. `family_invites.py` decides
 the invite suggestions (`test_family_invites.py`). Already did this is `Fleet.handled_round` with the Family's rule `done` (`family.DONE`, and
 `family_done.py` for the match and the line), shown from `suggestions.done_elsewhere`. Tests: `test_family.py`, `test_family_done.py`,
 `test_family_dashboard.mjs`, `test_family_done_dashboard.mjs`. Try it on

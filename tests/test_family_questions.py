@@ -17,6 +17,8 @@ import fleet
 import machine.actions as machine_actions
 import machine.main as machine_main
 import message_seal
+import network
+import verified_sender
 from machine.owner_error import OwnerError
 
 RUG = 'Any news about the carpet?'
@@ -42,19 +44,25 @@ class Questions(unittest.TestCase):
         self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config, self.app.fleet = self.store, CONFIG, self.fleet
         self.app.background_pause = lambda **_: None
-        self.prompts, self.checks = [], []  # the drafting turns, and the ones on the question alone
+        self.prompts, self.checks, self.seconds, self.thirds = [], [], [], []  # the drafting turns, the ones on the question alone, the second checks, the facts
         self.check = {'series': False, 'whose': 'none', 'kind': 'household'}
         self.reply = {'verdict': 'answer', 'answer': 'The carpet ships on Thursday.', 'sources': [1]}
+        self.second = {'steered': False, 'ways': [{'how': 'a present', 'plausible': False}, {'how': 'late', 'plausible': False}], 'bought': True, 'right': True,
+                       'answers': True, 'days': [], 'times': [], 'safe': True}
+        self.now = {'n': 1, 'about': 'same', 'answered': True, 'open': False, 'done': False, 'days': [], 'times': [], 'at': []}
+        self.facts = {'moves': [], 'hidden': [], 'bought': True}
         self.app.ask_model = self.model
         self.told, self.soon = [], []
         self.fleet.tell = lambda text, anchor: self.told.append(text)
         self.fleet.draft_answer = self.soon.append
         self.mail('Your carpet order', 'Good news: your carpet leaves our warehouse on Thursday.')
 
-    def mail(self, title, body, account='home', sender='Rugs <orders@rugs.example>', to='owner@gmail.com', days=2, thread=None, labels=('INBOX',)):
+    def mail(self, title, body, account='home', sender='Rugs <orders@rugs.example>', to='owner@gmail.com', days=2, thread=None, labels=('INBOX',), verified=True):
         e = tf.mail(account, days, sender, to)
         e.update(title=title, body=body)
         e['metadata']['labels'] = list(labels)
+        if verified:
+            e['metadata'][verified_sender.KEY] = True
         if thread:
             e['metadata']['thread_id'] = thread
         self.store.commit_page(account, {}, [e])
@@ -69,9 +77,16 @@ class Questions(unittest.TestCase):
         return status
 
     def model(self, config, prompt):
-        seen, said = (self.checks, self.check) if '"kind": "household"' in prompt else (self.prompts, self.reply)
+        seen, said = ((self.checks, self.check) if '"kind": "household"' in prompt else (self.seconds, self.second) if '"ways":' in prompt else
+                      (self.thirds, {'now': self.now, **self.facts}) if '"hidden":' in prompt else (self.prompts, self.reply))
         seen.append(prompt)
         return json.dumps(said)
+
+    def pinned(self, *members):
+        with self.store.connect() as db:
+            db.executescript(network.SCHEMA)
+            for member in members:
+                db.execute("INSERT OR REPLACE INTO network_pins(member_id,fingerprint,keys,name,first_at) VALUES(?,'f','{}','',?)", (member, '2026-01-01T00:00:00+00:00'))
 
     def declined(self, ask_id, text, at):
         with self.store.connect() as db:
@@ -214,16 +229,13 @@ class Questions(unittest.TestCase):
         self.assertEqual([(x['what'], x['status']) for x in self.activity()], [(f'Robin asked: “{RUG}”', 'Not answered (the rule is Never)')])
 
     # -- rules
-    def test_ask_me_first_is_the_default_and_always_is_not_a_rule(self):
+    def test_ask_me_first_is_the_default_and_the_family_never_has_always(self):
         fam = next(f for f in self.fleet.view()['fleets'] if f['id'] == FAM)
         self.assertEqual((fam['rules']['question']['rule'], fam['kind_rules']['question']), ('ask', ['ask', 'never']))
-        for who in ('*', 'fm_robin'):
-            with self.assertRaises(OwnerError):
-                self.fleet.set_rule(FAM, who, 'question', 'always')
+        with self.assertRaises(OwnerError):
+            self.fleet.set_rule(FAM, '*', 'question', 'always')
 
-    def test_folded_rules_never_answer_a_question_by_themselves(self):
-        """An Always kept for one person (by an older copy, or by hand) folds into everyone's rule, and still reads as Ask
-        me first for all of them."""
+    def test_folded_rules_never_make_one_persons_always_everyones(self):
         with self.store.connect() as db:
             db.execute("DELETE FROM fleet_rules WHERE kind='question'")
             db.execute("INSERT INTO fleet_rules(fleet,member_id,kind,rule,details,updated_at) VALUES(?,'fm_robin','question','always',0,'2026-01-01')", (FAM,))
@@ -231,7 +243,8 @@ class Questions(unittest.TestCase):
         self.relay.directory['fleets'][1]['members'] = [m for m in self.relay.directory['fleets'][1]['members'] if m['member_id'] != 'fm_alex']
         self.fleet.directory(refresh=True)
         with self.store.connect() as db:
-            self.assertEqual(self.fleet.rule(db, FAM, 'fm_robin', 'question')[0], 'ask')
+            kept = {r['member_id']: r['rule'] for r in db.execute("SELECT member_id,rule FROM fleet_rules WHERE fleet=? AND kind='question'", (FAM,))}
+            self.assertEqual((kept, self.fleet.rule(db, FAM, 'fm_alex', 'question')[0]), ({'*': 'ask', 'fm_robin': 'always'}, 'ask'))
         fam = next(f for f in self.fleet.view()['fleets'] if f['id'] == FAM)
         self.assertEqual((fam['rules']['question']['rule'], fam['kind_rules']['question']), ('ask', ['ask', 'never']))
         self.ask()
@@ -523,10 +536,16 @@ class Questions(unittest.TestCase):
 
     def test_a_database_from_before_gets_the_column(self):
         with self.store.connect() as db:
-            db.execute('ALTER TABLE fleet_questions DROP COLUMN asked')
-            family_questions.ensure(db)
-            family_questions.ensure(db)
-            self.assertIn('asked', {r[1] for r in db.execute('PRAGMA table_info(fleet_questions)')})
+            for gone in (('asked',), ('hold',), ('asked', 'hold')):
+                for column in gone:
+                    db.execute(f'ALTER TABLE fleet_questions DROP COLUMN {column}')
+                family_questions.ensure(db)
+                family_questions.ensure(db)
+                self.assertLessEqual({'asked', 'hold'}, {r[1] for r in db.execute('PRAGMA table_info(fleet_questions)')})
+
+    def test_only_a_plain_true_says_it_went_by_itself(self):
+        for auto, want in ((True, {'text': 'x', 'auto': True}), ('yes', {'text': 'x'}), (1, {'text': 'x'}), (None, {'text': 'x'})):
+            self.assertEqual(family_questions.clean_answer({'text': 'x', 'auto': auto, 'more': 1}), want)
 
     # -- the asker
     def test_asking_and_the_answer(self):
@@ -540,7 +559,11 @@ class Questions(unittest.TestCase):
         self.fleet.take_answer({'id': ask_id, 'status': 'answered', 'answer': {'text': 'It ships\nThursday.', 'by': 'machine', 'run': 'x'}})
         shown = self.fleet.family_view()['questions'][0]
         self.assertEqual((shown['name'], shown['question'], shown['state'], shown['answer']), ('Robin', RUG, 'answered', 'It ships Thursday.'))
-        self.assertEqual(self.told, ['Robin answered: “It ships Thursday.”'])
+        self.assertEqual((self.told, 'auto' in shown), (['Robin answered: “It ships Thursday.”'], False))
+        auto = self.fleet.ask_question('fm_robin', RUG)['ids']['fm_robin']  # one that went by itself says so to the asker
+        self.fleet.take_answer({'id': auto, 'status': 'answered', 'answer': {'text': 'On Friday.', 'auto': True}})
+        self.assertEqual([q.get('auto') for q in self.fleet.family_view()['questions'] if q.get('answer') == 'On Friday.'], [True])
+        self.assertEqual(self.told[1:], ['Robin’s Machine answered by itself: “On Friday.”'])
         with self.store.connect() as db:
             self.assertNotIn('Thursday', str([tuple(r) for r in db.execute('SELECT * FROM fleet_log')]))
 

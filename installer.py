@@ -980,11 +980,8 @@ def plugin_fingerprint(facts):
 def bridge_parts(facts):
     """The same, part by part, so a later run can tell what changed: only the OpenClaw around a bridge whose files
     and folder stayed the same needs no swap (bridge_in_openclaw)."""
-    digest = hashlib.sha256()
     root = ROOT / 'openclaw-plugin'
-    for path in sorted(p for p in root.rglob('*') if p.is_file() and 'node_modules' not in p.parts):
-        digest.update(str(path.relative_to(root)).encode() + b'\0' + path.read_bytes() + b'\0')
-    return {'files': digest.hexdigest(), 'root': str(root), 'openclaw': str(facts.get('openclaw')), 'version': str(facts.get('openclaw_version'))}
+    return {'files': bridge_wait.files(root), 'root': str(root), 'openclaw': str(facts.get('openclaw')), 'version': str(facts.get('openclaw_version'))}
 
 
 def read_stamp(stamp):

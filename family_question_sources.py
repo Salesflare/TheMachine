@@ -146,13 +146,14 @@ def _work_sources(db, ids, config):
     return out
 
 
-def allowed(db, rows, config, company=(), team=(), clock=None):
+def allowed(db, rows, config, company=(), team=(), clock=None, days=DAYS, kind=KINDS):
     """The rows an answer may be written from, in their order. company: the owner's company domains; team: their Work
-    Fleet teammates' addresses."""
+    Fleet teammates' addresses. The second check of an answer that goes by itself reads further back and calendars too
+    (family_question_always.py): the same limits otherwise."""
     clock = clock or timeutil.clock()
     mine = set(accounts(config))
-    oldest = (clock - dt.timedelta(days=DAYS)).isoformat()
-    rows = [r for r in rows if r['account_id'] in mine and r['kind'] in KINDS and str(r['occurred_at']) >= oldest]
+    oldest = (clock - dt.timedelta(days=days)).isoformat()
+    rows = [r for r in rows if r['account_id'] in mine and r['kind'] in kind and str(r['occurred_at']) >= oldest]
     if not rows:
         return []
     out = set(knowledge.held(db, rows, 'personal'))
@@ -236,12 +237,17 @@ verdict "answer": the messages plainly answer the question, and it is an everyda
 a repair or someone coming to the house, a booking or trip both know of, school or a club, household paperwork.
 The answer is one or two plain sentences, in the language of the question, from {owner} to {asker}: only the status asked
 about (what happened, what is next, when). Your own words, never a sentence copied from a message. No link, address,
-code, or order, account or phone number. Nothing about other people or other matters. No guess, nothing added.
+code, or order, account or phone number. Nothing about other people or other matters. No guess, nothing added. A day as its
+weekday and date, never today or tomorrow.
+Where messages on it say different things, only the newest holds, whoever wrote it and in whatever words or language (the
+same order number or company is the same matter): answer from it, and name it in sources.
 
-verdict "nothing": the messages don't answer it. Also when they are only loosely about it, or older than what is asked.
+verdict "nothing": the messages don't answer it. Also when they are only loosely about it, or older than what is asked, and
+when what is asked for is left out of them: (number), (link) or (address).
 
 verdict "private" (answer empty), whatever else the messages say, when the true answer touches any of:
-- health, body, therapy, pregnancy, medicine, a diagnosis, an insurance claim about health;
+- health, body, therapy, pregnancy, medicine, a diagnosis, an insurance claim about health (a pet's vet, or just the day and time
+  of a child's ordinary check-up, is fine);
 - money beyond one household bill or order: salary, debt, loans, savings, investments, taxes, bank accounts, gambling;
 - a bill, contract, account, card, phone number, subscription, membership, policy or loan in {owner}'s own name that the
   messages don't show {asker} shares or was told of; the home's own (power, water, heating, internet, the house's

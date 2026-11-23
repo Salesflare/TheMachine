@@ -170,12 +170,12 @@ $('#settings-take-line').onclick=async e=>{const b=e.currentTarget,on=b.getAttri
 // #fleet=<question> from a phone notification or Telegram: the Fleet tab at that question; &choice= asks to confirm it.
 // #fleet-brief=<fleet> (Telegram, older notifications): To-dos
 // #fleet and #fleet/<pane> (#fleet/sharing, #fleet/activity) are links to the tab: they stay in the address, as #todos does.
-function openFleetLink(){if(/^#fleet-brief(=fl_[0-9a-f]{16})?$/.test(location.hash)){history.replaceState(null,'',location.pathname+location.search+'#todos');openTabLink();return}const sub=/^#fleet\/([a-z0-9_-]{1,40})$/.exec(location.hash),m=sub?[]:/^#fleet(?:=((?:q|fn)_[a-f0-9]{16})(?:&choice=(once|decline))?)?$/.exec(location.hash),card=/^q_/.test(m?.[1]||''),tab=sub||m&&!m[1];
+function openFleetLink(){if(/^#fleet-brief(=fl_[0-9a-f]{16})?$/.test(location.hash)){history.replaceState(null,'',location.pathname+location.search+'#todos');openTabLink();return}const sub=/^#fleet\/([a-z0-9_-]{1,40})$/.exec(location.hash),m=sub?[]:/^#fleet(?:=((?:q|fn)_[a-f0-9]{16})(?:&choice=(once|decline|stop))?)?$/.exec(location.hash),card=/^q_/.test(m?.[1]||''),tab=sub||m&&!m[1];
  // before the status comes (a tapped notification on a slow start): the Fleet tab at once, its own data fills it; a question's card waits for its to-dos
  if(!m||(card||state.suggestions)&&!state.fleet?.on)return;
  if(!tab)history.replaceState(null,'',location.pathname+location.search);else if(!$('#fleet').hidden&&(!sub||sub[1]===fleetPane))return;  // on screen already: a refresh leaves it be
  if(card||$('#fleet').hidden)document.querySelector(`nav [data-tab="${card?'inbox':'fleet'}"]`).click();
  (card?fleetSync(true):fleetShown).then(()=>{if(sub){showFleetPane(sub[1]);return}const c=m[1]&&document.getElementById('fleet-'+m[1]);if(!c)return;fleetReveal(c);c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
-  const w=m[2]&&fleetData?.waiting.find(x=>x.id===m[1]);if(w&&confirm(`${m[2]==='once'?'Share once':'Decline'}? ${w.name} asks: ${w.question}`))c.querySelector(`[data-choice-f="${m[2]}"]`)?.click()})}
+  const w=m[2]&&fleetData?.waiting.find(x=>x.id===m[1]);if(w&&(m[2]==='stop'||confirm(`${m[2]==='once'?'Share once':'Decline'}? ${w.name} asks: ${w.question}`)))c.querySelector(`[data-choice-f="${m[2]}"]`)?.click()})}
 // A shared pane is in the tab's views, which load when first needed: until they're in there is none to fill.
 function sharedLoad(fleet,quiet){if(lazyIn('fleet'))return sharedFill(fleet,quiet)}

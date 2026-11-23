@@ -252,7 +252,7 @@ assert.equal(await smartCard.locator('.more-menu>a.open',{hasText:'Open the Zap'
 assert.ok(await smartCard.getByText('Send reply: Gmail is connected read-only. Nothing was sent.',{exact:true}).isVisible());
 assert.equal(await smartCard.getByRole('button',{name:'Investigate further',exact:true}).count(),0);
 suggestions[2].next_actions=suggestions[2].next_actions.slice(1);await page.evaluate(()=>refresh());
-await smartCard.getByRole('button',{name:'Investigate further',exact:true}).click();assert.equal(posts.at(-1).revision,'fedcba654321');assert.equal(posts.at(-1).suggestion_id,ids[2]);
+const asked=page.waitForRequest(r=>r.method()==='POST'&&(r.postData()||'').includes('fedcba654321'));await smartCard.getByRole('button',{name:'Investigate further',exact:true}).click();await (await asked).response();assert.equal(posts.at(-1).revision,'fedcba654321');assert.equal(posts.at(-1).suggestion_id,ids[2]);
 suggestions[2].next_actions=[{kind:'email_demo',label:'Send',revision:'abcdef123456',from:'the-machine@example.invalid',to:['alex@example.invalid'],subject:'Demo reply',body:'Thanks!'}];await page.evaluate(()=>refresh());
 await smartCard.getByRole('button',{name:'Review and send',exact:true}).click();await page.getByText('Demo only. Nothing will be sent.',{exact:true}).waitFor();assert.equal(await page.locator('#send-confirm').isVisible(),false);
 const demoPosts=posts.length;await page.locator('#send-cancel').click();assert.equal(posts.length,demoPosts);

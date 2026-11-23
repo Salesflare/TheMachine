@@ -1,18 +1,21 @@
 """Questions in a Family (docs/family.md, "Ask someone's Machine"): the owner asks one member's Machine something, as "any
 news about the carpet?", and that member's Machine answers from its own owner's personal messages.
 
-First comes a turn that sees only the question (family_question_check.py): an ordinary household matter, asked the
+First, always, a turn that sees only the question (family_question_check.py): an ordinary household matter, asked the
 ordinary way? If not, or if it isn't sure, the question is set aside: nothing is searched or drafted, the to-do shows only
 the question and the notice not even that (hushed).
 - Ask me first (the default): this Machine drafts an answer in the background (family_question_sources.py: what it may
   read, the drafting turn and its checks; machine/app/family_questions.py runs it). The owner gets a to-do with the
   question quoted, the messages the draft comes from and the draft, to edit. Only their Send sends it.
 - Never: not drafted, not shown to act on.
-There is no Always: every answer is read by its owner, and from a notification or Telegram a question only opens.
+- Always, for one member only and only from the owner's own choice on the Sharing pane: where every layer of
+  family_question_always.py agrees, the answer goes by itself after a hold (family_question_hold.py). Anything less, and
+  any doubt, waits as with Ask me first. The asker's Machine is told that it went by itself (auto).
+From a notification or Telegram a question only opens, and an answer that would go by itself only stops.
 
-What the asker's Machine hears is the same for every other outcome. It is told once that the question waits, and
-nothing more when the owner declines, has it on Never, lets it expire, when no draft could be made, or when the asker
-asks too much: so nothing says which one it was. Not answered in APPROVAL_DAYS days, it reads "No answer". A Machine
+What the asker's Machine hears is the same for every other outcome. It is told once that the question waits, whatever the
+rule, and nothing more when the owner declines, has it on Never, lets it expire, when no draft could be made, or when the
+asker asks too much: so nothing says which one it was. Not answered in APPROVAL_DAYS days, it reads "No answer". A Machine
 from before questions declines them itself: the asker sees that it needs an update first.
 
 Safety: the question is untrusted text, kept as one plain line (parse) and only shown quoted, searched for and given to
@@ -25,6 +28,7 @@ import json
 import sqlite3
 
 import activity_log
+import family_question_hold
 import timeutil
 from i18n import t
 from machine.owner_error import OwnerError
@@ -45,19 +49,30 @@ CREATE TABLE IF NOT EXISTS fleet_questions(id TEXT PRIMARY KEY,state TEXT NOT NU
 # state: pending (no draft yet), running, then ready, empty, private, none (no safe draft), held (a usage limit or the
 # day's drafts are used up) or failed. draft: {'text', 'sources': [{id, kind, title, from, at}]}. answer: what went,
 # {'text', 'sources': [ids]}. day: the day its turns ran. asked: what the question is (family_question_check.py), none when
-# that couldn't be judged.
+# that couldn't be judged. hold: an answer that goes by itself (family_question_hold.py).
 
 
 def ensure(db):
     db.executescript(SCHEMA)
-    if 'asked' not in {r[1] for r in db.execute('PRAGMA table_info(fleet_questions)')}:  # added 2026-11-23
+    have = {r[1] for r in db.execute('PRAGMA table_info(fleet_questions)')}
+    if 'asked' not in have:  # added 2026-11-23
         db.execute('ALTER TABLE fleet_questions ADD COLUMN asked TEXT')
+    if 'hold' not in have:  # added 2026-11-24
+        db.execute('ALTER TABLE fleet_questions ADD COLUMN hold TEXT')
 
 
 def hushed(row):
     """Whether a notice leaves this question's words out: it isn't known to be an ordinary household matter."""
     import fleet
     return row['kind'] == KIND and (fleet._get(row, 'asked') != HOUSEHOLD or fleet._get(row, 'question_state') == 'private')
+
+
+def held_line(row):
+    """A waiting question's answer that goes by itself, as its Telegram message says it; None when it doesn't."""
+    import family_question_hold
+    import fleet
+    hold = _load(fleet._get(row, 'hold')) if row['kind'] == KIND else None
+    return f'{family_question_hold.hold_line(row, hold)}: {family_question_hold.hold_text(row)}' if hold and hold.get('goes_at') else None
 
 
 def parse(question):
@@ -69,7 +84,7 @@ def parse(question):
 def clean_answer(answer):
     import fleet
     text = fleet.free_text(answer.get('text'), ANSWER_CHARS) if isinstance(answer, dict) else ''
-    return {'text': text} if text else None
+    return {'text': text, **({'auto': True} if answer.get('auto') is True else {})} if text else None  # auto: it went by itself
 
 
 def question_text(question):
@@ -91,29 +106,34 @@ def _load(value, default=None):
 def activity(db, limit):
     """The Activity lines of the questions asked here: who, what, and exactly what was sent (activity_log.register)."""
     try:
-        rows = db.execute("SELECT i.id,i.name,i.question,i.status,i.choice,i.at,i.decided_at,q.answer FROM fleet_in i LEFT JOIN fleet_questions q "
-                          'ON q.id=i.id WHERE i.kind=? ORDER BY coalesce(i.decided_at,i.at) DESC LIMIT ?', (KIND, limit)).fetchall()
+        rows = db.execute("SELECT i.id,i.name,i.question,i.status,i.choice,i.at,i.decided_at,q.answer,q.draft,q.hold,"
+                          "EXISTS(SELECT 1 FROM fleet_rules f WHERE f.fleet=i.fleet AND f.member_id=i.member_id AND f.kind=i.kind AND f.rule='always') always "
+                          'FROM fleet_in i LEFT JOIN fleet_questions q ON q.id=i.id WHERE i.kind=? ORDER BY coalesce(i.decided_at,i.at) DESC LIMIT ?', (KIND, limit)).fetchall()
     except sqlite3.OperationalError:
         return  # no Fleet tables here yet
     for r in rows:
         answer = _load(r['answer'])
         what = t('{} asked: {}', r['name'], question_text(_load(r['question'])))
+        detail, alone = None, r['choice'] == 'always'
         if answer and r['status'] == 'answered':
-            outcome, status = 'done', t('Answered')
+            outcome, status, detail = 'done', t('Answered by itself') if alone else t('Answered'), t('Sent: {}', question_text(answer))
+            if alone and (titles := [s.get('title') for s in (_load(r['draft']) or {}).get('sources') or [] if s.get('title')]):
+                detail += ' · ' + t('From: {}', ', '.join(titles))
         elif r['status'] in ('waiting', DRAFTING):
-            outcome, status = 'pending', t('Waiting for you')
+            outcome, status = 'pending', t('Goes by itself') if r['hold'] else t('Waiting for you')
         else:
             outcome, status = 'refused', {'expired': t('Not answered in time')}.get(r['status']) or (
                 t('Not answered (the rule is Never)') if r['choice'] in ('rule', 'never') else
                 t('Not answered (too many questions)') if r['choice'] == 'limit' else t('Declined'))
         yield {'id': 'question:' + r['id'], 'kind': 'fleet', 'at': r['decided_at'] or r['at'], 'what': what, 'where': t('Family'), 'outcome': outcome,
-               'status': status, 'by': None, 'todo': None, 'detail': t('Sent: {}', question_text(answer)) if outcome == 'done' else None}
+               'status': status, 'by': None, 'todo': None, 'detail': detail,
+               **({'undo': {'action': 'family_question_ask_first', 'id': r['id']}} if outcome == 'done' and alone and r['always'] else {})}
 
 
 activity_log.register('fleet', activity)
 
 
-class Questions:
+class Questions(family_question_hold.Holds):
     """Mixed into fleet.Fleet. Set by the app: draft_answer(ask_id) starts the draft in the background."""
     draft_answer = None
 
@@ -159,7 +179,7 @@ class Questions:
             state = ('answered' if answer else 'old' if a['status'] == 'declined' else
                      'none' if a['status'] == 'expired' or g['at'] < late else 'waiting')
             out.append({'id': g['id'], 'at': g['at'], 'name': a['name'], 'question': g['question'].get('text', ''), 'state': state,
-                        **({'answer': answer['text']} if answer else {})})
+                        **({'answer': answer['text'], **({'auto': True} if answer.get('auto') else {})} if answer else {})})
         return out[:10]
 
     def question_answered(self, row, answer):
@@ -167,7 +187,7 @@ class Questions:
         if answer and self.tell and row['status'] != 'answered':
             first = row['name'].split()[0] if row['name'].split() else row['name']
             said = question_text(answer)
-            self.tell(t('{} answered: {}', first, said), row['id'])
+            self.tell(t('{}’s Machine answered by itself: {}', first, said) if answer.get('auto') else t('{} answered: {}', first, said), row['id'])
 
     # -- a member asks
     def take_question(self, ask, teammate, ref, question, name):
@@ -227,7 +247,8 @@ class Questions:
             return bool(db.execute("UPDATE fleet_questions SET day=? WHERE id=? AND state='running'", (day, str(ask_id))).rowcount)
 
     def question_drafted(self, ask_id, result):
-        """The draft, or why there is none: from now on the question waits for the owner. Only the first outcome counts: a
+        """The draft, or why there is none: from now on the question waits for the owner, where it may with an answer that
+        goes by itself after its hold (result['mark'], set only when every layer agreed). Only the first outcome counts: a
         draft that comes after its question already waits without one changes nothing."""
         import fleet
         kept = {k: result[k] for k in ('text', 'sources') if result.get(k)}
@@ -236,27 +257,32 @@ class Questions:
                 return
             db.execute('UPDATE fleet_questions SET state=?,draft=?,asked=? WHERE id=?',
                        (result['state'], json.dumps(kept) if kept else None, result.get('asked'), str(ask_id)))
+            if result.get('mark') and result['state'] == 'ready':
+                self.question_hold(db, ask_id, result['mark'])
             row = db.execute('SELECT status,fleet,member_id FROM fleet_in WHERE id=?', (str(ask_id),)).fetchone()
             if row and row['status'] == 'waiting' and self.rule(db, row['fleet'], row['member_id'], KIND)[0] == 'never':
                 self.move_in(db, ask_id, 'waiting', 'declined', 'rule', fleet.now())  # Never was chosen meanwhile
 
     def question_round(self):
         """A draft that takes too long, or was cut off by a restart: its question waits without one (only the first outcome
-        counts, should its draft still come)."""
+        counts, should its draft still come). Then the answers on hold."""
         with self.connect() as db:
             rows = [r['id'] for r in db.execute('SELECT id FROM fleet_in WHERE kind=? AND status=? AND at<?', (KIND, DRAFTING, self.question_since(seconds=STALE)))]
         for ask_id in rows:
             self.question_drafted(ask_id, {'state': 'failed'})
+        self.hold_round()
 
     def question_draft(self, db, ask_id):
-        """What the owner's to-do shows: the draft and its messages, or why there is none. Nothing of it for a question that
-        was set aside or whose answer may be private: neither that something was found nor that nothing was."""
-        row = db.execute('SELECT state,draft,asked FROM fleet_questions WHERE id=?', (str(ask_id),)).fetchone()
+        """What the owner's to-do shows: the draft and its messages, or why there is none, and when it goes by itself
+        ('goes': a time, or '' while it waits for the morning). Nothing of it for a question that was set aside or whose
+        answer may be private: neither that something was found nor that nothing was."""
+        row = db.execute('SELECT state,draft,asked,hold FROM fleet_questions WHERE id=?', (str(ask_id),)).fetchone()
         if not row:
             return {'state': 'none'}
         if row['asked'] == ASIDE or row['state'] == 'private':
             return {'state': 'aside'}
-        return {'state': row['state'], **(_load(row['draft']) or {})}
+        hold = _load(row['hold'])
+        return {'state': row['state'], **(_load(row['draft']) or {}), **({'goes': hold.get('goes_at') or ''} if hold else {})}
 
     def is_question(self, ask_id):
         with self.connect() as db:
@@ -264,11 +290,18 @@ class Questions:
         return bool(row) and row['kind'] == KIND
 
     def decide_question(self, ask_id, choice, text=None, retell=True):
-        """The owner on a question, from their dashboard: Send with the answer as they see it, Decline, or Never from
-        this member. Only Send sends anything."""
+        """The owner on a question, from their dashboard: Send with the answer as they see it, Decline, Never from this
+        member, or Stop on one that would go by itself (it then waits for them). Only Send sends anything."""
         import fleet
         if choice == 'always':
             raise OwnerError(t('Questions are answered one at a time: send this answer, or decline'))
+        if choice == 'stop':
+            self.hold_end(ask_id)
+            with self.connect() as db:
+                row = db.execute('SELECT status FROM fleet_in WHERE id=?', (str(ask_id),)).fetchone()
+            if not row or row['status'] != 'waiting':
+                raise OwnerError('That question was answered or has expired')
+            return {'status': 'waiting', 'answer': None}
         if choice not in ('once', 'decline', 'never'):
             raise OwnerError('Choose once, decline or never')
         answer = None
@@ -281,6 +314,7 @@ class Questions:
             row = db.execute("SELECT * FROM fleet_in WHERE id=? AND status='waiting'", (str(ask_id),)).fetchone()
             if not row or not self.move_in(db, ask_id, 'waiting', 'answered' if answer else 'declined', choice, fleet.now()):
                 raise OwnerError('That question was answered or has expired')
+            self.keep_hold(db, ask_id, None)
             if answer:
                 draft = self.question_draft(db, ask_id)
                 self.keep_answer(db, ask_id, {**answer, 'sources': [s['id'] for s in draft.get('sources') or []]})
@@ -293,6 +327,12 @@ class Questions:
         if choice == 'never':
             self.settle_waiting(row['fleet'], row['member_id'], KIND, retell=retell)
         return {'status': 'answered' if answer else 'declined', 'answer': answer_text(answer) if answer else None}
+
+    @staticmethod
+    def keep_hold(db, ask_id, hold, was=None):
+        """Its hold (family_question_hold.py), or none. was: only where it is still that one; 0 when it isn't."""
+        return db.execute('UPDATE fleet_questions SET hold=? WHERE id=? AND (? IS NULL OR hold=?)',
+                          (json.dumps(hold) if hold else None, str(ask_id), was and json.dumps(was), was and json.dumps(was))).rowcount
 
     def keep_answer(self, db, ask_id, answer):
         db.execute('INSERT INTO fleet_questions(id,state,answer,at) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET answer=excluded.answer',

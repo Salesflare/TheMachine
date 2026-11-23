@@ -9,6 +9,7 @@ and why the last one failed. A night outside the quiet hours or with work runnin
 After TRIES failed nights the service makes one to-do (Store.bridge_wait_card), worded for an owner who never opens a
 terminal: the to-do's chat can finish it. The file goes when the bridge is in (installer.write_stamp), and the to-do
 closes itself then. Plain functions of the data folder; only note writes."""
+import hashlib
 import json
 from pathlib import Path
 
@@ -16,7 +17,8 @@ import i18n
 
 LAYER = 0  # a changed bridge the nightly update could not put in yet (a leaf, shared with installer.py)
 
-NAME = 'plugin-waiting'  # in the data folder, next to the stamp (installer.BRIDGE_WAITING)
+ROOT = Path(__file__).resolve().parents[1] / 'openclaw-plugin'
+NAME, STAMP = 'plugin-waiting', 'plugin-installed'  # in the data folder: the one that waits, next to the stamp of the one that is in
 TRIES = 3  # failed quiet nights before the owner hears about it
 
 
@@ -62,6 +64,24 @@ def due(data):
     """The state in the data folder `data` once TRIES quiet nights failed, else None."""
     state = read(Path(data) / NAME)
     return state if state and state['attempts'] >= TRIES else None
+
+
+def files(root=ROOT):
+    """The bridge's own files, as a hash (installer.bridge_parts)."""
+    digest = hashlib.sha256()
+    for path in sorted(p for p in root.rglob('*') if p.is_file() and 'node_modules' not in p.parts):
+        digest.update(str(path.relative_to(root)).encode() + b'\0' + path.read_bytes() + b'\0')
+    return digest.hexdigest()
+
+
+def loaded(data, root=ROOT):
+    """Whether the Gateway last took the very bridge that is in this folder (the stamp's parts), as far as the installer
+    knows: False when it can't tell, or a changed one still waits."""
+    try:
+        parts = json.loads((Path(data) / STAMP).read_text().splitlines()[1])
+        return not waiting(data) and parts['files'] == files(root)
+    except (OSError, ValueError, LookupError, TypeError):
+        return False
 
 
 def waiting(data):

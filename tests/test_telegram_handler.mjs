@@ -389,6 +389,7 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  const before=edits.length;await handler(fleetCtx(`assistant:fleet:${q}:once`));
  assert.deepEqual(calls.pop(),['fleet_decide',{id:q,choice:'once',source:'telegram',message_id:'321',decision_id:'telegram:unique'}]);
  const edited=edits.pop();assert.equal(edits.length,before);assert.match(edited.text,/Answered once/);assert.equal(edited.buttons[0][0].url.endsWith('#fleet='+q),true);
+ await handler(fleetCtx(`assistant:fleet:${q}:stop`));assert.equal(calls.pop()[1].choice,'stop');edits.pop();  // an answer that goes by itself
  await handler(fleetCtx(`assistant:fleet:${q}:never`));await handler(fleetCtx(`assistant:fleet:q_x:once`));assert.equal(calls.length,0);  // never is for the dashboard
  await handler(fleetCtx(`assistant:fleet:${q}:always`,'999'));assert.equal(calls.pop()[1].message_id,'999');assert.equal(edits.length,before);  // refused: buttons cleared, nothing decided
  const stranger=fleetCtx(`assistant:fleet:${q}:once`);stranger.senderId='someone-else';await handler(stranger);assert.equal(calls.length,0);
