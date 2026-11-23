@@ -1,44 +1,46 @@
 ---
 title: X
 area: connections
-summary: Deine Erwähnungen, Antworten und Direktnachrichten auf X werden im Browser deiner Machine gelesen. Gesendet wird nur nach deiner Freigabe.
+summary: Deine Erwähnungen, Antworten und Direktnachrichten auf X, gelesen im eigenen Browser deiner Machine. Gesendet wird erst, wenn du zustimmst.
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
-translated: 5cbe43055458daf4
+translated: e8997ab6eb32523f
 ---
-## Was gelesen wird
+## Was sie liest
 
-Deine Erwähnungen, Antworten und Direktnachrichten auf X, im Browser deiner Machine und mit deinem Konto angemeldet. Sie markiert nichts als gelesen und kann keine verschlüsselten X Chats lesen.
+Deine Erwähnungen, Antworten und Direktnachrichten auf X, in deiner Machine im eigenen Browser und als du angemeldet. Sie markiert nichts als gelesen und kann verschlüsselte X-Chats nicht lesen.
 
-## Was gesendet werden kann
+## Was sie senden kann
 
-Eine Antwort oder eine Direktnachricht, und zwar nur, nachdem du sie in der Aufgabe freigegeben hast.
+Eine Antwort oder eine Direktnachricht, und erst nachdem du sie bei der Aufgabe freigegeben hast.
 
-Das läuft nicht über die offizielle API von X. Lesen und eine gelegentliche, von dir freigegebene Antwort führen sehr wahrscheinlich zu keinen Problemen. Massenhaftes oder automatisiertes Senden kann dazu führen, dass dein Konto gesperrt wird.
+X stellt Konten nach und nach auf eine neue Web-App um. Wenn dein Konto schon umgestellt wurde, können Antworten noch nicht über deine Machine gesendet werden. Eine von dir freigegebene Antwort wird daher nicht veröffentlicht, und die Machine weist dich darauf hin. Direktnachrichten werden weiterhin gesendet.
+
+Das läuft nicht über die offizielle API von X. Lesen und gelegentliche, von dir freigegebene Antworten führen sehr wahrscheinlich zu keinen Problemen. Massenhaftes oder automatisiertes Senden kann dazu führen, dass ein Konto gesperrt wird.
 
 ## Verbinden
 
 Auf einer gehosteten Machine:
 
-1. Öffne deine Setup-Seite unter app.themachine.computer/setup und gehe zu **Weitere Quellen**.
-2. Öffne X, gib deinen Handle ohne @ ein und melde dich auf Nachfrage im Browser deiner Machine bei X an. Drücke dann **Verbinden**.
+1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und gehe zu **Weitere Quellen**.
+2. Öffne X, gib deinen Handle ohne @ ein, melde dich bei X im Browser deiner Machine an, wenn du dazu aufgefordert wirst, und klicke dann auf **Verbinden**.
 
 Auf deinem eigenen Computer:
 
 1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle X aus.
-2. Wähle **Arbeit** mit dem zugehörigen Unternehmen oder **Privat**, gib deinen Handle ohne @ ein und drücke **Verbinden**.
-3. Drücke **Bei X anmelden** und melde dich im Browser deiner Machine an. Sobald du angemeldet bist, wird die Verbindung automatisch hergestellt.
+2. Wähle **Arbeit** und das zugehörige Unternehmen oder **Privat**, gib deinen Handle ohne @ ein und klicke auf **Verbinden**.
+3. Klicke auf **Bei X anmelden** und melde dich im Browser deiner Machine an. Sobald du angemeldet bist, wird die Verbindung automatisch hergestellt.
 
 Oder führe `assistant connect x` in einem Terminal aus.
 
 Wenn X deine Machine abmeldet, lies den Artikel [Von einer Website abgemeldet](signed-out.md).
 
-## Verbindung trennen
+## Entfernen
 
-- Im Dashboard: Öffne **Verbindungen**, wähle X aus und gehe zu **Details**. Drücke dann **Trennen**. Das Lesen wird beendet. Bereits übernommene Inhalte bleiben erhalten.
-- Auf einer gehosteten Machine kannst du auf deiner Setup-Seite auch daneben auf **Entfernen** drücken.
+- Im Dashboard: Öffne **Verbindungen**, wähle X aus und gehe zu **Details**. Klicke dann auf **Trennen**. X wird dann nicht mehr gelesen. Bereits importierte Inhalte bleiben erhalten.
+- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** klicken.
 
 ## Auf X abmelden
 
-Öffne in X **Einstellungen**, **Sicherheit und Kontozugriff**, **Apps und Sitzungen**, **Sitzungen** und melde die Sitzung des Browsers deiner Machine ab.
+Öffne auf X **Einstellungen** > **Sicherheit und Kontozugriff** > **Apps und Sitzungen** > **Sitzungen** und melde die Sitzung im Browser deiner Machine ab.
