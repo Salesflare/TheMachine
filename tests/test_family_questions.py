@@ -206,6 +206,22 @@ class Questions(unittest.TestCase):
             with self.assertRaises(OwnerError):
                 self.fleet.set_rule(FAM, who, 'question', 'always')
 
+    def test_folded_rules_never_answer_a_question_by_themselves(self):
+        """An Always kept for one person (by an older copy, or by hand) folds into everyone's rule, and still reads as Ask
+        me first for all of them."""
+        with self.store.connect() as db:
+            db.execute("DELETE FROM fleet_rules WHERE kind='question'")
+            db.execute("INSERT INTO fleet_rules(fleet,member_id,kind,rule,details,updated_at) VALUES(?,'fm_robin','question','always',0,'2026-01-01')", (FAM,))
+            db.execute('DELETE FROM fleet_meta WHERE key=?', ('rules_per_fleet:' + FAM,))
+        self.relay.directory['fleets'][1]['members'] = [m for m in self.relay.directory['fleets'][1]['members'] if m['member_id'] != 'fm_alex']
+        self.fleet.directory(refresh=True)
+        with self.store.connect() as db:
+            self.assertEqual(self.fleet.rule(db, FAM, 'fm_robin', 'question')[0], 'ask')
+        fam = next(f for f in self.fleet.view()['fleets'] if f['id'] == FAM)
+        self.assertEqual((fam['rules']['question']['rule'], fam['kind_rules']['question']), ('ask', ['ask', 'never']))
+        self.ask()
+        self.assertEqual(self.answers(), [{'id': 'q1', 'status': 'waiting'}])
+
     def test_only_in_a_family_and_only_where_the_network_carries_it(self):
         self.assertNotIn('question', fleet.ASKS['work'] + fleet.ASKS['friends'])
         self.assertTrue(self.fleet.family_view()['ask'])

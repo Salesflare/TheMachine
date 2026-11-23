@@ -135,8 +135,8 @@ it (see [Network](network.md)).
 the same path as Work requests (`fleet_requests.STAGED`). Dashboard operations: `family_free`, `family_todo`,
 `family_event`, `family_question`, `family_invite`, `family_invite_setting` and `family_still_needed`, from the owner's dashboard only.
 Questions: `family_questions.py` is the path (taken in the Fleet's loop, which never runs a model), `family_question_sources.py`
-what a draft may come from with its prompt and checks, `machine/app/family_questions.py` the search and the run, and
-`test_family_questions.py` the tests. `family_invites.py` decides
+what a draft may come from with its prompt and checks, `machine/app/family_questions.py` the search and the run,
+`test_family_questions.py` the tests, and `evals/family-questions/` made-up families to run against a model. `family_invites.py` decides
 the invite suggestions (`test_family_invites.py`). Already did this is `Fleet.handled_round` with the Family's rule `done` (`family.DONE`, and
 `family_done.py` for the match and the line), shown from `suggestions.done_elsewhere`. Tests: `test_family.py`, `test_family_done.py`,
 `test_family_dashboard.mjs`, `test_family_done_dashboard.mjs`. Try it on
