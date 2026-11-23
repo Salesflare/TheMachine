@@ -1,83 +1,88 @@
 ---
 title: Microsoft OneDrive
 area: connections
-summary: Commenti, menzioni, modifiche registrate e condivisioni dei tuoi file Word in OneDrive e SharePoint. I nuovi documenti e le modifiche aspettano il tuo OK.
+summary: Commenti, menzioni e revisioni tracciate nei tuoi file Word su OneDrive. I nuovi documenti e le modifiche restano in attesa del tuo OK.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
-translated: b06d8ca4f35e5a38
+translated: 41e5651f29782588
 ---
 ## Cosa legge
 
-**Microsoft OneDrive** legge i tuoi file Word in OneDrive e SharePoint, su una Machine ospitata o sul tuo computer. Non serve collegare Outlook. Per Google Docs, vedi sotto. Importa:
+**Microsoft OneDrive** legge i tuoi file Word su OneDrive, su una Machine ospitata e sul tuo computer. Non serve collegare Outlook. Per Google Docs, vedi sotto. Raccoglie:
 
-- I documenti che qualcuno condivide con te.
-- I commenti e le risposte sui tuoi documenti, e i commenti in cui ti menzionano.
-- Le modifiche registrate nei tuoi file Word.
+- Commenti e risposte nei tuoi file Word, compresi i commenti in cui ti menzionano.
+- Le revisioni tracciate nei tuoi file Word.
 
-La prima sincronizzazione copre gli ultimi 7 giorni. Ogni elemento è collegato alle persone e ai progetti nel tuo [Graph](graph.md). Un commento che richiede il tuo intervento diventa un’attività.
+La prima sincronizzazione copre i 7 giorni precedenti. Ogni elemento rimanda alle persone e ai progetti nel tuo [Graph](graph.md). Un commento che richiede il tuo intervento diventa un’attività.
+
+## File condivisi da altre persone
+
+Da novembre 2026, Microsoft non li elencherà più. Le condivisioni e le menzioni nei file di altre persone arriveranno alla tua Machine solo tramite le email di Microsoft. Collega anche [Outlook](microsoft.md) e lascia attive quelle email. L’attività creata da una di queste email la apre, e il relativo pulsante apre il file. Le condivisioni e le menzioni senza email non vengono rilevate.
 
 ## Cosa può fare
 
-Quando un’attività richiede il testo di un documento, la tua Machine legge solo quel documento e solo mentre lavora all’attività.
+Quando un’attività richiede il testo di un documento, la tua Machine legge quel documento solo mentre lavora sull’attività. Può leggere file Word, PDF e di testo.
 
-Può preparare una bozza di risposta a un commento. Word non permette di pubblicare risposte dall’esterno, quindi copi tu la bozza in Word.
+Cerca anche file di qualsiasi tipo nel tuo OneDrive personale e ti fornisce il link. Non cerca nei siti SharePoint né nei file condivisi con te. Non può leggere il testo di un PDF scansionato.
+
+Può preparare una risposta a un commento. Word non permette di pubblicare risposte dall’esterno, quindi devi copiare la bozza in Word.
 
 Non accetta mai un suggerimento, risolve un commento, condivide un file o modifica un documento senza il tuo OK.
 
-Per usarlo solo per fare cose, disattiva **Raccoglie segnali** in **Dettagli**. In questo modo trova e legge solo i documenti necessari per le tue attività e ne crea di nuovi.
+Per usarla solo per svolgere attività, disattiva **Raccoglie segnali** in **Dettagli**. Da quel momento trova e legge solo i file necessari alle tue attività e ne crea di nuovi.
 
-## Crea e modifica documenti
+## Creare e modificare documenti
 
-La tua Machine può creare un nuovo documento o modificare un documento relativo a un’attività:
+La tua Machine può creare un nuovo documento o modificare un documento a cui si riferisce un’attività:
 
-- Può creare subito un nuovo documento quando lo richiedono l’attività o una skill. Il documento è privato, nel tuo OneDrive o Google Drive. Nell’attività trovi **Apri il documento**. La condivisione del documento o l’invio del relativo link aspettano il tuo OK.
-- Per un documento esistente, prepara le modifiche senza applicarle. Premi **Rivedi le modifiche** per vedere ogni paragrafo prima e dopo, poi **Salva**. Se chiedi una modifica nella chat dell’attività, la applica subito.
-- Scrive solo nel documento così come l’hai visto. Se nel frattempo qualcuno lo ha modificato, non scrive nulla e te lo segnala nell’attività. Chiedi una nuova bozza.
-- In Talk legge ad alta voce tutte le modifiche e aspetta un sì esplicito.
-- Se Microsoft o Google non consente di creare un nuovo documento, l’attività spiega il motivo e mostra **Rivedi e crea** per riprovare.
+- Crea subito un nuovo documento quando l’attività o una skill lo richiede. Il documento è privato e si trova nel tuo OneDrive o Google Drive personale. Nell’attività compare **Apri il documento**. La condivisione del documento o l’invio del link restano in attesa del tuo OK.
+- Prepara le modifiche a un documento esistente. Premi **Rivedi le modifiche** per vedere ogni paragrafo prima e dopo, poi premi **Salva**. Se chiedi una modifica nella chat dell’attività, la applica subito.
+- Scrive solo nel documento nella versione che hai visto. Se nel frattempo qualcuno lo ha modificato, non viene scritto nulla e l’attività te lo segnala. Chiedi una nuova bozza.
+- In Talk, legge ad alta voce l’intera modifica e aspetta un sì esplicito.
+- Se Microsoft o Google non consentono di creare un nuovo documento, l’attività spiega il motivo e mostra **Rivedi e crea** per riprovare.
 
-Può sostituire e aggiungere testo, paragrafi e titoli. Tabelle, immagini, modifiche registrate e campi restano invariati.
+Può sostituire e aggiungere testo, paragrafi e titoli. Tabelle, immagini, revisioni tracciate e campi restano invariati.
 
-Il documento di un’attività di lavoro viene salvato nell’account dell’azienda, mai in uno personale. Sul tuo computer, anche un account Google collegato per Gmail con accesso a Drive può creare nuovi documenti Google. Se non è disponibile un account adatto, l’attività ti dice cosa collegare per il lavoro: Microsoft OneDrive o Google Docs, se la tua Machine può usarlo.
+Il documento di un’attività di lavoro viene salvato nell’account dell’azienda, mai in un account personale. Sul tuo computer, un account Google collegato per Gmail con accesso a Drive può creare anche nuovi documenti Google. Se nessun account è adatto, l’attività indica cosa collegare per il lavoro: Microsoft OneDrive o Google Docs, se la tua Machine può usarlo.
 
-Se il documento non è l’ultimo passaggio, per esempio se devi inviare una risposta con il relativo link, l’attività resta aperta e prepara una bozza di quel passaggio per il tuo OK.
+Se il documento non è l’ultimo passaggio, per esempio quando bisogna inviare una risposta con il relativo link, l’attività resta aperta e prepara quel passaggio in attesa del tuo OK.
 
-La modifica dei documenti è inclusa quando colleghi il servizio. Una connessione precedente che consente solo la lettura mostra **Consenti le modifiche** in **Connessioni**. Premilo una volta e accetta.
+La modifica dei documenti è inclusa quando li colleghi. Una connessione precedente con solo accesso in lettura mostra **Consenti le modifiche** in **Connessioni**. Premilo una volta e accetta.
 
 ## Cosa ti chiede
 
-Microsoft ti chiede un solo OK: leggere e modificare i tuoi file, compresi quelli condivisi con te. Ogni modifica aspetta comunque il tuo OK nell’attività corrispondente. L’accesso alla posta e al calendario non cambia.
+Microsoft ti chiede un solo OK: leggere e modificare i tuoi file, compresi quelli condivisi con te. Ogni modifica resta comunque in attesa del tuo OK nell’attività corrispondente. L’accesso alla posta e al calendario non cambia.
 
-Se in seguito revochi l’OK, in **Connessioni** Microsoft OneDrive mostra **In attesa del tuo OK per leggere i documenti**.
+Se in seguito ritiri il tuo OK, Microsoft OneDrive mostra **In attesa del tuo OK per leggere i documenti** in **Connessioni**.
 
-## Collegalo
+## Collegarlo
 
-Su una Machine ospitata o sul tuo computer abbinato al tuo account:
+Su una Machine ospitata o sul tuo computer associato al tuo account:
 
 - Apri **Connessioni**, poi **Documenti e file**, e scegli **Microsoft OneDrive**.
-- Premi **Accedi con Microsoft** e consenti la lettura e la modifica dei tuoi file.
+- Premi **Accedi con Microsoft** e consenti di leggere e modificare i tuoi file.
 
 Se Microsoft non consente la lettura, la connessione non viene aggiunta. Se premi **Consenti le modifiche** e Microsoft non le consente, te lo segnala.
 
 ## Google Docs
 
-Su una Machine ospitata, apri **Connessioni**, poi **Documenti e file**, e scegli **Google Docs**. Google ti chiede di consentire l’accesso ai documenti che indichi e di modificarli, oltre a creare nuovi documenti. Non serve collegare Gmail e l’accesso a Gmail non cambia.
+Su una Machine ospitata, apri **Connessioni**, poi **Documenti e file**, e scegli **Google Docs**. Google ti chiede di consentirle di vedere e modificare i documenti che le indichi e di crearne di nuovi. Non serve collegare Gmail e l’accesso a Gmail non cambia.
 
-La tua Machine:
+A quel punto, la tua Machine:
 
-- Legge un documento Google collegato nei messaggi di un’attività, solo mentre lavora a quell’attività.
-- Prepara le modifiche a quel documento. Ognuna aspetta il tuo OK, come descritto sopra.
+- Legge un Google Doc collegato nei messaggi di un’attività, solo mentre lavora su quell’attività.
+- Prepara le modifiche al documento. Ognuna resta in attesa del tuo OK, come descritto sopra.
 - Crea nuovi documenti privati nel tuo Google Drive.
 
-Non cerca nel tuo Drive. Vede commenti, condivisioni e suggerimenti solo sui documenti che ha creato. Per vedere altro servirebbe l’accesso a tutto il tuo Drive, che non chiede.
+Non cerca nel tuo Drive. Vede commenti, condivisioni e suggerimenti solo nei documenti che ha creato. Per accedere ad altro dovrebbe poter accedere all’intero Drive, cosa che non chiede.
 
-Sul tuo computer, la tua Machine può creare un nuovo documento Google in un account Gmail a cui hai già effettuato l’accesso e che dispone già dell’accesso a Drive. Non legge gli altri tuoi documenti Google né i relativi commenti. In **Documenti e file** compare come Google Docs per quell’account. Può anche modificare un documento creato lì per un’attività.
+Sul tuo computer, la tua Machine può creare un nuovo Google Doc in un account Gmail già aperto che abbia accesso a Drive. Non legge gli altri tuoi Google Docs né i relativi commenti. In **Documenti e file** compare come Google Docs, associato a quell’account. Può anche modificare un documento creato lì per un’attività.
 
 ## Lavoro o personale
 
-La tua Machine segue l’etichetta Lavoro o Personale della connessione, come per la posta. I documenti di lavoro possono comparire nel Graph del tuo team, secondo le tue [regole di condivisione](sharing-rules.md). Quelli personali non vi compaiono mai.
+La tua Machine segue l’etichetta Lavoro o Personale della connessione, come per la posta. I documenti di lavoro possono essere visibili al Graph del tuo team in base alle tue [regole di condivisione](sharing-rules.md). Quelli personali non lo sono mai.
 
-## Rimuovilo
+## Rimuoverlo
 
-Apri **Connessioni**, poi Microsoft OneDrive o Google Docs, **Dettagli** e **Disconnetti**. La tua Machine smette di leggere. I contenuti già importati restano. Su una Machine ospitata, **Disconnetti ↗** apre la pagina di configurazione, dove sono conservati i dati di accesso.
+Apri **Connessioni**, poi Microsoft OneDrive o Google Docs, **Dettagli** e **Disconnetti**. Smetterà di leggere i documenti. Quelli già importati restano. Su una Machine ospitata, **Disconnetti ↗** apre la pagina di configurazione che contiene i dati di accesso.
