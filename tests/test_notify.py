@@ -3,13 +3,16 @@ Every send here is a fake: no push service, Telegram or mail server is reached."
 import io, json, tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 import assistant as a
 import notify
 import timeutil
+from pinned import pinned  # noqa: E402
 from seams import patch_everywhere  # noqa: E402
 
 SUB = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'B' + 'x' * 86, 'auth': 'y' * 22}}
 UTC = a.dt.timezone.utc
+BRUSSELS = ZoneInfo('Europe/Brussels')
 
 
 class Daytime(a.dt.datetime):
@@ -23,7 +26,8 @@ class Notifications(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
         self.app = object.__new__(a.App); self.app.store = self.store
-        self.config = self.app.config = {'accounts': [], 'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/'}
+        # its own workspace: run on its own, the suite would greet by the name in this computer's USER.md
+        self.config = self.app.config = {'accounts': [], 'openclaw_workspace': self.temp.name, 'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/'}
         self.sent = []
         self.sender = lambda request: self.sent.append(request) or {'results': [{'endpoint': SUB['endpoint'], 'status': 201}]}
 
@@ -737,6 +741,30 @@ class Notifications(unittest.TestCase):
         # promise), so only the other one is said to wait
         self.assertEqual(digest['push']['body'], 'Due today: Send the pilot recap for Wren\n1 more can wait, about 1 min to clear.')
         self.assertIn('\n\n1 more can wait, about 1 min to clear.\n\n', digest['text'])
+
+    def test_due_today_is_the_owners_day_late_in_the_evening_and_just_after_midnight(self):
+        # In Brussels the day turns at 23:00 UTC: what is due today goes by the owner's date, also in that hour
+        self.card(key='a', title='Pay the invoice', due='2026-11-23')
+        self.card(key='b', title='Sign the lease', due='2026-11-24')
+        done = self.card(key='c', title='Read the recap')  # brings the promises' message, 3
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='completed' WHERE id=?", (done,))
+            for who, due in (('Wren', '2026-11-23'), ('Jonah', '2026-11-24')):
+                db.execute("INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,status,created_at,updated_at) "
+                           "VALUES('mine',?,?,?,'2026-11-25T00:00:00+00:00',3,'home','open','t','t')", (who, 'send the recap', due))
+            db.execute("UPDATE suggestions SET created_at='2026-11-20T10:00:00+00:00'")
+        for zone, at, day in ((BRUSSELS, '2026-11-23T10:00:00+01:00', 23), (BRUSSELS, '2026-11-23T22:20:00+01:00', 23),
+                              (BRUSSELS, '2026-11-23T23:59:00+01:00', 23), (BRUSSELS, '2026-11-24T00:05:00+01:00', 24),
+                              (UTC, '2026-11-23T22:20:00+00:00', 23), (UTC, '2026-11-23T23:59:00+00:00', 23), (UTC, '2026-11-24T00:05:00+00:00', 24)):
+            with self.subTest(zone=str(zone), at=at), pinned(at), patch_everywhere(a, 'local_tz', return_value=zone):
+                text = notify.LINKS.sub('', self.app.digest()['text'])
+                paid, signed = ('Pay the invoice', 'Sign the lease') if day == 23 else ('Sign the lease', 'Pay the invoice')
+                who, other = ('Wren', 'Jonah') if day == 23 else ('Jonah', 'Wren')
+                self.assertTrue(text.startswith('Good morning, 2 due today\n\n'), text)
+                self.assertIn('• ' + paid, text)
+                self.assertNotIn('• ' + signed, text)
+                self.assertIn('Send the recap for ' + who, text)
+                self.assertNotIn(other, text)
 
     def test_the_digest_goes_once_on_the_chosen_channels_and_the_preview_sends_nothing(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)

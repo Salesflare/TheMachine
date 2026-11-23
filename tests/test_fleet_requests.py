@@ -46,7 +46,7 @@ class Requests(unittest.TestCase):
         self.fleet.directory(refresh=True)
         self.ref = self.fleet.ref('work')
         self.app = object.__new__(machine_main.App)
-        self.app.store, self.app.config, self.app.fleet = self.store, CONFIG, self.fleet
+        self.app.store, self.app.config, self.app.fleet = self.store, {**CONFIG, 'openclaw_workspace': self.temp.name}, self.fleet
         self.told = []
         self.fleet.make_card, self.fleet.tell = self.app.fleet_card, lambda text, anchor: self.told.append(text)
 

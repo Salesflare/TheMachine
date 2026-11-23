@@ -56,7 +56,7 @@ class AppPush(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.app = object.__new__(machine_main.App); self.app.store = self.store
-        self.config = self.app.config = {'accounts': [], 'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/',
+        self.config = self.app.config = {'accounts': [], 'openclaw_workspace': self.temp.name, 'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/',
                                          'credentials': {'fleet': 'fleet'}, 'fleet': {'url': 'https://cp.example/api/fleet'}}
         self.cloud = Cloud()
         for patcher in (patch_everywhere(sources, 'credential', return_value='tok'),

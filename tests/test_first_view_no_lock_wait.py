@@ -36,7 +36,7 @@ class FirstViewNoLockWait(unittest.TestCase):
         for name in ('api-token', 'owner-token'):
             (Path(self.temp.name) / name).write_text(secrets.token_hex(24))
             credentials[name] = str(Path(self.temp.name) / name)
-        config = {'database': str(self.path), 'accounts': [{'id': 'work', 'email': 'owner@example.com', 'boundary': 'work:Example', 'service': 'gmail'}],
+        config = {'database': str(self.path), 'openclaw_workspace': self.temp.name, 'accounts': [{'id': 'work', 'email': 'owner@example.com', 'boundary': 'work:Example', 'service': 'gmail'}],
                   'owner_name': 'Alex Example', 'timezone': 'Europe/Brussels', 'telegram_owner': '', 'tailscale_owner': 'owner@example.com',
                   'dashboard_host': 'machine.example:8443', 'dashboard_path': '/', 'dashboard_aliases': [], 'port': 0, 'http_timeout': 1,
                   'app_dir': str(Path(a.__file__).parent), 'openclaw': '/nonexistent/openclaw', 'node': '/nonexistent/node',
