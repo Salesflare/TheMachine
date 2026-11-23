@@ -36,6 +36,7 @@ import next_actions
 import task_invites
 from fleet_requests import card_reason
 from i18n import t
+from machine import owner_name
 from machine import todo_states
 from machine.owner_error import OwnerError
 import timeutil
@@ -213,7 +214,7 @@ class HandoffMail:
         keys = {x['key'] for x in [*offered['lines'], *offered['links'], *offered['files'], *([offered['draft']] if offered['draft'] else [])]}
         keep = keys if keep is None else {k for k in keep if isinstance(k, str)} & keys
         take = offered['take'] if take is None else take is True
-        me = str(self.app.config.get('owner_name') or '').strip()
+        me = owner_name.full_name(self.app.config)
         task = task_invites.clean({'kind': 'handoff', 'title': str(title or '').strip() or card['title'],
                                    'summary': str(summary or '').strip() or offered['task'], 'due': str(card['due'] or '')[:10], 'from_name': me})
         context = []

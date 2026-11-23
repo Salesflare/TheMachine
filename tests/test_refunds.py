@@ -159,6 +159,19 @@ class Refunds(unittest.TestCase):
         self.app().promise_step()
         self.assertEqual(self.promise(pid)['status'], 'carded')
 
+    def test_the_draft_is_signed_also_without_owner_name(self):
+        (Path(self.tmp.name) / 'USER.md').write_text('# About me\n\n- Name: Robin Vale\n', encoding='utf-8')
+        plain = self.app
+
+        def app():
+            made = plain()
+            made.config.update(owner_name='', openclaw_workspace=self.tmp.name)
+            return made
+        self.app = app
+        self.record()
+        self.due_step()
+        self.assertTrue(json.loads(self.todos()[0]['next_action'])['body'].rstrip().endswith('Robin Vale'))
+
     def test_not_in_by_its_day_one_quiet_chase_to_do_with_a_draft(self):
         pid = self.record()['id']
         self.due_step()

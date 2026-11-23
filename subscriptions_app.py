@@ -29,6 +29,7 @@ import routine_templates
 import routines
 import subscriptions
 import todo_areas
+from machine import owner_name
 from machine import todo_states
 from machine.store import outcomes
 from models import background_model
@@ -76,7 +77,7 @@ class SubscriptionsTemplate(routine_templates.Template):
             row = subscriptions.pick(db, sid, n, choice, self.routines_stamp(), rows)
         out = {'saved': True, 'choice': choice}
         if choice == 'cancel':
-            out['draft'] = subscriptions.draft(row, graph.person_name(self.config.get('owner_name')).strip()[:80])
+            out['draft'] = subscriptions.draft(row, graph.person_name(owner_name.full_name(self.config)).strip()[:80])
         return out
 
     @staticmethod

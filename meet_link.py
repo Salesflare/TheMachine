@@ -29,6 +29,7 @@ import uuid
 import task_invites
 from i18n import t
 import meet as m
+from machine import owner_name
 from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
@@ -129,7 +130,7 @@ class MeetLink:
         return starts(free, record['minutes'], liked, tz=self._meet_tz())
 
     def _link_page(self, record):
-        return {'kind': 'schedule', 'from_name': first_name(self.config.get('owner_name')), 'minutes': record['minutes'],
+        return {'kind': 'schedule', 'from_name': first_name(owner_name.full_name(self.config)), 'minutes': record['minutes'],
                 'slots': record['slots'], 'brand': bool(record.get('brand'))}
 
     # -- making one: for a fallen-back ask
