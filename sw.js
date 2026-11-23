@@ -1,6 +1,6 @@
 // The installed dashboard app: push notifications, and a copy of the page itself (the app shell) so the app opens at
 // once. The shell holds no data and never its CSRF token; the last cards, chats and Graph lists are kept by the page,
-// encrypted (docs/architecture.md, "On the device"). Brand images and fonts are kept too, all of them up front. Nothing else is cached.
+// encrypted (docs/architecture.md, "On the device"). Brand images and fonts are kept too, up front (not Inter's Cyrillic letters, below). Nothing else is cached.
 // A new ASSETS name drops the kept brand files once (2: the moods became stickers, not the app icon).
 const SHELL = 'tm-shell-2', ASSETS = 'tm-assets-2', SHARE = 'tm-share', SHELL_AGE = 7 * 864e5;
 // The server no longer puts the token in the page (api/session has it); an older page still may, and it is taken out.
@@ -8,7 +8,8 @@ const CSRF = /(\bconst csrf=')(?:[0-9a-f]{64})?(')/;
 const scopeUrl = () => new URL(self.registration.scope);
 
 // Every brand image and font the page can show (assistant.py BRAND_ASSETS), kept up front, so the app offline looks the
-// same as online: the robot, its moods and the typefaces, also ones this device hasn't shown yet.
+// same as online: the robot, its moods and the typefaces, also ones this device hasn't shown yet. Not Inter's Cyrillic
+// letters: only a page that shows them loads them.
 const BRAND = ['avatar.png', 'avatar-blink.png', 'favicon-32.png', 'favicon-512.png', 'sleepy.webp', 'sad.webp', 'thinking.webp', 'wave.webp',
   'wave-blink.webp', 'wave-look.webp', 'wave-hand.webp', 'laugh.webp', 'party.webp', 'party-512.webp', 'app-icon-192.png', 'app-icon-maskable-192.png', 'app-icon-maskable-512.png', 'app-icon-badge-96.png', 'serif.woff2', 'sans.woff2'];
 const brandOk = r => r.status === 200 && r.type === 'basic' && /^(image|font)\//.test(r.headers.get('Content-Type') || '');

@@ -66,7 +66,7 @@ The dashboard's headings use Source Serif 4 by Adobe, bundled unmodified as `bra
 
 ## Inter
 
-The dashboard's interface text uses Inter by The Inter Project Authors, bundled unmodified as `brand/fonts/inter-latin.woff2` (the Latin subset Google Fonts serves). It is licensed under the SIL Open Font License 1.1; the full license is in [brand/fonts/Inter-OFL.txt](brand/fonts/Inter-OFL.txt).
+The dashboard's interface text uses Inter by The Inter Project Authors, bundled unmodified as `brand/fonts/inter-latin.woff2`, `brand/fonts/inter-cyrillic.woff2` and `brand/fonts/inter-cyrillic-ext.woff2` (the Latin, Cyrillic and Cyrillic Extended subsets Google Fonts serves). It is licensed under the SIL Open Font License 1.1; the full license is in [brand/fonts/Inter-OFL.txt](brand/fonts/Inter-OFL.txt).
 
 ## Simple Icons
 

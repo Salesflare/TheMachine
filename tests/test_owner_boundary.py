@@ -420,7 +420,7 @@ class OwnerBoundary(unittest.TestCase):
         def get(path, headers=None):
             conn = http.client.HTTPConnection('127.0.0.1', port)
             conn.request('GET', path, headers={**owner, **(headers or {})}); r = conn.getresponse(); body = r.read(); conn.close(); return r, body
-        for path in ('/brand/avatar.png', '/brand/avatar-blink.png', '/brand/favicon-32.png', '/brand/sleepy.webp', '/brand/sans.woff2', '/brand/serif.woff2'):
+        for path in ('/brand/avatar.png', '/brand/avatar-blink.png', '/brand/favicon-32.png', '/brand/sleepy.webp', '/brand/sans.woff2', '/brand/sans-cyrillic.woff2', '/brand/serif.woff2'):
             r, body = get(path)
             self.assertEqual((r.status, r.getheader('Cache-Control')), (200, 'private, max-age=86400'), path)
             self.assertTrue(body)

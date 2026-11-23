@@ -59,6 +59,9 @@ BRAND_ASSETS = {
     '/brand/serif.woff2': ROOT / 'brand/fonts/source-serif-4-latin.woff2',
     # Interface typeface (Inter, SIL OFL; license in brand/fonts/Inter-OFL.txt).
     '/brand/sans.woff2': ROOT / 'brand/fonts/inter-latin.woff2',
+    # Its Cyrillic letters, loaded only by a page that shows them (unicode-range in dashboard/base-tokens.css)
+    '/brand/sans-cyrillic.woff2': ROOT / 'brand/fonts/inter-cyrillic.woff2',
+    '/brand/sans-cyrillic-ext.woff2': ROOT / 'brand/fonts/inter-cyrillic-ext.woff2',
     # Talk live's voices, a short sample each for Settings (voice_input.TALK_VOICES)
     **{f'/brand/voices/{name}.mp3': ROOT / f'brand/voices/{name}.mp3' for name in voice_input.TALK_VOICES},
     # The services' logos for Connections, + Add, each loaded when shown (their sources and terms: dashboard/logos/NOTICE.md)

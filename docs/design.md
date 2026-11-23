@@ -55,7 +55,8 @@ Observed on claude.ai, claude.com and anthropic.com (public pages, light and dar
 - **Cream warms the dark text** (`#F3F0E8`) instead of coloring headings. Headings are ink in both themes.
 - **Typefaces.** Source Serif 4 (with its optical sizes, so display sizes get the fine display cut) for the display
   line, page titles, section heads and dialog titles, at weight 380 to 460. Inter for everything else at 400 and 500,
-  600 only for card titles and numbers. Both are bundled under the SIL Open Font License.
+  600 only for card titles and numbers. Both are bundled under the SIL Open Font License, in their Latin letters; Inter
+  also in Cyrillic, loaded only by a page that shows it (Russian headings use the device's serif).
 - **The mascot and logo** stay as they are: the mascot beside the title in the dashboard, on empty states and in the
   website's hero; the wordmark in the website's header.
 - **Omarchy theme.** On a Machine that runs on Omarchy, the dashboard follows the Omarchy theme (Settings, General, This
