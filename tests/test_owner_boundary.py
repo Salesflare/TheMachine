@@ -325,7 +325,7 @@ class OwnerBoundary(unittest.TestCase):
         r, body = get('/', {**owner, 'If-None-Match': etag})
         self.assertEqual((r.status, body), (304, b''))
         r, body = get('/api/session', owner)
-        self.assertEqual(r.status, 200); self.assertEqual(json.loads(body), {'csrf': csrf, 'cache_scope': scope})
+        self.assertEqual(r.status, 200); self.assertEqual(json.loads(body), {'csrf': csrf, 'cache_scope': scope, 'compact': 1})
         self.assertEqual(get('/api/session', {'Authorization': 'Bearer ' + TOKEN})[0].status, 403)
 
     def test_the_pages_script_is_a_file_kept_for_a_year_under_its_name(self):

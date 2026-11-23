@@ -331,6 +331,12 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   its area's part. The stylesheet
   is in parts already, in the page's order (`base-tokens.css` with the shared design tokens first); some runs still mix
   areas, as the sheet grew: a new rule goes in its area's part, after any rule it overrides.
+- **One to-do on its own**: `?compact=1#card=<id>` shows only that to-do, for a small window another app frames (300 px
+  and up; `GET api/session` answers `"compact": 1` where it's there). It is the dashboard's own card, chat and dialogs
+  with the page around them left out: `dashboard/todos-compact.js` and `.css`, a lazy part no other page fetches. Never
+  in a frame. What leads out of the to-do is a new window with the whole dashboard's address, Escape is the app's when
+  nothing is open, and the page's title is `<state>: <title>`, never translated: open, done, snoozed, gone, offline or
+  signed-out.
 - **Reading the dashboard's source** (a test, a script): through `dashboard_parts.assemble()` in Python or
   `dashboardPage()` from `tests/dashboard-page.mjs` in Node, never `dashboard.html` itself. The page is served as one
   document, but its source can be split into parts (`dashboard/<name>.js`, `.css` and `.html`, each filling its include

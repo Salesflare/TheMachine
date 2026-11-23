@@ -183,7 +183,7 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url), scope = scopeUrl();
   if (url.origin !== scope.origin) return;
-  if (req.mode === 'navigate' && url.pathname === scope.pathname && !url.search) return event.respondWith(shell(event));
+  if (req.mode === 'navigate' && url.pathname === scope.pathname && (!url.search || url.search === '?compact=1')) return event.respondWith(shell(event));
   const name = url.pathname.startsWith(scope.pathname + 'brand/') && !url.search && url.pathname.slice(scope.pathname.length + 6);
   if (name && /^(fonts\/)?[\w.-]+\.(png|svg|webp|jpg|woff2?)$/.test(name)) return event.respondWith(asset(event, name));
   const file = url.pathname.startsWith(scope.pathname) && !url.search && url.pathname.slice(scope.pathname.length);

@@ -496,7 +496,8 @@ def make_handler(app):
             # copy never keeps it) and whose data the device may keep (dashboard_cache_scope)
             aside(lambda: app.store.note_activity('visit'), 'visit', once=False)  # counted off the request (timing.aside)
             self.output(200, {'csrf': dashboard_csrf(app.token, app.config['tailscale_owner']),
-                              'cache_scope': dashboard_cache_scope(app.token, app.config['tailscale_owner'])})
+                              'cache_scope': dashboard_cache_scope(app.token, app.config['tailscale_owner']),
+                              'compact': 1})  # this dashboard shows one to-do on its own (?compact=1#card=<id>)
 
         def get_api_notice(self, path):
             # The mobile app, woken by a push without text: what its notification says and which buttons it

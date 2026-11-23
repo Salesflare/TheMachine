@@ -12,10 +12,10 @@ const card=(id,extra)=>({id,title:'Reply about the venue '+id,body:'I can draft 
 const cards=[card('wait',{preparation_status:'queued',preparation_hold:{why:'budget'}}),card('turn',{preparation_status:'queued'}),
  card('run',{preparation_status:'running',preparation_started_at:now}),card('none',{})];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
-const posted=[];
+const posted=[];let hold=null;
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
+ if(url.pathname==='/api/status'){if(hold)await hold;res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/action'){const a=JSON.parse(body||'{}');if(a.action==='decide'){posted.push(a.args);res.end(JSON.stringify({status:'accepted',held:{why:'limit',until}}));return}}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -38,7 +38,13 @@ try{
  assert.equal((await page.locator('#task-wait .chip').first().textContent()).trim(),'Not started yet');
  assert.match(await page.locator('#task-run').textContent(),/Preparing this ahead, so it arrives ready/);  // once it runs, as before
  assert.equal(await doIt('run').count(),0,'a run under way has no Do it');
+ // Pressed, its button goes with the press's own answer, not with the next status (still on its way here): it can't be
+ // pressed again and again
+ let go;hold=new Promise(r=>go=r);
  await doIt('wait').click();
+ await page.waitForFunction(()=>!document.querySelector('#task-wait button[data-choice="accept"]'));
+ assert.equal((await page.locator('#task-wait .chip').first().textContent()).trim(),'Preparing…');
+ go();hold=null;
  await page.waitForFunction(()=>/Waiting for the usage limit to reset/.test(document.querySelector('#toast')?.textContent||''));
  assert.deepEqual(posted.map(a=>[a.suggestion_id,a.choice]),[['wait','accept']]);
  assert.deepEqual(errors,[]);

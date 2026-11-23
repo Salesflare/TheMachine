@@ -27,6 +27,15 @@ function appBadge(n){try{if(navigator.setAppBadge)(n?navigator.setAppBadge(n):na
 // phone's screen holds about three (a to-do there is 260 px and up), so it draws four: each one more cost ~35 ms at a
 // phone's speed before anything showed.
 const firstCards=()=>skeletonBand()==='n'?4:8,plainOpen=(()=>{try{return performance.getEntriesByType('navigation')[0]?.type==='navigate'&&!sessionStorage.getItem('tm-update-view')}catch{return false}})();
+// What someone has typed or open on the to-dos, put back after a redraw (also todos-compact.js)
+function redrawKeep(){
+const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
+const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
+const pk=document.querySelector('.project-picker'),pkIn=pk?.closest('.chat-main,article[id]')?.id;  // and an open picker
+const foldsBack=foldsKeep($('#suggestions'));
+return()=>{for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
+for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
+if(pk&&!pk.isConnected)(pkIn?document.getElementById(pkIn):$('.chat-main'))?.append(pk);}}
 function render(view){
 // What stands over the to-dos (dashboard_parts.LAZY_EARLY: the mail check's line, a milestone) comes with the first
 // drawing: while its file, fetched with the page, is still on its way, the loading outline stays (once, a moment)
@@ -35,9 +44,7 @@ if(!earlyWaited&&!drawnWhole&&!view&&/^(#todos)?$/.test(location.hash)){const wa
 const first=!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash),onScreen=first&&plainOpen&&/^(#todos)?$/.test(location.hash);  // a page's first drawing on To-dos (below)
 scopeSync(state.locale);try{talkFromStatus();if(lazyIn('talk'))talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();if(!first&&lazyIn('settings'))renderNotify();fixedLoad();try{palAskShow()}catch{}
 const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),waitOpen=listOpen('waiting-list'),olderOpen=listOpen('older-list');
-const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
-const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
-const pk=document.querySelector('.project-picker'),pkIn=pk?.closest('.chat-main,article[id]')?.id;  // and an open picker
+const keptBack=redrawKeep();
 const shown=scopeShown(state.suggestions,scopeFilter);
 const fleetCards=scopeFilter==='personal'?[]:fleetCardsOf(fleetData);
 // A new owner's first view leads with the to-do their hello names (Store.greeting): first in For you
@@ -63,7 +70,6 @@ $('#badge-inbox').textContent=(open.length-fuHidden-open.filter(toRead).length+(
 // "All clear" only when the Machine itself just said so: a copy from the device keeps the loading outline instead
 if(!shownCached)try{localStorage.setItem('skeleton-cards',String(Math.min(4,outstanding.length+fleetCards.length)));localStorage.setItem('skeleton-fleet',state.fleet?.on?'1':'')}catch{}
 const loading=shownCached&&!outstanding.length&&!fleetCards.length;$('#suggestions').toggleAttribute('aria-busy',loading);
-const foldsBack=foldsKeep($('#suggestions'));
 // Snoozed cards are out of the way by choice: folded by default, open state kept across refreshes. Waiting on others too.
 // A first run (no to-do anywhere yet) has no empty "Done / dismissed 0" fold at the end; once there are to-dos it stays.
 // A folded list's rows are left out (nothing of them shows): they're drawn as it opens (listShow).
@@ -72,9 +78,7 @@ if(!chatOpen())listBack(),drawKept($('#suggestions'),html`${milestoneSlot()}${re
 const sideRows=l=>fuSide(l).map(x=>x?.side||x).filter(plainTodo),sideForYou=sideRows(fuv.foryou);
 sideCounts={foryou:sideForYou.filter(s=>!toRead(s)).length,preparing:fuv.ready.filter(s=>plainTodo(s)&&placeOf(s)==='preparing').length,later:later.length,promises:(state.promises||[]).filter(p=>['open','card'].includes(p.state)).length};sideCards([[sideForYou,'For you','foryou'],[older,'Older','older'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]);
 {const c=chatOpen();document.body.classList.toggle('chat-open',!!c);pageMarks();if(c)chatMount(c.id,chatView(c,[[sideForYou,'For you','foryou'],[older,'Older','older'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]))}pageHead();
-for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
-for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
-if(pk&&!pk.isConnected)(pkIn?document.getElementById(pkIn):$('.chat-main'))?.append(pk);
+keptBack();
 fleetSoon();graphCountsSet(state.graph_counts);
 // A page's first drawing on To-dos (the device's copy, else the Machine's first answer): the to-dos, the sidebar and a chat now,
 // and the rest (the Done list, Learning, Connections, Settings, the other tabs' parts) just after that first paint, not before it.

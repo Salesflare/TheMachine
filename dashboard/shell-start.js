@@ -18,6 +18,8 @@ sessionCheck();
 for(const l of document.querySelectorAll('link[data-lazy]'))lazyPart(l.dataset.lazy).catch(()=>{});
 if(localCache.on)localCache.read('status').then(hit=>{if(!hit||state.suggestions)return;state=wakeSnoozed(hit.value);shownCached=true;shownAt=hit.at;
  try{cardsMerge();render();openChatLink();openTabLink()}catch(e){errCaught(e);console.error(e)}});
+// One to-do on its own: nothing of the whole page draws or goes anywhere; todos-compact.js draws, from when it is in
+if(self.COMPACT){render=openCardLink=setupShape=()=>{};lazyPart(COMPACT).catch(()=>{$('#load-failed').hidden=false})}
 refresh().then(()=>{newTagline();updateViewBack();if(localCache.on&&'serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>r.active?.postMessage({cache:'warm'})).catch(e=>{if(navigator.onLine!==false&&e?.name!=='SecurityError'&&e?.name!=='AbortError')errSw({kind:e?.name,message:e?.message,function:'register'})})});setInterval(refreshWhenReady,30000);
 // Sign out clears this device first; the service worker says when the Machine no longer knows this session
 document.addEventListener('submit',e=>{const f=e.target;if(!f.matches?.('form[action$="/_machine/logout"]')||f.dataset.wiped)return;e.preventDefault();f.dataset.wiped='1';localCache.wipe().finally(()=>f.submit())},true);

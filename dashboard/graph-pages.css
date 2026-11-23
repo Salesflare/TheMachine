@@ -362,7 +362,9 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 /*@lazy*/
 .board-sub .seen-by{margin-right:2px}.ed-seen{display:flex;flex-wrap:wrap;gap:6px 16px;border:0;margin:0;padding:0}.ed-seen legend{padding:0;margin-bottom:6px}.ed-seen label{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}.ed-seen input[type=radio]{flex:none;width:18px;height:18px;min-height:0;margin:0}.ed-people+.sp-line{margin-top:calc(-1*var(--sp-2));color:var(--c-text-2);font-size:var(--fs-sm)}
 /*@eager*/
+/*@lazy*/
 .graph-stage .seen-pick{display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--c-text-3);font-size:var(--fs-xs)}.graph-stage .seen-pick select{min-height:30px;width:auto;margin:0;font-size:var(--fs-xs)}
+/*@eager*/
 /*@lazy*/
 /* Inline, each stage with its arrow kept whole, lines balanced: a narrow card never leaves one stage alone on a line */
 .stage-flow{margin:8px 0 0;padding:0;list-style:none;color:var(--c-text-2);font-size:var(--fs-sm);line-height:1.6;text-wrap:balance}
