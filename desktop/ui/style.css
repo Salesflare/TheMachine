@@ -1,0 +1,107 @@
+/* The dashboard's colors and type (dashboard/base-tokens.css, docs/design.md), as few of them as this needs. */
+@font-face{font-family:Inter;src:url(fonts/inter-latin.woff2) format('woff2');font-weight:100 900}
+:root{color-scheme:light dark;
+ --surface:#fff;--raised:#f3f1ea;--line:#1d1d1b1a;--text:#1d1d1b;--text-2:#5a5954;--text-3:#6d6b66;
+ --accent:#4e6b34;--accent-ink:#fff;--error:#a3312a;--dot:#e2703a;--shadow:0 6px 12px #0000002e}
+@media (prefers-color-scheme:dark){:root{
+ --surface:#232428;--raised:#2c2d32;--line:#ffffff17;--text:#f3f0e8;--text-2:#c4c1b8;--text-3:#a19e96;
+ --accent:#bccba8;--accent-ink:#1a1d17;--error:#f0a29a;--dot:#f08a52;--shadow:0 6px 12px #00000066}}
+*{box-sizing:border-box}
+html,body{margin:0;background:transparent;overflow:hidden;font:14px/1.45 Inter,system-ui,sans-serif;color:var(--text);-webkit-user-select:none;user-select:none;cursor:default}
+button,input,textarea{font:inherit;color:inherit}
+[hidden]{display:none!important}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+.robot #robot{position:fixed;left:0;top:0;width:88px;height:88px;padding:4px;border:0;background:none;border-radius:50%;touch-action:none;cursor:pointer}
+.robot #robot:focus-visible{outline-offset:-3px}
+#face{width:100%;height:100%;object-fit:contain;pointer-events:none;-webkit-user-drag:none}
+@media (prefers-reduced-motion:no-preference){#face{transition:transform .15s}#robot:hover #face{transform:translateY(-2px)}}
+#face.carried,#face.carried+#dot{opacity:0}
+#dot{position:absolute;right:14px;top:10px;width:13px;height:13px;border-radius:50%;background:var(--dot);border:2px solid #fff}
+
+.box main{margin:14px;width:340px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:10px 12px 12px}
+.box main.drop{outline:2px dashed var(--accent);outline-offset:-5px}
+header .icon{margin-top:-4px}
+header{display:flex;align-items:flex-start;gap:2px;margin-bottom:10px}
+header div{flex:1;min-width:0}
+#state{margin:0;font-size:12px;line-height:1.35;color:var(--text-3);overflow-wrap:anywhere}
+#state.error{color:var(--error)}
+#state.greeting{font-size:13px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+h1{font-size:13px;font-weight:600;margin:0}
+h2{font-size:12px;font-weight:500;color:var(--text-3);margin:0 0 2px}
+p{margin:4px 0}
+ul{list-style:none;margin:0;padding:0}
+button{border:0;background:none;padding:0;cursor:pointer}
+.icon{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--text-2);flex:none}
+header .icon{margin-right:-6px}
+.icon:hover{background:var(--raised)}
+svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.primary{background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:7px 14px;font-weight:500;white-space:nowrap}
+.primary:disabled{opacity:.6}
+.link{color:var(--text-2);text-decoration:underline;text-underline-offset:2px;border-radius:4px}
+.error{color:var(--error)}
+#signin p:empty,#said:empty{display:none}
+#notice-text{margin-bottom:10px}
+#signin-intro{color:var(--text-2);margin-bottom:10px}
+#by-account,#by-address{display:flex;gap:8px;margin-bottom:8px}
+#address,#compose{background:var(--raised);border:1px solid var(--line);border-radius:10px}
+#address{flex:1;min-width:0;padding:6px 10px}
+#signin .link{font-size:13px}
+.rows{margin:0 -6px 8px}
+#menu{border-bottom:1px solid var(--line);padding-bottom:6px}
+.rows svg{width:15px;height:15px;vertical-align:-2px;margin-inline-end:8px;color:var(--text-2)}
+.quick svg{margin:0}
+#adds{margin:0 -2px 6px}
+#adds .name:hover{background:var(--surface)}
+#menu .where{padding:2px 6px 5px;font-size:12px;color:var(--text-3);overflow-wrap:anywhere;-webkit-user-select:text;user-select:text}
+.rows button.name{display:block;width:100%;text-align:start;padding:5px 6px;border-radius:8px}
+.name,.name span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.name span{display:block}
+.name .sub{font-size:12px;line-height:1.35;color:var(--text-3)}
+/* What was just added: marked a moment */
+li.new{animation:new 3s ease-out both}
+@keyframes new{0%,45%{background:color-mix(in srgb,var(--accent) 18%,transparent)}to{background:transparent}}
+.rows button.name:hover,.rows li:hover .name,.rows li:focus-within .name{background:var(--raised)}
+/* A row's quick buttons, over its end, on hover and with the keys */
+.todos li{position:relative;border-radius:8px}
+.quick{position:absolute;inset-block:0;inset-inline-end:0;display:flex;align-items:center;padding-inline:20px 3px;border-radius:8px;background:linear-gradient(to left,var(--raised) 74%,transparent);opacity:0;pointer-events:none}
+li:hover>.quick,li:focus-within>.quick{opacity:1;pointer-events:auto}
+@media (hover:none){.quick{opacity:1;pointer-events:auto}}
+.quick .icon{width:26px;height:26px}
+.quick .icon:hover{background:var(--surface);color:var(--text)}
+li.busy{opacity:.5;pointer-events:none}
+.went{display:flex;gap:8px;padding:5px 6px;color:var(--text-2)}
+.went span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#live{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip-path:inset(50%)}
+.todos .more{color:var(--text-3);font-size:13px}
+#answer{max-height:260px;overflow:auto;margin:4px 0 10px;-webkit-user-select:text;user-select:text;overflow-wrap:anywhere}
+#answer-text{white-space:pre-wrap;margin:0}
+#answer-to{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+#answer.looking{overflow:hidden}
+#answer.looking #answer-text{color:var(--text-2);display:flex;align-items:center;gap:8px}
+#answer.looking #answer-text::before{content:'';width:12px;height:12px;flex:none;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:turn .9s linear infinite}
+@keyframes turn{to{transform:rotate(1turn)}}
+@media (prefers-reduced-motion:reduce){#answer.looking #answer-text::before{animation-duration:4s}}
+#compose{padding:8px 8px 6px;margin-top:6px}
+#compose:focus-within{border-color:var(--accent)}
+#text{display:block;width:100%;border:0;background:none;resize:none;padding:2px 4px 6px;line-height:20px;max-height:120px;overflow:auto;-webkit-user-select:text;user-select:text}
+#text:focus-visible{outline:none}
+::placeholder{color:var(--text-3);opacity:1}
+.bar{display:flex;align-items:center;gap:4px}
+.kinds{display:flex;gap:2px}
+.kinds span{display:block;padding:3px 9px;border-radius:8px;font-size:13px;color:var(--text-2);cursor:pointer}
+.kinds input{position:absolute;opacity:0;pointer-events:none}
+.kinds input:checked+span{background:var(--surface);color:var(--text);box-shadow:0 0 0 1px var(--line)}
+.kinds input:focus-visible+span{outline:2px solid var(--accent)}
+.send{margin-inline-start:auto;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.send:disabled{background:none;color:var(--text-3);cursor:default}
+#files{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+#files li{display:flex;align-items:center;max-width:100%;background:var(--surface);border-radius:8px;padding-inline-start:8px;font-size:13px}
+#files span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#files .up span{color:var(--text-3)}
+#files img{height:48px;max-width:120px;object-fit:cover;border-radius:5px;margin:3px 6px 3px -5px;display:block}
+#files .icon{width:24px;height:24px}
+#said{font-size:13px;color:var(--text-2);margin:8px 0 0}
+#said.error{color:var(--error)}
+@media (forced-colors:active){.box main,.kinds input:checked+span,.send,.primary{border:1px solid}#dot{background:Highlight;forced-color-adjust:none}}

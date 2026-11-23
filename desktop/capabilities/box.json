@@ -1,0 +1,9 @@
+{
+  "identifier": "box",
+  "windows": ["box"],
+  "permissions": [
+    "core:event:allow-listen", "core:event:allow-unlisten",
+    "allow-box-state", "allow-box-look", "allow-box-fit", "allow-box-draft", "allow-box-close", "allow-connect", "allow-sign-in", "allow-add-todo", "allow-add-file",
+    "allow-remove-file", "allow-take-screenshot", "allow-todo-quick", "allow-todo-decide", "allow-todo-undo", "allow-ask", "allow-open-dashboard", "allow-menu-item"
+  ]
+}

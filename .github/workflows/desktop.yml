@@ -1,0 +1,54 @@
+name: Desktop prototype
+
+# A Windows build of the desktop prototype (desktop/README.md), to try it: unsigned, kept 14 days as this run's artifact,
+# never a release. Then a smoke run of it on this computer's own desktop (desktop/smoke/), with its screenshots. Only when
+# desktop/ changes, or by hand. No secrets, one job, no macOS.
+on:
+  pull_request:
+    paths: ['desktop/**', '.github/workflows/desktop.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test and build
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          cargo +stable test --release --locked
+          cargo +stable build --release --locked --features sandbox
+          mkdir out sandbox-build
+          cp target/release/the-machine-desktop.exe sandbox-build/
+          cargo +stable build --release --locked
+          cp target/release/the-machine-desktop.exe out/
+          cp README.md ../LICENSE out/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-windows-unsigned
+          path: desktop/out/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Use it, with a made-up Machine
+        timeout-minutes: 15
+        run: python smoke/windows.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-windows-screenshots
+          path: desktop/shots/
+          retention-days: 14
