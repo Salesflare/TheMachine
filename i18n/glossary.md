@@ -11,6 +11,10 @@ counts in any case. File names (.skill, SKILL.md) don't count.
 Dutch *Klaargezet* and *Voor jou klaargezet*, never *Klaar* alone; Spanish and Brazilian Portuguese *Para revisar*, never
 *Lista* or *Pronta* alone (they read as finished). *Klaar om ...*, *Lista para ...*, *Pronta para ...* are fine.
 
+**no new to-dos** ends the mail check's one line above the to-dos ("Checked 13 messages at 08:41 · no new to-dos"),
+which fits one line on a phone (tests/test_mail_check_dashboard.mjs): the short forms in the Terms table, as *keine
+neuen Aufgaben*, *No hay tareas nuevas* and *Nessuna nuova attività* wrap it.
+
 Tone: short UI copy, the way a native product says it, never word for word. Dutch uses *je*, French *vous*, German *du*,
 Spanish *tú*, Italian *tu*, Brazilian Portuguese *você*, Russian *вы* (lowercase), Chinese *你* (never 您). Japanese
 writes polite *です/ます* and Korean polite *해요체* (요 endings), both without a word for "you" (the subject is left out).
@@ -80,6 +84,7 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailsca
 | Work Fleet | Werk-Fleet | Fleet Travail, Fleets Travail | Work Fleet | Fleet de trabajo, Fleets de trabajo | Fleet di lavoro | Fleet de Trabalho, Fleets de Trabalho | 工作Fleet | Work Fleet | 업무 Fleet | рабочий Fleet, рабочего Fleet, рабочем Fleet, рабочему Fleet, рабочим Fleet, рабочие Fleet, рабочих Fleet |
 | Family Fleet | Familie-Fleet | Fleet Famille, Fleets Famille | Family Fleet | Fleet familiar, Fleets familiares | Fleet di famiglia | Fleet da Família, Fleets da Família | 家庭Fleet | 家族Fleet | 가족 Fleet | семейный Fleet, семейного Fleet, семейном Fleet, семейному Fleet, семейным Fleet, семейные Fleet, семейных Fleet |
 | team Graph | Team-Graph | Graph d’équipe, Graph de l’équipe | Team Graph | Graph del equipo | Graph del team | Graph da equipe | Team Graph | チームのGraph | 팀 Graph | Graph команды |
+| no new to-dos | geen nieuwe to-do's | aucune nouvelle tâche | keine neue Aufgabe | sin tareas nuevas | niente attività nuove | nenhuma tarefa nova | 没有新的待办 | 新しいToDoはありません | 새 할 일 없음 | нет новых задач |
 
 ## Exceptions
 
