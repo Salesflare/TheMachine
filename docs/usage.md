@@ -570,6 +570,7 @@ These go through the same signed-in x.com session the X source reads with.
 - Send shows the account, the post replied to or the conversation, and the text. Preflight resolves the post or conversation without writing.
 - `XTransport` then runs `x_inbox.py send --yes` with the job ID as token.
 - **A reply** goes through X's own composer (`x.com/intent/post`). The tab first checks that the composer holds exactly the approved text for the approved post, then clicks Reply once, and blocks every other post request.
+- **X's new web app:** an account X shows its new web app can't reply through The Machine yet: the send stops before anything is written and says so. DMs send as before.
 - **A DM** goes to the DM inbox API (`dm/new2`) with a request ID derived from the token.
 - The reader logs its intent before the one write (fsynced, in `~/.local/share/x-inbox/sends.jsonl`) and never sends a token that is already in the log. It switches accounts only under its run lock and always switches back.
 - An unclear outcome stays uncertain and is checked through `x_inbox.py verify` (the returned post ID, else that account's reply to the post with the same text; for a DM the request ID). Never resent.

@@ -7,12 +7,16 @@ import json
 import subprocess
 import sys
 import tempfile
+import threading
 import types
 import unittest
 import uuid
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import machine.app.sync as machine_app_sync
+import machine.main as machine_main
 import next_actions as n
+import sources
 import test_ux as ux
 sys.path.insert(0, str(Path(__file__).parent.parent / 'integrations'))
 import x_inbox
@@ -129,6 +133,42 @@ class XSource(unittest.TestCase):
         with patch.object(a.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '{"mentions": []}', '')):
             with self.assertRaises(a.SourceError):
                 source.page(5, {})
+
+    def test_a_short_outage_stays_connected_and_one_that_lasts_shows(self):
+        account = {**ACCOUNT, 'poll_seconds': 3600}
+        card = lambda: self.store.snapshot([account])['connectors'][0]
+        outage = lambda: self.store.failed(account['id'], sources.SourceError('x_query_unavailable', retry_after=900))
+        outage()
+        self.assertEqual(card()['error'], 'x_query_unavailable')  # never read yet: nothing to call connected
+        self.store.commit_page(account['id'], {}, [])
+        for shown in (None, None, 'x_query_unavailable', 'x_query_unavailable'):
+            outage()
+            self.assertEqual(card()['error'], shown)
+        self.assertEqual(card()['sync_activity'][0]['error'], 'x_query_unavailable')  # each try stays under Recent syncs
+        self.store.commit_page(account['id'], {}, [])
+        outage()
+        self.assertIsNone(card()['error'])  # a read that worked starts the count again
+        self.store.commit_page(account['id'], {}, [])
+        for code in ('x_signed_out', 'x_query_failed:HTTP_403', 'x_rate_limited'):  # X refusing or asking for something shows at once
+            self.store.failed(account['id'], sources.SourceError(code, retry_after=900))
+            self.assertEqual(card()['error'], code)
+            self.store.commit_page(account['id'], {}, [])
+
+    def test_a_lasting_outage_is_read_less_often(self):
+        account = {**ACCOUNT, 'poll_seconds': 3600}
+        waits = []
+        for _ in range(4):
+            app = object.__new__(machine_main.App)
+            app.config, app.store, app.stop = {}, self.store, threading.Event()
+            app.stop.wait = lambda seconds: waits.append(seconds) or app.stop.set() or True
+            with self.store.connect() as db:
+                db.execute('UPDATE checkpoints SET retry_at=NULL')
+            with patch.object(app, 'resume_wait', return_value=0), patch_everywhere(machine_app_sync, 'sync_source',
+                    side_effect=sources.SourceError('x_query_unavailable', retry_after=900)):
+                app.collector(account)
+        self.assertEqual(waits, [900, 1800, 3600, 3600])
+        self.assertEqual(sources.outage_backoff(sources.SourceError('x_rate_limited'), 1800, 5, 3600), 1800)  # any other keeps its own wait
+        self.assertEqual(sources.outage_backoff(sources.SourceError('x_query_unavailable'), 900, None, 300), 900)
 
     def test_review_context_source_line_and_promises(self):
         with patch_everywhere(a, 'now', return_value=NOW):

@@ -75,7 +75,7 @@ import routine_changes
 import routine_offers
 import shared_connectors
 import skills
-from sources import CALENDAR_SERVICES, MAIL_SERVICES
+from sources import CALENDAR_SERVICES, MAIL_SERVICES, short_outage
 import still_needed
 from timeutil import local_tz, now
 import todo_areas
@@ -1067,5 +1067,6 @@ class ViewsStore(ConversationStore):
                         # a Fleet share the owner also connected themselves rests (shared_connectors.covered_by)
                         'covered_by': covered_name(accounts, account),
                         **(dict(row) if row else {}), **dict(counts), **channel_health,
+                        **({'error': None} if row and row['last_success'] and short_outage(row['error'], row['failures']) else {}),
                         **(silent_failure(db, account, row) or {}), 'backfill': history_store.progress(db, [account['id']]).get(account['id'])})
         return out
