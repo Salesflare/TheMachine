@@ -12,6 +12,7 @@ import test_ux as ux
 import machine.cards as machine_cards
 import machine.delivery.push as machine_delivery_push
 import machine.main as machine_main
+import machine.store.decisions as machine_store_decisions
 from test_honest_status import GMAIL, SLACK, email
 
 DRAFT = {'kind': 'email', 'label': 'Send reply', 'account_id': 'work', 'to': ['customer@client.example'], 'subject': 'Re: Invoice',
@@ -55,6 +56,43 @@ class Rule(unittest.TestCase):
         self.assertEqual(machine_cards.needs_owner(self.row('x', handled_hint='{"reason":"replied"}')), '')
         self.assertEqual(machine_cards.needs_owner({**self.row(''), 'outcome': '{"state":"done"}'}), '')
         self.assertEqual(machine_cards.needs_owner({**self.row(''), 'outcome': 'not json'}), '')
+
+
+class Lead(unittest.TestCase):
+    """result_ask: what is left is for the owner to say (Answer leads), or a step they do themselves (Mark done leads).
+    The phone's buttons (quick_kind), Telegram's (controls) and the note's question (waiting_questions) agree."""
+    row = Rule.row
+
+    def lead(self, row):
+        row = {'event_ids': '[]', 'source_links': '[]', 'next_action': None, **row}
+        first = machine_cards.controls(row)['blocks'][0]['buttons'][0]['label']
+        return first, machine_delivery_push.quick_kind(row, 'result')
+
+    def test_a_need_nothing_on_it_settles_leads_with_answer_question_or_not(self):
+        for needs in ('the signed contract from you', 'confirm which policy covers the office', 'Which date should I offer?'):
+            with self.subTest(needs):
+                self.assertEqual(machine_cards.result_ask(self.row(needs)), needs)
+                self.assertEqual(self.lead(self.row(needs)), ('Answer', 'question'))
+
+    def test_a_step_they_do_themselves_leads_with_mark_done(self):
+        own = self.row('pay it in your bank', outcome=json.dumps({'state': 'needs_you', 'needs': 'pay it in your bank', 'owner_step': True}))
+        self.assertEqual(machine_cards.result_ask(own), '')
+        self.assertEqual(self.lead(own), ('Mark done', 'ready'))
+        self.assertEqual(self.lead(self.row('bring the keys', owner_step=1))[0], 'Mark done')
+        self.assertEqual(machine_cards.result_ask(self.row('get the readings', handoff_still={'name': 'Ann Baker'})), '')
+        # asked as a question, it still asks
+        self.assertEqual(machine_cards.result_ask(self.row('Which shop?', owner_step=1)), 'Which shop?')
+
+    def test_what_is_on_it_leads_instead(self):
+        draft = {**DRAFT, 'revision': 'r1'}
+        for row, kind in ((self.row('check the draft and send it', [draft]), 'draft'), (self.row('Tuesday or Wednesday?', [draft]), 'draft'),
+                          (self.row('check the doc', [LINK]), 'ready'), (self.row('check the report', result_files=[{'path': 'memory/assistant/r.md'}]), 'ready')):
+            with self.subTest(kind):
+                row['next_action'] = {'kind': 'menu', 'actions': row['next_actions']}
+                first, quick = self.lead(row)
+                self.assertNotEqual(first, 'Answer')
+                self.assertEqual(quick, kind)
+        self.assertEqual(self.lead(self.row('confirm it', handled_hint='{"reason":"replied"}')), ('Mark done', 'ready'))
 
 
 class Everywhere(unittest.TestCase):
@@ -103,6 +141,24 @@ class Everywhere(unittest.TestCase):
         self.assertEqual(self.lead(), ('Needs you', 'Needs you'))  # its notification: "Needs you: <title>", never "Ready:"
         headline = self.digest()['text'].split('\n')[0]
         self.assertNotIn('ready', headline)  # not counted as ready in the morning digest
+
+    def test_a_need_without_a_question_asks_everywhere_and_a_step_of_theirs_does_not(self):
+        self.save(outcome='needs_you', needs='confirm which policy covers the office')
+        view = self.row()
+        self.assertEqual(machine_cards.controls(view)['blocks'][0]['buttons'][0]['label'], 'Answer')
+        notice = machine_delivery_push.app_notice(self.store, {'accounts': [GMAIL]}, self.sid, 'result', 2)
+        self.assertEqual((notice['actions'][0], notice['body']), ('answer', 'confirm which policy covers the office'))
+        with self.store.connect() as db:
+            asked = machine_store_decisions.waiting_questions(db, db.execute('SELECT * FROM suggestions WHERE id=?', (self.sid,)).fetchone())
+        self.assertEqual(asked, ['confirm which policy covers the office'])  # the chat's "Asked:" line before their note
+        self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'The deposit is due.', 'outcome': 'needs_you',
+                                      'needs': 'pay the deposit in your bank', 'owner_step': True})
+        view = self.row()
+        self.assertIs(json.loads(view['outcome'])['owner_step'], True)
+        self.assertEqual(view['needs_owner'], 'pay the deposit in your bank')
+        self.assertEqual(machine_cards.controls(view)['blocks'][0]['buttons'][0]['label'], 'Mark done')
+        notice = machine_delivery_push.app_notice(self.store, {'accounts': [GMAIL]}, self.sid, 'result', 2)
+        self.assertEqual(notice['actions'], ['open', 'done', 'snooze2h'])
 
     def test_a_run_that_only_answered_reads_needs_you_everywhere(self):
         self.save(outcome='answered')

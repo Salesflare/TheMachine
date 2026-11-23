@@ -557,21 +557,34 @@ def retry_pointless(row):
 
 
 def ask_question(row, actions):
-    """A card waiting on the owner's answer: Answer leads (the Change path) and Mark done steps back. Either a run that
-    stopped to ask (ask_blocked) or a result whose needs_you is a question, with nothing to send. Same rule as
-    askQuestion() in dashboard.html."""
+    """A card waiting on the owner's answer: Answer leads (the Change path), Mark done beside it. Either a run that
+    stopped to ask (ask_blocked) or a result that asks (result_ask), with nothing to send. Same rule as askQuestion() in
+    the dashboard."""
     if row['status'] in todo_states.CLOSED_OR_SNOOZED or row.get('handled_hint'):
         return ''
     if ask_blocked(row):
         return ask_text(row)
     if row['status'] != 'prepared' or row.get('preparation_status') == 'blocked' or any(a.get('kind') != 'open' for a in actions):
         return ''
+    return result_ask(row)
+
+
+def result_ask(row, db=None):
+    """What a prepared result waits on the owner to say, or '': its needs, when it is a question or nothing on the to-do
+    settles it (needs_owner). Answer leads there, so what they say makes it carry on. A step they settle by doing it
+    themselves (owner_step, the to-do's or its run's) has Mark done lead, and one a teammate still has, Check in now.
+    The same rule everywhere a lead shows: needsAsk() in the dashboard, the plugin's askQuestion(), quick_kind()."""
     try:
-        outcome = json.loads(row.get('outcome') or '{}')
-        question = str(outcome.get('needs') or '').strip()
-        return question if outcome.get('state') == 'needs_you' and question.endswith('?') else ''
+        outcome = row.get('outcome') or {}
+        outcome = json.loads(outcome) if isinstance(outcome, str) else outcome
+        needs = ' '.join(str(outcome.get('needs') or '').split()) if outcome.get('state') == 'needs_you' else ''
     except (ValueError, TypeError, AttributeError):
         return ''
+    if needs.endswith('?') or not needs:
+        return needs
+    if outcome.get('owner_step') or row.get('owner_step') or row.get('handoff_still'):
+        return ''
+    return needs if (row['needs_owner'] if 'needs_owner' in row else needs_owner(row, db)) else ''
 
 
 RESULT_FILE = re.compile(r'memory/assistant/[^\s<>"\)]+')  # a file the run made, linked in its result (Store.suggestion_result)

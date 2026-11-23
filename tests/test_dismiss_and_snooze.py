@@ -237,8 +237,8 @@ class AnswerQuestion(unittest.TestCase):
         answer=next(b for block in machine_cards.controls(row)['blocks'] for b in block['buttons'] if b['label']=='Answer')
         self.assertTrue(answer['action']['value'].endswith(':other'))  # the Change path
         self.assertTrue(machine_cards.card(row).endswith('Needs you: Which date goes in the cash-out field?'))
-        # Not a question, a draft to send, or a sign it's handled: the usual buttons
-        plain={**row,'outcome':json.dumps({'state':'needs_you','needs':'Pay in the bank app'})}
+        # A step they do themselves, a draft to send, or a sign it's handled: the usual buttons
+        plain={**row,'outcome':json.dumps({'state':'needs_you','needs':'Pay in the bank app','owner_step':True})}
         self.assertEqual(self.labels(plain)[0],'Mark done');self.assertTrue(machine_cards.card(plain).endswith('Needs you: Pay in the bank app.'))
         self.assertNotIn('Answer',self.labels({**row,'next_actions':[{'kind':'email','revision':'v1','label':'Send','to':['x@example.com'],'subject':'s','body':'b'}]}))
         self.assertNotIn('Answer',self.labels({**row,'handled_hint':json.dumps({'reason':'You replied'})}))

@@ -29,6 +29,7 @@ from machine.cards import (
     LOOKS_DONE_SQL,
     looks_done_at,
     outcome_state,
+    result_ask,
     snooze_time,
     title_kept,
 )
@@ -483,8 +484,8 @@ def rewait_handoffs(db):
 
 def waiting_questions(db, row):
     """The questions a to-do waits on the owner's answer to, as its Needs you line asks them: those its stopped run
-    named (ask_blocked), else its result's own question (needs_you ending in ?, with nothing to send). [] when it asks
-    nothing. Same rule as ask_question() in machine/cards.py, from the stored rows."""
+    named (ask_blocked), else what its result asks (result_ask, with nothing to send). [] when it asks nothing. Same rule
+    as ask_question() in machine/cards.py, from the stored rows."""
     if row['status'] in todo_states.CLOSED_OR_SNOOZED or row['handled_hint']:
         return []
     prep = db.execute('SELECT status,reason,error,questions FROM preparations WHERE suggestion_id=?', (row['id'],)).fetchone()
@@ -496,12 +497,8 @@ def waiting_questions(db, row):
         return []
     if any(a.get('kind') != 'open' for a in next_actions.visible_actions(row['next_action'])):
         return []
-    try:
-        outcome = json.loads(row['outcome'] or '{}')
-        question = ' '.join(str(outcome.get('needs') or '').split())
-        return [question] if outcome.get('state') == 'needs_you' and question.endswith('?') else []
-    except (ValueError, TypeError, AttributeError):
-        return []
+    asked = result_ask({**dict(row), **view}, db)
+    return [asked] if asked else []
 
 
 def bind_feedback_prompt(db, suggestion_id, request_id, message_id):

@@ -50,7 +50,7 @@ Each notification has buttons for the next step. On the phone app:
 - New to-do: Do it, Snooze, Mark done.
 - Draft ready: Open draft, Snooze, Mark done.
 - Result ready: Open, Mark done, Snooze.
-- Question, stuck or a sign-in: Answer, Open or Sign in, then Snooze and Mark done.
+- Needs your answer, stuck or a sign-in: Answer, Open or Sign in, then Snooze and Mark done.
 - Reminder: Mark done, Snooze, Open.
 - Morning digest: tap it to open.
 
