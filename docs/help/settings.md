@@ -40,7 +40,7 @@ On your own computer, a daily timer installs each new signed release on Linux. S
 
 ## Search by meaning
 
-In **Settings**, **Model**. It finds emails, messages and notes by what they're about, not only by their words. On a hosted Machine a small AI on the Machine itself does it, and nothing is sent anywhere. It's on from 8 GB of memory. On 4 GB, turn it on with its switch. It uses about half a gigabyte, so a busy Machine can slow down.
+In **Settings**, **Model**. It finds emails, messages and notes by what they're about, not only by their words. On a hosted Machine a small AI on the Machine itself does it, and nothing is sent anywhere. It's on from 8 GB of memory. On 4 GB, turn it on with its switch. It uses about half a gigabyte, so a busy Machine can slow down. With it off, a to-do's preparation still looks for related messages, by words.
 
 On your own computer, it's the `embeddings` block in `config.json`. Restart the Machine after a change.
 
