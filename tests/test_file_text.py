@@ -79,6 +79,9 @@ def cid_pdf(packed):
     return pdf([b'null', b'null', b'null', b'null', stream(CMAP, compress=True), content, packed_stream])
 
 
+SLOW = b'%PDF-1.4\n1 0 obj ' + b'/Font<<' * 100_000 + b' endobj'  # minutes of work for the reader
+
+
 class PdfText(unittest.TestCase):
     def test_a_pdfs_text_in_page_order(self):
         for compress in (False, True):
@@ -110,7 +113,7 @@ class PdfText(unittest.TestCase):
                     data[at] = rng.randrange(256)
                 else:
                     del data[at:at + rng.randint(1, 80)]
-            self.assertIsInstance(file_text.excerpt(bytes(data), 'application/pdf'), str)
+            self.assertIsInstance(file_text._read(bytes(data), 'application/pdf', 4000), str)
 
     def test_bounded_for_files_from_anywhere(self):
         # A small file that inflates to a lot of text: cut at the limit, quickly
@@ -127,15 +130,15 @@ class PdfText(unittest.TestCase):
         self.assertLess(time.monotonic() - started, 5)
 
 
-    def test_a_file_someone_else_made_is_read_apart(self):
+    def test_a_pdf_is_read_in_a_process_of_its_own_with_a_time_limit(self):
         self.assertIn('Total due: EUR 255.00', file_text.apart(two_pages(True)))
-        self.assertEqual(file_text.apart(two_pages(), 200), file_text.excerpt(two_pages(), 'application/pdf', 200))
         self.assertEqual(file_text.apart(b'not a pdf'), '')
+        with patch.object(file_text, 'pdf_text', side_effect=AssertionError('read in this process')):
+            self.assertIn('Total due: EUR 255.00', file_text.excerpt(two_pages(), 'application/pdf'))
         # Made to keep the reader busy for minutes: it ends at the time limit
-        with patch.object(file_text, 'APART_SECONDS', 1):
-            started = time.monotonic()
-            self.assertEqual(file_text.apart(b'%PDF-1.4\n1 0 obj ' + b'/Font<<' * 100_000 + b' endobj'), '')
-            self.assertLess(time.monotonic() - started, 5)
+        started = time.monotonic()
+        self.assertEqual(file_text.excerpt(SLOW, 'application/pdf', seconds=1), '')
+        self.assertLess(time.monotonic() - started, 5)
 
 
 class PlainText(unittest.TestCase):
