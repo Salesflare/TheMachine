@@ -25,6 +25,9 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  const context=await browser.newContext({viewport:{width:390,height:844},locale:'en-US'});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+ // The save's other way, a timer for a page whose frames don't come (a background tab), is held back until asked for: a
+ // slow computer's first frame can take longer than it
+ await context.addInitScript(()=>{const timer=self.setTimeout,held=[];self.setTimeout=(f,ms,...a)=>ms===300&&/^\(\)=>\{if\(!saved/.test(String(f))?(held.push(f),0):timer(f,ms,...a);self.heldTimers=held});
  // When the first to-do is in the page, the first frame after that (painted next), each copy of the status made for
  // the device (the device store's own JSON.stringify, called from its put) and each write to the device's store
  await context.addInitScript(()=>{self.seen={card:null,frame:null,copies:[],saves:[]};
@@ -39,6 +42,8 @@ try{
  assert.equal(seen.copies.length,1,`copied once ${JSON.stringify(seen)}`);assert.equal(seen.saves.length,1,`saved once ${JSON.stringify(seen)}`);
  assert.ok(seen.copies[0]>seen.frame,`copied after the to-dos were painted, not before ${JSON.stringify(seen)}`);
  assert.equal(await p.evaluate(async()=>(await localCache.read('status'))?.value?.suggestions?.length),1,'the saved copy has the to-dos');
+ assert.ok(await p.evaluate(()=>heldTimers.length)>0,'a timer saves it on a page whose frames do not come');
+ await p.evaluate(()=>heldTimers.forEach(f=>f()));assert.equal(await p.evaluate(()=>self.seen.copies.length),1,'and not again once it is saved');
  // Once whole, a changed status is saved in the same refresh
  extra=[{...cards[0],id:'2'.repeat(16),title:'Book the room'}];
  // (the store's put comes once the copy is sealed, a moment after the call: no paint is waited for)
