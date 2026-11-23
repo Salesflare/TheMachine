@@ -346,7 +346,7 @@ class StatusApp:
         except Exception as error:  # noqa: BLE001 - the dashboard shows without it
             LOG.error('reset nudge error=%s', type(error).__name__); result['reset_nudge'] = None
         result['check']= self.check_view()
-        result['mail_check'] = self.mail_check_view()  # "Checked 9 emails and 4 chats at 16:11 · nothing needs you" on To-dos
+        result['mail_check'] = self.mail_check_view()  # "Checked 13 messages at 16:11 · no new to-dos" on To-dos
         result['skills'] = self.skills.view() if getattr(self, 'skills', None) else None
         result['review_live'] = self.review_live()
         result['started_at'] = self.started_at()

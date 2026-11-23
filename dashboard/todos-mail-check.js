@@ -1,6 +1,7 @@
 // After a check that saw new messages (state.mail_check, check_now.mail_check), from every source it read (email,
-// chats, phone notifications, the rest): one line above the to-dos, "Checked 13 messages at 16:11 · nothing needs you",
-// so new messages with no to-do read as checked, not as broken. A tap opens one row per thread or chat: its source's
+// chats, phone notifications, the rest): one line above the to-dos, "Checked 13 messages at 16:11 · no new to-dos",
+// so new messages with no to-do read as checked, not as broken. It speaks of this check only: "nothing needs you"
+// above to-dos still marked Needs you read as a contradiction. A tap opens one row per thread or chat: its source's
 // one-color mark (todos-logos.js: Gmail or Outlook by its account, a phone notification by its app), who, the subject or first words, and its new to-do (held until when, if it waits) or the
 // check's reason it needed nothing; a row opens its newest message in the message viewer (openEvent).
 // A lazy part (dashboard_parts.LAZY): shell-render.js mailCheckSlot loads it only while state.mail_check read something,
@@ -14,7 +15,7 @@ const heldAt=v=>{const d=new Date(v),tm=new Date();tm.setDate(tm.getDate()+1);
 const mailCheckRead=m=>t(['Checked {} message at {}','Checked {} messages at {}'],m.read,checkClock(m.at));
 function mailCheckLine(m){const [tmw,when]=m.held&&m.held_until?heldAt(m.held_until):[],
  held=when?t(tmw?['{} to-do held until tomorrow {}','{} to-dos held until tomorrow {}']:['{} to-do held until {}','{} to-dos held until {}'],m.held,when):'';
- return [mailCheckRead(m),m.todos?(held&&m.held===m.todos?'':t(['{} new to-do','{} new to-dos'],m.todos)):t('nothing needs you'),held].filter(Boolean).join(' · ')}
+ return [mailCheckRead(m),m.todos?(held&&m.held===m.todos?'':t(['{} new to-do','{} new to-dos'],m.todos)):t('no new to-dos'),held].filter(Boolean).join(' · ')}
 function mailCheckWhy(r){if(r.todo){const [tmw,when]=r.held_until?heldAt(r.held_until):[];
   return html`<span class="mc-why mc-todo"><b>${when?t(tmw?'Held until tomorrow {}':'Held until {}',when):t('New to-do')}</b> <span translate="no">${r.todo}</span></span>`}
  return r.later?html`<span class="mc-why">${t('Read again in the next check')}</span>`:r.why?html`<span class="mc-why" translate="no">${r.why}</span>`:''}
