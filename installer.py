@@ -226,7 +226,7 @@ def check_prerequisites():
     if openclaw:
         got = run([openclaw, '--version']).stdout
         have = '.'.join(map(str, version_tuple(got) or ())) or 'unknown'
-        note = '' if have == want else f' (tested with {want}; the Telegram Change prompt falls back to a plain prompt on other versions)'
+        note = '' if have == want else f' (tested with {want}; the Telegram Change prompt can fall back to a plain prompt on other versions)'
         say(f'  ok    openclaw {have}{note}')
         if version_tuple(got) and version_tuple(got) < version_tuple(want):
             say(f'  note  to update: openclaw backup create --verify, then openclaw update --tag {want}. It migrates'
