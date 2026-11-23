@@ -1,0 +1,155 @@
+# The Machine on the desktop (prototype)
+
+The Machine's robot stands in a corner of the screen, above other windows. A click opens a small box: add a to-do (with
+files or a screenshot), ask about your messages, and see the first of For you, with the quick buttons of each one's
+notification. A dot shows when something is new since you last looked.
+The dashboard, the phone app and the Machine don't change for it. It is not part of a release, and off means not started.
+
+It never sends or approves anything. A to-do opens in the dashboard, where its draft is read first. It starts with
+nothing of its own: no start at login, no hotkey. On Windows it has an icon by the clock while it runs, with the same dot
+(Windows may put it behind the arrow there).
+
+**Quick buttons.** On a row, with the mouse over it or the keys in it: those of its notification on Android that do
+something (Do it, Snooze, Mark done), in your Machine's words. The row then says what happened, with Undo for a snooze and
+for Mark done, and goes. Your Machine takes nothing else from them. A Fleet item and a board's follow-ups have none.
+
+**Just added.** A to-do added here is the first row at once, lit for a moment, with "Just added" and the dashboard's own
+word for its state under it, which follows while the box is open. The count stays the dashboard's: one it has outside For
+you stands under its own "Just added" line. Next time the box opens it is a row like any other. If it isn't taken, its
+text and files come back to the box. The dashboard has no Undo for adding, so there is none here. A question
+takes the list's place, with its answer under it.
+
+**Screenshots.** **+**, **Take a screenshot**: you pick an area or a window with the system's own tool while the robot and
+its box are away, and see it in the box before you add the to-do. Remove it there and it goes from your Machine too.
+Windows: its own snip (Windows itself may also keep the image, as its settings say). Linux: the desktop's portal, where it
+has one that lets you pick.
+
+**The dot.** Something came into For you, became ready, needs you, or became due today, since the box was open or the
+dashboard's app was in front on this computer, or a to-do was opened from the box. Opening the box takes it away. A
+dashboard in a browser's tab isn't seen by it. To know this it keeps fingerprints of what was there, not what it was.
+
+## Try it
+
+Windows (10 or 11, 64-bit): download `the-machine-desktop-windows-unsigned` from the newest run of
+[Desktop prototype](https://github.com/Salesflare/TheMachine/actions/workflows/desktop.yml), unpack it and start
+`the-machine-desktop.exe`. It isn't signed, so Windows warns: **More info**, **Run anyway**.
+
+Linux (64-bit): build it (below), then start `target/release/the-machine-desktop`. It needs WebKitGTK 4.1 and
+gtk-layer-shell (`libgtk-layer-shell.so.0`, from the system or in `lib/` next to the program).
+
+The robot stands in the bottom right corner, and the first time its box opens by itself to sign in:
+
+- **Sign in** opens your account in your browser and comes back, for a hosted Machine or one on The Machine Network.
+- **Self-hosted?** takes your Machine's own address. Like the dashboard, it only works where you are its owner: a computer
+  on your Tailscale network.
+
+The box greets you by the first name your Machine knows, by this computer's clock, and says so when nothing needs you; or
+that you aren't signed in, or that your Machine doesn't answer. Click the robot to open and close it, and drag the robot to
+move it, also to another monitor. Right-click it, or **...** in the box, for where you are signed in, **Open dashboard**,
+**Hide**, **Sign out** and **Quit**. For a key of your own, bind it to the program with `--toggle`.
+
+A hidden robot never goes away altogether: it looks over the bottom edge of the screen, dot and all. Click it and it is
+back where it stood; so do a click on its icon by the clock (Windows) and starting the program again. The first time, the
+box says so.
+
+## For you
+
+The list, its order and its count are the dashboard's For you, with your Work or Personal filter: the first three, then
+how many more. The robot runs the dashboard's own rules on the Machine's own answer, so nothing is worked out twice. It
+asks every 30 seconds, when the box opens and when you leave the app, and a look of the robot's doesn't count as opening
+the dashboard. Follow-ups of a board and Fleet items open with the dashboard.
+
+## Opening a to-do
+
+What the box opens goes to the Machine's installed app when there is one, in the window that is open, else to the
+browser. The robot finds the app where Chrome or Edge listed it when you installed it (Linux: the applications menu;
+Windows: the Start menu and installed apps), only for the Machine you are signed in to, and starts that browser with the
+app's id and the address. No shell, no setting and no prompt. Signing in stays in the browser.
+
+## Hidden while the app is in front
+
+While that app's window is the one in front, the robot and its box are away, and what you wrote in the box stays. They
+come back when another window is in front, or the app is minimized or closed. A robot you hid yourself stays hidden. In an
+ordinary browser tab the dashboard doesn't hide it.
+
+For this the robot asks the system one thing: which app the window in front belongs to (Windows: the app id of its
+taskbar button; X11: its window class). It compares that with the installed app's id and forgets it. It reads no titles
+and nothing on the screen, needs no permission, and stores, logs and sends none of it. On Linux this works on X11,
+and on Hyprland, which tells what comes to the front on a socket of its own: the robot takes the class from it and drops
+the rest. Other Wayland desktops tell a program nothing about other windows, so there the robot stays.
+
+## Quit
+
+To quit: the menu above; on Windows also its icon by the clock, or Alt+F4 after a click on the robot. The program with
+`--quit` stops it whatever state it is in.
+
+## Remove it
+
+Quit it, delete the program, and delete its folders:
+
+| | Address, session, place | Page cache |
+|---|---|---|
+| Windows | `%APPDATA%\computer.themachine.desktop` | `%LOCALAPPDATA%\computer.themachine.desktop` |
+| Linux | `~/.config/computer.themachine.desktop` | `~/.local/share/computer.themachine.desktop`, `~/.cache/computer.themachine.desktop` |
+
+For a hosted Machine, sign it out on your account page too (**Security**).
+
+Signing in with an account registers `computer.themachine.app:` links while the browser is open, and takes that back
+when it returns, the app quits or it next starts. After a crash in between, what is left is
+`HKCU\Software\Classes\computer.themachine.app` on Windows, and on Linux
+`~/.local/share/applications/the-machine-desktop-handler.desktop` with its line in `~/.config/mimeapps.list`.
+
+## How it is made
+
+Tauri 2: a small Rust program and the system's own web view. Three parts, each replaceable without the others:
+
+| Part | Files | Knows |
+|---|---|---|
+| Windows | `src/windows.rs`, `src/place.rs` | Where the robot and the box are. Nothing of the Machine. |
+| Pages | `ui/` | What is in them. `robot.js` only clicks and drags; `box.js` asks `native.js` for everything. |
+| The Machine | `src/machine.rs`, `src/signin.rs`, `src/address.rs`, `src/saved.rs` | The same requests and address rules as the phone app (`mobile/`). |
+| A screenshot | `src/snip.rs` | The system's own tool. |
+| The dot | `src/seen.rs` | What was there when the person last looked. |
+| The installed app | `src/webapp.rs`, `src/front.rs` | Where it is, how it is started, whether it is in front. |
+
+`ui/for-you.js` is `dashboard/todos-for-you.js` as it is, and `ui/list.js` the few names it needs. When the dashboard's file
+changes, copy it again: `tests/test_for_you_rules_dashboard.mjs` compares both, and the two lists for every state.
+
+`src/main.rs` joins them. `build.rs` names every command and `capabilities/` says which window may call which; the pages
+load nothing from elsewhere (`tauri.conf.json`, `csp`). The address and a hosted Machine's session are in one file only
+its owner can read (`app.json` in the folder above).
+
+To a Machine it sends `GET manifest.webmanifest`, `api/session`, `api/status`, `api/fleet` and `api/notice`, and the actions
+`card_new`, `chat_upload`, `chat_file_remove`, `search_ask` and `decide` (as a notification's buttons do, and Undo), with
+the dashboard's own token and Origin. No others.
+
+| | Windows | Linux: layer-shell (Hyprland, Sway, KDE) | Linux: X11, GNOME (XWayland) | macOS |
+|---|---|---|---|---|
+| Built | yes, by CI | yes | yes | no |
+| On top, no taskbar entry | window flags | layer surface | window hints | |
+| Full screen | hidden | under it | the window manager decides | |
+| Away while the app is in front | yes | Hyprland only, by the socket it tells it on | yes, XWayland apps on GNOME only | |
+| Clicks beside the robot | taken in the window's corners | go through | go through | |
+
+## Develop
+
+```bash
+scripts/sandbox.sh busy 8870                                  # a Machine with made-up data
+cargo run --release --features sandbox --manifest-path desktop/Cargo.toml   # takes http://127.0.0.1:8870 as an address
+cargo test --manifest-path desktop/Cargo.toml
+```
+
+CI also uses the Windows build, with real mouse and keys against a made-up Machine (`smoke/windows.py`), and keeps the
+screenshots with the run. It moves the mouse and changes the resolution, so it is for a throwaway computer.
+
+On Windows, never make a window from a page's call or a message: it can wait for itself (`later` in `src/main.rs`). Both
+windows are made at the start.
+
+## Before a release
+
+- The box as a page of the Machine's, so its words come from the catalogs (`i18n/`); `native.js` is the seam.
+- The account names this app in its list of signed-in apps (it says iPhone now), and a check of the whole hosted sign-in.
+- Settings to turn it on, a hotkey and start at login for who wants them, updates, signing, macOS.
+- Talk and dictation: the dashboard has no address that opens Talk yet.
+
+The robot's images come from `brand/` ([TRADEMARKS.md](../TRADEMARKS.md)). The font is Inter (`ui/fonts/Inter-OFL.txt`).

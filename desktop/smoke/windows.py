@@ -1,0 +1,1370 @@
+"""Runs the app on a Windows desktop as a person would: real mouse and keys (SendInput), against a made-up Machine, with a
+screenshot of each step. For CI's own throwaway computer (desktop.yml): it moves the mouse and changes the resolution.
+
+  python smoke/windows.py <sandbox build> <build for people> <folder for the pictures>
+"""
+import base64
+import ctypes
+import json
+import os
+import pathlib
+import shutil
+import socket
+import struct
+import subprocess
+import sys
+import time
+import traceback
+import urllib.request
+import winreg
+import uuid
+import zlib
+from ctypes import wintypes as w
+
+from standin import Machine, TODOS
+
+PORT, DEBUG, ID = 8941, 9227, 'computer.themachine.desktop'
+user, gdi = ctypes.WinDLL('user32', use_last_error=True), ctypes.WinDLL('gdi32')
+user.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))  # physical pixels everywhere
+for f, r in ((user.GetDC, w.HDC), (gdi.CreateCompatibleDC, w.HDC), (gdi.CreateCompatibleBitmap, w.HBITMAP), (user.GetForegroundWindow, w.HWND), (user.FindWindowW, w.HWND)):
+    f.restype = r
+gdi.BitBlt.argtypes = [w.HDC, *[ctypes.c_int] * 4, w.HDC, ctypes.c_int, ctypes.c_int, w.DWORD]
+gdi.SelectObject.argtypes = [w.HDC, w.HGDIOBJ]
+gdi.DeleteObject.argtypes, gdi.DeleteDC.argtypes = [w.HGDIOBJ], [w.HDC]
+gdi.CreateCompatibleBitmap.argtypes = [w.HDC, ctypes.c_int, ctypes.c_int]
+gdi.CreateCompatibleDC.argtypes, user.ReleaseDC.argtypes = [w.HDC], [w.HWND, w.HDC]
+gdi.GetDIBits.argtypes = [w.HDC, w.HBITMAP, w.UINT, w.UINT, ctypes.c_void_p, ctypes.c_void_p, w.UINT]
+for f in (user.GetWindowRect, user.ClientToScreen, user.IsWindowVisible, user.GetDpiForWindow):
+    f.argtypes = [w.HWND] + ([ctypes.c_void_p] if f in (user.GetWindowRect, user.ClientToScreen) else [])
+user.SendMessageTimeoutW.argtypes = [w.HWND, w.UINT, w.WPARAM, w.LPARAM, w.UINT, w.UINT, ctypes.c_void_p]
+EACH = ctypes.WINFUNCTYPE(w.BOOL, w.HWND, w.LPARAM)
+SM = user.GetSystemMetrics
+
+out = pathlib.Path(sys.argv[3])
+out.mkdir(parents=True, exist_ok=True)
+results = []
+SNIP = (out / 'snip.cmd').resolve()  # what the app takes for Windows' own snip, while it is there
+
+
+# The screen, the mouse and the keys
+
+def png(name):
+    time.sleep(0.4)
+    x, y, wide, high = SM(76), SM(77), SM(78), SM(79)  # all monitors
+    screen = user.GetDC(None)
+    memory = gdi.CreateCompatibleDC(screen)
+    bitmap = gdi.CreateCompatibleBitmap(screen, wide, high)
+    gdi.SelectObject(memory, bitmap)
+    gdi.BitBlt(memory, 0, 0, wide, high, screen, x, y, 0x40CC0020)  # SRCCOPY | CAPTUREBLT
+    header = ctypes.create_string_buffer(struct.pack('<IiiHHIIiiII', 40, wide, -high, 1, 32, 0, 0, 0, 0, 0, 0), 44)
+    raw = ctypes.create_string_buffer(wide * high * 4)
+    gdi.GetDIBits(memory, bitmap, 0, high, raw, header, 0)
+    gdi.DeleteDC(memory)
+    gdi.DeleteObject(bitmap)
+    user.ReleaseDC(None, screen)
+    px = bytearray(raw.raw)
+    rgb = bytearray(wide * high * 3)
+    rgb[0::3], rgb[1::3], rgb[2::3] = px[2::4], px[1::4], px[0::4]
+    rows = b''.join(b'\0' + rgb[i * wide * 3:(i + 1) * wide * 3] for i in range(high))
+    part = lambda kind, data: struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))
+    (out / f'{name}.png').write_bytes(b'\x89PNG\r\n\x1a\n' + part(b'IHDR', struct.pack('>IIBBBBB', wide, high, 8, 2, 0, 0, 0))
+                                     + part(b'IDAT', zlib.compress(bytes(rows), 6)) + part(b'IEND', b''))
+
+
+class Mouse(ctypes.Structure):
+    _fields_ = [('dx', w.LONG), ('dy', w.LONG), ('data', w.DWORD), ('flags', w.DWORD), ('time', w.DWORD), ('extra', ctypes.c_size_t)]
+
+
+class Key(ctypes.Structure):
+    _fields_ = [('vk', w.WORD), ('scan', w.WORD), ('flags', w.DWORD), ('time', w.DWORD), ('extra', ctypes.c_size_t)]
+
+
+class Either(ctypes.Union):
+    _fields_ = [('mouse', Mouse), ('key', Key)]
+
+
+class Input(ctypes.Structure):
+    _fields_ = [('type', w.DWORD), ('is_', Either)]
+
+
+def send(one):
+    if user.SendInput(1, ctypes.byref(one), ctypes.sizeof(Input)) != 1:
+        raise OSError(f'SendInput: {ctypes.get_last_error()}')
+
+
+def mouse(flags, x=0, y=0):
+    send(Input(0, Either(mouse=Mouse(x, y, 0, flags, 0, 0))))
+
+
+def move(x, y):
+    left, top, wide, high = SM(76), SM(77), SM(78), SM(79)
+    mouse(0xC001, round((x - left) * 65535 / (wide - 1)), round((y - top) * 65535 / (high - 1)))
+    time.sleep(0.03)
+
+
+def click(x, y, right=False):
+    move(x - 3, y)
+    move(x, y)
+    time.sleep(0.15)
+    mouse(8 if right else 2)
+    time.sleep(0.06)
+    mouse(16 if right else 4)
+    time.sleep(0.5)
+
+
+def drag(a, b, steps=25):
+    move(*a)
+    time.sleep(0.2)
+    mouse(2)
+    for i in range(1, steps + 1):
+        move(a[0] + (b[0] - a[0]) * i / steps, a[1] + (b[1] - a[1]) * i / steps)
+    time.sleep(0.3)
+    mouse(4)
+    time.sleep(0.6)
+
+
+def key(vk, up=None):
+    for flag in (0, 2) if up is None else (2,) if up else (0,):
+        send(Input(1, Either(key=Key(vk, 0, flag, 0, 0))))
+    time.sleep(0.05)
+
+
+def alt_f4():
+    key(0x12, False)
+    key(0x73)
+    key(0x12, True)
+
+
+def write(text):
+    for c in text:
+        for flag in (4, 6):
+            send(Input(1, Either(key=Key(0, ord(c), flag, 0, 0))))
+        time.sleep(0.01)
+    time.sleep(0.2)
+
+
+ENTER, ESCAPE = 0x0D, 0x1B
+
+
+# The app's windows and pages
+
+def until(what, seconds=15, every=0.25):
+    end = time.time() + seconds
+    while True:
+        found = what()
+        if found or time.time() > end:
+            return found
+        time.sleep(every)
+
+
+def need(ok, text):
+    if not ok:
+        raise AssertionError(text)
+
+
+class App:
+    last = None
+
+    def __init__(self, program, *args, debug=True):
+        if App.last and App.last.poll() is None:  # a step before this one failed
+            App.last.kill()
+            App.last.wait()
+        env = dict(os.environ, MACHINE_SANDBOX_ACCOUNT=f'http://127.0.0.1:{PORT}', MACHINE_SANDBOX_SNIP=str(SNIP))
+        if debug:
+            env['MACHINE_SANDBOX_DEBUG'] = str(DEBUG)
+        self.env, self.program = env, program
+        self.process = App.last = subprocess.Popen([program, *args], env=env)
+
+    def again(self, *args, seconds=15):
+        return subprocess.run([self.program, *args], env=self.env, timeout=seconds).returncode
+
+    def windows(self):
+        found = []
+
+        def each(hwnd, _):
+            pid, rect = w.DWORD(), w.RECT()
+            user.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+            if pid.value == self.process.pid and user.IsWindowVisible(hwnd):
+                user.GetWindowRect(hwnd, ctypes.byref(rect))
+                if rect.right - rect.left > 40:
+                    found.append((hwnd, rect))
+            return True
+        user.EnumWindows(EACH(each), 0)
+        return found
+
+    def robot(self):
+        return next((x for x in self.windows() if x[1].right - x[1].left < 250), None)
+
+    def box(self):
+        return next((x for x in self.windows() if x[1].right - x[1].left >= 250), None)
+
+    def center(self):
+        r = need_window(self.robot())[1]
+        return (r.left + r.right) // 2, (r.top + r.bottom) // 2
+
+    def answers(self):
+        """Whether its main thread takes messages."""
+        windows = self.windows()
+        return bool(windows) and all(user.SendMessageTimeoutW(h, 0, 0, 0, 0, 3000, None) for h, _ in windows)
+
+    def ended(self, seconds=8):
+        return until(lambda: self.process.poll() is not None, seconds)
+
+
+def need_window(found):
+    need(found, 'the window is there')
+    return found
+
+
+def page(name, script):
+    """What a page says about itself: only read, never clicked this way."""
+    pages = json.load(urllib.request.urlopen(f'http://127.0.0.1:{DEBUG}/json', timeout=5))
+    address = next(p['webSocketDebuggerUrl'] for p in pages if name in p['url'])
+    host, path = address.removeprefix('ws://').split('/', 1)
+    host, port = host.split(':')
+    with socket.create_connection((host, int(port)), 10) as s:
+        s.sendall(f'GET /{path} HTTP/1.1\r\nHost: {host}:{port}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n'
+                  f'Sec-WebSocket-Key: {base64.b64encode(os.urandom(16)).decode()}\r\nSec-WebSocket-Version: 13\r\n\r\n'.encode())
+        f = s.makefile('rb')
+        while f.readline().strip():
+            pass
+        body = json.dumps({'id': 1, 'method': 'Runtime.evaluate', 'params': {'expression': script, 'returnByValue': True}}).encode()
+        mask = os.urandom(4)
+        s.sendall(struct.pack('>BBH', 0x81, 0x80 | 126, len(body)) + mask + bytes(b ^ mask[i % 4] for i, b in enumerate(body)))
+        while True:
+            _, n = f.read(2)
+            n = struct.unpack('>H', f.read(2))[0] if n == 126 else struct.unpack('>Q', f.read(8))[0] if n == 127 else n
+            told = json.loads(f.read(n))
+            if told.get('id') == 1:
+                return told['result']['result'].get('value')
+
+
+def says(selector, name='box.html'):
+    shown = page(name, f'(e => e && e.getClientRects().length ? e.innerText : "")(document.querySelector({json.dumps(selector)}))')
+    return (shown or '').strip()
+
+
+def press(app, selector):
+    """A real click on something in the box, where its page says it is."""
+    at = page('box.html', f'(() => {{ const e = document.querySelector({json.dumps(selector)}).getBoundingClientRect(); '
+                          'return [e.x + e.width / 2, e.y + e.height / 2].map(v => v * devicePixelRatio) })()')
+    point = w.POINT(0, 0)
+    user.ClientToScreen(need_window(app.box())[0], ctypes.byref(point))
+    click(round(point.x + at[0]), round(point.y + at[1]))
+
+
+def work_area():
+    r = w.RECT()
+    user.SystemParametersInfoW(0x30, 0, ctypes.byref(r), 0)
+    return r
+
+
+def in_corner(app):
+    """In the bottom right corner of the work area, where it starts: 16 and 12 from its edges."""
+    hwnd, r = need_window(app.robot())
+    area, scale = work_area(), user.GetDpiForWindow(hwnd) / 96
+    told = (f'robot {r.left},{r.top} {r.right - r.left}x{r.bottom - r.top}, work area {area.left},{area.top} to '
+            f'{area.right},{area.bottom}, scale {scale}')
+    return abs(area.right - r.right - 16 * scale) <= 2 and abs(area.bottom - r.bottom - 12 * scale) <= 2 and abs(r.right - r.left - 88 * scale) <= 2, told
+
+
+def step(name):
+    def run(f):
+        try:
+            told = f() or ''
+            results.append((name, True, told))
+        except Exception as e:  # noqa: BLE001 (the next steps still tell something)
+            results.append((name, False, f'{type(e).__name__}: {e}'))
+            traceback.print_exc()
+        try:
+            png(f'{len(results):02d}-{name.replace(" ", "-")}')
+        except Exception:  # noqa: BLE001
+            traceback.print_exc()
+        print('ok  ' if results[-1][1] else 'FAIL', name, results[-1][2], flush=True)
+    return run
+
+
+def fresh():
+    for base in ('APPDATA', 'LOCALAPPDATA'):
+        for _ in range(10):  # the page cache is let go of a moment after the app
+            shutil.rmtree(pathlib.Path(os.environ[base], ID), ignore_errors=True)
+            if not pathlib.Path(os.environ[base], ID).exists():
+                break
+            time.sleep(0.5)
+
+
+def scheme():
+    try:
+        winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Classes\computer.themachine.app').Close()
+        return True
+    except FileNotFoundError:
+        return False
+
+
+def saved():
+    return json.loads(pathlib.Path(os.environ['APPDATA'], ID, 'app.json').read_text())
+
+
+class Id(ctypes.Structure):
+    _fields_ = [('size', w.DWORD), ('hwnd', w.HWND), ('id', w.UINT), ('guid', ctypes.c_byte * 16)]
+
+
+def tray(app):
+    """Where its icon is: behind the taskbar's arrow, opened first, unless the person moved it out."""
+    at, rect = [], w.RECT()
+
+    def each(hwnd, _):
+        pid, name = w.DWORD(), ctypes.create_unicode_buffer(64)
+        user.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        user.GetClassNameW(hwnd, name, 64)
+        if pid.value == app.process.pid and name.value.startswith('tray_icon'):
+            at.append(hwnd)
+        return True
+    user.EnumWindows(EACH(each), 0)
+    need(at, 'it has one')
+
+    def where():
+        found = any(not ctypes.windll.shell32.Shell_NotifyIconGetRect(ctypes.byref(Id(ctypes.sizeof(Id), at[0], n)), ctypes.byref(rect)) for n in range(1, 6))
+        need(found, 'Windows shows it')
+        return (rect.left + rect.right) // 2, (rect.top + rect.bottom) // 2
+    here = where()
+    if here[1] < work_area().bottom:
+        return here
+    for _ in range(3):
+        click(*here)
+        if until(lambda: where()[1] < work_area().bottom, 3):
+            time.sleep(0.5)
+            return where()
+    return here
+
+
+class Mode(ctypes.Structure):
+    _fields_ = [('name', w.WCHAR * 32), ('v', w.WORD * 2), ('size', w.WORD), ('extra', w.WORD), ('fields', w.DWORD), ('x', w.LONG),
+                ('y', w.LONG), ('o', w.DWORD * 2), ('s', ctypes.c_short * 5), ('form', w.WCHAR * 32), ('px', w.WORD), ('bits', w.DWORD),
+                ('width', w.DWORD), ('height', w.DWORD), ('rest', w.DWORD * 10)]
+
+
+def resolution(wide, high):
+    mode = Mode(size=ctypes.sizeof(Mode), fields=0x180000, width=wide, height=high)
+    if user.ChangeDisplaySettingsW(ctypes.byref(mode), 0):
+        return False
+    time.sleep(2)
+    return (SM(0), SM(1)) == (wide, high)
+
+
+def scale(percent):
+    """Settings > Display > Scale, by the call Settings uses. False: this computer's screen doesn't offer it."""
+    paths, modes = w.UINT(), w.UINT()
+    user.GetDisplayConfigBufferSizes(2, ctypes.byref(paths), ctypes.byref(modes))
+    path, mode = ctypes.create_string_buffer(72 * paths.value), ctypes.create_string_buffer(64 * modes.value)
+    user.QueryDisplayConfig(2, ctypes.byref(paths), path, ctypes.byref(modes), mode, None)
+    source = path.raw[:12]  # adapter, id
+    get = ctypes.create_string_buffer(struct.pack('<iI', -3, 32) + source + bytes(12), 32)
+    if user.DisplayConfigGetDeviceInfo(get):
+        return False
+    least, _, most = struct.unpack('<iii', get.raw[20:32])
+    steps = [100, 125, 150, 175, 200, 225, 250, 300]
+    wanted = least + steps.index(percent)  # its steps count from the recommended one
+    if wanted > most:
+        return False
+    if user.DisplayConfigSetDeviceInfo(ctypes.create_string_buffer(struct.pack('<iI', -4, 24) + source + struct.pack('<i', wanted), 24)):
+        return False
+    time.sleep(3)
+    return True
+
+
+sandbox, people = (str(pathlib.Path(p).resolve()) for p in sys.argv[1:3])
+fresh()
+resolution(1920, 1080)
+print('screen', SM(0), SM(1), 'of', SM(80), 'monitors', flush=True)
+
+
+# The build for people, as it first starts
+
+app = App(people, debug=False)
+
+
+@step('first start')
+def _():
+    need(until(app.robot, 60), 'the robot shows')
+    time.sleep(3)
+    ok, told = in_corner(app)
+    need(ok, told)
+    return told
+
+
+@step('first start opens the sign-in')
+def _():
+    need(until(app.box, 10), 'the box opens by itself')
+
+
+@step('click closes and opens')
+def _():
+    had = bool(app.box())
+    for wanted in (not had, had, not had, True):
+        if bool(app.box()) == wanted:
+            continue
+        click(*app.center())
+        ok = until(lambda: bool(app.box()) == wanted, 8)
+        need(app.answers(), 'its main thread answers')
+        need(ok, f'the box is {"open" if wanted else "closed"}')
+
+
+@step('quit from a second start')
+def _():
+    if not app.answers():
+        print('(its main thread did not answer)')
+    app.again('--quit')
+    need(app.ended(), 'the process is gone')
+
+
+if app.process.poll() is None:
+    app.process.kill()
+    app.process.wait()
+fresh()
+
+
+# The same with a made-up Machine
+
+machine = Machine(PORT)
+app = App(sandbox)
+
+
+@step('sandbox first start')
+def _():
+    need(until(app.box, 30), 'the box opens by itself')
+    need(until(lambda: says('#signin-go'), 10), 'it offers the sign-in')
+    need(says('#state') == 'Not signed in', says('#state'))
+    return says('#panel').replace('\n', ' | ')
+
+
+@step('drag')
+def _():
+    a = app.center()
+    b = (500, 300)
+    drag(a, b)
+    c = app.center()
+    need(abs(c[0] - b[0]) < 6 and abs(c[1] - b[1]) < 6, f'from {a} to {b}, it is at {c}')
+    need(app.answers(), 'its main thread answers')
+    need(saved()['places'], 'its place is kept')
+    return f'{a} to {c}'
+
+
+@step('right click')
+def _():
+    click(*app.center(), right=True)
+    need(until(app.box), 'the box opens')
+    need(until(lambda: 'Quit' in says('#menu')), 'on its menu')
+    told = says('#menu').replace('\n', ' | ')
+    key(ESCAPE)
+    need(until(lambda: not says('#menu')), 'Escape closes the menu')
+    return told
+
+
+@step('wrong address')
+def _():
+    press(app, '#signin-other')
+    press(app, '#address')
+    write('http://127.0.0.1:1')
+    key(ENTER)
+    need(until(lambda: says('#signin-error'), 25), 'it says why not')
+    return says('#signin-error')
+
+
+def listed():
+    return page('box.html', '[...document.querySelectorAll("#todos li")].map(x => x.innerText)')
+
+
+def greeted(name=', Sam'):
+    part = lambda: 'morning' if 5 <= time.localtime().tm_hour < 12 else 'afternoon' if 12 <= time.localtime().tm_hour < 18 else 'evening'
+    return says('#state') == f'Good {part()}{name}'
+
+
+def one_line():
+    return page('box.html', '(e => e.scrollWidth <= e.clientWidth && e.clientHeight < 20)(document.getElementById("state"))')
+
+
+@step('sign in by address')
+def _():
+    press(app, '#address')
+    key(0x11, False), key(0x41), key(0x11, True)
+    write(f'http://127.0.0.1:{PORT}')
+    key(ENTER)
+    need(until(lambda: says('#compose')), 'signed in')
+    need(until(greeted), says('#state'))
+    need(until(lambda: len(listed()) == 4), 'three to-dos and more')
+    need(listed() == [title for _, title in TODOS[:3]] + ['1 more'] and says('#ready-name') == 'For you 4', f"{says('#ready-name')}: {listed()}")
+    return says('#panel').replace('\n', ' | ')
+
+
+@step('the menu says where')
+def _():
+    press(app, '#more')
+    need(until(lambda: f'Signed in to 127.0.0.1:{PORT}' in says('#menu')), says('#menu'))
+    png('menu')
+    key(ESCAPE)
+    need(until(lambda: not says('#menu')), 'it closes')
+
+
+@step('nothing for them')
+def _():
+    machine.todos = []
+    reopen = lambda: (click(*app.center()), click(*app.center()))
+    reopen()
+    need(until(lambda: says('#state') == 'Nothing needs you right now, Sam.', 12), says('#state'))
+    need(not says('#ready') and one_line(), 'one line, and no list')
+    png('nothing-for-them')
+    machine.name = ''
+    reopen()
+    need(until(lambda: says('#state') == 'Nothing needs you right now.', 12), says('#state'))
+    machine.name, machine.todos = '<b>Sam</b> & ' + 'x' * 50, list(TODOS)
+    reopen()
+    need(until(lambda: greeted(''), 12) and one_line(), 'a name too long is left out')
+    machine.name = '<i>S</i>'
+    reopen()
+    need(until(lambda: greeted(', <i>S</i>'), 12), f"only text: {says('#state')}")
+    machine.name = 'Sam'
+    reopen()
+    need(until(greeted, 12), says('#state'))
+
+
+@step('add a to-do')
+def _():
+    press(app, '#text')
+    write('Call the printer about the flyers')
+    key(ENTER)
+    need(until(lambda: len(listed()) == 4 and listed()[0] == 'Call the printer about the flyers\nJust added · Needs you'), str(listed()))
+    need(not page('box.html', 'document.getElementById("text").value') and not says('#said'), 'ready for the next one')
+    need(machine.actions[-1][:2] == ('card_new', {'text': 'Call the printer about the flyers'}), str(machine.actions))
+    png('just-added')
+    need(until(lambda: says('#ready-name') == 'For you 5' and listed()[-1] == '2 more', 5), f"{says('#ready-name')}: {listed()}")
+    first = listed()[0]
+    machine.status[machine.todos[-1][0]] = {'status': 'accepted', 'preparation_status': 'working'}
+    need(until(lambda: 'Working…' in says('#panel'), 12), says('#panel'))
+    machine.status[machine.todos[-1][0]] = {'status': 'completed'}
+    need(until(lambda: says('#added').endswith('Done'), 12), says('#added') + str(listed()))
+    need(says('#ready-name') == 'For you 4', says('#ready-name'))
+    png('just-added-but-not-for-you')
+    machine.no = 'That to-do is too long.'
+    write('Something else')
+    key(ENTER)
+    need(until(lambda: says('#said') == machine.no), says('#said'))
+    need(page('box.html', 'document.getElementById("text").value') == 'Something else', 'the text is back')
+    need(not any('Something' in x for x in listed()), str(listed()))
+    machine.no = None
+    key(0x11, False), key(0x41), key(0x11, True), key(8)
+    machine.todos = list(TODOS)
+    press(app, '#close')
+    need(until(lambda: not app.box()), 'the box closes')
+    click(*app.center())
+    need(until(lambda: len(listed()) == 4 and not says('#added')), 'the next time it is a row like any other')
+    return first.replace('\n', ' | ')
+
+
+@step('ask')
+def _():
+    press(app, '#kind-ask')
+    write('When is lunch with Nora?')
+    key(ENTER)
+    need(until(lambda: '12:30' in says('#answer')), says('#answer'))
+    need(machine.actions[-1][0] == 'search_ask', str(machine.actions))
+    need(says('#answer-to') == 'When is lunch with Nora?' and not page('box.html', 'document.getElementById("text").value'), says('#answer'))
+
+
+def dot():
+    return page('robot.html', '!document.getElementById("dot").hidden')
+
+
+def label():
+    return page('robot.html', 'document.getElementById("robot").getAttribute("aria-label")')
+
+
+@step('close and the dot')
+def _():
+    press(app, '#close')
+    need(until(lambda: not app.box()), 'the box closes')
+    need(not dot(), 'nothing is new since the box was open')
+    return label()
+
+
+@step('the dot is what is new')
+def _():
+    since = time.time()
+    machine.todos = list(TODOS) + [('aa05', 'Answer the caterer')]
+    need(until(dot, 40), 'something new: the dot, with the box closed')
+    took = time.time() - since
+    png('the-dot')
+    told = label()
+    machine.todos = list(TODOS)[1:]
+    need(until(lambda: not dot(), 40), 'it was handled elsewhere: no dot')
+    machine.todos = list(TODOS)  # back again, so it is new
+    need(until(dot, 40), 'one came back: the dot')
+    click(*app.center())
+    need(until(lambda: len(listed()) == 4, 5), 'opening the box asks at once')
+    need(until(lambda: not dot()), 'and it is seen')
+    press(app, '#close')
+    need(until(lambda: not app.box()) and not dot(), 'it stays seen')
+    print(told)
+    return f'{took:.0f} s'
+
+
+def hide():
+    click(*app.center(), right=True)
+    need(until(lambda: 'Hide' in says('#menu')), 'the menu opens')
+    press(app, '#menu-hide')
+    need(until(hidden), 'it only looks over the bottom edge')
+
+
+def hidden():
+    r = app.robot()
+    return r and r[1].bottom - r[1].top == 40 and r[1].bottom == work_area().bottom
+
+
+def back():
+    r = app.robot()
+    return r and (r[1].left, r[1].top, r[1].bottom - r[1].top) == stood
+
+
+stood = None
+
+
+@step('hide says where it is')
+def _():
+    global stood
+    r = app.robot()[1]
+    stood = r.left, r.top, r.bottom - r.top
+    hide()
+    need(until(lambda: 'bring it back' in says('#notice')), 'the box says how to bring it back')
+    png('hidden-with-the-line')
+    told = says('#notice').replace('\n', ' | ')
+    press(app, '#notice-ok')
+    need(until(lambda: not app.box()), 'the box closes')
+    need(hidden(), 'it is still there')
+    return told
+
+
+@step('a click brings it back')
+def _():
+    click(*app.center())
+    need(until(back), 'it is where it stood')
+    need(not app.box(), 'and no box opens')
+
+
+@step('hide, icon by the clock')
+def _():
+    hide()
+    time.sleep(1)
+    need(not app.box(), 'the line shows once')
+    at = tray(app)
+    png('hidden-icon-by-the-clock')
+    click(*at)
+    need(until(back), 'it is where it stood')
+    need(not app.box(), 'and no box opens')
+
+
+@step('hide and show in the icon menu')
+def _():
+    click(*tray(app), right=True)
+    png('tray-menu-hide')
+    key(0x28), key(ENTER)
+    need(until(hidden), 'Hide')
+    click(*tray(app), right=True)
+    png('tray-menu-show')
+    key(0x28), key(ENTER)
+    need(until(back), 'Show robot')
+
+
+@step('right click while hidden')
+def _():
+    hide()
+    click(*app.center(), right=True)
+    need(until(lambda: 'Show robot' in says('#menu')), 'the menu has Show robot')
+    png('hidden-menu')
+    press(app, '#menu-show')
+    need(until(back), 'it is where it stood')
+
+
+@step('hide and start again')
+def _():
+    hide()
+    app.again()
+    need(until(back), 'it is back')
+
+
+def open_it():
+    if not app.box():
+        click(*app.center())
+    need(until(app.box), 'the box opens')
+    need(until(lambda: len(listed()) == 4), str(listed()))
+
+
+def over(n, seconds=1.2):
+    """The mouse over the nth row, with its tooltip."""
+    at = page('box.html', f'(() => {{ const e = document.querySelectorAll("#todos li")[{n}].getBoundingClientRect(); return [e.x + 60, e.y + e.height / 2].map(v => v * devicePixelRatio) }})()')
+    point = w.POINT(0, 0)
+    user.ClientToScreen(need_window(app.box())[0], ctypes.byref(point))
+    move(round(point.x + at[0]) - 4, round(point.y + at[1]))
+    move(round(point.x + at[0]), round(point.y + at[1]))
+    time.sleep(seconds)
+
+
+def row(n):
+    return page('box.html', f'(r => ({{names: [...r.querySelectorAll(".quick button")].map(b => b.title), shown: r.querySelector(".quick") ? getComputedStyle(r.querySelector(".quick")).opacity : "",'
+                f' tip: r.querySelector(".name")?.title ?? null, text: r.innerText, labels: [...r.querySelectorAll(".quick button")].map(b => b.ariaLabel) }}))(document.querySelectorAll("#todos li")[{n}])')
+
+
+def quick(n, act):
+    over(n, 0.3)
+    press(app, f'#todos li:nth-child({n + 1}) [data-act={act}]')
+
+
+@step('quick buttons')
+def _():
+    open_it()
+    need(until(lambda: row(0)['names'] == ['Do it', 'Snooze', 'Mark done']), str(row(0)))
+    need(row(1)['names'] == ['Snooze', 'Mark done'] and row(0)['shown'] == '0', str(row(1)))
+    over(0)
+    r = row(0)
+    need(r['shown'] == '1' and r['tip'] == '' and r['labels'][0] == 'Do it: ' + TODOS[0][1], str(r))
+    png('quick-buttons')
+    machine.todos = [('aa01', 'Reply to the caterer about the menu, the tables and who brings what'), *TODOS[1:]]
+    press(app, '#close')
+    open_it()
+    need(until(lambda: 'caterer' in row(0)['text']), str(listed()))
+    over(0)
+    need(row(0)['tip'].startswith('Reply to the caterer'), str(row(0)))
+    png('a-cut-off-title')
+    machine.todos = list(TODOS)
+    press(app, '#close')
+    return r['labels']
+
+
+def decided():
+    return [a[1] for a in machine.actions if a[0] == 'decide'][-1]
+
+
+@step('snooze and undo')
+def _():
+    open_it()
+    need(until(lambda: row(0)['names']), 'its buttons')
+    quick(0, 'snooze2h')
+    need(until(lambda: row(0)['text'].startswith('Snoozed it · ')), str(listed()))
+    png('snoozed')
+    told, d = row(0)['text'], decided()
+    need(d['choice'] == 'snooze' and d['snooze_option'] == '2h' and d['decision_id'].startswith('notify-'), str(d))
+    need(until(lambda: says('#ready-name') == 'For you 3'), says('#ready-name'))
+    press(app, '#todos li:first-child .link')
+    need(until(lambda: listed()[0] == TODOS[0][1]), str(listed()))
+    d = decided()
+    need(d['choice'] == 'accept' and not d['decision_id'].startswith('notify-'), str(d))
+    return told
+
+
+@step('mark done and it goes')
+def _():
+    quick(1, 'done')
+    need(until(lambda: row(1)['text'].startswith('Marked it done')), str(listed()))
+    need(decided()['choice'] == 'complete', str(decided()))
+    need(until(lambda: listed() == [TODOS[0][1], TODOS[2][1], TODOS[3][1]], 25), str(listed()))
+    machine.todos = list(TODOS)
+
+
+def again():
+    global machine
+    was, machine = machine, Machine(PORT)
+    machine.cookies = was.cookies
+
+
+@step('a decision that is refused')
+def _():
+    press(app, '#close')
+    open_it()
+    machine.no = 'Open the to-do to do this.'
+    need(until(lambda: row(0)['names']), 'its buttons')
+    quick(0, 'prepare')
+    need(until(lambda: says('#said') == machine.no), says('#said'))
+    need(listed()[0] == TODOS[0][1], 'the row is back')
+    png('refused')
+    machine.no = None
+    machine.stop()
+    quick(0, 'prepare')
+    need(until(lambda: 'reach' in says('#said'), 40), says('#said'))
+    again()
+    press(app, '#close')
+
+
+def plus():
+    if page('box.html', 'document.querySelector("#plus").hidden'):  # it was asking
+        press(app, '#kind-todo')
+    until(lambda: not page('box.html', 'document.querySelector("#plus").hidden'))
+    press(app, '#plus')
+
+
+def shot():
+    plus()
+    need(until(lambda: says('#add-shot')), 'the menu')
+    press(app, '#add-shot')
+    need(until(lambda: not app.windows(), 8), 'the robot and its box are away')
+
+
+@step('a screenshot')
+def _():
+    open_it()
+    SNIP.write_text('@powershell -sta -noprofile -command "Add-Type -A System.Windows.Forms,System.Drawing; Start-Sleep 1; $b = New-Object Drawing.Bitmap 320,200; '
+                    '$g = [Drawing.Graphics]::FromImage($b); $g.Clear([Drawing.Color]::Teal); [Windows.Forms.Clipboard]::SetImage($b)"')
+    plus()
+    need(until(lambda: 'Take a screenshot' in says('#adds')), says('#adds'))
+    png('the-plus-menu')
+    key(ESCAPE)
+    need(until(lambda: not says('#adds')) and app.box(), 'Escape closes the menu only')
+    shot()
+    need(until(app.box, 30), 'the box is back')
+    need(until(lambda: 'Screenshot.png' in says('#files')), says('#files') + ' | ' + says('#said'))
+    size = page('box.html', '(i => [i.naturalWidth, i.naturalHeight])(document.querySelector("#files img"))')
+    need(size == [320, 200], str(size))
+    need(until(lambda: machine.actions[-1][0] == 'chat_upload'), str(machine.actions[-1][0]))
+    need(base64.b64decode(machine.actions[-1][1]['data'])[:4] == b'\x89PNG', 'a PNG')
+    need(user.CountClipboardFormats() == 0, 'nothing is left on the clipboard')
+    png('a-screenshot')
+    press(app, '#files button')
+    need(until(lambda: machine.actions[-1][0] == 'chat_file_remove'), str(machine.actions[-1]))
+    need(not says('#files'), 'it is gone')
+
+
+@step('a screenshot that does not come')
+def _():
+    open_it()
+    SNIP.write_text('@exit')
+    shot()
+    need(until(app.box, 30), 'the box is back')
+    need(until(lambda: 'screenshot' in says('#said')), says('#said'))
+    return says('#said')
+
+
+@step('a screenshot with Windows own snip')
+def _():
+    SNIP.unlink(missing_ok=True)
+    try:
+        winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, 'ms-screenclip').Close()
+    except FileNotFoundError:
+        return 'NOT TESTED: this Windows has none'
+    open_it()
+    shot()
+    time.sleep(4)
+    png('windows-own-snip')
+    drag((300, 300), (520, 420))
+    if not until(app.box, 25) or not until(lambda: 'Screenshot' in says('#files'), 5):
+        until(app.box, 180)
+        return 'NOT TESTED: ' + says('#said')
+    size = page('box.html', '(i => [i.naturalWidth, i.naturalHeight])(document.querySelector("#files img"))')
+    png('from-windows-own-snip')
+    press(app, '#files button')
+    shot()
+    time.sleep(4)
+    key(ESCAPE)
+    need(until(app.box, 20), 'Escape: the box is back')
+    time.sleep(1)
+    need(not says('#files') and not says('#said'), 'with nothing: ' + says('#said'))
+    return f'{size}'
+
+
+@step('toggle from a second start')
+def _():
+    if app.box():
+        press(app, '#close')
+        need(until(lambda: not app.box()), 'it was open')
+    app.again('--toggle')
+    need(until(app.box), 'the box opens')
+    need(app.answers(), 'its main thread answers')
+    app.again('--toggle')
+    need(until(lambda: not app.box()), 'the box closes')
+
+
+@step('not reachable')
+def _():
+    machine.stop()
+    click(*app.center())
+    need(until(app.box), 'the box opens')
+    need(until(lambda: 'reach' in says('#state'), 25), says('#state'))
+    return says('#state')
+
+
+@step('reachable again')
+def _():
+    global machine
+    machine = Machine(PORT)
+    click(*app.center())
+    click(*app.center())
+    need(until(greeted, 25), says('#state'))
+
+
+@step('signed out elsewhere')
+def _():
+    machine.refuse = True
+    click(*app.center())
+    click(*app.center())
+    need(until(lambda: says('#signin') and says('#state'), 25), 'it offers the sign-in')
+    told = says('#panel').replace('\n', ' | ')
+    machine.refuse = False
+    click(*app.center())
+    click(*app.center())
+    need(until(lambda: says('#compose'), 25), 'and is back')
+    return told
+
+
+@step('sign out')
+def _():
+    press(app, '#more')
+    press(app, '#menu-signout')
+    time.sleep(1)
+    if not app.box():
+        click(*app.center())
+    need(until(lambda: says('#state') == 'Not signed in'), says('#state'))
+
+
+@step('account sign-in')
+def _():
+    if says('#signin-other') != 'Self-hosted?':
+        press(app, '#signin-other')
+    press(app, '#signin-go')
+    need(until(lambda: machine.links, 60), 'the browser opens the account')
+    need(scheme(), 'its links are registered')
+    png('account-in-the-browser')
+    os.startfile(machine.links[-1])  # as the browser does: by the registered scheme
+    need(until(lambda: says('#compose'), 25), 'signed in')
+    need(not says('#answer') and not page('box.html', 'document.getElementById("text").value'), 'nothing from before')
+    need(machine.cookies and saved()['cookie'] in machine.cookies, 'with its session')
+    need(until(lambda: not scheme()), 'its links are taken back')
+    subprocess.run(['taskkill', '/f', '/im', 'msedge.exe'], capture_output=True)
+    return says('#state') + ' | ' + says('#said')
+
+
+# What it opens on the dashboard: in the installed app, or else in the browser
+
+OTHER = Machine(PORT + 1)  # another Machine, with an app of its own
+HERE, THERE = f'http://127.0.0.1:{PORT}/', f'http://127.0.0.1:{PORT + 1}/'
+
+
+def browsers_closed():
+    for name in ('msedge.exe', 'chrome.exe'):
+        subprocess.run(['taskkill', '/f', '/t', '/im', name], capture_output=True)
+    time.sleep(1)
+
+
+def in_front():
+    """The window in front: its title, its program."""
+    hwnd, title, pid = user.GetForegroundWindow(), ctypes.create_unicode_buffer(200), w.DWORD()
+    user.GetWindowTextW(w.HWND(hwnd), title, 200)
+    user.GetWindowThreadProcessId(w.HWND(hwnd), ctypes.byref(pid))
+    line = subprocess.run(['tasklist', '/fi', f'pid eq {pid.value}', '/fo', 'csv', '/nh'], capture_output=True, text=True).stdout
+    return title.value, line.split(',')[0].strip('"').lower()
+
+
+def facts():
+    """What the taskbar knows of the window in front: the id it is grouped by, how it is started again."""
+    class Guid(ctypes.Structure):
+        _fields_ = [('a', w.DWORD), ('b', w.WORD), ('c', w.WORD), ('d', ctypes.c_ubyte * 8)]
+
+    class PropertyKey(ctypes.Structure):
+        _fields_ = [('of', Guid), ('pid', w.DWORD)]
+    guid = lambda text: Guid.from_buffer_copy(uuid.UUID(text).bytes_le)
+    ctypes.windll.ole32.CoInitialize(None)
+    store = ctypes.c_void_p()
+    call = ctypes.windll.shell32.SHGetPropertyStoreForWindow
+    call.argtypes = [w.HWND, ctypes.c_void_p, ctypes.c_void_p]
+    if call(user.GetForegroundWindow(), ctypes.byref(guid('886d8eeb-8cf2-4446-8d02-cdba1dbdcf99')), ctypes.byref(store)):
+        return in_front()
+    table = ctypes.cast(ctypes.cast(store, ctypes.POINTER(ctypes.c_void_p))[0], ctypes.POINTER(ctypes.c_void_p))
+    get = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)(table[5])
+    found = []
+    for pid in (5, 2):
+        value, text = ctypes.create_string_buffer(24), ctypes.c_wchar_p()
+        get(store, ctypes.byref(PropertyKey(guid('9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3'), pid)), value)
+        ctypes.windll.propsys.PropVariantToStringAlloc(value, ctypes.byref(text))
+        found.append(text.value)
+    return (*in_front(), *found)
+
+
+def open_box():
+    if not app.box():
+        click(*app.center()) if app.robot() else app.again('--toggle')
+    need(until(app.box), 'the box opens')
+
+
+def to_front(hwnd):
+    key(0x12)  # Windows lets a program do this after a key
+    user.ShowWindow(w.HWND(hwnd), 9)
+    user.SetForegroundWindow(w.HWND(hwnd))
+    return until(lambda: user.GetForegroundWindow() == hwnd, 5)
+
+
+def changes(seconds):
+    """How often the robot shows or goes meanwhile."""
+    end, seen = time.time() + seconds, [bool(app.robot())]
+    while time.time() < end:
+        if bool(app.robot()) != seen[-1]:
+            seen.append(not seen[-1])
+        time.sleep(0.03)
+    return len(seen) - 1
+
+
+def opens(press_it, at, app_window, program=None):
+    """Clicks something in the box; what the page that opened says."""
+    open_box()
+    need(until(lambda: says('#todos')), 'the box opens, with the to-dos')
+    del machine.seen[:], OTHER.seen[:]
+    since = time.time()
+    press_it()
+    seen = until(lambda: next((s for s in machine.seen if s.get('at', '') == at and bool(s.get('app')) == app_window), None), 40)
+    took = time.time() - since
+    need(seen, f'opened {machine.seen}, in front {in_front()}')
+    need(all(bool(s.get('app')) == app_window for s in machine.seen), f'only there: {machine.seen}')
+    need(not OTHER.seen, 'and not in the other one')
+    need(until(lambda: not app.box()), 'the box closes')
+    need(until(lambda: in_front()[1] == program if program else in_front()[1] in ('msedge.exe', 'chrome.exe'), 10), f'in front: {in_front()}')
+    if app_window:
+        need(until(lambda: not app.robot(), 5), f'the robot goes: {facts()}')
+    else:
+        need(app.robot(), 'the robot stays')
+    return seen['me'], f'{took:.1f} s, in front: {in_front()}'
+
+
+def todo(n):
+    return lambda: press(app, f'#todos li:nth-child({n}) button')
+
+
+def entries():
+    """What Windows lists as installed by a browser."""
+    found, top = [], r'Software\Microsoft\Windows\CurrentVersion\Uninstall'
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, top) as k:
+            for i in range(winreg.QueryInfoKey(k)[0]):
+                try:
+                    with winreg.OpenKey(k, winreg.EnumKey(k, i)) as one:
+                        found.append(winreg.QueryValueEx(one, 'UninstallString')[0])
+                except OSError:
+                    pass
+    except OSError:
+        pass
+    menu = pathlib.Path(os.environ['APPDATA'], 'Microsoft', 'Windows', 'Start Menu', 'Programs')
+    return found + [str(x) for x in menu.rglob('*.lnk') if 'Machine' in x.name]
+
+
+FORCED = {}
+
+
+def data(browser):
+    return str(out.resolve().parent / ('data-' + pathlib.Path(browser).stem))
+
+
+def web_app(browser, what, address):
+    winreg.CreateKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\Windows\CurrentVersion\Uninstall').Close()  # as any used Windows has
+    before = entries()
+    if not FORCED.get(browser):
+        done = subprocess.run(['node', str(pathlib.Path(__file__).with_name('webapp.mjs')), browser, data(browser), what, address], capture_output=True, text=True, timeout=90)
+        print(done.stdout, done.stderr, *entries(), sep='\n', flush=True)
+        if entries() != before:
+            need(done.returncode == 0, done.stdout)
+            return done.stdout.strip()
+    # The browser wrote nothing for it: as an administrator installs one for people
+    FORCED[browser] = [*(a for a in FORCED.get(browser, []) if a != address), *([address] if what == 'install' else [])]
+    with winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Policies\Microsoft\Edge' if 'msedge' in browser else r'SOFTWARE\Policies\Google\Chrome') as k:
+        winreg.SetValueEx(k, 'WebAppInstallForceList', 0, winreg.REG_SZ, json.dumps([{'url': a, 'default_launch_container': 'window'} for a in FORCED[browser]]))
+    subprocess.Popen([browser, '--no-first-run', '--no-default-browser-check', 'about:blank'])
+    changed = until(lambda: entries() != before, 45)
+    time.sleep(4)
+    browsers_closed()
+    print('by policy', *entries(), sep='\n', flush=True)
+    return 'by policy' if changed else None
+
+
+def program(*parts):
+    return next((str(p) for base in ('PROGRAMFILES', 'PROGRAMFILES(X86)') if (p := pathlib.Path(os.environ[base], *parts)).exists()), None)
+
+
+@step('to-do without an app')
+def _():
+    told = opens(todo(1), '#card=aa01', False)[1]
+    browsers_closed()
+    return told
+
+
+def with_app(name, exe):
+    if not exe:
+        return
+    running, window, missing = pathlib.Path(exe).name.lower(), None, 'NOT TESTED: here this browser tells Windows nothing of an app it installs'
+
+    @step(f'{name}, another Machine has an app')
+    def _():
+        nonlocal missing
+        version = web_app(exe, 'install', THERE)
+        if not version:
+            return missing
+        missing = ''
+        told = opens(todo(1), '#card=aa01', False)[1]
+        browsers_closed()
+        return f'{version}: {told}'
+
+    @step(f'{name}, to-do in the app')
+    def _():
+        nonlocal window
+        if missing:
+            return missing
+        web_app(exe, 'install', HERE)
+        window, told = opens(todo(2), '#card=aa02', True, running)
+        return told
+
+    @step(f'{name}, next to-do in the open app')
+    def _():
+        if missing:
+            return missing
+        me, told = opens(todo(1), '#card=aa01', True, running)
+        need(me == window, 'the same window')
+        return told
+
+    @step(f'{name}, more and the dashboard in the open app')
+    def _():
+        if missing:
+            return missing
+        me, told = opens(lambda: press(app, '#todos .more'), '#card=aa01', True, running)
+        need(me == window, 'the same window')
+        return told
+
+    @step(f'{name}, the robot and the app in front')
+    def _():
+        if missing:
+            return missing
+        its = user.GetForegroundWindow()
+        told = facts()
+        need(not app.robot(), f'the app is in front, so no robot: {told}')
+        pad = subprocess.Popen(['notepad.exe'])
+        try:
+            other = until(lambda: user.FindWindowW('Notepad', None), 10)
+            since = time.time()
+            need(to_front(other), 'another window in front')
+            need(until(app.robot, 5, 0.05), 'the robot is back')
+            took = time.time() - since
+            need(in_front()[1] == 'notepad.exe', f'and takes no focus: {in_front()}')
+            # A click on the robot and its box, with the app behind them
+            click(*app.center())
+            need(until(app.box), 'the box opens')
+            press(app, '#text')
+            write('Half a to-do')
+            need(changes(2) == 0, 'no flicker')
+            # The app again: the box closes, what is written stays
+            need(to_front(its), 'the app in front')
+            need(until(lambda: not app.box() and not app.robot(), 5), 'the robot and its box go')
+            app.again('--toggle')
+            need(until(app.box), 'a key still opens the box')
+            need(page('box.html', 'document.getElementById("text").value') == 'Half a to-do', 'with what was written')
+            need(changes(2) == 0 and app.robot(), 'it stays while the box is open')
+            app.again('--toggle')
+            need(until(lambda: not app.box()), 'the box closes')
+            # Minimized, back, full screen
+            need(to_front(its) and until(lambda: not app.robot(), 5), 'no robot')
+            user.ShowWindow(w.HWND(its), 6)
+            need(until(app.robot, 5), 'minimized: the robot is back')
+            need(to_front(its) and until(lambda: not app.robot(), 5), 'no robot')
+            key(0x7A)
+            time.sleep(4)
+            need(not app.robot(), 'full screen: no robot')
+            key(0x7A)
+            time.sleep(1)
+            # The person's own Hide stays
+            need(to_front(other) and until(app.robot, 5), 'the robot is back')
+            hide()
+            need(to_front(its) and until(lambda: not app.robot(), 5), 'no robot')
+            click(*tray(app), right=True)
+            key(ESCAPE), key(ESCAPE)
+            need(to_front(other) and until(hidden, 5), 'it still only looks over the edge')
+            need(changes(1) == 0, 'no flicker')
+            need(to_front(its) and until(lambda: not app.robot(), 5), 'no robot')
+            user.PostMessageW(w.HWND(its), 0x10, 0, 0)
+            need(until(app.robot, 8), 'closed: the robot is back')
+            click(*app.center())
+            need(until(back), 'it is where it stood')
+        finally:
+            subprocess.run(['taskkill', '/f', '/im', 'notepad.exe'], capture_output=True)
+        return f'{took:.1f} s after another window came to the front; {told}'
+
+    @step(f'{name}, its app is uninstalled')
+    def _():
+        if missing:
+            return missing
+        browsers_closed()
+        web_app(exe, 'uninstall', HERE)
+        told = opens(todo(3), '#card=aa03', False)[1]
+        browsers_closed()
+        web_app(exe, 'uninstall', THERE)
+        return told
+
+
+with_app('Chrome', program('Google', 'Chrome', 'Application', 'chrome.exe'))
+with_app('Edge', program('Microsoft', 'Edge', 'Application', 'msedge.exe'))
+browsers_closed()
+
+
+@step('another resolution')
+def _():
+    drag(app.center(), (SM(0) - 100, SM(1) - 200))
+    before = app.robot()[1]
+    gap = work_area().right - before.right, work_area().bottom - before.bottom
+    if not resolution(1280, 720):
+        return 'not offered here'
+    fits = lambda: (r := app.robot()[1]) and (work_area().right - r.right, work_area().bottom - r.bottom) == gap
+    ok = until(fits, 12)
+    r = app.robot()[1]
+    need(ok, f'{gap} from the corner, now {work_area().right - r.right, work_area().bottom - r.bottom}')
+    return f'stays {gap} from the corner'
+
+
+resolution(1920, 1080)
+time.sleep(4)
+
+
+@step('scale 150%')
+def _():
+    r = app.robot()[1]
+    corner = work_area().right - r.right, work_area().bottom - r.bottom
+    if not scale(150):
+        return 'not offered here'
+    until(lambda: app.robot()[1].right - app.robot()[1].left == 132, 8)
+    r = app.robot()[1]
+    need(r.right - r.left == 132 and r.bottom - r.top == 132, f'{r.right - r.left}x{r.bottom - r.top}')
+    gap = (work_area().right - r.right) / 1.5, (work_area().bottom - r.bottom) / 1.5
+    need(all(abs(a - b) < 2 for a, b in zip(gap, corner)), f'{gap} from the corner, it was {corner}')
+    click(*app.center())
+    need(until(app.box), 'the box opens')
+    png('scale-150-box')
+    click(*app.center())
+    b = (700, 400)
+    drag(app.center(), b)
+    c = app.center()
+    need(abs(c[0] - b[0]) < 6 and abs(c[1] - b[1]) < 6, f'to {b}, it is at {c}')
+    return f'132 pixels, dragged to {c}'
+
+
+@step('scale back')
+def _():
+    if not scale(100):
+        return 'not offered here'
+    need(until(lambda: app.robot()[1].right - app.robot()[1].left == 88, 8), 'it is 88 pixels again')
+
+
+@step('tray icon')
+def _():
+    if app.box():
+        click(*app.center())
+    click(*tray(app))
+    need(until(app.box, 5), 'a click on it opens the box')
+
+
+@step('Alt F4 closes the box')
+def _():
+    if not app.box():
+        click(*app.center())
+    press(app, '#panel h1')
+    alt_f4()
+    need(until(lambda: not app.box()), 'the box closes')
+    need(app.process.poll() is None and app.robot(), 'the robot stays')
+
+
+@step('Alt alone')
+def _():
+    click(*app.center())
+    need(until(app.box), 'the box opens')
+    press(app, '#text')
+    write('Al')
+    key(0x12)
+    time.sleep(1)
+    write('so')
+    said = page('box.html', 'document.getElementById("text").value')
+    need(said.endswith('Also'), f'it goes on: {said!r}')
+    key(0x11, False), key(0x41), key(0x11, True), key(0x08)
+    click(*app.center())
+
+
+@step('Alt F4 quits from the robot')
+def _():
+    click(*app.center())
+    click(*app.center())  # clicked last, so it has the keys
+    need(until(lambda: not app.box()), 'the box is closed')
+    alt_f4()
+    need(app.ended(), 'the process is gone')
+
+
+app = App(sandbox)
+
+
+@step('next start')
+def _():
+    need(until(app.robot, 30), 'the robot shows')
+    time.sleep(4)
+    need(not app.box(), 'signed in: the box waits for a click')
+    need(not dot(), 'what was seen before stays seen')
+    machine.todos = [*TODOS, ('aa07', 'Answer the florist')]
+    need(until(dot, 40), 'the dot shows')
+    machine.todos = list(TODOS)
+
+
+@step('started twice')
+def _():
+    need(app.again() == 0 and app.process.poll() is None, 'the second one ends')
+
+
+@step('quit from the menu')
+def _():
+    click(*app.center(), right=True)
+    need(until(lambda: 'Quit' in says('#menu')), 'the menu opens')
+    press(app, '#menu-quit')
+    need(app.ended(), 'the process is gone')
+
+
+app = App(sandbox)
+
+
+@step('quit from the tray')
+def _():
+    need(until(app.robot, 30), 'the robot shows')
+    time.sleep(2)
+    click(*tray(app), right=True)
+    png('tray-menu')
+    key(0x26)  # up, to the last one
+    key(ENTER)
+    need(app.ended(), 'the process is gone')
+
+
+app = App(sandbox)
+
+
+@step('quit from a second start while it is stuck')
+def _():
+    need(until(app.robot, 30), 'the robot shows')
+    time.sleep(2)
+    app.again('--hang')
+    time.sleep(1)
+    need(not app.answers(), 'its main thread is stuck')
+    since = time.time()
+    app.again('--quit')
+    need(app.ended(), 'the process is gone')
+    return f'gone after {time.time() - since:.1f} s'
+
+
+if app.process.poll() is None:
+    app.process.kill()
+
+
+@step('nothing is left')
+def _():
+    name = os.path.basename(sandbox)
+    need(until(lambda: name not in subprocess.run(['tasklist'], capture_output=True, text=True).stdout, 5), 'no process')
+    need(not scheme(), 'no links')
+    sent = {a for a, _, _ in machine.actions}
+    need(sent <= {'card_new', 'search_ask', 'decide', 'chat_upload', 'chat_file_remove'}, str(sent))
+    need({a['choice'] for n, a, _ in machine.actions if n == 'decide'} <= {'accept', 'snooze', 'complete', 'undo'}, 'only what the buttons do')
+
+
+failed = [r for r in results if not r[1]]
+(out / 'results.txt').write_text('\n'.join(f'{"ok  " if ok else "FAIL"} {name}  {told}' for name, ok, told in results) + '\n', encoding='utf-8')
+print(f'{len(results) - len(failed)} of {len(results)} steps')
+sys.exit(bool(failed))
