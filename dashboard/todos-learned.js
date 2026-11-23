@@ -103,10 +103,9 @@ const doneAsked=new Set();
 function doneFetch(id,then){if(doneAsked.has(id))return false;doneAsked.add(id);
  request('api/cards/done?id='+encodeURIComponent(id)).then(r=>{const c=(r?.cards||[]).find(c=>c.id===id);if(c){doneExtra.set(id,c);cardsMerge()}}).catch(()=>{}).finally(then);return true}
 let doneSeen='';  // done counts and ids as last shown: when they change, the Done lists start over from the top
-const listShown={};const clipList=(id,rows,empty,n=3)=>{const k=listShown[id]||n;return rows.length?html`${rows.slice(0,k)}${rows.length>k?html`<button type="button" class="quiet more-rows" data-more="${id}" data-shown="${k}">Show ${Math.min(10,rows.length-k)} more</button>`:''}`:empty};
-// clipList for html`` rows
-const clipHTML=(id,rows,empty,n=3)=>{const k=listShown[id]||n;return rows.length?html`${rows.slice(0,k)}${rows.length>k?html`<button type="button" class="quiet more-rows" data-more="${id}" data-shown="${k}">Show ${Math.min(10,rows.length-k)} more</button>`:''}`:html`${empty}`};
-// clipList as nodes: the first rows, then Show more; `empty` gives the nodes for no rows
+// The first rows, then Show more
+const listShown={};const clipHTML=(id,rows,empty,n=3)=>{const k=listShown[id]||n;return rows.length?html`${rows.slice(0,k)}${rows.length>k?html`<button type="button" class="quiet more-rows" data-more="${id}" data-shown="${k}">Show ${Math.min(10,rows.length-k)} more</button>`:''}`:html`${empty}`};
+// clipHTML as nodes: the first rows, then Show more; `empty` gives the nodes for no rows
 // clipRows(items,draw): the rows drawn only for the ones shown (a long Deliveries or Decisions list drew every row on each redraw)
 const clipRows=(items,draw)=>({items,draw});
 const clipNodes=(id,rows,empty,n=3)=>{const k=listShown[id]||n,shown=rows.draw?rows.items.slice(0,k).map(rows.draw):rows.slice(0,k);rows=rows.items||rows;return rows.length?[...shown,...rows.length>k?[make('button',{type:'button',class:'quiet more-rows','data-more':id,'data-shown':k},`Show ${Math.min(10,rows.length-k)} more`)]:[]]:empty()};

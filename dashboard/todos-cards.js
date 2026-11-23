@@ -414,8 +414,13 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const answered=s.status==='prepared'&&outState(s)==='answered';
  const ask=askQuestion(s,smart,hint);
  const mine=ownerStep(s)&&!ask;
+ // Mark done leads a result without a draft. One that leaves the owner a step on a page (needs_you) has that page's link,
+ // its first button, lead instead, with Mark done beside it; not when another button leads (Copy draft, Reconnect, Retry)
+ const done=!copy&&!withTeammate(s)&&(hint||(s.status==='prepared'&&!answered&&!ask&&!finalStep(s)&&!smart.some(a=>a.kind!=='open')));
+ const to=done&&!hint&&!mine&&outState(s)==='needs_you'&&s.preparation_status!=='blocked'&&/^<a (?!.*data-browser)/.test(smartButtons[0]?.(ID));
+ if(to){const f=smartButtons.shift();smartButtons.unshift(k=>f((c,x)=>k('open doc-open primary',x)))}
  // machine_fix: Do it runs its one fix
- const base=c=>c==='send'||(c==='complete'&&toRead(s))||(c==='complete'&&made&&!madeLink)||(c==='checkin'&&withTeammate(s))||(c==='retry'&&!ask&&!asked)||c==='answer'||(c==='complete'&&mine&&!ownFix(s))||(c==='complete'&&!copy&&!withTeammate(s)&&(hint||(s.status==='prepared'&&!answered&&!ask&&!finalStep(s)&&!smart.some(a=>a.kind!=='open'))))||(c==='accept'&&(s.status==='pending'||answered||waitAhead(s))&&!hint&&(!mine||!!ownFix(s)));
+ const base=c=>c==='send'||c==='answer'||(c==='complete'&&(toRead(s)||made&&!madeLink||mine&&!ownFix(s)||done&&!to))||(c==='checkin'&&withTeammate(s))||(c==='retry'&&!ask&&!asked)||(c==='accept'&&(s.status==='pending'||answered||waitAhead(s))&&!hint&&(!mine||!!ownFix(s)));
  // Nothing else leads and nothing waits (a pick, a run, a send): Mark done leads, never only in the …
  const waits=ask||/^(queued|starting|running|working)$/.test(s.preparation_status)||s.cleanup&&!cleanupSettled(s)||s.facebook_birthdays||smart.some(a=>{const x=a.state||s.action_status;return sendBusy(x)&&!/^(sent|undone)$/.test(x.status)});
  const lone=/^(pending|prepared)$/.test(s.status)&&!waits&&!smartButtons.length&&!choices.some(([c])=>c!=='complete'&&base(c));

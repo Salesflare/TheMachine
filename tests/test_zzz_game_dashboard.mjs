@@ -17,11 +17,12 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/';
 const errors=[];let browser;
 // Hold the next Z still for the test to aim at: its rise paused at a fixed point (and only once the pause has taken
-// effect, so a busy machine can't move it after it was measured), on top of any Z that spawns later, and a round
+// effect, so a busy machine can't move it after it was measured), mid-board (one born at its edge has its area cut off
+// there), on top of any Z that spawns later, and a round
 // long enough that it can't end under load. The game itself runs as usual.
 const heldZ=async page=>{for(;;){await page.waitForFunction(()=>document.querySelector('#game-field .zz:not(.got):not(#held)'));
  const r=await page.evaluate(async()=>{const z=document.querySelector('#game-field .zz:not(.got):not(#held)');if(!z)return null;
-  document.querySelector('#held')?.removeAttribute('id');z.id='held';z.classList.remove('gold');z.style.zIndex='5';game.end=Date.now()+120000;
+  document.querySelector('#held')?.removeAttribute('id');z.id='held';z.classList.remove('gold');z.style.zIndex='5';z.style.left='45%';game.end=Date.now()+120000;
   for(const a of z.getAnimations()){a.pause();a.currentTime=600;await a.ready}
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   if(!z.isConnected)return null;

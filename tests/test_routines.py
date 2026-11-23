@@ -376,7 +376,7 @@ class Runs(unittest.TestCase):
         # (the day is the day the draft was made, by the real clock: any day, not the one this test was written on)
         self.assertRegex(card['source_line'], r'^Source: your routine Check what shipped in the · [A-Z][a-z]{2}, [A-Z][a-z]{2} \d{1,2}$')
         self.assertEqual(view['routine'], {'id': rid, 'name': 'Check what shipped', 'live': True})
-        self.assertEqual(view['labels'], {'accept': 'Post it'})
+        self.assertEqual(view['labels'], {'accept': 'Prepare post'})
         self.now = T(2026, 11, 10, 9, 30)
         self.act('routine_run_now', id=rid); self.app.routines_step()
         start = [s for s in self.sent if s['action'] == 'start'][-1]['message']
