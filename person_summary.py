@@ -46,6 +46,7 @@ import json
 import re
 
 import locale_prefs
+from machine.store import graph_promises
 from machine.store.graph_history import live
 import timeutil
 from machine import todo_states
@@ -262,10 +263,11 @@ def evidence(db, owner, person, signals):
             "ORDER BY f.created_at DESC LIMIT 12", (*ids, *ids))]
     promises = []
     if _table(db, 'promises'):
+        elses = graph_promises.of_others(db, person['id'])
         promises = [{'id': f"P{r['id']}", 'who_promised': 'the owner' if r['direction'] == 'mine' else 'they', 'what': r['what'],
                      **({'due': r['due']} if r['due'] else {}), **({'together': True} if r['together'] else {})} for r in db.execute(
             f"SELECT p.id,p.direction,p.what,p.due,p.together FROM promises p WHERE {OPEN_PROMISE if _table(db, 'suggestions') else STILL_PROMISED} "
-            'AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) ORDER BY coalesce(p.due,p.check_at) LIMIT 8', (person['id'],))]
+            'AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) ORDER BY coalesce(p.due,p.check_at) LIMIT ?', (person['id'], 8 + len(elses))) if r['id'] not in elses][:8]
     messages = []
     for m in signals(db, person['id'], owner, SIGNALS):
         item = {'id': f"E{m['event_id']}", 'date': m['at'], 'kind': m['kind'], 'title': clip(m.get('title'), 120), **({'all_day': True} if m.get('all_day') else {})}

@@ -12,6 +12,7 @@ from pinned import pinned  # noqa: E402
 
 import assistant_on_use
 import enrichment
+import fleet
 import graph
 import graph_board_reviews  # noqa: E402
 import machine.actions as machine_actions
@@ -21,9 +22,11 @@ import machine.main as machine_main
 import machine.prompts.profile as machine_prompts_profile
 import machine.prompts.review as machine_prompts_review
 import machine.sources.slack as machine_sources_slack
+import machine.store.graph_promises as machine_store_graph_promises
 import machine.store.profile as machine_store_profile
 import machine.store.promises as machine_store_promises
 import machine.web.handler as machine_web_handler
+import person_summary
 import timeutil
 
 __getattr__ = assistant_on_use.handed_out('a', 'graph_assistant')  # `a` for the tests that still read it from here
@@ -902,6 +905,39 @@ class Graph(unittest.TestCase):
         self.app.action('forget_fact', {'id': merged['id']}, owner_dashboard=True)
         self.assertEqual(known('email:ann@client.com'), [])
         self.assertNotIn(merged['id'], [f['id'] for f in self.store.facts()])
+
+    def test_a_promise_is_not_also_a_colleagues_on_the_same_message(self):
+        """A promise named after exactly one person on the message is theirs alone: not their colleague's, who was copied
+        in, on the record page, in a summary or for a teammate. A name that isn't exactly someone's stays with everyone."""
+        both = 'Ann Example <ann@client.com>'
+        ask = mail(3, both, 'sam@acme.com', cc='Bob Other <bob@client.com>', thread='deal')
+        reply = mail(2, 'Sam <sam@acme.com>', both, ('SENT',), cc='Bob Other <bob@client.com>', thread='deal')
+        self.add(ask, reply)
+        ask_id, reply_id = self.ids([ask['source_id'], reply['source_id']])
+        self.store.owner_user_ids = set()
+        promise = lambda direction, event_id, who, what: self.app.action('promise', {'direction': direction, 'event_id': event_id, 'who': who, 'what': what})
+        promise('theirs', ask_id, 'Ann Example', 'sign the contract')
+        promise('mine', reply_id, 'bob@client.com', 'send the deck')
+        promise('mine', reply_id, 'The client team', 'book the room')  # nobody's name: both, as before
+        promise('mine', reply_id, 'Bob', 'bring the samples')  # only a first name: both, as before
+        self.build()
+        ann, bob = 'email:ann@client.com', 'email:bob@client.com'
+        what = lambda node, key: {p['what'] for p in self.app.graph_action({'node_id': node})['open'].get(key, [])}
+        self.assertEqual((what(ann, 'they_promised'), what(bob, 'they_promised')), ({'sign the contract'}, set()))
+        self.assertEqual(what(ann, 'you_promised'), {'book the room', 'bring the samples'})
+        self.assertEqual(what(bob, 'you_promised'), {'send the deck', 'book the room', 'bring the samples'})
+        with self.store.connect() as db:
+            person = {'id': bob, 'name': 'Bob Other', 'info': {}}
+            page = person_summary.evidence(db, graph.Owner(self.app.config, db), person, graph.person_evidence)
+            self.assertNotIn('sign the contract', [p['what'] for p in page['open_promises']])
+            shared = fleet._shared_promises(db, bob, ['work'], lambda r: True)
+            self.assertEqual((shared['they_promised'], len(shared['you_promised'])), ([], 3))
+            # The owner renamed Ann since: the old name is nobody's now, so it is on both again rather than on neither.
+            db.execute("UPDATE graph_nodes SET name='Annie E.' WHERE id=?", (ann,))
+            self.assertEqual(machine_store_graph_promises.of_others(db, bob), set())
+            # One person known twice on the message (two records not merged yet) keeps it on both.
+            db.execute("UPDATE graph_nodes SET name='Ann Example' WHERE id IN (?,?)", (ann, bob))
+            self.assertEqual(machine_store_graph_promises.of_others(db, bob) & {r[0] for r in db.execute("SELECT id FROM promises WHERE who='Ann Example'")}, set())
 
     def test_an_event_row_says_who_wrote_it_and_how_it_starts(self):
         accounts = [{'id': 'slack', 'service': 'slack', 'user_id': 'U0OWNER'}]

@@ -83,6 +83,7 @@ import fleet_learnings
 import embeddings
 from machine import services, todo_states
 from machine.owner_error import OwnerError
+from machine.store import graph_promises
 from machine.dashboard_link import dashboard_address, dashboard_link
 import timeutil
 
@@ -891,11 +892,14 @@ def _shared_promises(db, node_id, accounts, ok, limit=3):
     out = {'you_promised': [], 'they_promised': []}
     if not accounts:
         return out
-    for r in db.execute("SELECT p.direction,p.what,p.due,e.id,e.account_id,e.kind,e.metadata FROM promises p JOIN events e ON e.id=p.event_id "
+    elses = graph_promises.of_others(db, node_id)
+    for r in db.execute("SELECT p.id AS promise,p.direction,p.what,p.due,e.id,e.account_id,e.kind,e.metadata FROM promises p JOIN events e ON e.id=p.event_id "
                         "LEFT JOIN suggestions s ON s.id=p.suggestion_id WHERE (p.status='open' OR (p.status='carded' AND s.status IN "
                         f"{todo_states.sql(todo_states.OPEN)})) AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) "
                         f"AND e.deleted=0 AND e.account_id IN ({','.join('?' * len(accounts))}) ORDER BY coalesce(p.due,p.check_at) LIMIT ?",
-                        (node_id, *accounts, limit * 4)):
+                        (node_id, *accounts, limit * 4 + len(elses))):
+        if r['promise'] in elses:
+            continue
         side = out['you_promised' if r['direction'] == 'mine' else 'they_promised']
         if len(side) < limit and ok(r):
             side.append({'what': r['what'], 'due': r['due']})
