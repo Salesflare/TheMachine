@@ -42,12 +42,16 @@ URL = re.compile(r'(?i)\b(?:https?://|www\.)\S+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[
 EMAIL = re.compile(r'[\w.+\'-]+@[\w-]+(?:\.[\w-]+)+')
 HANDLE = re.compile(r'(?<!\w)@\w{3,}')
 DATES = re.compile(r'\b\d{4}-\d{1,2}-\d{1,2}(?:[T ]\d{1,2}:\d{2}(?::\d{2})?)?\b|\b\d{1,2}[./-]\d{1,2}[./-](?:20)?\d{2}\b')
-LONG = re.compile(r'(?<![\w])[+(]?\d(?:[ ().\-/ ]?\d){6,}(?!\w)')
+LONG = re.compile(r'(?<![\w])[+(]?\d(?:[ ().\-/\xa0]?\d){6,}(?!\w)')
 MIXED = re.compile(r'(?<![\w-])(?=[\w-]*\d[\w-]*\d[\w-]*\d)(?=[\w-]*[A-Za-z])[A-Za-z0-9][\w-]{4,}(?![\w-])')
 MEASURE = re.compile(r'(?i)\d+(?:x\d+)+(?:cm|mm|m)?|\d{1,4}(?:cm|mm|km|kg|gr?|ml|cl|l|w|v|gb|mb)|\d{1,2}[hu]\d{0,2}(?:-\d{1,2}[hu]\d{0,2})?|(?:\d{1,2}[hu:]?\d{0,2})-(?:\d{1,2}[hu:]?\d{0,2})|\d{4}s')
 CODE_WORD = re.compile(r'(?i)\b(?:pin|pin ?code|code|codes|passcode|password|otp|cvc|cvv|key ?safe|lockbox|wachtwoord|toegangscode|afhaalcode|'
                        r'sleutelkluis|mot de passe|digicode|passwort|kennwort|abholcode|zugangscode|contraseña|clave|senha|código|codice|parola)\b')
 CODE_NEAR = re.compile(r'(?<![\w:.,€$£])\d{3,8}(?![\w:%])|(?<!\w)(?=[A-Z0-9]*\d)(?=[A-Z0-9]*[A-Z])[A-Z0-9]{4,12}(?!\w)')
+# A date is kept behind a mark while numbers are masked: three characters no message has (they are taken out first), the
+# middle one counting up from DATE_MARK to the end of that range
+DATE_OPEN, DATE_CLOSE, DATE_MARK = chr(0xe000), chr(0xe001), 0xe100
+PRIVATE_USE = re.compile(f'[{chr(0xe000)}-{chr(0xf8ff)}]')
 KEPT = {'link': '(link)', 'address': '(address)', 'number': '(number)'}
 PLACEHOLDER = re.compile(r'\((?:link|address|number)\)')
 
@@ -180,7 +184,7 @@ def allowed(db, rows, config, company=(), team=(), clock=None):
 def mask(text):
     """A message's text without links, addresses, phone, account and order numbers and codes. Dates, times, sizes and
     amounts stay: the owner reads the answer before it goes."""
-    text = re.sub('[-]', '', str(text or ''))  # the marks a date is kept with, below
+    text = PRIVATE_USE.sub('', str(text or ''))  # the marks a date is kept with, below
     text = URL.sub(KEPT['link'], text)
     text = EMAIL.sub(KEPT['address'], text)
     text = HANDLE.sub(KEPT['address'], text)
@@ -188,15 +192,17 @@ def mask(text):
     dates = []
 
     def keep(m):
+        if len(dates) > 0xf8ff - DATE_MARK:  # no mark left for it: masked like any other number
+            return m.group(0)
         dates.append(m.group(0))
-        return f'{chr(0xe100 + len(dates) - 1)}'
+        return DATE_OPEN + chr(DATE_MARK + len(dates) - 1) + DATE_CLOSE
     text = DATES.sub(keep, text)
     text = LONG.sub(KEPT['number'], text)
     text = MIXED.sub(lambda m: m.group(0) if MEASURE.fullmatch(m.group(0)) else KEPT['number'], text)
     spans = [(m.start() - 24, m.end() + 48) for m in CODE_WORD.finditer(text)]
     if spans:
         text = CODE_NEAR.sub(lambda m: KEPT['number'] if any(a <= m.start() < b for a, b in spans) else m.group(0), text)
-    return re.sub('(.)', lambda m: dates[ord(m.group(1)) - 0xe100], text)
+    return re.sub(f'{DATE_OPEN}(.){DATE_CLOSE}', lambda m: dates[ord(m.group(1)) - DATE_MARK], text)
 
 
 def sources(rows, body=lambda text: text, mine=None):

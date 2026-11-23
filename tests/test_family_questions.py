@@ -352,7 +352,9 @@ class Questions(unittest.TestCase):
             self.assertNotIn(gone, seen)
         for kept in ('€ 480,50', '2026-11-26', '09:00-12:00', '200x300cm'):
             self.assertIn(kept, seen)
-        self.assertEqual(fqs.mask('a b 2026-01-02 '), 'a b 2026-01-02 ')  # nobody's own marks for a date
+        self.assertEqual(fqs.mask(f'a {chr(0xe000)}b{chr(0xe001)} 2026-01-02 {chr(0xf8ff)}'), 'a b 2026-01-02 ')  # nobody's own marks for a date
+        many = fqs.mask('2026-01-02 ; ' * 6145 + 'BE68 5390 0754 7034')  # more dates than there are marks: the rest is masked
+        self.assertEqual((many.count('2026-01-02'), many.count('(number)')), (6144, 2))
 
     # -- the reply, read by code
     def test_an_answer_with_a_code_link_number_or_the_message_itself_is_no_draft(self):
