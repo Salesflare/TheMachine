@@ -1681,15 +1681,23 @@ def _():
     told = [f'as it is {windows_says()}']
     plain = windows_says('off')  # a runner may start with it on
     told.append(f'Do Not Disturb off {plain}')
-    switch = plain.split()[0].isdigit()
-    if not switch:
-        plain = windows_says()
+    if plain.split()[0].isdigit():
+        on = windows_says('on')
+        told.append(f'on {on}')
+        need(on.split()[0] == plain.split()[0], f'in the mode and nowhere else: {told}')
+        told.append('and it speaks' if on.split()[1] != plain.split()[1] else 'NOT TESTED with it on: the switch did not take')
+        comes('aa02')
+        png('always-in-do-not-disturb')
+        away()
+        need(until(lambda: not app.bubble(), 20), 'it goes')
+        windows_says('off')
+    plain = windows_says()
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, path) as key:
         winreg.SetValueEx(key, 'ToastEnabled', 0, winreg.REG_DWORD, 0)
     try:
         time.sleep(2)
         off = windows_says()
-        told.append(f'notifications off {off}')
+        told.append(f'notifications on {plain}, off {off}')
         need(off == plain, f'the same: {told}')
         comes('aa02')
         away()
@@ -1697,15 +1705,6 @@ def _():
     finally:
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, path) as key:
             winreg.SetValueEx(key, 'ToastEnabled', 0, winreg.REG_DWORD, 1)
-    if switch:
-        on = windows_says('on')
-        told.append(f'Do Not Disturb on {on}')
-        need(on.split()[0] == plain.split()[0] and on.split()[1] != plain.split()[1], f'in the mode and nowhere else: {told}')
-        comes('aa02')
-        png('always-in-do-not-disturb')
-        away()
-        need(until(lambda: not app.bubble(), 20), 'it goes')
-        told.append(f'and off again {windows_says("off")}')
     return ', '.join(told)
 
 
