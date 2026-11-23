@@ -1589,6 +1589,9 @@ QUIET_OPENCLAW = {
     'skills.workshop.autonomous.mode': 'off',
     'agents.defaults.utilityModel': '',
 }
+# From 2026.11.5 OpenClaw refuses the heartbeat setting: its setup makes an ordinary job instead, every half hour, turned
+# off here under the same rules. An older OpenClaw's heartbeat at 0m becomes a job that is off when it updates.
+HEARTBEAT, HEARTBEAT_IS_A_JOB, HEARTBEAT_JOB = 'agents.defaults.heartbeat.every', (2026, 11, 5), 'Proactive check ('
 # Each Gateway session keeps its MCP tool connections until it is stopped or reset, unless an idle time is set, and the
 # Gateway holds at most 256: past that every new turn fails (2026-10-30, after three days of to-do chats and reviews on
 # one Gateway). Idle sessions let theirs go after 30 minutes; they reconnect on their next turn. Same rules as above.
@@ -1637,6 +1640,16 @@ MEMORY_RULES_BEFORE = (
 MEMORY_RULES_VERSION = len(MEMORY_RULES_BEFORE) + 1  # kept in the stamp: which text this workspace was last offered
 
 
+def heartbeat_job_off(openclaw):
+    """Whether OpenClaw's own half-hourly job is off (HEARTBEAT_JOB), or there is none. False when the Gateway can't say."""
+    from machine.upkeep import memory_rebuild
+    jobs = memory_rebuild.list_jobs(openclaw, run)
+    if jobs is None:
+        return False
+    on = [job['id'] for job in jobs if job.get('enabled') and str(job.get('name')).startswith(HEARTBEAT_JOB)]
+    return not memory_rebuild.switch_jobs(openclaw, on, False, run)
+
+
 def quiet_openclaw(facts, stamp):
     """QUIET_OPENCLAW, OPENCLAW_UPKEEP and TELEGRAM_NO_PREVIEWS into openclaw.json where nothing is set yet (OpenClaw reloads these without a restart). The keys
     set once are kept in `stamp`. Returns the keys set now."""
@@ -1656,6 +1669,11 @@ def quiet_openclaw(facts, stamp):
             node = node.get(part, None) if isinstance(node, dict) else None
         if key in done or node is not None:
             done.add(key)
+            continue
+        if key == HEARTBEAT and (version_tuple(facts.get('openclaw_version')) or ()) >= HEARTBEAT_IS_A_JOB:
+            if heartbeat_job_off(openclaw):  # else the next install or update tries again
+                changed.append(key)
+                done.add(key)
             continue
         result = run([openclaw, 'config', 'set', key, json.dumps(value), '--strict-json'], timeout=120)
         if result.returncode == 0:

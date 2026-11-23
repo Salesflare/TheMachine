@@ -101,6 +101,31 @@ class InstallerTest(unittest.TestCase):
                 self.assertEqual(installer.quiet_openclaw({'openclaw': 'openclaw'}, stamp), [])
                 self.assertEqual(calls, [])
 
+    def test_the_heartbeat_of_a_newer_openclaw_is_a_job_that_goes_off_once(self):
+        # From 2026.11.5 OpenClaw refuses agents.defaults.heartbeat; a new OpenClaw makes a half-hourly job instead.
+        calls, up = [], [False]
+        jobs = [{'id': 'p', 'name': 'Proactive check (main)', 'enabled': True, 'payload': {'kind': 'agentTurn'}},
+                {'id': 'm', 'name': 'Morning note', 'enabled': True, 'payload': {'kind': 'agentTurn'}},
+                {'id': 'q', 'name': 'Proactive check (other)', 'enabled': False}]
+        def run(command, **kwargs):
+            calls.append(command[1:])
+            listing = command[1:3] == ['cron', 'list']
+            return subprocess.CompletedProcess(command, int(listing and not up[0]), json.dumps({'jobs': jobs}) if listing else '', '')
+        facts = {'openclaw': 'openclaw', 'openclaw_version': '2026.11.7'}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say'):
+            config, stamp = Path(tmp) / 'openclaw.json', Path(tmp) / 'data' / 'openclaw-quiet.json'
+            config.write_text('{}')
+            with mock.patch.dict(os.environ, {'OPENCLAW_CONFIG_PATH': str(config)}):
+                # The Gateway is not up: the other settings go in, this one waits for the next install or update
+                self.assertNotIn(installer.HEARTBEAT, installer.quiet_openclaw(facts, stamp))
+                self.assertFalse(any(installer.HEARTBEAT in call for call in calls))
+                up[0] = True
+                self.assertEqual(installer.quiet_openclaw(facts, stamp), [installer.HEARTBEAT])
+                self.assertEqual([c for c in calls if c[:2] == ['cron', 'disable']], [['cron', 'disable', 'p']])
+                calls.clear()
+                self.assertEqual(installer.quiet_openclaw(facts, stamp), [])  # on again by the owner: theirs
+                self.assertEqual(calls, [])
+
     def test_telegram_link_previews_go_off_once_telegram_is_set_up_and_only_where_unset(self):
         # Telegram's servers open the first link of a message for its preview: a link a model was talked into writing
         # (to-do text, an assistant reply) would reach that site with no tap. Off once Telegram is there.
