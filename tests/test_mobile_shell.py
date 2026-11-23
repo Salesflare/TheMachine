@@ -249,12 +249,16 @@ class IOSNotifications(unittest.TestCase):
         self.assertIn('evaluateJavaScript(MachineShellPlugin.pageProbe)', check)
         self.assertIn('asyncAfter(deadline: .now() + MachineShellPlugin.pageAnswer) { finish(nil) }', check)
         self.assertIn('applicationState != .background', check)
-        for caller in ('@objc private func becameActive() {\n        checkPage()', '@objc private func cameBack() { checkPage() }',
-                       'if self.networkWasDown { self.networkWasDown = false; self.checkPage() }', 'if slept { self.checkPage() }'):
+        for caller in ('@objc private func becameActive() {\n        activeAt = Date()\n        checkPage()', '@objc private func cameBack() { checkPage() }',
+                       'if self.networkWasDown { self.networkWasDown = false; self.checkPage() }',
+                       'if late || back || self.sleptLong { self.checkPage() }'):
             self.assertIn(caller, plugin)
         reopen = plugin[plugin.index('    private func reopen(force: Bool = false) {'):]
         reopen = reopen[:reopen.index('\n    }\n')]
         self.assertIn('force || Date().timeIntervalSince(lastReopen) > MachineShellPlugin.reopenGap', reopen)
+        # dropped as too soon: checked again once the gap is over, never lost
+        self.assertIn('asyncAfter(deadline: .now() + MachineShellPlugin.reopenGap) { [weak self] in\n'
+                      '                    self?.againSoon = false\n                    self?.checkPage()', reopen)
         self.assertIn('webView.load(URLRequest(url: target))', reopen)
 
     def test_ios_never_blank_when_the_page_answers_but_shows_nothing(self):
@@ -272,18 +276,54 @@ class IOSNotifications(unittest.TestCase):
         check = plugin[plugin.index('    func checkPage() {'):plugin.index('    private func showOffline() {')]
         self.assertIn('Date().timeIntervalSince(started) > MachineShellPlugin.loadLimit', check)
         self.assertIn('webView.stopLoading()\n            return showOffline()', check)
-        self.assertIn('case "shown"? where slept: self.reopen(force: true)', check)
-        self.assertIn('if self.blankTries >= 2 { self.showOffline() } else { self.reopen(force: true) }', check)
-        self.assertIn('default: self.reopen()', check)
+        self.assertIn('if self.badTries >= 2 { self.showOffline() } else { self.reopen(force: true) }', check)
+        self.assertIn('guard MachineShellPlugin.onMac else { return self.reopen() }', check)
+        self.assertIn('if !inUse && sleptLong { return reopen(force: true) }', plugin)
         offline = plugin[plugin.index('    private func showOffline() {'):]
         self.assertIn('appendingPathComponent("offline.html")', offline[:offline.index('\n    }\n')])
         # a page that loaded is asked too, and a load that started is asked once it should have ended
         self.assertIn('asyncAfter(deadline: .now() + MachineShellPlugin.afterLoad) { [weak self] in self?.checkPage() }', plugin)
         self.assertIn('if self?.loadStarted == started { self?.checkPage() }', plugin)
-        self.assertIn('ProcessInfo.processInfo.isiOSAppOnMac, now.timeIntervalSince(self.lastTick) > MachineShellPlugin.longSleep', plugin)
+        # the sleep is counted by the clocks, so one made of short wakes, or one whose check came to nothing, isn't missed
+        self.assertIn('static let onMac = ProcessInfo.processInfo.isiOSAppOnMac', plugin)
+        self.assertIn('MachineShellPlugin.onMac && MachineShellPlugin.asleep() - asleepSeen > MachineShellPlugin.longSleep', plugin)
+        self.assertIn('clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) - TimeInterval(clock_gettime_nsec_np(CLOCK_UPTIME_RAW))', plugin)
+        self.assertIn('let back = active && !self.wasActive', plugin)
         self.assertIn('UIKeyCommand(input: "r", modifierFlags: .command, action: #selector(reloadPage))', plugin)
         self.assertIn('@objc func reloadPage() { reopen(force: true) }', plugin)
         self.assertEqual((MOBILE / 'capacitor.config.json').read_text().count('"errorPath": "offline.html"'), 1)
+
+    def test_mac_never_stays_unpainted(self):
+        # A page alive and full of words that the window doesn't paint answers every script. On a Mac the app looks at
+        # its own window; also a page in use doesn't stay unpainted, and one that does paint is never touched.
+        plugin = (self.IOS / 'App/MachineShellPlugin.swift').read_text()
+
+        def body(start):
+            at = plugin.index(start)
+            return plugin[at:plugin.index('\n    }\n', at)]
+        check = body('    func checkPage() {')
+        self.assertIn('case "shown"?, "busy"?: self.looked(webView, inUse: shows == "busy")', check)
+        looked = body('    private func looked(')
+        self.assertIn('if painted == false && store.bool(forKey: "paintSeen") {', looked)  # looks known to work on this Mac
+        steps = [looked.index(x) for x in ('case 1: checkSoon(MachineShellPlugin.lookAgain)', 'case 2: redraw()',
+                                           'default: if freshView() { store.set(false, forKey: "paintSeen") }')]
+        self.assertLess(looked.index('timeIntervalSince(lastFlat) >'), steps[0])  # checks that come at once count as one look
+        self.assertIn('case _ where inUse && Date().timeIntervalSince(activeAt) > MachineShellPlugin.justBack: break', looked)
+        self.assertEqual(steps, sorted(steps))  # looked at twice, then what loses nothing, then a new WebView, once
+        self.assertLess(looked.index('            return\n        }'), looked.index('reopen(force: true)'))
+        paints = body('    private func paints(')
+        for part in ('guard MachineShellPlugin.onMac, UIApplication.shared.applicationState == .active', 'vc.presentedViewController == nil',
+                     'webView.bounds.insetBy(dx: MachineShellPlugin.edge', 'drawHierarchy(in: webView.bounds, afterScreenUpdates: false)',
+                     'guard whole, let image = picture.cgImage else { return nil }', 'return !MachineShellPlugin.oneColor(pixels)'):
+            self.assertIn(part, paints)
+        self.assertNotRegex(body('    static func oneColor('), r'255|white|0xff')  # any one color, so the dark theme too
+        redraw = body('    private func redraw(')
+        self.assertIn('window.rootViewController = nil', redraw)
+        self.assertNotIn('load(', redraw)
+        fresh = body('    private func freshView(')
+        self.assertIn('Date().timeIntervalSince(MachineShellPlugin.lastFresh) > MachineShellPlugin.freshGap', fresh)
+        for gone in ('NotificationCenter.default.removeObserver(self)', 'wakeTimer?.invalidate()', 'network.cancel()', 'loading?.invalidate()'):
+            self.assertLess(fresh.index(gone), fresh.index('window.rootViewController = MachineViewController()'))
 
     def test_android_buttons_are_the_same_decisions(self):
         java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/PushText.java').read_text()

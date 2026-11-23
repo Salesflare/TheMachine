@@ -35,8 +35,14 @@ dashboard release reaches the app at once, with no store update. The app itself 
   also a few seconds after every load); a second empty page in a row, or a load stuck for 30 s, gets the app's offline
   page instead. On a Mac, after a sleep of 5 minutes or more the page is opened again unless something is typed or open
   in it (the dashboard's `pageInUse`). The end of the page's process is heard before Capacitor's own reload
-  (`PageWatch`). Cmd+R loads the page again by hand. The offline page tries again by itself once online, in front
-  again, or every 30 s, and the dashboard says "The page didn't load" with Try again when its script doesn't come.
+  (`PageWatch`). A page can also be alive and full of words while the window doesn't paint it, which no script can tell:
+  on a Mac the app looks at its own window (`paints`, an on-screen copy of the page without its scrollbar). One flat
+  color twice in a row, in a theme of any color: the page is put in the window anew, and when that doesn't help the app
+  starts a new WebView (`freshView`), also when something was typed (chat drafts and waiting decisions are kept on the
+  device and come back; other half-filled fields don't). It only acts where a look has seen a page before, and never on
+  a page that paints. The sleep itself is counted by the clocks (`asleep`), so many short sleeps add up. Cmd+R loads
+  the page again by hand. The offline page tries again by itself once online, in front again, or every 30 s, and the
+  dashboard says "The page didn't load" with Try again when its script doesn't come.
 - **Back** (Android): closes the dashboard's open dialog or sheet first (`machineBack`, `dashboard/shell-back.js`),
   then goes back in the Machine's pages; from the first page it leaves the app.
 
