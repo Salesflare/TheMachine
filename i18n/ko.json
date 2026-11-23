@@ -316,6 +316,7 @@
  "Add to {}?": "{}에 추가할까요?",
  "Add transcript": "녹취록 추가",
  "Add your name first, in Settings": "설정에서 먼저 이름을 추가해 주세요",
+ "Add your other address too? Mail to it shows up here.": "다른 주소도 추가할까요? 그 주소로 온 메일도 여기에 표시돼요.",
  "Add {}": "{} 추가",
  "Add {} as personal contacts": {
   "other": "{}을(를) 개인 연락처로 추가"
@@ -1135,6 +1136,9 @@
  "Connect Stripe": "Stripe 연결",
  "Connect Stripe ↗": "Stripe 연결 ↗",
  "Connect WhatsApp": "WhatsApp 연결",
+ "Connect WhatsApp? {} emails mention it.": {
+  "other": "WhatsApp을 연결할까요? 이메일 {}개에서 WhatsApp을 언급해요."
+ },
  "Connect a channel that can send first.": "먼저 메시지를 보낼 수 있는 채널을 연결하세요.",
  "Connect a mailbox that can send first.": "먼저 메일을 보낼 수 있는 메일함을 연결하세요.",
  "Connect a source first": "먼저 소스를 연결하세요",
@@ -1149,6 +1153,15 @@
  "Connect your calendar": "캘린더 연결",
  "Connect your mail to get your first to-dos.": "첫 할 일을 받아보려면 메일을 연결하세요.",
  "Connect your own Intercom": "사용 중인 Intercom 연결",
+ "Connect {0}? {1} emails from {0} this month.": {
+  "other": "{0}을 연결할까요? 이번 달 {0}에서 온 이메일이 {1}개예요."
+ },
+ "Connect {0}? {1} meetings use it this month.": {
+  "other": "{0}을 연결할까요? 이번 달 회의 {1}개에서 사용돼요."
+ },
+ "Connect {0}? {1} messages link to it this month.": {
+  "other": "{0}을 연결할까요? 이번 달 메시지 {1}개가 연결돼 있어요."
+ },
  "Connect {}": "{} 연결",
  "Connected": "연결됨",
  "Connected AIs": "연결된 AI",
@@ -6371,6 +6384,8 @@
  "Try it": "사용해 보기",
  "Try now": "지금 시도",
  "Try part of a name, an address or a company.": "이름 일부, 주소 또는 회사를 입력해 보세요.",
+ "Try {} again? The code ran out.": "{} 다시 시도할까요? 코드가 만료됐어요.",
+ "Try {} again? The sign-in didn’t finish.": "{} 다시 시도할까요? 로그인이 완료되지 않았어요.",
  "Try: {}": "예: {}",
  "Trying again": "다시 시도 중",
  "Trying again around {}.": "{}쯤 다시 시도해요.",
@@ -7422,6 +7437,7 @@
  "no grant": "권한 없음",
  "no keys for the sender": "발신자 키가 없어요",
  "no longer shared": "더 이상 공유되지 않음",
+ "no new to-dos": "새 할 일 없음",
  "no signal recorded": "기록된 신호 없음",
  "none found": "찾은 항목 없음",
  "none you made yourself": "직접 만든 항목 없음",

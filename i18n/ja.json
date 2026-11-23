@@ -316,6 +316,7 @@
  "Add to {}?": "{}に追加しますか？",
  "Add transcript": "文字起こしを追加",
  "Add your name first, in Settings": "先に設定で名前を追加してください",
+ "Add your other address too? Mail to it shows up here.": "別のメールアドレスも追加しますか？そこに届いたメールがここに表示されます。",
  "Add {}": "{}を追加",
  "Add {} as personal contacts": {
   "other": "{}を個人の連絡先に追加"
@@ -1135,6 +1136,9 @@
  "Connect Stripe": "Stripeに接続",
  "Connect Stripe ↗": "Stripeに接続 ↗",
  "Connect WhatsApp": "WhatsAppに接続",
+ "Connect WhatsApp? {} emails mention it.": {
+  "other": "WhatsAppを連携しますか？{}件のメールで言及されています。"
+ },
  "Connect a channel that can send first.": "先にメッセージを送信できるチャンネルを接続してください。",
  "Connect a mailbox that can send first.": "先にメールを送信できるメールボックスを接続してください。",
  "Connect a source first": "先にデータソースを接続",
@@ -1149,6 +1153,15 @@
  "Connect your calendar": "カレンダーを接続",
  "Connect your mail to get your first to-dos.": "メールを接続して、最初のToDoを受け取りましょう。",
  "Connect your own Intercom": "ご自身のIntercomを接続",
+ "Connect {0}? {1} emails from {0} this month.": {
+  "other": "{0}を連携しますか？今月、{0}からのメールが{1}件あります。"
+ },
+ "Connect {0}? {1} meetings use it this month.": {
+  "other": "{0}を連携しますか？今月、{1}件のミーティングで使用されています。"
+ },
+ "Connect {0}? {1} messages link to it this month.": {
+  "other": "{0}を連携しますか？今月、{1}件のメッセージからリンクされています。"
+ },
  "Connect {}": "{}に接続",
  "Connected": "接続済み",
  "Connected AIs": "接続済みのAI",
@@ -6371,6 +6384,8 @@
  "Try it": "試す",
  "Try now": "今すぐ試す",
  "Try part of a name, an address or a company.": "名前の一部、アドレス、会社名を入力してみてください。",
+ "Try {} again? The code ran out.": "もう一度{}を試しますか？コードの有効期限が切れました。",
+ "Try {} again? The sign-in didn’t finish.": "もう一度{}を試しますか？ログインが完了しませんでした。",
  "Try: {}": "例：{}",
  "Trying again": "再試行中",
  "Trying again around {}.": "{}ごろに再試行します。",
@@ -7422,6 +7437,7 @@
  "no grant": "許可なし",
  "no keys for the sender": "送信者のキーがありません",
  "no longer shared": "共有されなくなりました",
+ "no new to-dos": "新しいToDoはありません",
  "no signal recorded": "シグナルが記録されていません",
  "none found": "見つかりませんでした",
  "none you made yourself": "自分で作成したものはありません",
