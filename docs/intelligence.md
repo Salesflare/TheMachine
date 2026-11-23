@@ -984,8 +984,8 @@ nothing, and a log write that fails never fails the prompt.
   already given in that state (its runs' `memory_use` rows), one learned on this to-do, or a connected AI's. At most 3
   lines and 400 characters, before the `retained` slice, and nothing when nothing changed.
 - `memory_use.outcomes(db, to-do)` joins what was in a to-do's prompts with what the owner then did (sent unchanged,
-  sent after their own edit, dismissed, snoozed), and `memory_use.summary(db)` counts that per kind and per item.
-  Nothing reads them yet.
+  sent after their own edit, done, dismissed, snoozed), and `memory_use.summary(db)` counts that per kind and per item.
+  A report only: nothing picks memory by it, as how a to-do went says little about one of the many items it read.
 
 <a id="bring-these-in"></a>
 ## Bring these in

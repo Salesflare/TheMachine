@@ -298,6 +298,7 @@ class MemoryUseTests(unittest.TestCase):
 
     def test_outcomes_join_what_was_read_with_what_the_owner_did(self):
         todos = {name: self.store.suggest(name, f'To-do {name}', 'Body', [2])['id'] for name in ('plain', 'edited', 'dropped')}
+        more = {name: self.store.suggest(name, f'To-do {name}', 'Body', [2])['id'] for name in ('done', 'later', 'reopened', 'expired')}
         for n, (name, todo) in enumerate(todos.items()):
             rows = [['fact', '4', 'closeness', 0.9, 40, 1], ['signal', '2', 'closeness', 0.8, 60, 0]] + ([['rule', '31', 'weight', None, 30, 0]] if n else [])
             memory_use.record(self.store, 'preparation', rows, f'prep-{name}', todo)
@@ -310,7 +311,13 @@ class MemoryUseTests(unittest.TestCase):
             db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) "
                        "VALUES('e2',?,'r0','r1','email','Before','After','agent',?)", (todos['plain'], NOW.isoformat()))
         self.store.decide(todos['dropped'], 'reject', 'not now', 'drop-note', 'dashboard')
+        self.store.decide(more['later'], 'snooze', '', 'later-1', 'dashboard')
+        for name in ('done', 'later', 'reopened', 'expired'):  # Done without a send, also after a snooze
+            self.store.decide(more[name], 'complete', '', f'{name}-done', 'dashboard')
+        self.store.decide(more['reopened'], 'reopen', '', 'reopened-back', 'dashboard')
         with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET expired_at=? WHERE id=?', (NOW.isoformat(), more['expired']))
+            self.assertEqual({'done': 'done', 'later': 'done', 'reopened': 'open', 'expired': 'open'}, {n: memory_use.outcomes(db, todo)['outcome'] for n, todo in more.items()})
             got = {name: memory_use.outcomes(db, todo) for name, todo in todos.items()}
             summary = memory_use.summary(db)
             self.assertIsNone(memory_use.outcomes(db, 'nope'))
@@ -319,8 +326,8 @@ class MemoryUseTests(unittest.TestCase):
         self.assertEqual([('fact', '4', 'closeness'), ('signal', '2', 'closeness'), ('rule', '31', 'weight')],
                          [(m['kind'], m['row_id'], m['how']) for m in got['edited']['memory']])
         self.assertEqual(1, got['edited']['prompts'])
-        self.assertEqual({'prompts': 3, 'sent_unchanged': 1, 'sent_edited': 1, 'dismissed': 1, 'snoozed': 0, 'open': 0}, summary['kinds']['fact'])
-        self.assertEqual({'prompts': 2, 'sent_unchanged': 0, 'sent_edited': 1, 'dismissed': 1, 'snoozed': 0, 'open': 0}, summary['items'][('rule', '31')])
+        self.assertEqual({'prompts': 3, 'sent_unchanged': 1, 'sent_edited': 1, 'done': 0, 'dismissed': 1, 'snoozed': 0, 'open': 0}, summary['kinds']['fact'])
+        self.assertEqual({'prompts': 2, 'sent_unchanged': 0, 'sent_edited': 1, 'done': 0, 'dismissed': 1, 'snoozed': 0, 'open': 0}, summary['items'][('rule', '31')])
         self.assertNotIn('To-do', json.dumps({'kinds': summary['kinds'], 'items': sorted(map(list, summary['items']))}))
 
 
