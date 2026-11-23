@@ -210,6 +210,9 @@ const expect=async(outcome,cases)=>{for(const [tool,params] of cases)assert.equa
  assert.equal((await hooks.before_tool_call({toolName:'skills_read',params:{name:'signal-prep'}},ctx)).block,true);  // reviews too
  assert.equal(await hooks.before_tool_call({toolName:'skills_read',params:{name:'signal-prep'}},main),undefined);  // the owner's chat
  assert.ok(readFileSync(`${shop}/signal-prep/SKILL.md`,'utf8').includes('assistant_signals'));
+ // A preparation is told which ones, instead of trying each and being refused; the other skills are not named.
+ const told=(await hooks.before_prompt_build({},prepCtx)).prependSystemContext;
+ assert.ok(told.includes('older copies of those rules: do not read them (signal-prep).'));
  delete process.env.OPENCLAW_STATE_DIR;
 }
 await expect('run',[['assistant_signals',{action:'prepare'}],['openclawweb_fetch',{url:'https://example.com'}],['memory_search',{}],

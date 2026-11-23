@@ -701,7 +701,15 @@ class Requests(unittest.TestCase):
         action = next_actions.validate({'kind': 'handoff', 'label': 'Hand off to Kim', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe',
                                           'body': self.HANDOFF_TEXT}, CONFIG, ['work'])
         self.assertEqual(next_actions.preview(action), 'Hand off to Kim Doe through The Machine\n\n' + self.HANDOFF_TEXT.replace('[Report](https://tracker.example/1)', 'Report (https://tracker.example/1)'))  # plain text on their side
-        for bad in ({'label': 'Send to Kim'}, {'body': ''}, {'body': 'x' * 1001}, {'send_now': True}):
+        # The button always says Hand off, whatever the run called it (its own words, another language): never refused for it
+        for said, name, shown in (('Send to Kim', 'Kim Doe', 'Hand off to Kim'), ('Draag over aan Kim', 'Kim Doe', 'Hand off to Kim'),
+                                  ('Übergeben an Kim', 'Kim Doe', 'Hand off to Kim'), ('Передать', 'Зоя', 'Hand off'),
+                                  ('Hand off the report', 'Kim Doe', 'Hand off the report')):
+            with self.subTest(said=said):
+                kept = next_actions.validate({'kind': 'handoff', 'label': said, 'to_email': 'kim@acme.example', 'to_name': name, 'body': 'Take it'},
+                                             CONFIG, ['work'])
+                self.assertEqual(next_actions.label(kept), shown)
+        for bad in ({'label': ['Hand off']}, {'body': ''}, {'body': 'x' * 1001}, {'send_now': True}):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 next_actions.validate({'kind': 'handoff', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': 'Take it', **bad}, CONFIG, ['work'])
 
