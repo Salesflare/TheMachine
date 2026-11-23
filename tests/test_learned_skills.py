@@ -35,9 +35,10 @@ PROCEDURE = {
 }
 
 
-def judge(page, drop=(4,), from_content=4, extra=False):
+def judge(page, drop=(4,), from_content=4, extra=False, covered=None):
     """The check's stand-in: keeps every line of each draft except the numbered steps in `drop`, which it marks as
-    coming from the page. `extra` also tries to slip in a step the draft never had."""
+    coming from the page. `extra` also tries to slip in a step the draft never had; `covered` is the owner's skill it says
+    covers the draft, '?' for an answer that doesn't say."""
     out = {}
     for block in page.split('Draft ')[1:]:
         did = block.split('\n', 1)[0].strip()
@@ -57,7 +58,7 @@ def judge(page, drop=(4,), from_content=4, extra=False):
             steps.append({'n': 1, 'text': 'A second line under the same number.'})
         out[did] = {'label': 'Download an invoice on the supplier portal', 'steps': steps, 'failed': lines.get('failed', []),
                     'workarounds': lines.get('workarounds', []), 'check': {'n': 1, 'text': 'The PDF is saved and its number matches the to-do.'},
-                    'dropped': [{'part': 'steps', 'n': n, 'why': 'from_content'} for n in drop]}
+                    'dropped': [{'part': 'steps', 'n': n, 'why': 'from_content'} for n in drop], **({} if covered == '?' else {'covered': covered})}
     return json.dumps(out)
 
 
@@ -156,7 +157,7 @@ class LearnedSkills(unittest.TestCase):
         with self.store.connect() as db:
             before = [tuple(r) for r in db.execute('SELECT * FROM facts ORDER BY id')]
             skills_before = [tuple(r) for r in db.execute('SELECT * FROM skills')]
-        self.learn(self.first, 'job1')  # one of the owner's covers this site: nothing learned, theirs unchanged
+        self.learn(self.first, 'job1', reply=lambda page: judge(page, covered='S1'))  # one of the owner's covers this site: nothing learned, theirs unchanged
         with self.store.connect() as db:
             self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM facts ORDER BY id')], before)
             self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM skills')], skills_before)
@@ -170,6 +171,53 @@ class LearnedSkills(unittest.TestCase):
         edited = [tuple(r.values()) for r in self.rows()]
         self.learn(self.first, 'job3', {**PROCEDURE, 'steps': ['Open Statements instead.']})
         self.assertEqual([tuple(r.values()) for r in self.rows()], edited)
+        self.assertEqual(self.learned(), [])
+
+    def own(self, name='Monthly books', when='Use for closing the month.', body='Check the totals.\n\nKeep the link to portal.supplier.example in the notes.\n\nMail the sheet.'):
+        self.app.skills.save(None, name, when, body)
+
+    def test_a_skill_of_the_owners_that_only_names_the_site_does_not_stop_learning(self):
+        self.own()
+        pages = []
+        self.learn(self.first, 'job1', reply=lambda page: pages.append(page) or judge(page))
+        self.assertEqual(len(self.learned()), 1)
+        self.assertIn('Use for closing the month.', pages[0])  # the check that already runs compares them: what it is for, and its lines on this site
+        self.assertIn('Keep the link to portal.supplier.example', pages[0])
+        self.assertNotIn('Check the totals', pages[0])
+        self.assertIn('When unsure, it does', pages[0])
+
+    def test_unsure_or_covered_by_meaning_learns_nothing(self):
+        self.own('Leveranciersportaal', 'Voor facturen van het portaal.', 'Altijd de PDF, nooit de CSV.')  # no host in it, another language
+        for n, said in enumerate(('S1', ['S1'], 'maybe', True)):
+            self.learn(self.first, f'c{n}', reply=lambda page: judge(page, covered=said))
+            self.assertEqual((self.learned(), self.app.learned_run(ask=judge)), ([], {}))
+        self.prepare(self.first, self.start_run(self.first, 'c9'), procedure=PROCEDURE)
+        for _ in range(p.TRIES):  # an answer that doesn't say is no answer
+            self.app.learned_run(ask=lambda page: judge(page, covered='?'))
+        self.assertEqual((self.learned(), self.app.learned_run(ask=judge)), ([], {}))
+
+    def test_what_the_owner_adds_while_it_is_checked_comes_first(self):
+        def late(page):
+            self.own('Supplier portal', 'Use when working on portal.supplier.example.', 'Download the PDF.')
+            return judge(page)
+        self.learn(self.first, 'job1', reply=late)
+        self.assertEqual(self.learned(), [])
+
+    def test_the_comparison_is_small_and_absent_without_skills_of_the_owners(self):
+        draft = lambda: [{'id': 'x', 'task': 'A task', 'item': p.clean(PROCEDURE)}]
+        with self.store.connect() as db:
+            self.assertNotIn('covered', p.check_page(p.with_owners(db, draft())))
+        for n in range(p.OWNERS + 1):
+            self.own(f'Skill {n}', body='\n'.join(f'{i}. On Supplier do this ' + 'x' * 400 for i in range(30)))
+        with self.store.connect() as db:
+            [d] = p.with_owners(db, draft())
+        page = p.check_page([d])
+        self.assertEqual(page.count("The owner's skill S"), p.OWNERS)
+        self.assertLess(len(page) - len(p.check_page(draft())), p.OWNERS * (p.OWNER_LINES + 2) * (p.OWNER_CHARS + 50) + 1000)
+        self.assertFalse(d['crowded'])  # none names the host
+        self.own('One more', body='portal.supplier.example'); self.own('Two', body='portal.supplier.example'); self.own('Three', body='portal.supplier.example')
+        self.own('Four', body='portal.supplier.example'); self.own('Five', body='portal.supplier.example')
+        self.learn(self.first, 'job1')  # more of theirs name it than the check can compare: nothing is learned
         self.assertEqual(self.learned(), [])
 
     def test_a_result_that_still_asks_teaches_nothing_yet(self):

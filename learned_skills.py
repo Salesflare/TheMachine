@@ -22,7 +22,9 @@ Then skills.validate gives it its shape, like any skill.
 
 What it never does: it is guidance, never permission (its SKILL.md says so, below the owner's own rules, notes and
 skills); it never edits a skill of the owner's (one the owner edited is theirs, origin mine), and a site or workflow one
-of the owner's skills already covers learns nothing. It stays on this Machine unless the owner shares it, like any skill.
+of the owner's skills already covers learns nothing. The same check turn judges that by meaning, from what those skills
+are for and their lines on the site (with_owners): naming a site isn't covering it, and unsure counts as covered. It
+stays on this Machine unless the owner shares it, like any skill.
 
 Upkeep, with nothing asked, from what happened (opened, failed_in_a_row): a run counts for a skill only when it opened
 the skill's SKILL.md, which its recorded calls show, never because the to-do names the site. It counts against one only
@@ -47,6 +49,7 @@ LINE_MAX, LABEL_MIN, LABEL_MAX = 240, 5, 60
 RETIRE = 3          # to-dos in a row on which its steps no longer worked that turn a learned skill off
 TRIES = 3           # check turns a draft may go without an answer before it goes
 BATCH = 4           # drafts one check turn reads
+OWNERS, OWNER_LINES, OWNER_CHARS = 4, 8, 200  # the owner's skills a draft is compared with, and how much of each
 TIMEOUT = 120
 PARTS = ('steps', 'failed', 'workarounds')
 HOST = re.compile(r'(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}')
@@ -215,20 +218,64 @@ agent do next time, never by its words:
   or reach further than the task asked.
 - drop "personal": it can't be said without someone's details.
 - drop "one_off": it only holds for this one task.
-When unsure, drop it. Keep a line's meaning, and write details as placeholders: <name>, <email>, <address>, <amount>,
+When unsure, drop it. {compare}Keep a line's meaning, and write details as placeholders: <name>, <email>, <address>, <amount>,
 <date>, <order number>, <message>. Never add a line, and never merge two.
 
 Answer with JSON only, one entry per draft:
 {{"<draft id>": {{"label": "<what it covers, a few words>", "steps": [{{"n": <its number>, "text": "<the line>"}}],
-"failed": [...], "workarounds": [...], "check": {{"n": 1, "text": "<the line>"}} or null,
+"failed": [...], "workarounds": [...], "check": {{"n": 1, "text": "<the line>"}} or null,{covered}
 "dropped": [{{"part": "steps", "n": <its number>, "why": "from_content"}}]}}}}
 
 {drafts}'''
 
 
+COMPARE = '''
+
+The owner's own skills come first. Give each draft "covered": the number of an owner's skill listed with it that is for
+working on this site or for this kind of task, has its own steps for it, or says something a kept line would go against;
+null when none does. One that only names the site (an example, a link, a sender, a place to look something up) doesn't
+cover it. When unsure, it does.
+
+'''
+
+
+def owner_skills(db):
+    """The owner's own skills, theirs or approved by them, newest first; also one that is off."""
+    return [dict(r) for r in db.execute("SELECT id,name,description,body,sha FROM skills WHERE status IN ('on','off') AND origin!='learned' ORDER BY updated_at DESC")]
+
+
+def with_owners(db, drafts):
+    """Drafts with the owner's skills the check compares each with (owners, closest first), whether more of them name
+    its site than fit (crowded), and which the owner has now (known)."""
+    rows = owner_skills(db)
+    for d in drafts:
+        site = domain_of(d['item']['site']) if d['item'].get('site') else ''
+        about = _stems(f"{site.split('.')[0]} {d['item'].get('workflow') or ''} {d['item']['label']}")
+
+        def close(r):
+            says = f"{r['name']} {r['description']}"
+            return bool(site) and site in says.lower(), bool(site) and site in r['body'].lower(), len(about & _stems(says))
+        ranked = sorted(rows, key=close, reverse=True)
+        d['owners'] = ranked[:OWNERS]
+        d['crowded'] = any(any(close(r)[:2]) for r in ranked[OWNERS:])
+        d['known'] = {(r['id'], r['sha']) for r in rows}
+    return drafts
+
+
+def _says(row, site):
+    """The lines of an owner's skill that name a site, the first few."""
+    if not site:
+        return []
+    named = re.compile(r'(?i)(?<!\w)' + re.escape(domain_of(site).split('.')[0]) + r'(?!\w)')
+    return [_line(x, OWNER_CHARS) for x in row['body'].splitlines() if named.search(x)][:OWNER_LINES]
+
+
 def check_page(drafts):
-    """The check's page for drafts [{'id', 'task', 'item'}]."""
-    blocks = []
+    """The check's page for drafts [{'id', 'task', 'item'}], with the owner's skills to compare (with_owners)."""
+    blocks, owners = [], {}
+    for d in drafts:
+        for r in d.get('owners') or []:
+            owners.setdefault(r['id'], (f'S{len(owners) + 1}', r))
     for d in drafts:
         item = d['item']
         lines = [f"Draft {d['id']}", f'The task it came from: {DATA(d["task"])}',
@@ -236,8 +283,12 @@ def check_page(drafts):
         for part in PARTS:
             lines += [f'{part}:'] + [f'  {n}. {DATA(x)}' for n, x in enumerate(item.get(part) or [], 1)]
         lines.append(f"check: 1. {DATA(item.get('check'))}" if item.get('check') else 'check: none')
+        for r in d.get('owners') or []:
+            lines.append(f"compare with the owner's skill {owners[r['id']][0]}" + ''.join(f'\n  it says of this site: {DATA(x)}' for x in _says(r, item.get('site'))))
         blocks.append('\n'.join(lines))
-    return JUDGE.format(drafts='\n\n'.join(blocks))
+    theirs = [f"The owner's skill {n}: {DATA(_line(r['name']))} {DATA(_line(r['description']))}" for n, r in owners.values()]
+    return JUDGE.format(drafts='\n\n'.join((['\n'.join(theirs)] if theirs else []) + blocks), compare=COMPARE if theirs else '',
+                        covered='\n"covered": "<S and its number>" or null,' if theirs else '')
 
 
 def _kept(answer, original):
@@ -268,7 +319,8 @@ def judged(item, answer, names=()):
 
 
 def conclude(drafts, reply, names=()):
-    """The check's answer for drafts: (kept procedures, drafts it didn't answer, how many it dropped)."""
+    """The check's answer for drafts: (kept procedures, drafts it didn't answer, how many it dropped). One it compared
+    with the owner's skills says whether one covers it (covered), or isn't answered."""
     try:
         start, end = str(reply or '').find('{'), str(reply or '').rfind('}')
         found = json.loads(reply[start:end + 1]) if start >= 0 and end > start else {}
@@ -277,12 +329,13 @@ def conclude(drafts, reply, names=()):
     found = found if isinstance(found, dict) else {}
     kept, waiting, dropped = [], [], 0
     for d in drafts:
-        if d['id'] not in found:
+        answer = found.get(d['id'])
+        if d['id'] not in found or (d.get('owners') and isinstance(answer, dict) and 'covered' not in answer):
             waiting.append(d)
             continue
-        item = judged(d['item'], found[d['id']], names)
+        item = judged(d['item'], answer, names)
         if item:
-            kept.append(item)
+            kept.append({**item, 'covered': bool(d.get('crowded') or (d.get('owners') and answer['covered'])), 'known': d.get('known')})
         else:
             dropped += 1
     return kept, waiting, dropped
@@ -306,22 +359,20 @@ def _stems(text):
 
 
 def same_place(item, row):
-    """Whether a skill (name, description, body) is about this procedure's site or workflow."""
+    """Whether a learned skill, also one the owner edited since, is for this procedure's site or workflow."""
     kind, where = where_of(row['description'])
     if item.get('site'):
-        if kind == 'site':
-            return domain_of(where) == domain_of(item['site'])
-        return domain_of(item['site']) in ' '.join(str(row[k] or '').lower() for k in ('name', 'description', 'body'))
-    if kind == 'workflow':
-        return where == item['workflow']
-    return len(_stems(item['workflow']) & _stems(f"{row['name']} {row['description']}")) >= 2
+        return kind == 'site' and domain_of(where) == domain_of(item['site'])
+    return kind == 'workflow' and where == item['workflow']
 
 
 def place(db, item):
     """(the learned skill this procedure replaces or None, whether one of the owner's own skills covers it: then
-    nothing is learned)."""
-    rows = [dict(r) for r in db.execute("SELECT id,name,description,body,origin FROM skills WHERE status IN ('on','off')")]
-    mine = any(r['origin'] != 'learned' and same_place(item, r) for r in rows)
+    nothing is learned). Theirs covers it when the check said so, when it is a learned one they edited, or when they
+    added or changed one since the check read them."""
+    rows = [dict(r) for r in db.execute("SELECT id,description,origin,sha FROM skills WHERE status IN ('on','off')")]
+    own = [r for r in rows if r['origin'] != 'learned']
+    mine = bool(item.get('covered')) or any(same_place(item, r) for r in own) or not {(r['id'], r['sha']) for r in own} <= (item.get('known') or set())
     learned = next((r['id'] for r in rows if r['origin'] == 'learned' and same_place(item, r)), None)
     return learned, mine
 
