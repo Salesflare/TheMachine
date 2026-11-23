@@ -22,9 +22,11 @@ Nothing. (On your own computer, the `join_pipelines` setting can make it add you
 
 ## Sync details
 
-Under **Connections**, **Customers**, Salesflare shows how far it is: accounts read this round, and any skipped because Salesflare was too slow. A round that runs for hours says it may be stuck.
+Under **Connections**, **Customers**, Salesflare shows how far it is: accounts checked this round, any skipped because Salesflare was too slow, and any your API key can't open (**without access**). A round that runs for hours says it may be stuck.
 
-Its tiles count the accounts it could open and the emails and meetings it brought in. If Salesflare lets your API key open none of the accounts, the card says **Needs your help**: use the key of a user who can see them. If Salesflare keeps timing out but each retry gets through, it says Salesflare is **slow at times**.
+Its tiles count the accounts it read this week and the emails and meetings it brought in.
+
+A few accounts without access are nothing to fix: the rest comes in as usual. If your API key opens no account at all, the card says **Needs your help**: use the key of a user who can see them. A new key starts afresh and reads the last week again. If Salesflare keeps timing out but each retry gets through, it says Salesflare is **slow at times**.
 
 If Salesflare hasn't switched on feed access for API keys for your team, the card says so: no emails or meetings come in until Salesflare support switches it on. It checks again every 10 minutes on the first day, then about every hour, and goes on by itself once it works.
 

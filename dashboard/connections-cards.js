@@ -533,7 +533,7 @@ function connActions(c){const name=connTitle(c)||c.id;
  return html`${c.shared_with?html`<p class="note">Shared with ${c.shared_with}.</p>`:''}${c.connect_name?html`<div class="actions conn-actions"><button type="button" class="ghost" data-reconnect="${c.connect_name}" data-account="${c.id}"${c.signin?html` data-signin-source="${c.signin}"`:''}>Reconnect</button><button type="button" class="ghost danger" data-disconnect="${c.id}" data-name="${name}">Disconnect</button></div>`:''}`}
 // Salesflare (assistant.py salesflare_progress): what it reads, the round of accounts it is on, Stop or Start, Restart
 // for a round that is stuck, and where its API keys are.
-// No access to any account (no_access_all) says so with the way out (another key); the counts are one round's.
+// No access to any account (no_access_all) says so with the way out (another key).
 // Salesflare refusing the feed for the whole team (feed_off) says who can switch it on, instead of counting accounts.
 function salesflareBox(c){const v=c.salesflare||{},r=v.round,id=c.id,n=x=>Number(x||0).toLocaleString(DL);
  const line=v.stopped?'Nothing new comes in until you start it.':r?[t('Checked {} of {} accounts so far.',n(r.done),n(r.accounts)),r.stuck?t('Started {}, may be stuck.',ago(r.started)):''].filter(Boolean).join(' '):c.last_success?'':'Finding the accounts with recent emails and meetings…';
@@ -609,9 +609,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button[dat
 // The card's three tiles. A calendar counts events: how many it keeps, how many come up in the next 7 days and how many
 // were new or changed in the last 24h (as the note above the cards says; its review runs in the background, so no
 // "not checked" there)
-// A CRM counts the accounts it could open (this round, else the last one) and the emails and meetings it brought in.
+// A CRM counts the accounts it read this week and the emails and meetings it brought in.
 const connFigures=(c,unit)=>CALENDAR_SERVICES.includes(c.service)?[[c.total,'events'],[c.upcoming_7d,'next 7 days'],[c.signals_24h,'last 24h']]
- :c.service==='salesflare'?[[c.salesflare?.round?.read??c.salesflare?.last_round?.read,'accounts read'],[c.total,'emails and meetings'],[c.signals_24h,'last 24h']]
+ :c.service==='salesflare'?[[c.salesflare?.accounts_read,'accounts read'],[c.total,'emails and meetings'],[c.signals_24h,'last 24h']]
  :[[c.total,unit],[c.signals_24h,'last 24h'],[c.pending,'not checked']];
 // Recent syncs, newest first, in the dashboard's own time style (Today 08:18, the year only when it isn't this one).
 // A failed sync that a later one made up for reads calm, without its old Retry time; only a failure that is still
