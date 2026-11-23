@@ -36,6 +36,7 @@ import moving
 import person_summary
 import security_levels
 import signatures
+from machine import owner_name
 from machine import todo_states
 from machine.owner_error import OwnerError
 import timeutil
@@ -113,7 +114,7 @@ class StoreReader:
                 for a in self.config.get('accounts', []) if isinstance(a, dict) and a.get('id')}
 
     def owner(self):
-        return {'name': self.config.get('owner_name') or '', 'timezone': self.config.get('timezone') or '',
+        return {'name': owner_name.full_name(self.config), 'timezone': self.config.get('timezone') or '',
                 'language': self.config.get('language') or ''}
 
     def nodes(self):

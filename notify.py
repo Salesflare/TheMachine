@@ -45,6 +45,7 @@ import urllib.request
 import clear_pace
 from i18n import t
 import timeutil
+from machine import owner_name
 from machine import todo_states
 from machine.owner_error import OwnerError
 
@@ -645,10 +646,7 @@ def promised_today(promises, top, today, text):
             for p in promises if p['direction'] == 'mine' and p.get('due') == today and p['state'] in ('open', 'card')]
 
 
-def first_name(name):
-    """The owner's first name for the greeting, or '' when it doesn't look like one."""
-    first = (str(name or '').split() or [''])[0]
-    return first if re.fullmatch(r"[^\W\d_][\w'’-]*", first) else ''
+first_name = owner_name.first_name  # for the greeting, '' when it doesn't look like one
 
 
 def asks(outcome):

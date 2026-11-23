@@ -137,6 +137,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     from its line).
   - `machine/names.py`: what the owner calls a service, app or agent; every key from data shown on screen goes
     through it, so a tool underneath (gog, wacli, msgraph-cli) is never a name (`tests/test_owner_names.py`).
+  - `machine/owner_name.py`: the owner's own name for what greets them or signs for them: config, else USER.md, else (a
+    greeting only) their work mailbox's. Whose message is whose keeps to `owner_name` (`own_addresses.py`, `graph.py`).
   - `machine/services.py`: every service a connection reads (`gmail`, `slack`, `web_page`), one row each: its name,
     its + Add label, group and sign-in, and the transports that mean it. A leaf; `names`, `sources/groups`, `fleet`,
     `onboarding` and the mail and calendar lists read it, and the page carries its dashboard fields as JSON

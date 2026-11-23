@@ -276,7 +276,7 @@ class StatusApp:
 
     def status_inputs(self):
         """What the status reads besides the database, the config and the minute that changes by itself: the to-dos'
-        preparations held back in memory (a usage limit, busy slots), USER.md (the owner's names in Learning) and the
+        preparations held back in memory (a usage limit, busy slots), USER.md (the owner's name, also in Learning) and the
         disconnect receipts beside the database (Connections, Disconnected lately). The rest it reads outside the
         database changes with the config, or is kept longer inside it as before (card_views' CARDS, setup_hints_view)."""
         import mail_grants
@@ -448,9 +448,10 @@ class StatusApp:
                 result['setup_hints'] = [h for h in result['setup_hints'] if h.get('id') != 'source-' + nudge['id'].rpartition('-')[2]]
         except sqlite3.Error as error:
             LOG.warning('setup card error=%s', type(error).__name__); result['setup_card'] = None
-        result['first_name'] = notify.first_name(self.config.get('owner_name'))  # as the digest greets them ('' when none is known)
+        owner = self.owner_full_name()
+        result['first_name'] = notify.first_name(owner)  # as the digest greets them ('' when none is known)
         try:  # the hello on a new owner's first views, with who has waited longest on them (Store.greeting)
-            result['greeting'] = self.store.greeting(self.config.get('owner_name'))
+            result['greeting'] = self.store.greeting(owner)
         except sqlite3.Error as error:
             LOG.warning('greeting error=%s', type(error).__name__); result['greeting'] = None
         try:  # the first-use tips on a new person's first to-dos (Store.first_tips)
