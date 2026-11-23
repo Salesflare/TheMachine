@@ -9,6 +9,7 @@ import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {fileURLToPath} from 'node:url';
 import {dashboardPage} from './dashboard-page.mjs';
+import {waitForAction} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 const at=html=>html.replaceAll('__BASE__','/').replaceAll('__CSRF__','').replaceAll('__UI_VERSION__','v1').replaceAll('__CACHE_SCOPE__','');
@@ -104,9 +105,8 @@ try{
  await page.evaluate(id=>{location.hash='#card='+id},ASK);await page.waitForFunction(()=>!document.body.classList.contains('chat-open'));
 
  // 5. How it ends: done, snoozed, not here anymore
- await page.locator(`#task-${ASK} [data-choice="complete"]`).first().evaluate(b=>b.click());await titled(page,'done: Tell Robin about Saturday');
- for(let i=0;i<200&&!posts.some(p=>p.action==='decide');i++)await page.waitForTimeout(25);
- assert.equal(posts.filter(p=>p.action==='decide').length,1);await page.locator('#toast [data-undo]').waitFor();
+ await page.locator(`#task-${ASK} [data-choice="complete"]`).first().evaluate(b=>b.click());await waitForAction(posts,'decide');await titled(page,'done: Tell Robin about Saturday');await page.locator('#toast [data-undo]').waitFor();
+ assert.equal(posts.filter(p=>p.action==='decide').length,1);
  await page.context().close();
  reset();page=await open(one(DONE));await titled(page,'done: Book the venue');await page.context().close();
  reset();list[1].status='snoozed';list[1].snoozed_until=new Date(Date.now()+864e5).toISOString();page=await open(one(ASK));await titled(page,'snoozed: Tell Robin about Saturday');await page.context().close();

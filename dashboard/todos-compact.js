@@ -26,7 +26,7 @@ function oneDraw(){if(!state.suggestions)return;
  box.removeAttribute('aria-busy');pageMarks();keptBack();if(!oneOwn(location.hash))oneBack();oneTitle();
  if(s&&!kbLanded){kbLanded=true;requestAnimationFrame(()=>setTimeout(()=>kbLand()))}}
 // What Escape closes before it is the app's: a dialog, a menu, a picker
-const ONE_OPEN='dialog[open],#suggestions .more-actions[open],#chat-menu[open],.row-menu,.project-picker,#share-pop,#cm-menu:not([hidden])';
+const ONE_OPEN=['dialog[open]','.more-actions[open]','#chat-menu[open]','.row-menu','.project-picker','#share-pop','#cm-menu:not([hidden])'].join();
 function oneShut(d){if(d.matches('dialog'))backCancel(d);else if('open' in d)d.open=false;else if(d.id==='cm-menu')d.hidden=true;else if(d.id==='share-pop')sharePopClose();else d.remove()}
 function oneStart(){const root=document.documentElement;oneId=/^#(?:card|chat)=([a-f0-9]{16})\b/.exec(location.hash)?.[1]||'';
  root.classList.remove('compact');root.classList.add('one-todo');document.querySelector('base').target='_blank';

@@ -11,6 +11,6 @@
 .one-todo .card.is-closed{padding-bottom:16px}.one-todo .card.is-closed>.actions{position:static;padding:0}
 .one-todo [data-chat-drawer]{display:none!important}
 .one-todo .skeleton>:not(:nth-child(2)){display:none}.one-todo .sk-card{padding:16px 0;border:0;background:none}
-.one-todo #offline-bar{margin-top:12px}.one-todo body:has(.card>.actions .primary) #toast{bottom:136px}
+.one-todo #offline-bar{margin-top:12px}.one-todo #toast{bottom:136px}
 .one-line{margin:0;padding:16px 0;color:var(--c-text-2)}
 .one-todo .empty{padding:16px 0}.one-todo .empty img{display:none}
