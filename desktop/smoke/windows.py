@@ -1599,15 +1599,30 @@ def windows_says(to='read'):
     return (done.stdout.strip().splitlines() or [done.stderr.strip()[-300:]])[-1]
 
 
+def look():
+    """It asks now, as its box opens: not only in its half a minute. Somebody is there, too."""
+    away()
+    before = len(machine.desks)
+    app.again('--toggle')
+    need(until(lambda: len(machine.desks) > before), 'it asks')
+    app.again('--toggle')
+    need(until(lambda: not app.box()), 'the box goes')
+
+
 def speaks(yes):
-    need(until(lambda: machine.desks[-1][1] == '01'[yes], 40), str(machine.desks[-1]))
+    for _ in range(3):
+        look()
+        if machine.desks[-1][1] == '01'[yes]:
+            return
+    raise AssertionError(str(machine.desks[-1]))
 
 
 def quiet(todo='aa03'):
     """What comes isn't said, and left to the browser."""
     speaks(False)
     machine.notices = [{'key': f'{time.time_ns():x}', 'id': todo, 'kind': 'todo'}]
-    time.sleep(35)
+    look()
+    time.sleep(3)
     need(not app.bubble() and machine.notices, 'it says nothing, and leaves it to the browser')
     machine.notices = []
 
