@@ -28,7 +28,8 @@ function openResultLink(){const match=/^#result=([a-f0-9]{16})$/.exec(location.h
 // is the page's own address: that one the page opens by itself. A link handed in is use: an update waiting for a quiet
 // moment doesn't reload the page under it.
 {const first=location.href;let seen=false;if('launchQueue' in window)launchQueue.setConsumer(p=>{const u=p.targetURL&&new URL(p.targetURL),opening=!seen;seen=true;
- if(!u||!u.hash||opening&&u.href===first)return;
+ if(!u||opening&&u.href===first)return;
+ if(deskTaken(u))deskSay();if(!u.hash)return;
  try{lastInput=lastTouch=Date.now()}catch{}  // (shell-tabs.js, further down the page: not there yet while the page itself still loads)
  if(u.hash!==location.hash)location.hash=u.hash;else dispatchEvent(new HashChangeEvent('hashchange'))})}
 // A draft moved off an address that bounced to the person's working one (bounces.moved): "Bounced, now to <address>".

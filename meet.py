@@ -29,6 +29,7 @@ import json
 import logging
 import re
 import secrets
+import urllib.parse
 
 import activity_log
 import network_crypto as nc
@@ -268,6 +269,27 @@ def video_habit(db, owner=(), days=90):
                 break
     kind = max(counts, key=counts.get)
     return kind if counts[kind] else None
+
+
+# The path of a link that joins a call, per service: never its dial-in numbers, its help or its settings
+VIDEO_JOIN = {'zoom': r'/(?:j|my|s|w)/\S+', 'meet': r'/[a-z]{3,4}-[a-z]{3,4}-[a-z]{3,4}\S*', 'teams': r'/(?:l/meetup-join|meet)/\S+'}
+
+
+def video_link(text):
+    """The first link in the text that joins a call of a known service (VIDEO_LINKS): https, on that service's own
+    host or one under it. None without."""
+    for url in re.findall(r'https://[^\s<>"\'\\]{4,2000}', str(text or '')):
+        url = url.rstrip('.,;:)]}>')
+        parts = urllib.parse.urlsplit(url)
+        try:
+            host, plain = (parts.hostname or ''), parts.port is None and not parts.username and not parts.password
+        except ValueError:
+            continue
+        for kind, marks in VIDEO_LINKS.items():
+            names = [m.rstrip('/') for m in marks]
+            if plain and any(host == n or host.endswith('.' + n) for n in names) and re.match(VIDEO_JOIN[kind], parts.path):
+                return url
+    return None
 
 
 def when_text(moment, tz):

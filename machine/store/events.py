@@ -298,6 +298,9 @@ class EventsStore:
                     # Who on the team closed or answered it is kept beside, never a new version: a conversation read
                     # again for these alone is not reviewed again (its replies change its body and updated_at anyway)
                     digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items() if k not in INTERCOM_FACTS}}
+                if event['kind'] == 'calendar.event' and isinstance(event.get('metadata'), dict):
+                    # Its call's link is kept beside, never a new version: a calendar read again for it is not reviewed again
+                    digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items() if k != 'video'}}
                 slack = event['kind'] == 'slack.message' and isinstance(event.get('metadata'), dict)
                 if slack:  # its title names people as they become known: the same message, not an edit (slack_raw_title)
                     digest_event = {**event, 'title': slack_raw_title(event)}

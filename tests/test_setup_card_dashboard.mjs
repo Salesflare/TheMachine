@@ -102,6 +102,18 @@ const sent=async(got,want,why)=>{for(const end=Date.now()+5000;Date.now()<end&&!
 const dismissed=()=>actions.filter(a=>a.action==='setup_dismiss');
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+ // Opened by the desktop robot (?desk=): the page says which browser is on its computer, with its push once it is on
+ // (machine/delivery/desk.py). The address is clean again; anything else says nothing.
+ {reset();setup={...FRESH,dismissed:['phone']};const desk='a1'.repeat(16),says=()=>actions.filter(a=>a.action==='push_desk').map(a=>a.args);
+  const {context,page}=await open({url:base+'?desk='+desk+'#settings/general'});await page.waitForFunction(()=>devicePush.checked);
+  await sent(says,[{desk,endpoint:''}],'no notifications here: said so');
+  assert.deepEqual(await page.evaluate(()=>[location.search,location.hash]),['','#settings/general']);
+  await page.evaluate(()=>pushEnable());const endpoint=await page.evaluate(()=>devicePush.sub.endpoint||'');
+  await sent(says,[{desk,endpoint:''},{desk,endpoint}],'on: which one');
+  await page.evaluate(()=>lazyPart('settings').then(()=>pushDisable()));await sent(()=>says().length,3,'off: none again');await context.close()}
+ {reset();const {context,page}=await open({url:base+'?desk=nope'});await page.waitForFunction(()=>devicePush.checked);
+  await page.evaluate(()=>fleetPost('push_test',{}));  // sent after anything the page said by itself
+  assert.deepEqual(actions.map(a=>a.action).filter(a=>a.startsWith('push_')),['push_test']);await context.close()}
  // The command palette's actions, in one place.
  {reset();const {context,page}=await open();
   assert.deepEqual(await page.evaluate(()=>window.deviceActions.map(a=>[a.id,a.label])),[['install-app','Install app'],['push-on','Turn on notifications'],['push-test','Send test notification']]);

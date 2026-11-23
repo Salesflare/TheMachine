@@ -50,6 +50,10 @@ try{
  await launch(page,link(3));await until(()=>shown(page,3),'warm: another to-do');
  await launch(page,base+'#chat='+id(5));await until(()=>page.evaluate(i=>chatId===i,id(5)),'warm: a chat');
  await launch(page,link(12));await until(()=>shown(page,12),'from a chat: the to-do');
+ // From the desktop robot (?desk=): the same, and the page says which browser is on its computer (machine/delivery/desk.py)
+ const said=page.waitForRequest(r=>r.method()==='POST'&&r.url().endsWith('/api/action')&&r.postData().includes('push_desk'));
+ await launch(page,base+'?desk='+'a1'.repeat(16)+'#card='+id(2));await until(()=>shown(page,2),'from the robot: the to-do');
+ assert.deepEqual(JSON.parse((await said).postData()).args,{desk:'a1'.repeat(16),endpoint:''});assert.equal(await page.evaluate(()=>location.search),'');
  await page.evaluate(()=>{window.__hashes=[];addEventListener('hashchange',e=>__hashes.push(new URL(e.newURL).hash))});
  await launch(page,base+'#promise/7');await until(()=>page.evaluate(()=>__hashes.includes('#promise/7')),'a promise link');
  await page.close();

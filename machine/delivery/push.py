@@ -14,6 +14,7 @@ import fleet
 import i18n
 from machine.cards import NOT_FOR_OWNER_SQL, ask_question, needs_owner, plain
 from machine.config import LOG, ROOT, WORKSPACE
+from machine.delivery import desk
 from machine.model_usage import node_bin, node_env, telegram_on
 from machine.sources.connectors import HOSTED_SIGNINS
 from machine.sources.mail_senders import HINT_MAILS, HINT_SOURCES, mails_from, sender_domain_in  # noqa: F401  (setup hints; assistant.py, tests)
@@ -156,7 +157,7 @@ def push_notify(store, config, row, sender=None):
     """Phone notification for the installed dashboard app, next to the Telegram one
     . Best effort: never changes the Telegram delivery state."""
     subscriptions, phones = push_reach(store, config)
-    if not subscriptions and not phones:
+    if not subscriptions and not phones and not desk.up():
         return []
     root = dashboard_link(config)
     try:
@@ -225,7 +226,7 @@ def report_done(store, config, suggestion_id, sender=None):
         work = any(a['id'] in ids and str(a.get('boundary') or '').startswith('work:') for a in config.get('accounts', []))
         text = security_levels.notify_text(db, work)  # Careful: no card text on a lock screen
     subscriptions, phones = push_reach(store, config)
-    if not subscriptions and not phones:
+    if not subscriptions and not phones and not desk.up():
         return []
     root = dashboard_link(config)
     payload = {'title': i18n.t('Done: {}', row['title']) if text else i18n.t('Done'),
@@ -698,6 +699,23 @@ def waiting_count(db):
     return sum(1 for r in rows if r[0] not in later)
 
 
+def web_send(store, config, subscriptions, payload, label, sender=None):
+    """The web pushes themselves: one result per subscription. One that is gone is forgotten."""
+    try:
+        results = (sender or (lambda request: push_node(config, request)))({'action': 'send', 'subscriptions': subscriptions, 'payload': payload})['results']
+    except (subprocess.TimeoutExpired, ValueError, KeyError) as error:
+        LOG.warning('push %s error=%s', label, type(error).__name__)
+        return []
+    with store.connect() as db:
+        for result in results:
+            if result['status'] in (404, 410):  # the phone unsubscribed or the app was removed
+                db.execute('DELETE FROM push_subscriptions WHERE endpoint=?', (result['endpoint'],))
+            else:
+                db.execute('UPDATE push_subscriptions SET last_status=?,last_sent_at=? WHERE endpoint=?', (result['status'], now(), result['endpoint']))
+    LOG.info('push %s statuses=%s', label, ','.join(str(r['status']) for r in results))
+    return results
+
+
 def push_send(store, config, subscriptions, payload, label, sender=None, kind=None, held=False, wake=None):
     """kind (notify.KINDS): left out when the owner turned that kind off for push; held while a dashboard is in use or
     for a minute after they left one (notify.push_now), then sent by App.notify_step unless they saw it there. It
@@ -726,21 +744,12 @@ def push_send(store, config, subscriptions, payload, label, sender=None, kind=No
                 LOG.info('push %s held', label)
                 return []
             payload = {**payload, 'badge': waiting_count(db)}
-    results = []
-    if subscriptions:
-        try:
-            results = (sender or (lambda request: push_node(config, request)))({'action': 'send', 'subscriptions': subscriptions, 'payload': payload})['results']
-        except (subprocess.TimeoutExpired, ValueError, KeyError) as error:
-            LOG.warning('push %s error=%s', label, type(error).__name__)
-            results = []
-        else:
-            with store.connect() as db:
-                for result in results:
-                    if result['status'] in (404, 410):  # the phone unsubscribed or the app was removed
-                        db.execute('DELETE FROM push_subscriptions WHERE endpoint=?', (result['endpoint'],))
-                    else:
-                        db.execute('UPDATE push_subscriptions SET last_status=?,last_sent_at=? WHERE endpoint=?', (result['status'], now(), result['endpoint']))
-            LOG.info('push %s statuses=%s', label, ','.join(str(r['status']) for r in results))
+    with store.connect() as db:  # the desktop robot shows it instead of its computer's browser (machine/delivery/desk.py)
+        subscriptions, desks = desk.stand_in(db, subscriptions, payload, kind)
+    results = web_send(store, config, subscriptions, payload, label, sender) if subscriptions else []
+    if desks:
+        LOG.info('push %s desks=%d', label, desks)
+        results = [*results, {'status': 200, 'desk': desks}]
     if kind and not payload.get('silent'):
         with store.connect() as db:  # the day's count for notify.PUSH_CAP
             notify.count_push(db, timeutil.clock(local_tz()).date().isoformat())

@@ -101,6 +101,17 @@ def _at(value):
     return at if at.tzinfo else at.replace(tzinfo=dt.timezone.utc)
 
 
+def start_if_on(occurred_at, metadata):
+    """(when a meeting starts, its metadata), or (None, {}) when it isn't one to go to: canceled, declined or all day."""
+    try:
+        meta = json.loads(metadata or '{}')
+    except ValueError:
+        return None, {}
+    me = next((a for a in meta.get('attendees') or () if isinstance(a, dict) and a.get('self')), {})
+    off = meta.get('all_day') or meta.get('status') == 'cancelled' or me.get('responseStatus') == 'declined'
+    return (None, {}) if off else (_at(occurred_at), meta)
+
+
 KEY_PREFIX = 'meetprep:'
 
 
