@@ -1094,9 +1094,12 @@ whose to-do the owner dismissed or snoozed, is never looked at again. **Connecti
   owner sent to several people (an outreach, a mail merge, near word for word) counts once, in the sample and the
   estimate.
 - One small model turn with its own prompt judges each: a reply owed, a promise made to or by the owner, a deadline, a
-  request. It never sees what the review decided, and every message's text is marked as untrusted data. Ten made-up
-  signals with a known answer are mixed in blind. The owner's own offer that only holds once the other side acts first,
-  and a promise kept in the same message, are no work: the other side's answer comes in as a message of its own.
+  request. It never sees what the review decided, and every message's text is marked as untrusted data. A long chat or
+  meeting record shows its start and its end, where it was answered or closed. Ten made-up signals with a known answer
+  are mixed in blind, the least used ones first. What counts as a promise (owed now: not an offer that waits for the
+  other side, one kept in the same message, a courtesy or a mailing) and whose a matter is (a team's alert, or what a
+  colleague closed, is not the owner's) are the review's own words (`OWED_NOW`, `WHOSE_WORK` in
+  `machine/prompts/review.py`), so the two judge alike.
 - It keeps the share of misses with a 95% confidence interval, overall (each stratum weighted by its size) and per
   stratum, and adjusts it by the evaluator's precision and recall: recall from the made-up signals of the last eight
   audits, precision from those blended with the owner's own labels (the made-up ones weigh as three labels, so each

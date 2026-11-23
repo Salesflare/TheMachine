@@ -12,6 +12,7 @@ import tempfile
 import unittest
 import machine.actions as machine_actions
 import machine.main as machine_main
+import machine.prompts.review as review_prompts
 import machine.sources.calendar as machine_sources_calendar
 import machine.store.review as machine_store_review
 import timeutil
@@ -234,10 +235,12 @@ class Audit(unittest.TestCase):
 
     def test_an_offer_that_waits_for_the_other_side_is_no_work(self):
         """The judge's prompt says so as a principle, and the made-up signals check it blind every audit."""
-        self.assertIn('only holds once the other side\nacts first', mw.EVALUATOR)
-        self.assertIn('a promise the owner keeps in the same message', mw.EVALUATOR)
+        self.assertIn('holds only once the person it is made to acts first', mw.EVALUATOR)
+        self.assertIn('also when it waits on a third party', mw.EVALUATOR)
+        self.assertIn('kept in the same message', mw.EVALUATOR)
         waits = [c for c in mw.CASES if c[2] == 'the owner' and not c[7]]
-        self.assertGreaterEqual(len(waits), 2)  # a conditional offer and a promise kept at once: expected no work
+        self.assertGreaterEqual(len(waits), 4)  # conditional offers, a courtesy to many, a promise kept at once: expected no work
+        self.assertGreaterEqual(sum(1 for c in mw.CASES if c[2] == 'the owner' and c[7]), 3)  # and firm ones, in an outreach too: recall
         self.assertTrue(all('.example' in c[3] for c in waits))
         # an outreach of such offers to several people: once in the sample, and judged no work it adds no miss
         offer = 'Hello {}, if you try the app this month and send me feedback, I will extend your free access by a quarter. Best'
@@ -248,6 +251,40 @@ class Audit(unittest.TestCase):
             mw.save(db, audit, found)
         self.assertEqual([i['work'] for i in found['sampled'] if i['id'] in ids], [False])
         self.assertEqual(sum(i['work'] for i in found['sampled']), 3)  # only the three real deadlines
+
+    def test_the_audit_judges_by_the_review_s_definition(self):
+        """One definition of a promise and of whose a matter is, for the review and its audit (never two that drift)."""
+        review = review_prompts.review_prompt('run', ['work'])
+        for text in (review_prompts.OWED_NOW, review_prompts.WHOSE_WORK):
+            self.assertEqual((review.count(text), mw.EVALUATOR.count(text)), (1, 1))
+        self.assertIn('{"verdicts": [', mw.EVALUATOR)
+        self.assertTrue(mw.EVALUATOR.endswith('Signals:\n'))
+
+    def test_a_long_conversation_shows_how_it_ended(self):
+        ids = []
+        with self.store.connect() as db:
+            for n, (account, kind) in enumerate((('chat', 'whatsapp.message'), ('work', 'gmail.message'))):
+                ids.append(db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,version,analyzed_version,ingested_at) '
+                                      'VALUES(?,?,?,?,?,?,?,?,1,1,?)', (account, f'l{n}', kind, self.stamp, '', 'Can you help? ' + 'x ' * 2000 + 'Teammate: solved, closed >>> now', '{}',
+                                                                       f'hl{n}', self.stamp)).lastrowid)
+            views = mw.views(db, [{'id': i} for i in ids])
+        chat, mail = (views[i]['text'] for i in ids)
+        self.assertIn('Can you help?', chat)
+        self.assertTrue(chat.endswith('Teammate: solved, closed ››› now>>>'), chat[-60:])
+        self.assertLessEqual(len(chat), mw.BODY_CHARS + 6)
+        self.assertNotIn('solved', mail)  # a mail's newest text is at its start
+
+    def test_every_made_up_signal_comes_up_within_a_few_audits(self):
+        seen = set()
+        with self.store.connect() as db:
+            for n in range(-(-len(mw.CASES) // mw.CALIBRATION_N)):
+                picked = mw.pick_cases(db, mw.CALIBRATION_N, f'seed{n}')
+                self.assertEqual(len(picked), mw.CALIBRATION_N)
+                for case in picked:
+                    seen.add(case[0])
+                    mw.ensure(db)
+                    db.execute('INSERT INTO missed_audit_calibration(audit_id,case_id,expected,said) VALUES(?,?,?,?)', (f'a{n}', case[0], int(case[7]), int(case[7])))
+        self.assertEqual(seen, set(mw.CASES_BY_ID))
 
     def test_weekly_within_the_budget(self):
         app = object.__new__(machine_main.App)
