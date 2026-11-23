@@ -46,21 +46,34 @@ frame.addEventListener('load',()=>{reveal();const doc=frame.contentDocument,root
   frame.style.height=Math.min(Math.max(root.scrollHeight,doc.body.scrollHeight,80),20000)+'px';box.style.minHeight=''};
  fit();new ResizeObserver(fit).observe(doc.body);doc.addEventListener('load',fit,true);doc.fonts?.ready.then(fit)});
 frame.srcdoc=emailDoc(view.html,view.images||{},id,o.event_id,o.local);box.replaceChildren(frame)}
-// The dialog with a to-do's messages (openEmail in events-email.js opens it once this part is in)
-async function emailOpen(id,{keep}={}){const s=state.suggestions.find(s=>s.id===id);const dialog=$('#email-dialog');
-if(!keep){$('#email-title').textContent=s?.title||'Original';setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);dialog.showModal()}
-let list;try{[list]=await Promise.all([originalsFor(id),lazyPart('msgview')])}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
-if(!list.length){setHTML($('#email-content'),html`${draftFilesBlock(s)}<p class="muted">The original is no longer available.</p>`);return}
-const [first,...rest]=list,near=nearOf(id,list),all=[...list,...near.before,...near.after],at=o=>all.indexOf(o);
-if(first.kind==='calendar'&&!rest.length&&!draftFiles(s||{}).length){openMeeting(first.event_id,s?.title);return}  // a to-do from a meeting: the meeting itself
-const box=$('#email-content'),wire=()=>{box.querySelectorAll('details.email').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)fillMessage(d,all[+d.dataset.msg],id)}));
- box.querySelector('[data-convo-earlier]')?.addEventListener('click',e=>showEarlier(id,e.currentTarget))};
-const inView=()=>{if(!keep)box.querySelector('.convo-main,.email-main')?.scrollIntoView({block:box.querySelector('.convo-main')?'center':'start'})};
-// A chat to-do: its conversation as one thread, with what was said around it (its other conversations after it); anything else still as related messages
-if(isChat(first)){const others=list.filter(o=>!isChat(o)),main=near.main??first.event_id;
- setHTML(box,html`${draftFilesBlock(s)}${chatThreads([...list,...near.before,...near.after]).map(c=>chatThreadHTML(c,{main,earlier:near.earlier&&c.some(o=>o.event_id===main)}))}${others.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],others.length)}</h3>${others.map(o=>html`<details class="email" data-msg="${at(o)}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${localeDate(new Date(o.occurred_at),DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,at(o))}</details>`)}`:''}`);
+// The dialog with a to-do's messages (openEmail in events-email.js opens it once this part is in), or with one opened
+// from anywhere else (ev: {ids, title, raw, local, run}, openOriginal in events-list.js): read the same way, with what was
+// said around it. ev.ids: the newest last; several are the new ones of one row, all marked. ev.run: a Graph row that is
+// itself a conversation (chatThreadHTML's options), with nothing in it marked.
+const eventsFor=(id,ev)=>{const last=ev.ids.at(-1),r=request('api/originals?'+(ev.ids.length>1?`events=${ev.ids}&near=${last}`:'event='+last)).then(({originals:list,around:c})=>{
+ const own=new Map(list.map(o=>[o.event_id,Object.assign(o,{own:true,raw:!!ev.raw,local:!!ev.local})])),first=own.get(last)||list[0];own.delete(first?.event_id);
+ // the row's other messages take their place in what is around, each as it is when opened (an email's HTML and files)
+ const place=l=>l.map(o=>{const m=own.get(o.event_id);own.delete(o.event_id);return m?{...o,...m}:o});
+ if(c){c.before=place(c.before);c.after=place(c.after);for(const x of ev.run?[]:c.rest||[]){x.items=[...place(x.before),...x.ids.filter(i=>own.has(i)).map(i=>own.get(i)),...place(x.after)];x.ids.forEach(i=>own.delete(i))}}
+ around.set(id,c||null);return first?[first,...own.values()]:[]});originals.set(id,r);return r};
+const relatedHTML=(list,id,at)=>list.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],list.length)}</h3>${list.map(o=>html`<details class="email" data-msg="${at(o)}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${localeDate(new Date(o.occurred_at),DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,at(o))}</details>`)}`:'';
+async function emailOpen(id,{keep,ev}={}){const s=ev?null:state.suggestions.find(s=>s.id===id),box=$('#email-content'),files=s?draftFilesBlock(s):'';
+if(!keep&&!ev)mailDialog(s?.title);
+let list;try{[list]=await Promise.all([ev&&!keep?eventsFor(id,ev):originalsFor(id),lazyPart('msgview')])}catch(e){errCaught(e);setHTML(box,html`<p class="muted">${e.message}</p>`);return}
+if(!list.length){setHTML(box,html`${files}<p class="muted">The original is no longer available.</p>`);return}
+const [first,...rest]=list,near=nearOf(id,list),all=[...list,...near.before,...near.after],at=o=>all.indexOf(o),src=ev?'':id;
+if(first.kind==='calendar'&&(ev||!rest.length)&&!first.raw&&!files){openMeeting(first.event_id,(ev||s)?.title);return}  // the meeting itself
+// Opened by itself: titled by the message (an email's subject, a chat's conversation), not by the row it was opened from
+const shown=ev?ev.run&&ev.title||viewTitle(first)||ev.title||t('Original'):s?.title;if(ev)$('#email-title').textContent=shown;
+const mark=ev?t(ev.ids.length>1?'New messages':'This message'):'';
+const wire=()=>{box.querySelectorAll('details.email').forEach(d=>{const fill=()=>{if(d.open)fillMessage(d,all[+d.dataset.msg],src)};fill();d.addEventListener('toggle',fill)});
+ box.querySelector('[data-convo-earlier]')?.addEventListener('click',e=>showEarlier(id,e.currentTarget,ev))};
+const inView=()=>{const main=box.querySelector('.convo-main,.convo-from,.email-main');if(!keep)main?.scrollIntoView({block:main.matches('.email-main')?'start':'center'})};
+// A chat: its conversation as one thread, with what was said around it (its other conversations after it); anything else still as related messages
+if(isChat(first)){const others=list.filter(o=>!isChat(o)),main=near.main??first.event_id,marks=ev?ev.ids:[main];
+ setHTML(box,html`${files}${chatThreads([...list,...near.before,...near.after]).map((c,i)=>chatThreadHTML(c,{main:marks,mark,earlier:near.earlier&&c.some(o=>o.event_id===main),titled:ev&&!ev.run&&!i,...ev?.run}))}${near.rest.map(x=>chatThreadHTML(x.items.map(o=>({...o,thread:x.thread})),{main:marks,mark,plain:x.thread,head:false,titled:!x.thread}))}${relatedHTML(others,src,at)}`);
  wire();inView();return}
-// An email: the thread's earlier mail folded above it and the replies below, the to-do's own one open and marked
-const chats=rest.filter(isChat),mails=rest.filter(o=>!isChat(o)),threaded=near.before.length||near.after.length||near.earlier;
-setHTML(box,html`${draftFilesBlock(s)}${near.earlier?earlierButton():''}${near.before.map(o=>emailRow(o,at(o)))}<div class="email${threaded?' email-main':''}" data-msg="0"${threaded?html` aria-label="${t('The message this to-do is about')}"`:''}>${messageHTML(first,id,0,s?.title)}</div>${near.after.map(o=>emailRow(o,at(o)))}${mails.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],mails.length)}</h3>${mails.map(o=>html`<details class="email" data-msg="${at(o)}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${localeDate(new Date(o.occurred_at),DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,at(o))}</details>`)}`:''}${chatThreads(chats).map(c=>chatThreadHTML(c))}`);
-fillMessage(box.querySelector('[data-msg="0"]'),first,id);wire();inView()}
+// An email: the thread's earlier mail folded above it and the replies below, the opened one open and marked
+const threaded=near.before.length||near.after.length||near.earlier;
+setHTML(box,html`${files}${near.earlier?earlierButton():''}${near.before.map(o=>emailRow(o,at(o)))}<div class="email${threaded?' email-main':''}" data-msg="0"${threaded?html` aria-label="${mark||t('The message this to-do is about')}"`:''}>${messageHTML(first,src,0,shown)}</div>${near.after.map(o=>emailRow(o,at(o)))}${relatedHTML(rest.filter(o=>!isChat(o)),src,at)}${chatThreads(rest).map(c=>chatThreadHTML(c))}`);
+fillMessage(box.querySelector('[data-msg="0"]'),first,src);wire();inView()}

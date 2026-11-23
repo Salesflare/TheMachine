@@ -59,7 +59,8 @@ function prefetchNext(){while(prefetching<2&&prefetchQueue.length){const id=pref
 const prefetchSeen=window.IntersectionObserver?new IntersectionObserver(entries=>{for(const e of entries){if(!e.isIntersecting)continue;prefetchSeen.unobserve(e.target);const id=e.target.dataset.id||e.target.querySelector('[data-original="read"][data-id]')?.dataset.id;
  if(id&&!prefetched.has(id)&&!originals.has(id)){prefetched.add(id);prefetchQueue.push(id)}}prefetchNext()},{rootMargin:'100px'}):null;
 let prefetchScan=0;if(prefetchSeen)new MutationObserver(()=>{cancelAnimationFrame(prefetchScan);prefetchScan=requestAnimationFrame(()=>{for(const b of document.querySelectorAll('[data-original="read"][data-id]'))if(!prefetched.has(b.dataset.id))prefetchSeen.observe(b.closest('.card-details')?b.closest('article'):b)})}).observe(document.body,{childList:true,subtree:true});
-// The dialog itself (emailOpen) is in the lazy 'emailframe' part (events-email-frame.js), with the frame it reads in.
+const mailDialog=title=>{const d=$('#email-dialog');$('#email-title').textContent=title||t('Original');setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);if(!d.open)d.showModal()};
+// What it shows (emailOpen) is in the lazy 'emailframe' part (events-email-frame.js), with the frame it reads in.
 async function openEmail(id,o){if(!lazyIn('emailframe'))await lazyPart('emailframe');return emailOpen(id,o)}
 // The link to an event in its own calendar: Google Calendar, Outlook, or another one
 const calOpenLabel=url=>{let h='';try{h=new URL(url).hostname}catch{}return /(^|\.)google\.com$/.test(h)?'Open in Google Calendar ↗':/(^|\.)(outlook\.(com|office\.com|office365\.com|live\.com)|office\.com|live\.com)$/.test(h)?'Open in Outlook ↗':'Open in its calendar ↗'};

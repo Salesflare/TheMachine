@@ -35,27 +35,21 @@ $('#results').onclick=e=>{const m=e.target.closest('[data-ev-soon]');if(m){for(c
 function openEventFrom(e){const a=e.target.closest('article[data-event]');if(!a||e.target.closest('a,button,input'))return false;const title=a.querySelector('h3,h4')?.textContent;
  if(a.dataset.events)openConversation(a);else if('meeting' in a.dataset)openMeeting(a.dataset.meeting||a.dataset.event,title);else openEvent(a.dataset.event,title);return true}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches?.('article[data-event]'))openEventFrom(e)});
+// ev: a message, or several opened together ("20,21": the new ones of one row), the newest last
 const openEvent=(ev,title,local)=>openOriginal(ev,title,false,local);  // local: nothing from outside loads (events-email-frame.js)
-// One collected signal as it came in. A meeting opens as it does in the Calendar instead (openMeeting), unless its raw
+// One collected signal as it came in, in the same viewer as a to-do's messages, with what was said around it (emailOpen
+// in events-email-frame.js). A meeting opens as it does in the Calendar instead (openMeeting), unless its raw
 // invite is asked for (raw: Original invite in the meeting's details).
-async function openOriginal(ev,title,raw,local){const dialog=$('#email-dialog');$('#email-title').textContent=title||t('Original');setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);if(!dialog.open)dialog.showModal();
-let o;try{[{originals:[o]}]=await Promise.all([request('api/originals?event='+encodeURIComponent(ev)),lazyPart('msgview')])}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
-if(!o){setHTML($('#email-content'),html`<p class="muted">The original is no longer available.</p>`);return}
-if(o.kind==='calendar'&&!raw){openMeeting(ev,title);return}
-// Titled by the message itself (an email's subject, a chat's conversation), not by the row it was opened from
-const shown=viewTitle(o)||title||t('Original');$('#email-title').textContent=shown;
-if(isChat(o)){setHTML($('#email-content'),chatThreadHTML([o],{titled:true}));return}  // a chat message as in its thread, its text once
-o.raw=!!raw;o.local=!!local;setHTML($('#email-content'),html`<div class="email" data-msg="0">${messageHTML(o,'',0,shown)}</div>`);fillMessage($('#email-content [data-msg="0"]'),o,'')}
+async function openOriginal(ev,title,raw,local,run){mailDialog(title);
+if(!lazyIn('emailframe'))try{await lazyPart('emailframe')}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
+return emailOpen('event='+ev,{ev:{ids:(''+ev).split(',').map(Number),title,raw,local,run}})}
 // A meeting, wherever it is opened (a timeline, Events, a to-do's source, a search): the Calendar's own details, with its
 // Notes, Transcript and Generate notes, and its invite one tap away. When the meeting can't be read that way, its invite.
 async function openMeeting(ev,title){let m=null;try{m=(await request('api/meeting?event='+encodeURIComponent(ev))).meeting}catch(e){errCaught(e)}
  if(!m){openOriginal(ev,title,true);return}if($('#email-dialog').open)$('#email-dialog').close();lazyRun('calendar',()=>calView(m))}
 $('#email-content').addEventListener('click',e=>{const b=e.target.closest('[data-open-meeting]');if(b)openMeeting(b.dataset.openMeeting,'')});
-// A conversation from the Graph: its messages in order, each who said it, when and the whole text.
-async function openConversation(row){const dialog=$('#email-dialog'),group='group' in row.dataset;$('#email-title').textContent=row.dataset.title||'Conversation';setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);dialog.showModal();
-let list;try{[{originals:list}]=await Promise.all([request('api/originals?events='+encodeURIComponent(row.dataset.events)),lazyPart('msgview')])}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
-if(!list.length){setHTML($('#email-content'),html`<p class="muted">The messages are no longer available.</p>`);return}
-setHTML($('#email-content'),chatThreadHTML(list,{names:group,head:false,src:row.dataset.src}))}
+// A conversation from the Graph: its messages in order, each who said it, when and the whole text, and what was said around them.
+const openConversation=row=>openOriginal(row.dataset.events,row.dataset.title,false,false,{quiet:true,names:'group' in row.dataset,head:false,src:row.dataset.src});
 $('#query').onkeydown=e=>{if(e.key==='Enter')search()};
 // Messages, the results page: everything the Machine read, by meaning and by words, every account or one. It isn't in
 // the sidebar: the palette's See all results (and a message there), G then E and #messages (#events) open it; an empty

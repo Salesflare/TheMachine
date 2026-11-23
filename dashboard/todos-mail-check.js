@@ -4,7 +4,7 @@
 // so the whole line is one line in every language. It speaks of this check only: "nothing needs you"
 // above to-dos still marked Needs you read as a contradiction. A tap opens one row per thread or chat: its source's
 // one-color mark (todos-logos.js: Gmail or Outlook by its account, a phone notification by its app), who, the subject or first words, and its new to-do (held until when, if it waits) or the
-// check's reason it needed nothing; a row opens its newest message in the message viewer (openEvent).
+// check's reason it needed nothing; a row opens its new messages in the message viewer, with what was said around them (openEvent).
 // A lazy part (dashboard_parts.LAZY): shell-render.js mailCheckSlot loads it only while state.mail_check read something,
 // and draws the list again once it's in (lazyRun).
 let mailCheckOpen=false;
@@ -25,7 +25,7 @@ function mailCheckWhy(r){if(r.todo){const [tmw,when]=r.held_until?heldAt(r.held_
 // color, and the time. An email always names its sender and subject (Unknown sender when a chat or update has nothing).
 function mailCheckRow(r){const mail=!r.source||r.source==='email',who=(r.from&&sender(r.from))||(r.dm?t('Slack DM'):mail||!r.subject?t('Unknown sender'):''),what=r.subject||(mail?t('(no subject)'):''),at=checkClock(r.at);
  const body=html`<span class="mc-top"><span class="mc-who">${r.kind?html`<span class="mc-src"><span class="icon">${markIco(sourceMark(r.kind,r.account,r.app))}</span></span>`:''}${who?html`<b translate="no">${who}</b>`:''}${r.n>1?html`<span class="mc-n" title="${t(['{} message','{} messages'],r.n)}"> (${r.n})</span>`:''}${who||r.n>1?' ':''}<span class="mc-what" translate="no">${what}</span></span>${at?html`<time class="mc-at">${at}</time>`:''}</span>${mailCheckWhy(r)}`;
- return html`<li>${r.event!=null?html`<button type="button" class="mc-row" data-mc-event="${r.event}">${body}</button>`:body}</li>`}
+ return html`<li>${r.event!=null?html`<button type="button" class="mc-row" data-mc-event="${r.ids||r.event}">${body}</button>`:body}</li>`}
 // The first MC_SHOWN rows, the rest behind "Show N more": every thread the check read can be seen
 const MC_SHOWN=10;let mailCheckAll=false;
 function mailCheckBlock(){const m=state?.mail_check;if(!m?.read||chatOpen()||firstLookInfo(state.review_live||{}))return '';

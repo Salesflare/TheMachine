@@ -81,9 +81,10 @@ p.querySelector('button').onclick=()=>{delete box.dataset.filled;setHTML(box,htm
 // Chats (Slack, WhatsApp, Telegram, Intercom and the rest: event_views' chat) read as one thread, oldest first: the
 // conversation named once on top (it stays in view while the thread scrolls), a day line when the day changes, each
 // sender's run of messages under their name and time once, a light time inside a run only after a pause. The to-do's
-// own message is outlined under a "This to-do" line when the thread holds more, and the viewer opens on it.
+// own message (main: one or more) is outlined under a "This to-do" line (mark: "This message" or "New messages" when
+// opened by itself) when the thread holds more, and the viewer opens on it; quiet: no outline, it only opens on it.
 // A Slack thread shown after the channel's messages before it (thread: true, machine/store/conversation.py) starts
-// under an In thread line. Each sender has the avatar circle with their initials, as people have elsewhere.
+// under an In thread line (plain: those came in another thread above). Each sender has the avatar circle with their initials, as people have elsewhere.
 // One link opens the whole thread where it lives. Slack's :emoji: codes read as emoji (chatEmoji).
 const THREAD_APP={Slack:'Slack',WhatsApp:'WhatsApp',Telegram:'Telegram',Signal:'Signal',Intercom:'Intercom',LinkedIn:'LinkedIn','X message':'X',Teams:'Teams'};
 const THREAD_VIA={Slack:'slack',WhatsApp:'whatsapp',Telegram:'telegram',Signal:'signal',Intercom:'intercom',LinkedIn:'linkedin','X message':'x',Teams:'teams'};
@@ -119,15 +120,16 @@ const linkCard=u=>{const name=linkName(u);return html`<a class="convo-link" href
 // A day line as people say it: Today, Yesterday, else the date
 const convoDay=at=>{const d=new Date(at),n=Math.round((new Date().setHours(0,0,0,0)-new Date(at).setHours(0,0,0,0))/864e5);
  return n===0?t('Today'):n===1?t('Yesterday'):localeDate(d,DL,{weekday:'long',day:'numeric',month:'long',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
-function chatThreadHTML(items,{main,names=true,head=true,src,earlier,titled}={}){
+function chatThreadHTML(items,{main=[],mark='',quiet,plain,names=true,head=true,src,earlier,titled}={}){
+const isMain=o=>main.includes(o.event_id);
 const msgs=items.flatMap(o=>o.turns?.length?o.turns.map(x=>({...x,kind:o.kind})):[o]).filter(o=>String(o.body||'').trim()||o.photo||o.media).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at));
-const first=items.find(o=>o.event_id===main)||items[0]||{},im=THREAD_IM.has(first.kind);
+const first=items.findLast(isMain)||items[0]||{},im=THREAD_IM.has(first.kind);
 // a messenger's 1:1 (one other person, who the chat is named after) names nobody over the bubbles: the line on top does
 const others=new Set(msgs.filter(o=>o.from!=='You'&&!o.role).map(o=>sender(o.from)).filter(Boolean)),firstWord=s=>String(s||'').trim().split(/\s+/)[0].toLowerCase();
 const duo=im&&others.size<=1&&(first.dm||!first.chat||[...others].every(w=>sameText(w,first.chat)||firstWord(w)===firstWord(first.chat)));
-const days=[];let prev=null,plain=false,inThread=false;
+const days=[];let prev=null,inThread=false,named=0;
 // The owner's side on the right: their own messages, and in a support chat (Intercom) the team's and its bot's, each named
-for(const o of msgs){const at=Date.parse(o.occurred_at),day=convoDay(at),you=o.from==='You',me=you||o.role==='team'||o.role==='bot',mark=main!=null&&o.event_id===main&&msgs.length>1;
+for(const o of msgs){const at=Date.parse(o.occurred_at),day=convoDay(at),you=o.from==='You',me=you||o.role==='team'||o.role==='bot',marked=isMain(o)&&!msgs.every(isMain);
  if(days.at(-1)?.day!==day){days.push({day,turns:[]});prev=null}
  if(o.thread&&plain&&!inThread){days.at(-1).turns.push({thread:true});prev=null}
  inThread||=Boolean(o.thread);plain||=!inThread;
@@ -136,9 +138,9 @@ for(const o of msgs){const at=Date.parse(o.occurred_at),day=convoDay(at),you=o.f
  const say=html`${o.note?html`<span class="convo-tag">${t('Note')}</span>`:''}${o.media?mediaChip(o.media):''}${said.text?chatMarkdown(said.text):''}${said.links.map(linkCard)}${o.photo?photoThumbs([o.photo]):''}`;
  if(!prev||prev.from!==o.from||prev.role!==o.role)turns.push({me,says:[],meta:im&&(me||!who||duo)?'':html`<p class="convo-meta">${who&&!me?html`<span class="convo-av" data-av="${senderInitials(who)}" aria-hidden="true"></span>`:''}${who?html`<b translate="no">${who}</b>${o.role==='bot'?html` <span class="msg-bot">${t('Bot')}</span>`:''}${im||o.untimed?'':' · '}`:''}${im||o.untimed?'':time}</p>`});
  else if(!im&&!o.untimed&&at-Date.parse(prev.occurred_at)>=THREAD_PAUSE)turns.at(-1).says.push(html`<p class="convo-at">${time}</p>`);
- if(mark)turns.at(-1).says.push(html`<p class="convo-this" aria-hidden="true">${t('This to-do')}</p>`);
+ if(marked&&!quiet&&!named++)turns.at(-1).says.push(html`<p class="convo-this" aria-hidden="true">${mark||t('This to-do')}</p>`);
  const kind=only&&o.media&&!said.links.length?' convo-say-media':only&&said.links.length?' convo-say-link':'';
- turns.at(-1).says.push(html`<div class="convo-say${kind}${mark?' convo-main':''}${o.note?' convo-note':''}"${mark?html` aria-label="${t('The message this to-do is about')}"`:''}>${im?html`<div class="convo-said">${say}</div><span class="convo-t">${time}</span>`:say}</div>`);prev=o}
+ turns.at(-1).says.push(html`<div class="convo-say${kind}${marked?quiet?' convo-from':' convo-main':''}${o.note?' convo-note':''}"${marked&&!quiet?html` aria-label="${mark||t('The message this to-do is about')}"`:''}>${im?html`<div class="convo-said">${say}</div><span class="convo-t">${time}</span>`:say}</div>`);prev=o}
 // titled: the dialog's title names the conversation already, so the line above it names only the app (and its channel)
 const app=THREAD_APP[first.kind]||first.app||src,title=titled?app:head?chatTitle(first):'';
 const url=[first,...[...items].reverse()].find(o=>o?.url&&safeURL(o.url))?.url;
@@ -148,13 +150,13 @@ function chatThreads(list){const by=new Map();for(const o of list.filter(isChat)
 // A to-do's source opens with what was said around it (api/originals' around, machine/store/conversation.py): the
 // messages before it and the replies after it, the source tinted and in view, and a quiet Show earlier for older ones.
 const earlierButton=()=>html`<button type="button" class="link convo-earlier" data-convo-earlier>${t('Show earlier')}</button>`;
-const nearOf=(id,list)=>{const c=around.get(id);if(!c)return {before:[],after:[]};const have=new Set(list.map(o=>o.event_id)),mark=o=>({...o,near:true}),keep=o=>o.event_id==null||!have.has(o.event_id);
- return {before:c.before.filter(keep).map(mark),after:c.after.filter(keep).map(mark),main:c.event_id,earlier:c.earlier}};
-async function showEarlier(id,button){const c=around.get(id),from=c?.before.find(o=>o.event_id!=null)?.event_id??c?.event_id;if(!c||from==null)return;
- button.disabled=true;let r;try{r=(await request(`api/originals?id=${encodeURIComponent(id)}&before=${encodeURIComponent(from)}`)).around}catch(e){button.disabled=false;errCaught(e);toast(e.message,true);return}
+const nearOf=(id,list)=>{const c=around.get(id);if(!c)return {before:[],after:[],rest:[]};const have=new Set(list.map(o=>o.event_id)),mark=o=>o.own?o:{...o,near:true},keep=o=>o.event_id==null||!have.has(o.event_id);
+ return {before:c.before.filter(keep).map(mark),after:c.after.filter(keep).map(mark),main:c.event_id,earlier:c.earlier,rest:(c.rest||[]).filter(x=>x.items)}};
+async function showEarlier(id,button,ev){const c=around.get(id),from=c?.before.find(o=>o.event_id!=null)?.event_id??c?.event_id;if(!c||from==null)return;
+ button.disabled=true;let r;try{r=(await request(`api/originals?${ev?'event='+c.event_id:'id='+encodeURIComponent(id)}&before=${encodeURIComponent(from)}`)).around}catch(e){button.disabled=false;errCaught(e);toast(e.message,true);return}
  const dialog=$('#email-dialog'),fromEnd=dialog.scrollHeight-dialog.scrollTop;  // what was in view stays in view
  const seen=new Set(c.before.map(o=>o.event_id).filter(v=>v!=null)),live=new Set(c.before.filter(o=>o.event_id==null).map(o=>o.occurred_at+o.from));
  c.before=[...(r?.before||[]).filter(o=>o.event_id==null?!live.has(o.occurred_at+o.from):!seen.has(o.event_id)),...c.before];c.earlier=Boolean(r?.earlier);
- await openEmail(id,{keep:true});dialog.scrollTop=dialog.scrollHeight-fromEnd}
+ await emailOpen(id,{keep:true,ev});dialog.scrollTop=dialog.scrollHeight-fromEnd}
 const peek=o=>String(o.body||'').replace(/\s+/g,' ').trim().slice(0,160);  // a folded email's first words, on one line
-const emailRow=(o,i)=>html`<details class="email email-near" data-msg="${i}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${localeDate(new Date(o.occurred_at),DL,{day:'numeric',month:'short'})}${peek(o)?html`<span class="email-peek">${peek(o)}</span>`:''}</summary>${messageHTML(o,'',i)}</details>`;
+const emailRow=(o,i)=>html`<details class="email email-near${o.own?' email-main':''}" data-msg="${i}"${o.own?' open':''}><summary>${sender(o.from)||kindLabel(o.kind)} · ${localeDate(new Date(o.occurred_at),DL,{day:'numeric',month:'short'})}${peek(o)?html`<span class="email-peek">${peek(o)}</span>`:''}</summary>${messageHTML(o,'',i)}</details>`;

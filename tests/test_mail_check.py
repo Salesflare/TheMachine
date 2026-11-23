@@ -142,7 +142,8 @@ class MailCheck(unittest.TestCase):
                                              'kind': 'slack.message', 'event': slack, 'account': 'work', 'todo': 'Approve the Delta discount'})
         rows = {r['kind']: r for r in got['threads'][1:]}
         self.assertEqual(rows['whatsapp.message'], {'from': 'Ivo Lark', 'subject': 'Bringing snacks on Friday', 'source': 'chat', 'kind': 'whatsapp.message',
-                                                    'event': wa2, 'account': 'home', 'why': 'Group chat chatter, nothing asked of you', 'n': 2})  # the newest message, not the owner's
+                                                    'event': wa2, 'account': 'home', 'why': 'Group chat chatter, nothing asked of you', 'n': 2,
+                                                    'ids': f'{wa1},{wa2}'})  # the newest message, not the owner's; both new ones open together
         self.assertEqual(rows['android.notification'], {'from': 'Parcels', 'subject': 'Parcel: Delivered to your door', 'source': 'notification',
                                                         'kind': 'android.notification', 'event': phone, 'account': 'phone', 'app': 'com.parcels.example', 'why': 'A delivery notice, the parcel is in'})
         self.assertEqual(rows['calendar.event'], {'from': 'Ola Brisk', 'subject': 'Planning review', 'source': 'update', 'kind': 'calendar.event',
@@ -195,7 +196,8 @@ class MailCheck(unittest.TestCase):
         self.assertEqual(got['read'], 9)
         self.assertEqual(sum(r.get('n', 1) for r in rows), got['read'])  # the rows add up to the line's total
         dm_row, = [r for r in rows if r['kind'] == 'slack.message' and r.get('dm')]
-        self.assertEqual({k: dm_row[k] for k in ('from', 'subject', 'n', 'event')}, {'from': '', 'subject': 'ok thx', 'n': 2, 'event': ids[8]})
+        self.assertEqual({k: dm_row[k] for k in ('from', 'subject', 'n', 'event', 'ids')},
+                         {'from': '', 'subject': 'ok thx', 'n': 2, 'event': ids[8], 'ids': f'{ids[7]},{ids[8]}'})
         channel, = [r for r in rows if r['kind'] == 'slack.message' and not r.get('dm')]
         self.assertEqual((channel['from'], channel['subject']), ('Rae Fenn', 'Can you look at #billing & ping @Rae Fenn?'))
         self.assertTrue(all(r['at'] for r in rows))

@@ -8,6 +8,7 @@
 .convo-chat>span[translate]{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
 .convo-chat .convo-app{flex:none;color:var(--faint);font-weight:400}.convo-chat .convo-app::before{content:"·";margin-right:8px}
 .convo .convo-day>span{display:inline-block;padding:3px 10px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--text) 6%,transparent);color:var(--muted)}
+.convo .convo-day+.convo-thread{margin-top:8px}
 .convo-this{display:flex;align-items:center;gap:6px;margin:8px 4px 2px;font-size:var(--fs-xs);font-weight:var(--fw-medium);color:var(--muted)}
 .convo-this::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--mint)}
 .convo-turn.me>.convo-this{flex-direction:row-reverse}

@@ -85,7 +85,7 @@ def mail_check(db, current=None, own=()):
     (`counts`, `read` in all), how many new to-dos it made and how many of those are held until later, and one row per
     thread or chat: its kind and newest message (to open it) and when, who (by name: an app's name, never its package; a
     Slack member's name, never their id), the subject or the message's first words in plain text, how many new messages
-    it holds when more than one (`n`: the rows add up to `read`), and either its new to-do or why it needed nothing (the review's finish_analysis no_todo, as stored: no model call here).
+    it holds when more than one (`n`: the rows add up to `read`; `ids`: which, to open them together), and either its new to-do or why it needed nothing (the review's finish_analysis no_todo, as stored: no model call here).
     Quality or nothing: a reason under three words, or the same one for SAME_WHY threads, is left out. The owner's own
     chat messages (from_me) and The Machine's own logs (OWN_KINDS) aren't new. `own`: the owner's addresses, so a
     thread shows who wrote to them rather than their own reply. None without such a check in the last MAIL_CHECK_HOURS."""
@@ -229,9 +229,11 @@ def _mail_view(db, review, items, batch, mail, current, own):
         meta = _meta(row['metadata'])
         group, mine = source_group(row['kind']), _from_owner(meta, own)
         thread = threads.setdefault(_thread_key(row['account_id'], row['kind'], meta, row['id']),
-                                    {'ids': [], 'from': '', 'subject': '', 'why': None, 'later': False, 'source': group, 'in': 0, 'heads': set()})
+                                    {'ids': [], 'from': '', 'subject': '', 'why': None, 'later': False, 'source': group, 'in': 0, 'new': [], 'heads': set()})
         thread['ids'].append(row['id'])
         thread['in'] += not mine
+        if not mine:
+            thread['new'].append(row['id'])
         thread['last'] = row['occurred_at']  # rows come oldest first
         if not mine or 'open' not in thread:
             thread['open'], thread['kind'] = row['id'], row['kind']  # its newest message to the owner opens
@@ -297,6 +299,7 @@ def _mail_view(db, review, items, batch, mail, current, own):
             row['app'] = thread['package']  # a phone notification shows the mark of the app that posted it
         if thread['in'] > 1:
             row['n'] = thread['in']  # its new messages: the rows add up to the line's total
+            row['ids'] = ','.join(map(str, thread['new'][-60:]))  # and which they are, the newest last: they open together
         if thread.get('dm') and not thread['from']:
             row['dm'] = True  # a Slack DM whose other person has no name yet: "Slack DM", never their id
         if 'todo' in thread:

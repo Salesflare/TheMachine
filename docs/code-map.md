@@ -258,7 +258,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   worker and timeline methods into `GraphActionsApp` (`machine/app/graph_actions.py`), `machine/app/card_chat.py`
   (`CardChatApp`: a to-do's chat turn, its models, stop and hand-offs), `machine/app/recap.py` (`RecapApp`: the weekly
   recap, its steps, view and choices), `machine/store/conversation.py` and `machine/app/conversation.py`
-  (`ConversationStore`, `ConversationApp`: what was said around a to-do's source message), `machine/app/first_look.py`
+  (`ConversationStore`, `ConversationApp`: what was said around a message), `machine/app/first_look.py`
   (`FirstLookApp`: the quick first review, the dig after it and its ending, with their timing constants),
   `App.meeting_notes` (the meeting_notes tool) into `MeetingWritesApp` (`machine/app/meeting_writes.py`),
   `machine/app/preparation.py` (`PreparationApp`: starting and checking a to-do's preparation run, its progress, peek

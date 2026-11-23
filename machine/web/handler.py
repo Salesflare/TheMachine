@@ -896,14 +896,15 @@ def make_handler(app):
         def get_api_originals(self, path):
             try:
                 args = urllib.parse.parse_qs(path.query)
-                events = [int(v) for v in args.get('events', [''])[0].split(',') if v.strip()][:60]  # one conversation from the Graph
-                card = args.get('id', [''])[0]
-                if card and args.get('before', [''])[0]:  # Show earlier: older messages of the to-do's own conversation
-                    self.output(200, {'around': app.message_context(card, int(args['before'][0]))})
+                events = [int(v) for v in args.get('events', [''])[0].split(',') if v.strip()][-60:]  # opened together, the newest last
+                card, event = args.get('id', [''])[0], args.get('event', [''])[0]
+                near = args.get('near', [event])[0]  # near: the one of `events` to read around
+                if (card or event) and args.get('before', [''])[0]:  # Show earlier: older messages of that same conversation
+                    self.output(200, {'around': app.message_context(card, int(args['before'][0]), None if card else int(event))})
                     return
-                found = {'originals': app.originals(card, args.get('event', [''])[0], events)}
-                if card:  # what was said around the to-do's source message (machine/app/conversation.py)
-                    found['around'] = app.message_context_quiet(card)
+                found = {'originals': app.originals(card, event, events)}
+                if card or near:  # what was said around it (machine/app/conversation.py)
+                    found['around'] = app.message_context_quiet(card, None if card else int(near), events)
                 self.output(200, found)
             except (ValueError, sqlite3.OperationalError):
                 self.output(404, {'error': 'Original not available'})

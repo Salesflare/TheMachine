@@ -82,7 +82,7 @@ LinkedIn, X and Salesflare keep their own pace.
 
 After a check that read new messages, a line above your to-dos says what it found, from every source it read, like "Checked 13 messages at 16:11 · no new to-dos" or "· 2 new to-dos". It speaks of that check only: to-dos already on your list still wait as they are. When a new to-do waits for a better moment, like your morning summary, it says until when: "1 to-do held until tomorrow 08:30".
 
-Tap the line to see each email thread, chat and notification, with its source's icon: who wrote, the subject or first words, and its new to-do or why it needed nothing, like "Only cc'd, a teammate is answering" or "Meeting already set for Thursday". A thread shows no reason when the check gave only a vague one. Tap one to read it.
+Tap the line to see each email thread, chat and notification, with its source's icon: who wrote, the subject or first words, and its new to-do or why it needed nothing, like "Only cc'd, a teammate is answering" or "Meeting already set for Thursday". A thread shows no reason when the check gave only a vague one. Tap one to read it, with what was said around it.
 
 The first 10 show, and a tap below them shows the rest. A number after a name, like (3), is how many new messages that chat has. A phone notification about a message that's already listed shows only once. The line shows for 12 hours after the check.
 
@@ -134,7 +134,7 @@ Above the draft, one faint line names the message it came from, with that servic
 
 When the draft follows someone's input elsewhere, like a teammate's suggestion in Slack, a line says so, like "Based on Sam in #ops". Tap it to read that message.
 
-A chat (Slack, WhatsApp, Telegram, Intercom…) reads as one conversation, oldest first: the messages before the one the to-do is about and the replies after it. In WhatsApp, Telegram or Signal your messages sit on the right, as in the app. The to-do's message is marked "This to-do" and opens in view. **Show earlier** adds older messages. An email shows the rest of its thread folded above and below it.
+A chat (Slack, WhatsApp, Telegram, Intercom…) reads as one conversation, oldest first: the messages before the one the to-do is about and the replies after it. In WhatsApp, Telegram or Signal your messages sit on the right, as in the app. The to-do's message is marked "This to-do" and opens in view. **Show earlier** adds older messages. An email shows the rest of its thread folded above and below it. A message opens the same way from search, the Graph, Ask's answers or the last check, marked "This message" (or "New messages").
 
 **Open in Gmail** opens the email in the Gmail account it came to. On Android it opens in the Gmail app when you have it.
 
