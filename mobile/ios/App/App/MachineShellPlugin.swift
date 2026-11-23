@@ -48,8 +48,13 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
     private var probing = false
     private var lastReopen = Date.distantPast
     private var loadStarted: Date?  // the load under way since then (none: no load)
-    private var blankTries = 0  // pages in a row that came up blank
-    private var sleptAt: Date?  // the computer or phone slept (a late timer tick), not checked since
+    private var badTries = 0  // checks in a row that found the page gone, blank or not painted
+    private var wasActive = true
+    private var activeAt = Date()  // came in front then
+    private var lastFlat = Date.distantPast  // the last look that counted as unpainted
+    private var asleepSeen = MachineShellPlugin.asleep()  // the sleep up to the last load, or the last look at a page in use
+    private var againSoon = false  // a check is already waiting for reopenGap to pass
+    private static var lastFresh = Date.distantPast
 
     override public func load() {
         MachineActions.shared.install()  // in front of Capacitor's notification delegate, which it set by now
@@ -69,6 +74,7 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
             } else if change.newValue == false {
                 self.loadStarted = nil
                 self.pageGone = false
+                self.asleepSeen = MachineShellPlugin.asleep()
                 self.onMachinePage(webView.url)
                 // a page that loaded but shows nothing (an empty answer on the way) is caught at once, not on the next return
                 DispatchQueue.main.asyncAfter(deadline: .now() + MachineShellPlugin.afterLoad) { [weak self] in self?.checkPage() }
@@ -557,6 +563,7 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
 
     /// What the Share extension left in the app group (ShareExtension/ShareViewController.swift): read once, then gone.
     @objc private func becameActive() {
+        activeAt = Date()
         checkPage()
         MachineNotice.sweep()
         guard let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: MachineShellPlugin.appGroup)?
@@ -584,12 +591,22 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
     // "it answered" is not enough: an empty page (an empty answer on the way, a load that never ended) is opened again
     // once, then the app's own offline page says so with Try again. After a real sleep the page is opened again when
     // nothing is typed or open in it, so whatever the sleep did to the window is gone.
+    //
+    // On a Mac a page can also be alive, full of words and still not painted: the window shows only the WebView's own
+    // plain background. No script can tell, so there the app looks at its own window (paints). One flat color twice in
+    // a row: the page is put in the window anew, which loses nothing; still flat: a new WebView (freshView), as if the
+    // app was closed and opened. That also goes for a page in use: nobody can use it, and chat drafts come back.
 
     static let pageAnswer: TimeInterval = 8  // a busy page still answers in this time; a gone or hung one never does
     static let reopenGap: TimeInterval = 15  // never in a loop
     static let loadLimit: TimeInterval = 30  // a load still going after this is stuck
     static let afterLoad: TimeInterval = 3  // a finished page is asked this long after
+    static let onMac = ProcessInfo.processInfo.isiOSAppOnMac
     static let longSleep: TimeInterval = 5 * 60  // a sleep this long opens the page again when it isn't in use
+    static let lookAgain: TimeInterval = 2  // an unpainted page gets this long before the next step
+    static let justBack: TimeInterval = 60  // in front since less than this: someone is there
+    static let freshGap: TimeInterval = 5 * 60  // never in a loop
+    static let edge: CGFloat = 24  // left out of the look: the scrollbar is the app's own, drawn also over a blank page
     // What the page shows: "shown" (words or a picture), "empty" (a white page, or the Machine's restarting note in
     // place of the page), "busy" (the dashboard has typing or an open panel: shell-tabs.js pageInUse)
     static let pageProbe = "(()=>{const b=document.body;if(document.contentType==='application/json'||!b)return 'empty';"
@@ -608,12 +625,25 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         // Timers don't run while the computer sleeps: a tick that comes late is a wake
         wakeTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            let now = Date(), slept = now.timeIntervalSince(self.lastTick) > 90
-            // On a Mac only: the window stays open for days, where a phone's system ends the page itself
-            if ProcessInfo.processInfo.isiOSAppOnMac, now.timeIntervalSince(self.lastTick) > MachineShellPlugin.longSleep { self.sleptAt = self.lastTick }
+            let now = Date(), late = now.timeIntervalSince(self.lastTick) > 90
+            let active = UIApplication.shared.applicationState == .active
+            let back = active && !self.wasActive  // in front again, also when no notification said so
             self.lastTick = now
-            if slept { self.checkPage() }
+            self.wasActive = active
+            if back { self.activeAt = now }
+            if late || back || self.sleptLong { self.checkPage() }
         }
+    }
+
+    /// How long the computer slept since it started: the clock that counts sleep less the one that doesn't. Unlike a
+    /// late tick it can't be missed: short wakes in the night, where the timer ticks, add up too.
+    static func asleep() -> TimeInterval {
+        (TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)) - TimeInterval(clock_gettime_nsec_np(CLOCK_UPTIME_RAW))) / 1_000_000_000
+    }
+
+    /// A Mac only: the window stays open for days, where a phone's system ends the page itself.
+    private var sleptLong: Bool {
+        MachineShellPlugin.onMac && MachineShellPlugin.asleep() - asleepSeen > MachineShellPlugin.longSleep
     }
 
     @objc private func cameBack() { checkPage() }
@@ -626,8 +656,8 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
 
     /// Opens the page again when it has no address, its process ended without a page loading since, it doesn't answer
     /// a one-line script in time, or it shows nothing; a load stuck for loadLimit, or a second empty page in a row, gets
-    /// the app's offline page (what happened, with Try again). Only while the app is in front: in the background it
-    /// would be lost again.
+    /// the app's offline page (what happened, with Try again). A page that answers is looked at too (looked). Only while
+    /// the app is in front: in the background it would be lost again.
     func checkPage() {
         guard UIApplication.shared.applicationState != .background, let webView = bridge?.webView, !probing else { return }
         if pageGone || webView.url == nil { return reopen() }
@@ -637,31 +667,120 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
             return showOffline()
         }
         probing = true
-        let slept = sleptAt != nil
-        sleptAt = nil
         var done = false
         let finish: (String?) -> Void = { [weak self] shows in
             guard let self = self, !done else { return }
             done = true
             self.probing = false
             switch shows {
-            case "shown"? where slept: self.reopen(force: true)  // a long sleep: a fresh page, nothing in use is lost
-            case "shown"?, "busy"?: self.blankTries = 0
+            case "shown"?, "busy"?: self.looked(webView, inUse: shows == "busy")
             case "empty"?:
-                self.blankTries += 1
-                if self.blankTries >= 2 { self.showOffline() } else { self.reopen(force: true) }  // once at once, then offline
-            default: self.reopen()  // no answer: the page is gone or hung
+                self.badTries += 1
+                if self.badTries >= 2 { self.showOffline() } else { self.reopen(force: true) }  // once at once, then offline
+            default:  // no answer: the page is gone or hung, and on a Mac its WebView may be too
+                guard MachineShellPlugin.onMac else { return self.reopen() }
+                self.badTries += 1
+                if self.badTries < 2 { self.reopen() } else if !self.freshView() { self.showOffline() }
             }
         }
         webView.evaluateJavaScript(MachineShellPlugin.pageProbe) { result, error in finish(error == nil ? result as? String : nil) }
         DispatchQueue.main.asyncAfter(deadline: .now() + MachineShellPlugin.pageAnswer) { finish(nil) }
     }
 
+    /// A page that says it shows something: does the window? A page not in use is opened again after a long sleep anyway.
+    private func looked(_ webView: WKWebView, inUse: Bool) {
+        let painted = paints(webView)
+        if painted == false && store.bool(forKey: "paintSeen") {
+            // Several checks come at once on a return: one look counts, the next one a moment later
+            guard Date().timeIntervalSince(lastFlat) > MachineShellPlugin.lookAgain / 2 else { return }
+            lastFlat = Date()
+            badTries += 1
+            switch badTries {
+            case 1: checkSoon(MachineShellPlugin.lookAgain)  // perhaps it only just came back
+            case 2: redraw()
+            // What is typed is only given up when the owner just came back to a window that can't be used
+            case _ where inUse && Date().timeIntervalSince(activeAt) > MachineShellPlugin.justBack: break
+            default: if freshView() { store.set(false, forKey: "paintSeen") }  // once: until a look sees a page again
+            }
+            return
+        }
+        badTries = 0
+        if painted == true { store.set(true, forKey: "paintSeen") }  // looks work on this Mac: a flat one means something
+        if !inUse && sleptLong { return reopen(force: true) }  // a long sleep: a fresh page, nothing in use is lost
+        if painted == true { asleepSeen = MachineShellPlugin.asleep() }
+    }
+
+    private func checkSoon(_ wait: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in self?.checkPage() }
+    }
+
+    /// Whether the window shows more than one flat color where the page is, as it is on screen now. On a Mac only, with
+    /// the app in front and nothing over the page; nil when there is nothing to tell by.
+    private func paints(_ webView: WKWebView) -> Bool? {
+        guard MachineShellPlugin.onMac, UIApplication.shared.applicationState == .active, webView.window != nil,
+              let vc = bridge?.viewController, vc.presentedViewController == nil else { return nil }
+        let area = webView.bounds.insetBy(dx: MachineShellPlugin.edge, dy: MachineShellPlugin.edge)
+        guard area.width >= 100, area.height >= 100 else { return nil }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        var whole = false
+        let picture = UIGraphicsImageRenderer(bounds: area, format: format).image { _ in
+            whole = webView.drawHierarchy(in: webView.bounds, afterScreenUpdates: false)
+        }
+        guard whole, let image = picture.cgImage else { return nil }
+        let width = image.width, height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let copied = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                                          space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard copied, pixels.count >= 4, pixels[3] > 0 else { return nil }  // nothing drawn at all: no look
+        return !MachineShellPlugin.oneColor(pixels)
+    }
+
+    /// Every pixel (RGBA) the first one's color, give or take. The colors don't matter: white in the light mode, black
+    /// or dark in the dark one. A page with any word or line in sight never is.
+    static func oneColor(_ pixels: [UInt8]) -> Bool {
+        guard pixels.count >= 4 else { return false }
+        let (r, g, b) = (Int(pixels[0]), Int(pixels[1]), Int(pixels[2]))
+        for i in stride(from: 0, to: pixels.count - 3, by: 4)
+        where abs(Int(pixels[i]) - r) > 6 || abs(Int(pixels[i + 1]) - g) > 6 || abs(Int(pixels[i + 2]) - b) > 6 { return false }
+        return true
+    }
+
+    /// The same page put in the window anew, in two turns so the WebView notices: it draws again, nothing is reloaded.
+    private func redraw() {
+        guard let vc = bridge?.viewController, let window = vc.view.window, window.rootViewController === vc else { return }
+        window.rootViewController = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            if window.rootViewController == nil { window.rootViewController = vc }
+            self?.checkSoon(MachineShellPlugin.lookAgain)
+        }
+    }
+
+    /// The last resort, what closing and opening the app does: a new WebView, which starts at the start page and opens
+    /// the saved Machine. At most every freshGap. False when it can't be now.
+    private func freshView() -> Bool {
+        guard Date().timeIntervalSince(MachineShellPlugin.lastFresh) > MachineShellPlugin.freshGap, let vc = bridge?.viewController,
+              let window = vc.view.window, window.rootViewController === vc, vc.presentedViewController == nil else { return false }
+        MachineShellPlugin.lastFresh = Date()
+        // This plugin goes with its view; until then it hears and asks nothing
+        NotificationCenter.default.removeObserver(self)
+        loading?.invalidate()
+        wakeTimer?.invalidate()
+        network.cancel()
+        probing = true
+        window.rootViewController = MachineViewController()
+        return true
+    }
+
     /// The app's own offline page (www/offline.html: can't reach your Machine, Try again), which tries again by itself
     /// once online or in front again. Never a white window, whatever came back instead of a page.
     private func showOffline() {
         guard let webView = bridge?.webView, let local = bridge?.config.localURL else { return }
-        blankTries = 0
+        badTries = 0
         lastReopen = Date()
         webView.load(URLRequest(url: local.appendingPathComponent("offline.html")))
     }
@@ -671,7 +790,17 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
 
     /// The page it had (the Machine's, or the app's own start or offline page), else the saved Machine, else the start page.
     private func reopen(force: Bool = false) {
-        guard let webView = bridge?.webView, force || Date().timeIntervalSince(lastReopen) > MachineShellPlugin.reopenGap else { return }
+        guard let webView = bridge?.webView else { return }
+        guard force || Date().timeIntervalSince(lastReopen) > MachineShellPlugin.reopenGap else {
+            if !againSoon { // too soon after the last one: checked again once it may, so the one that matters isn't lost
+                againSoon = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + MachineShellPlugin.reopenGap) { [weak self] in
+                    self?.againSoon = false
+                    self?.checkPage()
+                }
+            }
+            return
+        }
         lastReopen = Date()
         pageGone = false
         let local = bridge?.config.localURL

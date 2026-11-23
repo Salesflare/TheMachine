@@ -19,7 +19,7 @@ On a hosted Machine the app signs in with your account. On a self-hosted one, op
 
 **Sign in with** a service under **Connections** (Shortcut, Notion, Slack, Zoom and the others) opens your phone's sign-in sheet. When you're done there, you're back in the app, and the new connection shows in **Connections** by itself.
 
-When the app can't reach your Machine, it says so and tries again by itself. On a Mac or an iPad with a keyboard, Cmd+R loads the page again.
+When the app can't reach your Machine, it says so and tries again by itself. On a Mac, the app also opens the page again by itself when its window comes back blank after sleep, and a chat message you were typing comes back with it. On a Mac or an iPad with a keyboard, Cmd+R loads the page again.
 
 ## Notifications
 
