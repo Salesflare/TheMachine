@@ -173,6 +173,13 @@ class NotionTests(unittest.TestCase):
         with self.store.connect() as db:
             return [{**dict(r), 'metadata': json.loads(r['metadata'])} for r in db.execute('SELECT * FROM events ORDER BY id')]
 
+    def test_a_pages_text_names_the_files_on_it(self):
+        self.api.blocks[MINE].append({'object': 'block', 'id': notion.dashed('ba' * 16), 'type': 'pdf', 'pdf': {
+            'type': 'file', 'name': 'Offer.pdf', 'caption': [], 'file': {'url': 'https://files.example/signed'}}})
+        text = notion.read_text(self.config, self.account, MINE, self.helpers)['text']
+        self.assertIn('\n[file] Offer.pdf', text)
+        self.assertNotIn('signed', text)
+
     def test_signin_or_pasted_token(self):
         self.assertEqual(notion.signin(json.dumps(SIGNIN))['bot_id'], BOT)
         self.assertIsNone(notion.signin('ntn_' + 'x' * 40))

@@ -167,5 +167,6 @@ class DocsApp:
 
     def doc_read_error(self, error):
         return ValueError({'docs_not_connected': 'Reading docs is not allowed for this account yet (Connect Google Docs or Microsoft documents)',
+                           'docs_file_too_large': 'That file is too large to read here (open it in the browser instead)',
                            'docs_text_unsupported': 'That file has no text to read here (open it in the browser instead)'}.get(
                                error.category, f'The doc could not be read ({error.category})'))

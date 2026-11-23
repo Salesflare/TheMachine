@@ -7,6 +7,7 @@ import time
 import unittest
 import zlib
 from pathlib import Path
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('file_text_under_test', Path(__file__).parent.parent / 'file_text.py')
 file_text = importlib.util.module_from_spec(spec)
@@ -124,6 +125,17 @@ class PdfText(unittest.TestCase):
         started = time.monotonic()
         file_text.excerpt(odd, 'application/pdf')
         self.assertLess(time.monotonic() - started, 5)
+
+
+    def test_a_file_someone_else_made_is_read_apart(self):
+        self.assertIn('Total due: EUR 255.00', file_text.apart(two_pages(True)))
+        self.assertEqual(file_text.apart(two_pages(), 200), file_text.excerpt(two_pages(), 'application/pdf', 200))
+        self.assertEqual(file_text.apart(b'not a pdf'), '')
+        # Made to keep the reader busy for minutes: it ends at the time limit
+        with patch.object(file_text, 'APART_SECONDS', 1):
+            started = time.monotonic()
+            self.assertEqual(file_text.apart(b'%PDF-1.4\n1 0 obj ' + b'/Font<<' * 100_000 + b' endobj'), '')
+            self.assertLess(time.monotonic() - started, 5)
 
 
 class PlainText(unittest.TestCase):

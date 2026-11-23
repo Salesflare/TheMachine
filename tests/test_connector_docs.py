@@ -285,7 +285,50 @@ class Microsoft(unittest.TestCase):
                                         'lastModifiedDateTime': '2026-10-27T09:20:00Z',
                                         'lastModifiedBy': {'user': {'displayName': 'Robin Reviewer', 'email': 'robin@partner.example'}},
                                         '@microsoft.graph.downloadUrl': 'https://acme-my.sharepoint.com/download/sow?tempauth=x'}).encode())
+        if url.path.startswith('/v1.0/me/drive/root/search('):
+            return Response(json.dumps({'value': self.found}).encode())
+        if url.path == '/v1.0/drives/d1/items/f1':
+            return Response(json.dumps(self.found[0] | {'@microsoft.graph.downloadUrl': 'https://acme-my.sharepoint.com/download/f1?tempauth=x'}).encode())
         raise AssertionError('unexpected request ' + request.full_url)
+
+    @staticmethod
+    def drive_file(name, **more):
+        return {'id': 'f1', 'name': name, 'size': 900, 'webUrl': 'https://acme-my.sharepoint.com/' + name.replace(' ', '%20'),
+                'parentReference': {'driveId': 'd1'}, 'lastModifiedDateTime': '2026-10-27T09:20:00Z', 'file': {'mimeType': 'x/y'}, **more}
+
+    def test_finds_files_of_any_kind_with_the_same_scope(self):
+        folder = {k: v for k, v in self.drive_file('Offers').items() if k != 'file'} | {'folder': {'childCount': 2}}
+        self.found = [folder] + [self.drive_file(n) for n in ('Offer.pdf', 'Rates.xlsx', 'Deck.pptx', 'SOW.docx', 'Photo.JPG', 'Floor plan')]
+        found = docs.find(self.config, ACCOUNT, "Sam's offer", helpers_for())
+        self.assertEqual([(d['title'], d['type']) for d in found], [('Offer.pdf', 'pdf'), ('Rates.xlsx', 'xlsx'), ('Deck.pptx', 'pptx'),
+                                                                    ('SOW.docx', 'docx'), ('Photo.JPG', 'jpg'), ('Floor plan', 'x/y')])
+        self.assertEqual(found[0]['url'], 'https://acme-my.sharepoint.com/Offer.pdf')
+        self.assertEqual(found[0]['file_id'], 'd1!f1')
+        self.assertIn('/v1.0/me/drive/root/search(q=%27Sam%27%27s%20offer%27)', {p.replace("'", '%27') for _, p in self.requests})
+        self.assertEqual({s for k, s in self.requests if k == 'BROKER' and s}, {'Files.Read.All'})
+        self.found = [self.drive_file(f'Offer {i}.pdf') for i in range(30)]
+        self.assertEqual(len(docs.find(self.config, ACCOUNT, 'offer', helpers_for())), docs.MAX_FOUND)
+
+    def test_reads_word_pdf_and_text_files_and_only_links_the_rest(self):
+        from test_file_text import two_pages
+        for name, data, text in (('Offer.pdf', two_pages(True), 'Total due: EUR 255.00'), ('SOW.docx', docx(), 'Statement of work'),
+                                 ('SOW.docm', docx(), 'Statement of work'), ('rates.csv', b'day,900', 'day,900')):
+            self.found, self.file = [self.drive_file(name)], data
+            read = docs.read_text(self.config, ACCOUNT, 'd1!f1', helpers_for())
+            self.assertIn(text, read['text'])
+            self.assertEqual((read['title'], read['url']), (name, 'https://acme-my.sharepoint.com/' + name))
+        self.requests.clear()
+        for item, why in ((self.drive_file('Rates.xlsx'), 'docs_text_unsupported'), (self.drive_file('setup.exe'), 'docs_text_unsupported'),
+                          (self.drive_file('Big.pdf', size=docs.MAX_PDF + 1), 'docs_file_too_large')):
+            self.found = [item]
+            with self.assertRaises(sources.SourceError) as caught:
+                docs.read_text(self.config, ACCOUNT, 'd1!f1', helpers_for())
+            self.assertEqual(caught.exception.category, why)
+        self.assertNotIn('DOWNLOAD', {k for k, _ in self.requests})  # nothing fetched that it can't read
+        self.found, self.file = [self.drive_file('Scan.pdf')], b'%PDF-1.4\nno text'
+        with self.assertRaises(sources.SourceError) as caught:
+            docs.read_text(self.config, ACCOUNT, 'd1!f1', helpers_for())
+        self.assertEqual(caught.exception.category, 'docs_text_unsupported')
 
     def events(self):
         with self.store.connect() as db:

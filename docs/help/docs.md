@@ -18,13 +18,15 @@ The first sync goes back 7 days. Each item links to the people and projects in y
 
 ## What it can do
 
-When a to-do needs a doc's text, your Machine reads that one doc, only while it works on that to-do.
+When a to-do needs a doc's text, your Machine reads that one doc, only while it works on that to-do. It can read Word, PDF and text files.
+
+It also looks for files of any kind in your own OneDrive, and gives you the link. It doesn't search SharePoint sites or files shared with you. It can't read a scanned PDF's text.
 
 It can draft a reply to a comment. Word has no way to post replies from outside, so you copy the draft into Word.
 
 It never accepts a suggestion, resolves a comment, shares a file or changes a doc without your OK.
 
-To use it only for doing things, turn off **Brings in signals** under **Details**. It then only finds and reads the docs your to-dos need, and makes new ones.
+To use it only for doing things, turn off **Brings in signals** under **Details**. It then only finds and reads the files your to-dos need, and makes new ones.
 
 ## Create and edit docs
 
