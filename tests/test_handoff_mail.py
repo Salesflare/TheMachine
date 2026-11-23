@@ -4,7 +4,9 @@ promise that closes with the to-do, and the move into their Machine once they jo
 A fake Network stands in for the control plane; nothing is sent anywhere (no email, Telegram or push)."""
 import json
 import re
+import tempfile
 import unittest
+from pathlib import Path
 
 import activity_log
 import handoff_mail
@@ -48,6 +50,13 @@ class HandoffMail(unittest.TestCase):
 
     def parts(self, card):
         return self.app.action('fleet_handoff_email_parts', {'suggestion_id': card}, owner_dashboard=True)
+
+    def test_it_is_signed_also_without_owner_name(self):
+        with tempfile.TemporaryDirectory() as folder:
+            self.app.config = {**self.app.config, 'owner_name': '', 'openclaw_workspace': folder}
+            Path(folder, 'USER.md').write_text('# About me\n\n- Name: Robin Vale\n', encoding='utf-8')
+            body = self.hand(self.handed_card())['body']
+        self.assertIn('\nRobin', body.split('Best,', 1)[1][:8])
 
     def with_draft(self, card):
         """The to-do already holds a reply to Sam, ready to send."""

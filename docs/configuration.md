@@ -9,7 +9,7 @@
 
 | Key | Default | Meaning |
 |---|---|---|
-| `owner_name` | none | Your name: the greeting and the digests use your first name, and preparations sign emails with it. Without it, The Machine takes the `- Name:` line of your `USER.md`, and for the greeting the name on your own work mailbox. A company or a mailbox's name ("info") is never used |
+| `owner_name` | none | Your name: the greeting and the digests use your first name, and the email drafts made for you sign with your name. A page to pick a time names you by it too. Without it, The Machine takes the `- Name:` line of your `USER.md`, and for the greeting the name on your own work mailbox. A company or a mailbox's name ("info") is never used |
 | `owner_emails`, `not_owner_emails` | `[]` | Addresses that are always yours, and ones that never are. The Machine also finds your own addresses itself ([Your addresses](intelligence.md#your-addresses)); these override it |
 | `timezone` | `Europe/Amsterdam` (the installer sets this computer's) | IANA zone for your work hours, digests, snoozes and recaps (Settings, Notifications, Work hours on the dashboard, or `assistant hours --timezone`) |
 | `telegram_owner` | empty | Your Telegram chat ID; the only chat that gets to-dos and whose taps count. Empty: Telegram off, to-dos go to the dashboard app's notifications |

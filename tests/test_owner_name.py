@@ -14,6 +14,8 @@ from machine.export import knowledge
 import machine.main as machine_main
 import notify
 import own_addresses
+import subscriptions
+from subscriptions_app import SubscriptionsTemplate
 
 NOW = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
 WORK = {'id': 'work', 'email': 'sam.rivera@acme.example', 'service': 'gmail', 'boundary': 'work:Acme'}
@@ -146,6 +148,21 @@ class OwnerNameTest(unittest.TestCase):
         self.config['owner_name'] = 'Dr. Robin Vale'  # as the config says it, also when no greeting would
         self.assertIn('- The owner is Dr. Robin Vale;', preparation.owner_details(self.config))
         self.assertEqual(knowledge.StoreReader(None, self.config).owner()['name'], 'Dr. Robin Vale')
+
+    def test_the_cancel_draft_is_signed_with_it(self):
+        row = {'name': 'Streamly', 'reply': 'help@streamly.example', 'link': ''}
+        app = self.app()
+        ask = lambda: app.action('subs_pick', {'suggestion_id': 's', 'item': 1, 'choice': 'cancel'}, owner_dashboard=True)['draft']['body']
+        with patch.object(subscriptions, 'pick', return_value=row), patch.object(SubscriptionsTemplate, 'subs_rows', return_value=[]):
+            self.assertTrue(ask().endswith('Thank you'))
+            self.mailbox(app, 'Sam Rivera')  # a mailbox's name never signs
+            self.assertTrue(ask().endswith('Thank you'))
+            self.user_md('# About me\n\n- Name: Sam Rivera\n')
+            self.assertTrue(ask().endswith('Thank you\nSam Rivera'))
+            self.user_md('# About me\n\n- Name: Acme\n')
+            self.assertTrue(ask().endswith('Thank you'))
+            self.config['owner_name'] = 'Robin Vale'
+            self.assertTrue(ask().endswith('Thank you\nRobin Vale'))
 
 
 if __name__ == '__main__':

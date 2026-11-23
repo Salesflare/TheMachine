@@ -6,6 +6,7 @@ import datetime as dt
 import json
 import tempfile
 import unittest
+from pathlib import Path
 
 import meet
 import meet_link
@@ -126,6 +127,12 @@ class BookingLinks(unittest.TestCase):
         self.assertEqual(next(iter(self.links.links.values()))['days'], 7)
         self.assertEqual([l['what'] for l in self.ann.log()], ['fallback', 'link'])
         self.assertEqual(self.ann.booked, [])
+
+    def test_the_page_names_the_owner_also_without_owner_name(self):
+        # "Pick a time with Someone": the page of a Machine whose name is only in USER.md
+        self.ann.box.config.update(owner_name='', openclaw_workspace=self.temp.name)
+        (Path(self.temp.name) / 'USER.md').write_text('# About me\n\n- Name: Ann Sample\n', encoding='utf-8')
+        self.assertEqual(self.links.page(self.start())['from_name'], 'Ann')
 
     def test_a_pick_is_a_to_do_and_only_book_it_books(self):
         link = self.start()

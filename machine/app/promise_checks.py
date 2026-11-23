@@ -23,6 +23,7 @@ from models import background_model, openclaw_model
 from machine.store import message_view, outcomes
 import locale_prefs
 from timeutil import local_tz, now
+from machine import owner_name
 from machine import todo_states
 from machine.owner_error import OwnerError
 
@@ -288,7 +289,7 @@ class PromiseChecksApp:
         if not saved or saved.get('duplicate') or saved.get('status') != 'pending' or not refund:
             return saved
         made = dt.datetime.fromisoformat(p['made_at']).astimezone(local_tz())
-        found = refunds.draft(p, refund, locale_prefs.day_text(made), graph.person_name(self.config.get('owner_name')).strip()[:80])
+        found = refunds.draft(p, refund, locale_prefs.day_text(made), graph.person_name(owner_name.full_name(self.config)).strip()[:80])
         if not found:
             return saved
         try:
