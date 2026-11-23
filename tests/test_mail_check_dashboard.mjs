@@ -5,7 +5,8 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // The last check of new messages above the to-dos (dashboard/todos-mail-check.js, state.mail_check, made by check_now.mail_check):
-// "Checked 12 messages at 16:11 · nothing needs you", a to-do held until later, and on a tap one row per thread with
+// "Checked 12 messages at 16:11 · no new to-dos" (this check only: never "nothing needs you" above a to-do that
+// still waits on the list), a to-do held until later, and on a tap one row per thread with
 // who, the subject and its to-do or the review's reason. Every source the check read counts, in one total no longer
 // than the email-only line was (one line on a phone in every language); each row has its source's icon and opens its
 // message in the viewer.
@@ -55,7 +56,7 @@ try{
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port+'/');
  const line=page.locator('#suggestions .mail-check .mc-line');await line.waitFor();
- assert.equal((await line.innerText()).trim(),'Checked 12 messages at 16:11 · nothing needs you');
+ assert.equal((await line.innerText()).trim(),'Checked 12 messages at 16:11 · no new to-dos');
  assert.equal(await line.getAttribute('aria-expanded'),'false');
  assert.equal(await page.locator('#suggestions .mc-list').count(),0,'folded until tapped');
  // A tap: one row per thread, its reason or nothing when the check gave none worth showing
@@ -79,7 +80,7 @@ try{
  // Every source it read: one total, each row with its source's icon (the to-dos' own) and its reason
  mail=mixed;await page.evaluate(()=>refresh());
  await page.waitForFunction(()=>/13 messages/.test(document.querySelector('#suggestions .mc-line')?.textContent||''));
- assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 13 messages at 16:11 · nothing needs you');
+ assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 13 messages at 16:11 · no new to-dos');
  assert.deepEqual(await rows(),['Noor Pell Did anyone finish chapter 4? Group chat chatter, nothing asked of you','Rae Fenn Lunch moved to 13:00 Team lunch moved, nothing to do',
   'Yara Oak Re: Coffee next week Coffee already set for Thursday 10:00','Unknown sender']);
  // each row's source by its one-color mark (todos-logos.js), mail by the account it came in on
@@ -98,7 +99,7 @@ try{
  // Many sources: still one total, the detail is in the list
  mail=many;await page.evaluate(()=>refresh());
  await page.waitForFunction(()=>/15 messages/.test(document.querySelector('#suggestions .mc-line')?.textContent||''));
- assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 15 messages at 16:11 · nothing needs you');
+ assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 15 messages at 16:11 · no new to-dos');
  assert.equal((await rows()).at(-1),'Parcels Parcel: Delivered to your door A delivery notice, the parcel is in');
  // a phone notification by the app that posted it when it's a known brand, else the phone
  assert.deepEqual((await marks()).slice(-2),['via-medium','via-android']);
@@ -110,12 +111,17 @@ try{
   const cat=JSON.parse(await readFile(new URL(`../i18n/${lang}.json`,import.meta.url),'utf8'));
   const now=cat['Checked {} messages at {}'],was=cat['Checked {} new emails at {}'];
   for(const form of Object.keys(was))assert.ok(now[form].length<=was[form].length,`${lang} ${form}: "${now[form]}" is longer than "${was[form]}"`);
-  lines.push([lang,fill(now.other,13,'08:41')+' · '+(typeof cat['nothing needs you']==='string'?cat['nothing needs you']:'nothing needs you')]);
+  // until the daily translator adds "no new to-dos", the language's old words for that spot stand in for its length
+  const none=[cat['no new to-dos'],cat['nothing needs you'],'no new to-dos'].find(s=>typeof s==='string');
+  lines.push([lang,fill(now.other,13,'08:41')+' · '+none]);
  }
  await page.evaluate(()=>document.fonts.ready.then(()=>{}));
  const heights=await page.evaluate(lines=>{const span=document.querySelector('#suggestions .mc-line span'),b=span.closest('.mc-line'),kept=span.textContent;
   const out=lines.map(([lang,text])=>{span.textContent=text;return [lang,text,b.getBoundingClientRect().height]});span.textContent=kept;return out},lines);
- const one=heights[0][2];
+ // measured against the English line as it read before "no new to-dos" (as tall as it ever was): the shorter English
+ // words alone must not make the other languages' lines fail here
+ const one=Math.max(heights[0][2],await page.evaluate(()=>{const span=document.querySelector('#suggestions .mc-line span'),b=span.closest('.mc-line'),kept=span.textContent;
+  span.textContent='Checked 13 messages at 08:41 · nothing needs you';const h=b.getBoundingClientRect().height;span.textContent=kept;return h}));
  for(const [lang,text,h] of heights)assert.ok(h<=one+1,`${lang} wraps at 390: "${text}" (${h}px, one line is ${one}px)`);
  // A long check reads like an inbox and hides nothing: the first 10 rows, "Show N more" for the rest, a row's new
  // messages as "(3)" so the rows add up to the line's total, the time, and a Slack DM with no name yet as "Slack DM"

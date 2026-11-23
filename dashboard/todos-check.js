@@ -13,7 +13,7 @@ function checkLine(c){ const last=checkClock(c.reviewed),next=c.waiting&&!c.soon
   :next?t('Next check by {}',next):soon?t('Next check soon'):'';
  return c.waiting?[line,t('{} new (a message)',c.waiting).replace(/ /g,'\u00a0')].filter(Boolean).join(' · '):line}
 // The robot's lines, 2 or 3 per state, one per day (sayToday). The 'ok' ones never repeat the mail check line over
-// the list ("Checked 6 new emails at 14:10 · nothing needs you", todos-mail-check.js): no checking, no "nothing needs you".
+// the list ("Checked 6 messages at 14:10 · no new to-dos", todos-mail-check.js): no checking, no "no new to-dos".
 const CLEAR_SAY={busy:['Snooping around your messages…','Rummaging through the new stuff…'],ok:['All caught up.','All quiet. Back to my nap.','Clean slate. Time for a nap.'],
  late:['Dozed off. Last look at {}.','Overslept a little. Last look at {}.'],failed:['Tripped over something. That check failed.','Oops, that check went sideways.'],first:['Haven’t snooped around yet.']};
 const sayToday=(k,...v)=>{const day=Math.floor((Date.now()-new Date().getTimezoneOffset()*6e4)/864e5);return t(CLEAR_SAY[k][day%CLEAR_SAY[k].length],...v)};

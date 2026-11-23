@@ -62,7 +62,7 @@ try{
  for(let d=0;d<3;d++){
   check={...done(),reviewed:new Date(DAY+d*864e5-52*60000).toISOString()};[context,page]=await open({time:DAY+d*864e5});
   const text=await line(page);assert.ok(OK.includes(text),text);await quiet(page,'asleep');
-  assert.ok(!/nothing needs you|check|peek|snoop/i.test(text),'never repeats the mail check line: '+text);
+  assert.ok(!/nothing needs you|no new to-dos|check|peek|snoop/i.test(text),'never repeats the mail check line: '+text);
   assert.equal(await pose(page),'brand/sleepy.webp');assert.equal(await page.locator('#suggestions .all-clear .check-row').count(),0,'no Check now by default');
   await page.evaluate(()=>refresh());assert.equal(await line(page),text,'same wording within a day');
   seen.add(text);await context.close();
