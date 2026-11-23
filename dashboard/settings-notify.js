@@ -2,6 +2,12 @@
 // Settings, Notifications (notify.py): each kind by channel, this device, the digest time and quiet hours. The app
 // icon's badge is the To-dos count (appBadge in shell-render.js). While this page is in front of them, it tells the Machine so no
 // push goes out (a heartbeat a minute; the Machine forgets it after two).
+// Off on this device, and a test, from their buttons (settings-device.js)
+async function pushDisable(){try{const reg=await navigator.serviceWorker.register('sw.js'),sub=await reg.pushManager.getSubscription();if(sub){await pushPost('push_unsubscribe',sub);await sub.unsubscribe()}
+ devicePush.sub=null;devStore.set('push-off','1');deskSay();toast('Notifications off')}catch(e){errCaught(e);toast(e.message,true)}finally{deviceRender()}}
+async function pushTest(done='Test sent. It shows up in a moment.'){if(!pushOn()){toast('Turn on notifications first.',true);return false}
+ try{await fleetPost('push_test',{endpoint:devicePush.sub.endpoint});toast(done);return true}
+ catch(e){errCaught(e);toast(e.message,true);return false}}
 const NOTIFY_KINDS=[['todo','New to-dos','Only what can’t wait: due today, a reply, urgent'],['result','Results and questions','A reply ready to send, a sign-in, a Fleet question'],
  ['reminder','Reminders','Snoozes and waits coming back'],['digest','Morning digest','Meetings, what’s due, what came in overnight'],['evening','Evening digest','']];
 const NOTIFY_COLS={push:'Push',telegram:'Telegram',email:'Email'};

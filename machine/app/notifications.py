@@ -10,10 +10,11 @@ import clear_pace
 import i18n
 import locale_prefs
 from machine.app.recap import recap_escape, recap_meetings
-from machine.cards import looks_done, needs_owner, NOT_FOR_OWNER_SQL, waits_on_others
+from machine.cards import looks_done, needs_owner, NOT_FOR_OWNER_SQL, snooze_choices, waits_on_others
 from machine.config import LOG
+from machine.delivery import desk
 from machine.delivery.push import (app_wake, cloud_target, mail_ready, phone_app, push_reach, push_send, quick_web,
-                                   reply_waits, waiting_count)
+                                   reply_waits, waiting_count, web_send)
 from machine.delivery.telegram import DeliveryNotSent, telegram_request
 from machine.model_usage import telegram_account, telegram_on
 from machine.store.facts import suggestion_scope
@@ -54,7 +55,8 @@ class NotificationsApp:
     ACTIONS = {'notify_set': 'notify_action', 'notify_active': 'notify_action', 'notify_preview': 'notify_action',
                'push_test': 'push_test_action', 'app_push_register': 'app_push_action_handler',
                'app_push_unregister': 'app_push_action_handler', 'push_subscribe': 'push_subscribe_action',
-               'push_unsubscribe': 'push_subscribe_action', 'area_digest': 'area_digest_action',
+               'push_unsubscribe': 'push_subscribe_action', 'push_desk': 'push_desk_action',
+               'area_digest': 'area_digest_action',
                'digest_sent': 'digest_sent_action', 'digest_row_hide': 'digest_row_hide_action'}
 
     def digest_row_hide_action(self, name, args, owner_dashboard=False):
@@ -157,6 +159,30 @@ class NotificationsApp:
                     ON CONFLICT(endpoint) DO UPDATE SET p256dh=excluded.p256dh,auth=excluded.auth''',
                        (endpoint, keys['p256dh'].rstrip('='), keys['auth'].rstrip('='), now()))
         return {'subscribed': True}
+
+    def push_desk_action(self, name, args, owner_dashboard=False):
+        # A page the desktop robot opened (?desk=): which browser is on that computer, and its push if it has one, so a
+        # to-do's notification shows in one place there (machine/delivery/desk.py)
+        if not owner_dashboard:
+            raise OwnerError('Phone notifications are turned on in the dashboard app')
+        endpoint = str(args.get('endpoint') or '')
+        if endpoint and not re.fullmatch(r'https://[^\s]{1,2000}', endpoint):
+            raise ValueError('Invalid push subscription')
+        with self.store.connect() as db:
+            desk.link(db, args.get('desk'), endpoint, now())
+        return {'linked': True}
+
+    def desk_look(self, ident, up, got=()):
+        """What the desktop robot gets with its look at the status: the to-dos whose notifications wait for it, each with
+        its snooze choices as the dashboard's, and a meeting about to start that has a briefing. {} for anything else,
+        and while it may not speak."""
+        found = desk.look(ident, up, got)
+        if not up or not desk.ID.fullmatch(ident or ''):
+            return {}
+        with self.store.connect() as db:
+            meeting = desk.meeting(db, dt.datetime.fromisoformat(now()), lambda: self.meeting_prep_owner(db), (todo_states.REJECTED,))
+        found = [{**n, 'snooze': snooze_choices(self.is_work_suggestion(n['id']))} for n in found]
+        return {'notices': found, **({'meeting': meeting} if meeting else {})}
 
     def digest(self, current=None):
         """The morning digest as of `current` (notify.compose), or None when there is nothing to say."""
@@ -380,6 +406,8 @@ class NotificationsApp:
         """Held notifications (notify.take_due): a push a minute after the owner left the dashboard, and one email for
         what is still unseen and waiting a while later. Within work hours only; a held push outside them is dropped."""
         local = (current or timeutil.clock()).astimezone(local_tz())
+        for subscriptions, payload in desk.late():  # the robot didn't get it: that computer's browser after all
+            web_send(self.store, self.config, subscriptions, payload, 'late', push)
         with self.store.connect() as db:
             notify.ensure(db)
             if not in_hours(local):
@@ -389,7 +417,7 @@ class NotificationsApp:
             handoffs = notify.take_handoffs(db)
         subscriptions, phones = push_reach(self.store, self.config) if pushes else ([], 0)
         went = []
-        if pushes and not subscriptions and not phones:
+        if pushes and not subscriptions and not phones and not desk.up():
             with self.store.connect() as db:
                 notify.delivered(db, pushes)  # nowhere to push to: dropped, not kept to go off later
             pushes = []

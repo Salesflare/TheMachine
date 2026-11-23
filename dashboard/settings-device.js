@@ -6,7 +6,7 @@ const pushOK='serviceWorker' in navigator&&'PushManager' in window&&'Notificatio
 const iosTab=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const iosHint='On iPhone and iPad: tap Share, then Add to Home Screen. Open The Machine from there to turn on notifications.';
 const keyBytes=k=>Uint8Array.from(atob(k.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-k.length%4)%4)),c=>c.charCodeAt(0));
-const pushPost=(action,sub)=>{const j=sub.toJSON();return request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args:{endpoint:j.endpoint,keys:j.keys}})})};
+const pushPost=(action,sub)=>{const {endpoint,keys}=sub.toJSON();return fleetPost(action,{endpoint,keys})};
 const devStore={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch{}}};
 const DEV=(()=>{const ua=navigator.userAgent;let framed=true;try{framed=window.top!==window}catch{}
  return {phoneApp:/ TheMachineApp\//.test(ua),ios:iosTab,android:/Android/.test(ua),mobile:iosTab||/Android|Mobi/.test(ua),framed,chromium:'onbeforeinstallprompt' in window,
@@ -33,10 +33,16 @@ if(nudgeable&&navigator.getInstalledRelatedApps)navigator.getInstalledRelatedApp
 async function appInstall(){const e=installEvt;if(!e){toast(DEV.ios?iosHint:'Find Install in the browser’s menu.');return}
  e.prompt();let outcome='dismissed';try{({outcome}=await e.userChoice)}catch{}if(outcome==='accepted')noteInstalled();else{installEvt=null;deviceRender()}return outcome==='accepted'}
 // Notifications: the browser's permission and this device's subscription. Off in Settings stays off: no nudge after it.
+// The desktop robot opens the dashboard with ?desk=<its id>: this browser is on its computer, so a to-do's notification
+// shows in one place there (machine/delivery/desk.py). Kept, and said again when notifications here turn on.
+// Also with a link the installed app caught while it was open (launchQueue, todos-list.js).
+const deskTaken=u=>{const d=/\?desk=([a-f0-9]{32})/.exec(u);if(d)devStore.set('desk',d[1]);return d};
+if(deskTaken(location.href))history.replaceState(null,'',location.pathname+location.hash);
+const deskSay=()=>{const desk=devStore.get('desk');if(desk)fleetPost('push_desk',{desk,endpoint:pushOn()?devicePush.sub.endpoint:''}).catch(()=>{})};
 const devicePush={perm:pushOK?Notification.permission:'unsupported',sub:null,checked:false};
 const pushOn=()=>devicePush.perm==='granted'&&!!devicePush.sub;
 async function pushCheck(sync=false){if(!pushOK)return deviceRender();try{const reg=await navigator.serviceWorker.register('sw.js');devicePush.sub=await reg.pushManager.getSubscription();devicePush.perm=Notification.permission;
- if(pushOn()&&sync)await pushPost('push_subscribe',devicePush.sub)}catch{}devicePush.checked=true;deviceRender()}
+ if(pushOn()&&sync)await pushPost('push_subscribe',devicePush.sub);if(sync)deskSay()}catch{}devicePush.checked=true;deviceRender()}
 const blockedHint=()=>DEV.ios?'In the Settings app: Notifications, The Machine.':DEV.macSafari?'In Safari: Settings, Websites, Notifications.':DEV.mobile?'Tap the icon left of the address, then Permissions, Notifications.':'Click the icon left of the address, then allow Notifications.';
 async function pushEnable(){if(!pushOK){toast(DEV.ios?iosHint:'This browser can’t show notifications.',true);return false}
  // The permission prompt first, while the tap still counts (Safari asks for that).
@@ -44,18 +50,14 @@ async function pushEnable(){if(!pushOK){toast(DEV.ios?iosHint:'This browser can�
  if(perm!=='granted'){deviceRender();toast(perm==='denied'?t('Notifications are blocked.')+' '+blockedHint():'Notifications stay off for now.',perm==='denied');return false}
  try{const reg=await navigator.serviceWorker.register('sw.js');let sub=await reg.pushManager.getSubscription();
   if(!sub){const {key}=await request('api/push-key');sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:keyBytes(key)})}
-  await pushPost('push_subscribe',sub);devicePush.sub=sub;devStore.set('push-off',null)}catch(e){errCaught(e);toast(e.message,true);return false}finally{deviceRender()}
- await pushTest('Notifications on. A test is on its way.');return true}
-async function pushDisable(){try{const reg=await navigator.serviceWorker.register('sw.js'),sub=await reg.pushManager.getSubscription();if(sub){await pushPost('push_unsubscribe',sub);await sub.unsubscribe()}
- devicePush.sub=null;devStore.set('push-off','1');toast('Notifications off')}catch(e){errCaught(e);toast(e.message,true)}finally{deviceRender()}}
-async function pushTest(done='Test sent. It shows up in a moment.'){if(!pushOn()){toast('Turn on notifications first.',true);return false}
- try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'push_test',args:{endpoint:devicePush.sub.toJSON().endpoint}})});toast(done);return true}
- catch(e){errCaught(e);toast(e.message,true);return false}}
+  await pushPost('push_subscribe',sub);devicePush.sub=sub;devStore.set('push-off',null);deskSay()}catch(e){errCaught(e);toast(e.message,true);return false}finally{deviceRender()}
+ await deviceTest('Notifications on. A test is on its way.');return true}
+const deviceTest=async said=>{await lazyPart('settings');return pushTest(said)};
 // The device actions in one place, for a command palette or anything else that lists actions.
 const DEVICE_ACTIONS=window.deviceActions=[
  {id:'install-app',label:'Install app',available:()=>!!installEvt||(!appInstalled()&&(DEV.ios||DEV.macSafari)),run:appInstall},
  {id:'push-on',label:'Turn on notifications',available:()=>pushOK&&!pushOn()&&devicePush.perm!=='denied',run:pushEnable},
- {id:'push-test',label:'Send test notification',available:pushOn,run:()=>pushTest()}];
+ {id:'push-test',label:'Send test notification',available:pushOn,run:()=>deviceTest()}];
 const deviceRun=id=>DEVICE_ACTIONS.find(a=>a.id===id)?.run();
 // Still setting up: no state yet, no source yet, or the first look running. The setup to-do waits for it.
 const settingUp=()=>!state?.suggestions||!(state.connectors||[]).length||!!firstLookInfo(state.review_live||{});
@@ -85,7 +87,7 @@ const deviceRows=(()=>{const theme=$('#theme-toggle').closest('.settings-list>di
  const app=document.createElement('div');app.id='device-app';setHTML(app,html`<span class="grow"><strong>App</strong><small></small></span><span class="device-act"></span>`);
  pushRow.id='device-push';pushRow.querySelector('strong').textContent='Notifications';
  const test=document.createElement('button');test.type='button';test.className='ghost';test.id='push-test';test.textContent='Send a test';test.hidden=true;$('#push-toggle').before(test);
- test.onclick=async()=>{test.disabled=true;try{await pushTest()}finally{test.disabled=false}};
+ test.onclick=async()=>{test.disabled=true;try{await deviceTest()}finally{test.disabled=false}};
  list.prepend(app);list.insertBefore(pushRow,theme);return {app,push:pushRow}})();
 // The help article for both rows (docs/help/phone-app.md on themachine.computer/help).
 const DEVICE_HELP=html` <a class="learn" href="https://themachine.computer/help/phone-app" target="_blank" rel="noopener">Learn more</a>`;
@@ -115,7 +117,7 @@ function phoneAppPush(){if(!document.documentElement.classList.contains('in-app'
 function phoneAppRender(){if(!document.documentElement.classList.contains('in-app'))return;
  if(state?.notify&&!state.notify.app_push_ready&&!devStore.get('app-push-network')){devStore.set('app-push-network',1);toast(t('Notifications in the app need The Machine Network. The app works without them.'))}}
 deviceRows.app.onclick=e=>{const b=e.target.closest('[data-device]');if(b)deviceRun(b.dataset.device)};
-$('#push-toggle').onclick=async()=>{const b=$('#push-toggle');if(!pushOK){toast(iosHint);return}b.disabled=true;try{if(pushOn())await pushDisable();else await pushEnable()}finally{b.disabled=false}};
+$('#push-toggle').onclick=async()=>{const b=$('#push-toggle');if(!pushOK){toast(iosHint);return}b.disabled=true;try{if(pushOn()){await lazyPart('settings');await pushDisable()}else await pushEnable()}finally{b.disabled=false}};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){pushCheck();phonePushCheck()}});
 addEventListener('machinephone',()=>{phonePush='';if(lazyIn('settings'))renderNotify()});  // the app's part came in after this page drew
 pushCheck(true);

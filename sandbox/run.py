@@ -149,7 +149,8 @@ def fake_ask(config, prompt):
     kept = re.search(r'^\[([PFSM]1)\] ([^\n<]*?):? ?(?:\n)?<<<([^\n]*?)>>>$', prompt, re.M)
     if len(question.split()) < 4 or not (best or kept):
         return 'NONE'
-    said = [f"{best[1]} wrote about it in “{best[2][:80]}” [1]."] if best else []
+    titled = f' in “{best[2][:80]}”' if best and best[2] != best[1] else ''  # a chat's title is who it is with
+    said = [f'{best[1]} wrote about it{titled} [1].'] if best else []
     return ' '.join(said + ([f"{kept[2].split(',')[0]}: “{kept[3][:120]}” [{kept[1]}]."] if kept else []))
 
 

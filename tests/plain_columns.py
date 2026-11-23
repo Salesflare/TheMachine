@@ -36,7 +36,7 @@ meet_sessions.video meet_sessions.rejected meet_sessions.note meet_sessions.dead
 memory_use.purpose memory_use.how merge_effects.operation milestones.name missed_audit_items.channel missed_audit_items.area
 missed_audit_items.what missed_audit_items.label missed_audits.result ms_photo_accounts.scopes ms_photo_accounts.offered
 ms_photo_asks.outcome network_outbox.method network_outbox.path network_people.relation network_pins.keys note_page_links.target
-note_pages.area note_pages.starts note_pages.ends note_writeups.basis notify_app_devices.platform notify_digests.channels
+note_pages.area note_pages.starts note_pages.ends note_writeups.basis notify_app_devices.platform notify_desks.desk notify_digests.channels
 notify_queue.batch notify_queue.channel notify_queue.delivery notify_queue.ref org_aliases.alias org_aliases.target org_apart.a org_apart.b
 own_addresses.sources pacing_starts.win person_facts.field person_orgs.via person_photos.type
 preparations.use_events preparations.connect preparations.update_retry preparations.move_to
@@ -92,7 +92,7 @@ WORDS = {
         org_logo_tries.domain org_profiles.domain org_profiles.profile own_address_choices.address own_addresses.address own_domains.domain
         owner_numbers.number person_edits.identifier person_edits.fields person_facts.identifier person_orgs.identifier person_orgs.org
         person_photo_tries.identifier person_photos.identifier person_profiles.identifier person_profiles.profile person_roles.identifier
-        project_org_checks.org project_org_fills.org projects.name projects.org promises.who push_subscriptions.endpoint
+        project_org_checks.org project_org_fills.org projects.name projects.org promises.who push_subscriptions.endpoint notify_desks.endpoint
         reconnect_asks.ask record_owners.owner record_owners.name role_corrections.identifier role_corrections.name
         self_record_backups.identifier share_rules.name slack_members.label suggestions.org suggestions.done_elsewhere
         suggestions.handoff_to suggestions.awaiting promises.watch suggestions.project team_sources.name telegram_photo_asks.identifier

@@ -45,7 +45,7 @@ LEFT_OUT = {
     'OpenClaw\'s own scheduled jobs (only the sandbox makes a stand-in; an install\'s are in OpenClaw)': {'cron_jobs'},
     'credentials and sign-ins (never exported)': {
         'agent_key_pins', 'ai_clients', 'ai_codes', 'ai_connections', 'ai_folded', 'ai_tokens', 'network_pins', 'network_sealed',
-        'push_subscriptions', 'notify_app_devices',
+        'push_subscriptions', 'notify_app_devices', 'notify_desks',
     },
     'message contents and their search index (only references go in)': {
         'chat_files', 'chats', 'event_passages', 'event_search', 'event_vector_changes', 'event_vector_skips', 'event_vectors', 'events_monotonic', 'messages', 'outbox',

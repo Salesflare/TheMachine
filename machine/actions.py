@@ -572,6 +572,7 @@ DASHBOARD_ACTIONS = frozenset({
     'promise_close',
     'promise_due',
     'promise_todo',
+    'push_desk',
     'push_subscribe',
     'push_test',
     'push_unsubscribe',

@@ -512,7 +512,9 @@ def make_handler(app):
             since = (args.get('since') or [''])[0]
             # a page's first read (dashboard.html statusEarly), which may take the status kept a moment ago (StatusApp.status_recent)
             recent = self.headers.get('X-Status-Kept') == '1'
-            self.output(200, status_delta.changes({**dashboard_status(app.action('status', {'full': True, 'done': DONE_FIRST, 'recent': recent})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
+            # the desktop robot (desk=): what waits for it to say, next to the status, never part of its changes
+            said = app.desk_look((args.get('desk') or [''])[0], args.get('up') == ['1'], (args.get('got') or [''])[0].split(',')) if args.get('look') == ['1'] and 'desk' in args else {}
+            self.output(200, said | status_delta.changes({**dashboard_status(app.action('status', {'full': True, 'done': DONE_FIRST, 'recent': recent})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                               'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))}, since))
             # after the answer and off the request: on its thread the next request of this connection would wait
             # (look=1: the desktop robot looking for its dot, the owner opened nothing)
