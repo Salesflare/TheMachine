@@ -293,6 +293,8 @@ Comments, replies and @mentions on the owner's docs (`docs.comment`, `docs.menti
 
 - Connecting Microsoft documents asks for `Files.ReadWrite.All` in one consent. A connection from before with `Files.Read.All` only gets **Allow edits** (the source `microsoft_docs_write`, refused when Microsoft doesn't grant it).
 - Reads ask for `Files.Read.All` (`/me/drive`, its delta, `sharedWithMe`, and items on shared drives).
+- Microsoft's `sharedWithMe` returns nothing after November 2026, and `/insights/shared` goes too. An empty or refused list is no error: the rest of the sync goes on, nothing that came in before changes, and a refused list is asked again an hour later.
+- From then on, shares, and mentions in files that aren't the owner's, come in only as Microsoft's own mails in a connected Outlook (or other) mailbox. Mail from `sharepointonline.com` always reaches the review, never set aside by the first pass. Without that mailbox, or when the sharer sends no mail, they are lost. Comments, mentions and tracked changes in the owner's own Word files don't change.
 - `.docx` files are downloaded only from Microsoft's pre-signed hosts, without the token, to read comments, mentions and tracked changes.
 - Microsoft Graph can't reply to Word comments, so those replies stay drafts.
 

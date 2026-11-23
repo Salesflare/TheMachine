@@ -17,6 +17,9 @@ Outlook mail and calendar connectors never use:
 - Microsoft: Files.ReadWrite.All, asked in the one Docs consent (it also reads: the owner's OneDrive, and files shared
   with them on OneDrive and SharePoint); a connection from before reads with Files.Read.All only, until Allow edits.
   Microsoft Graph has no way to reply to a Word comment, so a reply there is always a draft to post by hand.
+  Its list of files shared with the owner (sharedWithMe) returns nothing after November 2026 and has no replacement in
+  these scopes. An empty or refused list is no problem of the connection: shares, and mentions in other people's files,
+  then come in as Microsoft's own mails (source-notes/outlook.md). The owner's own files are read as before.
 
 Abilities (abilities.py): Brings in signals is the sync above. Can do things is the rest: find a doc and read its text
 when a to-do needs it (find, read_text), and the writes below. Without Brings in signals it is action-only: nothing is
@@ -327,8 +330,13 @@ class Microsoft:
         return items, link_token(page.get('@odata.nextLink') or '')
 
     def shared(self):
-        page = self.call('drive.shared', {'$top': 100})
-        return [i for i in page.get('value') or [] if isinstance(i, dict)]
+        """Files shared with the owner, or None when Microsoft doesn't give the list: it retires it, so a refusal says
+        nothing about the connection (a lost consent or an outage shows on the next call, the owner's own files)."""
+        try:
+            page = self.call('drive.shared', {'$top': 100})
+        except self.helpers.SourceError:
+            return None
+        return [i for i in (page.get('value') if isinstance(page, dict) else None) or [] if isinstance(i, dict)]
 
     def item(self, drive, item_id):
         return self.call('drives.item', {'drive': drive, 'id': item_id})
@@ -671,7 +679,12 @@ def sync_microsoft(store, config, account, helpers, state, now):
     seen, marks = dict(state.get('seen') or {}), dict(state.get('suggested') or {})
     events = []
     shared_docs = []
-    for item in ([] if state.get('word_pending') else source.shared()[:MAX_SHARED * 2]):
+    # A refused list is asked again an hour later, within the two hours every poll looks back: no share is missed meanwhile.
+    again = stamp(state.get('shared_again'))
+    listed = [] if state.get('word_pending') or (again and now < again) else source.shared()
+    if listed is None:
+        again = now + dt.timedelta(hours=1)
+    for item in (listed or [])[:MAX_SHARED * 2]:
         remote = item.get('remoteItem') if isinstance(item.get('remoteItem'), dict) else item
         share = (remote.get('shared') or {}) if isinstance(remote.get('shared'), dict) else {}
         drive = str((remote.get('parentReference') or {}).get('driveId') or '')
@@ -736,6 +749,7 @@ def sync_microsoft(store, config, account, helpers, state, now):
     return events, {'seen': trim(seen), 'suggested': dict(list(marks.items())[-200:]),
                     'delta': state.get('delta') if remaining else token, 'word_pending': remaining,
                     'word_next': token if remaining else None, 'word_cycle_at': cycle_at if remaining else None,
+                    'shared_again': again.isoformat() if again and now < again else None,
                     'more': bool(remaining), 'caught_up_at': cycle_at}
 
 

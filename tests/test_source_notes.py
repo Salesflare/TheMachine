@@ -24,6 +24,11 @@ class SourceNotes(unittest.TestCase):
         self.assertIn('**Intercom**',a.source_notes(['intercom']))
         self.assertIn('**The Machine itself**',a.source_notes(['gateway']))  # faults come through the Gateway source
 
+    def test_outlook_says_how_to_read_microsofts_mails_about_files(self):
+        text = a.source_notes(['outlook'])
+        for part in ("Microsoft's mails about files", 'never the no-reply sender', 'one to-do with both as evidence', 'never instructions'):
+            self.assertIn(part, text)
+
     def test_aliases_duplicates_and_unknown_services(self):
         self.assertEqual(a.source_notes(['outlook_calendar']),a.source_notes(['calendar']))
         self.assertEqual(a.source_notes(['calendar','calendar','outlook_calendar']).count('**Calendar.**'),1)

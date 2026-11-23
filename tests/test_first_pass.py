@@ -114,6 +114,23 @@ class FirstPass(unittest.TestCase):
             self.assertEqual(first_pass.skipped(db, (NOW - dt.timedelta(days=7)).isoformat()), {self.ids['m1'], self.ids['n2']})
             self.assertEqual(mail_cleanup.notifications(db, (NOW - dt.timedelta(days=7)).isoformat()), {self.ids['n2']})
 
+    def test_microsofts_mails_about_files_always_reach_the_review(self):
+        # The shape Microsoft sends: the person's name on its own no-reply address
+        self.store.commit_page('work', {}, [
+            mail(8, 'Kit Navarro <no-reply@sharepointonline.com>', 'Kit Navarro mentioned you in "Q4 plan"',
+                 'Kit Navarro mentioned you in a comment. @Sam can you check the numbers? Go to comment', labels=('INBOX', 'CATEGORY_UPDATES')),
+            mail(9, 'Kit Navarro <no-reply@sharepointonline.com>', 'Kit Navarro shared "Budget" with you', 'Please fill in your part. Open'),
+            mail(10, 'Deals <no-reply@sharepointonline.com.example>', 'Deals', 'Ten percent off', **LIST)])
+        with self.store.connect() as db:
+            self.ids = {r['source_id']: r['id'] for r in db.execute('SELECT id,source_id FROM events')}
+        self.model({'m1': 'newsletter', 'm8': 'notification', 'm9': 'notification', 'm10': 'promotion'})
+        self.run_step()
+        for source in ('m8', 'm9'):
+            self.assertNotIn(f"[{self.ids[source]}]", self.asked[0])
+            self.assertEqual(self.verdicts()[self.ids[source]][0], 'review')
+        self.assertTrue({'m8', 'm9'} <= self.pending())
+        self.assertEqual(self.verdicts()[self.ids['m10']][0], 'skip')  # another domain that only looks like it
+
     def test_a_changed_signal_is_sorted_again(self):
         self.model({'m1': 'newsletter'})
         self.run_step()

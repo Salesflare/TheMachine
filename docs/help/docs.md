@@ -1,20 +1,23 @@
 ---
 title: Microsoft OneDrive
 area: connections
-summary: Comments, mentions, tracked changes and shares on your Word files in OneDrive and SharePoint. New docs and edits wait for your OK.
+summary: Comments, mentions and tracked changes on your Word files in OneDrive. New docs and edits wait for your OK.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## What it reads
 
-**Microsoft OneDrive** reads your Word files in OneDrive and SharePoint, on a hosted Machine and on your own computer. Outlook doesn't need to be connected. For Google Docs, see below. It brings in:
+**Microsoft OneDrive** reads your Word files in OneDrive, on a hosted Machine and on your own computer. Outlook doesn't need to be connected. For Google Docs, see below. It brings in:
 
-- Docs someone shares with you.
-- Comments and replies on your docs, and comments that mention you.
+- Comments and replies on your Word files, and comments there that mention you.
 - Tracked changes in your Word files.
 
 The first sync goes back 7 days. Each item links to the people and projects in your [Graph](graph.md). A comment that needs you becomes a to-do.
+
+## Files others share with you
+
+Microsoft stops listing these in November 2026. Shares, and mentions in someone else's file, then reach your Machine only as Microsoft's own emails. Connect [Outlook](microsoft.md) too, and keep those emails on. A to-do from one opens the email, and its button opens the file. A share or mention without an email isn't seen.
 
 ## What it can do
 
