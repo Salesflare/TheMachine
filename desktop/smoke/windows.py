@@ -43,6 +43,8 @@ SM = user.GetSystemMetrics
 out = pathlib.Path(sys.argv[3])
 out.mkdir(parents=True, exist_ok=True)
 results = []
+STATE = (out / 'state.txt').resolve()  # what the app takes for Windows' word on notifications
+STATE.write_text('5')
 SNIP = (out / 'snip.cmd').resolve()  # what the app takes for Windows' own snip, while it is there
 
 
@@ -169,7 +171,7 @@ class App:
         if App.last and App.last.poll() is None:  # a step before this one failed
             App.last.kill()
             App.last.wait()
-        env = dict(os.environ, MACHINE_SANDBOX_ACCOUNT=f'http://127.0.0.1:{PORT}', MACHINE_SANDBOX_SNIP=str(SNIP))
+        env = dict(os.environ, MACHINE_SANDBOX_ACCOUNT=f'http://127.0.0.1:{PORT}', MACHINE_SANDBOX_SNIP=str(SNIP), MACHINE_SANDBOX_STATE=str(STATE))
         if debug:
             env['MACHINE_SANDBOX_DEBUG'] = str(DEBUG)
         self.env, self.program = env, program
@@ -1512,6 +1514,9 @@ def said():
 
 @step('it speaks up')
 def _():
+    told, state = ctypes.windll.shell32.SHQueryUserNotificationState, ctypes.c_int(0)
+    told(ctypes.byref(state))
+    print('the runner itself says', state.value, 'of notifications')  # a fresh user's first hour is quiet time
     machine.todos = list(TODOS)
     away()
     before = user.GetForegroundWindow()
@@ -1589,6 +1594,19 @@ def _():
     need(not app.bubble(), 'the bubble goes')
     press(app, '#card-close')
     machine.compact = False
+
+
+@step('not in a presentation')
+def _():
+    away()
+    STATE.write_text('4')
+    need(until(lambda: machine.desks[-1][1] == '0', 40), str(machine.desks[-1]))
+    machine.notices = [{'key': 'p1', 'id': 'aa03', 'kind': 'todo'}]
+    time.sleep(35)
+    need(not app.bubble() and machine.notices, 'it says nothing, and leaves it to the browser')
+    machine.notices = []
+    STATE.write_text('5')
+    need(until(lambda: machine.desks[-1][1] == '1', 40), str(machine.desks[-1]))
 
 
 @step('Speak up is off')
