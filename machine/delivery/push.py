@@ -12,7 +12,7 @@ import urllib.parse
 import agent_jobs
 import fleet
 import i18n
-from machine.cards import NOT_FOR_OWNER_SQL, needs_owner, plain
+from machine.cards import NOT_FOR_OWNER_SQL, ask_question, needs_owner, plain
 from machine.config import LOG, ROOT, WORKSPACE
 from machine.model_usage import node_bin, node_env, telegram_on
 from machine.sources.connectors import HOSTED_SIGNINS
@@ -390,8 +390,7 @@ def quick_kind(row, kind=None, blocked=None, signin=None):
         except (TypeError, ValueError, AttributeError):
             steps = []
         drafted = any(s.get('kind') in next_actions.APPROVE_KINDS for s in steps)
-        needs = str(outcome.get('needs') or '').strip()
-        if needs and (needs.endswith('?') or not drafted):  # "check the draft and send it" is the draft's: Open draft
+        if ask_question(row, steps):  # as the to-do's own lead: Answer, else its draft or result
             return 'question'
         if outcome.get('state') == 'snoozed' and kind == 'reminder':
             return 'reminder'
@@ -449,6 +448,7 @@ def app_notice(store, config, tag, kind=None, version=1):
             return {'gone': True}
         blocked = row.get('preparation_status') == 'blocked'
         browser = (store.suggestion_result(row, db).get('preparation_browser') or {}) if blocked else {}
+        row['needs_owner'] = needs_owner(row, db)
         ready_lead = result_lead(db, row)
     if row.get('preparation_status') == agent_jobs.WORKING:  # a job handed off after a stuck run is on it: not Stuck
         lead, buttons = 'Working', ['snooze', 'done']

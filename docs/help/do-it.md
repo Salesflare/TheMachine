@@ -42,6 +42,7 @@ It can send an email, a Slack direct message, or a WhatsApp, Telegram, LinkedIn 
 ## When it can't
 
 - "This can’t be sent from here." means you copy the draft with **Copy draft** and send it yourself.
+- **Needs you** with nothing on it to send, open or read leads with **Answer**: say what it needs and it carries on. A step only you can do yourself, like a payment in your bank, leads with **Mark done**.
 - **Needs your help** means it has a question: **Answer** it. **Stuck** means it stopped without one; the to-do says why.
 - Asked more than one thing? Each question has its own choices or a short field, sometimes filled in with last time's answer. **Answer** sends them all together.
 - Missing something only you have? It asks you for it and drafts only what can go without it, like a reply confirming a date. It doesn't draft a reply that only says it's coming.

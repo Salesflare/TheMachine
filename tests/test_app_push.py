@@ -330,7 +330,7 @@ class AppPush(unittest.TestCase):
         return {'new': self.card('Answer the school'),
                 'draft': self.card('Pick a time with Sam', status='prepared', next_action=reply),
                 'ready': self.card('Find the train times', status='prepared', outcome=json.dumps({'state': 'answered'})),
-                'question': self.card('Book the trip', status='prepared', outcome=json.dumps({'needs': 'Which dates work?'})),
+                'question': self.card('Book the trip', status='prepared', outcome=json.dumps({'state': 'needs_you', 'needs': 'Which dates work?'})),
                 'preparing': self.card('Draft the plan', status='accepted')}
 
     def test_no_quick_button_sends_publishes_pays_or_submits(self):

@@ -445,18 +445,17 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  // done on a ready one without a draft
  const draft=smart.some(a=>DRAFT_KINDS.includes(a.kind)),ready=s.status==='prepared'&&!answered&&!ask&&!mine&&!withTeammate(s);
  // with a draft, Mark done tops the … so the row stays one line
- const doneShown=ready&&(!draft||made),doneTop=ready&&draft&&!made;
+ const doneTop=ready&&draft&&!made;
  const review=s.status==='prepared'||(s.status==='pending'&&!mine)||!!agentAsk(s);
- const shown=x=>(x[0]==='snooze'&&!made)||(x[0]==='change'&&review)||(x[0]==='complete'&&(doneShown||!!ownFix(s)||shStopped(s)));
- const quiet=x=>x[0]==='change';
+ const shown=x=>x[0]==='snooze'&&!made||x[0]==='change'&&review||x[0]==='complete'&&(ready&&!doneTop||ask&&!askBlocked(s)||!!ownFix(s)||shStopped(s));
  const plain=others.filter(x=>!handing(x)&&x[0]!=='reject'&&x[0]!=='takeback');
- const items=html`${[...plain.filter(x=>x[0]==='complete'&&(doneTop||!shown(x))).map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&!quiet(x)&&x[0]!=='complete').map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
+ const items=html`${[...plain.filter(x=>x[0]==='complete'&&(doneTop||!shown(x))).map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&x[0]!=='change'&&x[0]!=='complete').map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
  // Snooze folds into the … when its line runs out of room (a long label, a narrow phone), so the … never sits alone on a line: actionsSize below
  // on a phone: the lead on its own row, the rest on one (a long Use … lead too)
  const two=(leads[0]?1:0)+plain.filter(shown).length>2||useAsk(s);
  const fold=String(items)&&plain.find(x=>x[0]==='snooze'&&shown(x));
  const row=html`${plain.filter(shown).sort((a,b)=>made?(a[0]==='complete'?-1:b[0]==='complete'?1:0):(b[0]==='change')-(a[0]==='change')).map(x=>btn(x,fold&&x===fold?html` data-row-fold`:''))}`;
- const hiddenBtns=html`${plain.filter(x=>!shown(x)&&quiet(x)).map(b=>btn(b,html` hidden`))}`;
+ const hiddenBtns=html`${plain.filter(x=>!shown(x)&&x[0]==='change').map(x=>btn(x,html` hidden`))}`;
  const menu=String(items)?html`<details class="more-actions"><summary aria-label="${t('More actions')}" title="${t('More actions')}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${t('More actions')}">${fold?btn(fold,html` data-row-fold-menu`):''}${items}${sub}</div></details>`:'';
  return html`<div class="actions${two?html` two-rows`:''}">${leads[0]?leads[0](ID):''}${row}${menu}${hiddenBtns}</div>${copy&&!skill?html`<p class="copy-why">${COPY_WHY}</p>`:''}`}
 // A line that runs out of room (a long label in another language, a narrow card) hands its Snooze to the … (it tops the
@@ -532,8 +531,8 @@ document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches?.('details
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const d=document.activeElement?.closest?.('details.more-actions[open]');if(!d)return;e.preventDefault();d.open=false;d.querySelector('summary')?.focus()});
 // A Needs you line ends with one mark: a question keeps its "?" instead of getting ".".
 const sentence=t=>{t=String(t).trim();return /[.?!…]$/.test(t)?t:t+'.'};
-// A card waiting on the owner's answer: Answer leads and opens the Change editor under the question; Mark done and
-// Hand off step back. Either a result whose needs_you is a question, with nothing to send, or a run that stopped to
+// A card waiting on the owner's answer: Answer leads and opens the Change editor under the question; Hand off steps back,
+// and so does Mark done on a stopped run. Either a result that asks (needsAsk), with nothing to send, or a run that stopped to
 // ask the owner: a blocker it wrote itself (no error of the service's own), not a sign-in and not waiting in the browser.
 // A result that left the final click (submit, pay, book) to the owner: what that click is, or ''. Same rule as card() in assistant.py.
 const finalStep=s=>{if(s.status!=='prepared'||s.handled_hint)return '';const o=outOf(s);return o.state==='your_step'&&o.step||''};
@@ -550,10 +549,10 @@ const waitAhead=s=>s.early&&s.status==='accepted'&&(s.preparation_status||'queue
 const lapsed=s=>s.status==='completed'&&!!s.expired_at;
 const cardState=s=>lapsed(s)?'Not needed':toRead(s)?'To read':cleanupSettled(s)?'Prepared':s.preparation_status==='working'&&!closed(s)?'Working…':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):waitAhead(s)?'Not started yet':TODO.PREPARING.includes(s.status)&&s.preparation_status!=='handed'?'Preparing…':label(s.needs_owner?'pending':s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
- if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
- return needsAsk(s)};
-// A result that needs the owner and says so with a question ("What is the new link?"): it waits on their answer, not on a tap
-const needsAsk=s=>{const o=outOf(s),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''};
+ return s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open')?'':needsAsk(s)};
+// A result that waits on what the owner says, not on a tap: a question, or any need with nothing on it that settles it
+// (needs_owner). Not a step they do themselves (owner_step: Mark done leads). Same rule as result_ask() in machine/cards.py.
+const needsAsk=s=>{const o=outOf(s),q=String(o.needs||'').trim();return o.state==='needs_you'&&(/\?$/.test(q)||s.needs_owner&&!o.owner_step&&!s.owner_step&&!withTeammate(s))?q:''};
 // A draft's Send opens the preview first: the button says so.
 const sendLabel=a=>a.kind==='linear'?(a.label||LIN_LABEL[a.op]):a.kind==='calendar'?CAL_LABEL[a.op]:a.kind==='doc_write'?DOC_LABEL[a.op]:a.kind==='doc_reply'?'Review and post':[...PERSON_SENDS,'email_demo'].includes(a.kind)&&/^Send\b/.test(a.label||'')?reviewSend(a.label):a.label;
 // "Send reply" reads "Review and send reply": a known label whole, "to Sam" by its pattern, else the start translated

@@ -7,14 +7,15 @@ const {chromium}=await import('./browser.mjs');
 
 // A card whose result waits on the owner's answer (needs_you, written as a question) leads with Answer: it opens the
 // Change editor under the question, and Send answer saves it as a Change note. Mark done steps back. A question line
-// keeps its "?" (no "?."). A needs line that isn't a question, or one with a draft to send, keeps its usual buttons.
+// keeps its "?" (no "?."). A step they do themselves (owner_step), or one with a draft to send, keeps its usual buttons.
+// Every other shape of needs_you: test_needs_lead_dashboard.mjs.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const cards=[
  {id:'q1',title:'Get the quarterly report ready',body:'Filled in every field except the cash-out date.',status:'prepared',scope:'work',created_at:now,event_ids:[1],
   outcome:JSON.stringify({state:'needs_you',needs:'How should infinite runway go in the date-only cash-out field?'}),needs_owner:'How should infinite runway go in the date-only cash-out field?'},
  {id:'t1',title:'Renew the parking permit',body:'Filled in the form.',status:'prepared',scope:'personal',created_at:now,event_ids:[2],
-  outcome:JSON.stringify({state:'needs_you',needs:'Pay in the bank app.'}),needs_owner:'Pay in the bank app.'},
+  outcome:JSON.stringify({state:'needs_you',needs:'Pay in the bank app.',owner_step:true}),needs_owner:'Pay in the bank app.'},
  {id:'d1',title:'Reply to Noor about the contract',body:'Drafted a reply for the likelier answer.',status:'prepared',scope:'work',created_at:now,event_ids:[3],
   outcome:JSON.stringify({state:'needs_you',needs:'Hold firm on the price?'}),
   next_actions:[{kind:'email',revision:'v1',label:'Send to Noor',to:['noor@example.com'],to_name:'Noor',subject:'Contract',body:'Hi Noor'}]},
@@ -64,7 +65,7 @@ try{
   assert.deepEqual(await primary('q1'),['Answer']);
   assert.equal(await page.locator('#task-q1 [data-choice="complete"]').getAttribute('class'),'ghost');
   assert.equal(await page.locator('#task-q1 [data-choice="change"]').count(),0);
-  // Not a question: Mark done still leads. A draft to send: Review and send leads, no Answer
+  // A step they do themselves: Mark done leads. A draft to send: Review and send leads, no Answer
   assert.deepEqual(await primary('t1'),['Mark done']);
   assert.deepEqual(await primary('d1'),['Review and send to Noor']);
   assert.equal(await page.locator('#task-d1 [data-choice="answer"]').count(),0);
