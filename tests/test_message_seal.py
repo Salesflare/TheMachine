@@ -1,6 +1,7 @@
 """Message contents sealed at rest (message_seal.py): every source's text is unreadable without the owner's key, the
 app reads, searches and exports as before, and support's learnings export never holds it."""
 import base64
+import contextlib
 import importlib.util
 import json
 import os
@@ -23,6 +24,7 @@ import machine.app.status as machine_app_status
 import machine.config as machine_config
 import machine.faults as machine_faults
 import machine.main as machine_main
+import machine.store.events as machine_events
 import machine.text as machine_text
 
 CANARY = 'Zanzibarquill'  # in every message's text; never in a sealed database's files
@@ -199,6 +201,100 @@ class Protected(unittest.TestCase):
             db.execute("UPDATE events SET body=? WHERE source_id='x'", (CANARY + ' again',))
         self.assertNotIn(CANARY.encode(), files(self.path))
         self.assertEqual(store.events(['acct'], query=CANARY.lower())[0]['body'], CANARY + ' again')
+
+    def stored_plain(self):
+        """The sealed columns whose rows, as SQLite has them (no key), hold anything in the clear but the plain keys."""
+        with contextlib.closing(sqlite3.connect(self.path)) as raw:
+            return [f'{table}.{column}' for table, column, plain in message_seal.sealed_columns(raw)
+                    for (value,) in raw.execute(f"SELECT {column} FROM {table} WHERE typeof({column})='text' AND {column}!=''")
+                    if plain is None or set(json.loads(value)) - plain - {message_seal.SEALED_KEY}]
+
+    def test_every_sealed_column_seals_what_any_code_writes_plain(self):
+        """Not one writer but the database keeps these columns sealed: each takes a plain INSERT and a plain UPDATE, as
+        code that never heard of sealing would write them, and the row as stored holds none of it."""
+        store = machine_main.Store(self.path, protect=True)
+        with store.connect() as db:
+            self.assertEqual(make_source_tables(db), set())
+        seen, values = set(), {}
+        with store.connect() as db:
+            db.execute('PRAGMA foreign_keys=OFF')
+            db.execute('PRAGMA ignore_check_constraints=ON')
+            for table, column, plain in message_seal.sealed_columns(db):
+                values.setdefault(table, {})[column] = plain
+            for table, columns in values.items():
+                info = db.execute(f'PRAGMA table_info({table})').fetchall()
+                say = lambda c, text: machine_text.encoded({'note': text}) if columns[c] is not None else text
+                row = {r['name']: say(r['name'], CANARY) if r['name'] in columns else 7 if 'INT' in r['type'].upper() else 'x'
+                       for r in info if r['name'] in columns or r['notnull'] or r['pk']}
+                with self.subTest(table=table):
+                    db.execute(f"INSERT INTO {table}({','.join(row)}) VALUES({','.join('?' * len(row))})", list(row.values()))
+                    self.assertEqual(db.execute(f'SELECT {",".join(columns)} FROM {table}').fetchone()[:], tuple(row[c] for c in columns))
+                    for column in columns:
+                        db.execute(f'UPDATE {table} SET {column}=?', (say(column, CANARY + ' again'),))
+                        seen.add((table, column))
+                    self.assertEqual(db.execute(f'SELECT {",".join(columns)} FROM {table}').fetchone()[:], tuple(say(c, CANARY + ' again') for c in columns))
+        self.assertEqual(len(seen), sum(len(c) for c in values.values()))
+        self.assertLessEqual({('events', c) for c in ('title', 'body', 'metadata')}, seen)
+        self.assertEqual(self.stored_plain(), [])
+        self.assertNotIn(CANARY.encode(), files(self.path))
+
+    def test_the_stores_writers_of_events_leave_them_sealed(self):
+        """The Store's ways of writing a message's title, text or metadata (one added later is covered by the test above),
+        then the rows and the files as stored."""
+        store = machine_main.Store(self.path, protect=True)
+        feed = {'transport': 'existing_openclaw_feed', 'app_name': CANARY, 'is_active': True, 'snapshot_content_hash': '1'}
+        talk = lambda **facts: {**event(1, 'intercom.conversation'), 'metadata': {'conversation_id': '1', 'subject': CANARY, **facts}}
+        reply = lambda name: {'at': 100, 'admin_id': '51', 'name': f'{CANARY} {name}'}
+        phone = lambda n: {**event(2, 'android.notification'), 'metadata': {**feed, 'updates_merged': n}}
+        slack = lambda title: {**event(3, 'slack.message'), 'title': title, 'body': f'hi {CANARY}',
+                               'metadata': {'channel_name': 'DM U02AB3CD4', 'user_id': 'U02AB3CD4', 'sender_id': 'U02AB3CD4'}}
+        store.commit_page('acct', {'c': 1}, [talk(), phone(1), slack(f'#DM U02AB3CD4: hi {CANARY}'), event(4, 'gmail.message')])
+        raw = lambda what: sqlite3.connect(self.path).execute(f'SELECT {what} FROM events ORDER BY id').fetchall()
+        before = raw('content_hash,version,analyzed_version')
+        # the same message again, with other facts beside it: kept, and no new version
+        store.commit_page('acct', {'c': 2}, [talk(team_reply=reply('Sam')), phone(2), slack(f'#DM Sam Lee: hi {CANARY}')])
+        self.assertEqual(raw('content_hash,version,analyzed_version'), before)
+        meta = lambda i: next(r['metadata'] for r in store.events(['acct'], limit=100) if r['source_id'].endswith(f':{i}'))
+        seen = meta(1)['team_reply']['seen']  # when the Machine first had it: read back from the row as sealed
+        with unittest.mock.patch('machine.store.events.now', return_value='2099-01-01T00:00:00+00:00'):
+            store.commit_page('acct', {'c': 3}, [talk(team_reply=reply('Sam'))])
+        self.assertEqual((meta(1)['team_reply'], meta(2)['updates_merged']), ({**reply('Sam'), 'seen': seen}, 2))
+        titles = lambda: [r['title'] for r in store.events(['acct'], limit=100) if r['kind'] == 'slack.message']
+        self.assertEqual(titles(), [f'#DM Sam Lee: hi {CANARY}'])
+        store.commit_page('acct', {'c': 3}, [slack(f'#DM U02AB3CD4: hi {CANARY}')])
+        with unittest.mock.patch('graph.slack_names', return_value={'U02AB3CD4': f'Kim {CANARY}'}):
+            store.name_slack_titles('acct')
+        self.assertEqual(len(titles()), 1)
+        quoted = f'Yes, {CANARY}.\n\nOn Mon, Oct 5, 2026 at 9:00 AM Pat <pat@example.com> wrote:\n' + f'> an older {CANARY} line\n' * 400
+        store.commit_page('acct', {'c': 3}, [{**event(6, 'gmail.message'), 'body': quoted}])
+        store.trim_stored_quoted_history()
+        forwarded = {**event(7, 'android.notification'), 'source_id': 'forwarded:one',
+                     'metadata': {'transport': 'existing_openclaw_feed', 'notification_key_hash': 'key', 'package_name': 'com.example.app', 'change': 'posted'}}
+        store.commit_page('acct', {'c': 3}, [forwarded])
+        with unittest.mock.patch('machine.store.events.now', return_value='2026-10-30T09:00:00+00:00'):
+            self.assertEqual(store.coalesce_android_history({'id': 'acct'})['signals_after'], 1)
+        store.commit_page('acct', {'c': 4}, [{**event(4, 'gmail.message'), 'body': f'{CANARY} edited'}])  # an edit
+        store.keep_found('acct', [event(5, 'gmail.message')])
+        made = store.reviewed_event('acct', 'meet:1', 'meet.time', CANARY, CANARY, {'note': CANARY})
+        store.machine_card('acct', 'gateway.fault', 'fault:1', CANARY, CANARY, CANARY, {'note': CANARY})
+        store.owner_card(f'Call {CANARY} back', 'acct')
+        with store.connect() as db:
+            machine_events.add_ai_request(db, 'acct', 'ai:1', '2026-10-10T09:00:00+00:00', CANARY, CANARY, {'note': CANARY})
+            note = {'account_id': 'acct', 'source_id': 'notes:1', 'kind': 'meeting.notes', 'occurred_at': '2026-10-10T09:00:00+00:00', 'title': CANARY, 'body': CANARY,
+                    'metadata': json.dumps({'note': CANARY}), 'content_hash': 'h', 'ingested_at': '2026-10-10T09:00:00+00:00'}
+            kept = machine_events.save_meeting_notes(db, ('insert', note))
+            machine_events.save_meeting_notes(db, ('update', kept['notes_id'], note))
+        store.suggest('brief', f'{CANARY} brief', CANARY, [made])
+        with store.connect() as db:
+            sid = db.execute("SELECT suggestion_id FROM suggestion_keys WHERE dedupe_key='brief'").fetchone()
+            sid = sid[0] if sid else db.execute("SELECT id FROM suggestions WHERE dedupe_key='brief'").fetchone()[0]
+            db.execute("UPDATE events SET kind='fleet.brief' WHERE id=?", (made,))
+        self.assertTrue(store.brief_reword(sid, f'{CANARY} anew', CANARY))
+        self.assertTrue(store.cleanup_grow(sid, made, f'{CANARY} grown', CANARY, {'note': CANARY}, kind='fleet.brief'))
+        self.assertEqual(store.events(['acct'], query=f'{CANARY} grown', limit=1)[0]['metadata'], {'note': CANARY})
+        self.assertEqual(self.stored_plain(), [])
+        self.assertNotIn(CANARY.encode(), files(self.path))
+        self.assertNotIn(CANARY.lower().encode(), files(self.path))
 
     def test_a_table_made_later_is_guarded_and_sealed(self):
         store = machine_main.Store(self.path, protect=True)
