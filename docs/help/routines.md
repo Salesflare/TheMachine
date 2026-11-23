@@ -95,7 +95,9 @@ At its time your Machine reads what it needs, like your messages, meetings and t
 
 Routines only read: your messages, web pages, GitHub and sites like X in the browser. They don’t send, reply, post or change anything. They open pages they found in what they read or in a search, plain page addresses and well-known sites, never an address made up to carry what they read. Only a template changes mail, and only what you confirm on its to-do.
 
-When a routine’s job ends in a post or a message, it does everything up to that step and shows the draft, like **Would post on X:**. After a real run you get it as a to-do to approve; a test run only shows it. Its name says what it is about and where it goes, its button names the step, like **Post it**, and **From your routine** under it opens the routine.
+When a routine’s job ends in a post or a message, it does everything up to that step and shows the draft, like **Would post on X:**. After a real run you get it as a to-do to approve; a test run only shows it.
+
+Its name says what it is about and where it goes, and **From your routine** under it opens the routine. Its button names the step, like **Prepare post**: that gets it ready and posts nothing. You post it from the result, and when The Machine can’t post it for you, the button there opens the page where you do.
 
 The to-do starts in the area of the account it goes out from, like Work for your company’s X account, so it never asks to be moved.
 

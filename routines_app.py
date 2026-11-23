@@ -369,7 +369,7 @@ class RoutinesApp:
     @staticmethod
     def routine_draft(draft, accounts=()):
         """A run's draft of the post or message its job ends in ({title, text, act, account}), checked, or None. act says
-        what the step does, post or send, so the to-do's button names it (Post it, Send it); the run judges it, none leaves
+        what the step does, post or send, so the to-do's button names it (Prepare post, Prepare message); the run judges it, none leaves
         Do it. account: the id of the account it goes out from, one of accounts; its to-do starts in that account's area."""
         if draft is None:
             return None

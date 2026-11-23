@@ -24,8 +24,6 @@ if(inApp())devStore.set('app-installed','1');
 const gmailIntent=u=>'intent://'+u.slice(8)+'#Intent;scheme=https;package=com.google.android.gm;S.browser_fallback_url='+encodeURIComponent(u)+';end';
 if(DEV.android&&!DEV.phoneApp)addEventListener('click',e=>{const a=e.target.closest?.('a[href^="https://mail.google.com/"]');if(a&&!e.defaultPrevented){e.preventDefault();location.href=gmailIntent(a.href)}});
 const appInstalled=()=>inApp()||!installEvt&&(relatedInstalled||devStore.get('app-installed')==='1');
-// Installing here: the browser's prompt (Chromium), steps (iPhone, Mac Safari) or nothing (Firefox).
-function installKind(){if(!nudgeable)return null;if(installEvt)return DEV.mobile?'android':'desktop';if(appInstalled())return null;return DEV.ios?'ios':DEV.macSafari?'mac':null}
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;devStore.set('app-installed',null);deviceRender()});
 // Installed (setup to-do, Settings or the browser's menu): a toast, once.
 let installedNoted=false;

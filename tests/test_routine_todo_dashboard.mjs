@@ -5,12 +5,12 @@ const {chromium}=await import('./browser.mjs');
 
 // A to-do a routine made (its draft, routines_app.py routine_draft_todo; machine/store/views.py routine_view): its source line
 // says it is the routine's ("From your routine Check what shipped"), the name a link that opens that routine on the Routines
-// page, in view and marked; its lead button names the step (Post it), not Do it. A routine gone from the page: its name, no
+// page, in view and marked; its lead button names the step (Prepare post), not Do it. A routine gone from the page: its name, no
 // link.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),ID='c3'.repeat(16),OTHER='e5'.repeat(16);
 const cards=[{id:'rt1',title:'Post on X about the faster search',body:'Search is faster now: results show as you type.',status:'pending',scope:'work',created_at:now,event_ids:[1],
-  source_line:'Source: your routine Check what shipped · Mon, Nov 9',routine:{id:ID,name:'Check what shipped',live:true},labels:{accept:'Post it'}},
+  source_line:'Source: your routine Check what shipped · Mon, Nov 9',routine:{id:ID,name:'Check what shipped',live:true},labels:{accept:'Prepare post'}},
  {id:'rt2',title:'Email the team this week’s numbers',body:'Signups are up 12% this week.',status:'pending',scope:'work',created_at:now,event_ids:[2],
   source_line:'Source: your routine Weekly numbers · Mon, Nov 9',routine:{id:OTHER,name:'Weekly numbers',live:false}}];
 const routine=(id,name)=>({id,name,instructions:name,rule:{unit:'week',n:1},anchor:'2026-11-09',at:'09:00',state:'on',next_due:'2026-11-16',runs:[]});
@@ -35,7 +35,7 @@ try{
  assert.match(await card.locator('.card-source .source').innerText(),/^From your routine Check what shipped · Mon,? (Nov 9|9 Nov)$/);
  assert.equal(await card.locator('.card-source .read-original').count(),0,'the draft is the to-do itself: no original to read');
  assert.equal(await card.locator('.card-source a.rt-link').getAttribute('href'),'#routines/'+ID);
- assert.equal((await card.locator('.actions>button.primary').first().innerText()).trim(),'Post it');
+ assert.equal((await card.locator('.actions>button.primary').first().innerText()).trim(),'Prepare post');
  // A routine gone from the page: its name, no link; no step named: Do it
  const gone=page.locator('#task-rt2');
  assert.match(await gone.locator('.card-source .source').innerText(),/^From your routine Weekly numbers · /);

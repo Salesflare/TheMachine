@@ -151,8 +151,9 @@ def skill_labels(cluster):
     return {'accept': 'Update ' + cluster['target_name'] if cluster['target_id'] else 'Create skill', 'reject': 'Not now'}
 
 
-# A routine draft's step (routines_app.DRAFT_ACTS), named on its to-do's lead button instead of Do it
-ROUTINE_ACT = {'post': 'Post it', 'send': 'Send it'}
+# A routine draft's step (routines_app.DRAFT_ACTS): its to-do's lead button says what it does, get it ready to go out.
+# Posting or sending is the button on the result.
+ROUTINE_ACT = {'post': 'Prepare post', 'send': 'Prepare message'}
 ROUTINE_ID = re.compile(r'[a-f0-9]{32}')
 
 
@@ -558,7 +559,7 @@ class ViewsStore(ConversationStore):
                 originals.append(url)
         extra={'result_files':files,'original_urls':originals[:5]}
         routine=routine_view(db,[row['metadata'] for row in rows])
-        if routine:  # "From your routine X", X a link to it; its step names the lead button (Post it) while it waits on the owner
+        if routine:  # "From your routine X", X a link to it; its step names the lead button (Prepare post) while it waits on the owner
             act=routine.pop('act')
             extra['routine']=routine
             if act and suggestion.get('status')=='pending':extra['labels']={'accept':ROUTINE_ACT[act]}
