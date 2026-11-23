@@ -1,14 +1,6 @@
 // Merge offer on an owner's card: the review thought it is the same as another card. Only the owner's tap merges.
 function mergeOther(s){if(s.origin!=='owner'||!s.merge_offer||closed(s))return null;try{const o=JSON.parse(s.merge_offer);return o.kept?null:(state.suggestions||[]).find(x=>x.id===o.card_id&&!closed(x))||null}catch{return null}}
-// Still needed? (still_needed.py): a to-do untouched for a week asks once, with the weekly recap's Not needed and Keep. Not needed is
-// the to-do's own Not needed (with its Undo); Keep never asks again. Unanswered a week more, it folds into Coming back later (setAside).
-// Its line on the to-do is drawn by the lazy part 'older' (todos-older.js stillNeeded), the old to-dos' part.
-const stillAsks=s=>!!s.still_needed&&!closed(s)&&s.status!=='snoozed'&&!looksDone(s)&&!waitsOnOthers(s);
-const setAside=s=>stillAsks(s)&&!!s.still_needed.folded;
 const stillLine=s=>stillAsks(s)?lazyIn('older')?stillNeeded(s):(lazyRun('older',render),''):'';
-// Older (still_needed.older): nothing new on it for a week, not urgent, not due soon and no send on its way. It waits in
-// Older under For you, where Dismiss all closes them all (todos-older.js); a new message or a tap of the owner's brings it back.
-const isOlder=s=>!!s.older&&!dueSoon(s)&&!fuBusy(s);
 // Already did this (Fleet.handled_round, family.DONE): someone in the Family closed as done a to-do from the same email or
 // bill. One quiet line, who and when, never more; nothing closes by itself. Done is this to-do's own Mark done; Still needed
 // keeps it and the line goes (family_still_needed).

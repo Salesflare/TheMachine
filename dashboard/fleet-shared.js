@@ -11,7 +11,6 @@ function graphSendingWatch(){const list=(fleetData?.shared?.graph)||[];let busy=
  clearTimeout(graphSendingWatch.t);graphSendingWatch.t=busy?setTimeout(()=>fleetView(true).then(graphSendingWatch),4000):0}
 // Teammates' brief asks (fleet.py QUIET): never a to-do. One quiet box in their Fleet's pane, the latest ask per teammate
 // (older ones expire), with the same choices as before. Nothing is shared until the owner picks one; unanswered, they expire.
-const FLEET_QUIET=['brief'];
 // What's shared (shared_graph.overview): one place per Work Fleet with counts, what went and why, Share these?, and what stays private.
 // Loaded when its pane opens; every list item is the owner's own mail, shown as text.
 // The consent an admin gives before the team's Graph starts, or before the Fleet requires its members' Work email or
@@ -104,7 +103,6 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
  fleetDraw(view)}
 // Family (family.py): when everyone is free, to-dos for one another and plans to say yes or no to. Self-contained:
 // its forms post family_free, family_todo and family_event; what waits for you is a card under Suggestions.
-const FAMILY_REQ=['todo','event'];
 fleetOn('click',async e=>{const b=e.target.closest('[data-net-do]');if(!b)return;if(b.dataset.confirmText&&!confirm(b.dataset.confirmText))return;b.disabled=true;
  try{const r=await fleetPost('fleet_network',{do:b.dataset.netDo,email:b.dataset.netEmail||'',relation:b.dataset.netRel||''});
   toast(r?.status==='connected'?'Already friends. Nothing was sent.':{find_on:'On. Your Machine checks your contacts privately.',asked:'Okay. Turn it on any time in the Fleet tab.',connect:'Request sent. It waits until they accept.',later:'Hidden for now.',never:'Won’t suggest them again.',leave:'You left the Network.'}[b.dataset.netDo]||'Done.');await fleetView();await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});

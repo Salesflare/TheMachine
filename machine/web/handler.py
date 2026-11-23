@@ -507,13 +507,16 @@ def make_handler(app):
             self.output(200, app_notice(app.store, app.config, tag, kind if kind in notify.KINDS else None, version))
 
         def get_api_status(self, path):
-            since = (urllib.parse.parse_qs(path.query).get('since') or [''])[0]
+            args = urllib.parse.parse_qs(path.query)
+            since = (args.get('since') or [''])[0]
             # a page's first read (dashboard.html statusEarly), which may take the status kept a moment ago (StatusApp.status_recent)
             recent = self.headers.get('X-Status-Kept') == '1'
             self.output(200, status_delta.changes({**dashboard_status(app.action('status', {'full': True, 'done': DONE_FIRST, 'recent': recent})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                               'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))}, since))
             # after the answer and off the request: on its thread the next request of this connection would wait
-            aside(lambda: (app.store.note_card_shown(), app.store.note_activity('dashboard')), 'dashboard shown')
+            # (look=1: the desktop robot looking for its dot, the owner opened nothing)
+            if args.get('look') != ['1']:
+                aside(lambda: (app.store.note_card_shown(), app.store.note_activity('dashboard')), 'dashboard shown')
 
         def get_api_merge_diff(self, path):
             args=urllib.parse.parse_qs(path.query)

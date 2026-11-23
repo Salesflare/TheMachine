@@ -121,6 +121,22 @@ class FirstViewNoLockWait(unittest.TestCase):
         with self.app.store.connect() as db:
             self.assertEqual([r['at'] for r in db.execute("SELECT at FROM milestones WHERE name='greeting'")], [at])
 
+    def test_the_desktop_robots_look_is_no_view(self):
+        port = self.serve()
+        self.assertEqual(self.view(port, ('/api/status?look=1',))['/api/status?look=1'][0], 200)
+        self.assertTrue(request_timing.aside_settled())
+        with self.app.store.connect() as db:
+            self.assertFalse(db.execute("SELECT 1 FROM milestones WHERE name='first_card_shown'").fetchone())
+            self.assertFalse(db.execute('SELECT 1 FROM activity_seen').fetchone())
+
+    def test_the_status_says_the_owners_first_name(self):
+        port = self.serve()
+        for owner, first in (('Sam van Dyck', 'Sam'), ('sam@example.org', ''), (None, '')):
+            self.app.config['owner_name'] = owner
+            conn = http.client.HTTPConnection('127.0.0.1', port, timeout=60)
+            conn.request('GET', '/api/status', headers=OWNER)
+            self.assertEqual(json.loads(conn.getresponse().read())['first_name'], first); conn.close()
+
     def test_a_pages_first_read_may_take_the_status_kept_a_moment_ago(self):
         port = self.serve()
         def status(path, first=False):
