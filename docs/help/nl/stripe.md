@@ -5,52 +5,54 @@ summary: Mislukte betalingen, geschillen, annuleringen en grote nieuwe abonnemen
 covers: connector:stripe
 code: connectors/stripe.py, shared_connectors.py
 site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, Remove
-translated: 6e7ca235dc502297
+translated: 85e6e07cca1a8e8d
 ---
-## Wat hij leest
+## Wat de koppeling leest
 
-Gebeurtenissen in je Stripe-account waarbij je mogelijk iets moet doen: mislukte betalingen, geschillen, annuleringen en grote nieuwe abonnementen, met de bijbehorende klant. Het e-mailadres van een klant koppelt de gebeurtenis aan die persoon en diens organisatie in de [Graph](graph.md).
+Gebeurtenissen in je Stripe-account waarbij je mogelijk iets moet doen: mislukte betalingen, geschillen, annuleringen en grote nieuwe abonnementen, met de klant die erbij hoort. Het e-mailadres van een klant koppelt de gebeurtenis aan die persoon en diens organisatie in de [Graph](graph.md).
 
-## Wat hij kan doen
+Bij een mislukte betaling staat waarvoor die was (een eerste betaling of een verlenging) en wanneer Stripe het opnieuw probeert. De reden waarom de kaart is geweigerd staat er niet bij. Stripe laat die informatie weg uit de gebeurtenis, dus open die in Stripe om de reden te bekijken.
 
-Niets in Stripe. Hij betaalt nooit terug, probeert betalingen nooit opnieuw en verandert niets. Hij vraagt alleen leestoegang aan. Stripe laat dat zien voordat je de koppeling installeert.
+## Wat de koppeling kan doen
 
-## Koppelen
+Niets in Stripe. De koppeling voert nooit terugbetalingen uit, probeert geen betalingen opnieuw en verandert niets. Hij vraagt alleen leestoegang. Stripe laat dat zien voordat je de koppeling installeert.
 
-Inloggen met Stripe is het makkelijkst:
+## De koppeling instellen
 
-1. In het dashboard: **Koppelingen**, **Klanten**, Stripe. Of op de installatiepagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Stripe. Op je eigen computer moet je de Machine eerst aan je account koppelen.
-2. Druk op **Inloggen met Stripe**. Stripe vraagt welk account je wilt gebruiken en laat zien wat The Machine mag lezen.
-3. Druk op **Installeren**. Je keert terug naar waar je was en Stripe is gekoppeld.
+Log op de eenvoudige manier in bij Stripe:
+
+1. Ga in het dashboard naar **Koppelingen**, **Klanten** en Stripe. Of ga op de installatiepagina van een gehoste Machine op app.themachine.computer/setup naar **Meer bronnen** en Stripe. Koppel de Machine op je eigen computer eerst aan je account.
+2. Klik op **Inloggen met Stripe**. Stripe vraagt welk account je wilt gebruiken en laat zien wat The Machine mag lezen.
+3. Klik op **Installeren**. Je keert terug naar waar je begon en Stripe is gekoppeld.
 
 Op je eigen computer kun je ook een beperkte sleutel plakken:
 
-1. Maak in Stripe een beperkte sleutel aan met leesrechten voor Events, Customers en Account, en geen rechten voor al het andere.
-2. Zoek je account-ID (acct_...) onder Instellingen, Bedrijfsgegevens.
-3. Open Stripe zoals hierboven (of voer `assistant connect stripe` uit), open **Of plak een beperkte sleutel**, plak de account-ID en de sleutel en druk op **Koppelen**.
+1. Maak in Stripe een beperkte sleutel aan met leestoegang voor Events, Customers en Account, en zonder toegang voor al het andere.
+2. Zoek je account-ID (acct_...) onder Settings, Business details.
+3. Open Stripe zoals hierboven (of voer `assistant connect stripe` uit), open **Of plak een beperkte sleutel**, plak de account-ID en de sleutel en klik op **Koppelen**.
 
-Als Inloggen met Stripe op je eigen computer nog niet beschikbaar is, laat Koppelingen dat weten en opent het formulier meteen.
+Als Inloggen met Stripe nog niet beschikbaar is op je eigen computer, laat Koppelingen dat weten en opent het meteen dit formulier.
 
 ## Eén keer koppelen voor je team
 
-In een Werk-Fleet koppelt een eigenaar of beheerder Stripe één keer en deelt de koppeling met het team:
+In een Werk-Fleet koppelt een eigenaar of beheerder Stripe één keer en deelt die koppeling met het team:
 
 1. Koppel Stripe op je eigen Machine (zie hierboven). In het vak **Gedeelde koppelingen** op het tabblad Fleet staat ook **Stripe koppelen**.
-2. Open op het tabblad Fleet **Stripe delen**. Iedereen is geselecteerd. Haal het vinkje weg bij wie de koppeling niet moet krijgen. Druk op **Delen**.
+2. Open **Stripe delen** op het tabblad Fleet. Iedereen is geselecteerd. Haal het vinkje weg bij wie de koppeling niet mag gebruiken. Klik op **Delen**.
 
-De Machines van je teamgenoten kunnen Stripe dan ook lezen. Koppelingen laat zien wie de koppeling heeft gedeeld. Alleen de beheerders van de Fleet kunnen de koppeling wijzigen of stopzetten. Je Machine vernieuwt hun toegang elk uur. Zolang hij uitstaat, wordt hun toegang tot Stripe onderbroken. Niemand krijgt je login zelf. Meer informatie: [Fleets](fleet.md).
+De Machines van je teamleden kunnen Stripe dan ook lezen. In Koppelingen zie je wie Stripe heeft gedeeld. Alleen beheerders van de Fleet kunnen de koppeling wijzigen of stopzetten. Je Machine vernieuwt elk uur hun toegang. Als die uitstaat, wordt hun toegang tot Stripe dus tijdelijk onderbroken. Niemand krijgt je inloggegevens. Meer informatie: [Fleets](fleet.md).
 
-Als een teamgenoot hetzelfde Stripe-account ook zelf koppelt, leest de Machine de gegevens maar één keer. De gedeelde koppeling blijft dan ongebruikt.
+Als een teamlid hetzelfde Stripe-account ook zelf koppelt, wordt het maar één keer gelezen. De gedeelde koppeling wordt dan niet gebruikt.
 
-Een Stripe-koppeling via een dienst waarvan één sleutel ook andere apps opent, kun je niet delen. Koppel Stripe rechtstreeks voor het team.
+Je kunt Stripe niet delen als het is gekoppeld via een dienst waarvan één sleutel ook toegang geeft tot andere apps. Koppel Stripe in plaats daarvan rechtstreeks voor het team.
 
 ## De koppeling verwijderen
 
-- In het dashboard: **Koppelingen**, open Stripe, **Details** en dan **Ontkoppelen**. Gegevens die al zijn opgehaald, blijven staan.
-- Op een gehoste Machine staat bij Stripe waarbij je bent ingelogd **Ontkoppelen ↗**. Daarmee open je je installatiepagina. Druk daar naast Stripe op **Verwijderen**.
-- Gedeeld met een Fleet? Druk dan eerst op **Stoppen met delen** op het tabblad Fleet.
+- Ga in het dashboard naar **Koppelingen**, open Stripe en kies **Details** en vervolgens **Ontkoppelen**. Wat de koppeling al heeft opgehaald, blijft staan.
+- Op een gehoste Machine staat bij Stripe waarvoor je bent ingelogd **Ontkoppelen ↗**. Daarmee open je je installatiepagina. Klik daar naast Stripe op **Verwijderen**.
+- Gedeeld met een Fleet? Kies dan eerst **Stoppen met delen** op het tabblad Fleet.
 
 ## De toegang intrekken in Stripe
 
-- Ingelogd met Stripe: open in Stripe Instellingen, Geïnstalleerde apps en verwijder The Machine.
-- Beperkte sleutel: open in Stripe Developers, API-sleutels en verwijder de sleutel of maak een nieuwe.
+- Ingelogd met Stripe: open in Stripe Settings, Installed apps en verwijder The Machine.
+- Beperkte sleutel: open in Stripe Developers, API keys en verwijder of vervang de sleutel.

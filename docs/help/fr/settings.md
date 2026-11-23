@@ -16,7 +16,7 @@ Ouvrez **Paramètres** avec l’engrenage en haut. Voici ses onglets :
 - **Notifications** : où vous les recevez, et vos heures de travail. Consultez [Notifications](notifications.md) et [Heures de travail](work-hours.md).
 - **Rédaction** : vos signatures et votre façon d’écrire. Consultez [Rédaction](writing.md).
 - **Compétences** : les guides que votre Machine suit. Consultez [Compétences](skills.md).
-- **Applis** : les applis de The Machine pour votre téléphone et votre ordinateur, puis Claude, ChatGPT et les autres IA que vous avez connectées, ainsi que les actions autorisées pour chacune. Consultez [L’app mobile](mobile-app.md) et [Connecter d’autres IA](ai-connections.md).
+- **Applis** : les applis de The Machine pour votre téléphone et votre ordinateur, puis Claude, ChatGPT et les autres IA que vous avez connectées, ainsi que les actions autorisées pour chacune. Consultez [L’application mobile](mobile-app.md) et [Connecter d’autres IA](ai-connections.md).
 - **Modèle** : l’IA qui lit et rédige pour vous, ainsi que ses limites. Consultez [Modèle](model.md). Vous y trouverez aussi **Codex et Claude Code** : consultez [Transférer à Claude Code ou Codex](hand-to-agent.md). Et **Recherche par le sens**, plus bas.
 
 Un onglet sans contenu est masqué.
