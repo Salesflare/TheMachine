@@ -274,8 +274,15 @@ def calm_reason(db, why, work_day, day, clock=wall):
 
 
 def hold(db, channel, kind, title, due, ref=None, payload=None, show=True, clock=wall):
-    """Queue a push (channel 'push', its payload) or an email line (channel 'email') to go at `due` unless seen."""
+    """Queue a push (channel 'push', its payload) or an email line (channel 'email') to go at `due` unless seen. A to-do
+    has one line in a waiting email: a newer state of one still queued (Needs you, then Ready) replaces its words, never
+    a second line for the same to-do. It keeps its due time; it counts as new (created) for seen and drop_covered."""
     ensure(db)
+    if channel == 'email' and ref and db.execute(
+            'UPDATE notify_queue SET kind=?,title=?,show=?,created=? WHERE id=(SELECT id FROM notify_queue WHERE '
+            "channel='email' AND ref=? AND batch IS NULL ORDER BY id DESC LIMIT 1)",
+            (kind, title[:200], 1 if show else 0, clock(), ref)).rowcount:
+        return
     db.execute('INSERT INTO notify_queue(channel,kind,ref,title,payload,show,created,due,delivery) VALUES(?,?,?,?,?,?,?,?,?)',
                (channel, kind, ref, title[:200], json.dumps(payload) if payload is not None else None, 1 if show else 0, clock(), due, uuid.uuid4().hex))
 

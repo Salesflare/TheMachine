@@ -158,9 +158,12 @@ class Repeats(unittest.TestCase):
         with self.store.connect() as db:
             notify.hold(db, 'email', 'result', 'One', 1000.0, ref='suggestion:' + 'a' * 16, clock=lambda: 100.0)
             notify.hold(db, 'email', 'result', 'Two', 1000.0, ref='suggestion:' + 'b' * 16, clock=lambda: 100.0)
-            notify.hold(db, 'email', 'result', 'Three', 1000.0, ref='suggestion:' + 'a' * 16, clock=lambda: 300.0)
             self.assertEqual(notify.drop_covered(db, ['suggestion:' + 'a' * 16], 200.0), 1)
-        self.assertEqual(self.held_titles(), ['Two', 'Three'])
+            notify.hold(db, 'email', 'result', 'Three', 1000.0, ref='suggestion:' + 'a' * 16, clock=lambda: 300.0)
+            # a newer state of one still queued replaces its line (notify.hold) and counts as after the digest
+            notify.hold(db, 'email', 'result', 'Four', 1000.0, ref='suggestion:' + 'b' * 16, clock=lambda: 300.0)
+            self.assertEqual(notify.drop_covered(db, ['suggestion:' + 'b' * 16], 200.0), 0)
+        self.assertEqual(self.held_titles(), ['Four', 'Three'])
 
 
 if __name__ == '__main__':
