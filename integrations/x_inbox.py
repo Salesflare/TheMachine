@@ -52,6 +52,19 @@ LEASE_API = None
 SENDS_LOG = Path.home() / '.local/share/x-inbox/sends.jsonl'
 REPLY_LIMIT, LONG_LIMIT, DM_LIMIT = 280, 25000, 10000  # long posts need X Premium on that account
 
+# The public client token X's own web app sends with every request, read from what X serves so a rotation or a new web
+# app doesn't break us. Its new web app (files under /x-web/) carries it in the page, in the headers of the requests the
+# page was made with; the one before it in its main script. X moves accounts between the two, back and forth while it
+# rolls out, so both stay. Found in neither, the read says so; nothing is guessed. A post shown in the page can't pass
+# for it: its quotes are escaped there.
+CLIENT_JS = r"""
+  const html = await (await fetch('/', {credentials: 'include'})).text();
+  const mainUrl = (html.match(/https:\/\/abs\.twimg\.com\/responsive-web\/client-web[^"]*\/main\.[a-z0-9]+\.js/) || [])[0];
+  const main = mainUrl ? await (await fetch(mainUrl)).text() : '';
+  const bearer = (main.match(/["'`](A{21}[A-Za-z0-9%]+)["'`]/) || html.match(/"authorization":"Bearer (A{21}[A-Za-z0-9%]+)"/i) || [])[1];
+  if (!bearer) return {error: 'query-failed', detail: 'web client token not found'};
+""".strip('\n')
+
 JS = r"""
 async () => {
   const P = __PARAMS__;
@@ -61,11 +74,7 @@ async () => {
   const me = () => decodeURIComponent(cookie('twid') || '').replace(/"/g, '').replace('u=', '');
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   const fail = (code, extra) => Object.assign(Error(code), {code, ...extra});
-  // The web app's public client token, read from its own script so a rotation doesn't break us.
-  const html = await (await fetch('/', {credentials: 'include'})).text();
-  const main = (html.match(/https:\/\/abs\.twimg\.com\/responsive-web\/client-web[^"]*\/main\.[a-z0-9]+\.js/) || [])[0];
-  const bearer = main && ((await (await fetch(main)).text()).match(/"(AAAAAAAAAAAAAAAAAAAAA[A-Za-z0-9%]+)"/) || [])[1];
-  if (!bearer) return {error: 'query-failed', detail: 'web client token not found'};
+__CLIENT__
   const headers = () => ({authorization: 'Bearer ' + bearer, 'x-csrf-token': cookie('ct0'), 'x-twitter-active-user': 'yes', 'x-twitter-auth-type': 'OAuth2Session'});
   const call = async (path, opts = {}) => {
     for (let i = 0; ; i++) {
@@ -233,7 +242,7 @@ async () => {
   }
   return out;
 }
-"""
+""".replace('__CLIENT__', CLIENT_JS)
 
 
 # Sending. Resolve, DM, verify and switch back run here on the neutral tab.
@@ -247,11 +256,7 @@ async () => {
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   const fail = (code, extra) => Object.assign(Error(code), {code, ...extra});
   const norm = (s) => String(s || '').replace(/\r\n?/g, '\n').replace(/ /g, ' ').split('\n').map(l => l.trimEnd()).join('\n').trim();
-  const html = await (await fetch('/', {credentials: 'include'})).text();
-  const mainUrl = (html.match(/https:\/\/abs\.twimg\.com\/responsive-web\/client-web[^"]*\/main\.[a-z0-9]+\.js/) || [])[0];
-  const main = mainUrl ? await (await fetch(mainUrl)).text() : '';
-  const bearer = (main.match(/"(AAAAAAAAAAAAAAAAAAAAA[A-Za-z0-9%]+)"/) || [])[1];
-  if (!bearer) return {error: 'query-failed', detail: 'web client token not found'};
+__CLIENT__
   const headers = () => ({authorization: 'Bearer ' + bearer, 'x-csrf-token': cookie('ct0'), 'x-twitter-active-user': 'yes', 'x-twitter-auth-type': 'OAuth2Session'});
   const call = async (path, opts = {}) => {
     for (let i = 0; ; i++) {
@@ -268,6 +273,7 @@ async () => {
   try { const s = html.indexOf('window.__INITIAL_STATE__='), fs = JSON.parse(html.slice(s + 25, html.indexOf(';window.__META_DATA__', s))).featureSwitch || {};
         flags = {...fs.defaultConfig, ...(fs.user || {}).config}; } catch (e) {}
   const gql = (name, variables) => {
+    if (!main) throw fail('new-client');  // X's new web app has other queries and another reply composer, not followed yet
     const m = main.match(new RegExp('queryId:"([^"]+)",operationName:"' + name + '",operationType:"query",metadata:\\{featureSwitches:\\[([^\\]]*)\\],fieldToggles:\\[([^\\]]*)\\]'));
     if (!m) throw fail('query-failed', {detail: name + ' not found in the web client'});
     const list = (s) => (s.match(/"[^"]+"/g) || []).map(x => x.slice(1, -1)), enc = (o) => encodeURIComponent(JSON.stringify(o));
@@ -365,7 +371,7 @@ async () => {
   if (!keep && (P.switch || P.mode === 'back')) { try { await switchTo((primary || target).id); } catch (e) { res.switch_back = 'failed'; } }
   return res;
 }
-"""
+""".replace('__CLIENT__', CLIENT_JS)
 
 # On x.com/intent/post: check X's own reply composer holds exactly the approved text for the approved
 # post, then (send) click Reply once. Until then, and for anything else, the tab blocks CreateTweet.
@@ -377,6 +383,8 @@ async () => {
   if (!cookie('ct0') || !cookie('twid')) return {error: 'signed-out'};
   const me = decodeURIComponent(cookie('twid') || '').replace(/"/g, '').replace('u=', '');
   if (me !== P.account_id) return {error: 'wrong-account'};
+  // X's new web app (it can come up here right after the old one answered): what it posts with isn't known to the guard below.
+  if (document.querySelector('[src*="/x-web/"], [href*="/x-web/"]')) return {error: 'new-client'};
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   const norm = (s) => String(s || '').replace(/\r\n?/g, '\n').replace(/ /g, ' ').split('\n').map(l => l.trimEnd()).join('\n').trim();
   addEventListener('beforeunload', (e) => e.stopImmediatePropagation(), true);
@@ -748,6 +756,7 @@ def trouble(res, handle):
             'encrypted': "this is an encrypted X Chat conversation; sending there isn't supported yet",
             'no-conversation': 'this conversation is not in the X DM inbox of @' + handle + ' (it may have moved to encrypted X Chat)',
             'read-only': 'this X conversation is read-only',
+            'new-client': "X now shows this account its new web app, which The Machine can't reply through yet; reply on X itself (messages still send)",
             'no-composer': "X's reply composer did not open",
             'composer-text': "X's reply composer did not hold exactly the approved text",
             'composer-target': "X's reply composer was not replying to the approved post",

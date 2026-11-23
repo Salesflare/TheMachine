@@ -27,7 +27,7 @@ from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_
 from machine.sources.signal_chats import sync_signal
 from machine.sources.telegram import sync_telegram
 from machine.sources.whatsapp import sync_whatsapp, WhatsApp
-from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, rate_limited, SourceError, transient, upstream_busy
+from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, outage_backoff, rate_limited, SourceError, transient, upstream_busy
 from timeutil import now
 import whatsapp_images
 from machine.owner_error import OwnerError
@@ -709,7 +709,7 @@ class SyncApp:
                 except SourceError as error:
                     if self.stop.is_set():
                         break
-                    delay = error.retry_after or delay
+                    delay = outage_backoff(error, error.retry_after or delay, row['failures'] if row else 0, delay)
                     if local_android_feed:
                         # The local queue is read again with a growing wait while the bridge stays down, not every
                         # poll (feed_backoff). Phone fallback attempts keep their own durable cap.

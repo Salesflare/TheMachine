@@ -58,6 +58,23 @@ def transient(error):
         bool(re.fullmatch(r'[a-z0-9_]*_(?:network|unreachable|browser_stalled|browser_busy|read_timeout)', category))
 
 
+# X's own web app answering oddly or slowly for a while (its page in another shape, a 5xx, a tab that didn't answer)
+SHORT_OUTAGE = re.compile(r'x_(?:query_unavailable|query_failed:HTTP_5\d\d|read_timeout|browser_stalled)')
+SHORT_OUTAGE_TRIES = 3
+
+
+def short_outage(error, failures):
+    """A failed read that often passes by itself, with under SHORT_OUTAGE_TRIES tries in a row failed: its connection
+    still shows as connected (Recent syncs lists the tries). From then on it shows, until a read works."""
+    return (failures or 0) < SHORT_OUTAGE_TRIES and bool(SHORT_OUTAGE.fullmatch(str(error or '')))
+
+
+def outage_backoff(error, delay, failures, poll):
+    """Seconds until the next read: for such an outage twice as long after each failed one, up to the usual poll, so
+    a long one isn't met with a read every few minutes. Any other failure keeps its own `delay`."""
+    return min(delay * 2 ** min(failures or 0, 10), max(delay, poll)) if SHORT_OUTAGE.fullmatch(str(error)) else delay
+
+
 class SourceError(Exception):
     """Only redacted, structured error labels are allowed in logs/checkpoints. `route` is the endpoint that failed with its
     ids masked (/accounts/{id}/feed), logged next to the category so support can tell which request it was."""
