@@ -20,7 +20,7 @@ import next_actions
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
-from machine.store import first_pass, message_view, review_last_look, review_saves, review_wait, todo_likely
+from machine.store import first_pass, message_view, review_last_look, review_saves, review_wait, review_whys, todo_likely
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import _address, clamp, encoded
 import own_addresses
@@ -1424,11 +1424,14 @@ class ReviewStore:
             # (check_now.mail_check). Optional and never a reason to refuse: a malformed entry is left out.
             quiet = {int(q['event_id']): ' '.join(str(q['why']).split())[:200] for q in no_todo if isinstance(q, dict)
                      and str(q.get('event_id') or '').isdigit() and str(q.get('why') or '').strip()} if isinstance(no_todo, list) else {}
+            whys = {}
             for item in items:
-                if item['id'] in quiet:
-                    item['no_todo'] = quiet[item['id']]
+                said = {**({'no_todo': quiet[item['id']]} if item['id'] in quiet else {}),
+                        **({'no_reply': answered[item['id']]} if item['id'] in answered else {})}
+                if said:
+                    whys[item['id']] = said  # kept with the review, for checking later why there was no to-do
                 if item['id'] in answered:
-                    item['no_reply'] = answered[item['id']]  # kept with the review, for checking later why there was no to-do
+                    item['no_reply'] = True
                 if item['id'] in sorted_as:
                     item['read'] = sorted_as[item['id']]
                 if item.get('excluded'):
@@ -1445,8 +1448,8 @@ class ReviewStore:
             except (sqlite3.Error, ValueError, TypeError) as error:
                 LOG.warning('link cards error=%s', type(error).__name__)
             self.project_blockers(db)
-            db.execute("UPDATE analyses SET status='complete',finished_at=?,summary=?,items=? WHERE id=?",
-                       (now(), summary[:4000], encoded(items), analysis_id))
+            db.execute("UPDATE analyses SET status='complete',finished_at=?,summary=?,items=?,whys=? WHERE id=?",
+                       (now(), summary[:4000], encoded(items), review_whys.text(whys), analysis_id))
         return {'status': 'complete', **({'stages': moved} if moved else {}),
                 **({'not_saved': sorted(not_saved), 'note': 'A to-do save failed for these messages: they stay unreviewed and come '
                     'back in a later review.'} if not_saved else {})}

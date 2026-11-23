@@ -129,8 +129,9 @@ Built-in noise rules, on top of yours (`"default_exclude": false` on an account 
 By default the service encrypts what messages say, from every source, in its database:
 subjects, bodies, attachments' names, quoted text and other metadata of email, chats, notifications, tickets,
 transcripts and calendar events, plus the text derived from them (to-do text, drafts and their edits, preparation
-tool calls and results, Fleet and Network questions and answers, promises, the line a role was read from, and
-the messages a profile or roles run reads) and the sign-ins saved with **Save for next time**. The key is
+tool calls and results, why a run stopped and what it asks you, the permissions it asked for, why a review made no
+to-do of a message, routines' steps and what they collected, the meeting a to-do came from, Fleet and Network
+questions and answers, promises, the line a role was read from, and the messages a profile or roles run reads) and the sign-ins saved with **Save for next time**. The key is
 `message-content.key`, next to the
 database, readable only by the service user. The dashboard, search, embeddings and reviews work as before: search
 uses a keyed hash of each word.
@@ -180,16 +181,24 @@ out of the data folder, but not encrypted at rest. `assistant message-key status
 
 Feedback, facts and rules, skills, profile and notes, to-do states and times, errors, sync health and logs stay
 readable, for support and to improve The Machine. `python3 learnings.py --database ... --workspace ...` exports
-exactly that, without the key.
+exactly that, without the key. Errors are the code's own line, or what a service answered.
 
 The words of what was learned from messages are encrypted: a Work Fleet's team learnings (also a removed one), what
 a learned change replaced and why, what the first look said of someone and you took off, and the lines of a Fleet's
-log. Their kind, Fleet, confidence, state and times stay readable. Without the key they are an error, never an
+log with its answers. Their kind, Fleet, confidence, state and times stay readable. Without the key they are an error, never an
 empty list.
 
 So are the lines of your OpenClaw notes that [Bring these in](intelligence.md#bring-these-in) offers, also a
 dismissed one. Their file, kind and state stay readable. A line you tick becomes a fact, readable like every fact.
 Without the key the section is not shown, and nothing is read or saved.
+
+Also readable: names, addresses, organizations, sites, labels, projects and roles, which the Graph finds messages by;
+your boards, fields, searches and settings; which store and item a purchase was; the name of a kind of conversation a
+Shared Graph asks about; and, until they are sent, the sealed envelopes of Fleet and Network messages. Each such column
+is in `tests/plain_columns.py` with the reason. A column in neither list, or words in one for codes, fails the tests.
+
+An update that encrypts more goes over the rows already kept at its first start. Backups, exports and copies made
+before it, and disk blocks not yet written over, keep what they held.
 
 ### Turning it on or off
 

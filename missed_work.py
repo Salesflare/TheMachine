@@ -46,6 +46,7 @@ import uuid
 from pathlib import Path
 from machine.owner_error import OwnerError
 from machine.prompts.review import OWED_NOW, WHOSE_WORK
+from machine.store import review_whys
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS missed_audits(id TEXT PRIMARY KEY,started_at TEXT NOT NULL,finished_at TEXT,status TEXT NOT NULL,
@@ -707,15 +708,14 @@ def review_said(db, event_id):
     row = db.execute('SELECT ingested_at FROM events WHERE id=?', (int(event_id),)).fetchone()
     if not row:
         return None
-    for (items,) in db.execute("SELECT items FROM analyses WHERE status='complete' AND finished_at>=? ORDER BY finished_at DESC", (row[0] or '',)):
+    for (items, whys) in db.execute("SELECT items,whys FROM analyses WHERE status='complete' AND finished_at>=? ORDER BY finished_at DESC", (row[0] or '',)):
         try:
             found = json.loads(items or '[]')
         except (TypeError, ValueError):
             continue
         for item in found if isinstance(found, list) else ():
             if isinstance(item, dict) and str(item.get('id')) == str(int(event_id)) and not item.get('excluded') and not item.get('deferred'):
-                said = next((x for x in (item.get('no_todo'), item.get('no_reply')) if isinstance(x, str) and x.strip()), '')
-                return ' '.join(said.split())[:REASON_CHARS]
+                return ' '.join(review_whys.said(review_whys.read(whys), event_id).split())[:REASON_CHARS]
     return None
 
 

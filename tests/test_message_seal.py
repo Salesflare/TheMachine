@@ -2,6 +2,8 @@
 app reads, searches and exports as before, and support's learnings export never holds it."""
 import base64
 import contextlib
+import hashlib
+import importlib
 import importlib.util
 import json
 import os
@@ -18,6 +20,8 @@ ROOT = Path(__file__).resolve().parent.parent
 import learnings
 import message_seal
 import moving
+import plain_columns
+from machine.store import review_whys
 from seams import patch_everywhere  # noqa: E402
 import datetime as dt
 import machine.app.status as machine_app_status
@@ -310,6 +314,105 @@ class Protected(unittest.TestCase):
             pass
         self.assertEqual(sqlite3.connect(self.path).execute("SELECT count(*) FROM network_replies WHERE typeof(body)='blob'").fetchone()[0], 2)
 
+    def stopped_run(self, store):
+        """A preparation that stopped on a question, a permission it asked for, and a review's why: all through the app's
+        own code."""
+        questions = [{'q': f'Which {CANARY}?', 'a': [f'the {CANARY} one']}]
+        with store.connect() as db:
+            db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,error,reason,details,questions,created_at,updated_at) "
+                       "VALUES('s1','d','j1','blocked','needs_owner',?,?,?,'t','t')", (f'Needs {CANARY}', json.dumps([f'{CANARY} asked']), json.dumps(questions)))
+        store.tool_approval_proposal(hashlib.sha256(f'exec {CANARY}'.encode()).hexdigest(), f'Send to {CANARY}', f'exec {CANARY}')
+        return questions
+
+    def test_what_a_stopped_run_says_is_sealed_and_read_as_before(self):
+        store = machine_main.Store(self.path, protect=True)
+        self.fill(store)
+        questions = self.stopped_run(store)
+        self.assertNotIn(CANARY.encode(), files(self.path))
+        with store.connect() as db:
+            row = db.execute('SELECT * FROM preparations').fetchone()
+            self.assertEqual((row['status'], row['error'], row['reason'], json.loads(row['details']), json.loads(row['questions'])),
+                             ('blocked', 'needs_owner', f'Needs {CANARY}', [f'{CANARY} asked'], questions))
+            self.assertEqual(db.execute("SELECT count(*) FROM preparations p WHERE trim(coalesce(p.reason,''))<>''").fetchone()[0], 1)  # AHEAD_BLOCKERS
+        self.assertEqual(store.tool_approval_document(hashlib.sha256(f'exec {CANARY}'.encode()).hexdigest())['detail'], f'exec {CANARY}')
+        with store.connect() as db:
+            db.execute('UPDATE suggestions SET next_action=NULL')
+        self.assertIn(f'Needs {CANARY}', json.dumps(store.snapshot([{'id': 'acct', 'boundary': 'work'}]), default=str))
+        raw = sqlite3.connect(self.path)  # without the key: the states support reads, none of the words
+        self.assertEqual(raw.execute('SELECT status,error,typeof(reason),typeof(details),typeof(questions) FROM preparations').fetchone(),
+                         ('blocked', 'needs_owner', 'blob', 'blob', 'blob'))
+        self.assertNotIn(CANARY, json.dumps(learnings.export(self.path), default=str))
+
+    def test_an_update_seals_what_stopped_runs_already_kept_plain_also_by_an_older_release(self):
+        older = {t: tuple(c for c in cs if (t, c) not in {('preparations', 'reason'), ('preparations', 'details'), ('preparations', 'questions'),
+                                                          ('tool_approval_proposals', 'title'), ('tool_approval_proposals', 'detail'), ('analyses', 'whys')})
+                 for t, cs in message_seal.DERIVED.items()}
+        with unittest.mock.patch.dict(message_seal.DERIVED, older):
+            before = machine_main.Store(self.path, protect=True)
+            self.fill(before)
+            self.stopped_run(before)
+            with before.connect() as db:
+                self.old_review(db)
+        self.assertIn(CANARY.encode(), files(self.path))
+        store = machine_main.Store(self.path, protect=True)
+        with store.connect() as db:
+            self.assertEqual(db.execute('SELECT reason FROM preparations').fetchone()[0], f'Needs {CANARY}')
+            self.assert_moved(db)
+        self.assertNotIn(CANARY.encode(), files(self.path))
+        # Back on the older release: it reads them sealed (a row opens whatever is sealed in it) and what it writes is
+        # sealed by the guards, which stay in the database
+        with unittest.mock.patch.dict(message_seal.DERIVED, older):
+            back = machine_main.Store(self.path, protect=True)
+            with back.connect() as db:
+                self.assertEqual(db.execute('SELECT reason FROM preparations').fetchone()[0], f'Needs {CANARY}')
+                db.execute('UPDATE preparations SET reason=?', (f'Still needs {CANARY}',))
+            with back.connect() as db:
+                self.assertEqual(db.execute('SELECT reason FROM preparations').fetchone()[0], f'Still needs {CANARY}')
+        self.assertNotIn(CANARY.encode(), files(self.path))
+
+    def old_review(self, db):
+        """A finished review from before its whys were kept apart: the words in its items, two reviews."""
+        for n, items in enumerate(([{'id': 1, 'version': 1, 'no_todo': f'Only {CANARY}'}, {'id': 2, 'version': 1, 'no_reply': f'Thanks {CANARY}'},
+                                    {'id': 3, 'version': 1, 'no_todo': f'Gone {CANARY}', 'excluded': 'person_deleted'}], [{'id': 4, 'version': 1}])):
+            db.execute("INSERT INTO analyses(id,started_at,finished_at,items,status) VALUES(?,'t','t',?,'complete')", (f'r{n}', json.dumps(items)))
+
+    def assert_moved(self, db):
+        self.assertEqual(json.loads(db.execute("SELECT items FROM analyses WHERE id='r0'").fetchone()[0]),
+                         [{'id': 1, 'version': 1}, {'id': 2, 'version': 1, 'no_reply': True}, {'id': 3, 'version': 1, 'excluded': 'person_deleted'}])
+        whys = review_whys.read(db.execute("SELECT whys FROM analyses WHERE id='r0'").fetchone()[0])
+        self.assertEqual(whys, {1: {'no_todo': f'Only {CANARY}'}, 2: {'no_reply': f'Thanks {CANARY}'}})
+
+    def test_why_a_review_made_no_to_do_moves_out_of_its_items_sealed(self):
+        store = machine_main.Store(self.path, protect=True)
+        with store.connect() as db:
+            self.old_review(db)
+        store = machine_main.Store(self.path, protect=True)
+        self.assertNotIn(CANARY.encode(), files(self.path))
+        with store.connect() as db:
+            self.assert_moved(db)
+            self.assertEqual(review_whys.move(db), 0)
+            review_whys.drop(db, 'r0', {1})  # the owner deleted that message
+            self.assertEqual(review_whys.read(db.execute("SELECT whys FROM analyses WHERE id='r0'").fetchone()[0]), {2: {'no_reply': f'Thanks {CANARY}'}})
+
+    def test_a_fix_keeps_no_quote_or_reason_readable(self):
+        import corrections
+        import learning_loop
+        store = machine_main.Store(self.path, protect=True)
+        rows = {'rows': [{'identifier': 'a@x', 'role': 'accountant', 'source': 'owner', 'quote': CANARY}]}
+        with store.connect() as db:
+            learning_loop.ensure(db)
+        with store.connect() as db:  # as fixes were kept before
+            learning_loop.record(db, 'fix:1', 'source', json.dumps({'type': 'role', 'where': {'id': 'a@x', 'ids': ['a@x']}, 'line': ['{}', 'Ann'], 'after': rows}),
+                                 json.dumps({'text': 'lawyer', 'state': rows}), 'Ann is the accountant', '')
+        self.assertIn(CANARY.encode(), files(self.path))
+        with store.connect() as db:
+            corrections.drop_quotes(db)
+        self.assertNotIn(CANARY.encode(), files(self.path))
+        with store.connect() as db:
+            row = db.execute('SELECT * FROM learning_changes').fetchone()
+        self.assertTrue(corrections._same('role', rows, json.loads(row['target'])['after']), 'Undo still compares what it left')
+        self.assertEqual(json.loads(row['before'])['state'], rows)
+
     def test_a_waiting_notification_keeps_its_to_do_title_sealed_and_sends_it_readable(self):
         import notify
         store = machine_main.Store(self.path, protect=True)
@@ -555,13 +658,14 @@ class Protected(unittest.TestCase):
     def test_role_quotes_promises_and_run_evidence_sealed_in_place_and_promises_still_dedupe(self):
         store = machine_main.Store(self.path, protect=True)
         self.fill(store)
-        columns = (('person_roles', 'quote'), ('promises', 'what'), ('promises', 'note'), ('promises', 'refund'), ('profile_runs', 'evidence'))
+        columns = (('person_roles', 'quote'), ('person_roles', 'hints'), ('promises', 'what'), ('promises', 'note'), ('promises', 'refund'),
+                   ('profile_runs', 'evidence'))
         with sqlite3.connect(self.path) as raw:  # a database sealed before these columns were: no guards, plain text
             for table, column in columns:
                 for when in ('insert', 'update'):
                     raw.execute(f'DROP TRIGGER mc_{table}_{column}_{when}')
-            raw.execute("INSERT INTO person_roles(identifier,role,source,created_at,event_id,quote) VALUES('email:pat@example.com','lawyer','review','t',1,?)",
-                        (f'{CANARY} counsel',))
+            raw.execute("INSERT INTO person_roles(identifier,role,source,created_at,event_id,quote,hints) VALUES('email:pat@example.com','lawyer','review','t',1,?,?)",
+                        (f'{CANARY} counsel', json.dumps([f'{CANARY} invoices'])))
             raw.execute("INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,note,created_at,updated_at,refund) "
                         "VALUES('theirs','Pat',?,'2026-10-20',1,'acct','answered',?,'t','t',?)", (f'send the {CANARY} contract', f'They wrote again: {CANARY}',
                                                                                                 json.dumps({'ref': CANARY})))
@@ -843,6 +947,10 @@ OTHER_DATABASES = {'telegram_store.py': "the Telegram account's own store, its t
 RENAMED = {'promises_next', 'events_monotonic'}
 MADE = re.compile(r'CREATE TABLE(?: IF NOT EXISTS)? (\w+)')
 ADDED = re.compile(r'ALTER TABLE (\w+) ADD COLUMN (\w+) (\w+)')
+# An ALTER TABLE put together at run time: its columns are made by the module's own ensure (or the Store's start)
+BUILT = re.compile(r"ADD COLUMN ['{]")
+ENSURED = {name + '.py': name for name in ('ai_access', 'fleet', 'graph', 'meeting_prep', 'notify', 'project_about', 'project_success', 'recurring',
+                                          'routines', 'team_learnings')}
 
 
 def source_modules():
@@ -862,6 +970,7 @@ def make_source_tables(db):
         for node in ast.walk(ast.parse(source)):
             if isinstance(node, ast.Constant) and isinstance(node.value, str) and 'CREATE TABLE' in node.value:
                 for statement in node.value.split(';'):
+                    statement = re.sub(r'(?m)^\s*--.*$', '', statement)  # a comment above it
                     made = MADE.search(statement)
                     if made and statement.strip().startswith('CREATE TABLE'):
                         named.add(made[1])
@@ -997,72 +1106,46 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
                      "the metadata of an event, like its cc"):
             self.assertEqual(reads(text), [], text)
 
-    def test_every_text_column_that_could_hold_a_message_is_classified(self):
-        """A new table or column whose name says it may hold message text has to be sealed (message_seal.DERIVED) or
-        listed here with the reason it is not a message."""
-        not_messages = {
-            'events.content_hash': 'a hash', 'calendar_writes.payload': 'a hash of the change', 'calendar_writes.result': 'a calendar event id', 'promise_log.detail': 'an event kind, a source, a date or an id (promise_logged)', 'milestones.detail': 'a count, a first-look state or a kind code (first_cards_report)', 'facts.text': 'a learned fact', 'facts.quote': "the owner's own words a learned fact came from, like decisions.feedback",'fact_search.text': 'the keyword index of facts.text (retained_facts.py)','recurring_series.rule': 'a rhythm (recurring.py)', 'recurring_offers.rule': 'a rhythm (recurring.py)', 'routines.rule': 'a rhythm (routines.py)', 'routines.state': 'on, paused, stopped, sorting, suggested or skipped (routines.py)', 'routines.origin': 'an OpenClaw job id (routine_imports.py) or a pattern key: a kind and a hash or channel id (routine_patterns.py)', 'routines.accepted_at': 'a time', 'routines.old_job': 'off or kept (routines.py)', 'routine_runs.state': 'a run state (routines.py)', 'routine_changes.state': 'offered, saved or kept (routine_changes.py)', 'mail_cleanup_items.state': 'a row state: open, working, done, kept, yours, failed or unknown (mail_cleanup.py)', 'facebook_birthdays.state': 'new, reading, signed_out, failed, preview or saved (birthdays_facebook.py)','rule_changes.text': 'a learned rule',
-            'decisions.feedback': "the owner's feedback", 'decision_annotations.reason': 'a status reason',
-            'meeting_prep_web.results': 'public web search results for a name and organization, never message text (meeting_prep.py)',
-            'meeting_preps.body_sha': "a hash of a briefing's text (meeting_prep.py)", 'meeting_preps.rebuilt_at': 'a time',
-            'profile_runs.draft': 'profile notes (USER.md)', 'skills.body': 'a skill', 'skills.description': 'a skill',
-            'skills.note': 'a skill', 'skill_hints.summary': 'a skill hint', 'tool_approval_proposals.title': 'a proposal',
-            'tool_approval_proposals.detail': 'a proposal', 'checkpoints.state': 'a sync cursor (MESSAGE_SEAL_AUDIT checks)', 'history_backfill.state': 'a history cursor: times and a page token (machine/store/history.py)',
-            'analyses.items': 'ids and versions', 'task_pages.state': "a task page's stage (offered, shared, done)", 'meet_links.state': "a booking link's stage (open, picked, booked, closed)", 'handoff_mails.state': "a handoff by email's stage (drafted, waiting, done)", 'preparations.details': 'why a preparation stopped',
-            'preparations.reason': 'a reason code', 'activity_blocks.reason': 'why a check stopped a send (the outbox job error line)', 'preparations.questions': 'what a stopped run asks the owner',
-            'fleet_questions.state': "a draft's stage (family_questions.py)",
-            'android_inbox.payload': "its text sealed by the Gateway's plugin (message_seal.INBOX); deleted once read",
-            'network_outbox.body': 'matched in SQL until sent; sealed end to end in transit (network_crypto)',
-            'fleet_out.context': 'matched in SQL: an id',
-            'fleet_rules.rule': 'a sharing rule', 'fleet_handled.state': 'done or settled', 'fleet_briefs.view': 'counts and dates (fleet brief)',
-            'fleet_notices.view': 'a Fleet notice', 'fleet_notices.reason': 'a reason code', 'fleet_splits.title': 'a meeting title',
-            'graph_nodes.info': 'people and organizations', 'network_people.reasons': 'why someone is suggested',
-            'faults.message': "an error's own message with anything private taken out (assistant.fault_message)",
-            'error_feed.message': "an error's message normalized to a strict shape, nothing private (error_feed.normalize)",
-            'voices.text': 'how the owner writes on a channel, learned like a fact',
-            'voice_merges.merged_text': 'the same learned channel voice, retained only for undo',
-            'suggestions.title_source': 'who wrote the title: auto or user',
-            'todo_moves.reason': "a code word for why a to-do's status moved (machine/store/todo_moves.py)",
-            'event_vector_skips.reason': 'a redacted error class (embeddings.EmbeddingError, like http_500)',
-            'skill_clusters.description': 'a skill suggested from learned notes', 'skill_clusters.body': 'a skill suggested from learned notes',
-            'skill_clusters.reviewed_sha': 'the content hash of the skill the owner saw before and after',
-            'board_suggestions.state': 'open, saved or dismissed',
-            'board_fits.state': 'open, added or left out',
-            'board_backfills.state': 'running or done', 'board_backfill_asks.state': 'open, added or left out',
-            'board_fit_undo.token': 'a random undo token', 'board_fit_undo.steps': 'project and message ids to put back',
-            'team_learnings.items': 'general learnings for The Machine team, anything personal taken out (team_learnings.strip)',
-            'team_learning_votes.text': "another Machine's general learning, scrubbed by the team and stripped again here",
-            'team_learning_votes.reason': 'the general reason sent with a vote, stripped (team_learnings.save_votes)',
-            'follow_up_cards.state': 'open, sent, skipped, stopped, handled or detached',
-            'agent_jobs.draft_revision': "a draft's revision id (agent_jobs.draft_revision)",
-            'family_invite_log.what': 'offered, later or opened (family_invites.py)', 'family_invite_offers.state': 'offered, later or invited',
-            'gbrain_pages.state': 'made, kept or gone (gbrain.py)',
-            'learned_fixes.state': 'removed',
-            'meet_log.what': 'a step code matched in SQL, like asked_in (meet.py)', 'meet_sessions.state': 'a booking stage', 'meet_sessions.note': 'a reason code: no_machine, keys, failed, no_slot, rounds, no_answer or passed',
-            'bring_in_items.status': 'offered, saved or dismissed',
-            'first_pass.what': 'one of first_pass.WHAT, a kind of signal', 'first_pass.verdict': 'skip or review', 'first_pass.by': 'rules or a model id',
-            'missed_audit_items.what':'one of missed_work.WHAT, a kind of work', 'missed_audits.result': 'counts and rates (missed_work.summarize)',
-            'team_wants.body': 'times and counts of what a teammate\'s Machine misses (shared_graph.py)',
-            'reorder_mail.state': 'order or other (reorder.py)',
-            'own_addresses.state': 'yours, maybe or shared', 'own_addresses.reason': 'one of own_addresses.classify\'s fixed reasons',
-        }
-        sealed = {f'{t}.{c}' for t, cs in message_seal.DERIVED.items() for c in cs} | {f'{t}.{c}' for t, c, _ in message_seal.DERIVED_JSON}
-        sealed |= {'events.title', 'events.body', 'events.metadata'}
-        words = re.compile(r'title|body|subject|text|snippet|question|answer|summary|draft|what|payload|params|result|preview|'
-                           r'description|note|content|feedback|reason|detail|view|info|items|context|rule|state|transcript|quote|evidence|message$')
+    def source_database(self, db):
+        """Every table the source can make, whenever it makes it, with every column: a table the Store's own start does
+        not make was never looked at here, and notify_queue kept to-do titles plain."""
+        missing = make_source_tables(db)
+        self.assertEqual(missing, set(), 'a table the source names was not made here: this check cannot see its columns')
+        built = {p.relative_to(ROOT).as_posix() for p in source_modules() if BUILT.search(p.read_text(encoding='utf-8'))}
+        self.assertEqual(built - {'machine/store/core.py'}, set(ENSURED), 'an ALTER TABLE put together at run time: its module has to be in ENSURED')
+        for name in ENSURED.values():
+            importlib.import_module(name).ensure(db)
+
+    def test_every_text_column_is_sealed_or_plain_for_a_reason(self):
+        """A new text column has to be sealed (message_seal.DERIVED) or listed in plain_columns, as a code (which is
+        checked: the guard below) or as words that stay plain, with why."""
         with tempfile.TemporaryDirectory() as temp:
-            store = machine_main.Store(Path(temp) / 'events.sqlite')
-            with store.connect() as db:
-                # every table the source can make, whenever it makes it (app start, a feature's first use): a table
-                # the Store's own start does not make was never looked at here, and notify_queue kept to-do titles plain
-                missing = make_source_tables(db)
-                self.assertEqual(missing, set(), 'a table the source names was not made here: this check cannot see its columns')
-                for (table,) in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'event_search%'"):
-                    for _, column, kind, *_ in db.execute(f'PRAGMA table_info({table})'):
-                        name = f'{table}.{column}'
-                        if kind.upper() in ('TEXT', '') and words.search(column) and not column.endswith(('_id', '_at', 'status', '_kind', '_until', '_state', '_hash')):
-                            with self.subTest(column=name):
-                                self.assertTrue(name in sealed or name in not_messages, f'{name}: seal it or say why it is no message')
+            with machine_main.Store(Path(temp) / 'events.sqlite').connect() as db:
+                self.source_database(db)
+                every = {f'{t}.{c}' for t, cs in plain_columns.columns(db).items() for c in cs}
+        sealed, codes, words = plain_columns.sealed_names(), set(plain_columns.CODES.split()), plain_columns.worded()
+        named = {name for name in every if plain_columns.CODE_NAME.search(name)}
+        self.assertEqual(sorted(every - sealed - codes - words - named), [], 'seal it (message_seal.DERIVED), or say in plain_columns why it may stay plain')
+        self.assertEqual(sorted((codes | words) - every), [], 'no such column any more')
+        self.assertEqual(sorted((codes & words) | (sealed & (codes | words)) | (codes & named)), [], 'listed twice')
+
+    def test_words_written_to_a_code_column_are_caught(self):
+        with tempfile.TemporaryDirectory() as temp:
+            with machine_main.Store(Path(temp) / 'events.sqlite').connect() as db:
+                plain_columns.guard(db)
+                db.execute("INSERT INTO todo_moves(suggestion_id,from_status,to_status,reason,at) VALUES('s','pending','done','owner_done','t')")
+                for reason in ('she wrote that she signs on Monday', json.dumps({'why': 'she wrote that she signs'})):
+                    with self.assertRaisesRegex(sqlite3.IntegrityError, 'a plain column of todo_moves holds words'):
+                        db.execute('UPDATE todo_moves SET reason=?', (reason,))
+                db.execute('UPDATE todo_moves SET reason=?', (json.dumps({'ids': [1, 2, 3, 4, 5], 'a': 'b', 'c': 'd', 'e': 'f'}),))  # JSON of codes
+
+    def test_the_suites_that_write_most_run_with_that_guard(self):
+        runner = (ROOT / 'scripts' / 'test.py').read_text(encoding='utf-8')
+        checked = re.findall(r'\w+', re.search(r'^PLAIN_CHECKED = \((.*?)\)', runner, re.M)[1])
+        self.assertTrue(checked)
+        for stem in checked:
+            self.assertTrue((ROOT / 'tests' / (stem + '.py')).is_file(), stem)
+        self.assertIn("'plain_columns' if file.stem in PLAIN_CHECKED else 'unittest'", runner)
 
     def test_connectors_store_only_through_the_sealed_path(self):
         for path in sorted((ROOT / 'connectors').glob('*.py')) + sorted((ROOT / 'integrations').glob('*.py')):

@@ -8,6 +8,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from machine.store import review_whys
 from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('board_replies_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
@@ -89,8 +90,9 @@ class BoardReplies(unittest.TestCase):
                 self.store.finish_analysis(claim['analysis_id'], 'Nothing new', replies=bad)
         self.store.finish_analysis(claim['analysis_id'], 'Nothing new', replies=[{'event_id': thanks, 'why': 'Only a thank-you'}])
         with self.store.connect() as db:  # the why stays with the review, to check later why there was no to-do
-            items = json.loads(db.execute('SELECT items FROM analyses WHERE id=?', (claim['analysis_id'],)).fetchone()[0])
-        self.assertEqual(next(i['no_reply'] for i in items if i['id'] == thanks), 'Only a thank-you')
+            items, whys = db.execute('SELECT items,whys FROM analyses WHERE id=?', (claim['analysis_id'],)).fetchone()
+        self.assertIs(next(i['no_reply'] for i in json.loads(items) if i['id'] == thanks), True)  # SQL reads items: no words there
+        self.assertEqual(review_whys.read(whys), {thanks: {'no_reply': 'Only a thank-you'}})
 
     def test_bounces_answered_threads_and_projects_on_no_board_are_not_held(self):
         _, reply = self.outreach_and_terms()

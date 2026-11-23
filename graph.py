@@ -61,7 +61,7 @@ from machine import stamps, todo_states
 from machine.kinds import KINDS, of
 from machine.names import SERVICES
 from machine.owner_error import OwnerError
-from machine.store import graph_history, graph_identifiers
+from machine.store import graph_history, graph_identifiers, review_whys
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE COLLATE NOCASE,created_at TEXT NOT NULL,closed_at TEXT);
@@ -4069,6 +4069,7 @@ def delete_person(db, node_id, config, now):
                     if isinstance(item, dict) and item.get('id') in gone_events:
                         item['excluded'] = 'person_deleted'
                 db.execute('UPDATE analyses SET items=? WHERE id=?', (json.dumps(items), review['id']))
+                review_whys.drop(db, review['id'], gone_events)
     # The graph: them, their links and scores, aliases, roles, where they work, relations, looked-up details.
     db.execute(f'DELETE FROM graph_nodes WHERE id IN ({marks})', ids)
     for table in ('graph_links', 'graph_merges', 'graph_same', 'graph_relations'):  # all in SCHEMA

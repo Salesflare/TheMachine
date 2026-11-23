@@ -827,12 +827,14 @@ def load_reviews(db, ids, base, assistant, fixture=None):
                     assistant.REVIEW_SESSION_PREFIX + run_id, run_id))
     last = fixture.get('last_check') if fixture else None
     if last:  # the last check of new email, with the review's reason for each thread it made no to-do for (check_now.mail_check)
+        from machine.store import review_whys
         started, finished = last['minutes']
-        items = [{'id': ids[k], 'version': 1, **({'no_todo': last['why'][k]} if k in last['why'] else {})} for k in last['events'] if k in ids]
+        items = [{'id': ids[k], 'version': 1} for k in last['events'] if k in ids]
+        whys = {ids[k]: {'no_todo': last['why'][k]} for k in last['events'] if k in ids and k in last['why']}
         db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,finished_at,attempts,planned) VALUES(?,'ok',?,?,?,1,?)",
                    ('sandbox-run-last', stamp(started, base), stamp(finished, base), stamp(finished, base), len(items)))
-        db.execute("INSERT INTO analyses(id,started_at,finished_at,items,status,summary,owner_session,owner_run) VALUES(?,?,?,?,'complete',?,?,?)",
-                   ('sandbox-analysis-last', stamp(started, base), stamp(finished, base), json.dumps(items), 'Read and sorted.',
+        db.execute("INSERT INTO analyses(id,started_at,finished_at,items,whys,status,summary,owner_session,owner_run) VALUES(?,?,?,?,?,'complete',?,?,?)",
+                   ('sandbox-analysis-last', stamp(started, base), stamp(finished, base), json.dumps(items), review_whys.text(whys), 'Read and sorted.',
                     assistant.REVIEW_SESSION_PREFIX + 'sandbox-run-last', 'sandbox-run-last'))
 
 

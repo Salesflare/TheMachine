@@ -70,6 +70,9 @@ SEAL_COVERED_BY = {
     'github': 'test_github_stripe', 'linkedin': 'test_linkedin', 'rss': 'test_connectors', 'stripe': 'test_github_stripe',
     'x': 'test_x',
 }
+# Run with a guard on every plain column of the database: words written to one that should hold codes fail there
+# (tests/plain_columns.py). The sandbox's data is the widest.
+PLAIN_CHECKED = ('test_sandbox',)
 SEAL_AUDIT = tuple(sorted({*SEAL_AUDIT_ALSO, *(file.stem for file in TESTS.glob('test_connector_*.py'))}))
 SEAL_LEAK = 'keeps message text in the clear'
 
@@ -251,7 +254,7 @@ def main():
 
         def run_one(file):
             limit = int(configured_limit or 600)
-            command = [sys.executable, '-m', 'unittest', file.stem] if file.suffix == '.py' else [node, str(file)]
+            command = [sys.executable, '-m', 'plain_columns' if file.stem in PLAIN_CHECKED else 'unittest', file.stem] if file.suffix == '.py' else [node, str(file)]
             started = time.monotonic()
             own = Path(home) / file.name
             own.mkdir()

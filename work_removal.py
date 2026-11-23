@@ -29,6 +29,7 @@ from pathlib import Path
 
 import sources
 import timeutil
+from machine.store import review_whys
 
 BACKUP_DAYS = 7
 PENDING = 'work-removal-pending.json'
@@ -199,6 +200,7 @@ def purge(config, account_ids, store=None):
                         if isinstance(i, dict) and i.get('id') in events:
                             i['excluded'] = 'work_removed'
                     db.execute('UPDATE analyses SET items=? WHERE id=?', (json.dumps(items, separators=(',', ':')), review['id']))
+                    review_whys.drop(db, review['id'], events)
             _chunks(db, 'DELETE FROM events WHERE id IN ({})', events)
         db.execute('COMMIT')
         counts['events'], counts['cards'] = len(events), len(cards)
