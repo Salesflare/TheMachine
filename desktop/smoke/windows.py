@@ -198,13 +198,18 @@ class App:
     def wide(self):
         return [x for x in self.windows() if x[1].right - x[1].left >= 250]
 
+    def sized(self, least, most):
+        return next((x for x in self.wide() if least <= (x[1].right - x[1].left) * 96 / user.GetDpiForWindow(x[0]) < most), None)
+
     def box(self):
-        return max(self.wide(), key=lambda x: x[1].right - x[1].left, default=None)
+        return self.sized(350, 999)
 
     def card(self):
-        """A to-do open in the box. It is above the box."""
-        wide = self.wide()
-        return wide[0] if len(wide) == 2 and wide[0][0] != self.box()[0] else None
+        """A to-do open in the box."""
+        return self.sized(333, 350)
+
+    def bubble(self):
+        return self.sized(250, 333)
 
     def center(self):
         r = need_window(self.robot())[1]
@@ -257,7 +262,7 @@ def press(app, selector, name='box.html'):
     at = page(name, f'(() => {{ const e = document.querySelector({json.dumps(selector)}).getBoundingClientRect(); '
                           'return [e.x + e.width / 2, e.y + e.height / 2].map(v => v * devicePixelRatio) })()')
     point = w.POINT(0, 0)
-    user.ClientToScreen(need_window(app.box() if name == 'box.html' else app.card())[0], ctypes.byref(point))
+    user.ClientToScreen(need_window(app.box() if name == 'box.html' else app.bubble() if name == BUBBLE else app.card())[0], ctypes.byref(point))
     click(round(point.x + at[0]), round(point.y + at[1]))
 
 
@@ -857,7 +862,7 @@ def _():
     press(app, '#close')
 
 
-CARD = 'compact=1'
+CARD, BUBBLE = 'compact=1', 'bubble.html'
 
 
 def carded(todo):
@@ -1476,6 +1481,135 @@ def _():
     browsers_closed()
     machine.compact = False
     return 'signed in' if machine.cards[-1] else 'NOT TESTED: a browser sends the session only to https, here it is http'
+
+
+def comes(todo, soon=False):
+    """The Machine has something for it to say. Soon: asked as the box closes (what its rows show isn't said after it)."""
+    if app.box():
+        press(app, '#close')
+    need(until(lambda: not app.wide(), 20), 'nothing is there')
+    machine.notices = [{'key': f'{time.time_ns():x}', 'id': todo, 'kind': 'todo', 'snooze': SNOOZE}]
+    since = time.time()
+    if soon:
+        app.again('--toggle')
+        need(until(app.box), 'the box opens')
+        need(until(lambda: not machine.notices), 'it is asked')
+        time.sleep(1)
+        need(not app.bubble(), 'not while the box is open')
+        app.again('--toggle')
+    need(until(app.bubble, 45, 0.05), f'the bubble shows {machine.desks[-2:]}')
+    need(until(lambda: says('#title', BUBBLE)), 'with its words')
+    return time.time() - since
+
+
+def away():
+    click(work_area().left + 60, work_area().top + 400)
+
+
+def said():
+    return page(BUBBLE, '[...document.querySelectorAll("#buttons button")].filter(b => b.getClientRects().length).map(b => b.innerText)')
+
+
+@step('it speaks up')
+def _():
+    machine.todos = list(TODOS)
+    away()
+    before = user.GetForegroundWindow()
+    took = comes('aa02')
+    came = time.time()
+    png('it-speaks-up')
+    need(user.GetForegroundWindow() == before, 'the keys stay where they were')
+    need(says('#title', BUBBLE) == TODOS[1][1] and says('#line', BUBBLE) == 'Made up, for the stand-in.', says('#panel', BUBBLE))
+    need(said() == ['See draft', 'Snooze', 'Mark done'], str(said()))  # never Send
+    (_, b), (_, r), area = app.bubble(), app.robot(), work_area()
+    need(area.left <= b.left and b.right <= area.right + 20 and area.top <= b.top and b.bottom <= r.top + 20, f'above the robot, on the screen: {b.left} {b.top} {b.right} {b.bottom}')
+    need(until(lambda: not app.bubble(), 20, 0.05), 'it goes')
+    stayed = time.time() - came
+    need(10.5 < stayed < 15, f'after about 12 s: {stayed:.1f}')
+    need(len(saved()['desk']) == 32 and machine.desks[-1][0] == saved()['desk'], str(machine.desks[-1]))
+    return f'{took:.0f} s after the Machine had it, for {stayed:.1f} s'
+
+
+@step('a bubble stays under the pointer, and goes when it is done elsewhere')
+def _():
+    comes('aa03')
+    (_, b) = app.bubble()
+    user.SetCursorPos((b.left + b.right) // 2, (b.top + b.bottom) // 2)
+    time.sleep(0.3)
+    user.mouse_event(1, 1, 1, 0, 0)
+    time.sleep(14)
+    need(app.bubble(), 'it stays')
+    machine.todos = [x for x in TODOS if x[0] != 'aa03']
+    need(until(lambda: not app.bubble(), 40), 'it goes with it')
+    machine.todos = list(TODOS)
+    away()
+
+
+@step('snooze and undo in a bubble')
+def _():
+    comes('aa04', soon=True)
+    before = len(machine.actions)
+    press(app, '#buttons [data-act^=snooze]', BUBBLE)
+    shown = lambda: page(BUBBLE, '[...document.querySelectorAll("#choices button")].filter(b => b.getClientRects().length).map(b => b.innerText)')
+    need(until(lambda: shown() == [text for _, text in SNOOZE] + ['Choose date']), str(shown()))
+    time.sleep(0.5)
+    png('it-speaks-up-snooze')
+    press(app, '#choices [data-until="3d"]', BUBBLE)
+    need(until(lambda: says('#said', BUBBLE).startswith('Snoozed it · ')), says('#panel', BUBBLE))
+    png('it-speaks-up-snoozed')
+    told = says('#said', BUBBLE).replace('\n', ' ')
+    need(machine.actions[before][1]['snooze_option'] == '3d' and machine.actions[before][1]['decision_id'].startswith('notify-'), str(machine.actions[before:]))
+    press(app, '#said .link', BUBBLE)
+    need(until(lambda: any(x[0] == 'aa04' for x in machine.todos)), 'it is back')
+    away()
+    need(until(lambda: not app.bubble(), 15), 'it goes')
+    return told
+
+
+@step('Do it in a bubble')
+def _():
+    comes('aa01')
+    before = len(machine.actions)
+    need(said() == ['Open', 'Do it', 'Snooze', 'Mark done'], str(said()))
+    press(app, '#buttons [data-act=prepare]', BUBBLE)
+    need(until(lambda: says('#said', BUBBLE) == 'Preparing…'), says('#panel', BUBBLE))
+    away()
+    need(until(lambda: not app.bubble(), 10), 'it goes')
+    need([a[1]['choice'] for a in machine.actions[before:]] == ['accept'], str(machine.actions[before:]))
+    machine.status.clear()
+
+
+@step('a bubble opens it in the box')
+def _():
+    machine.compact = True
+    comes('aa04', soon=True)
+    press(app, '#open', BUBBLE)
+    need(until(app.box), 'the box opens')
+    carded('aa04')
+    need(not app.bubble(), 'the bubble goes')
+    press(app, '#card-close')
+    machine.compact = False
+
+
+@step('Speak up is off')
+def _():
+    open_it()
+    press(app, '#more')
+    need(until(lambda: page('box.html', 'document.querySelector("#menu-speak").getAttribute("aria-checked")') == 'true'), 'on')
+    png('speak-up')
+    press(app, '#menu-speak')
+    need(until(lambda: machine.desks[-1][1] == '0', 10), str(machine.desks[-1]))
+    press(app, '#close')
+    machine.notices = [{'key': 'a4', 'id': 'aa04', 'kind': 'todo'}]
+    time.sleep(35)
+    need(not app.bubble() and machine.notices, 'it says nothing, and leaves it to the browser')
+    machine.notices = []
+    open_it()
+    press(app, '#more')
+    need(until(lambda: says('#menu-speak')), 'the menu')
+    press(app, '#menu-speak')
+    need(until(lambda: machine.desks[-1][1] == '1', 10), str(machine.desks[-1]))
+    press(app, '#close')
 
 
 @step('quit from the menu')

@@ -3,10 +3,10 @@
 // where its draft is read first.
 (function () {
   'use strict';
-  const t = window.MachineText, native = window.Native;
+  const t = window.MachineText, native = window.Native, {icon, when, fill} = window.Parts;
   const $ = id => document.getElementById(id);
   const MAX_FILES = 5, MAX_BYTES = 10 * 1024 * 1024, MAX_IMAGE = 5 * 1024 * 1024;
-  let kind = 'todo', busy = false, byAddress = false, files = [], draft = '', connected = false, machine = null, hidden = false, notice = false, fresh = false, written = null, snip = false, shooting = false;
+  let kind = 'todo', busy = false, byAddress = false, files = [], draft = '', connected = false, machine = null, hidden = false, notice = false, fresh = false, written = null, snip = false, shooting = false, speaks = true;
 
   for (const [id, text] of Object.entries({
     'signin-intro': t.signInIntro, 'signin-go': t.signIn, 'notice-text': t.hidden, 'notice-ok': t.ok, connect: t.connect, 'kind-todo': t.todo, 'kind-ask': t.ask,
@@ -19,26 +19,10 @@
   $('address').placeholder = t.address;
 
   const words = e => t.errors[e] || (typeof e === 'string' && e) || t.errors.failed;
-  const fill = (text, v) => text.replace('{}', () => v);
   const el = (tag, set, ...kids) => { const e = Object.assign(document.createElement(tag), set); e.append(...kids); return e; };
 
   const fit = () => native.fit(Math.ceil($('panel').getBoundingClientRect().height));
   new ResizeObserver(fit).observe($('panel'));
-
-  // Pictures by path, as the dashboard's
-  const ICONS = {
-    prepare: 'M5 3.2l7.5 4.8L5 12.8z', done: 'M3 8.4l3.3 3.3L13 5', snooze: 'M8 2.2a5.8 5.8 0 1 0 0 11.6A5.8 5.8 0 0 0 8 2.2M8 5v3.2l2.1 1.3',
-    file: 'M13 7.5l-4.9 4.9a3 3 0 0 1-4.3-4.3l5.3-5.2a2 2 0 0 1 2.8 2.8L6.7 11a1 1 0 0 1-1.4-1.4l4.6-4.6', shot: 'M2 5.2V3.5A1.5 1.5 0 0 1 3.5 2h1.7M10.8 2h1.7A1.5 1.5 0 0 1 14 3.5v1.7M14 10.8v1.7a1.5 1.5 0 0 1-1.5 1.5h-1.7M5.2 14H3.5A1.5 1.5 0 0 1 2 12.5v-1.7M8 5.6a2.4 2.4 0 1 0 0 4.8 2.4 2.4 0 0 0 0-4.8',
-  };
-  ICONS.snooze2h = ICONS.snooze;
-  function icon(name) {
-    const at = 'http://www.w3.org/2000/svg', svg = document.createElementNS(at, 'svg'), path = document.createElementNS(at, 'path');
-    svg.setAttribute('viewBox', '0 0 16 16');
-    svg.setAttribute('aria-hidden', 'true');
-    path.setAttribute('d', ICONS[name]);
-    svg.append(path);
-    return svg;
-  }
 
   async function show() {
     const s = await native.state();
@@ -46,6 +30,7 @@
     machine = s.machine;
     hidden = s.hidden;
     snip = s.snip;
+    speaks = s.speaks;
     notice = s.notice; // until the box is closed
     $('notice').hidden = !notice;
     connected = !!machine && s.problem !== 'notowner';
@@ -62,7 +47,8 @@
   // What is known at once, then what the Machine says now
   async function load() {
     const s = await show();
-    if (s.menu) menu(true); else focus();
+    if (s.wanted && connected && !notice) openTodo({id: s.wanted});
+    else if (s.menu) menu(true); else focus();
     if (!machine) return;
     const before = connected;
     buttons();
@@ -193,7 +179,7 @@
     showReady(shown);
     try {
       const done = await native.decide(x.id, b.act, until), undo = b.act;
-      const line = [b.said, when(done?.snoozed_until)].filter(Boolean).join(' · ');
+      const line = [b.said, when(done?.snoozed_until, shown.hour12)].filter(Boolean).join(' · ');
       Object.assign(went.get(x.id) || {}, {busy: false, line, undo, act: b.act});
       $('live').textContent = line;
       if (mine.some(m => m.id === x.id)) follow(true);
@@ -237,14 +223,6 @@
     await native.look().catch(() => {});
     gone(id);
   }
-  function when(until) {
-    const at = until ? new Date(until) : null;
-    if (!at || isNaN(at)) return '';
-    const day = v => new Date(v).setHours(0, 0, 0, 0), days = Math.round((day(at) - day(Date.now())) / 864e5);
-    const time = at.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', hourCycle: shown.hour12 ? 'h12' : 'h23'});
-    return days <= 0 ? time : days === 1 ? fill(t.tomorrow, time) : at.toLocaleDateString([], days < 7 ? {weekday: 'long'} : {day: 'numeric', month: 'short'}) + ' ' + time;
-  }
-
   // Sign-in
   function signinBy(address) {
     byAddress = address;
@@ -284,12 +262,19 @@
     $('menu').hidden = !open;
     $('more').setAttribute('aria-expanded', String(open));
     if (!open) return;
-    const items = [...(machine ? ['dashboard'] : []), hidden ? 'show' : 'hide', ...(machine ? ['signout'] : []), 'quit'];
-    const names = {dashboard: t.dashboard, hide: t.hide, show: t.show, signout: t.signOut, quit: t.quit};
+    const items = [...(machine ? ['dashboard', 'speak'] : []), hidden ? 'show' : 'hide', ...(machine ? ['signout'] : []), 'quit'];
+    const names = {dashboard: t.dashboard, speak: t.speak, hide: t.hide, show: t.show, signout: t.signOut, quit: t.quit};
     const where = machine && connected ? [el('li', {className: 'where', textContent: fill(t.signedIn, new URL(machine).host)})] : [];
-    $('menu').replaceChildren(...where, ...items.map(id => el('li', {}, el('button', {type: 'button', className: 'name', id: 'menu-' + id, textContent: names[id], onclick: () => (id === 'dashboard' ? native.openDashboard().catch(fail) : native.menuItem(id))}))));
+    $('menu').replaceChildren(...where, ...items.map(id => el('li', {}, el('button', {type: 'button', className: 'name', id: 'menu-' + id, textContent: names[id], onclick: () => (id === 'dashboard' ? native.openDashboard().catch(fail) : id === 'speak' ? setSpeaks(!speaks) : native.menuItem(id))}))));
+    const speak = $('menu-speak');
+    if (speak) { speak.setAttribute('role', 'switch'); speak.title = t.speakHint; showSpeaks(); }
     $('menu').querySelector('button').focus();
   }
+  function showSpeaks() {
+    $('menu-speak').setAttribute('aria-checked', String(speaks));
+    $('menu-speak').replaceChildren(el('span', {textContent: t.speak}), el('i', {className: 'switch'}));
+  }
+  function setSpeaks(on) { speaks = on; native.setSpeaks(on).catch(fail); showSpeaks(); }
   $('more').addEventListener('click', () => menu($('menu').hidden));
 
   // Writing

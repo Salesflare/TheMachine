@@ -17,11 +17,19 @@ pub struct Saved {
     pub hide_told: bool,
     /// What was in For you when the person last looked. None: nothing was ever there.
     pub seen: Option<crate::seen::Seen>,
+    /// It doesn't speak up ("..." turns that off and on).
+    pub quiet: bool,
+    /// A random name for this robot, for its Machine to know which computer's it is (speak.rs).
+    pub desk: String,
 }
 
 impl Saved {
     pub fn read(file: &Path) -> Saved {
-        fs::read(file).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default()
+        let mut saved: Saved = fs::read(file).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
+        if saved.desk.len() != 32 || !saved.desk.bytes().all(|b| b.is_ascii_hexdigit()) {
+            saved.desk = crate::machine::random();
+        }
+        saved
     }
 
     pub fn write(&self, file: &Path) -> io::Result<()> {
@@ -54,14 +62,16 @@ mod tests {
         s.places.insert("DP-1".into(), Corner { right: 1.0, bottom: 2.0 });
         s.write(&file).unwrap();
         s.write(&file).unwrap();
-        assert_eq!(Saved::read(&file), s);
+        assert_eq!(Saved { desk: String::new(), ..Saved::read(&file) }, s);
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             assert_eq!(fs::metadata(&file).unwrap().permissions().mode() & 0o777, 0o600);
         }
         fs::write(&file, b"not json").unwrap();
-        assert_eq!(Saved::read(&file), Saved::default());
+        let fresh = Saved::read(&file);
+        assert!(fresh.desk.len() == 32 && fresh.desk != Saved::read(&file).desk);
+        assert_eq!(Saved { desk: String::new(), ..fresh }, Saved::default());
         fs::remove_dir_all(folder).unwrap();
     }
 }

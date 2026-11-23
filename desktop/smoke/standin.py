@@ -54,6 +54,7 @@ class Machine(http.server.ThreadingHTTPServer):
         super().__init__(('127.0.0.1', port), Page)
         self.port, self.actions, self.cookies, self.links, self.challenges = port, [], set(), [], {}
         self.seen, self.cards = [], []
+        self.desks, self.notices = [], []  # what the robot says of itself with each look; what waits for it to say
         self.todos, self.name = list(TODOS), 'Sam'
         self.refuse = False
         self.compact = False  # its dashboard has the page of one to-do
@@ -106,13 +107,20 @@ class Page(http.server.BaseHTTPRequestHandler):
         if u.path == '/api/session':
             return self.answer({'csrf': 'made-up', **({'compact': 1} if m.compact else {})})
         if u.path == '/api/status':
-            return self.answer({'first_name': m.name, 'suggestions': [{'id': i, 'title': t, 'status': 'prepared' if i != 'aa01' else 'pending', 'due': '2000-01-01' if i == 'aa01' else None,
+            waits = []
+            if 'desk' in q:
+                m.desks.append((q['desk'], q.get('up')))
+                if q.get('up') == '1':
+                    m.notices = [n for n in m.notices if n['key'] not in q.get('got', '').split(',')]
+                    waits = m.notices
+            return self.answer({**({'notices': waits} if 'desk' in q else {}), 'first_name': m.name, 'suggestions': [{'id': i, 'title': t, 'status': 'prepared' if i != 'aa01' else 'pending', 'due': '2000-01-01' if i == 'aa01' else None,
                                                                              'created_at': '2026-01-01T00:00:00Z', 'snooze_choices': SNOOZE, **m.status.get(i, {})} for i, t in m.todos]})
         if u.path == '/api/notice':
             own = m.status.get(q['tag'], {}).get('status', 'pending' if q['tag'] == 'aa01' else 'prepared')
             first = {'pending': ['prepare'], 'accepted': []}.get(own, ['draft'])
-            return self.answer({'title': 'x', 'actions': [*first, 'snooze2h', 'done', 'send'],
-                                'labels': {'prepare': 'Do it', 'draft': 'See draft', 'snooze2h': 'Snooze', 'done': 'Mark done', 'send': 'Send'},
+            named = dict(TODOS).get(q['tag'])
+            return self.answer({'title': named, 'body': 'Made up, for the stand-in.', 'actions': [*first, 'snooze2h', 'done', 'send'],
+                                'labels': {'open': 'Open', 'prepare': 'Do it', 'draft': 'See draft', 'snooze2h': 'Snooze', 'done': 'Mark done', 'send': 'Send'},
                                 'events': {'prepare': 'Preparing it', 'snooze2h': 'Snoozed it', 'done': 'Marked it done', 'send': 'Sent'}})
         if q.get('compact') == '1':
             m.cards.append(self.headers.get('Cookie') in m.cookies)

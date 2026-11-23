@@ -12,6 +12,7 @@ mod saved;
 mod seen;
 mod signin;
 mod snip;
+mod speak;
 mod webapp;
 mod windows;
 
@@ -69,6 +70,11 @@ pub struct Shared {
     /// The Machine whose dashboard has a page for one to-do, once that is known, and the one that is open (card.rs).
     compact: Mutex<Option<String>>,
     card: Mutex<card::Card>,
+    /// What the robot says, and will (speak.rs); how tall its bubble is.
+    speaking: Mutex<speak::Speaking>,
+    tall: Mutex<f64>,
+    /// The to-do the box opens on.
+    pub wanted: Mutex<Option<String>>,
     /// What was added in the box since it opened.
     pub added: Mutex<Vec<String>>,
     dot: AtomicBool,
@@ -153,14 +159,15 @@ async fn with_machine<T: Send + 'static>(app: &AppHandle, work: impl FnOnce(Mach
 fn look(app: &AppHandle) -> Result<(), String> {
     let shared = app.state::<Shared>();
     let Some(machine) = shared.machine() else { return Ok(()) };
-    let found = ask_status(&shared, &machine);
+    let found = ask_status(app, &shared, &machine);
     if shared.machine().is_none_or(|m| m.url != machine.url) {
         return Ok(()); // signed out meanwhile
     }
     *shared.problem.lock().unwrap() = found.as_ref().err().cloned();
-    match found {
-        Ok(()) => {
+    match &found {
+        Ok(notices) => {
             let _ = app.emit_to("robot", "news", ());
+            speak::came(app, &machine, notices);
         }
         Err(_) => { // not reachable or signed out: nothing is known to wait, so no dot
             set_dot(app, false);
@@ -172,11 +179,12 @@ fn look(app: &AppHandle) -> Result<(), String> {
             *shared.alone.lock().unwrap() = Some((machine.url, alone));
         }
     }
-    found
+    found.map(|_| ())
 }
 
 /// One at a time: each answer is what changed since the one before. The robot's page puts them together (ui/list.js).
-fn ask_status(shared: &Shared, machine: &Machine) -> Result<(), String> {
+/// Gives what waits for the robot to say.
+fn ask_status(app: &AppHandle, shared: &Shared, machine: &Machine) -> Result<Value, String> {
     let _one = shared.looking.lock().unwrap();
     let (since, fleet_held) = {
         let mut held = shared.held.lock().unwrap();
@@ -185,14 +193,16 @@ fn ask_status(shared: &Shared, machine: &Machine) -> Result<(), String> {
         }
         (held.token.clone(), held.fleet.clone())
     };
-    let status = machine.status(since.as_deref())?;
+    let desk = shared.saved.lock().unwrap().desk.clone();
+    let mut status = machine.status(since.as_deref(), &desk, speak::up(app), &speak::got(shared))?;
+    let notices = status["notices"].take(); // not part of the status
     // The Fleet's items, when its part says they changed (a change list without that part: they didn't)
     let part = &status["fleet"];
     let due = (part["on"] == true && fleet_held.as_ref() != Some(&part["stamp"])).then(|| part["stamp"].clone());
     let fleet = due.as_ref().and_then(|_| machine.fleet().ok());
     let mut held = shared.held.lock().unwrap();
     if held.machine != machine.url {
-        return Ok(()); // signed out meanwhile
+        return Ok(Value::Null); // signed out meanwhile
     }
     // One that didn't answer is asked for again, with the whole status
     held.token = if due.is_some() && fleet.is_none() { None } else { status["_token"].as_str().map(String::from) };
@@ -203,7 +213,7 @@ fn ask_status(shared: &Shared, machine: &Machine) -> Result<(), String> {
         held.news.clear();
     }
     held.news.push(News { machine: machine.url.clone(), status, fleet });
-    Ok(())
+    Ok(notices)
 }
 
 fn listed(app: &AppHandle, waiting: Waiting) {
@@ -275,6 +285,7 @@ fn robot_list(app: AppHandle, machine: String, todos: Option<Vec<machine::Todo>>
         let here = app.state::<Shared>().added.lock().unwrap().clone();
         let added = added.into_iter().filter(|a| here.contains(&a.id)).collect();
         listed(app, Waiting { hour12, ..Waiting::of(todos, marks.len(), &name, added) });
+        speak::follow(app, &marks);
         news(app, seen::now(&machine, &marks));
     });
 }
@@ -344,6 +355,10 @@ fn hide(app: &AppHandle) {
 
 fn set_hidden(app: &AppHandle, hidden: bool) {
     app.state::<Shared>().hidden.store(hidden, Ordering::Relaxed);
+    if hidden {
+        speak::hush(app, true);
+    }
+    app.state::<Shared>().look_soon(); // whether it speaks
     windows::place(app);
     let _ = app.emit_to("robot", "hidden", hidden);
     follow_tray(app);
@@ -393,6 +408,7 @@ fn chosen(app: &AppHandle, id: &str) {
             shared.now.lock().unwrap().clear();
             *shared.compact.lock().unwrap() = None;
             card::forget(app);
+            speak::hush(app, true);
             set_dot(app, false);
             listed(app, Waiting::default());
             open(app); // it says so
@@ -428,6 +444,8 @@ struct BoxState {
     notice: bool,
     snip: bool,
     open: bool,
+    speaks: bool,
+    wanted: Option<String>,
 }
 
 #[tauri::command]
@@ -441,7 +459,68 @@ fn box_state(shared: State<Shared>) -> BoxState {
         notice: shared.notice.load(Ordering::Relaxed),
         snip: shared.snip.load(Ordering::Relaxed),
         open: shared.open.load(Ordering::Relaxed),
+        speaks: !shared.saved.lock().unwrap().quiet,
+        wanted: shared.wanted.lock().unwrap().clone(),
     }
+}
+
+/// "Speak up", in its menu.
+#[tauri::command]
+fn set_speaks(app: AppHandle, on: bool) {
+    let shared = app.state::<Shared>();
+    shared.saved.lock().unwrap().quiet = !on;
+    shared.save();
+    shared.look_soon();
+    if !on {
+        later(&app, |app| speak::hush(app, true));
+    }
+}
+
+// The bubble
+
+#[derive(Serialize)]
+struct BubbleState {
+    say: Option<speak::Say>,
+    /// Where the robot is along it, and whether it is below the robot.
+    tail: f64,
+    below: bool,
+    hour12: bool,
+}
+
+#[tauri::command]
+fn bubble_state(app: AppHandle) -> BubbleState {
+    let (tail, below) = windows::bubble_tail(&app);
+    let shared = app.state::<Shared>();
+    let hour12 = shared.waiting.lock().unwrap().hour12;
+    BubbleState { say: speak::now(&shared), tail, below, hour12 }
+}
+
+#[tauri::command]
+fn bubble_fit(app: AppHandle, height: f64) {
+    later(&app, move |app| windows::fit_bubble(app, height));
+}
+
+/// A button was tapped: it stays until the page is done with it.
+#[tauri::command]
+fn bubble_hold(shared: State<Shared>) {
+    speak::hold(&shared);
+}
+
+/// It opens as a row of the box does.
+#[tauri::command]
+async fn bubble_open(app: AppHandle, todo: String) -> Result<(), String> {
+    todo_id(&todo)?;
+    if has_card(&app).await? {
+        *app.state::<Shared>().wanted.lock().unwrap() = Some(todo);
+        later(&app, open);
+        return Ok(());
+    }
+    open_path(&app, &format!("#card={todo}"))
+}
+
+#[tauri::command]
+fn bubble_done(app: AppHandle) {
+    later(&app, speak::done);
 }
 
 /// Asks the Machine now: whether it still answers, and what waits.
@@ -604,16 +683,24 @@ async fn ask(app: AppHandle, text: String) -> Result<Value, String> {
     with_machine(&app, move |m| m.ask(&text)).await
 }
 
+/// Whether its Machine's dashboard has a page for one to-do: asked once.
+async fn has_card(app: &AppHandle) -> Result<bool, String> {
+    let known = app.state::<Shared>().compact.lock().unwrap().clone();
+    let url = with_machine(app, move |m| Ok((known.as_ref() == Some(&m.url) || m.compact()).then_some(m.url))).await?;
+    if url.is_some() {
+        *app.state::<Shared>().compact.lock().unwrap() = url.clone();
+    }
+    Ok(url.is_some())
+}
+
 /// Opens it in the box. The box's height with it; none: this Machine has no page for that, so it opens in the dashboard.
 #[tauri::command]
 async fn card_open(app: AppHandle, todo: String) -> Result<Option<f64>, String> {
     todo_id(&todo)?;
-    let known = app.state::<Shared>().compact.lock().unwrap().clone();
-    let url = with_machine(&app, move |m| Ok((known.as_ref() == Some(&m.url) || m.compact()).then_some(m.url))).await?;
-    if url.is_none() {
+    *app.state::<Shared>().wanted.lock().unwrap() = None;
+    if !has_card(&app).await? {
         return Ok(None);
     }
-    *app.state::<Shared>().compact.lock().unwrap() = url;
     let (tell, told) = std::sync::mpsc::channel();
     later(&app, move |app| {
         let _ = tell.send(windows::tall(app));
@@ -649,7 +736,8 @@ fn open_dashboard(app: AppHandle, todo: Option<String>) -> Result<(), String> {
 fn open_path(app: &AppHandle, path: &str) -> Result<(), String> {
     let (machine, alone) = app.state::<Shared>().signed_in().ok_or("notowner")?;
     looked(app);
-    let address = format!("{machine}{path}");
+    // Which robot opens it: the page tells the Machine what browser is on this computer (speak.rs)
+    let address = format!("{machine}?desk={}{path}", app.state::<Shared>().saved.lock().unwrap().desk);
     if webapp::open(&machine, &address, alone) {
         return Ok(());
     }
@@ -736,7 +824,9 @@ fn watch(app: AppHandle) {
         let here = app.clone();
         let _ = app.run_on_main_thread(move || {
             windows::follow_screens(&here);
-            here.state::<Shared>().full.store(full, Ordering::Relaxed);
+            if here.state::<Shared>().full.swap(full, Ordering::Relaxed) != full {
+                here.state::<Shared>().look_soon(); // whether it speaks
+            }
             windows::show_or_not(&here);
         });
     });
@@ -782,13 +872,15 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             robot_state, robot_grab, robot_drag, robot_drop, robot_click, robot_menu, robot_take, robot_list, box_state, box_look, box_fit, box_draft, box_close,
             connect, sign_in, add_todo, add_file, remove_file, take_screenshot, todo_quick, todo_decide, todo_undo, ask, open_dashboard, menu_item,
-            card_open, card_place, card_close
+            card_open, card_place, card_close, set_speaks, bubble_state, bubble_fit, bubble_hold, bubble_open, bubble_done
         ])
         .on_window_event(|window, event| {
             // Alt+F4 closes the box. On the robot it quits, on Windows: on Linux a monitor that goes away closes it too.
             if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
-                if window.label() != "robot" {
+                if window.label() == "bubble" {
+                    speak::done(window.app_handle());
+                } else if window.label() != "robot" {
                     windows::close_box(window.app_handle());
                 } else if cfg!(windows) {
                     quit::quit(window.app_handle());
@@ -819,6 +911,9 @@ fn main() {
                 compact: Mutex::default(),
                 card: Mutex::default(),
                 added: Mutex::default(),
+                speaking: Mutex::default(),
+                wanted: Mutex::default(),
+                tall: Mutex::new(90.0),
                 dot: AtomicBool::new(false),
                 snip: AtomicBool::new(false),
                 picking: AtomicBool::new(false),
@@ -838,6 +933,9 @@ fn main() {
                 screens: Mutex::default(),
                 layer,
             });
+            if app.state::<Shared>().machine().is_some() {
+                app.state::<Shared>().save(); // its name, made once
+            }
             // Left by a sign-in that was cut off
             if app.deep_link().is_registered(signin::SCHEME).unwrap_or(false) {
                 no_links(app.handle());

@@ -32,6 +32,11 @@ fn change(was: Front, now: Front) -> Option<bool> {
     }
 }
 
+/// Whether what is in front is full screen, where the window system tells (on Windows: windows::full_screen).
+pub fn full() -> bool {
+    system::full()
+}
+
 pub fn watch(app: &AppHandle) {
     let (changed, changes) = std::sync::mpsc::channel();
     if system::listen(changed) {
@@ -57,6 +62,7 @@ fn follow(app: &AppHandle, changes: &Receiver<()>) {
             }
             later(app, move |app| {
                 if gone {
+                    app.state::<Shared>().look_soon(); // it doesn't speak now
                     looked(app);
                     windows::close_box(app);
                 }
@@ -113,6 +119,10 @@ mod system {
     const TASKBAR: ::windows::core::GUID = ::windows::core::GUID::from_u128(0x9F4C2855_9F79_4B39_A8D0_E1D42DE1D5F3);
     const RELAUNCH: PROPERTYKEY = PROPERTYKEY { fmtid: TASKBAR, pid: 2 };
     const ID: PROPERTYKEY = PROPERTYKEY { fmtid: TASKBAR, pid: 5 };
+
+    pub fn full() -> bool {
+        false
+    }
 
     pub fn front(ids: &[String]) -> Front {
         // SAFETY: plain calls; what they give back is checked, and freed by its own types.
@@ -184,6 +194,7 @@ mod system {
         if !x11() {
             return hyprland::listen(to);
         }
+        X11.store(true, std::sync::atomic::Ordering::Relaxed);
         std::thread::spawn(move || {
             let Ok((x, screen)) = x11rb::connect(None) else { return };
             let root = x.setup().roots[screen].root;
@@ -209,20 +220,70 @@ mod system {
         hyprland::front(ids).or_else(|| read(ids)).unwrap_or(Front::Other)
     }
 
+    /// Known once listen() asked on the main thread, the only one GDK answers on.
+    static X11: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+    pub fn full() -> bool {
+        hyprland::full().unwrap_or_else(|| X11.load(std::sync::atomic::Ordering::Relaxed) && read_full().unwrap_or(false))
+    }
+
+    fn read_full() -> Option<bool> {
+        let (x, screen) = x11rb::connect(None).ok()?;
+        let first = |window: Window, name: &str, kind: AtomEnum, most: u32| -> Option<Vec<u32>> {
+            let found = x.get_property(false, window, atom(&x, name)?, kind, 0, most).ok()?.reply().ok()?;
+            let all = found.value32()?.collect();
+            Some(all)
+        };
+        let window = *first(x.setup().roots[screen].root, "_NET_ACTIVE_WINDOW", AtomEnum::WINDOW, 1)?.first().filter(|w| **w != 0)?;
+        let full = atom(&x, "_NET_WM_STATE_FULLSCREEN")?;
+        Some(first(window, "_NET_WM_STATE", AtomEnum::ATOM, 32)?.contains(&full))
+    }
+
     /// Only where Hyprland says it is there, and only the program's name (its class): the title after it is never kept.
     mod hyprland {
         use super::{Front, Sender};
-        use std::io::{BufRead, BufReader};
+        use std::io::{BufRead, BufReader, Read, Write};
         use std::os::unix::net::UnixStream;
         use std::sync::Mutex;
 
         /// The program in front; nothing is: an empty desktop, or the keys are in a layer (the robot's box, a launcher).
         static IN_FRONT: Mutex<Option<String>> = Mutex::new(None);
 
+        fn connect(socket: &str) -> Option<UnixStream> {
+            let (run, which) = (std::env::var_os("XDG_RUNTIME_DIR")?, std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE")?);
+            UnixStream::connect(std::path::Path::new(&run).join("hypr").join(which).join(socket)).ok()
+        }
+
+        /// One question on its other socket; of the answer only what T names is read.
+        fn ask<T: serde::de::DeserializeOwned>(question: &str) -> Option<T> {
+            let mut socket = connect(".socket.sock")?;
+            let soon = Some(std::time::Duration::from_secs(2));
+            socket.set_read_timeout(soon).ok()?;
+            socket.write_all(question.as_bytes()).ok()?;
+            let mut answer = Vec::new();
+            socket.take(64 << 10).read_to_end(&mut answer).ok()?;
+            serde_json::from_slice(&answer).ok()
+        }
+
+        #[derive(serde::Deserialize)]
+        struct Window {
+            fullscreen: serde_json::Value,
+        }
+
+        #[derive(serde::Deserialize)]
+        struct Locked {
+            locked: bool,
+        }
+
+        /// The window in front is full screen (2 and up; 1 is only maximized), or the screen is locked. None: not Hyprland.
+        pub fn full() -> Option<bool> {
+            connect(".socket.sock")?;
+            let window = ask::<Window>("j/activewindow").is_some_and(|w| w.fullscreen == true || w.fullscreen.as_i64().is_some_and(|f| f >= 2));
+            Some(window || ask::<Locked>("j/locked").is_some_and(|l| l.locked))
+        }
+
         pub fn listen(to: Sender<()>) -> bool {
-            let (Some(run), Some(which)) = (std::env::var_os("XDG_RUNTIME_DIR"), std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE")) else { return false };
-            let socket = std::path::Path::new(&run).join("hypr").join(which).join(".socket2.sock");
-            let Ok(stream) = UnixStream::connect(socket) else { return false };
+            let Some(stream) = connect(".socket2.sock") else { return false };
             *IN_FRONT.lock().unwrap() = Some(String::new());
             std::thread::spawn(move || {
                 for line in BufReader::new(stream).split(b'\n') {
@@ -274,6 +335,10 @@ mod system {
     use super::{Front, Sender};
 
     pub fn listen(_: Sender<()>) -> bool {
+        false
+    }
+
+    pub fn full() -> bool {
         false
     }
 

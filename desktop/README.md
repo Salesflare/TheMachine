@@ -64,6 +64,29 @@ how many more. The robot runs the dashboard's own rules on the Machine's own ans
 asks every 30 seconds, when the box opens and when you leave the app, and a look of the robot's doesn't count as opening
 the dashboard. Follow-ups of a board and Fleet items open with the dashboard.
 
+## It speaks up
+
+When a to-do's notification would buzz on this computer, the robot says it in a small bubble instead: the notification's
+own title and line, and its buttons (Open, Do it, Snooze with its choices, Mark done; never Send). It goes after about 12
+seconds, not while the mouse is on it, and the dot stays. It never takes the keys. **Speak up** in **...** turns it off.
+
+- **What and when is your Machine's.** Hours, the day's cap, batches, hidden text, the kinds you turned off, a dashboard in
+  use: all decided before, as for every notification (`machine/delivery/desk.py`). The robot only says with its usual look,
+  every 30 seconds, that it is there and may speak. So a bubble comes up to 30 seconds after the phone's push.
+- **Never twice on one computer.** While the robot may speak, your Machine doesn't push to the browser or app on the
+  robot's computer. Which one that is it knows after the robot has opened the dashboard there once; until then it stays
+  quiet if any browser has notifications on. A second browser with notifications on this computer still shows its own.
+  Phones and other computers get theirs as ever.
+- **It may not speak** while it is hidden, off, or away for the app or something in full screen; and, where the system
+  tells without a permission, while the screen is locked or the system says not to disturb. Windows: presentation mode,
+  a game, quiet hours, or no mouse and keys for 5 minutes. Linux: KDE, dunst, mako (a mode named do-not-disturb or dnd),
+  GNOME's Do Not Disturb. Then your Machine pushes to the browser as ever. One it was handed but didn't
+  say it got in 90 seconds (an answer lost on the way is sent again) goes to the browser after all.
+- **Decided elsewhere**, on the phone or the dashboard: the bubble goes with the robot's next look.
+- While the box is open nothing is said, and what its rows showed isn't said after.
+
+A Machine without this part gives nothing to say, and nothing changes.
+
 ## Opening a to-do
 
 A row opens the to-do in the box, which grows with it, up to a comfortable height: the dashboard's own page of one to-do (`?compact=1#card=<id>`), with **Back**,
@@ -124,6 +147,7 @@ Tauri 2: a small Rust program and the system's own web view. Three parts, each r
 | The Machine | `src/machine.rs`, `src/signin.rs`, `src/address.rs`, `src/saved.rs` | The same requests and address rules as the phone app (`mobile/`). |
 | A screenshot | `src/snip.rs` | The system's own tool. |
 | The dot | `src/seen.rs` | What was there when the person last looked. |
+| Speaking up | `src/speak.rs`, `ui/bubble.js` | What waits to be said, and whether the system says not to disturb. |
 | The installed app | `src/webapp.rs`, `src/front.rs` | Where it is, how it is started, whether it is in front. |
 
 `ui/for-you.js` is `dashboard/todos-for-you.js` as it is, and `ui/list.js` the few names it needs. When the dashboard's file
@@ -133,7 +157,8 @@ changes, copy it again: `tests/test_for_you_rules_dashboard.mjs` compares both, 
 pages load nothing from elsewhere (`tauri.conf.json`, `csp`). The address and a hosted Machine's session are in one file only
 its owner can read (`app.json` in the folder above).
 
-To a Machine it sends `GET manifest.webmanifest`, `api/session`, `api/status`, `api/fleet` and `api/notice`, the page of a to-do open in the box, and the actions
+To a Machine it sends `GET manifest.webmanifest`, `api/session`, `api/status` (with a random name for this robot and whether
+it may speak), `api/fleet` and `api/notice`, the page of a to-do open in the box, and the actions
 `card_new`, `chat_upload`, `chat_file_remove`, `search_ask` and `decide` (as a notification's buttons do, and Undo), with
 the dashboard's own token and Origin. No others.
 
@@ -141,7 +166,7 @@ the dashboard's own token and Origin. No others.
 |---|---|---|---|---|
 | Built | yes, by CI | yes | yes | no |
 | On top, no taskbar entry | window flags | layer surface | window hints | |
-| Full screen | hidden | under it | the window manager decides | |
+| Full screen | hidden, says nothing | under it; says nothing on Hyprland | the window manager decides; says nothing | |
 | Away while the app is in front | yes | Hyprland only, by the socket it tells it on | yes, XWayland apps on GNOME only | |
 | Clicks beside the robot | taken in the window's corners | go through | go through | |
 

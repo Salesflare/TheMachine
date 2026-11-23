@@ -124,7 +124,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     }
     let window = window.build()?;
     #[cfg(target_os = "linux")]
-    windows::linux::prepare(app, &window, false)?;
+    windows::linux::prepare(app, &window, "card")?;
     #[cfg(windows)]
     windows::no_menu(&window);
     Ok(window)

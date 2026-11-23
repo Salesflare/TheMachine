@@ -27,6 +27,7 @@ pub const ROBOT: (f64, f64) = (88.0, 88.0);
 /// How much of a hidden robot still shows: it looks over the bottom edge, so it is there to click.
 pub const PEEK: f64 = 40.0;
 pub const BOX_WIDTH: f64 = 340.0;
+pub const BUBBLE_WIDTH: f64 = 300.0;
 pub const GAP: f64 = 6.0;
 /// The box always has room for a shadow around it, so its window is this much larger on every side.
 pub const SHADOW: f64 = 14.0;
@@ -60,12 +61,18 @@ pub fn tall(robot: Rect, area: Rect) -> f64 {
     (above.max(below) - GAP - 8.0).clamp(420.0, 640.0).min(area.h - 16.0).max(200.0)
 }
 
-/// The box's window for a robot: above it, its right edge over the robot's, below it when there is no room above, and
+/// Where the robot's middle is along a bubble, so that its tail points there.
+pub fn tail(robot: Rect, bubble: Rect) -> f64 {
+    let half = (BUBBLE_WIDTH / 2.0 - 24.0).max(0.0);
+    (robot.x + robot.w / 2.0 - bubble.x - bubble.w / 2.0).clamp(-half, half) + BUBBLE_WIDTH / 2.0
+}
+
+/// The window of the box, or of a bubble, for a robot: above it, its right edge over the robot's, below it when there is no room above, and
 /// always within the area. height is the page's own, without the shadow.
-pub fn box_at(robot: Rect, area: Rect, height: f64) -> Rect {
-    let (w, h) = (BOX_WIDTH + 2.0 * SHADOW, height.min(area.h) + 2.0 * SHADOW);
+pub fn box_at(robot: Rect, area: Rect, width: f64, height: f64) -> Rect {
+    let (w, h) = (width + 2.0 * SHADOW, height.min(area.h) + 2.0 * SHADOW);
     let over = SHADOW - 8.0; // the box keeps 8 from the edges, its shadow not
-    let x = (robot.x + robot.w - BOX_WIDTH - SHADOW).max(area.x - over).min(area.x + area.w - w + over);
+    let x = (robot.x + robot.w - width - SHADOW).max(area.x - over).min(area.x + area.w - w + over);
     let above = robot.y - GAP - height - SHADOW;
     let y = if above >= area.y - over { above } else { robot.y + robot.h + GAP - SHADOW };
     Rect { x, y: y.min(area.y + area.h - h + over).max(area.y - over), w, h }
@@ -83,7 +90,7 @@ mod tests {
             let area = Rect { h, ..AREA };
             let robot = Corner { right: 16.0, bottom }.robot(area);
             let tall = tall(robot, area);
-            let r = box_at(robot, area, tall);
+            let r = box_at(robot, area, BOX_WIDTH, tall);
             assert!(tall >= 360.0 && r.y >= area.y - SHADOW && r.y + r.h <= area.y + area.h + SHADOW, "{bottom} {h}: {tall} {r:?}");
         }
     }
@@ -123,7 +130,7 @@ mod tests {
             for bottom in [0.0, 200.0, 602.0] {
                 for height in [150.0, 320.0, 480.0] {
                     let robot = Corner { right, bottom }.robot(AREA);
-                    let b = box_at(robot, AREA, height);
+                    let b = box_at(robot, AREA, BOX_WIDTH, height);
                     let seen = Rect { x: b.x + SHADOW, y: b.y + SHADOW, w: b.w - 2.0 * SHADOW, h: b.h - 2.0 * SHADOW };
                     assert!(seen.x >= AREA.x && seen.x + seen.w <= AREA.x + AREA.w, "{right} {bottom} {height} {seen:?}");
                     assert!(seen.y >= AREA.y && seen.y + seen.h <= AREA.y + AREA.h, "{right} {bottom} {height} {seen:?}");
@@ -133,17 +140,27 @@ mod tests {
     }
 
     #[test]
+    fn a_bubbles_tail_is_at_the_robot() {
+        for right in [0.0, 16.0, 600.0, 1192.0] {
+            let robot = Corner { right, bottom: 12.0 }.robot(AREA);
+            let b = box_at(robot, AREA, BUBBLE_WIDTH, 90.0);
+            let at = b.x + SHADOW + tail(robot, b);
+            assert!((at - (robot.x + robot.w / 2.0)).abs() < 21.0, "{right} {at} {robot:?}");
+        }
+    }
+
+    #[test]
     fn a_hidden_one_looks_over_the_bottom_edge() {
         let r = peek(Corner { right: 300.0, bottom: 400.0 }.robot(AREA), AREA);
         assert_eq!((r.x, r.y + r.h, r.w, r.h), (AREA.x + AREA.w - 388.0, AREA.y + AREA.h, 88.0, PEEK));
-        assert!(box_at(r, AREA, 300.0).y + SHADOW + 300.0 <= r.y);
+        assert!(box_at(r, AREA, BOX_WIDTH, 300.0).y + SHADOW + 300.0 <= r.y);
     }
 
     #[test]
     fn the_box_is_above_the_robot_then_below() {
         let low = Corner::default().robot(AREA);
-        assert!(box_at(low, AREA, 300.0).y + SHADOW + 300.0 <= low.y);
+        assert!(box_at(low, AREA, BOX_WIDTH, 300.0).y + SHADOW + 300.0 <= low.y);
         let high = Corner { right: 16.0, bottom: 602.0 }.robot(AREA);
-        assert!(box_at(high, AREA, 300.0).y + SHADOW >= high.y + high.h);
+        assert!(box_at(high, AREA, BOX_WIDTH, 300.0).y + SHADOW >= high.y + high.h);
     }
 }
