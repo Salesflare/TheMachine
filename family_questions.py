@@ -1,8 +1,11 @@
 """Questions in a Family (docs/family.md, "Ask someone's Machine"): the owner asks one member's Machine something, as "any
 news about the carpet?", and that member's Machine answers from its own owner's personal messages.
 
+First comes a turn that sees only the question (family_question_check.py): an ordinary household matter, asked the
+ordinary way? If not, or if it isn't sure, the question is set aside: nothing is searched or drafted, the to-do shows only
+the question and the notice not even that (hushed).
 - Ask me first (the default): this Machine drafts an answer in the background (family_question_sources.py: what it may
-  read, the one model turn and its checks; machine/app/family_questions.py runs it). The owner gets a to-do with the
+  read, the drafting turn and its checks; machine/app/family_questions.py runs it). The owner gets a to-do with the
   question quoted, the messages the draft comes from and the draft, to edit. Only their Send sends it.
 - Never: not drafted, not shown to act on.
 There is no Always: every answer is read by its owner, and from a notification or Telegram a question only opens.
@@ -13,7 +16,7 @@ asks too much: so nothing says which one it was. Not answered in APPROVAL_DAYS d
 from before questions declines them itself: the asker sees that it needs an update first.
 
 Safety: the question is untrusted text, kept as one plain line (parse) and only shown quoted, searched for and given to
-the one turn as data. It is taken in the Fleet's loop, which never runs a model: the draft is made by a worker of the
+the turns as data. It is taken in the Fleet's loop, which never runs a model: the draft is made by a worker of the
 app, once. Each question and the exact answer that went are in the answering owner's Activity (activity)."""
 from __future__ import annotations
 
@@ -29,8 +32,10 @@ from machine.owner_error import OwnerError
 KIND = 'question'
 CHARS, ANSWER_CHARS = 300, 600
 OPEN, A_DAY = 3, 10      # questions from one member: waiting at once, and taken in a day
-RUNS = 6                 # drafts (model turns) a day, over everyone in the Family
-STALE = 180              # seconds a draft may take before its question waits without one
+RUNS = 6                 # questions a day that may use the model, over everyone in the Family
+STALE = 300              # seconds a draft may take before its question waits without one
+HOUSEHOLD, ASIDE = 'household', 'aside'  # what the turn on the question alone calls it (fleet_questions.asked)
+RECENT, RECENT_DAYS = 40, 30             # the same member's earlier questions that turn sees
 DRAFTING = 'drafting'    # fleet_in's status while a draft is made: nothing shows or acts on it yet
 NOW = ('waiting', 'answered', 'expired', 'declined')
 CONTEXT = 'family-question:'
@@ -39,11 +44,20 @@ CREATE TABLE IF NOT EXISTS fleet_questions(id TEXT PRIMARY KEY,state TEXT NOT NU
 '''
 # state: pending (no draft yet), running, then ready, empty, private, none (no safe draft), held (a usage limit or the
 # day's drafts are used up) or failed. draft: {'text', 'sources': [{id, kind, title, from, at}]}. answer: what went,
-# {'text', 'sources': [ids]}. day: the day its turn ran.
+# {'text', 'sources': [ids]}. day: the day its turns ran. asked: what the question is (family_question_check.py), none when
+# that couldn't be judged.
 
 
 def ensure(db):
     db.executescript(SCHEMA)
+    if 'asked' not in {r[1] for r in db.execute('PRAGMA table_info(fleet_questions)')}:  # added 2026-11-23
+        db.execute('ALTER TABLE fleet_questions ADD COLUMN asked TEXT')
+
+
+def hushed(row):
+    """Whether a notice leaves this question's words out: it isn't known to be an ordinary household matter."""
+    import fleet
+    return row['kind'] == KIND and (fleet._get(row, 'asked') != HOUSEHOLD or fleet._get(row, 'question_state') == 'private')
 
 
 def parse(question):
@@ -186,6 +200,13 @@ class Questions:
             self.draft_answer(ask['id']) if self.draft_answer else self.question_drafted(ask['id'], {'state': 'none'})
         return 'waiting'
 
+    def question_earlier(self, ask):
+        """The questions this member asked before this one lately, newest first: their own words, however each ended."""
+        with self.connect() as db:
+            rows = db.execute('SELECT question FROM fleet_in WHERE fleet=? AND member_id=? AND kind=? AND id<>? AND at>=? ORDER BY at DESC,id LIMIT ?',
+                              (ask['fleet'], ask['member_id'], KIND, ask['id'], self.question_since(days=RECENT_DAYS), RECENT)).fetchall()
+        return [text for r in rows if (text := (_load(r['question']) or {}).get('text'))]
+
     def question_claim(self, ask_id):
         """The question to draft for, once: {'id', 'fleet', 'member_id', 'name', 'question'}; None when it was taken before
         (a draft cut off by a restart is never run again)."""
@@ -197,7 +218,7 @@ class Questions:
         return {**{k: row[k] for k in ('id', 'fleet', 'member_id', 'name')}, 'question': (_load(row['question']) or {}).get('text', '')}
 
     def question_run(self, ask_id):
-        """Whether its model turn may run: RUNS a day, over everyone. Counted before it runs."""
+        """Whether its model turns may run: for RUNS questions a day, over everyone. Counted before they run."""
         day = timeutil.today().isoformat()
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -206,29 +227,35 @@ class Questions:
             return bool(db.execute("UPDATE fleet_questions SET day=? WHERE id=? AND state='running'", (day, str(ask_id))).rowcount)
 
     def question_drafted(self, ask_id, result):
-        """The draft, or why there is none: from now on the question waits for the owner."""
+        """The draft, or why there is none: from now on the question waits for the owner. Only the first outcome counts: a
+        draft that comes after its question already waits without one changes nothing."""
         import fleet
         kept = {k: result[k] for k in ('text', 'sources') if result.get(k)}
         with self.connect() as db:
-            db.execute('UPDATE fleet_questions SET state=?,draft=? WHERE id=?', (result['state'], json.dumps(kept) if kept else None, str(ask_id)))
-            self.move_in(db, ask_id, DRAFTING, 'waiting')
+            if not self.move_in(db, ask_id, DRAFTING, 'waiting'):
+                return
+            db.execute('UPDATE fleet_questions SET state=?,draft=?,asked=? WHERE id=?',
+                       (result['state'], json.dumps(kept) if kept else None, result.get('asked'), str(ask_id)))
             row = db.execute('SELECT status,fleet,member_id FROM fleet_in WHERE id=?', (str(ask_id),)).fetchone()
             if row and row['status'] == 'waiting' and self.rule(db, row['fleet'], row['member_id'], KIND)[0] == 'never':
                 self.move_in(db, ask_id, 'waiting', 'declined', 'rule', fleet.now())  # Never was chosen meanwhile
 
     def question_round(self):
-        """A draft that takes too long, or was cut off by a restart: its question waits without one (move_in keeps only
-        the first outcome, should its draft still come)."""
+        """A draft that takes too long, or was cut off by a restart: its question waits without one (only the first outcome
+        counts, should its draft still come)."""
         with self.connect() as db:
             rows = [r['id'] for r in db.execute('SELECT id FROM fleet_in WHERE kind=? AND status=? AND at<?', (KIND, DRAFTING, self.question_since(seconds=STALE)))]
         for ask_id in rows:
             self.question_drafted(ask_id, {'state': 'failed'})
 
     def question_draft(self, db, ask_id):
-        """What the owner's to-do shows: the draft and its messages, or why there is none."""
-        row = db.execute('SELECT state,draft FROM fleet_questions WHERE id=?', (str(ask_id),)).fetchone()
+        """What the owner's to-do shows: the draft and its messages, or why there is none. Nothing of it for a question that
+        was set aside or whose answer may be private: neither that something was found nor that nothing was."""
+        row = db.execute('SELECT state,draft,asked FROM fleet_questions WHERE id=?', (str(ask_id),)).fetchone()
         if not row:
             return {'state': 'none'}
+        if row['asked'] == ASIDE or row['state'] == 'private':
+            return {'state': 'aside'}
         return {'state': row['state'], **(_load(row['draft']) or {})}
 
     def is_question(self, ask_id):

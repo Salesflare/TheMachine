@@ -21,6 +21,7 @@ In your Family's pane on the Fleet tab, pick one person and ask: "Any news about
 - Their Machine drafts an answer from their own personal messages. They see the draft and the messages it comes from, change it if they like, and send it. Nothing reaches you before that.
 - The answer shows in your Family's pane and as a notice. After three days without one it says **No answer**.
 - A draft never comes from work, from anything sensitive or kept private, or from codes, links and account numbers. Your Machine is careful with gifts and surprises too. When it isn't sure, there is no draft and you answer in your own words.
+- A question that isn't an ordinary household matter gets no draft and nothing is looked up. You only see the question.
 - Every question to you, and exactly what you sent, is in [Activity](activity.md).
 - Don't want questions from someone? Set **Never** for them on the Sharing pane. They aren't told.
 - A Machine that isn't up to date can't answer yet; you see that.

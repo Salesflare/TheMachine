@@ -30,7 +30,7 @@ const view={on:true,kinds:{relationships:'who knows someone',availability:'free/
    {id:'t8',at:'2026-10-14T10:00:00Z',name:'Alex Moss',question:'Is the bike ready?',state:'old'}]},
  waiting:[{id:'q_'+'3'.repeat(16),fleet:FAM,member_id:'fm_robin',name:'Robin',kind:'question',question:'“Any <b>news</b> about the carpet?”',status:'waiting',at:'2026-10-20T12:00:00Z',
    draft:{state:'ready',text:'It ships on Thursday.',sources:[{id:41,kind:'gmail.message',title:'Your order is on its way',from:'Rugs & More',at:'2026-10-19T09:00:00Z'}]}},
-  {id:'q_'+'4'.repeat(16),fleet:FAM,member_id:'fm_alex',name:'Alex',kind:'question',question:'“What did the bank say?”',status:'waiting',at:'2026-10-20T12:30:00Z',draft:{state:'private'}},
+  {id:'q_'+'4'.repeat(16),fleet:FAM,member_id:'fm_alex',name:'Alex',kind:'question',question:'“What did the bank say?”',status:'waiting',at:'2026-10-20T12:30:00Z',draft:{state:'aside'}},
 {id:'q_'+'1'.repeat(16),fleet:FAM,member_id:'fm_robin',name:'Robin',kind:'todo',question:'To-do: Pick up the kids, due Fri 23 Oct',status:'waiting',at:'2026-10-20T10:00:00Z'},
   {id:'q_'+'2'.repeat(16),fleet:FAM,member_id:'fm_alex',name:'Alex',kind:'event',question:'Plan: Zoo trip, Sun 25 Oct',status:'waiting',at:'2026-10-20T11:00:00Z'}],
  plan_calendar:'Home calendar',  // "I'm in" adds a plan to the owner's own calendar (family.py)
@@ -67,7 +67,8 @@ try{
   await ask.locator('[data-fleet-source="41"]').click();await page.locator('#email-dialog[open]').waitFor();await page.keyboard.press('Escape');
   await ask.locator('textarea').fill('Thursday!');calls.length=0;await ask.locator('[data-fleet-send]').click();await landed('fleet_decide');
   assert.deepEqual(calls.at(-1),{action:'fleet_decide',args:{id:'q_'+'3'.repeat(16),choice:'once',text:'Thursday!'}});
-  const quiet=page.locator('#fleet-q_'+'4'.repeat(16));assert.match(await quiet.innerText(),/No draft: this may be private/);assert.equal(await quiet.locator('textarea').inputValue(),'');
+  // One set aside shows only its words: nothing on what was found, or that nothing was
+  const quiet=page.locator('#fleet-q_'+'4'.repeat(16)),set=await quiet.innerText();assert.match(set,/What did the bank say/);assert.doesNotMatch(set,/draft|found|private|messages/i);assert.equal(await quiet.locator('textarea').inputValue(),'');
   // A plan: I'm in says which calendar it goes on, nobody invited; the toast's Undo takes the event off again
   const plan=page.locator('#fleet-q_'+'2'.repeat(16));await plan.waitFor();
   assert.match(await plan.innerText(),/Alex proposes a plan/);assert.match(await plan.innerText(),/adds it to Home calendar\. Nobody is invited\./);
