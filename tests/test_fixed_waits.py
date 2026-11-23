@@ -33,7 +33,7 @@ WAITS = {
     'tests/test_calendar_dashboard.mjs': 4,
     'tests/test_calendar_grid_dashboard.mjs': 2,
     'tests/test_calendar_notes_dashboard.mjs': 1,
-    'tests/test_calendar_scroll_dashboard.mjs': 6,
+    'tests/test_calendar_scroll_dashboard.mjs': 5,
     'tests/test_calendar_starts_dashboard.mjs': 2,
     'tests/test_calendar_write_dashboard.mjs': 5,
     'tests/test_card_button_labels_dashboard.mjs': 1,

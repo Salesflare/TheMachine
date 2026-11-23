@@ -49,10 +49,26 @@ export function fencedEnv(base = process.env) {
 }
 const fenced = (options = {}) => ({...options, env: fencedEnv({...process.env, ...(options.env || {})})});
 
+// Playwright asks Chrome to quit and kills it after 30 s. One that had to be killed had a process that stopped answering,
+// so a timeout in the test may be Chrome's: say so next to it. On the weekly macOS run Chrome's GPU process freezes now
+// and then: no frames come, so a click waits for a stable element until it times out.
+const STUCK = 25000;
+function saysWhenStuck(browser) {
+  const close = browser.close.bind(browser);
+  browser.close = async (...args) => {
+    const start = Date.now();
+    try { return await close(...args); } finally {
+      const took = Date.now() - start;
+      if (took > STUCK) console.error(`The browser took ${Math.round(took / 1000)} s to close: one of its processes had stopped answering, which can also be why a wait timed out.`);
+    }
+  };
+  return browser;
+}
+
 // launch, launchServer and launchPersistentContext as playwright-core's own, called at call time (scripts/
 // test_impact_js.mjs patches launch on the real object), with the fenced environment
 const WRAPPED = {
-  launch: (target) => (options) => target.launch(fenced(options)),
+  launch: (target) => async (options) => saysWhenStuck(await target.launch(fenced(options))),
   launchServer: (target) => (options) => target.launchServer(fenced(options)),
   launchPersistentContext: (target) => (dir, options) => target.launchPersistentContext(dir, fenced(options)),
 };
