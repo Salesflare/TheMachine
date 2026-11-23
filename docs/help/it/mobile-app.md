@@ -1,49 +1,49 @@
 ---
 title: L’app mobile
 area: getting-started
-summary: The Machine come app su iPhone e Android: notifiche per le tue attività e condivisione con The Machine da qualsiasi app.
+summary: Usa The Machine su iPhone e Android: ricevi notifiche per le tue attività e condividi contenuti con The Machine da qualsiasi app.
 covers: mobile-app
 code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, dashboard/setup-card.js, dashboard/settings-apps.js, sw.js, manifest.webmanifest
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
-translated: 672364a90f92ef8f
+translated: 927fa395fe97f565
 ---
-L’app mobile apre la tua dashboard personale, con l’accesso effettuato come sul web. **Scarica** l’app dall’[App Store](https://apps.apple.com/app/id6829875215) per iPhone e iPad o da [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) per Android.
+L’app mobile apre la tua dashboard personale, con lo stesso accesso che usi sul web. Scaricala dall’[App Store](https://apps.apple.com/app/id6829875215) per iPhone e iPad o da [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) per Android.
 
-L’attività **Sfrutta al meglio The Machine** in cima alla sezione Attività te la suggerisce. Nel browser del telefono, **Scarica** apre lo store. Se il telefono è impostato per mostrare i siti desktop, compaiono i link a entrambi gli store. Su un computer compare un codice QR da scansionare con il telefono e i link a entrambi gli store.
+L’attività **Sfrutta al meglio The Machine** in cima alla sezione Attività ti suggerisce di scaricarla. Nel browser del telefono, **Scarica** apre lo store. Se il telefono è impostato per mostrare i siti desktop, vengono mostrati i link a entrambi gli store. Su un computer compare un codice QR da scansionare con il telefono e i link a entrambi gli store.
 
-Su qualsiasi telefono, [themachine.computer/app](https://themachine.computer/app) apre lo store giusto. In **Impostazioni**, **App** trovi entrambi gli store in cima, oppure solo quello del tuo telefono se stai usando un telefono. Su un computer, **Computer** installa la dashboard come app: vedi [Installare l’app](phone-app.md).
+Da qualsiasi telefono, [themachine.computer/app](https://themachine.computer/app) apre lo store giusto. In **Impostazioni**, **App** trovi entrambi gli store in cima, oppure solo quello del telefono se usi un telefono. Su un computer, **Computer** installa la dashboard come app: vedi [Installa l’app](phone-app.md).
 
-## Collega l’app
+## Collegala
 
-Su una Machine ospitata, l’app accede con il tuo account. Su una Machine self-hosted, apri **Impostazioni**, **App** su un computer: sotto gli store, **Non sei nel Network?** mostra un codice. Installa l’app, poi scansiona il codice con la fotocamera del telefono oppure inserisci nell’app l’indirizzo mostrato sotto. L’app ti chiede di confermare la connessione e resta valida la modalità di accesso della tua Machine.
+Su una Machine ospitata, l’app accede con il tuo account. Su una Machine ospitata autonomamente, apri **Impostazioni**, **App** da un computer: sotto gli store, **Non sei nel Network?** mostra un codice. Installa l’app e poi scansiona il codice con la fotocamera del telefono, oppure inserisci nell’app l’indirizzo mostrato sotto il codice. L’app ti chiede conferma prima di collegarsi. Continua a essere necessario accedere alla tua Machine.
 
-**Accedi con** un servizio in **Connessioni** (Shortcut, Notion, Slack, Zoom e gli altri) apre la schermata di accesso del telefono. Quando hai finito, torni all’app e la nuova connessione compare automaticamente in **Connessioni**.
+Selezionando **Accedi con** un servizio in **Connessioni** (Shortcut, Notion, Slack, Zoom e gli altri), si apre la schermata di accesso del telefono. Quando hai finito, torni all’app e la nuova connessione compare automaticamente in **Connessioni**.
 
-Quando l’app non riesce a raggiungere la tua Machine, te lo dice e riprova automaticamente. Su un Mac o un iPad con tastiera, Cmd+R ricarica la pagina.
+Quando l’app non riesce a raggiungere la tua Machine, te lo dice e riprova automaticamente. Su Mac, l’app ricarica anche la pagina quando la finestra torna vuota dopo la sospensione, e riappare anche il messaggio che stavi scrivendo in chat. Su Mac o iPad con tastiera, premi Cmd+R per ricaricare la pagina.
 
 ## Notifiche
 
-La prima volta che si apre, l’app ti chiede di consentire le notifiche. Tocca una notifica per aprire ciò a cui si riferisce: un’attività appare nell’elenco, evidenziata; il promemoria del mattino apre la giornata di oggi nel **Calendario**; il riepilogo del team apre Attività; una domanda di Fleet apre la relativa attività. Il testo di un’attività non passa mai dai servizi di Apple, Google o The Machine: trasmettono solo una frase fissa, come «C’è un’attività che ti aspetta».
+Al primo avvio, l’app ti chiede se vuoi consentire le notifiche. Tocca una notifica per aprire il contenuto: un’attività appare nell’elenco evidenziata, la notifica del mattino apre la giornata in **Calendario**, il riepilogo del team apre Attività e una domanda di Fleet apre la relativa attività. Il testo di un’attività non passa mai da Apple, Google o dal servizio di The Machine: trasmettono solo una frase fissa, come «C’è un’attività che richiede il tuo intervento».
 
-Poi l’app chiede alla tua Machine il titolo dell’attività e il passaggio successivo, per esempio «Rispondi a Sam» con «Scrivi a Sam: martedì alle 10:00 va bene». Il promemoria del mattino mostra cosa ti aspetta e l’ora della prima riunione; il riepilogo del team, i primi elementi; un aggiornamento di Fleet, cosa è successo. Se non riesce a raggiungere la tua Machine, resta visibile la frase fissa. Su Android indica quante attività ti aspettano, per esempio «Hai 2 attività».
+L’app chiede poi alla tua Machine il titolo e il prossimo passaggio dell’attività, ad esempio «Rispondi a Sam» con «Scrivi a Sam: martedì alle 10:00 va bene». La notifica del mattino mostra gli impegni in attesa e l’orario della prima riunione, il riepilogo del team i primi elementi e un aggiornamento di Fleet cosa è successo. Se non riesce a raggiungere la tua Machine, resta la frase fissa. Su Android indica quante attività sono in attesa, ad esempio «2 attività richiedono il tuo intervento».
 
-Una notifica include **Posticipa** (fino a domani) e **Segna come fatto**, oltre a **Fallo** per un’attività non ancora iniziata. Le azioni sono disponibili dopo aver sbloccato il telefono, senza aprire l’app. L’invio e i passaggi finali aprono sempre l’app. C’è una notifica per ogni attività: «In preparazione» diventa «Pronta» e la notifica scompare quando l’attività è completata o posticipata, qui o altrove.
+Una notifica include **Posticipa** (fino a domani) e **Segna come fatto**, oltre a **Fallo** per un’attività non ancora iniziata. Puoi usarli dopo aver sbloccato il telefono, senza aprire l’app. L’invio e i passaggi finali aprono sempre l’app. C’è una notifica per ogni attività: «In preparazione» diventa «Pronta» e scompare quando l’attività viene completata o posticipata, nell’app o altrove.
 
-Quando un passaggio che hai confermato va a buon fine, la notifica mostra **Fatto** e cosa è successo, finché non tocchi **Ho capito** in Attività. Su iPhone la notifica può aggiornarsi solo la prossima volta che apri l’app.
+Quando viene completato un passaggio che hai confermato, la notifica mostra **Fatto** e cosa è successo, finché non tocchi **Ho capito** nella sezione Attività. Su iPhone puoi farlo anche la prossima volta che apri l’app.
 
-Se disattivi **Testo nelle notifiche** in **Impostazioni**, **Sicurezza**, resta visibile la frase fissa. Lo stesso succede se la schermata di blocco nasconde il contenuto delle notifiche. Quando non può mostrare altro, la notifica dice «Tocca per aprire». Se il telefono non riesce a raggiungere la tua Machine quando arriva una notifica, ne mostra i dettagli appena torna online.
+Se disattivi **Testo nelle notifiche** in **Impostazioni**, **Sicurezza**, la notifica mostra la frase fissa. Succede lo stesso se la schermata di blocco nasconde il contenuto delle notifiche. Se non può mostrare altro, dice «Tocca per aprire». Se il telefono non riesce a raggiungere la tua Machine quando arriva una notifica, i dettagli vengono mostrati quando torna online.
 
-Le notifiche seguono le stesse regole delle notifiche push sul web: le preferenze per tipo che hai scelto in [Notifiche](notifications.md), il tuo [orario di lavoro](work-hours.md) e nessuna notifica mentre usi una dashboard.
+Le notifiche seguono le stesse regole delle notifiche push sul web: le preferenze che hai scelto per ogni tipo in [Notifiche](notifications.md), il tuo [orario di lavoro](work-hours.md) e l’assenza di notifiche mentre usi una dashboard.
 
-Ogni telefono con l’app compare in **Impostazioni**, **Notifiche** come **Telefono con l’app**. **Rimuovi** ne interrompe le notifiche. Per riceverle, una Machine self-hosted ha bisogno di The Machine Network; l’app funziona anche senza.
+Ogni telefono con l’app compare in **Impostazioni**, **Notifiche** come **Telefono con l’app**. **Rimuovi** ne interrompe le notifiche. Per riceverle su una Machine ospitata autonomamente serve The Machine Network. L’app funziona anche senza.
 
 ## Condividi con The Machine
 
-In qualsiasi app, tocca Condividi e scegli The Machine. Si apre una **Nuova attività** con il testo, il link o i file che hai condiviso. Controllala, aggiungi una data se vuoi e aggiungila. Non viene aggiunto nulla finché non lo fai.
+In qualsiasi app, tocca Condividi e scegli The Machine. Si apre una **Nuova attività** con il testo, il link o i file che hai condiviso. Controlla il contenuto, aggiungi una data se vuoi e aggiungi l’attività. Non viene aggiunto nulla finché non lo fai.
 
-Puoi condividere anche solo un file, come una fattura o una lettera. La tua Machine legge il testo di un PDF e compila l’attività: di cosa si tratta, il passaggio successivo e la data. Il file va direttamente alla tua Machine e resta lì.
+Puoi condividere anche solo un file, ad esempio una fattura o una lettera. La tua Machine legge il testo di un PDF e completa l’attività: indica di cosa si tratta, il prossimo passaggio e la data. Il file viene inviato direttamente alla tua Machine e resta lì.
 
-Anche la dashboard installata come app su Android può ricevere contenuti condivisi: sceglila nel menu di condivisione come faresti con qualsiasi altra app.
+Anche la dashboard installata come app su Android può ricevere contenuti condivisi: selezionala nel menu di condivisione.
 
-Piani e pagamenti non sono visibili nell’app. In **Impostazioni** trovi **Apri l’account**, da cui puoi eliminare il tuo account.
+Piani e fatturazione non sono disponibili nell’app. In **Impostazioni** resta **Apri l’account**, per eliminare il tuo account.
