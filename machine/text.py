@@ -369,3 +369,8 @@ def fold_previews(rows):
             seen.add(said)
         out.append(r)
     return out
+
+
+def intercom_note(part_type):
+    """Whether a part is an internal note the customer never sees (note, note_and_reopen, note_and_unsnooze, …_note)."""
+    return bool(re.search(r'(?:^|_)note(?:_|$)', part_type))

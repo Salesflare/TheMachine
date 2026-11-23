@@ -45,7 +45,7 @@ from machine.owner_error import OwnerError
 FOUND_NEWS_SLACK = dt.timedelta(hours=1)
 # What connectors/intercom.py handled_facts keeps on a conversation: who on the team closed or answered it, and when the
 # customer last wrote (Store.close_handled_intercom)
-INTERCOM_FACTS = ('team_closed', 'team_reply', 'customer_at')
+INTERCOM_FACTS = ('team_closed', 'team_reply', 'customer_at', 'delivered_as')
 
 
 def intercom_seen(old, metadata, stamp):

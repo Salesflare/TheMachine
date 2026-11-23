@@ -34,6 +34,7 @@ from i18n import t
 import next_actions
 from machine import todo_states
 from machine.owner_error import OwnerError
+from machine.store import message_view
 import timeutil
 
 LOG = logging.getLogger('personal-assistant')
@@ -609,12 +610,12 @@ class Requests:
             name, address = sender(meta.get('from'))
             if r['kind'] == 'intercom.conversation':  # the customer, by name (the opener may be a bot or a teammate)
                 address = str(meta.get('contact_email') or address or '')
-                name = fleet.clean(meta.get('contact_name') or meta.get('from_name'), 120) or address
+                name = fleet.clean(message_view.intercom_customer(meta) or meta.get('from_name'), 120) or address
             who = fleet.clean(meta.get('sender_display'), 120) if r['kind'].startswith('fleet.') or not meta.get('from') else \
                 (f'{name} <{address}>' if address and name and name != address else name or address)
             if r['kind'] == 'slack.message' and not who:
                 who = graph.SOMEONE_ON_SLACK
-            text = carried_text(r['body'], SOURCE_CHARS + 1)
+            text = carried_text(message_view.intercom_body(r['kind'], meta, r['body']), SOURCE_CHARS + 1)
             body = text[:min(SOURCE_CHARS, budget)]
             budget -= len(body)
             when = dt.datetime.fromisoformat(r['occurred_at'])

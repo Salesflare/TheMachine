@@ -99,6 +99,13 @@ SAMPLES = {
                                     **{'conversation_id': '9102', 'from': 'operator+abc123@intercom.io', 'from_name': 'Fin',
                                        'contact_email': 'sam@reed.example', 'contact_name': 'Sam Reed', 'created_at': 1794488400,
                                        'source_url': 'https://app.intercom.example/a/inbox/w1/inbox/shared/all/conversation/9102'}),
+    # opened by a teammate (a campaign): their words first, the contact's answer after
+    'intercom.conversation#team': ev('ic', '9103', 'intercom.conversation', 'The fair’s program is out',
+                                     'The fair’s program is out 🎪\n1794488700 · Toby Lark · comment: Which day is best for a school group?\n'
+                                     '1794488800 · Mira Holt · note_and_unsnooze: They came last year too.',
+                                     **{'conversation_id': '9103', 'from': 'mira@fair.example', 'from_name': 'Mira Holt', 'contact_email': 'toby@lark.example',
+                                        'contact_name': 'Toby Lark', 'author_roles': {'Mira Holt': 'team', 'Toby Lark': 'customer'}, 'created_at': 1794488400,
+                                        'channel': 'conversation', 'source_url': 'https://app.intercom.example/a/inbox/w1/inbox/shared/all/conversation/9103'}),
     'android.notification': ev('phone', 'n1', 'android.notification', 'Your daily digest is ready', 'Your daily digest is ready',
                                **{'package_name': 'com.medium.reader', 'app_name': 'Medium'}),
     # a group's summary notification, stored with its package id as the title (as older events were)
@@ -398,6 +405,58 @@ class Rules(unittest.TestCase):
         self.assertEqual(sender_name('gmail.message', {'from': 'noreply@shop.example'}), 'noreply@shop.example')  # email keeps its From
         self.assertEqual(sender_name('slack.message', {'from': 'Kit Navarro <U0KITNAVA1>'}), 'Kit Navarro')
 
+    def test_an_intercom_opening_is_under_who_wrote_it(self):
+        o = self.items['intercom.conversation#team']
+        self.assertEqual((o['chat'], o['from']), ('Toby Lark', 'Toby Lark'))  # the conversation reads by its customer
+        self.assertEqual([(t['from'], t['role'], t.get('note', False)) for t in o['turns']],
+                         [('Mira Holt', 'team', False), ('Toby Lark', 'customer', False), ('Mira Holt', 'team', True)])
+        bot = self.items['intercom.conversation#bot']['turns']
+        self.assertEqual([(t['from'], t['role']) for t in bot], [('Fin', 'bot'), ('Fin', 'bot')])
+        team = SAMPLES['intercom.conversation#team']['metadata']
+        row = message_view.list_row('intercom.conversation', 'Program', SAMPLES['intercom.conversation#team']['body'], team)
+        self.assertEqual(row['who'], 'Toby Lark')
+        self.assertTrue(row['text'].startswith('Mira Holt: The fair’s program'))
+
+        opener = message_view.intercom_opener
+        old = {k: v for k, v in team.items() if k != 'author_roles'}  # stored before the roles were kept
+        self.assertEqual(opener(old), ('team', 'Mira Holt'))
+        self.assertEqual(opener({**old, 'from': 'toby@lark.example', 'from_name': 'Toby Lark'}), ('customer', 'Toby Lark'))
+        self.assertEqual(opener({**old, 'from': 'operator+x1@intercom.io', 'from_name': 'Fin'}), ('bot', 'Fin'))
+        self.assertEqual(opener({'from': 'kit@owner.example', 'from_name': 'Kit', 'admin_emails': {'7': 'kit@owner.example'}}), ('team', 'Kit'))  # nobody answered
+        self.assertEqual(opener({'from': 'ann@x.example', 'from_name': 'Ann Ray'}), ('customer', 'Ann Ray'))  # unknown
+        self.assertEqual(opener({'from': '', 'from_name': '', 'author_roles': {'lead': 'customer', 'Mira Holt': 'team'}}), ('customer', ''))
+        # a lead Intercom only names by its type never reads as "lead"
+        said = message_view.intercom_turns({'from': '', 'author_roles': {'lead': 'customer', 'bot': 'bot'}}, 'Hi\n1794488700 · lead · comment: And?\n1794488800 · bot · comment: Yes', AT)
+        self.assertEqual([(t['from'], t['role']) for t in said], [('', 'customer'), ('', 'customer'), ('', 'bot')])
+
+    def test_text_read_by_a_review_or_a_teammate_names_who_opened_it(self):
+        e = SAMPLES['intercom.conversation#team']
+        text = message_view.intercom_body('intercom.conversation', e['metadata'], e['body'])
+        self.assertTrue(text.startswith('1794488400 · Mira Holt · opening: The fair’s program'))
+        self.assertEqual(message_view.intercom_body('intercom.conversation', e['metadata'], text), text)  # once
+        sent = message_view.intercom_body('intercom.conversation', {**e['metadata'], 'delivered_as': 'automated'}, e['body'])
+        self.assertTrue(sent.startswith('1794488400 · Mira Holt · automated: The fair’s program'))
+        for kind, key in (('intercom.conversation', 'intercom.conversation'), ('slack.message', 'intercom.conversation#team')):
+            self.assertEqual(message_view.intercom_body(kind, SAMPLES[key]['metadata'], e['body']), e['body'])  # the customer's own, another source
+        # a teammate it is handed to reads it the same way, without the roles
+        carried = message_view.intercom_turns({'contact_email': 'toby@lark.example', 'contact_name': 'Toby Lark', 'from': 'Toby Lark <toby@lark.example>'}, text, AT)
+        self.assertEqual([(t['from'], t['role']) for t in carried][:2], [('Mira Holt', 'team'), ('Toby Lark', 'customer')])
+        from machine.store.review import review_view
+        view = review_view({'id': 1, 'account_id': 'ic', 'source_id': '9103', 'kind': 'intercom.conversation', 'occurred_at': AT, 'title': e['title'],
+                            'body': e['body'], 'metadata': {**e['metadata'], 'delivered_as': 'admin_initiated'}})
+        self.assertTrue(view['body'].startswith('1794488400 · Mira Holt · opening: The fair’s program'))
+        self.assertNotIn('delivered_as', view['metadata'])
+
+    def test_a_to_dos_chat_has_the_customer_on_the_other_side(self):
+        from machine.chat import CHAT_PART, chat_conversation
+        e = SAMPLES['intercom.conversation#team']
+        for title in ('Say which day is best', 'Tell Toby which day'):  # also when the title names the customer
+            body = message_view.intercom_body('intercom.conversation', e['metadata'], e['body'] + '\n1794488900 · Kit Navarro · comment: On it.')
+            found = chat_conversation(body, [p for p in CHAT_PART.finditer(body) if p[4].strip()], title, 'Dana Reyes', e['metadata'],
+                                      lambda name: message_view.intercom_role(name, e['metadata']) == 'customer')
+            self.assertEqual([(who, at, note) for who, at, _, note in found], [('Mira Holt', 1794488400000, False), ('Toby Lark', 1794488700000, False)])
+            self.assertTrue(found[0][2].startswith('The fair’s program is out'))
+
     def test_cards_drop_a_first_line_that_repeats_the_title(self):
         self.assertEqual(self.items['trello.action']['body'], 'Moved from Ideas to Doing')
         self.assertTrue(self.items['stripe.event']['body'].startswith('Email:'))
@@ -447,11 +506,11 @@ class Rules(unittest.TestCase):
     def test_an_amount_reads_as_the_owner_writes_it(self):
         from decimal import Decimal
         import locale_prefs
-        for language, locale, euro, whole, francs in [('en', 'en-US', '€1,234.50', '€348', 'CHF\xa012'), ('nl', 'nl-BE', '€\xa01.234,50', '€\xa0348', 'CHF\xa012'),
-                                                      ('de', 'de-DE', '1.234,50\xa0€', '348\xa0€', '12\xa0CHF'), ('fr', 'fr-FR', '1\u202f234,50\xa0€', '348\xa0€', '12\xa0CHF'),
-                                                      ('ja', 'ja-JP', '€1,234.50', '€348', 'CHF\xa012')]:
+        for language, locale, euro, whole, francs in [('en', 'en-US', '€1,234.50', '€240', 'CHF\xa012'), ('nl', 'nl-BE', '€\xa01.234,50', '€\xa0240', 'CHF\xa012'),
+                                                      ('de', 'de-DE', '1.234,50\xa0€', '240\xa0€', '12\xa0CHF'), ('fr', 'fr-FR', '1\u202f234,50\xa0€', '240\xa0€', '12\xa0CHF'),
+                                                      ('ja', 'ja-JP', '€1,234.50', '€240', 'CHF\xa012')]:
             with patch.object(locale_prefs, '_current', {**locale_prefs._current, 'locale': locale, 'language': language}):
-                self.assertEqual([locale_prefs.money_text(Decimal(n), c) for n, c in (('1234.50', 'EUR'), ('348', 'EUR'), ('12', 'CHF'))], [euro, whole, francs])
+                self.assertEqual([locale_prefs.money_text(Decimal(n), c) for n, c in (('1234.50', 'EUR'), ('240', 'EUR'), ('12', 'CHF'))], [euro, whole, francs])
 
     def test_a_page_change_reads_as_was_and_now_by_its_site(self):
         o = self.items['web_page.change']

@@ -134,6 +134,13 @@ try{
     assert.deepEqual(await box.locator('.convo-turn').evaluateAll(ts=>ts.map(t=>t.classList.contains('me'))),[false,true,true,false]);
     assert.match(await box.locator('.convo-turn.me').first().innerText(),/Fin Bot/);
     assert.doesNotMatch(await box.innerText(),/^Facebook$|assignment|Jordan Lake\nFacebook/m)}
+   // opened by a teammate: their words on the team's side under their name, the customer's answer on the other
+   const opened=shown('intercom.conversation#team');if(opened){
+    await dialog.evaluate(d=>d.close());await page.locator(`#suggestions [data-mc-event="${opened.event_id}"]`).click();await box.locator('.convo-say').first().waitFor();
+    assert.equal(await page.locator('#email-title').innerText(),'Toby Lark');
+    assert.deepEqual(await box.locator('.convo-turn').evaluateAll(ts=>ts.map(t=>t.classList.contains('me'))),[true,false,true]);
+    assert.match(await box.locator('.convo-turn').first().innerText(),/Mira Holt[\s\S]*The fair’s program/);
+    assert.match(await box.locator('.convo-turn').nth(2).innerText(),/Note/i)}
    // GitHub: the title without [repo], repo #number, state, the commenting bot marked, the comment first, the issue folded
    const gh=shown('github.notification');if(gh){
     await dialog.evaluate(d=>d.close());await page.locator(`#suggestions [data-mc-event="${gh.event_id}"]`).click();await box.locator('.msg-md').first().waitFor();

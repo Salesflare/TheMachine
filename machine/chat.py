@@ -8,7 +8,7 @@ import urllib.parse
 
 import i18n
 from machine.cards import CHAT_HANDLE, chat_plain_name
-from machine.text import _address, clamp, split_quoted_history
+from machine.text import _address, clamp, intercom_note, split_quoted_history
 import next_actions
 from timeutil import local_tz, now
 
@@ -239,21 +239,23 @@ def chat_name(address, names, fallback=''):
 CHAT_ROLES = {'user', 'lead', 'contact', 'visitor', 'customer'}
 
 
-CHAT_NOTES = {'note', 'note_and_reopen'}
-
-
-def chat_conversation(body, parts, title, owner_name, metadata):
+def chat_conversation(body, parts, title, owner_name, metadata, customer=lambda name: False):
     """A conversation's source for the chat, as [(who, at ms, text, is_note)]: what the other side asked (the opening
     question, then their latest messages), followed by a later internal note of whom the card names. Empty when the
-    conversation has no other side, and then the part the card is about stands alone."""
+    conversation has no other side, and then the part the card is about stands alone. In Intercom the other side is the
+    customer (customer says whether a name is theirs), and an opening a teammate or a bot wrote (message_view.intercom_body) is under their own name."""
     first = lambda p: p[2].split()[0].lower()
     me = str(owner_name or '').strip().lower()
     named = {first(p) for p in parts if first(p) in str(title or '').lower() and p[2].strip().lower() not in CHAT_ROLES}
+    # Intercom says who each part is from; its customer is the other side, whoever the to-do's title names
+    support = {p.start() for p in parts if not intercom_note(p[3]) and customer(p[2].strip())}
+    if support:
+        named -= {first(p) for p in parts if p.start() in support}
     def text_of(p):
         rest = body[p.end():]
         after = CHAT_PART.search(rest)
         return chat_excerpt(p[4] + rest[:after.start() if after else None], '')
-    them = [p for p in parts if p[3] not in CHAT_NOTES and p[2].strip().lower() != me and first(p) not in named
+    them = [p for p in parts if p.start() in support] or [p for p in parts if not intercom_note(p[3]) and p[2].strip().lower() != me and first(p) not in named
             and (p[2].strip().lower() in CHAT_ROLES or not named)]
     if not them:
         pick = ([p for p in parts if first(p) in named] or [p for p in parts if p[2].strip().lower() != me] or parts)[-1]
@@ -261,7 +263,7 @@ def chat_conversation(body, parts, title, owner_name, metadata):
     who = them[-1][2]
     run = []  # their latest messages in a row; a one or two word "Great!" is left out when there is more
     for p in reversed(parts):
-        if p[2] == who and p[3] not in CHAT_NOTES:
+        if p[2] == who and not intercom_note(p[3]):
             run.insert(0, p)
         elif run and (p[2] != who and p[3] not in ('assignment', 'snoozed', 'open', 'close') or p[4].strip()):
             break
@@ -269,11 +271,13 @@ def chat_conversation(body, parts, title, owner_name, metadata):
     name = 'Contact' if who.strip().lower() in CHAT_ROLES else chat_person(who)
     out = []
     opening = chat_excerpt(body[:CHAT_PART.search(body).start()], '')
-    if opening and (who.strip().lower() in CHAT_ROLES or not named):
+    if not opening and parts[0][3] in ('opening', 'automated') and parts[0][2] != who:  # a teammate or a bot opened it
+        out.append((chat_person(parts[0][2]), int(parts[0][1]) * 1000, text_of(parts[0]), False))
+    if opening and (who.strip().lower() in CHAT_ROLES or support or not named):
         start = metadata.get('created_at') if isinstance(metadata.get('created_at'), int) else int(parts[0][1]) - 1
         out.append((name, start * 1000, opening, False))
     out.append((name, int(said[-1][1]) * 1000, chat_text('\n'.join(text_of(p) for p in said), chars=1500), False))
-    note = [p for p in parts if first(p) in named and p[3] in CHAT_NOTES and int(p[1]) >= int(run[-1][1])]
+    note = [p for p in parts if first(p) in named and intercom_note(p[3]) and int(p[1]) >= int(run[-1][1])]
     if note:
         out.append((chat_person(note[-1][2]), int(note[-1][1]) * 1000, text_of(note[-1]), True))
     return out

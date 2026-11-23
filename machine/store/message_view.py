@@ -36,6 +36,7 @@ from machine.cards import group_sender
 from machine.sources.android import android_app_shown, android_text_shown
 from machine.sources.slack import slack_plain
 from machine.store import graph_identifiers
+from machine.text import intercom_note
 from mail_senders import relay
 
 VIEWS =('email', 'chat', 'notification', 'card')
@@ -207,6 +208,8 @@ def sender_name(kind, m):
     names = [n for n in (' '.join(str(m.get(k) or '').split()) for k in NAME_KEYS) if n and '@' not in n]
     if '@' not in raw and '<' not in raw:
         return raw or (names[0] if names else '')  # a name as is, or none
+    if kind == 'intercom.conversation' and not m.get('sender_display') and (customer := intercom_customer(m)):
+        return customer  # also when a teammate or a bot opened it
     name, address = email.utils.parseaddr(raw)
     name = name.strip().strip('"')
     name = '' if '@' in name else name
@@ -379,11 +382,64 @@ INTERCOM_CHANNELS = {'facebook': 'Facebook', 'instagram': 'Instagram', 'whatsapp
 INTERCOM_BOTS = re.compile(r'^(?:fin|operator|.*\bbot)$', re.I)
 
 
+INTERCOM_KINDS = ('intercom.conversation', 'fleet.intercom')
+# An author Intercom names by no more than its type
+INTERCOM_TYPES = {'user': 'customer', 'lead': 'customer', 'contact': 'customer', 'visitor': 'customer', 'admin': 'team', 'team': 'team', 'bot': 'bot'}
+
+
+def intercom_opener(m):
+    """(role, name) of who wrote a conversation's first message: the customer, or 'team' or 'bot' when a teammate, a
+    campaign sent as one, or Intercom's bot did. By the stored author roles; a conversation from before they were kept
+    by whether its author is its customer. '' for a name Intercom doesn't give."""
+    roles = m.get('author_roles') if isinstance(m.get('author_roles'), dict) else {}
+    name = ' '.join(str(m.get('from_name') or '').split())
+    raw = email.utils.parseaddr(str(m.get('from') or ''))[1].lower()
+    address, contact = raw if '@' in raw else '', str(m.get('contact_email') or '').lower()
+    admins = m.get('admin_emails') if isinstance(m.get('admin_emails'), dict) else {}
+    if address and address == contact:
+        role = 'customer'
+    elif relay(address):
+        role = 'bot'
+    elif name in roles or address in roles:
+        role = roles.get(name) or roles[address]
+    elif not name and not address:
+        role = next((INTERCOM_TYPES[k] for k in INTERCOM_TYPES if k in roles), 'customer')
+    elif INTERCOM_BOTS.match(name):
+        role = 'bot'
+    else:
+        role = 'team' if address and (contact or address in admins.values()) else 'customer'
+    shown = str(m.get('contact_name') or '') if role == 'customer' else ''
+    return role, shown or name or ('' if relay(address) else address)
+
+
+def intercom_customer(m):
+    """A conversation's customer, whoever opened it: by name when Intercom gives one, else by address, else ''."""
+    role, name = intercom_opener(m)
+    found = [str(m.get('contact_name') or ''), name if role == 'customer' else '', str(m.get('contact_email') or '')]
+    found = [' '.join(x.split()) for x in found if x.strip() and not relay(x)]
+    return next((x for x in found if '@' not in x), found[0] if found else '')
+
+
+def intercom_body(kind, m, body):
+    """A conversation's stored text for someone who reads it as text (a review, a teammate it is handed to): a first
+    message that is not the customer's gets its author, as the parts after it have ("1794488400 · Mira Holt ·
+    opening: Hi"; "automated" for a campaign or another automatic message). Any other text as it is."""
+    role, name = intercom_opener(m) if kind in INTERCOM_KINDS else ('customer', '')
+    at, body = m.get('created_at'), str(body or '')
+    if role == 'customer' or type(at) is not int or not body.split('\n', 1)[0].strip() or INTERCOM_PART.match(body.split('\n', 1)[0]):
+        return body
+    sent = 'automated' if m.get('delivered_as') in ('automated', 'campaigns_initiated') else 'opening'
+    return f"{at} · {name.replace('·', ' ') or role} · {sent}: {body}"
+
+
 def intercom_role(name, m):
     roles = m.get('author_roles') if isinstance(m.get('author_roles'), dict) else {}
     if name in roles:
         return roles[name]
-    customer = {str(m.get(k) or '').casefold() for k in ('contact_name', 'from_name', 'from', 'contact_email')} - {''}
+    keys = ('contact_name', 'contact_email') + (('from_name', 'from') if intercom_opener(m)[0] == 'customer' else ())
+    customer = {str(m.get(k) or '').casefold() for k in keys} - {''}
+    if name in INTERCOM_TYPES:
+        return INTERCOM_TYPES[name]
     if str(name).casefold() in customer:
         return 'customer'
     return 'bot' if INTERCOM_BOTS.match(str(name).strip()) else 'team'
@@ -395,7 +451,7 @@ INTERCOM_PART = re.compile(r'^(\d{9,11}) · (.*?) · ([a-z_]+): ?(.*)$')
 def intercom_turns(m, body, occurred_at):
     """The conversation as turns: [{'from', 'occurred_at', 'body', 'role', 'note'?}]. Parts with no text (assignments,
     attribute updates, state changes) are left out; a part's raw time and type never show."""
-    who = m.get('contact_name') or m.get('from_name') or ''
+    role, who = intercom_opener(m)
     turns, opening = [], []
     for line in str(body or '').split('\n'):
         part = INTERCOM_PART.match(line)
@@ -410,14 +466,16 @@ def intercom_turns(m, body, occurred_at):
         v.casefold() for v in INTERCOM_CHANNELS.values()}
     first = '\n'.join(line for line in opening if line.strip().casefold() not in noise - {''}).strip()
     start = m.get('created_at') if type(m.get('created_at')) is int else None
-    out = [{'from': who or m.get('from') or '', 'role': 'customer', 'body': first,
+    out = [{'from': who, 'role': role, 'body': first,
             'occurred_at': dt.datetime.fromtimestamp(start, dt.timezone.utc).isoformat() if start else occurred_at}] if first else []
     for t in turns:
         if not t['body'].strip():
             continue
-        out.append({'from': t['from'][:300], 'role': intercom_role(t['from'], m), 'body': t['body'].strip(),
+        role = intercom_role(t['from'], m)
+        said_by = (intercom_customer(m) if role == 'customer' else '') if t['from'] in INTERCOM_TYPES else t['from']  # never the bare type
+        out.append({'from': said_by[:300], 'role': role, 'body': t['body'].strip(),
                     'occurred_at': dt.datetime.fromtimestamp(t['at'], dt.timezone.utc).isoformat(),
-                    **({'note': True} if t['type'] == 'note' else {})})
+                    **({'note': True} if intercom_note(t['type']) else {})})
     return out
 
 
@@ -505,11 +563,11 @@ def list_row(kind, title, body, m, occurred_at=''):
         who = app
     elif transcript_kind(kind) and (turns := transcript_turns(text[:6000], m.get('start_at') or occurred_at)):  # its start is enough
         text = '\n'.join(f"{t['from']}: {t['body']}" for t in turns)
-    elif kind in ('intercom.conversation', 'fleet.intercom') and (said := intercom_turns(m, text, occurred_at)):
+    elif kind in INTERCOM_KINDS and (said := intercom_turns(m, text, occurred_at)):
         # a support conversation by who said what, never its parts' raw times and types; the customer's own words
         # without their name again (the meta line says it)
         who = sender_name(kind, m)
-        text = '\n'.join(t['body'] if t['from'] == who else f"{t['from']}: {t['body']}" for t in said)
+        text = '\n'.join(t['body'] if t['from'] in ('', who) else f"{t['from']}: {t['body']}" for t in said)
     else:  # as the viewer shapes it (shape): mail headers out of the text, GitHub's head line and its comment's author
         o = shape(kind, {'title': title, 'body': text, 'from': str(m.get('from') or ''), 'occurred_at': occurred_at, 'url': None}, dict(m))
         title, text = ' '.join(str(o.get('title') or title).split()), o.get('body') or ''
@@ -616,7 +674,7 @@ def shape(kind, o, m):
         o['body'] = mrkdwn(o['body'], slack=kind != 'whatsapp.message')
         for turn in o.get('turns') or ():
             turn['body'] = mrkdwn(turn['body'], slack=kind != 'whatsapp.message')
-    if kind in ('intercom.conversation', 'fleet.intercom'):
+    if kind in INTERCOM_KINDS:
         channel = INTERCOM_CHANNELS.get(str(m.get('channel') or '').lower())
         if channel and channel != 'Email':
             o['via'] = channel

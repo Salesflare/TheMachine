@@ -7571,8 +7571,8 @@
    "body": "Can I export my pipeline to a spreadsheet?",
    "metadata": {
     "conversation_id": "770036",
-    "from": "operator+demo1@noreply.intercom.example",
-    "from_name": "Fin",
+    "from": "wren@saltmarshmedia.example",
+    "from_name": "Wren Calloway",
     "contact_email": "wren@saltmarshmedia.example",
     "contact_name": "Wren Calloway",
     "state": "closed",

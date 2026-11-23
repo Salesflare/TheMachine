@@ -74,7 +74,7 @@ KIND_LISTS = {
     'machine/store/cards.py': 3,
     'machine/store/conversation.py': 1,
     'machine/store/core.py': 2,
-    'machine/store/message_view.py': 8,
+    'machine/store/message_view.py': 7,
     'machine/store/profile.py': 1,
     'machine/store/review.py': 5,
     'machine/store/review_last_look.py': 1,

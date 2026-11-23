@@ -377,7 +377,6 @@ from machine.chat import (
     CHAT_IDS,
     CHAT_LEARNED,
     CHAT_MARKER,
-    CHAT_NOTES,
     CHAT_NOT_SENT,
     CHAT_ON,
     CHAT_OWNER_WORDS,

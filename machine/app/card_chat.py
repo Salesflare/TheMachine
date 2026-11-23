@@ -58,7 +58,7 @@ from machine.store.cards import WROTE_AGAIN_PREFIX, use_line
 from machine.store.machine_cards import parked_redo
 from machine.text import _address, clamp, encoded, shown_body, split_quoted_history
 from models import background_model, claude_plan_route
-from machine.store import outcomes, promises
+from machine.store import message_view, outcomes, promises
 import recurring
 import talk_live
 from timeutil import local_tz, now
@@ -308,9 +308,12 @@ class CardChatApp:
             kind = kinds.get(v.get('event_id'), '')
             via = v['kind'] if v['kind'] != 'signal' else kind.split('.')[0]
             who, at, text = chat_person(v['from'].split('<')[0]) or v['from'], chat_ms(v['occurred_at']), None
+            meta = metas.get(v.get('event_id')) or {}
+            v['body'] = message_view.intercom_body(kind, meta, v['body'])
+            customer = lambda name, m=meta: 'contact_email' in m and message_view.intercom_role(name, m) == 'customer'
             parts = [p for p in CHAT_PART.finditer(v['body'] or '') if p[4].strip()]
             if parts:  # a conversation (Intercom, a thread): what was asked, then the note of whom the card names
-                found = chat_conversation(v['body'], parts, title, self.config.get('owner_name'), metas.get(v.get('event_id')) or {})
+                found = chat_conversation(v['body'], parts, title, self.config.get('owner_name'), meta, customer)
                 for n, (who, at, text, note) in enumerate(found):
                     owner.append({'kind': 'source', 'from': clamp(who, 120), 'via': via, 'title': clamp(v['title'], 200), 'text': text,
                                   'mine': False, 'at': at, **({'note': True} if note else {})})

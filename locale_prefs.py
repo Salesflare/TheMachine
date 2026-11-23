@@ -326,15 +326,15 @@ def short_text(moment):
 
 
 # How amounts are written (as the dashboard's Intl does): the thousands and decimal marks by language, English and the
-# rest '1,234.50'; the languages that put the sign after ('348 €'), and before it with a space ('€ 348'). Spaces never break.
+# rest '1,234.50'; the languages that put the sign after ('240 €'), and before it with a space ('€ 240'). Spaces never break.
 MARKS = {'nl': '.,', 'de': '.,', 'es': '.,', 'it': '.,', 'pt-BR': '.,', 'fr': '\u202f,', 'ru': '\u00a0,'}
 SIGN_AFTER, SIGN_SPACED = frozenset(('de', 'es', 'fr', 'it', 'ru')), frozenset(('nl', 'pt-BR'))
 SIGNS = {'EUR': '€', 'GBP': '£', 'JPY': '¥', 'INR': '₹', 'KRW': '₩'}
 
 
 def money_text(amount, currency):
-    """'€348', '€1,234.50', 'CHF 12' in English; '€ 1.234,50' in Dutch, '1.234,50 €' in German: whole amounts without
-    decimals. amount: a Decimal in whole units (348), currency its code."""
+    """'€240', '€1,234.50', 'CHF 12' in English; '€ 1.234,50' in Dutch, '1.234,50 €' in German: whole amounts without
+    decimals. amount: a Decimal in whole units (240), currency its code."""
     lang, text = language(), f'{amount:,f}' if amount != amount.to_integral() else f'{amount:,.0f}'
     group, point = MARKS.get(lang, ',.')
     text = text.translate({ord(','): group, ord('.'): point})

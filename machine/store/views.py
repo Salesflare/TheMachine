@@ -222,7 +222,7 @@ def chat_view(kind, m, body, occurred_at):
         dm = m.get('conversation_type') == 'dm' or name.startswith('DM ')
         out.update(chat=name[3:].strip() if dm and name.startswith('DM ') else ('#' + name if name else ''), dm=dm)
     elif kind in ('intercom.conversation', 'fleet.intercom'):
-        out['chat'] = m.get('contact_name') or m.get('from_name') or m.get('contact_email') or m.get('from') or ''
+        out['chat'] = message_view.intercom_customer(m) or m.get('from_name') or m.get('from') or ''
         turns = message_view.intercom_turns(m, body, occurred_at)
         if turns:
             out['turns'] = turns
