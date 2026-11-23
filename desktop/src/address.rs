@@ -72,6 +72,16 @@ pub fn parse(input: &str) -> Option<String> {
     Some(format!("https://{host}{port}{}", path(&url)?))
 }
 
+/// A link that joins a call of a service the Machine knows (its meet.video_link found it): on that service's own host.
+pub fn call(link: &str) -> bool {
+    const HOSTS: [&str; 4] = ["zoom.us", "meet.google.com", "teams.microsoft.com", "teams.live.com"];
+    Url::parse(link).is_ok_and(|url| {
+        let host = url.host_str().unwrap_or_default();
+        let own = HOSTS.iter().any(|h| host == *h || host.strip_suffix(h).is_some_and(|sub| sub.ends_with('.')));
+        own && link.len() <= 2000 && url.scheme() == "https" && url.port().is_none() && url.username().is_empty() && url.password().is_none()
+    })
+}
+
 /// The Origin of a Machine's address, which its actions ask for.
 pub fn origin(machine: &str) -> String {
     Url::parse(machine).map(|u| u.origin().ascii_serialization()).unwrap_or_default()
@@ -125,6 +135,16 @@ mod tests {
         assert!(is_machine(403, &json!({"error": "Use the owner-authenticated Tailscale dashboard"})));
         assert!(!is_machine(200, &json!({"name": "Something else", "start_url": ".", "icons": []})));
         assert!(!is_machine(404, &json!({"name": "The Machine", "start_url": ".", "icons": []})));
+    }
+
+    #[test]
+    fn a_call_is_on_its_service() {
+        for link in ["https://zoom.us/j/1", "https://us02web.zoom.us/j/1?pwd=x", "https://meet.google.com/abc-defg-hij", "https://teams.microsoft.com/l/meetup-join/x"] {
+            assert!(call(link), "{link}");
+        }
+        for link in ["http://zoom.us/j/1", "https://zoom.us.example.com/j/1", "https://notzoom.us/j/1", "https://a@zoom.us/j/1", "https://zoom.us:8443/j/1", "javascript:1", "file:///etc", ""] {
+            assert!(!call(link), "{link}");
+        }
     }
 
     #[test]

@@ -1,19 +1,29 @@
 //! The robot speaks up: a small bubble above it when a to-do's notification would buzz on this computer, with the
 //! notification's own buttons. Whether it does, and in what words, is the Machine's (its machine/delivery/desk.py): the
 //! robot only says that it is there and may speak, with the look it takes anyway, and gets what waits for it. Then this
-//! computer's browser doesn't get it too.
+//! computer's browser doesn't get it too. A meeting with a briefing that starts in a few minutes is the Machine's word too.
 use crate::machine::{Machine, Quick};
 use crate::{later, windows, Shared};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::VecDeque;
+use std::collections::{BTreeSet, VecDeque};
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Manager};
 
 /// At most this many after another; the dot says there is more.
 const QUEUE: usize = 3;
 
-/// One bubble.
+/// A meeting about to start, for the page to put in words.
+#[derive(Clone, Serialize, Debug, Default, PartialEq)]
+pub struct Meeting {
+    pub at: String,
+    /// The first guest's first name, or the meeting's own; empty when notifications hide what they are about.
+    pub who: String,
+    pub others: u64,
+    pub join: bool,
+}
+
+/// One bubble. A meeting's is of its briefing to-do.
 #[derive(Clone, Serialize, Debug, Default, PartialEq)]
 pub struct Say {
     pub id: String,
@@ -24,6 +34,10 @@ pub struct Say {
     pub quick: Vec<Quick>,
     /// What Snooze offers: each with its name, as the dashboard's.
     pub snooze: Vec<(String, String)>,
+    pub meeting: Option<Meeting>,
+    /// What Join opens: the page names no address.
+    #[serde(skip)]
+    pub link: Option<String>,
     /// It was in For you since: gone from there, it goes too.
     #[serde(skip)]
     pub listed: bool,
@@ -39,6 +53,8 @@ pub struct Speaking {
     /// The notifications it has (the Machine's keys of them), until the Machine no longer offers them: an answer can be
     /// lost on the way, so the Machine keeps each until a look names it.
     got: Vec<String>,
+    /// The meetings it said.
+    told: BTreeSet<String>,
 }
 
 /// When it speaks, as the person chose. That notifications are switched off on this computer says nothing of it: the
@@ -85,7 +101,7 @@ fn showing(shared: &Shared) -> bool {
 }
 
 /// What came with a look. Asked of the Machine once more, as the phone app does: its words, and its buttons now.
-pub fn came(app: &AppHandle, machine: &Machine, notices: &Value) {
+pub fn came(app: &AppHandle, machine: &Machine, notices: &Value, meeting: &Value) {
     if notices.is_null() || !up(app) {
         return;
     }
@@ -107,7 +123,8 @@ pub fn came(app: &AppHandle, machine: &Machine, notices: &Value) {
     shared.speaking.lock().unwrap().got = got;
     {
         let mut speaking = shared.speaking.lock().unwrap();
-        for say in said.into_iter().rev() {
+        let soon = about(meeting).filter(|(key, _)| speaking.told.insert(key.clone())).map(|(_, say)| say);
+        for say in said.into_iter().rev().chain(soon) {
             speaking.queue.retain(|s| s.id != say.id);
             speaking.queue.push_back(say);
             while speaking.queue.len() > QUEUE {
@@ -119,6 +136,20 @@ pub fn came(app: &AppHandle, machine: &Machine, notices: &Value) {
         shared.look_soon(); // it says so right away: then the browser doesn't get it too when the computer sleeps meanwhile
     }
     later(app, next);
+}
+
+/// The meeting that starts soon, and what it is told once by: one that is moved is told again.
+fn about(meeting: &Value) -> Option<(String, Say)> {
+    let words = |key: &str| meeting[key].as_str().unwrap_or_default().split_whitespace().collect::<Vec<_>>().join(" ").chars().filter(|c| !c.is_control()).take(60).collect::<String>();
+    let id = meeting["id"].as_str().filter(|id| crate::todo_id(id).is_ok())?.to_string();
+    let (at, link) = (words("at"), meeting["join"].as_str().filter(|l| crate::address::call(l)).map(String::from));
+    let of = Meeting { who: words("who"), others: meeting["others"].as_u64().unwrap_or(0), join: link.is_some(), at: at.clone() };
+    (!at.is_empty()).then(|| (format!("{} {at}", meeting["event"]), Say { id, meeting: Some(of), link, ..Say::default() }))
+}
+
+/// Join was tapped: that meeting's link.
+pub fn link(shared: &Shared, todo: &str) -> Option<String> {
+    shared.speaking.lock().unwrap().now.as_ref().filter(|say| say.id == todo)?.link.clone()
 }
 
 pub fn got(shared: &Shared) -> Vec<String> {
@@ -196,7 +227,7 @@ pub fn hush(app: &AppHandle, all: bool) {
 pub fn closed(app: &AppHandle) {
     let shared = app.state::<Shared>();
     let rows: Vec<String> = shared.waiting.lock().unwrap().todos.iter().filter_map(|t| t.id.clone()).collect();
-    shared.speaking.lock().unwrap().queue.retain(|s| !rows.contains(&s.id));
+    shared.speaking.lock().unwrap().queue.retain(|s| s.meeting.is_some() || !rows.contains(&s.id));
     later(app, next);
 }
 
@@ -364,5 +395,18 @@ mod tests {
         let (kept, fresh) = sort(&["a1".into(), "gone".into()], &offered);
         assert_eq!((kept, fresh), (vec!["a1".to_string()], vec![json!({"key": "b2", "id": "x"})]));
         assert_eq!(sort(&["a1".into()], &json!([])), (vec![], vec![]));
+    }
+
+    #[test]
+    fn a_meeting_and_its_link() {
+        let meeting = json!({"id": "aa01", "event": 7, "at": "2026-11-24T10:00:00+00:00", "who": " Dana\n", "others": 2, "join": "https://zoom.us/j/1"});
+        let (key, say) = about(&meeting).unwrap();
+        assert_eq!(key, "7 2026-11-24T10:00:00+00:00");
+        assert_eq!(say.meeting, Some(Meeting { at: "2026-11-24T10:00:00+00:00".into(), who: "Dana".into(), others: 2, join: true }));
+        assert_eq!(say.link.as_deref(), Some("https://zoom.us/j/1"));
+        let with = |key: &str, value: Value| { let mut m = meeting.clone(); m[key] = value; about(&m) };
+        let (_, other) = with("join", json!("https://zoom.us.example.com/j/1")).unwrap();
+        assert!(other.link.is_none() && !other.meeting.unwrap().join);
+        assert!(with("id", json!("../x")).is_none() && with("at", Value::Null).is_none() && about(&Value::Null).is_none());
     }
 }

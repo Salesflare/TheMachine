@@ -3,6 +3,6 @@
   "windows": ["bubble"],
   "permissions": [
     "core:event:allow-listen", "core:event:allow-unlisten",
-    "allow-bubble-state", "allow-bubble-fit", "allow-bubble-hold", "allow-bubble-open", "allow-bubble-done", "allow-todo-decide", "allow-todo-undo"
+    "allow-bubble-state", "allow-bubble-fit", "allow-bubble-hold", "allow-bubble-open", "allow-bubble-join", "allow-bubble-done", "allow-todo-decide", "allow-todo-undo"
   ]
 }

@@ -54,7 +54,7 @@ class Machine(http.server.ThreadingHTTPServer):
         super().__init__(('127.0.0.1', port), Page)
         self.port, self.actions, self.cookies, self.links, self.challenges = port, [], set(), [], {}
         self.seen, self.cards = [], []
-        self.desks, self.notices = [], []  # what the robot says of itself with each look; what waits for it to say
+        self.desks, self.notices, self.meeting = [], [], None  # what the robot says of itself with each look; what waits for it to say
         self.todos, self.name = list(TODOS), 'Sam'
         self.refuse = False
         self.compact = False  # its dashboard has the page of one to-do
@@ -113,7 +113,7 @@ class Page(http.server.BaseHTTPRequestHandler):
                 if q.get('up') == '1':
                     m.notices = [n for n in m.notices if n['key'] not in q.get('got', '').split(',')]
                     waits = m.notices
-            return self.answer({**({'notices': waits} if 'desk' in q else {}), 'first_name': m.name, 'suggestions': [{'id': i, 'title': t, 'status': 'prepared' if i != 'aa01' else 'pending', 'due': '2000-01-01' if i == 'aa01' else None,
+            return self.answer({**({'notices': waits, **({'meeting': m.meeting} if m.meeting and q.get('up') == '1' else {})} if 'desk' in q else {}), 'first_name': m.name, 'suggestions': [{'id': i, 'title': t, 'status': 'prepared' if i != 'aa01' else 'pending', 'due': '2000-01-01' if i == 'aa01' else None,
                                                                              'created_at': '2026-01-01T00:00:00Z', 'snooze_choices': SNOOZE, **m.status.get(i, {})} for i, t in m.todos]})
         if u.path == '/api/notice':
             own = m.status.get(q['tag'], {}).get('status', 'pending' if q['tag'] == 'aa01' else 'prepared')
