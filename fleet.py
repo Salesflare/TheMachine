@@ -1432,6 +1432,8 @@ def question_text(kind, question, db=None):
 
 def asks_line(row):
     """Who asks and the question, in its fixed form. Notifications carry this and nothing of the owner's."""
+    if family_questions.hushed(row):
+        return t('{} asks your Machine', row['name'])
     return t("{}'s Machine asks: {}", row['name'], question_text(row['kind'], json.loads(row['question'])))
 
 
@@ -1439,6 +1441,8 @@ def push_payload(rows, root):
     """One phone notification for the questions that arrived together. Opens the Fleet tab at the card."""
     if len(rows) == 1:
         row = rows[0]
+        if family_questions.hushed(row):
+            return {'title': asks_line(row), 'body': '', 'url': root + '#fleet=' + row['id'], 'tag': 'fleet-' + row['id'], 'actions': [{'action': 'open', 'title': t('Open')}]}
         return {'title': t("{}'s Machine asks", row['name']), 'body': question_text(row['kind'], json.loads(row['question']))[:200],
                 'url': root + '#fleet=' + row['id'], 'tag': 'fleet-' + row['id'],
                 # a free question opens on its draft, to read and edit before anything goes (quick buttons: push.QUICK)
@@ -2237,8 +2241,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
 
     def telegram_view(self, message_id):
         with self.connect() as db:
-            rows = db.execute("SELECT i.*,m.value AS silent FROM fleet_in i LEFT JOIN fleet_meta m ON m.key='handoff_silent:'||i.id "
-                              'WHERE i.telegram_message_id=? ORDER BY i.at,i.id', (str(message_id),)).fetchall()
+            rows = db.execute("SELECT i.*,m.value AS silent,q.asked,q.state AS question_state FROM fleet_in i LEFT JOIN fleet_meta m ON m.key='handoff_silent:'||i.id "
+                              'LEFT JOIN fleet_questions q ON q.id=i.id WHERE i.telegram_message_id=? ORDER BY i.at,i.id', (str(message_id),)).fetchall()
         return telegram_message(rows, dashboard_link(self.config)) if rows else None
 
     # -- notices: what happens in the owner's Fleet (a seat request, joined, a server started, left)
@@ -2400,8 +2404,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
     def untold(self, db):
         """Waiting questions the owner wasn't told about yet, and may be now: free questions wait for their work hours.
         Brief asks never notify: they wait quietly in the Fleet tab, never as a to-do (QUIET)."""
-        rows = db.execute("SELECT * FROM fleet_in WHERE status='waiting' AND notified_at IS NULL AND kind NOT IN (%s) ORDER BY at,id"
-                          % ','.join('?' * len(QUIET)), QUIET).fetchall()
+        rows = db.execute("SELECT i.*,q.asked,q.state AS question_state FROM fleet_in i LEFT JOIN fleet_questions q ON q.id=i.id "
+                          "WHERE i.status='waiting' AND i.notified_at IS NULL AND i.kind NOT IN (%s) ORDER BY i.at,i.id"
+                          %','.join('?' * len(QUIET)), QUIET).fetchall()
         return rows if self.working() else [r for r in rows if r['kind'] != 'anything']
 
     def set_rule(self, fleet, member_id, kind, rule=None, details=None, scope=None, clear=False):

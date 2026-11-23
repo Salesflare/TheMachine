@@ -40,13 +40,19 @@ What a draft may come from:
   with one of them, or with a long run of a message's own words, isn't used.
 - The limits above are in code. The model also judges what they can't: it makes no draft when the answer could be private,
   as with health, money beyond a household bill, work, a quarrel, someone else's confidence, or anything that could be a
-  gift or a surprise. The to-do then says so, and you can still answer in your own words.
+  gift or a surprise. You can still answer in your own words.
+
+Before anything is looked up, a separate model run reads the question alone, with the same member's recent questions. One
+that isn't an ordinary household matter is **set aside**: it is about the person, checks up on someone, asks about a bill,
+contract, account, number or subscription that could be in one person's own name, or is unclear. Nothing is then searched
+or drafted. The to-do shows only the question and an empty answer, and the notification says only "Robin asks your
+Machine". A question this run couldn't read gets no draft and that same notification.
 
 What you can count on:
 
 - A question is at most 300 characters, an answer 600. At most 3 questions from one member wait for you, 10 a day. A
-  draft is one short model run, at most 6 a day for the whole Family, within your
-  [usage limits](usage.md); without one, the question waits with no draft.
+  question is at most two short model runs, for at most 6 questions a day for the whole Family, within your
+  [usage limits](usage.md); without them, the question waits with no draft.
 - The asker is told only that their question waits. Declining, **Never**, too many questions, no draft and no reply all
   look the same to them.
 - Every question, and exactly what was sent, is a line in your [Activity](activity.md).
@@ -123,7 +129,7 @@ ignore, and nothing goes out until you press Send. Work to-dos never go to the F
 
 What a member sends is kept to a fixed shape (a title, a short note, a date or time, a place) and only ever shown,
 quoted, as their words. No model, tool or Do it runs on a to-do, plan or free-times request, and nothing happens until
-you accept (or set Always). A [question](#ask-someones-machine) is the one thing a model reads: as data, in a single run
+you accept (or set Always). A [question](#ask-someones-machine) is the one thing a model reads: as data, in runs
 without tools, files or memory, whose only result is a draft you read before anything goes. So the most a hostile
 question, or a hostile message it finds, can do is change the words of that draft.
 Messages travel over the Network like every Fleet question, and are end-to-end encrypted where both Machines support
@@ -135,8 +141,8 @@ it (see [Network](network.md)).
 the same path as Work requests (`fleet_requests.STAGED`). Dashboard operations: `family_free`, `family_todo`,
 `family_event`, `family_question`, `family_invite`, `family_invite_setting` and `family_still_needed`, from the owner's dashboard only.
 Questions: `family_questions.py` is the path (taken in the Fleet's loop, which never runs a model), `family_question_sources.py`
-what a draft may come from with its prompt and checks, `machine/app/family_questions.py` the search and the run,
-`test_family_questions.py` the tests, and `evals/family-questions/` made-up families to run against a model. `family_invites.py` decides
+what a draft may come from with its prompt and checks, `family_question_check.py` the run on the question alone,
+`machine/app/family_questions.py` the search and the runs, `test_family_questions.py` the tests, and `evals/family-questions/` made-up families to run against a model. `family_invites.py` decides
 the invite suggestions (`test_family_invites.py`). Already did this is `Fleet.handled_round` with the Family's rule `done` (`family.DONE`, and
 `family_done.py` for the match and the line), shown from `suggestions.done_elsewhere`. Tests: `test_family.py`, `test_family_done.py`,
 `test_family_dashboard.mjs`, `test_family_done_dashboard.mjs`. Try it on

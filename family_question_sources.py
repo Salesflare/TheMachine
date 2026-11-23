@@ -1,5 +1,6 @@
-"""What an answer to a family member's question may be written from, and the one model turn's prompt and reply
-(family_questions.py has the question's path, machine/app/family_questions.py the search and the turn).
+"""What an answer to a family member's question may be written from, and the drafting turn's prompt and reply
+(family_questions.py has the question's path, machine/app/family_questions.py the search and the turns). It runs only on an
+ordinary household question (family_question_check.py judges that first, without a message).
 
 Hard limits, in code, before any model sees a message (allowed):
 - only mail and chats on an account that is personal in both its boundary and its label; never a calendar, an
@@ -223,7 +224,7 @@ def _data(text):
     return re.sub(r'<<<|>>>', '', str(text))
 
 
-# --- the one turn ------------------------------------------------------------------------------------------------------
+# --- the drafting turn ------------------------------------------------------------------------------------------------------
 
 RULES = '''{asker} and {owner} are family. {asker}'s Machine asks {owner}'s Machine a question. From {owner}'s own messages below,
 write the short answer {owner} could send {asker}. {owner} reads it before it goes.
@@ -242,6 +243,9 @@ verdict "nothing": the messages don't answer it. Also when they are only loosely
 verdict "private" (answer empty), whatever else the messages say, when the true answer touches any of:
 - health, body, therapy, pregnancy, medicine, a diagnosis, an insurance claim about health;
 - money beyond one household bill or order: salary, debt, loans, savings, investments, taxes, bank accounts, gambling;
+- a bill, contract, account, card, phone number, subscription, membership, policy or loan in {owner}'s own name that the
+  messages don't show {asker} shares or was told of; the home's own (power, water, heating, internet, the house's
+  insurance, school) is fine;
 - work: a job, employer, client, colleague, application, contract, meeting, business or side business;
 - a lawyer, court, police, a dispute, immigration; religion, politics, sexuality, dating; a relationship or a quarrel;
 - someone else's confidence, or what a friend or relative wrote about their own life;
