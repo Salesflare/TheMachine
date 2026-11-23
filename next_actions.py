@@ -568,8 +568,8 @@ def linkedin_reply(value, threads):
     return {**value, 'conversation_id': found[0]} if len(found) == 1 else value
 
 
-# How a follow-up's label (kind:prepare) starts: another Do it turn drafts, checks, researches or applies a change.
 LABEL_WORDS = r'[A-Za-z][A-Za-z0-9 ,’\-/]+'  # what a button's label may hold
+# How a follow-up's label (kind:prepare) starts: another Do it turn drafts, checks, researches or applies a change.
 FOLLOW_UP_VERBS = ('Draft', 'Prepare', 'Investigate', 'Check', 'Compare', 'Research', 'Apply', 'Fix', 'Update', 'Implement', 'Test',
                    'Set up', 'Configure')
 
@@ -589,8 +589,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     if not isinstance(value, dict):
         raise OwnerError('Next action must be an email draft, local preparation or original-page link')
     if value.get('kind') == 'handoff' and value.get('label') and isinstance(value['label'], str) and not value['label'].startswith('Hand off'):
-        # Its button always says Hand off. A run writing in the owner's language worded it itself; refused, it saved the
-        # whole result again for those words (2026-11-23). The name only where a label may hold it.
+        # Its button always says Hand off: a run's own words for it (the owner's language) are replaced, never refused
         name = ' '.join(['Hand off to', *str(value.get('to_name') or '').split()[:1]])
         value = {**value, 'label': name if value.get('to_name') and len(name) <= 28 and re.fullmatch(LABEL_WORDS, name) else 'Hand off'}
     if value.get('label') is not None and (not isinstance(value['label'],str) or not 1<=len(value['label'])<=28
@@ -977,9 +976,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # Machine gets it as a handoff to accept. Nothing goes by itself: the button opens the Fleet handoff
         # form with this text, for the owner to read, edit and send. The caller checks they are a teammate.
         only_fields(value, {'kind', 'label', 'to_email', 'to_name', 'body'}, 'handoff')
-        result = {'kind': 'handoff'}
-        if value.get('label'):
-            result['label'] = value['label']  # Hand off..., above
+        result = {'kind': 'handoff', **({'label': value['label']} if value.get('label') else {})}
         if not isinstance(value.get('to_email'), str) or len(value['to_email']) > 254 or not re.fullmatch(r'[^\s<>@,;]+@[^\s<>@,;]+\.[^\s<>@,;]+', value['to_email']):
             raise ValueError('to_email is the teammate’s work email, as in the Fleet')
         result['to_email'] = value['to_email'].lower()
