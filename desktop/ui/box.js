@@ -3,9 +3,9 @@
 // where its draft is read first.
 (function () {
   'use strict';
-  const t = window.MachineText, native = window.Native, {icon, when, fill} = window.Parts;
+  const t = window.MachineText, native = window.Native, {icon, when, fill, takes, dropped, base64, MAX_FILES, MAX_BYTES} = window.Parts;
   const $ = id => document.getElementById(id);
-  const MAX_FILES = 5, MAX_BYTES = 10 * 1024 * 1024, MAX_IMAGE = 5 * 1024 * 1024;
+  const MAX_IMAGE = 5 * 1024 * 1024, LONGEST = 2000;
   let kind = 'todo', busy = false, byAddress = false, files = [], draft = '', connected = false, machine = null, hidden = false, notice = false, fresh = false, written = null, snip = false, shooting = false, speaks = 'always';
 
   for (const [id, text] of Object.entries({
@@ -51,10 +51,16 @@
     else if (s.menu) menu(true); else focus();
     if (!machine) return;
     const before = connected;
+    await take();
     buttons();
     await native.look().catch(() => {});
     await show();
-    if (connected !== before && !s.menu) focus();
+    if (connected !== before) { await take(); if (!s.menu) focus(); }
+  }
+  async function take() {
+    const g = connected && !notice ? await native.given() : null;
+    if (g) given({text: g.text, files: g.files.map(f => new File([bytes(f.data)], f.name, {type: f.kind}))});
+    if (g?.error) fail(g.error);
   }
   const focus = () => setTimeout(() => (notice ? $('notice-ok') : connected ? $('text') : byAddress ? $('address') : $('signin-go')).focus(), 30);
 
@@ -403,12 +409,6 @@
   }
 
   // Files: they go up at once under this to-do's own key, and join it when it is added (as in New to-do, chat_files.py)
-  const base64 = f => new Promise((ok, no) => {
-    const r = new FileReader();
-    r.onload = () => ok(String(r.result).split(',')[1] || '');
-    r.onerror = no;
-    r.readAsDataURL(f);
-  });
   const key = () => [...crypto.getRandomValues(new Uint8Array(8))].map(b => b.toString(16).padStart(2, '0')).join('');
   function showFiles() {
     $('files').replaceChildren(...files.map(f => el('li', {className: f.id ? '' : 'up'}, ...(f.image ? [el('img', {src: f.image, alt: ''})] : []), el('span', {textContent: f.name}), el('button', {
@@ -471,14 +471,22 @@
   }
   $('pick').addEventListener('change', () => { add([...$('pick').files]); $('pick').value = ''; });
   addEventListener('paste', e => { const f = [...(e.clipboardData?.files || [])]; if (f.length && connected) { e.preventDefault(); toTodo(); add(f); } });
-  addEventListener('dragover', e => { e.preventDefault(); if (connected) $('panel').classList.add('drop'); });
+  addEventListener('dragover', e => { if (!takes(e.dataTransfer)) return; e.preventDefault(); if (connected) $('panel').classList.add('drop'); });
   addEventListener('dragleave', e => { if (!e.relatedTarget) $('panel').classList.remove('drop'); });
   addEventListener('drop', e => {
     e.preventDefault();
     $('panel').classList.remove('drop');
-    const f = [...(e.dataTransfer?.files || [])];
-    if (f.length && connected) { toTodo(); add(f); }
+    if (connected) given(dropped(e.dataTransfer));
   });
+  // Dropped here or on the robot: it is in the box, and goes nowhere before a tap. Files go up as those of + do
+  function given({text, files: f}) {
+    if (card) cardBack();
+    const all = [$('text').value.trim(), text].filter(Boolean).join('\n');
+    if (text) { $('text').value = all.slice(0, LONGEST); grow(); ready(); }
+    if (f.length) { toTodo(); add(f); } else say('');
+    if (all.length > LONGEST) fail('long');
+    focus();
+  }
   function toTodo() { if (kind !== 'todo') document.querySelector('[name=kind][value=todo]').click(); }
 
   // One to-do in the box, by its Machine's own dashboard; where that has no page for it, the app or the browser
@@ -555,6 +563,7 @@
   });
   addEventListener('contextmenu', e => { if (!e.target.closest('input,textarea,#answer')) e.preventDefault(); });
   native.onFailed(fail);
+  native.onGiven(take);
   native.onListed(() => native.state().then(s => {
     head(s);
     showReady(connected && !notice ? s.waiting : {todos: [], count: 0});

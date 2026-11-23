@@ -29,6 +29,11 @@ its box are away, and see it in the box before you add the to-do. Remove it ther
 Windows: its own snip (Windows itself may also keep the image, as its settings say). Linux: the desktop's portal, where it
 has one that lets you pick.
 
+**Drop anything on it.** Files, an image, a link or selected text, dropped on the robot or its box: the box opens with it.
+Text and links stand in the field, for To-do or Ask; files are attached as with **+**, up to 5 of 10 MB, to a to-do. Nothing
+becomes a to-do or a question before you say so. A folder isn't taken. On GNOME with Wayland the robot is an X11 window,
+and selected text from a Wayland app may not arrive there; files and links do.
+
 **The dot.** Something came into For you, became ready, needs you, or became due today, since the box was open or the
 dashboard's app was in front on this computer, or a to-do was opened from the box. Opening the box takes it away. A
 dashboard in a browser's tab isn't seen by it. To know this it keeps fingerprints of what was there, not what it was.

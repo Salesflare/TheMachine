@@ -1708,6 +1708,74 @@ def _():
     return ', '.join(told)
 
 
+# A window to drag from, as Explorer, a browser and an editor put it
+SOURCE = r"""
+Add-Type -A System.Windows.Forms,System.Drawing
+$f = New-Object Windows.Forms.Form -Property @{Text='source'; StartPosition='Manual'; Left=40; Top=40; Width=400; Height=160; TopMost=$true}
+$files = New-Object Collections.Specialized.StringCollection
+$args[0].Split('|') | % { [void]$files.Add($_) }
+$file = New-Object Windows.Forms.DataObject; $file.SetFileDropList($files)
+$text = New-Object Windows.Forms.DataObject; $text.SetText('Ask Dana <b>about</b> the pilot')
+$link = New-Object Windows.Forms.DataObject; $link.SetText('https://example.com/pilot?x=1')
+$link.SetData('UniformResourceLocatorW', (New-Object IO.MemoryStream (,[Text.Encoding]::Unicode.GetBytes("https://example.com/pilot?x=1`0"))))
+$i = 0
+foreach ($d in $file, $text, $link) {
+  $l = New-Object Windows.Forms.Label -Property @{Left=130*$i; Top=0; Width=125; Height=110; BackColor='LightGray'; Text="$i"; Tag=$d}
+  $l.add_MouseDown({ [void]$this.DoDragDrop($this.Tag, 'Copy') }); $f.Controls.Add($l); $i++
+}
+$t = New-Object Windows.Forms.Timer -Property @{Interval=300}; $where = $args[1]
+$t.add_Tick({ $o = $f.PointToScreen([Drawing.Point]::Empty); [IO.File]::WriteAllText($where, "$($o.X) $($o.Y)") }); $t.Start()
+[Windows.Forms.Application]::Run($f)
+"""
+
+
+@step('drop anything on it')
+def _():
+    if app.box():
+        press(app, '#close')
+    need(until(lambda: not app.wide()), 'nothing is there')
+    script, where, one, two = (out / n for n in ('source.ps1', 'source.txt', 'notes.txt', 'plan & b.txt'))
+    script.write_text(SOURCE, encoding='utf-8')
+    for f in (one, two):
+        f.write_text('made up')
+    source = subprocess.Popen(['powershell', '-sta', '-noprofile', '-executionpolicy', 'bypass', '-file', str(script), f'{one}|{two}', str(where)])
+    try:
+        need(until(lambda: where.exists() and where.read_text().strip(), 30), 'a window to drag from')
+        x, y = map(int, where.read_text().split())
+        from_ = lambda n: (x + 130 * n + 60, y + 60)
+        before = len(machine.actions)
+        drag(from_(1), app.center())
+        need(until(app.box), 'the box opens')
+        value = lambda: page('box.html', 'document.getElementById("text").value')
+        need(until(lambda: value() == 'Ask Dana <b>about</b> the pilot'), str(value()))
+        need(page('box.html', 'document.activeElement.id') == 'text', 'ready to go on')
+        png('dropped-text')
+        drag(from_(2), app.center())
+        need(until(lambda: 'https://example.com/pilot?x=1' in value().split('\n')), str(value()))
+        need(len(machine.actions) == before, f'nothing is sent: {machine.actions[before:]}')
+        drag(from_(0), app.center())
+        need(until(lambda: 'notes.txt' in says('#files') and 'plan & b.txt' in says('#files')), says('#files'))
+        need(until(lambda: len(machine.actions) == before + 2), str(machine.actions[before:]))
+        need({n for n, *_ in machine.actions[before:]} == {'chat_upload'}, 'the files are attached, as with +')
+        png('dropped-files')
+        press(app, '#kind-ask')
+        need(value().startswith('Ask Dana'), 'it can be asked too')
+        press(app, '#kind-todo')
+        for _ in range(2):
+            press(app, '#files button')
+        press(app, '#text')
+        key(0x11, False), key(0x41), key(0x11, True), key(8)
+        press(app, '#close')
+        hide()
+        drag(from_(1), app.center())
+        need(until(app.box), 'a hidden one comes back with it')
+        press(app, '#text')
+        key(0x11, False), key(0x41), key(0x11, True), key(8)
+        press(app, '#close')
+    finally:
+        source.kill()
+
+
 @step('quit from the menu')
 def _():
     click(*app.center(), right=True)
