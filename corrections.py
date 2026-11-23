@@ -232,14 +232,27 @@ def _state(db, kind, target):
 
 def _same(kind, a, b):
     """Is it still what the fix left? Compared on what says the value (a review's later re-read of the same role is fine)."""
+    return _compared(kind, a) == _compared(kind, b)
+
+
+def _compared(kind, state):
+    """The part of a state that says the value: all a fix keeps of what it left (its target is readable; the quotes and
+    reasons are in `before`, sealed)."""
     if kind in ('role', 'org'):
-        keys = ('identifier', 'role', 'org', 'source')
-        pick = lambda s: [{k: r.get(k) for k in keys} for r in (s or {}).get('rows', [])]
-        return pick(a) == pick(b)
+        return {'rows': [{k: r.get(k) for k in ('identifier', 'role', 'org', 'source')} for r in (state or {}).get('rows', [])]}
     if kind == 'stage':
-        pick = lambda s: {k: (s or {}).get(k) for k in ('board_id', 'stage', 'stage_by')}
-        return pick(a) == pick(b)
-    return a == b
+        return {k: (state or {}).get(k) for k in ('board_id', 'stage', 'stage_by')}
+    return state
+
+
+def drop_quotes(db):
+    """Fixes from before _compared (or by an older release since) kept the quotes and reasons too: their target keeps what
+    it compares."""
+    if not db.execute("SELECT 1 FROM sqlite_master WHERE name='learning_changes'").fetchone():
+        return
+    for change, stored in db.execute("SELECT id,target FROM learning_changes WHERE kind='source' AND (instr(target,'\"quote\"')>0 OR instr(target,'_reason\"')>0)").fetchall():
+        target = json.loads(stored)
+        learning_loop.retarget(db, change, json.dumps({**target, 'after': _compared(target['type'], target.get('after'))}))
 
 
 def fix(db, suggestion_id, decision_id, kind, target, value, came_from, now, wrong=''):
@@ -333,7 +346,7 @@ def fix(db, suggestion_id, decision_id, kind, target, value, came_from, now, wro
     about = {'kind': kind, 'where': where, 'old': old, 'wrong': _clip(wrong, VALUE_CHARS),
              'name': said['project'] if kind == 'stage' else name if kind in ('role', 'org', 'title', 'location') else None}
     change = learning_loop.record(db, 'fix:' + str(decision_id), 'source',
-                                  json.dumps({'type': kind, 'where': where, 'line': line, 'after': after, 'suggestion_id': str(suggestion_id)}),
+                                  json.dumps({'type': kind, 'where': where, 'line': line, 'after': _compared(kind, after), 'suggestion_id': str(suggestion_id)}),
                                   json.dumps({'text': old, 'state': before}), _english(line, value), came_from or '')
     return {'id': change, 'fixed': _english(line, value), **({'came_from': came_from} if came_from else {}), 'graph': kind in GRAPH_KINDS,
             **pending_work(db, suggestion_id, about)}

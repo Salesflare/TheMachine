@@ -5,8 +5,8 @@ command).
 In: feedback and the rules, facts and per-channel voices learned from it, the owner's profile and notes (USER.md, MEMORY.md, memory/),
 skills and proposals, how reviews, preparations, cards and Claude Code or Codex jobs went (states, error codes, times), roles learned for people
 in counts, code faults, which sources are on and how they sync.
-Never: what messages say (subjects, bodies, metadata beyond counts, card text, drafts, tool results; see
-message_seal.py), names or addresses of people, tokens. The database is read without the message key and only the
+Never: what messages say (subjects, bodies, metadata beyond counts, card text, drafts, tool results, why a run
+stopped; see message_seal.py), names or addresses of people, tokens. The database is read without the message key and only the
 columns below are selected, so a sealed database gives the same answer as a plain one."""
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ TABLES = {
     'deliveries': ('suggestion_id', 'status', 'error', 'updated_at', 'needs_edit'),
     'agent_jobs': ('suggestion_id', 'tool', 'place', 'status', 'error_kind', 'turns', 'outcome', 'created_at', 'updated_at', 'started_at', 'finished_at'),
     'action_jobs': ('suggestion_id', 'status', 'source', 'error', 'created_at', 'updated_at', "json_extract(payload,'$.kind') AS kind"),
-    'preparations': ('suggestion_id', 'status', 'reason', 'error', 'attempts', 'auto_retries', 'created_at', 'started_at', 'updated_at'),
+    'preparations': ('suggestion_id', 'status', 'error', 'attempts', 'auto_retries', 'created_at', 'started_at', 'updated_at'),
     'preparation_runs': ('job_id', 'status', 'started_at', 'finished_at', 'history_read'),
     'review_runs': ('run_id', 'status', 'started_at', 'finished_at', 'attempts', 'error', 'preview'),
     'profile_runs': ('run_id', 'status', 'started_at', 'finished_at', 'attempts', 'error', 'draft'),
@@ -43,7 +43,7 @@ TABLES = {
     'promises': ('direction', 'status', 'due', 'created_at'),
     'skills': ('slug', 'name', 'description', 'body', 'status', 'origin', 'version', 'note', 'created_at', 'updated_at'),
     'skill_hints': ('suggestion_id', 'skill', 'kind', 'name'),
-    'tool_approval_proposals': ('title', 'detail', 'created_at'),
+    'tool_approval_proposals': ('created_at',),
     'faults': ('day', 'kind', 'frames', 'location', 'version', 'count'),
     'sync_activity': ('at', 'status', 'signals', 'error', 'retry_at', 'account_id'),
     'checkpoints': ('account_id', 'last_success', 'error', 'error_at', 'failures'),

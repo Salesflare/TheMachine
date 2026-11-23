@@ -27,7 +27,7 @@ from machine.cards import group_sender
 from machine.sources.android import android_app_shown, android_text_shown
 from machine.sources.gmail import machine_notice
 from machine.sources.slack import slack_named, slack_plain
-from machine.store import message_view
+from machine.store import message_view, review_whys
 import timeutil
 
 REST_SECONDS = 60             # after a check ends, a new press within this long shows it instead of starting another
@@ -92,7 +92,7 @@ def mail_check(db, current=None, own=()):
     current = current or timeutil.clock()
     since = (current - dt.timedelta(hours=MAIL_CHECK_HOURS)).isoformat()
     own = {str(a).lower() for a in own if a}
-    for review in db.execute("SELECT started_at,finished_at,items FROM analyses WHERE status='complete' AND finished_at>=? "
+    for review in db.execute("SELECT started_at,finished_at,items,whys FROM analyses WHERE status='complete' AND finished_at>=? "
                              'ORDER BY finished_at DESC LIMIT 12', (since,)).fetchall():
         # new messages only: a later version of one already read (its labels or read state changed) is not new mail
         batch = [i for i in json.loads(review['items'] or '[]') if isinstance(i, dict) and not i.get('excluded')]
@@ -224,7 +224,7 @@ def _echo(note, threads):
 
 
 def _mail_view(db, review, items, batch, mail, current, own):
-    threads = {}
+    threads, whys = {}, review_whys.read(review['whys'])
     for row in mail:
         meta = _meta(row['metadata'])
         group, mine = source_group(row['kind']), _from_owner(meta, own)
@@ -259,8 +259,8 @@ def _mail_view(db, review, items, batch, mail, current, own):
         if not mine:
             thread['heads'].update(h for h in (_plain(w)[:24] for w in words) if len(h) >= 4)
         item = items[row['id']]
-        if item.get('no_todo'):
-            thread['why'] = item['no_todo']
+        if (whys.get(row['id']) or {}).get('no_todo'):
+            thread['why'] = whys[row['id']]['no_todo']
         thread['later'] = thread['later'] or bool(item.get('deferred'))
     # The to-dos this check made: created while it ran, from a message it read or one in the same thread
     end = (dt.datetime.fromisoformat(review['finished_at']) + dt.timedelta(minutes=1)).isoformat()

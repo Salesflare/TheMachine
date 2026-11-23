@@ -13,6 +13,7 @@ import unittest
 import machine.actions as machine_actions
 import machine.main as machine_main
 import machine.prompts.review as review_prompts
+from machine.store import review_whys
 import machine.sources.calendar as machine_sources_calendar
 import machine.store.review as machine_store_review
 import timeutil
@@ -76,7 +77,7 @@ class Audit(unittest.TestCase):
                                                                                      'labels': ['INBOX', 'CATEGORY_PROMOTIONS']})
             add('spam', 'work', 'gmail.message', 'Reply by Friday to claim it', {'thread_id': 'ts', 'from': 'z@other.example', 'labels': ['SPAM']})
             add('deferred', 'work', 'gmail.message', 'deadline next week', {'thread_id': 'td', 'from': 'y@other.example'})
-            items = [{'id': i, 'version': 1, **({'deferred': True} if name == 'deferred' else {}), **({'no_reply': 'a thanks'} if i == self.ids['mail'][5] else {})}
+            items = [{'id': i, 'version': 1, **({'deferred': True} if name == 'deferred' else {}), **({'no_reply': True} if i == self.ids['mail'][5] else {})}
                      for name, ids in self.ids.items() for i in ids]
             db.execute("INSERT INTO analyses(id,started_at,finished_at,items,status) VALUES('r1',?,?,?,'complete')", (self.stamp, self.stamp, json.dumps(items)))
             db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES('s1','k1','Pay it','b',?,'[\"work\"]','pending',?)",
@@ -323,11 +324,7 @@ class Audit(unittest.TestCase):
     def audited(self):
         """One audit, with the review's own reason on the first mail (finish_analysis no_todo)."""
         with self.store.connect() as db:
-            items = json.loads(db.execute("SELECT items FROM analyses WHERE id='r1'").fetchone()[0])
-            for item in items:
-                if item['id'] == self.ids['mail'][0]:
-                    item['no_todo'] = 'Only an update, nothing asked'
-            db.execute("UPDATE analyses SET items=? WHERE id='r1'", (json.dumps(items),))
+            db.execute("UPDATE analyses SET whys=? WHERE id='r1'", (review_whys.text({self.ids['mail'][0]: {'no_todo': 'Only an update, nothing asked'}}),))
             audit = mw.begin(db)
             mw.save(db, audit, mw.run(db, ACCOUNTS, answer_all, seed=audit, bulk=machine_store_review.bulk_kind))
 

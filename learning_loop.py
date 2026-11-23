@@ -294,6 +294,11 @@ def record(db, run_id, kind, target, before, after, why):
     return _record(db, run_id, kind, target, before, after, why)
 
 
+def retarget(db, change_id, target):
+    """What a kept change is about, said shorter (corrections.drop_quotes)."""
+    db.execute('UPDATE learning_changes SET target=? WHERE id=?', (target, change_id))
+
+
 def set_fact(db, fact_id, text, removed_at, ref):
     """A learned fact or rule as the owner says it is (corrections.py, and its undo): its text, and removed or not. A
     draft rule's change is logged like the loop's own."""

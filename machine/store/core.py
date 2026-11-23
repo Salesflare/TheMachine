@@ -19,6 +19,7 @@ import ai_access
 import bounces
 import chat_files
 import chat_model
+import corrections
 import embeddings
 import error_feed
 import follow_ups
@@ -33,7 +34,7 @@ from machine.config import LOG
 from machine.sources.exclusions import calendar_title_excluded, email_subject_excluded, excluded_by_rules, routine_rules
 from machine.store import history as history_store
 from machine.store.profile import QUALITY_TABLES
-from machine.store import todo_moves
+from machine.store import review_whys, todo_moves
 from machine.store.views import CARD_TABLES
 from machine import stamps
 from machine.text import QUOTED_HISTORY_KEPT, encoded, open_copy, seal_copy, trim_quoted_history
@@ -85,6 +86,7 @@ def exclude_sources(db, account, source_ids, reason='account_content_filter'):
                     if item['id'] in removed:
                         item['excluded'] = reason
                 db.execute('UPDATE analyses SET items=? WHERE id=?', (encoded(items), review['id']))
+                review_whys.drop(db, review['id'], removed)
     return len(removed)
 
 
@@ -283,7 +285,7 @@ class StoreCore:
             if 'retry_at' not in checkpoint_columns:
                 db.execute('ALTER TABLE checkpoints ADD COLUMN retry_at TEXT')
             review_columns = {r['name'] for r in db.execute('PRAGMA table_info(analyses)')}
-            for column in ['owner_session', 'owner_run', 'last_error', 'error_at', 'resumed_at', 'resumed_from']:
+            for column in ['owner_session', 'owner_run', 'last_error', 'error_at', 'resumed_at', 'resumed_from', 'whys']:
                 if column not in review_columns:
                     db.execute('ALTER TABLE analyses ADD COLUMN ' + column + ' TEXT')
             if 'attempts' not in review_columns:
@@ -578,6 +580,9 @@ class StoreCore:
             moved = self.move_meeting_transcripts(db)
             if moved:
                 LOG.info('Moved %d meeting transcript(s) out of Notes into Transcript: %s', len(moved), moved)
+        with self.connect() as db:  # a connection of its own: the guards of a column just made are there
+            review_whys.move(db)
+            corrections.drop_quotes(db)
         restored = self.restore_ahead_blockers()
         if restored:
             LOG.info('Showed the blocker again on %d prepared-ahead to-do(s)', restored)

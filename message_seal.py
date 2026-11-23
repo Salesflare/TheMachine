@@ -70,16 +70,23 @@ ROUTING_KEYS = frozenset({'end_at', 'status', 'recurring_event_id', 'chat_kind'}
 PLAIN_METADATA = frozenset({'thread_id', 'from', 'to', 'labels', 'notification_key_hash', 'user_id', 'from_me',
                             'channel_id', 'chat_id', 'conversation_id'}) | ROUTING_KEYS
 # Text the app derives from messages: card text and the drafts behind it, edits, what a preparation's tools returned, a person's summary (person_summary.py), a project's description (project_about.py),
-# a review's own summary (and its answer on a board check), what teammates' Machines asked and answered, what they shared in the team's Graph (and the review's
+# why a preparation stopped and what it asks, a review's own summary (and its answer on a board check), what teammates' Machines asked and answered, what they shared in the team's Graph (and the review's
 # line for each shared thread), a Claude Code or Codex job's brief and result, a task page's record (with its link's key), the weekly recap as sent and the lines it offers a choice on, the line a role or an organization was read from, promises (what
 # and the note closing one, and the refund one is about), and the messages a profile, roles or skills run was given. JSON columns keep the named
 # keys in the clear. Not here, on purpose: columns the app matches in SQL, and what the Machine learned (facts, rules,
 # feedback, skills, profile, voices, roles), which support may read (docs/configuration.md). The words around a
 # learning are here: a Fleet's team learnings, what a learned change replaced and why, and the Fleet's log lines.
-DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'title_suggested', 'expires_what', 'chat_asks', 'done_when', 'bill'), 'feedback_prompts': ('title',),
-           'person_roles': ('quote',), 'person_orgs': ('quote',), 'person_summaries': ('lines', 'proposal'), 'person_facts': ('value',), 'promises': ('what', 'note', 'refund'), 'profile_runs': ('evidence',),
+DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'title_suggested', 'expires_what', 'chat_asks', 'done_when', 'bill',
+                           'source_line'),  # the line may name a meeting (machine/store/cards.py)
+           'feedback_prompts': ('title',),
+           'person_roles': ('quote', 'hints'), 'person_orgs': ('quote',), 'person_summaries': ('lines', 'proposal'), 'person_facts': ('value',), 'promises': ('what', 'note', 'refund'), 'profile_runs': ('evidence',),
            'draft_edits': ('before_subject', 'before_body', 'after_subject', 'after_body'),
-           'graph_unnamed': ('titles',), 'preparation_calls': ('params', 'result'), 'analyses': ('summary',),
+           'graph_unnamed': ('titles',), 'preparation_calls': ('params', 'result', 'error'),
+           # why a run stopped, in the model's words, and what it asks the owner (decisions.preparation_blocked)
+           'preparations': ('reason', 'details', 'questions'), 'tool_approval_proposals': ('title', 'detail'),
+           'gateway_starts': ('request',),  # a run's whole start, its prompt too, while it may have to be sent again (preparation_state.py)
+           'review_save_failures': ('error',),  # it can quote what the review tried to save (review_saves.py)
+           'analyses': ('summary', 'whys'),
            'fleet_questions': ('draft', 'answer'),  # a family member's question: its draft and the exact answer that went
            'fleet_in': ('question', 'draft'),'fleet_out': ('question', 'answer'), 'network_replies': ('body',),
            'task_pages': ('record',), 'meet_links': ('record',), 'handoff_mails': ('record',), 'recaps': ('text',), 'chat_stops': ('text',),  # a stopped chat reply's partial text
@@ -91,12 +98,20 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            # kept from the Notes feature that is gone, unread by any code: still sealed, and the full export opens them
            'section_topics': ('note',), 'note_writeups': ('page',), 'folder_overviews': ('page',), 'topic_routes': ('note', 'title'),
            'recurring_series': ('text',), 'recurring_offers': ('title', 'text'),  # a recurring to-do's words (recurring.py)
-           'routines': ('name', 'instructions'), 'routine_runs': ('result', 'why'),  # a routine's words and what its run read (routines.py)
+           'routines': ('name', 'instructions', 'steps', 'recipe'),  # a routine's words, and what its run read (routines.py)
+           'routine_runs': ('result', 'why', 'trial', 'steps', 'recipe', 'data'),
            'routine_changes': ('instructions',),  # a routine's new words, offered on one of its to-dos (routine_changes.py)
-           'purchases': ('title', 'variant'),  # an item bought, as its order mail names it (reorder.py); matched in SQL by its plain key, item
+           'purchases': ('title', 'variant', 'link', 'status_link'), 'reorder_todos': ('shown',),  # an item bought, as its order mail names it (reorder.py); matched in SQL by its plain key, item
            'mail_cleanup_items': ('link',),  # a list's unsubscribe page, left for the owner to open (mail_cleanup.py)
            'trip_pending': ('text',),  # a booking mail's text the history walk read, waiting for the model (trip_notes.py)
-           'digest_items': ('feedback',),  # More or Less like this on a Daily digest's pick (reading_digest.py)
+           'digest_items': ('feedback', 'topic'),  # More or Less like this on a Daily digest's pick, and what the pick is about (reading_digest.py)
+           'follow_up_advice': ('why',),  # why a run would stop following up (follow_ups.py)
+           'skill_hints': ('why',),  # why a run wants a skill, in its own words (skills.py)
+           # a review a teammate was asked for: the draft, their answer and its steps (fleet_reviews.py); the retired follow-up splits
+           'fleet_reviews': ('sent', 'reply', 'history'), 'fleet_splits': ('title', 'parts'),
+           'self_record_backups': ('rows',),  # rows as they were, opened: a person's quotes and facts among them (graph.py)
+           'agent_relayed': ('progress',),  # the job's progress line as last told (agent_remote.py)
+           'record_changes': ('old', 'new'),  # a custom field's value before and after (crm_sync.py)
            'recap_items': ('line', 'data'),
            'graph_imports': ('undo',),  # an import's Undo: what it changed, which can hold a project's notes
            'crm_values': ('value',),  # custom field values the owner typed on a record (crm_fields.py)
@@ -104,21 +119,21 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'missed_audit_items': ('reason',),  # why the missed-work audit saw work in a signal (missed_work.py)
            'review_misses': ('what', 'why'),  # a confirmed miss: the work the audit saw, the review's line on why none (missed_work.py)
            'projects': ('stage_reason', 'next_step', 'sort_note', 'notes', 'outcome_reason', 'about'), 'board_fits': ('why',), 'board_backfill_asks': ('why',), 'project_moves': ('reason',), 'board_suggestions': ('about', 'reason'), 'board_offers': ('answer',),
-           'team_mail': ('body',), 'team_records': ('body',), 'team_files': ('data',), 'team_blobs': ('dk',), 'share_lines': ('line',),
+           'team_mail': ('body',), 'team_records': ('body',), 'team_files': ('name', 'data'), 'team_blobs': ('dk',), 'share_lines': ('line',),
            'agent_jobs': ('brief', 'asks', 'progress', 'summary', 'diff', 'files', 'error', 'answers'),
            'ai_activity': ('detail',),  # what a connected AI asked for and got, in short (ai_access.py)
            'ai_writes': ('changes',),  # a connected AI's Graph change, before and after, for its Undo (ai_access.py)
            # a to-do's title while its push, email line or handoff email waits to go, and the line a woken phone shows (notify.py)
            'notify_queue': ('title', 'payload'), 'notify_app_lines': ('line', 'body'),
            'notify_digests': ('body',),  # a sent morning or evening digest, kept a week to open again (notify.digest_done)
-           'contact_marks': ('note',),  # the note a teammate wrote on a contact they shared (contact_share.py)
+           'contact_marks': ('note',), 'contact_shares': ('card',),  # the note a teammate wrote on a contact they shared (contact_share.py)
            'gbrain_notes': ('text',),  # the owner's own notes on a GBrain page (gbrain.py)
            # a Work Fleet's team learnings, also a removed one kept so it is not learned again (fleet_learnings.py)
            'fleet_learnings': ('text',), 'fleet_learn_removed': ('text',),
            'learned_drafts': ('data',),  # a Do it run's procedure that waits for its check (learned_skills.py)
            'learned_fixes': ('text',),  # what the first look's old summary said of someone, left off it
            'learning_changes': ('before', 'after', 'why'),  # a learned change, what it replaced and why (learning_loop.py)
-           'fleet_log': ('what',),  # what was asked, answered or learned in a Fleet, a line each (fleet.py)
+           'fleet_log': ('what', 'outcome'),  # what was asked, answered or learned in a Fleet, a line each, and the answer (fleet.py)
            # a line of the owner's OpenClaw notes offered as a fact, kept also once dismissed (bring_in.py)
            'bring_in_items': ('text',),
            'decision_asks': ('questions',)}  # the question a note of the owner's answered, beside it (decisions.waiting_questions)
