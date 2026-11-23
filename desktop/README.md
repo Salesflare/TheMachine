@@ -68,7 +68,8 @@ the dashboard. Follow-ups of a board and Fleet items open with the dashboard.
 
 When a to-do's notification would buzz on this computer, the robot says it in a small bubble instead: the notification's
 own title and line, and its buttons (Open, Do it, Snooze with its choices, Mark done; never Send). It goes after about 12
-seconds, not while the mouse is on it, and the dot stays. It never takes the keys. **Speak up** in **...** turns it off.
+seconds, not while the mouse is on it, and the dot stays. It makes no sound and never takes the keys. **Speak up** in
+**...** says when: **Always** (to start with), **Not in Do Not Disturb** or **Never**.
 
 - **What and when is your Machine's.** Hours, the day's cap, batches, hidden text, the kinds you turned off, a dashboard in
   use: all decided before, as for every notification (`machine/delivery/desk.py`). The robot only says with its usual look,
@@ -77,10 +78,15 @@ seconds, not while the mouse is on it, and the dot stays. It never takes the key
   robot's computer. Which one that is it knows after the robot has opened the dashboard there once; until then it stays
   quiet if any browser has notifications on. A second browser with notifications on this computer still shows its own.
   Phones and other computers get theirs as ever.
-- **It may not speak** while it is hidden, off, or away for the app or something in full screen; and, where the system
-  tells without a permission, while the screen is locked or the system says not to disturb. Windows: presentation mode,
-  a game, quiet hours, or no mouse and keys for 5 minutes. Linux: KDE, dunst, mako (a mode named do-not-disturb or dnd),
-  GNOME's Do Not Disturb. Then your Machine pushes to the browser as ever. One it was handed but didn't
+- **It may not speak** while it is hidden, off, or away for the app or something in full screen; nor, where the system
+  tells without a permission, while the screen is locked or presented. Windows: the lock screen and screen saver, an app
+  or game in full screen, presentation mode, duplicated displays, or no mouse and keys for 5 minutes. Linux: a lock the
+  sign-in manager knows of, as GNOME's and KDE's, or Hyprland. That the screen is shared in a call no system tells an app like this.
+- **Notifications switched off** on the computer don't keep it quiet. **Do Not Disturb** does only with **Not in Do Not
+  Disturb**: on Windows 11 (23H2 and later; Focus turns it on too; also the first hour of a new account, which Windows
+  keeps quiet), KDE, dunst, mako (a mode named do-not-disturb or dnd) and GNOME. Elsewhere the system doesn't tell, and
+  it speaks. GNOME has one switch for both, so there notifications off is Do Not Disturb.
+- A robot that may not speak takes nothing. Your Machine pushes to the browser as ever. One it was handed but didn't
   say it got in 90 seconds (an answer lost on the way is sent again) goes to the browser after all.
 - **Decided elsewhere**, on the phone or the dashboard: the bubble goes with the robot's next look.
 - While the box is open nothing is said, and what its rows showed isn't said after.

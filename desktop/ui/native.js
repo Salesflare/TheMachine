@@ -23,7 +23,7 @@
     cardOpen: todo => invoke('card_open', {todo}),
     cardPlace: (top, height) => invoke('card_place', {top, height}),
     cardClose: () => invoke('card_close'),
-    setSpeaks: on => invoke('set_speaks', {on}),
+    setSpeaks: when => invoke('set_speaks', {when}),
     menuItem: id => invoke('menu_item', {id}),
     onOpened: run => listen('opened', run),
     onListed: run => listen('listed', run),

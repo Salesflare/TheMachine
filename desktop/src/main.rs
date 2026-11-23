@@ -444,7 +444,7 @@ struct BoxState {
     notice: bool,
     snip: bool,
     open: bool,
-    speaks: bool,
+    speaks: speak::Speak,
     wanted: Option<String>,
 }
 
@@ -459,19 +459,19 @@ fn box_state(shared: State<Shared>) -> BoxState {
         notice: shared.notice.load(Ordering::Relaxed),
         snip: shared.snip.load(Ordering::Relaxed),
         open: shared.open.load(Ordering::Relaxed),
-        speaks: !shared.saved.lock().unwrap().quiet,
+        speaks: shared.saved.lock().unwrap().speak,
         wanted: shared.wanted.lock().unwrap().clone(),
     }
 }
 
 /// "Speak up", in its menu.
 #[tauri::command]
-fn set_speaks(app: AppHandle, on: bool) {
+fn set_speaks(app: AppHandle, when: speak::Speak) {
     let shared = app.state::<Shared>();
-    shared.saved.lock().unwrap().quiet = !on;
+    shared.saved.lock().unwrap().speak = when;
     shared.save();
     shared.look_soon();
-    if !on {
+    if when == speak::Speak::Never {
         later(&app, |app| speak::hush(app, true));
     }
 }

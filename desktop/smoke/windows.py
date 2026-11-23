@@ -1514,9 +1514,6 @@ def said():
 
 @step('it speaks up')
 def _():
-    told, state = ctypes.windll.shell32.SHQueryUserNotificationState, ctypes.c_int(0)
-    told(ctypes.byref(state))
-    print('the runner itself says', state.value, 'of notifications')  # a fresh user's first hour is quiet time
     machine.todos = list(TODOS)
     away()
     before = user.GetForegroundWindow()
@@ -1596,38 +1593,98 @@ def _():
     machine.compact = False
 
 
-@step('not in a presentation')
-def _():
-    away()
-    STATE.write_text('4')
-    need(until(lambda: machine.desks[-1][1] == '0', 40), str(machine.desks[-1]))
-    machine.notices = [{'key': 'p1', 'id': 'aa03', 'kind': 'todo'}]
+def windows_says(to='read'):
+    """Windows' own word of notifications: its state, and its mode (Do Not Disturb)."""
+    done = subprocess.run(['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(pathlib.Path(__file__).with_name('dnd.ps1')), to], capture_output=True, text=True, timeout=120)
+    return (done.stdout.strip().splitlines() or [done.stderr.strip()[-300:]])[-1]
+
+
+def speaks(yes):
+    need(until(lambda: machine.desks[-1][1] == '01'[yes], 40), str(machine.desks[-1]))
+
+
+def quiet(todo='aa03'):
+    """What comes isn't said, and left to the browser."""
+    speaks(False)
+    machine.notices = [{'key': f'{time.time_ns():x}', 'id': todo, 'kind': 'todo'}]
     time.sleep(35)
     need(not app.bubble() and machine.notices, 'it says nothing, and leaves it to the browser')
     machine.notices = []
-    STATE.write_text('5')
-    need(until(lambda: machine.desks[-1][1] == '1', 40), str(machine.desks[-1]))
 
 
-@step('Speak up is off')
-def _():
-    open_it()
-    press(app, '#more')
-    need(until(lambda: page('box.html', 'document.querySelector("#menu-speak").getAttribute("aria-checked")') == 'true'), 'on')
-    png('speak-up')
-    press(app, '#menu-speak')
-    need(until(lambda: machine.desks[-1][1] == '0', 10), str(machine.desks[-1]))
-    press(app, '#close')
-    machine.notices = [{'key': 'a4', 'id': 'aa04', 'kind': 'todo'}]
-    time.sleep(35)
-    need(not app.bubble() and machine.notices, 'it says nothing, and leaves it to the browser')
-    machine.notices = []
-    open_it()
+def speak_up(when):
+    if not app.box():
+        open_it()
     press(app, '#more')
     need(until(lambda: says('#menu-speak')), 'the menu')
-    press(app, '#menu-speak')
-    need(until(lambda: machine.desks[-1][1] == '1', 10), str(machine.desks[-1]))
+    press(app, f'#speak-{when}')
+    chosen = 'document.querySelector("#menu-speak [aria-checked=true]").id'
+    need(until(lambda: page('box.html', chosen) == f'speak-{when}'), 'it is the one')
+    png(f'speak-up-{when}')
     press(app, '#close')
+    need(until(lambda: saved()['speak'] == when), str(saved().get('speak')))
+
+
+@step('never while presenting, locked or on a doubled screen')
+def _():
+    away()
+    for state in ('4', '1', '2 1', '3', '5 0 1'):
+        STATE.write_text(state)
+        speaks(False)
+        STATE.write_text('5')
+        speaks(True)
+    STATE.write_text('4')
+    quiet()
+    STATE.write_text('5')
+    speaks(True)
+
+
+@step('Do Not Disturb, by choice')
+def _():
+    need(saved().get('speak', 'always') == 'always', 'Always, to start with')
+    STATE.write_text('5 1')
+    comes('aa03')
+    away()
+    need(until(lambda: not app.bubble(), 20), 'it goes')
+    speak_up('calm')
+    quiet()
+    STATE.write_text('5 0')
+    speaks(True)
+    STATE.write_text('6')
+    speaks(False)
+    STATE.write_text('5')
+    speaks(True)
+    speak_up('never')
+    quiet('aa04')
+    speak_up('always')
+    speaks(True)
+
+
+@step('what Windows itself says: notifications off, Do Not Disturb')
+def _():
+    path = r'Software\Microsoft\Windows\CurrentVersion\PushNotifications'
+    plain = windows_says()
+    told = [f'as it is {plain}']
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, path) as key:
+        winreg.SetValueEx(key, 'ToastEnabled', 0, winreg.REG_DWORD, 0)
+    try:
+        time.sleep(2)
+        off = windows_says()
+        told.append(f'notifications off {off}')
+        need(off == plain, f'the same: {told}')
+        comes('aa02')
+        away()
+        need(until(lambda: not app.bubble(), 20), 'it goes')
+    finally:
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, path) as key:
+            winreg.SetValueEx(key, 'ToastEnabled', 0, winreg.REG_DWORD, 1)
+    on = windows_says('on')
+    told.append(f'Do Not Disturb {on}')
+    if on.split()[0].isdigit():
+        png('do-not-disturb')
+        told.append(f'and off again {windows_says("off")}')
+        need(on.split()[0] == plain.split()[0] and on != plain, f'in the mode and nowhere else: {told}')
+    return ', '.join(told)
 
 
 @step('quit from the menu')

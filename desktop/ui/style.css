@@ -41,12 +41,9 @@ svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke
 .primary:disabled{opacity:.6}
 .link{color:var(--text-2);text-decoration:underline;text-underline-offset:2px;border-radius:4px}
 .error{color:var(--error)}
-#menu-speak{display:flex!important;align-items:center;justify-content:space-between}
-.switch{width:26px;height:15px;border-radius:8px;background:var(--text-3);position:relative;flex:none}
-.switch::after{content:'';position:absolute;width:11px;height:11px;left:2px;top:2px;border-radius:50%;background:var(--surface)}
-[aria-checked=true] .switch{background:var(--accent)}
-[aria-checked=true] .switch::after{left:13px}
-@media (prefers-reduced-motion:no-preference){.switch::after{transition:left .12s}}
+#menu-speak{border:solid var(--line);border-width:1px 0;margin:4px 0;padding:4px 0}
+#menu-speak button{display:flex;align-items:center;justify-content:space-between}
+#menu-speak button:not([aria-checked=true]) svg{visibility:hidden}
 
 /* What the robot says */
 .bubble main{position:relative;margin:14px;width:300px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:8px 10px}
