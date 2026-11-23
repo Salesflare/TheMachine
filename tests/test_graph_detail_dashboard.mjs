@@ -50,7 +50,7 @@ const server=createServer(async(req,res)=>{
   res.end(JSON.stringify(node?person():{projects:[],people:[person()],quiet:[],new:[],orgs:[]}));return}
  if(url.pathname==='/api/originals'){const ids=(url.searchParams.get('events')||'').split(',').map(Number);calls.push({originals:ids});
   const at=id=>person().recent.find(r=>r.id===id).occurred_at;
-  res.end(JSON.stringify({originals:ids.map((id,i)=>({kind:'whatsapp',from:[50,56].includes(id)?'You':'Ann Example',occurred_at:at(id),body:'message '+id,event_id:id,url:i===ids.length-1&&id===56?'https://wa.example/chat':null}))}));return}
+  res.end(JSON.stringify({originals:ids.map((id,i)=>({kind:'whatsapp',chat:id<54?'Family 🌴':'Ann Example',from:[50,56].includes(id)?'You':'Ann Example',occurred_at:at(id),body:'message '+id,event_id:id,url:i===ids.length-1&&id===56?'https://wa.example/chat':null}))}));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
   if(call.action==='graph_fact_unlink'||call.action==='forget_fact')known=known.filter(f=>f.id!==(call.args.fact_id??call.args.id));
   if(call.action==='edit_fact')known=known.map(f=>f.id===call.args.id?{...f,text:call.args.text}:f);

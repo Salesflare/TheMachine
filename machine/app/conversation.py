@@ -1,4 +1,4 @@
-"""The conversation around a to-do's source message on the dashboard (machine/store/conversation.py reads what is
+"""The conversation around a message on the dashboard, a to-do's source or one opened by itself (machine/store/conversation.py reads what is
 stored). An email thread whose earlier messages came in before the mailbox's first import is read live from Gmail on
 Show earlier, read-only (gmail.readonly, the scope the Machine already reads mail with), with the same exclusions a
 sync applies, and never stored. A mixin of assistant.App (APP_MIXINS)."""
@@ -29,15 +29,17 @@ def readable(items):
 class ConversationApp:
     ACTIONS = {}
 
-    def message_context(self, suggestion_id, before=None):
-        """The to-do's source message with what was said around it (Store.message_context), or None. An email thread
+    def message_context(self, suggestion_id, before=None, event=None, also=()):
+        """The to-do's source message (or `event`, one opened by itself) with what was said around it
+        (Store.message_context), or None. An email thread
         with nothing older stored offers Show earlier (earlier) while its oldest message answers another one; Show
         earlier then reads the rest of that thread live."""
-        found = self.store.message_context(suggestion_id, before)
+        found = self.store.message_context(suggestion_id, before, event, also)
         if not found:
             return None
-        readable(found['before'])
-        readable(found['after'])
+        for part in [found, *found.get('rest', ())]:
+            readable(part['before'])
+            readable(part['after'])
         account = self.mail_account_of(found)
         if not account or found['earlier']:
             return found
@@ -47,16 +49,16 @@ class ConversationApp:
         found['before'] = self.live_thread(account, found, before) + found['before']
         return found
 
-    def message_context_quiet(self, suggestion_id):
-        """message_context for the to-do's originals: None when it can't be read, so the source message still shows."""
+    def message_context_quiet(self, suggestion_id, event=None, also=()):
+        """message_context for the originals: None when it can't be read, so the message itself still shows."""
         try:
-            return self.message_context(suggestion_id)
+            return self.message_context(suggestion_id, event=event, also=also)
         except (ValueError, sqlite3.Error) as error:
-            LOG.info('message context suggestion=%s error=%s', suggestion_id, type(error).__name__)
+            LOG.info('message context suggestion=%s event=%s error=%s', suggestion_id, event, type(error).__name__)
             return None
 
     def mail_account_of(self, found):
-        """The Gmail account of an email to-do's thread, when its thread can be read live; else None."""
+        """The Gmail account of an email's thread, when its thread can be read live; else None."""
         with self.store.connect() as db:
             anchor = db.execute('SELECT account_id,kind FROM events WHERE id=?', (found['event_id'],)).fetchone()
         if not anchor or anchor['kind'] != 'gmail.message':

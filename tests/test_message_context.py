@@ -3,17 +3,21 @@ the messages before it in the same Slack DM, channel or thread, WhatsApp or Tele
 the same day's run for a chat, never fewer than three when there are any), the replies after it, and Show earlier for
 older ones. Only the same connection and kind: a Work to-do never shows a Personal message, a Slack thread's replies stay
 in their thread, and Show earlier pages only that conversation. An email thread with older mail the Machine never stored
-reads the rest live, read-only, once. The dashboard test (test_message_context_dashboard.mjs) reads dump(). All names
-and messages are made up."""
+reads the rest live, read-only, once. A message opened by itself (the check on To-dos, search, the Graph) reads the same
+way, all the new ones of its row with it. The dashboard tests (test_message_context_dashboard.mjs,
+test_message_opened_dashboard.mjs) read dump() and dump_opened(). All names and messages are made up."""
 import json
 import sys
 import tempfile
 import unittest
+import urllib.parse
 from pathlib import Path
 from unittest import mock
 import machine.main as machine_main
 import machine.sources.gmail as machine_sources_gmail
 import sources
+from machine.store.conversation import CONTEXT_KEYS
+from machine.web.handler import make_handler
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
@@ -107,6 +111,28 @@ def dump(folder):
         if v['around']['earlier']:
             v['earlier'] = {'from': v['around']['before'][0]['event_id'], 'around': app.message_context(v['id'], v['around']['before'][0]['event_id'])}
     return json.dumps(out)
+
+
+def asked(app, query):
+    """What api/originals answers the dashboard: (status, body)."""
+    got = []
+
+    class Request:
+        def output(self, status, body):
+            got.append((status, body))
+    make_handler(app).get_api_originals(Request(), urllib.parse.urlsplit('/api/originals?' + query))
+    return got[0]
+
+
+def dump_opened(folder):
+    """Messages opened from a list, as api/originals answers each question test_message_opened_dashboard.mjs asks."""
+    app, _, ids = fixture(folder)
+    wa = [ids[f'home-wa-wa{i}'] for i in range(1, 6)]
+    dm = [ids[f'D0TESTER:17937{i:05d}.000100'] for i in range(len(SLACK_DM))]
+    reply, mail = ids['D0TESTER:1793700051.000100'], [ids[f'm{i}'] for i in range(1, 5)]
+    ask = {'wa': f'event={wa[2]}', 'two': f'events={wa[2]},{wa[4]}&near={wa[4]}', 'dm': f'event={dm[7]}', 'dm_earlier': f'event={dm[7]}&before={dm[1]}',
+           'threads': f'events={reply},{dm[7]},{dm[8]}&near={dm[8]}', 'mail': f'event={mail[2]}', 'run': f'events={wa[3]},{wa[4]}&near={wa[4]}'}
+    return json.dumps({k: {'query': q, **asked(app, q)[1]} for k, q in ask.items()})
 
 
 def bodies(items):
@@ -263,6 +289,124 @@ class MessageContext(unittest.TestCase):
             event = db.execute("SELECT id FROM events WHERE source_id='ch1'").fetchone()[0]
         sid = self.app.store.suggest('stripe-card', 'Check the payment', 'Paid.', [event])['id']
         self.assertIsNone(self.app.message_context(sid))
+
+
+class MessageOpened(unittest.TestCase):
+    """A message opened from a list (api/originals?event=, or events=…&near= for the new ones of one row)."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.app, _, self.ids = fixture(temp.name)
+
+    def add(self, account, kind, key, rows, **more):
+        """rows: (source id, minute of the day, text), in one conversation `key` of this kind."""
+        self.app.store.commit_page(account, {}, [
+            {'account_id': account, 'source_id': f'{account}:{name}', 'kind': kind, 'occurred_at': f'{DAY}{minute // 60:02d}:{minute % 60:02d}:00+00:00',
+             'title': 'Trip', 'body': text, 'deleted': False, 'metadata': {CONTEXT_KEYS[kind]: key, 'from': 'Ana Ruiz', 'sender_display': 'Ana Ruiz', **more}}
+            for name, minute, text in rows], None)
+        with self.app.store.connect() as db:
+            return [db.execute('SELECT id FROM events WHERE source_id=?', (f'{account}:{name}',)).fetchone()[0] for name, _, _ in rows]
+
+    def opened(self, *ids):
+        query = f'events={",".join(map(str, ids))}&near={ids[-1]}' if len(ids) > 1 else f'event={ids[0]}'
+        status, found = asked(self.app, query)
+        self.assertEqual(status, 200)
+        return found
+
+    def test_every_kind_reads_with_what_was_said_around_it_and_never_another_accounts(self):
+        """Work and Personal connections whose conversations share an id: each reads only its own."""
+        for kind in CONTEXT_KEYS:
+            with self.subTest(kind=kind):
+                said = [(f'{kind}{i}', 600 + i, f'{kind} {i}') for i in range(4)]
+                mine = self.add('work-' + kind, kind, 'shared-id', said)
+                self.add('home-' + kind, kind, 'shared-id', [(n, m, 'Personal ' + t) for n, m, t in said])
+                found = self.opened(mine[1])
+                self.assertEqual(bodies(found['originals']), [said[1][2]])
+                self.assertEqual(found['around']['event_id'], mine[1])
+                self.assertEqual(bodies(found['around']['before']), [said[0][2]])
+                self.assertEqual(bodies(found['around']['after']), [said[2][2], said[3][2]])
+
+    def test_a_rows_new_messages_open_together_with_what_came_before_the_first(self):
+        """The reported shape: a chat with two new messages, the owner's own between them; both read, in their chat."""
+        found = self.opened(self.ids['home-wa-wa3'], self.ids['home-wa-wa5'])
+        self.assertEqual(bodies(found['originals']), ['Can someone bring it Saturday at 9?', 'Perfect, I’ll leave it by the gate'])
+        self.assertEqual(bodies(found['around']['before']), ['Who has the long ladder?', 'Mine is in the shed, happy to lend it',
+                                                            'Can someone bring it Saturday at 9?', 'I can pick it up Friday evening'])
+        self.assertEqual(found['around']['after'], [])
+
+    def test_new_messages_further_apart_than_the_window_are_all_there_in_order(self):
+        rows = [(f'n{i:02d}', 600 + i, f'Message {i}') for i in range(40)]
+        ids = self.add('home-tg', 'telegram.message', 'c1', rows)
+        around = self.opened(*ids[5:])['around']
+        self.assertEqual(bodies(around['before']), [t for _, _, t in rows[2:39]])  # three before the first new one, then all of them
+        self.assertTrue(around['earlier'])
+        status, older = asked(self.app, f'event={ids[-1]}&before={around["before"][0]["event_id"]}')
+        self.assertEqual((status, bodies(older['around']['before']), older['around']['earlier']), (200, ['Message 0', 'Message 1'], False))
+        around = self.opened(ids[30], ids[0])['around']  # later ones than the one read around
+        self.assertEqual(bodies(around['after'])[-1], 'Message 30')
+
+    def test_an_id_from_another_conversation_or_account_adds_nothing_around(self):
+        wa, work, dm = self.ids['home-wa-wa2'], self.ids['work-wa-wa9'], self.ids['D0TESTER:1793700008.000100']
+        around = self.opened(work, dm, wa)['around']
+        self.assertNotIn('rest', around)
+        self.assertEqual(bodies(around['before'] + around['after']), bodies(self.opened(wa)['around']['before'] + self.opened(wa)['around']['after']))
+
+    def test_a_slack_row_with_a_thread_reply_reads_the_channel_and_the_thread(self):
+        dm, reply = [self.ids[f'D0TESTER:17937{i:05d}.000100'] for i in range(9)], self.ids['D0TESTER:1793700051.000100']
+        around = self.opened(reply, dm[7], dm[8])['around']
+        self.assertEqual(around['event_id'], dm[8])
+        self.assertIn('Great, thanks :pray:', bodies(around['before']))
+        self.assertNotIn('Testers list attached in this thread', bodies(around['before']))
+        thread, = around['rest']
+        self.assertEqual((thread['event_id'], thread['ids'], thread['thread']), (reply, [reply], True))
+        self.assertEqual(bodies(thread['before']), [SLACK_DM[1][2]])  # what the thread is under
+
+    def test_a_slack_thread_reply_opened_alone_reads_its_thread_and_what_it_answers(self):
+        around = self.opened(self.ids['D0LISTS:1793700065.000100'])['around']
+        self.assertEqual(bodies(around['before']), [t for _, _, t in LISTS[:3]])
+        self.assertEqual([bool(v.get('thread')) for v in around['before']], [False, False, True])
+
+    def test_an_email_opens_with_its_thread(self):
+        found = self.opened(self.ids['m3'])
+        self.assertEqual([i['from'] for i in found['around']['before']], ['Avery Stone <avery@booths.example>', 'You'])
+        self.assertEqual(bodies(found['around']['after']), ['Let me check with the team today.'])
+        alone, = self.add('work', 'gmail.message', 'T9', [('single', 700, 'Just this one')])
+        around = self.opened(alone)['around']
+        self.assertEqual((around['before'], around['after'], around['earlier']), ([], [], False))  # nothing around it: it reads as it did
+
+    def test_deleted_messages_stay_out_and_one_deleted_itself_opens_nothing_around(self):
+        with self.app.store.connect() as db:
+            db.execute("UPDATE events SET deleted=1 WHERE source_id IN ('home-wa-wa2','home-wa-wa5')")
+        self.assertNotIn('Mine is in the shed, happy to lend it', json.dumps(self.opened(self.ids['home-wa-wa4']), ensure_ascii=False))
+        self.assertIsNone(self.opened(self.ids['home-wa-wa5'])['around'])
+
+    def test_a_kind_with_no_conversation_and_a_teammates_shared_message_open_as_before(self):
+        self.app.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': kind, 'kind': kind, 'title': 'One', 'occurred_at': DAY + '09:00:00+00:00',
+                                                 'body': 'Said', 'deleted': False, 'metadata': {'chat_id': 'x', 'thread_id': 'T1', 'channel_id': 'D0TESTER'}}
+                                                for kind in ('fleet.message', 'android.notification', 'stripe.event')], None)
+        with self.app.store.connect() as db:
+            ids = [r[0] for r in db.execute("SELECT id FROM events WHERE kind IN ('fleet.message','android.notification','stripe.event')")]
+        for event in ids:
+            self.assertIsNone(self.opened(event)['around'])
+
+    def test_show_earlier_only_pages_the_opened_conversation(self):
+        for source in ('C0MOBILE:1793700050.000100', 'work-wa-wa9', 'm1'):
+            status, body = asked(self.app, f'event={self.ids["home-wa-wa4"]}&before={self.ids[source]}')
+            self.assertEqual((status, body), (404, {'error': 'Original not available'}))
+
+    def test_reading_one_changes_nothing_stored(self):
+        with self.app.store.connect() as db:
+            before = list(db.iterdump())
+        self.opened(self.ids['home-wa-wa3'], self.ids['home-wa-wa5'])
+        with self.app.store.connect() as db:
+            self.assertEqual(list(db.iterdump()), before)
+
+    def test_several_without_one_to_read_around_open_as_they_are(self):
+        """A person's sources (openSources): the messages themselves."""
+        status, found = asked(self.app, f'events={self.ids["m1"]},{self.ids["home-wa-wa1"]}')
+        self.assertEqual((status, set(found)), (200, {'originals'}))
+        self.assertEqual(len(found['originals']), 2)
 
 
 if __name__ == '__main__':
