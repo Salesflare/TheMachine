@@ -1909,6 +1909,17 @@ def end_process(process, grace=10):
         process.wait(10)
 
 
+OUTPUT_WAIT = 5  # seconds an ended tool's last lines get to arrive
+
+
+def close_output(process, reader):
+    """Close an ended tool's output once its reader is done. A child of the tool may still hold the pipe: closing it
+    then would wait for that child, so it is left to the daemon reader, which ends with it."""
+    reader.join(OUTPUT_WAIT)
+    if not reader.is_alive():
+        process.stdout.close()
+
+
 def follow(command, ui, seen, wait=CODE_WAIT, env=None, ends=None):
     """Run a sign-in that shows a code (gh auth login, wacli auth) and hand each line to `seen` until it ends, the
     dashboard's Cancel, or `wait` seconds. Returns the exit code, or None when it was stopped. `ends`: a list `seen` may
@@ -1924,17 +1935,14 @@ def follow(command, ui, seen, wait=CODE_WAIT, env=None, ends=None):
     while process.poll() is None:
         if ends and time.monotonic() > ends[0]:
             end_process(process)
-            reader.join(5)
-            if not reader.is_alive():  # a child still holding the pipe: the daemon reader ends with it
-                process.stdout.close()
+            close_output(process, reader)
             return 0
         if getattr(ui, 'cancelled', False) or time.monotonic() > until:
             end_process(process)
-            process.stdout.close()
+            close_output(process, reader)
             return None
         time.sleep(1)
-    reader.join(5)
-    process.stdout.close()
+    close_output(process, reader)
     return process.returncode
 
 
