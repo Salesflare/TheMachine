@@ -7,25 +7,8 @@ const projState=n=>{const c=n.project;return c?.outcome?endWord(c.outcome,c.deal
 const shownProven=n=>{const s=n.success||n.board?.success;return !!(s?.done&&s.done_by==='evidence'&&s.evidence)};
 // The board's follow-ups as last loaded for the Graph (fuLoad): an edit clears them (graphPost).
 let fuKept=null;
-// The board's follow-ups as one to-do: "8 follow-ups ready for <board>" once one is written, else
-// "Follow-ups for <board>", in For you either way. Each is in it from the start, also alone: never a to-do of its own in any list, so a board
-// with follow-ups on is one to-do to review, not one per email. While drafts are written it says "Writing 3 follow-ups…".
-// One that got stuck (needs the owner's help) stays a to-do of its own. A project's own follow-up (not grouped) is a
-// normal to-do. Follow-ups on their way in a batch (spaced 30-45 s per mailbox) show as one progress to-do per board
-// instead (fuSendingCard).
-// Queued or on its way: out of the ready to-do at once. A follow-up's draft can sit in a menu, so its own state counts too.
-const fuBusy=s=>sendBusy(s.action_status)||taskActions(s).some(a=>DRAFT_KINDS.includes(a.kind)&&sendBusy(a.state));
-function fuSplit(ready,needs){fuGroups.clear();const groups={},member=s=>typeof s!=='string'&&!(s instanceof SafeHTML)&&s.follow_up?.group&&s.follow_up.state==='open'&&!fuBusy(s)&&!needsDecision(s);
- const batch=new Set((state.follow_up_progress||[]).filter(p=>p.going).map(p=>p.group||'own')),inBatch=s=>s.follow_up&&fuBusy(s)&&batch.has(s.follow_up.group||'own');
- for(const s of [...ready,...needs])if(member(s))(groups[s.follow_up.group]??=[]).push(s);
- const grouped=new Set(Object.values(groups).flat().map(s=>s.id)),cards=Object.entries(groups).map(([g,l])=>[l.some(s=>s.status==='prepared'),fuGroupCard(g,l)]);
- const out=list=>list.filter(s=>typeof s==='string'||s instanceof SafeHTML||!grouped.has(s.id));
- return {ready:[...cards.filter(([r])=>r).map(([,c])=>c),...cards.filter(([r])=>!r).map(([,c])=>c),...out(ready).filter(s=>!inBatch(s))],needs:out(needs)}}
-// The sidebar lists a board's group as one row that opens the review
-const fuGroups=new Map();
-function fuSide(items){return items.map(x=>fuGroups.has(x)?fuGroups.get(x):x)}
-function fuGroupCard(g,all){const list=all.filter(s=>s.status==='prepared'),writing=all.length-list.length,board=all[0].follow_up.board||'',names=all.map(s=>s.follow_up.name||s.follow_up.project),first=names.slice(0,3);
- const title=list.length?t(['{} follow-up ready for {}','{} follow-ups ready for {}'],list.length,board):t('Follow-ups for {}',board);
+function fuGroupCard(g,all){const list=all.filter(s=>s.status==='prepared'),writing=all.length-list.length,names=all.map(s=>s.follow_up.name||s.follow_up.project),first=names.slice(0,3);
+ const title=fuGroupTitle(all);
  const card=html`<h3>${list.length?html`<button type="button" class="title-link fu-title" data-fu-review="${g}"><span translate="no">${title}</span></button>`:html`<span translate="no">${title}</span>`}</h3><div class="meta"><div class="card-badges"><span class="meta-side">${time(all.map(s=>s.created_at).sort().pop(),true)}</span></div></div>${writing?html`<p class="fu-progress" role="status">${t(['Writing {} follow-up…','Writing {} follow-ups…'],writing)}</p>`:''}<p class="fu-names">${names.length>3?t('{}, {}, {} and {} more',...first,names.length-3):namesLine(first)}</p>${list.length?html`<div class="actions"><button class="primary" data-fu-review="${g}">${t('Review')}</button></div>`:''}</article>`;
  const body=html`<article class="card todo ${list.length?'t-mint':'t-lavender'} fu-group" id="fu-${g.replace(':','-')}" data-status="${list.length?'prepared':'accepted'}">${card}`;  // see fuSide
  fuGroups.set(body,{id:'fu-'+g,fuGroup:g,title,created_at:all[0].created_at,scope:all[0].scope,writing:!list.length});return body}

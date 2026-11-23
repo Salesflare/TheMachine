@@ -75,8 +75,7 @@ async function shellDrop(){try{for(const k of await caches.keys())if(k.startsWit
 let wakeTimer=null;
 // The quiet Browser pill beside Settings: the Machine's browser view in a new tab, only when this Machine has one
 function browserPill(st){const u=String(st?.browser_link||''),ok=/^https?:\/\//i.test(u),p=$('#settings-browser');for(const a of [$('#open-browser'),p?.querySelector('a')]){if(!a)continue;if(ok)a.href=u;else a.removeAttribute('href')}$('#open-browser').hidden=!ok;if(p)p.hidden=!ok}
-function wakeSnoozed(st){const now=Date.now();let next=Infinity;for(const s of st?.suggestions||[]){if(s.status!=='snoozed'||!s.snoozed_until)continue;const at=Date.parse(s.snoozed_until);
-  if(at<=now)Object.assign(s,{status:TODO.OPEN_NOT_SNOOZED.includes(s.resume_status)?s.resume_status:'pending',snoozed_until:null,resume_status:null});else next=Math.min(next,at)}
+function wakeSnoozed(st){const now=Date.now(),next=wakeDue(st?.suggestions);
  clearTimeout(wakeTimer);if(next<Infinity&&next-now<864e5)wakeTimer=setTimeout(()=>refresh(true),next-now+3000);return st}
 // Follow-ups going out spaced (30-45 s apart) are watched every 5 s: their progress to-do moves on without a 2 s poll for minutes.
 let sendTimer=null;const sendWatch=()=>{clearTimeout(sendTimer);const busy=s=>chatSends(s).some(x=>['queued','sending'].includes(x.st.status)),batch=(state.follow_up_progress||[]).some(p=>p.going);
@@ -98,15 +97,6 @@ async function sessionCheck(){if(sessionAsked||!localCache.on&&csrfLive)return;s
 // api/status as the changes since the answer this page holds (machine/web/status_delta.py): a part left out is the
 // same, a row {"=":id} is that row as before. statusRaw stays as the server sent it; the page works on a copy.
 let statusRaw=null;
-const statusRow=x=>x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).length===1&&'='in x;
-// The whole answer again from the one held (with its _token) and the changes since it; null when they don't fit
-// (another token, a row it doesn't have). Also the Graph tab's overview (deltaGet).
-function deltaJoin(held,r){if(!held||r._since!==held._token)return null;
- const out={...held};for(const k of r._gone||[])delete out[k];
- for(const[k,v]of Object.entries(r)){if(k==='_since'||k==='_gone')continue;
-  if(Array.isArray(v)&&v.some(statusRow)){const was=new Map((held[k]||[]).map(x=>[typeof x?.id+':'+x?.id,x]));out[k]=v.map(x=>statusRow(x)?was.get(typeof x['=']+':'+x['=']):x);if(out[k].includes(undefined))return null}
-  else out[k]=v}
- return out}
 // A deep copy of JSON values, the same as JSON.parse(JSON.stringify(v)) gives (a key whose value is undefined left out,
 // undefined in a list as null, a "__proto__" key a key like any other) in a fifth of the time: the status is a few
 // hundred KB and was copied that way on every load, before the first drawing (tests/test_status_copy_dashboard.mjs)

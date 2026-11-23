@@ -38,20 +38,10 @@ const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),pr
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
 const pk=document.querySelector('.project-picker'),pkIn=pk?.closest('.chat-main,article[id]')?.id;  // and an open picker
-const shown=state.suggestions.filter(s=>scopeFilter==='all'||s.scope===scopeFilter);
-const outstanding=shown.filter(s=>!closed(s)&&s.status!=='snoozed').sort(openOrder),later=shown.filter(s=>s.status==='snoozed'),finished=shown.filter(closed);
-const lookDone=outstanding.filter(looksDone),waitingOn=outstanding.filter(waitsOnOthers),open=outstanding.filter(s=>!looksDone(s)&&!waitsOnOthers(s)&&!setAside(s));
-later.push(...outstanding.filter(setAside));  // Still needed? without an answer: folded into Coming back later, under its own heading
-// Nothing new on it for a week (isOlder): out of For you into Older below it; still open, so the badge counts it
-const older=open.filter(isOlder),young=open.filter(s=>!isOlder(s));
+const shown=scopeShown(state.suggestions,scopeFilter);
 const fleetCards=scopeFilter==='personal'?[]:fleetCardsOf(fleetData);
-// For you: prepared, needing the owner and still preparing alike (placeOf is only its chip)
-const needs=[...fleetCards,...young.filter(s=>placeOf(s)==='needs')],ready=young.filter(s=>placeOf(s)!=='needs');
 // A new owner's first view leads with the to-do their hello names (Store.greeting): first in For you
-const leadId=state.greeting?.line?.card;
-const leadFirst=l=>{const i=leadId?l.findIndex(s=>s?.id===leadId):-1;if(i>0)l.unshift(...l.splice(i,1));return l};
-const fuv=fuSplit(ready,needs);  // a board's follow-ups are one to-do (fuGroupCard)
-fuv.foryou=leadFirst(forYouList(fuv.ready,fuv.needs));
+const {outstanding,later,finished,lookDone,waitingOn,open,older,needs,ready,fuv,leadFirst}=todoLists(shown,fleetCards,state.greeting?.line?.card);
 // What Talk sees: every open to-do the lists show, in their order (For you, Waiting on others, Later).
 // One that looks done sits in Done, so it isn't here (find_todos still finds it)
 talkTodos=[...[...leadFirst(forYouList(ready,needs)),...older].filter(s=>plainTodo(s)&&state.suggestions.includes(s)).map(s=>[s,placeOf(s)]),

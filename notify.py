@@ -609,7 +609,7 @@ def brief_line(titles, show_text=True):
 
 def open_order(rows, current):
     """The waiting to-dos [{id, title, due, due_at, created_at}] in the order the dashboard's open lists show them
-    (openOrder in dashboard/todos-cards.js): overdue or due by tomorrow first, then newest first by created_at, then
+    (openOrder in dashboard/todos-for-you.js): overdue or due by tomorrow first, then newest first by created_at, then
     the id. `current` is the owner's local now (an aware datetime). The dashboard breaks a same-moment tie by the
     people weight first; that needs the Graph, so here the id alone does."""
     tomorrow = (current + dt.timedelta(days=1)).date().isoformat()

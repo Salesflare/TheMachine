@@ -29,6 +29,7 @@ from machine.sources.connectors import (connector_says, docs_offered, docs_provi
                                         reconnect_help, SIGNIN_ONLY)
 from machine.text import clamp
 import message_seal
+import notify
 from models import main_model, model_ready
 from sources import gog_signin_command
 from timeutil import now
@@ -447,6 +448,7 @@ class StatusApp:
                 result['setup_hints'] = [h for h in result['setup_hints'] if h.get('id') != 'source-' + nudge['id'].rpartition('-')[2]]
         except sqlite3.Error as error:
             LOG.warning('setup card error=%s', type(error).__name__); result['setup_card'] = None
+        result['first_name'] = notify.first_name(self.config.get('owner_name'))  # as the digest greets them ('' when none is known)
         try:  # the hello on a new owner's first views, with who has waited longest on them (Store.greeting)
             result['greeting'] = self.store.greeting(self.config.get('owner_name'))
         except sqlite3.Error as error:

@@ -313,6 +313,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   routines, connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
   and `refresh()`, `toast()` and the start (`shell-start.js`), the i18n script's body (`shell-i18n.js`).
+  Which to-dos stand in For you and in which order is `todos-for-you.js`: plain rules on the status, no page, so
+  another program can run the same file.
   `dashboard.html` itself holds the head (with its small theme script, which runs before paint), the page's
   elements that wrap the parts, and the include lines in order: what the page is made of, at a glance. A new top-level
   statement goes in a part only whole (each part parses on its own). Parts run in the page's order, as they were in

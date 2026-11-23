@@ -119,19 +119,6 @@ function dueChip(s){if(!s.due||closed(s)||looksDone(s))return '';const today=new
  const text=late?'Overdue':timed?'Due '+(days===0?'':localeDate(at,DL,days<7?{weekday:'short'}:{day:'numeric',month:'short'})+' ')+fmtHM(at)
   :days===0?'Due today':days===1?'Due tomorrow':'Due '+localeDate(due,DL,days<7?{weekday:'long'}:{day:'numeric',month:'short'});
  return html`<span class="chip t-${late||days<=0?'orange':days===1?'amber':'muted'}" title="Due ${localeDate(due,DL,{weekday:'long',day:'numeric',month:'long'})+(timed?' '+fmtHM(at):'')}">${text}</span>`}
-const closed=s=>TODO.CLOSED.includes(s.status);
-// The open lists' order (For you, Waiting on others; the sidebar the same): what is overdue or due by
-// tomorrow first, then the rest; each newest first by when it was added, the time its to-do shows. A tie (one review
-// made them together) goes to the one about the people closest to you (weight), then the id. A to-do a new signal
-// reopened was added when it came back (reopened_at, Store.card_views), not weeks before.
-const dueSoon=s=>{if(!s.due)return false;const at=s.due_at?Date.parse(s.due_at):NaN;if(!isNaN(at)&&at<Date.now())return true;const t=new Date();t.setDate(t.getDate()+1);return s.due<=localDay(t)};
-const cameIn=s=>s.reopened_at||s.created_at,addedAt=s=>Date.parse(cameIn(s))||0;
-const openOrder=(a,b)=>dueSoon(b)-dueSoon(a)||addedAt(b)-addedAt(a)||(b.weight||0)-(a.weight||0)||String(a.id).localeCompare(String(b.id));
-// For you: due by tomorrow, a Fleet ask, a board's follow-ups, the rest, each in openOrder. Prepared, Needs you and
-// Preparing… are only chips: the order reads the to-do's own fields, so a run starting or ending never moves it.
-const plainTodo=x=>!!x&&typeof x==='object'&&!(x instanceof SafeHTML);
-function forYouList(ready,needs){const rank=(x,fleet)=>!plainTodo(x)?(fleet?1:2):dueSoon(x)?0:3,all=[...ready.map(x=>[x,rank(x)]),...needs.map(x=>[x,rank(x,1)])];
- return [0,1,2,3].flatMap(r=>{const l=all.filter(([,k])=>k===r).map(([x])=>x);return r%3?l:l.sort(openOrder)})}
 // A done to-do keeps its title (what needed doing); how it ended goes under it: what went out has its own line
 // (outboxLine), the sign that it was handled is this one.
 const doneLine=s=>{if(s.status!=='completed')return '';let why='';try{why=JSON.parse(s.handled_hint||'{}').reason||''}catch{}
@@ -142,16 +129,6 @@ const expiredLine=s=>{const at=new Date(s.expires_at||'');if(!s.expired_at||isNa
  days=Math.round((new Date(localDay(new Date())+'T12:00')-new Date(localDay(at)+'T12:00'))/864e5);
  return days===0?t('No longer needed: {} was today at {}.',what,hm):days===1?t('No longer needed: {} was yesterday at {}.',what,hm)
   :t('No longer needed: {} was on {} at {}.',what,localeDate(at,DL,{weekday:'short',day:'numeric',month:'short'}),hm)};
-// A to-do that looks done already: its run found it done, or a later message suggests it's handled (LOOKS_DONE_SQL in
-// assistant.py). It waits in one quiet group above Done (lookDoneList), is never late and never counts as waiting for
-// you. Only you close it.
-// Its run's saved outcome ({} when none or unreadable), and the state it says (already_done, waiting, answered…)
-const outOf=s=>{try{return JSON.parse(s.outcome||'{}')||{}}catch{return {}}},outState=s=>outOf(s).state;
-const looksDone=s=>!closed(s)&&s.status!=='snoozed'&&(!!s.handled_hint||s.status==='prepared'&&outState(s)==='already_done');
-// Waiting on others: its run found a step still open on someone else's side (outcome waiting: a review, merge, deploy, a
-// reply). Nothing is ready for you there, so it sits in its own folded group above Coming back later and never counts.
-// A new message on it (assistant.py update_card) makes it an open to-do again. Same rule as waits_on_others().
-const waitsOnOthers=s=>!closed(s)&&s.status==='prepared'&&!looksDone(s)&&outState(s)==='waiting';
 // Left waiting by the review after the owner did their part (its outcome says until when; Store.wait_on_others): no run
 // made it, so there is no result to read, and its chat has no result that says what it waits on.
 const waitsAfterOwner=s=>waitsOnOthers(s)&&!!JSON.parse(s.outcome).until;
@@ -169,7 +146,6 @@ const kindService=k=>({'calendar.event':'calendar','meeting.notes':'calendar','s
 const briefOwn=s=>!!s.fleet_brief?.own&&!closed(s)&&s.status!=='snoozed',briefIn=s=>!!s.fleet_brief&&(lazyIn('brief')||(lazyRun('brief',render),false));
 // by to-do: each question's answer so far; those Answer found without one
 const changing=new Set(),dismissing=new Set(),askPicks=new Map(),askMissing=new Map();
-const taskActions=s=>{const choices=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);const ready=choices.some(a=>[...SENDS,'email_demo','merge','finish','handoff','calendar','doc_write','linear'].includes(a.kind));return choices.filter(a=>a.kind!=='prepare'||(!ready&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')))};
 // Messages to send: several go out together (openSendAll)
 const sendReady=s=>s?.status!=='prepared'?[]:taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)&&!sendBusy(a.state));
 // Who its messages go (or went) to, names and addresses: a search finds a to-do by recipient too (assistant.card_recipients)
@@ -205,8 +181,6 @@ const clashLine=s=>{const c=s.clash;if(!c||closed(s)||!c.start)return '';const o
 const lookalikeLine=s=>{const p=(s.people||[]).find(x=>x.lookalike?.from);if(!p)return '';const l=p.lookalike,d=x=>String(x).replace(/-/g,'‑');
  return html`<p class="note lookalike">${l.name?t('This isn’t {}. It came from {}, not {}.',l.name,d(l.from),d(l.domain)):t('Lookalike address: this came from {}, not {}.',d(l.from),d(l.domain))}</p>`};
 const handedNote=s=>{let w={};try{w=JSON.parse(s.awaiting||'{}')}catch{}if(!w.delegated)return '';const text=s.status==='snoozed'?t('Sent to {}. Waiting for their reply; it closes when they answer.',w.name):s.status==='completed'&&w.answered?t('{} replied, so I closed this.',w.name):s.status==='prepared'?t('No reply from {} yet.',w.name):'';return text?html`<p class="note">${text}</p>`:''};
-// Under way or done, so no Send. An unconfirmed send checked long enough (retry_ok) may be sent again by the owner.
-const sendBusy=a=>['queued','sending','sent','uncertain','local_preparation','paused','undoing','undone'].includes(a?.status)&&!a?.retry_ok;
 // a sent note in the owner's language: the plain sentence, or the one with the time it went out
 const sentNote=(a,plain,timed,...x)=>a?.sent_at?t(timed,...x,fmtHM(a.sent_at,{timeZone:state?.hours?.timezone||undefined})):t(plain,...x);
 const actionNote=(a,kind,action,m=a?.message_id||'')=>kind==='linear'?({queued:'Changing it in Linear…',sending:'Changing it in Linear…',sent:'Done in Linear.',blocked:a?.error,uncertain:a?.error,failed:a?.error})[a?.status]||'':kind==='doc_write'?({queued:'Writing the doc…',sending:'Writing the doc…',sent:docDoneText(action||{},a),blocked:a?.error,uncertain:a?.error,failed:a?.error})[a?.status]||'':kind==='calendar'?({queued:'Changing the calendar…',sending:'Changing the calendar…',sent:action?calDoneText(action,a):'Done.',blocked:a?.error,uncertain:a?.error,failed:a?.error})[a?.status]||'':kind==='merge'?({queued:a?.auto?'Testing the fix. It merges by itself if every check passes.':'Testing and merging the fix…',sending:'Testing and merging the fix…',sent:(a?.auto?'Merged by itself and restarted. You can undo it for 24 hours; it undoes itself if the error comes back.':'Merged. The Machine restarts with the fix.')+(a?.error?' '+a.error:''),blocked:(a?.error||'')+(a?.auto?' Tap Merge fix to merge it anyway.':''),uncertain:a?.error,failed:a?.error,undoing:'Undoing the merge…',undone:a?.error||'Merge undone.'})[a?.status]||'':({queued:'Sending your approved draft…',sending:'Sending your approved draft…',sent:/^(urn:li:|linkedin:)/.test(m)?sentNote(a,'LinkedIn message sent.','LinkedIn message sent at {}.'):/^slack:/.test(m)?sentNote(a,'Slack message sent.','Slack message sent at {}.'):/^x:/.test(m)?sentNote(a,'Reply posted on X.','Reply posted on X at {}.'):/^xdm:/.test(m)?sentNote(a,'X message sent.','X message sent at {}.'):/^whatsapp:/.test(m)?sentNote(a,'WhatsApp message sent.','WhatsApp message sent at {}.'):/^telegram:/.test(m)?sentNote(a,'Telegram message sent.','Telegram message sent at {}.'):/^signal:/.test(m)?sentNote(a,'Signal message sent.','Signal message sent at {}.'):/^teams:/.test(m)?sentNote(a,'Teams message sent.','Teams message sent at {}.'):/^intercom:/.test(m)?sentNote(a,'Sent as {} in Intercom.','Sent as {} in Intercom at {}.',a?.as_name||t('your Intercom admin')):/^doc:/.test(m)?sentNote(a,'Reply posted in the doc.','Reply posted in the doc at {}.'):sentNote(a,'Email sent.','Email sent at {}.')+(['queued','snoozed'].includes(a?.snooze_status)&&a?.snooze_until?' '+t('Thread out of your inbox until {}.',fmtDHM(a.snooze_until,{weekday:'short',day:'numeric',month:'short'},{timeZone:state?.hours?.timezone||undefined})):a?.snooze_status==='failed'?' '+(a.snooze_error||'I couldn’t snooze the thread in Gmail.'):''),blocked:a?.error,uncertain:a?.error,failed:a?.error})[a?.status]||'';
@@ -226,15 +200,6 @@ const resultLinks=s=>{const found=[],r={text:resultBody(s,(words,path)=>{found.p
  plain:t=>t.replace(/(\d+)/g,(m,i)=>found[i].words)};
  r.fill=x=>html`${String(x).split(/(\d+)/).map((y,i)=>i%2?r.piece(y):y)}`;
  r.mark=(x,mark)=>x.replace(/(\d+)/g,(m,i)=>{const p=r.piece(i);return p instanceof SafeHTML?mark(p):p.replace(/[\u0000\u0001]/g,'')});return r};
-// A Daily digest (todos-digest.js) and a meeting briefing (meeting_prep.py) are only for reading: To read, calm, not
-// counted as needing the owner; Done leads, then Snooze and Not needed. A briefing's promises and questions have their own to-dos.
-const toRead=s=>(!!s.digest||!!s.briefing)&&s.status==='pending';
-// A cleanup to-do with every row decided: finished, like a ready result
-const cleanupSettled=s=>!!s.cleanup?.items?.length&&!closed(s)&&s.status==='pending'&&s.cleanup.items.every(i=>!/^(open|working)$/.test(i.state));
-// Prepared with nothing ready to approve, only a need of the owner's (needs_owner, machine/cards.py): Needs you too
-const needsDecision=s=>s.status==='pending'&&!s.digest&&!s.briefing&&!cleanupSettled(s)||s.needs_owner||(!closed(s)&&s.status!=='snoozed'&&s.preparation_status==='blocked');
-// An open to-do's chip in For you: needs (Needs you), ready (Prepared), read (To read) or preparing (Preparing…). All sit in For you.
-const placeOf=s=>needsDecision(s)?'needs':toRead(s)?'read':s.status==='prepared'||cleanupSettled(s)?'ready':'preparing';
 // A to-do held for later (deliver_after): when it reaches the owner, and where, as deliver_one sends it
 // (state.todo_channels, from Settings, Notifications: New to-dos). Nowhere but here: no chip.
 function deliveryLabel(value,ch=state?.todo_channels){
@@ -244,7 +209,6 @@ const day=localDay(target)===today?t('Today'):localDay(target)===localDay(tomorr
 const when=day+' · '+fmtHM(target);
 return tg&&push?t('Telegram and notification {}',when):tg?t('Telegram {}',when):t('Notification {}',when);
 }
-const DRAFT_KINDS=[...SENDS,'email_demo','handoff','finish','calendar','doc_write','linear'];
 // A Linear change (linear_writes.py): what it does, and to which issue
 const LIN_LABEL={comment:'Review and post',state:'Change status',assign:'Reassign',create:'Create issue'};
 const LIN_DO={comment:'Comment on {} in Linear',state:'Move {} in Linear',assign:'Reassign {} in Linear',create:'New issue in {}'};
