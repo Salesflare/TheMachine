@@ -658,7 +658,11 @@ def build(profile):
                       'minutes_ago': max(e['minutes_ago'] - 20, 30), 'source': 'email from ' + p['name'], 'choice': 'complete' if status == 'completed' else 'reject'})
     promises = [{'direction': d, 'who': who, 'what': what, 'due_days': due, 'status': status, 'event': keys[story][n]}
                 for d, story, n, who, what, due, status in PROMISES]
-    job = {**JOB, 'card': 'open' + str(next(i for i, s in enumerate(STORIES) if s['key'] == JOB['story']))}
+    add('home-gmail', 'gmail.message', 1630, 'Your carpet is on its way',  # what Robin's Family question is about (family_questions.py)
+        'Hello Alex, your wool carpet has left our warehouse. We deliver it on Thursday between 9:00 and 12:00.',
+        {'from': 'Thistle & Loom <orders@thistleloom.example>', 'to': OWNER['personal_email'], 'labels': ['INBOX'], 'thread_id': 't500000000001',
+         'message-id': '<t500000000001.1@thistleloom.example>', 'source_url': 'https://mail.example/#inbox/t500000000001'}, 'home:carpet')
+    job = {**JOB, 'card':'open' + str(next(i for i, s in enumerate(STORIES) if s['key'] == JOB['story']))}
     network = {
         'owner': {'member_id': 'm_me', 'name': OWNER['name'], 'email': OWNER['email'], 'username': OWNER['username']},
         'work': {'id': 'fl_5a4db0c0ffee0001', 'name': 'Lumen Labs', 'team': TEAM},
@@ -677,6 +681,7 @@ def build(profile):
                           'note': 'She wants a CRM partner for her agency clients'}},
             {'id': 'fa_sandbox0008', 'fleet': 'family', 'from': 'm_fam_robin', 'kind': 'contact',
              'question': {'name': 'Lena Ortiz', 'emails': ['lena@ortizdental.example'], 'role': 'Dentist', 'note': 'Our dentist. She takes new patients'}},
+            {'id': 'fa_sandbox0009', 'fleet': 'family', 'from': 'm_fam_robin', 'kind': 'question', 'question': {'text': 'Any news about the carpet?'}},
         ],
         'notices': [
             {'id': 'fn_5a4db0c0ffee0004', 'kind': 'seat_request', 'fleet': 'work', 'fleet_id': 'fl_5a4db0c0ffee0001', 'fleet_name': 'Lumen Labs', 'status': 'open', 'version': 1,

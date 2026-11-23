@@ -94,7 +94,7 @@ class Network:
             if kind in self.groups:
                 group = self.net[kind]
                 fleets.append({'id': group['id'], 'kind': kind, 'name': group['name'], 'asks': ['relationships', 'meeting', 'brief', 'anything',
-                               'intro', 'handoff', 'followup', 'skill', 'contact', 'review'] if kind == 'work' else ['availability', 'todo', 'event', 'skill', 'contact', 'review'], 'me': {'member_id': self.net['owner']['member_id'], 'role': 'owner'},
+                               'intro', 'handoff', 'followup', 'skill', 'contact', 'review'] if kind == 'work' else ['availability', 'todo', 'event', 'skill', 'contact', 'review', 'question'], 'me': {'member_id': self.net['owner']['member_id'], 'role': 'owner'},
                                'members': [self.me()] + [self.member(m) for m in group['team']],
                                **({'trust': list(self.trust)} if kind == 'work' else {})})
         if 'friends' in self.groups:
@@ -120,6 +120,8 @@ class Network:
             return {'knows': True, 'people': 2, 'closeness': 'close', 'last_contact': 'last week'} if index == 0 else {'knows': False}
         if kind == 'anything':
             return {'text': ['Not that I know of. Tomasz met them in September, I think.', 'Yes, I spoke to their ops lead on Monday.'][index % 2]}
+        if kind == 'question':
+            return {'text': 'It comes on Thursday, between 9 and 12.'}
         if kind in ('intro', 'handoff', 'followup'):
             return {'stage': 'accepted'}
         if kind == 'contact':

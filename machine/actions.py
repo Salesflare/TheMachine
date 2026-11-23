@@ -210,6 +210,7 @@ FAMILY_ACTIONS = {
     'family_invite',
     'family_invite_setting',
     'family_plan_undo',
+    'family_question',
     'family_still_needed',
     'family_todo',
 }

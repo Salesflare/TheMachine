@@ -83,7 +83,7 @@ _BY_PART = {
     'agents': _names('''agent_jobs agent_result_receipts agent_key_pins agent_relayed chat_models chat_fast_sessions'''),
     'attachments': _names('chat_files whatsapp_photos'),
     'sharing': _names('''fleet_briefs fleet_claims fleet_handled fleet_in fleet_log fleet_meta fleet_notices fleet_out
-        fleet_rules fleet_scopes fleet_requests fleet_splits fleet_reviews fleet_learnings fleet_learn_read
+        fleet_rules fleet_scopes fleet_requests fleet_splits fleet_reviews fleet_questions fleet_learnings fleet_learn_read
         fleet_learn_removed fleet_learn_seen fleet_learn_used fleet_learn_vectors network_aliases network_outbox network_pins
         network_replies network_sealed network_taken network_twins network_request_nodes network_looked network_people
         share_lines share_meta share_out share_people share_private share_rules share_threads team_asks team_blobs

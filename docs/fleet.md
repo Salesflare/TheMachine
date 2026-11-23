@@ -66,7 +66,8 @@ Any Fleet, and any friend, can share:
 7. **The team brief**, **team learnings** and **free questions**: see [The team brief](#the-team-brief),
    [Team learnings](#team-learnings) and [Ask the Fleet anything](#ask-the-fleet-anything).
 
-A Family Fleet asks other things (free times, to-dos for one another, family plans) and never work questions. See
+A Family Fleet asks other things (free times, to-dos for one another, family plans, questions to one member's Machine)
+and never work questions. See
 [Family](family.md).
 
 ### Shared emails

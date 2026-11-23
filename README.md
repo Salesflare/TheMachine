@@ -8,7 +8,7 @@ Your proactive AI assistant. It reads your email, chats, calendar and phone, tur
 - **Promises:** what you promised and what others promised you, tracked until it's kept.
 - **Talk:** a live spoken conversation about a to-do or anything else (with OpenAI), and dictation into any message box.
 - **People and projects:** the Graph keeps track of who you deal with and what's going on, with boards for deals, hiring and more.
-- **Fleets:** your teammates' Machines answer each other's questions, sharing only what the Team Graph allows. A Family Fleet shares free times, to-dos and plans.
+- **Fleets:** your teammates' Machines answer each other's questions, sharing only what the Team Graph allows. A Family Fleet shares free times, to-dos and plans, and answers one another's questions when you send the answer.
 - **Connected AIs:** Claude, ChatGPT, Cursor and other AIs can read your to-dos and Graph over MCP, and add to-dos or Graph changes you can undo. They never send anything.
 
 ## Where it's going
@@ -80,7 +80,7 @@ The full walkthrough: [Getting started](docs/getting-started.md).
 | Facts, people, projects, embeddings and enrichment | [Intelligence](docs/intelligence.md) |
 | Model and provider setup | [Models](docs/models.md) |
 | Work Fleets, Friends and The Machine Network | [Fleet](docs/fleet.md), [Network](docs/network.md), [Team Graph](docs/shared-graph.md) |
-| Family Fleets: free times, to-dos and plans | [Family](docs/family.md) |
+| Family Fleets: free times, to-dos, plans and questions | [Family](docs/family.md) |
 | Finding a meeting time with another Machine | [Scheduling between Machines](docs/scheduling-between-machines.md) |
 | Skills: write, approve and share them | [Skills](docs/skills.md) |
 | Hand a to-do to Claude Code or Codex | [Coding agents](docs/agents.md) |

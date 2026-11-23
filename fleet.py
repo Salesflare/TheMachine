@@ -67,6 +67,7 @@ import fleet_reviews
 import fleet_rounds
 import family
 import family_done
+import family_questions
 import contact_share
 import friends
 import discovery
@@ -196,6 +197,13 @@ KIND_LABEL.update(skill='skills')
 for _kind in ('work', 'family'):
     ASKS[_kind] = ASKS[_kind] + (fleet_reviews.KIND,)
 KIND_LABEL.update(review='reviews')
+# Questions (family_questions.py): a member asks one other member's Machine. Ask me first or Never; the owner sends every
+# answer. Offered only where the Network says it carries them (the directory's asks).
+ASKS['family'] += (family_questions.KIND,)
+RULE_KINDS['family'] += (family_questions.KIND,)
+KIND_LABEL.update(question='questions')
+KIND_RULES[family_questions.KIND] = ('ask', 'never')
+NO_DETAILS += (family_questions.KIND,)
 
 
 class Off(Exception):
@@ -408,6 +416,7 @@ def ensure(db):
     db.executescript(SCHEMA)
     fleet_requests.ensure(db)
     fleet_reviews.ensure(db)
+    family_questions.ensure(db)
     discovery.ensure(db)
     contact_share.ensure(db)
     have = {r[1] for r in db.execute('PRAGMA table_info(fleet_in)')}
@@ -1250,6 +1259,8 @@ def parse_question(kind, question):
     """A teammate's question in its fixed form, else None. Nothing else of it is ever read."""
     if kind == fleet_reviews.KIND:
         return fleet_reviews.parse(question)
+    if kind == family_questions.KIND:
+        return family_questions.parse(question)
     if kind in fleet_requests.STAGED:
         return fleet_requests.parse(kind, question)
     if kind == 'availability':
@@ -1342,6 +1353,8 @@ def clean_answer(kind, answer):
     """A teammate's answer, kept to the fields and shapes this Machine would send itself. None when it doesn't fit."""
     if kind == fleet_reviews.KIND:
         return fleet_reviews.clean_answer(answer)
+    if kind == family_questions.KIND:
+        return family_questions.clean_answer(answer)
     if kind in fleet_requests.STAGED:
         return fleet_requests.clean_answer(kind, answer)
     if kind == 'availability':
@@ -1394,6 +1407,8 @@ def clean_answer(kind, answer):
 def question_text(kind, question, db=None):
     if kind == fleet_reviews.KIND:
         return fleet_reviews.question_text(question)
+    if kind == family_questions.KIND:
+        return family_questions.question_text(question)
     if kind in fleet_requests.STAGED:
         return fleet_requests.question_text(kind, question, db)
     if kind == 'availability':
@@ -1427,7 +1442,7 @@ def push_payload(rows, root):
         return {'title': t("{}'s Machine asks", row['name']), 'body': question_text(row['kind'], json.loads(row['question']))[:200],
                 'url': root + '#fleet=' + row['id'], 'tag': 'fleet-' + row['id'],
                 # a free question opens on its draft, to read and edit before anything goes (quick buttons: push.QUICK)
-                'actions': [{'action': 'open', 'title': t('Open draft')}] if row['kind'] == 'anything' else [{'action': 'once', 'title': t('Accept') if row['kind'] in fleet_requests.STAGED else t('Answer once')}, {'action': 'decline', 'title': t('Decline')}]}
+                'actions': [{'action': 'open', 'title': t('Open draft')}] if row['kind'] in ('anything', family_questions.KIND) else [{'action': 'once', 'title': t('Accept') if row['kind'] in fleet_requests.STAGED else t('Answer once')}, {'action': 'decline', 'title': t('Decline')}]}
     return {'title': t('{} Fleet questions wait for you', len(rows)),
             'body': ' · '.join(asks_line(r) for r in rows[:3]) + (' · …' if len(rows) > 3 else ''),
             'url': root + '#fleet', 'tag': 'fleet-' + rows[0]['id'], 'actions': [{'action': 'open', 'title': t('Open')}]}
@@ -1461,7 +1476,9 @@ def telegram_message(rows, root):
                                + [{'text': t('Don’t answer'), 'value': f"assistant:fleet:{row['id']}:decline"}])
             continue
         lines.append((f'{n}. ' if many else '') + asks_line(row) + (f'\n   → {outcome}' if outcome else ''))
-        if row['status'] == 'waiting':
+        if row['status'] == 'waiting' and row['kind'] == family_questions.KIND:  # sent only where its draft and sources show
+            buttons.append([{'text': prefix + t('Decline'), 'value': f"assistant:fleet:{row['id']}:decline"}])
+        elif row['status'] == 'waiting':
             staged = row['kind'] in fleet_requests.STAGED
             buttons.append([{'text': prefix + (t('Accept') if staged else t('Answer once')), 'value': f"assistant:fleet:{row['id']}:once"},
                             {'text': t('Always accept') if staged else t('Always'), 'value': f"assistant:fleet:{row['id']}:always"},
@@ -1555,6 +1572,8 @@ def answer_text(kind, answer):
     """One plain line of an answer: for the dashboard, the log and preparations."""
     if kind == fleet_reviews.KIND:
         return fleet_reviews.answer_text(answer)
+    if kind == family_questions.KIND:
+        return family_questions.answer_text(answer)
     if kind in fleet_requests.STAGED:
         return fleet_requests.answer_text(kind, answer)
     if kind == 'availability':
@@ -1592,7 +1611,7 @@ def answer_text(kind, answer):
 
 # ---------------------------------------------------------------- the Fleet on this Machine
 
-class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, contact_share.ContactShare, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
+class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews, family_questions.Questions, friends.Friends, contact_share.ContactShare, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
             shared_graph.SharedGraph, meet.Meet, meet_link.MeetLink, fleet_brief_todos.BriefTodos):
     def __init__(self, connect, config, token, relay=None):
         self.connect, self.config = connect, config
@@ -1903,9 +1922,28 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         db.execute('DELETE FROM fleet_log WHERE id NOT IN (SELECT id FROM fleet_log ORDER BY id DESC LIMIT 2000)')
 
     # -- questions from teammates
+    @staticmethod
+    def keep_in(db, ask_id, fleet, member_id, name, kind, question, status, choice=None):
+        """A question with a path of its own (family_questions.py), kept as it came; one kept before stays as it is."""
+        db.execute('INSERT OR IGNORE INTO fleet_in(id,fleet,member_id,name,kind,question,status,at,decided_at,choice) VALUES(?,?,?,?,?,?,?,?,?,?)',
+                   (ask_id, fleet, member_id, name, kind, json.dumps(question), status, now(), now() if choice else None, choice))
+
+    @staticmethod
+    def move_in(db, ask_id, was, status, choice=None, decided_at=None):
+        """From one status to the next, once: 0 when it isn't in that status any more (so nothing is sent twice)."""
+        return db.execute('UPDATE fleet_in SET status=?,choice=?,decided_at=? WHERE id=? AND status=?',
+                          (status, choice, decided_at, str(ask_id), was)).rowcount
+
+    def set_member_rule(self, db, fleet, member_id, kind, rule):
+        """One member's own rule for a kind, from the owner's choice on their question."""
+        db.execute('INSERT OR REPLACE INTO fleet_rules(fleet,member_id,kind,rule,details,updated_at) VALUES(?,?,?,?,?,?)',
+                   (fleet, member_id, kind, rule, int(self.rule(db, fleet, member_id, kind)[1]), now()))
+
     def compute(self, db, kind, question, details, fleet=None, scope=None, only=True, ok=None):
         """ok: who knows someone and meeting context answered by themselves in a Work Fleet, from only what the Team
         Graph shares (team_gate), in the accounts that Fleet hears about."""
+        if kind == family_questions.KIND:  # never computed: its draft has a path of its own, and the owner sends it
+            raise ValueError('question computed')
         accounts, keep = scope_accounts(self.config, scope), scope and scope_keep(scope, only)
         if ok is not None:
             accounts = [a for a in accounts if a in self.fleet_accounts(fleet or 'work')]
@@ -2008,6 +2046,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         name = clean(label(teammate) or ask.get('name'), 120) or 'A teammate'
         if kind == fleet_reviews.KIND:  # a review request: a to-do of its own, never across work and personal
             return self.take_review(ask, teammate, fleet, question, name)
+        if kind == family_questions.KIND:  # a family member's question: drafted apart, sent by the owner
+            return self.take_question(ask, teammate, fleet, question, name)
         if kind in fleet_requests.STAGED:  # a request to do something: its own path
             return self.take_request(ask, teammate, fleet, kind, question, name)
         if kind == 'skill':  # a shared skill: kept for the owner to read (skills.py), never installed by itself
@@ -2091,6 +2131,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         follow-up) can carry the owner's short `note`, a reason with a decline."""
         if self.is_request(ask_id):
             return self.decide_request(ask_id, choice, retell=retell, note=note)
+        if self.is_question(ask_id):
+            return self.decide_question(ask_id, choice, text=text, retell=retell)
         if choice not in ('once', 'always', 'decline', 'never'):
             raise OwnerError('Choose once, always, decline or never')
         with self.connect() as db:
@@ -2134,6 +2176,11 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             rows = db.execute("SELECT * FROM fleet_in WHERE status='waiting' ORDER BY at,id").fetchall()
         for row in rows:
             if (fleet and row['fleet'] != fleet) or (member_id and row['member_id'] != member_id) or (kind and row['kind'] != kind):
+                continue
+            if row['kind'] == family_questions.KIND:  # only ever taken off the list, by Never: nothing is sent
+                if self.settle_question(row):
+                    settled.append(row['id'])
+                    told.update({row['telegram_message_id']} - {None})
                 continue
             if row['kind'] in ('anything', 'skill') or row['kind'] in fleet_requests.STAGED:  # answered one at a time, or their own path
                 continue
@@ -2427,7 +2474,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             if context_key:
                 db.execute('DELETE FROM fleet_meta WHERE key=?', (context_key,))
             if created:
-                self.log(db, 'out', fleet, None, 'your Fleet', kind, question_text(kind, question, db), f"asked {len(sent.get('ids', {}))}")
+                # a question to one member names them; the Family pane has its answer (family_questions.py)
+                one = self.member(fleet, to[0]) if to and kind == family_questions.KIND else None
+                self.log(db, 'out', fleet, to[0] if one else None, clean(label(one), 120) if one else 'your Fleet', kind, question_text(kind, question, db), f"asked {len(sent.get('ids', {}))}")
         return sent
 
     def ask_free(self, text, fleet):
@@ -2456,11 +2505,13 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 status = 'declined'
             db.execute('UPDATE fleet_out SET status=?,answer=?,answered_at=? WHERE id=?',
                        (status, json.dumps(answer) if answer is not None else None, now(), row['id']))
-            if status != 'waiting':
+            if status != 'waiting' and row['kind'] != family_questions.KIND:  # a question's answer shows in the Family pane only
                 self.log(db, 'out', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], json.loads(row['question']), db),
                          ('answered: ' + answer_text(row['kind'], answer)) if answer is not None else status)
         if row['kind'] == fleet_reviews.KIND:
             self.review_answered(row, status, answer)
+        if row['kind'] == family_questions.KIND:
+            self.question_answered(row, answer)
         if row['kind'] in fleet_requests.STAGED:
             if status == 'waiting' and row['kind'] == 'handoff':  # their Machine has it, and says whether it can ping them
                 self.ping_answered(row, fleet_requests.clean_ping(item.get('answer')))
@@ -3073,6 +3124,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         for message_id in {r['telegram_message_id'] for r in expired if r['telegram_message_id']}:
             if self.retell:
                 self.retell(message_id)
+        self.question_round()
         try:
             self.settle_waiting()
         except Exception as error:  # a relay hiccup: the next round tries again
@@ -3522,7 +3574,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 scopes.setdefault(r['fleet'], {}).setdefault(r['member_id'], {})[r['kind']] = scope_of(r['scope'])
             noping = {r['key'][15:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_noping:%'")}
             waiting = [{**{k: v for k, v in dict(r).items() if k != 'draft'}, 'question': question_text(r['kind'], json.loads(r['question']), db),
-                        **({'draft': json.loads(r['draft'])} if _get(r, 'draft') else {})}
+                        **({'draft': self.question_draft(db, r['id'])} if r['kind'] == family_questions.KIND else
+                           {'draft': json.loads(r['draft'])} if _get(r, 'draft') else {})}
                        for r in db.execute("SELECT * FROM fleet_in WHERE status='waiting' ORDER BY at DESC LIMIT 50")]
             # A handoff taken back says so; two open handoffs of one to-do to the same teammate show as one (the newest)
             withdrawn = {r['key'][18:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_withdrawn:%'")}

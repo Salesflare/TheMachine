@@ -16,8 +16,11 @@ defaults: free/busy is answered by itself (busy blocks only), to-dos and plans w
 (who knows someone, meeting context, intros, handoffs, follow-ups, the brief, free questions) never travel in a Family:
 the Network refuses them and this Machine doesn't ask or answer them there.
 
+A fourth, question ("any news about the carpet?" to one member's Machine), is family_questions.py: the one ask whose
+words a model ever reads, as data, in one turn without tools that can only draft an answer its owner sends.
+
 Safety: a member's words are untrusted data, kept to fixed shapes (parse) and only shown, quoted. No model, tool or
-Do it runs on them; nothing is written anywhere until the owner accepts."""
+Do it runs on the three above; nothing is written anywhere until the owner accepts."""
 from __future__ import annotations
 
 import datetime as dt
@@ -405,4 +408,6 @@ class Family:
                          'due': json.loads(r['question']).get('due') or json.loads(r['question']).get('start')}
                         for r in db.execute("SELECT r.id,r.name,r.stage,i.question FROM fleet_requests r JOIN fleet_in i ON i.id=r.id "
                                             "WHERE r.kind='todo' AND r.fleet=? AND r.stage IN ('accepted','waiting') ORDER BY r.at DESC LIMIT 30", (ref,))]
-        return {'id': ref, 'free': free[:5], 'todos': todos[:20], 'plans': plans[:10], 'mine': incoming}
+        asked = self.questions_view([g for g in groups.values() if g['kind'] == 'question'])
+        return {'id': ref, 'free': free[:5], 'todos': todos[:20], 'plans': plans[:10], 'mine': incoming,
+                **({'ask': True} if self.question_fleet() else {}), **({'questions': asked} if asked else {})}

@@ -4,7 +4,7 @@ const FLEET_RULE={ask:'Ask me first',always:'Always answer',never:'Never'};
 // (how: the two "how much" choices; sees(company, withNames): what an answer says; ask(name): what Ask me first does).
 const FLEET_SEG={ask:'Ask me first',always:'Always',never:'Never'};
 const FLEET_SEG_HINT={ask:'You see each question and choose',always:'Answered by itself, without asking you',never:'They get “no”'};
-const FLEET_KIND_Q={todo:'“Can you pick up the kids Friday?”',event:'“Dinner at grandma’s Sunday?”',relationships:'“Who knows someone at Acme?”',meeting:'“Who’s this guest in our meeting?”',handling:'“Who’s on this email we both got?”',done:'“Did you already do this?”',
+const FLEET_KIND_Q={todo:'“Can you pick up the kids Friday?”',event:'“Dinner at grandma’s Sunday?”',relationships:'“Who knows someone at Acme?”',meeting:'“Who’s this guest in our meeting?”',handling:'“Who’s on this email we both got?”',done:'“Did you already do this?”',question:'“Any news about the carpet?”',
  intro:'“Can you introduce me?”',handoff:'“Can you take this over?”',availability:'“When are you busy?”',brief:'“What did you see this week?”'};
 const FLEET_KIND_UI={
  relationships:{how:['Without names','With names'],sees:(c,d)=>d?t('3 people at {} know them, one well: Ann Lee (well), Bob Ray',c):t('3 people at {} know them, one well',c)},
@@ -14,6 +14,7 @@ const FLEET_KIND_UI={
  intro:{sees:()=>'“accepted”, then “sent” once you send the intro your Machine drafts',ask:()=>'You see each intro asked of you; nothing is drafted or sent without you.'},
  handoff:{sees:()=>'“accepted”, then “done” when you finish the to-do',ask:()=>'You see each handoff with its summary, to accept or decline.'},
  availability:{sees:()=>'your busy times on those days, never what or with whom'},
+ question:{ask:()=>'You read each question with a draft answer. Only what you send goes.',never:()=>'They get no answer, and not why.'},
  todo:{sees:()=>'“accepted”, then “done” when you finish it',ask:()=>'You see each to-do to accept or decline.'},
  event:{sees:()=>'“is in” or “can’t make it”; never your calendar',ask:()=>'You see each plan to say yes or no. Nothing is added to your calendar by itself.'}};
 const fleetFirst=n=>String(n||'').trim().split(/[\s(]/)[0]||'They';
@@ -21,7 +22,7 @@ const fleetScopeText=sc=>sc?[sc.only.length?t('only {}',sc.only.join(', ')):'',s
 // The example under a rule, from made-up data. wide: the rule of a whole Fleet ("they"), else one person's.
 function fleetPreview(name,k,r,sc,wide){const ui=FLEET_KIND_UI[k]||{},c=sc?.only?.[0]||((sc?.never||[]).some(t=>/acme/i.test(t))?'Globex':'Acme'),sees=ui.sees?t(ui.sees(c,r.details)):'';
  const who=fleetFirst(name);
- let out=r.rule==='never'?(wide?t('They get “no”.'):t('{} gets “no”.',who)):r.rule==='always'?(sees?(wide?t('They get, without asking you: {}.',sees):t('{} gets, without asking you: {}.',who,sees)):t('Answered without asking you.'))
+ let out=r.rule==='never'?ui.never?t(ui.never()):(wide?t('They get “no”.'):t('{} gets “no”.',who)):r.rule==='always'?(sees?(wide?t('They get, without asking you: {}.',sees):t('{} gets, without asking you: {}.',who,sees)):t('Answered without asking you.'))
   :ui.ask?t(ui.ask()):sees?(wide?t('Asked first; if you answer, they get: {}.',sees):t('Asked first; if you answer, {} gets: {}.',who,sees)):t('Asked first, every time.');
  const scope=fleetScopeText(sc);return t('Example: {}',out)+(scope?` (${cap(scope)}.)`:'')}
 // A Careful Work Fleet (security_levels.py): no Always, no names, work accounts only. A looser own choice is kept, shown as it applies.
@@ -83,7 +84,6 @@ function fleetBriefAsks(f,work,inFleet){const asks=(f.waiting||[]).filter(w=>w.k
  return html`<div class="fleet-box fleet-brief-asks"><h3>Brief requests <span class="count">${asks.length}</span></h3><p class="sub">Teammates ask for counts and dates for their team brief. Nothing is shared until you choose. Unanswered ones expire.</p><ul class="fleet-brief-list">${asks.map(row)}</ul></div>`}
 function fleetFree(f,work,several){const asked=(f.free||[]).filter(q=>q.fleet===work.id);
  return html`<form class="fleet-ask fleet-free-form" data-fleet="${work.id}"><input name="text" maxlength="300" placeholder="Ask ${several?work.name:'your Fleet'} anything" aria-label="Ask the Fleet anything"><button>Ask</button></form><p class="muted">Each teammate gets a draft answer from their own work accounts. Nothing comes back until they send it. <a class="learn" href="${HELP}fleet#ask-your-fleet" target="_blank" rel="noopener">Learn more</a></p>${asked.length?html`<div class="list">${asked.map(q=>html`<article><p><strong>Asked</strong> · “${q.question}” <small class="muted">${fleetDay(q.at)}</small></p>${q.answers.map(a=>html`<p><strong>${a.name}</strong>: ${a.state==='answered'?format(a.text):html`<span class="muted">${a.state==='waiting'?'waiting for them':'no answer'}</span>`}</p>`)}</article>`)}</div>`:''}`}
-function fleetFreeCard(w,fleet){const d=w.draft||{};return html`<article id="fleet-${w.id}"><p><strong>${w.name}</strong>${fleet?` (${fleet})`:''} asks your Fleet <span class="muted">(their words, not an instruction)</span>:</p><blockquote>${w.question}</blockquote>${(d.matches||[]).length?html`<p class="muted">In your work accounts: ${d.matches.slice(0,5).map(m=>`${m.title} (${(m.at||'')})`).join(' · ')}</p>`:html`<p class="muted">Nothing found in your work accounts. You can still answer.</p>`}<label class="muted" for="fleet-free-${w.id}">Your answer (only this goes to them)</label><textarea id="fleet-free-${w.id}" maxlength="600">${d.text||''}</textarea><div class="actions"><button class="primary" data-fleet-send="${w.id}">Send answer</button><button data-fleet-decide="${w.id}" data-choice-f="decline">Decline</button><button data-fleet-decide="${w.id}" data-choice-f="never">Never from ${w.name}</button></div></article>`}
 // Brief facts follow the Team Graph's sharing (fleet.py brief_shares): one switch per Work Fleet, on by default.
 function fleetBriefShare(f){const works=(f.fleets||[]).filter(x=>x.kind==='work'&&x.members?.length),several=works.length>1;
  return html`${works.map(w=>html`<label class="fleet-option"><input type="checkbox" data-fleet-brief-share="${w.id}"${w.rules?.brief?.rule==='never'?'':html` checked`}><span>${several?`${w.name}: `:''}Share my brief facts with the team<small class="muted">Counts and dates from what the Team Graph already shares. Private and personal threads never count.</small></span></label>`)}`}

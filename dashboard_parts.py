@@ -53,6 +53,7 @@ LAZY = {
     'clearrun': ('todos-clear.css', 'todos-clear-run.js'),
     'connections': ('base-layout.css', 'connections-cards.js'),
     'fleet': ('fleet-manage.css', 'fleet-rules.js', 'fleet-sharing.js', 'fleet-tabs.js', 'fleet-manage.js'),
+    'fleetask': ('fleet-questions.css', 'fleet-questions.js'),
     'fbpeople': ('todos-facebook-people.css', 'todos-facebook-people.js'),
     'brief': ('fleet-brief-todo.js',),
     'game': ('todos-game.js',),

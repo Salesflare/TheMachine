@@ -1,9 +1,9 @@
 ---
 title: Family
 area: fleet
-summary: A free Family Fleet for up to 6 people: when everyone's free, shared to-dos and plans.
+summary: A free Family Fleet for up to 6 people: when everyone's free, shared to-dos, plans and questions.
 covers: family
-code: family.py, dashboard.html
+code: family.py, family_questions.py, dashboard.html
 order: 6
 ---
 ## What it does
@@ -13,6 +13,17 @@ order: 6
 - Plans: propose one. Everyone answers I'm in or Can't make it. I'm in adds it to your own Google calendar, with nobody invited; Undo takes it off again. Without a calendar The Machine can change, you get a link to add it yourself.
 
 No work questions go through a Family Fleet.
+
+## Ask someone's Machine
+
+In your Family's pane on the Fleet tab, pick one person and ask: "Any news about the carpet?"
+
+- Their Machine drafts an answer from their own personal messages. They see the draft and the messages it comes from, change it if they like, and send it. Nothing reaches you before that.
+- The answer shows in your Family's pane and as a notice. After three days without one it says **No answer**.
+- A draft never comes from work, from anything sensitive or kept private, or from codes, links and account numbers. Your Machine is careful with gifts and surprises too. When it isn't sure, there is no draft and you answer in your own words.
+- Every question to you, and exactly what you sent, is in [Activity](activity.md).
+- Don't want questions from someone? Set **Never** for them on the Sharing pane. They aren't told.
+- A Machine that isn't up to date can't answer yet; you see that.
 
 ## Invite suggestions
 
@@ -34,6 +45,6 @@ When you both get the same email, bill or form and one of you marks their to-do 
 
 ## Rules
 
-By default, free and busy times are shared, and to-dos and plans ask you first. Change it on the Sharing pane: see [Sharing rules](sharing-rules.md).
+By default, free and busy times are shared, and to-dos, plans and questions ask you first. Change it on the Sharing pane: see [Sharing rules](sharing-rules.md).
 
 A Family Fleet is free. Hosted Machines in it cost {price.family_pair} a month for the first two together, then {price.family_seat} each, excl. VAT. See [Plans and billing](plans-and-billing.md).
