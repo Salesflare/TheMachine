@@ -315,7 +315,8 @@ class AppPush(unittest.TestCase):
                                                                         outcome=asks))['body'], 'Send it from the work address?')
         found = machine_delivery_push.app_notice(self.store, self.config, self.card('Assess the Swiss tax review', 'The review found no tax due. Details below.',
                                                                status='prepared', outcome=json.dumps({'state': 'answered'})))
-        self.assertEqual((found['title'], found['body']), ('Assess the Swiss tax review', 'The review found no tax due.'))
+        # (an answer only, nothing done yet: Needs you, as on the card; machine/cards.py needs_owner)
+        self.assertEqual((found['title'], found['body']), ('Needs you: Assess the Swiss tax review', 'The review found no tax due.'))
         # other states keep their word in front, and Text in notifications off still says only "Ready"
         self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, self.card('Draft the memo', status='accepted'))['title'], 'Preparing: Draft the memo')
         with self.store.connect() as db:
