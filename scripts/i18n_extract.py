@@ -438,6 +438,8 @@ SERVER_TEXT = {
     'crm.py': ['org_doubles'],           # why two organizations look like one
     'fleet.py': ['KIND_LABEL'],          # what a Fleet asks about, in a sentence and (capitalized) as a row's name
     'family.py': ['LABELS'],
+    # a source's codes in plain words (its read_as)
+    'connectors/stripe.py': ['BILLING', 'DISPUTES', 'ENDED', 'FEEDBACK', 'STATUS', 'TITLES'],
     'machine/store/profile.py': ['TODO_SOURCE', 'TODO_SOURCE_OTHER'],  # Feedback's rows: where the to-dos came from
     # a to-do being prepared: one plain line per kind of step
     'machine/browser.py': ['PREPARING_OTHER', 'PREPARING_TOOLS', 'PREPARING_CONNECTED', 'PREPARING_BROWSER', 'PREPARING_ACTIONS',

@@ -13,7 +13,8 @@ A connector declares the view of each of its kinds in VIEWS (and the app its lin
 in BUILT_IN. tests/test_message_view.py fails any connector kind without one, and checks every view against the rules
 below on made-up data. The rules (docs/adding-a-source.md, "How a message reads"):
 
-1. No raw ids, Unix timestamps or internal type names on screen; never an app's package id (android_text_shown).
+1. No raw ids, Unix timestamps, codes or internal type names on screen (a connector's read_as says its service's codes
+   in plain words, also for events stored with them); never an app's package id (android_text_shown).
 2. Nothing said twice: the title, the header, the details and the body each say something the others don't.
 3. Markup renders: markdown, Slack's mrkdwn and HTML (sanitized). No literal ** or <url|label> brackets.
 4. People by name where a name is known, and the real author, not the bot that sent the notification. A bare address
@@ -190,6 +191,10 @@ def address_names(db, addresses):
 NAME_KEYS = ('sender_display', 'from_name', 'contact_name', 'sender_name', 'user_name', 'customer_name')
 
 
+# A service's id for a person or a thing: 24 hex digits (Trello), a uuid (Shortcut)
+RAW_ID = re.compile(r'[0-9a-f]{24}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}')
+
+
 def sender_name(kind, m):
     """Who sent a message, by name (rule 4), for every source: the name in `from` ("Sam Lee <sam@x.example>"), else
     the name the source gives beside it (NAME_KEYS: Intercom's from_name, a chat's sender_display), the address only
@@ -197,6 +202,8 @@ def sender_name(kind, m):
     and never shows outside email: the conversation's customer by name when the source names one, else the bot or
     teammate by the name the source gives ("Fin"), else nothing."""
     raw = ' '.join(str(m.get('from') or '').split())
+    if RAW_ID.fullmatch(raw):  # a service's own id for someone (Trello, Shortcut): never a name
+        raw = ''
     names = [n for n in (' '.join(str(m.get(k) or '').split()) for k in NAME_KEYS) if n and '@' not in n]
     if '@' not in raw and '<' not in raw:
         return raw or (names[0] if names else '')  # a name as is, or none
@@ -596,7 +603,10 @@ def shape(kind, o, m):
     elif kind == 'web_page.change':
         shape_page_change(o, m)
     elif view == 'card':
-        o['body'] = drop_repeats(o['body'], title)
+        read_as = getattr(_connector(kind), 'read_as', None)
+        if read_as:  # the connector's own words for its codes, also in events stored with them
+            o.update(read_as(kind, title, o['body'], {**m, 'from': o.get('from') or ''}))
+        o['body'] = drop_repeats(o['body'], title, o['title'], o.get('from'))
     if transcript_kind(kind) and (turns := transcript_turns(o['body'], m.get('start_at') or o.get('occurred_at'))):
         # a transcript reads as who said what, in turns, at the time of day they said it (chatThreadHTML), never "[0:00:00]"
         o['turns'], o['chat'] = turns, title

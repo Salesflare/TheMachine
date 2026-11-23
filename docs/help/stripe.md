@@ -10,6 +10,8 @@ site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, 
 
 Events on your Stripe account that may need you: failed payments, disputes, cancellations and big new subscriptions, with the customer they belong to. A customer's email links the event to that person and their organization in the [Graph](graph.md).
 
+A failed payment says what it was for (a first payment, a renewal) and when Stripe tries again. It doesn't say why the card was declined: Stripe's event leaves that out, so open it in Stripe for the reason.
+
 ## What it can do
 
 Nothing in Stripe. It never refunds, retries or changes anything. It asks for read access only, and Stripe shows that before you install it.

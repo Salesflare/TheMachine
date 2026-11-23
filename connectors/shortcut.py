@@ -27,6 +27,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import i18n
+import locale_prefs
+
 KINDS = {'shortcut.move': 'Shortcut'}
 # How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
 # (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
@@ -314,6 +317,24 @@ def moves(source, story, window, member, helpers):
                                         'sender_display': plain(item.get('actor_name')),
                                         'from_me': bool(item.get('member_id')) and item['member_id'] == member['id']}})
     return events
+
+
+def read_as(kind, title, body, metadata):
+    """How a move reads in the message viewer: the move, what is set on the story and its text, without the ids and
+    the bookkeeping around them (the owners, the state and who asked come as ids)."""
+    shown = []
+    for line in str(body or '').split('\n'):
+        if re.fullmatch(r'Current story context \(.*\):|Current state ID: ?\d*|Owner IDs:.*|Requested by:(?: [0-9a-f-]{36})? ?|Deadline: ?|Moved: \d+ → .*|Moved: .* → \d+', line):
+            continue
+        if found := re.fullmatch(r'Moved: (.+) → (.+)', line):
+            line = i18n.t('Moved from {} to {}', found[1], found[2])
+        elif found := re.fullmatch(r'Deadline: (\d{4}-\d\d-\d\d).*', line):
+            line = i18n.t('Deadline: {}', locale_prefs.day_text(dt.date.fromisoformat(found[1])))
+        elif found := re.fullmatch(r'Blocked: (True|False); completed: (?:True|False)', line):
+            line = i18n.t('Blocked') + '\n' if found[1] == 'True' else ''  # a blank line before its text
+        shown.append(line)
+    text = '\n'.join(shown)
+    return {'body': re.sub(r'\n{3,}', '\n\n', text).strip('\n')}
 
 
 def sync(store, config, account, helpers):
