@@ -13,6 +13,7 @@ import re
 import sys
 import urllib.request
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
@@ -41,13 +42,15 @@ def one(case, model):
     import test_family_questions as tq
 
     class Run(tq.Questions):
+        def setUp(self):
+            with mock.patch.object(tq.machine_main.Store, 'commit_page'), mock.patch.object(tq.Questions, 'mail'):  # none of the tests' own mail
+                super().setUp()
+
         def runTest(self):
             pass
     test = Run()
     test.setUp()
     try:
-        with test.store.connect() as db:
-            db.execute('UPDATE events SET deleted=1')  # the tests' own mail
         for m in case['mails']:
             if 'own' in m:
                 test.mail(m.get('t', 'About the house'), m['own'], sender=f'Owner <{OWNER}>', to=ASKER, days=m['d'], labels=('SENT',))
