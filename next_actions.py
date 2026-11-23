@@ -35,6 +35,7 @@ import timeutil
 import unicodedata
 from urllib.parse import urlsplit
 from machine.owner_error import OwnerError
+from machine import new_post
 from machine.kinds import SEND, TEXT_ONLY, TO_PERSON
 
 SEND_SCOPES = {'https://www.googleapis.com/auth/gmail.send',
@@ -627,7 +628,8 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     elif value.get('kind') == 'finish':
         # Everything up to the final click is done; the owner confirms that click. Its run
         # repeats the step from these instructions, since a tab or session may have expired.
-        if set(value)-{'kind','label','instructions','preview','url','message','to_name','attachments','via','via_login'} or not value.get('label'):
+        only_fields(value, {'kind','label','instructions','preview','url','message','to_name','attachments','via','via_login'}, 'final step')
+        if not value.get('label'):
             raise OwnerError('A final step needs a label, the exact instructions and a preview of what goes out')
         if value['label'].split()[0] not in FINISH_VERBS:
             raise OwnerError('A final step label starts with what it does: ' + ', '.join(FINISH_VERBS[:8]) + '…')
@@ -786,6 +788,8 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     elif value.get('kind') == 'x':
         # An X reply to a post, or a DM, from this task's own X signals; integrations/x_inbox.py sends it
         # through the owner's signed-in x.com session in the OpenClaw browser, only after their Send now.
+        if not value.get('reply_to') and not value.get('conversation_id'):
+            raise ValueError('A new post on X is not a kind:x send (that is a reply or a DM): ' + new_post.post_step('Publish on X', 'https://x.com/compose/post'))
         only_fields(value, {'kind', 'label', 'account_id', 'reply_to', 'conversation_id', 'body'}, 'X')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'x'), None)
         if not account:  # the one the post or chat came in on, checked below
@@ -1020,6 +1024,8 @@ def check(value, result='', own_addresses=()):
             problems.append(f"“{action.get('label') or action['kind']}” still has a placeholder ({PLACEHOLDER.search(text)[0]}): fill it in from the evidence")
         if re.search(r'\[[^\]]+\]\((?!https?://)[^)]*\)', text):
             problems.append('A link has no real https:// address')
+        if action['kind'] == 'open' and new_post.COMPOSERS.match(action['url']):
+            problems.append(f"“{action['label']}” only opens a composer, so the post is left to the owner: " + new_post.post_step('Publish post', action['url'].split('?')[0]))
         if action['kind'] == 'finish' and not action.get('attachments') and (
                 ATTACHED.search(text) or SAVED_FILE.search(action['instructions'])):
             problems.append(f"“{action['label']}” uploads or mentions a file but lists none: add attachments:[<paths>] so the owner sees it, or reword it")

@@ -31,7 +31,7 @@ from machine.sources.slack import call_wait
 from machine.sources.telegram import owner_telegram_chats
 from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
 import meeting_prep
-from machine import action_basis, todo_kinds
+from machine import action_basis, new_post, todo_kinds
 from models import model_ready
 import next_actions
 from machine.store import outcomes
@@ -298,6 +298,12 @@ class CardActionsApp:
         with self.store.connect() as db:  # a recipient at a lookalike domain (lookalike.py): the address on record instead
             problems+=lookalike.problems(next_actions.actions(action),lookalike.for_addresses(db,lookalike.recipients(next_actions.actions(action))))
         problems+=next_actions.reply_context(next_actions.actions(action),spots)
+        with self.store.connect() as db:  # a routine's draft, saved ready with nothing that posts or sends it
+            draft=db.execute("SELECT e.metadata FROM suggestions s JOIN json_each(s.event_ids) ids JOIN events e ON e.id=ids.value "
+                             "WHERE s.id=? AND e.kind='routine.draft'",(args['suggestion_id'],)).fetchone()
+        if draft and not args.get('finish_state'):
+            problems+=new_post.undelivered([a['kind'] for a in next_actions.actions(action)],args.get('outcome'),args.get('needs'),
+                                           json.loads(draft[0] or '{}').get('act'),next_actions.WAITING_KINDS)
         # The to-do names the place the doc goes, never the other one (Google Docs vs Word)
         problems+=doc_writes.wording(next_actions.actions(action),[args.get('body'),args.get('needs'),args.get('title')])
         if problems and args.get('checked') is not True:

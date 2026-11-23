@@ -27,6 +27,7 @@
  "A fact is one short sentence (5-240 characters), or empty to remove it",
  "A merge needs only clone (the fixed copy), summary (what the fix changes) and bug (why it is a bug)",
  "A new doc needs a title",
+ "A new post on X is not a kind:x send (that is a reply or a DM): {}",
  "A recipe is 1 to {} steps",
  "A recurring to-do needs name: the to-do itself, in a few words",
  "A reset starts your ChatGPT usage limits over.{}",
