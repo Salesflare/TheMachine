@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {waitForAction} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // A chat message shows in the chat as soon as it's sent, not once the Machine has saved it (a slow decide here). Should
@@ -8,7 +9,7 @@ const {chromium}=await import('./browser.mjs');
 const raw=await dashboardPage();
 const SCOPE='a1'.repeat(16),iso=new Date().toISOString(),A='1'.repeat(16),SLOW=1500;
 const cards=[{id:A,title:'Reply to Robin about the plan',body:'Robin asked for the numbers.',status:'pending',scope:'work',created_at:iso,event_ids:[1]}];
-let refuse=false;const said=[];
+let refuse=false;const said=[],answered=[];
 const page=()=>raw.replace('__CSRF__','').replaceAll('__UI_VERSION__','v1').replace('__BASE__','/').replace('__CACHE_SCOPE__',SCOPE);
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(page());return}
@@ -17,7 +18,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');
   if(r.action==='decide'){said.push(r.args?.feedback);await new Promise(r=>setTimeout(r,SLOW));
    if(refuse){res.statusCode=400;res.end(JSON.stringify({error:'That to-do changed. Use its current buttons.'}));return}
-   res.end(JSON.stringify({status:'instructions'}));return}
+   res.end(JSON.stringify({status:'instructions'}));answered.push(r);return}
   res.end('{}');return}
  res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -40,7 +41,8 @@ try{
  assert.equal(await tab.locator('#chat-input').inputValue(),'','the box empties at once');
  // A read of the chat that lands while the Machine still saves it (it doesn't have the message yet) keeps it shown
  assert.ok(await tab.evaluate(async()=>{await chatPoll();return [...document.querySelectorAll('#chat-log *')].some(e=>!e.childElementCount&&e.textContent.includes('Use the March numbers'))}),'a chat read meanwhile keeps the message');
- await tab.waitForFunction(()=>!document.querySelector('[data-chat-send]').disabled||chat?.active);
+ // the Machine has it (the Send button's state after that is the chat's: a read of it can change it again)
+ await waitForAction(answered,'decide',{timeout:SLOW*4});
 
  // A second message while the first is still being saved: typed into the freed box and sent with the keys, it goes
  // right after the first (nothing typed meanwhile is lost)
