@@ -22,6 +22,7 @@ import machine.prompts.profile as machine_prompts_profile
 import machine.prompts.review as machine_prompts_review
 import machine.sources.slack as machine_sources_slack
 import machine.store.profile as machine_store_profile
+import machine.store.promises as machine_store_promises
 import machine.web.handler as machine_web_handler
 import timeutil
 
@@ -831,6 +832,36 @@ class Graph(unittest.TestCase):
             full = graph.open_between(db, 'email:ann@client.com', 2, task['id'])
         self.assertEqual(only, {k: full[k] for k in ('you_promised', 'they_promised')})
         self.assertFalse([q for q in ran if 'FROM suggestions s WHERE' in q or 'FROM facts' in q or "kind='owner.card'" in q])
+
+    def test_a_projects_line_says_who_made_each_promise(self):
+        ask = mail(3, 'Sam <sam@acme.com>', 'Ann Example <ann@client.com>', ('SENT',), thread='deck')
+        bob = mail(2, 'Bob Other <bob@client.com>', 'sam@acme.com', thread='contract')
+        self.add(ask, bob)
+        ask_id, bob_id = self.ids([ask['source_id'], bob['source_id']])
+        self.store.owner_user_ids = set()
+        self.app.action('promise', {'direction': 'theirs', 'event_id': bob_id, 'who': 'Bob Other', 'what': 'sign the contract', 'due': '2026-10-20'})
+        self.app.action('promise', {'direction': 'mine', 'event_id': ask_id, 'who': 'Ann Example', 'what': 'send the deck'})
+        task = self.store.suggest('ann-1', 'Answer Ann', 'Ann asked about pricing.', [ask_id, bob_id], project='Acme deal')
+        self.build()
+        lines = self.app.graph_lines(task['id']).split('\n')
+        project = next(line for line in lines if line.startswith('- Project Acme deal: '))
+        self.assertIn('you promised Ann Example to send the deck', project)
+        self.assertIn('Bob Other promised to sign the contract by Tue, Oct 20', project)
+        self.assertNotIn('they promised', project)  # on a project, "they" is anyone
+        # A person's own line keeps you and they: it is about them, and only the one who promised has it
+        person = {name: next(line for line in lines if line.startswith(f'- {name} (')) for name in ('Ann Example', 'Bob Other')}
+        self.assertIn('open: you promised to send the deck', person['Ann Example'])
+        self.assertIn('open: they promised to sign the contract by Tue, Oct 20', person['Bob Other'])
+        self.assertNotIn('sign the contract', person['Ann Example'])
+
+    def test_a_projects_line_names_a_promise_by_an_address_as_the_person(self):
+        self.add(mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com'), mail(2, 'Ann Example <ann@client.com>', 'sam@acme.com'))
+        self.build()
+        with self.store.connect() as db:
+            items = {'they_promised': [{'id': 1, 'who': 'ann@client.com', 'what': 'send the photos', 'due': None}, {'id': 2, 'who': '', 'what': 'book the hall', 'due': None}]}
+            line = graph.open_line(items, (), lambda w: machine_store_promises.who_named(db, w))
+        self.assertIn('Ann Example promised to send the photos', line)
+        self.assertIn('they promised to book the hall', line)  # nobody noted: never a made-up name
 
     def test_a_fact_shows_on_who_it_is_about_never_on_who_sent_the_message(self):
         ask = mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com', thread='deal')

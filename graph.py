@@ -1473,7 +1473,8 @@ def context_lines(db, event_ids, limit_chars=1500, skip_card=None, sides=None, s
             lines.append(f"- {view['name']} ({', '.join(view['ids'][:2])}): " + '; '.join(bits))
         elif row['kind'] == 'project':
             people = [n['name'] for n in neighbours(db, row['id'], 6) if n['kind'] == 'person'][:4]
-            between = open_line(open_between(db, row['id'], 2 + len(skip_facts), skip_card), skip_facts)
+            from machine.store.promises import who_named  # it imports graph
+            between = open_line(open_between(db, row['id'], 2 + len(skip_facts), skip_card), skip_facts, lambda w: who_named(db, w))
             lines.append(f"- Project {view['name']}: {view['state']}, last signal {short_date(view['last_at'])}"
                          + (f", next meeting {short_date(view['next_meeting'])}" if view.get('next_meeting') else '') + (f"; people: {', '.join(people)}" if people else '')
                          + (f"; open: {between}" if between else ''))
@@ -2190,13 +2191,16 @@ def open_between(db, node_id, limit=6, skip_card=None, promises_only=False, know
     return {k: v if k == 'known' else v[:limit] for k, v in out.items() if v}  # known stops at its own count
 
 
-def open_line(items, skip=()):
-    """One short line from open_between, for a preparation or review. skip: ids of facts the prompt has already."""
+def open_line(items, skip=(), who=None):
+    """One short line from open_between, for a preparation or review. skip: ids of facts the prompt has already. who: for
+    a project, whose line says no one's name: p's who as a name, so each promise says who made it or whom it is to."""
     bits = []
     for p in items.get('you_promised', ())[:2]:
-        bits.append(f"you promised to {p['what']}" + (f" by {short_date(p['due'])}" if p['due'] else ''))
+        to = who(p['who']) if who and p['who'] else ''
+        bits.append(f"you promised {to + ' ' if to else ''}to {p['what']}" + (f" by {short_date(p['due'])}" if p['due'] else ''))
     for p in items.get('they_promised', ())[:2]:
-        bits.append(f"they promised to {p['what']}" + (f" by {short_date(p['due'])}" if p['due'] else ''))
+        by = who(p['who']) if who and p['who'] else ''
+        bits.append(f"{by or 'they'} promised to {p['what']}" + (f" by {short_date(p['due'])}" if p['due'] else ''))
     bits += [f"card \"{c['title']}\"" for c in items.get('cards', ())[:2]]
     # a fact a connected AI saved is that AI's claim, quoted as data, never the owner's word
     bits += [f"known: {f['text']}" if not str(f.get('source') or '').startswith('ai:') else
