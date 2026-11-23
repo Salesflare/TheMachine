@@ -158,6 +158,7 @@ class HandledElsewhere(unittest.TestCase):
         wait = app.handled_gate(sid, 'job1', self.HANDOFF)
         self.assertIn('mpdm-riley--sam--ana-1', wait)
         self.assertIn('Sleep', wait)
+        self.assertIn('save again as it is, its steps included', wait)  # runs dropped the handoff while they waited (2026-11-23)
         yes = self.slack_reads()
         found = app.handled_gate(sid, 'job1', self.HANDOFF)
         self.assertIn(f'event {yes}', found)
@@ -180,7 +181,7 @@ class HandledElsewhere(unittest.TestCase):
         slack_source.WAIT_STEP = 0.02
         sid, app = self.card(), self.app()
         waited = app.handled_gate(sid, 'job3', self.HANDOFF, wait=0.1)  # Slack's turn doesn't come in time
-        self.assertIn('This call waited for them already: save again as it is', waited)
+        self.assertIn('This call waited for them already: save again as it is (it waits again), its steps included', waited)
         self.assertNotIn('Sleep', waited)
         reader = threading.Timer(0.1, self.slack_reads)
         reader.start()
