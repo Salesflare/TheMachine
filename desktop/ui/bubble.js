@@ -4,7 +4,8 @@
   'use strict';
   const {core: {invoke}, event: {listen}} = window.__TAURI__;
   const t = window.MachineText, {icon, when, fill} = window.Parts;
-  const $ = id => document.getElementById(id);
+  const kept = {}; // what is said takes the place of some, and they come back
+  const $ = id => (kept[id] ??= document.getElementById(id));
   const STAYS = 12000, AFTER = 4000, UNDO = 8000;
   let say = null, hour12 = false, over = false, left = 0, since = 0, timer = 0, busy = false, picks = false;
 

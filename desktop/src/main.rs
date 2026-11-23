@@ -895,6 +895,10 @@ fn main() {
                 std::process::exit(0); // nothing was running
             }
             #[cfg(target_os = "linux")]
+            if let Ok(own) = std::env::current_exe() {
+                windows::linux::keep(&own.with_file_name("lib/libgtk-layer-shell.so.0"));
+            }
+            #[cfg(target_os = "linux")]
             let layer = windows::linux::has_layer_shell();
             #[cfg(not(target_os = "linux"))]
             let layer = false;
