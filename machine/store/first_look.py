@@ -11,6 +11,7 @@ import time
 import activity
 import graph
 from machine.config import LOG
+from machine.owner_name import first_name
 from machine.store.review import REVIEW_SESSION_PREFIX
 from machine.store.views import sender_first_name
 from machine.text import _address, encoded
@@ -395,8 +396,7 @@ class FirstLookStore:
         (greeting_name) gives no line. The dashboard leads with that to-do (line.card) and keeps the rest of the page quiet.
         None once past it, or for someone who had decided to-dos before this existed. For the owner's own dashboard only:
         nothing of it goes into a report or leaves the Machine."""
-        first = (str(owner_name or '').split() or [''])[0]
-        first = first if re.fullmatch(r"[^\W\d_][\w'’-]*", first) else ''
+        first = first_name(owner_name)
         with self.connect() as db:
             decided = lambda since='': db.execute(
                 'SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES)) + ') AND choice IN ('

@@ -4,10 +4,12 @@ and the Find my skills turn's report. Moved out of assistant.App's action as is.
 import datetime as dt
 import json
 import re
+import sqlite3
 import uuid
 
 import fleet_learnings
 import learning_loop
+from machine import owner_name
 from machine.config import LOG, WORKSPACE
 from machine.prompts.profile import (import_prompt, orgs_prompt, profile_prompt, PROFILE_ROOM, roles_prompt,
                                      share_history_prompt, skills_find_prompt, voices_prompt)
@@ -144,6 +146,18 @@ class ProfileApp:
         if run.get('auto') and run.get('kind') == 'profile':  # saves only once the run is ok
             self.first_profile_save(run['run_id'])
         return result
+
+    def owner_full_name(self):
+        """The owner's name as what greets them says it (machine/owner_name.py). The database is asked only when neither
+        the config nor USER.md gives one."""
+        name = owner_name.full_name(self.config)
+        if owner_name.first_name(name):
+            return name
+        try:
+            with self.store.connect() as db:
+                return owner_name.full_name(self.config, db)
+        except sqlite3.Error:
+            return name
 
     def owner_first_names(self):
         """The owner's first name, as the config and USER.md give it ("- Name: …", "# USER.md - About …"): for

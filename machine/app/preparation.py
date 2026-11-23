@@ -55,6 +55,7 @@ import routine_changes
 import talk_live
 from timeutil import local_tz, now
 import todo_areas
+from machine import owner_name
 from machine import todo_states
 from machine.owner_error import OwnerError
 from machine.dashboard_link import dashboard_link
@@ -257,11 +258,13 @@ def retry_after_update(db, version, held=lambda job: False):
 
 
 def owner_details(config=None):
-    """Optional owner facts from config: `owner_name` and `booking_links` ({purpose: url})."""
+    """Optional owner facts: their name (owner_name.full_name: the config's, else USER.md's, never one a mailbox gives)
+    and config's `booking_links` ({purpose: url})."""
     config = config or {}
     lines = []
-    if config.get('owner_name'):
-        lines.append(f"- The owner is {config['owner_name']}; sign emails with their first name.")
+    owner = owner_name.full_name(config)
+    if owner:
+        lines.append(f"- The owner is {owner}; sign emails with their first name.")
     links = config.get('booking_links') or {}
     if links:
         lines.append('- Booking links for meeting offers: ' + '; '.join(f'{k}: {v}' for k, v in links.items()))

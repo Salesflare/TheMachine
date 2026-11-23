@@ -202,7 +202,7 @@ class NotificationsApp:
         root = dashboard_link(self.config)
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
         digest = notify.compose(meetings, due, overnight, root, show, when, total=total, top=top, ready=ready, promised=promised,
-                                per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking,
+                                per=per, name=notify.first_name(self.owner_full_name()), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking,
                                 own=[r['id'] for r in top if r.get('origin') == 'owner'])  # "Added by you": always named
         if digest:  # the to-dos it speaks of, listed or counted: their held email lines go with it (digest_step)
             digest['covers'] = sorted({r['id'] for r in due + overnight + top if r.get('id')} |
@@ -336,7 +336,7 @@ class NotificationsApp:
         root = dashboard_link(self.config)
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(tz))
         tomorrow = following.date() == day + dt.timedelta(days=1)
-        return notify.evening_compose(done, held, waiting, due, ahead, root, show, when, name=notify.first_name(self.config.get('owner_name')),
+        return notify.evening_compose(done, held, waiting, due, ahead, root, show, when, name=notify.first_name(self.owner_full_name()),
                                       next_day=None if tomorrow else locale_prefs.day_text(following), tomorrow=tomorrow)
 
     def evening_step(self, current=None, push=None, telegram_send=None, mail=None):
