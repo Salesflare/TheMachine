@@ -119,6 +119,7 @@ class FleetApp:
             self.fleet.connector_profile = self.shared_connector_profile
             self.fleet.share_token = self.shared_connector_token  # Stripe signed in: a fresh access token to send
             self.fleet.connect_delivered = self.fleet_connect_delivered  # Sign in with Intercom for this Machine (fleet.py)
+            self.fleet.draft_answer = self.question_soon  # a family member's question: its draft, apart from the Fleet's loop (family_questions.py)
             self.fleet.watch_connects = True  # and picked up a moment after consent, apart from the Fleet's loop (connects_watch)
             self.fleet.support_read = self.support_read  # Support access: the team's read, while the owner allows it (fleet.py)
             self.meet_attach(lambda: dict(WORK_HOURS), local_tz)  # scheduling with Machines outside the Fleets (meet_app.py)
@@ -393,6 +394,8 @@ class FleetApp:
         if name == 'family_todo':  # a to-do for one member, who accepts or declines it on their Machine
             return self.fleet.propose_todo(str(args.get('member_id') or ''), str(args.get('title') or ''), str(args.get('due') or '') or None,
                                            str(args.get('note') or ''))
+        if name == 'family_question':  # a question to one member's Machine, answered by its owner (family_questions.py)
+            return self.fleet.ask_question(str(args.get('member_id') or ''), str(args.get('text') or ''))
         if name == 'family_invite':  # Invite (the account page's form, prefilled; nothing is sent here) or Not now (family_invites.py)
             return self.fleet.family_invite(str(args.get('suggestion_id') or ''), str(args.get('do') or ''))
         if name == 'family_invite_setting':  # Settings, Fleet: Suggest inviting family

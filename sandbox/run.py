@@ -137,6 +137,9 @@ def fake_ask(config, prompt):
     cited as [1], and one on the first promise, fact, summary or meeting notes the prompt has for it (ask_memory.py),
     cited as what it is ([P1], [F1], [S1], [M1]). No model runs."""
     import re
+    if '"verdict": "answer"' in prompt:  # a family member's question (family_questions.py): only the fixture's carpet is found
+        return json.dumps({'verdict': 'answer', 'answer': 'It is on its way: they bring it on Thursday between 9:00 and 12:00.', 'sources': [int(n[1])]}
+                          if (n := re.search(r'^<<< \[(\d+)\] [^\n]*carpet', prompt, re.M)) else {'verdict': 'nothing'})
     if 'reply with one JSON object' in prompt:  # the first turn, what it means: no person or days, so the search answers it
         return '{"question": true, "person": null, "said_by": "both", "from": null, "to": null, "about": ""}'
     question = prompt.rsplit('Question: <<<', 1)[-1].rstrip('>')

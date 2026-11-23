@@ -16,7 +16,7 @@ Decide what your Machine tells your Fleet. In the **Fleet** tab, open **Sharing*
 - **Never**: it says no.
 - **Names**: whether the answer may say who, like a guest's name, or leaves names out.
 
-It never shares email content or what your meetings are about. **Different for someone? Add an exception** sets a rule for one person.
+It never shares a whole email or what your meetings are about. In your Family, **Questions** (like "Any news about the carpet?") are Ask me first or Never: see [Family](family.md). **Different for someone? Add an exception** sets a rule for one person.
 
 Rules change only in the dashboard, never from a message.
 

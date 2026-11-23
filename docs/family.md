@@ -22,6 +22,37 @@ self-hosted. Your Machines coordinate over the Network, under rules each of you 
   that can do things), keeps the link, which you open yourself. Nobody else's calendar is ever written. The member's
   note stays on the to-do and doesn't go into the event.
 
+## Ask someone's Machine
+
+In the Fleet tab under your Family, pick one member and ask: "Any news about the carpet?" Their Machine looks in its
+owner's own personal messages and drafts an answer. Its owner gets a to-do with the question, the messages the draft
+comes from (each opens) and the draft, to edit, and taps **Send answer** or **Decline**. Only what they send goes to you:
+it shows under your question in the Family tab and comes as a notice. When nobody answers within three days it says
+**No answer**.
+
+What a draft may come from:
+
+- Mail and chats from the last 90 days, on accounts that are Personal. Not calendars, attachments, code or sign-in mails,
+  spam or the bin.
+- Never a thread that is work, marked sensitive or kept private, one with someone kept private or someone who is Work in
+  the Graph, one with an address of your company or a Work Fleet teammate, or one a Work to-do or project came from.
+- Links, addresses, codes and account, order and phone numbers are taken out before the model reads a message. A draft
+  with one of them, or with a long run of a message's own words, isn't used.
+- The limits above are in code. The model also judges what they can't: it makes no draft when the answer could be private,
+  as with health, money beyond a household bill, work, a quarrel, someone else's confidence, or anything that could be a
+  gift or a surprise. The to-do then says so, and you can still answer in your own words.
+
+What you can count on:
+
+- A question is at most 300 characters, an answer 600. At most 3 questions from one member wait for you, 10 a day. A
+  draft is one short model run, at most 6 a day for the whole Family, within your
+  [usage limits](usage.md); without one, the question waits with no draft.
+- The asker is told only that their question waits. Declining, **Never**, too many questions, no draft and no reply all
+  look the same to them.
+- Every question, and exactly what was sent, is a line in your [Activity](activity.md).
+- A notification or Telegram only opens the question (or declines it): sending is on the dashboard, beside the sources.
+- A Machine from before this feature can't answer. The asker sees "Robin’s Machine needs an update first."
+
 ## Invite suggestions
 
 Inviting someone used to be up to you. Now, when a to-do is about family plans with one person who isn't in your
@@ -51,8 +82,10 @@ Under **Sharing**, the Family has the same rules as a Work Fleet, one per kind f
 | To-dos | Ask me first | accepted, then done when you finish it |
 | Plans | Ask me first | "is in" or "can't make it"; never your calendar |
 | To-dos you already did | Always | "done" and the day, for a to-do you both have (a code, never the to-do); Always or Never only |
+| Questions | Ask me first | the answer you send, and nothing else; Ask me first or Never only |
 
-**Always** on a to-do or plan accepts it by itself (it still only makes a to-do for you). **Never** answers "no".
+**Always** on a to-do or plan accepts it by itself (it still only makes a to-do for you). **Never** answers "no"; a
+question gets no answer at all.
 
 ## Already did this
 
@@ -75,8 +108,8 @@ itself. Still needed hides the line until they reopen theirs and do it again.
 
 ## Kept apart from work
 
-A Family never asks or answers work questions: who knows someone, meeting context, shared emails, intros, handoffs,
-follow-up splits, the team brief or free questions. The Network refuses them in a Family, and your Machine declines
+A Family never asks or answers work questions, also not through [a question](#ask-someones-machine): who knows someone,
+meeting context, shared emails, intros, handoffs, follow-up splits, the team brief or free questions. The Network refuses them in a Family, and your Machine declines
 them there even if one arrives. A to-do or plan becomes a personal to-do, on a personal account when you have one.
 
 ## Ask to review
@@ -89,7 +122,10 @@ ignore, and nothing goes out until you press Send. Work to-dos never go to the F
 ## Safety
 
 What a member sends is kept to a fixed shape (a title, a short note, a date or time, a place) and only ever shown,
-quoted, as their words. No model, tool or Do it runs on it, and nothing happens until you accept (or set Always).
+quoted, as their words. No model, tool or Do it runs on a to-do, plan or free-times request, and nothing happens until
+you accept (or set Always). A [question](#ask-someones-machine) is the one thing a model reads: as data, in a single run
+without tools, files or memory, whose only result is a draft you read before anything goes. So the most a hostile
+question, or a hostile message it finds, can do is change the words of that draft.
 Messages travel over the Network like every Fleet question, and are end-to-end encrypted where both Machines support
 it (see [Network](network.md)).
 
@@ -97,7 +133,10 @@ it (see [Network](network.md)).
 
 `family.py` holds the shapes, the free-time arithmetic and the `Family` mixin of `fleet.Fleet`. To-dos and plans take
 the same path as Work requests (`fleet_requests.STAGED`). Dashboard operations: `family_free`, `family_todo`,
-`family_event`, `family_invite`, `family_invite_setting` and `family_still_needed`, from the owner's dashboard only. `family_invites.py` decides
+`family_event`, `family_question`, `family_invite`, `family_invite_setting` and `family_still_needed`, from the owner's dashboard only.
+Questions: `family_questions.py` is the path (taken in the Fleet's loop, which never runs a model), `family_question_sources.py`
+what a draft may come from with its prompt and checks, `machine/app/family_questions.py` the search and the run, and
+`test_family_questions.py` the tests. `family_invites.py` decides
 the invite suggestions (`test_family_invites.py`). Already did this is `Fleet.handled_round` with the Family's rule `done` (`family.DONE`, and
 `family_done.py` for the match and the line), shown from `suggestions.done_elsewhere`. Tests: `test_family.py`, `test_family_done.py`,
 `test_family_dashboard.mjs`, `test_family_done_dashboard.mjs`. Try it on

@@ -10,22 +10,28 @@ const {chromium}=await import('./browser.mjs');
 const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),FAM='fl_'+'f'.repeat(16),FL2='fl_'+'c'.repeat(16),FR='fr_'+'b'.repeat(16);
 const r=rule=>({rule,details:false});
-const view={on:true,kinds:{relationships:'who knows someone',availability:'free/busy times',todo:'to-dos',event:'family plans'},ask_meetings:false,
- kind_rules:{relationships:['ask','always','never'],availability:['ask','always','never'],todo:['ask','always','never'],event:['ask','always','never']},
- no_details:['availability','todo','event'],scoped:[],scopes:{},
+const view={on:true,kinds:{relationships:'who knows someone',availability:'free/busy times',todo:'to-dos',event:'family plans',question:'questions'},ask_meetings:false,
+ kind_rules:{question:['ask','never'],relationships:['ask','always','never'],availability:['ask','always','never'],todo:['ask','always','never'],event:['ask','always','never']},
+ no_details:['availability','todo','event','question'],scoped:[],scopes:{},
  // As the directory lists them: Work first, then friends, then the Family. The tabs go by when each was joined.
  fleets:[{id:FL,kind:'work',label:'Work Fleet',name:'Acme',joined_at:'2026-03-01T09:00:00Z',asks:['relationships'],people:[{member_id:'m',name:'Sam Doe',me:true}],members:[]},
   {id:FL2,kind:'work',label:'Work Fleet',name:'Beta',joined_at:'2026-08-01T09:00:00Z',asks:['relationships'],people:[{member_id:'m2',name:'Sam Doe',me:true}],members:[]},
   {id:FR,kind:'friends',label:'Friends',name:'Friends',asks:[],people:[{member_id:'fp_me',name:'Sam Doe',me:true}],members:[],rules:{},exceptions:{}},
-  {id:FAM,kind:'family',joined_at:'2026-05-01T09:00:00Z',label:'Family Fleet',name:'Home',asks:['availability','todo','event'],rules:{availability:r('always'),todo:r('ask'),event:r('ask')},exceptions:{},
+  {id:FAM,kind:'family',joined_at:'2026-05-01T09:00:00Z',label:'Family Fleet',name:'Home',asks:['availability','todo','event','question'],rules:{availability:r('always'),todo:r('ask'),event:r('ask'),question:r('ask')},exceptions:{},
    people:[{member_id:'fm_me',name:'Sam Doe',me:true},{member_id:'fm_robin',name:'Robin',answers_with:'Hosted: robin.example.test'},{member_id:'fm_alex',name:'Alex'}],
    members:[{member_id:'fm_robin',name:'Robin',rules:{availability:r('always'),todo:r('ask'),event:r('ask')}},{member_id:'fm_alex',name:'Alex',rules:{availability:r('always'),todo:r('ask'),event:r('ask')}}]}],
  family:{id:FAM,free:[{id:'t1',at:'2026-10-20T10:00:00Z',start:'2026-10-24',days:7,answered:1,asked:2,waiting:['Alex'],
    slots:[{from:'2026-10-24T08:00+02:00',until:'2026-10-24T11:00+02:00',text:'Sat 24 Oct 08:00–11:00'}]}],
   todos:[{id:'t2',title:'Buy milk',name:'Alex',stage:'accepted',due:'2026-10-24'}],
   plans:[{id:'t3',title:'Dinner at grandma’s with a rather long name that should wrap nicely',start:'2026-10-25T18:00+02:00',place:'Grandma’s',yes:['Robin'],no:[],waiting:['Alex'],link:'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Dinner'}],
-  mine:[{id:'t4',title:'Pick up Sam',name:'Robin',stage:'accepted',due:'2026-10-21'}]},
- waiting:[{id:'q_'+'1'.repeat(16),fleet:FAM,member_id:'fm_robin',name:'Robin',kind:'todo',question:'To-do: Pick up the kids, due Fri 23 Oct',status:'waiting',at:'2026-10-20T10:00:00Z'},
+  mine:[{id:'t4',title:'Pick up Sam',name:'Robin',stage:'accepted',due:'2026-10-21'}],
+  ask:true,questions:[{id:'t5',at:'2026-10-20T10:00:00Z',name:'Robin',question:'Any news about the carpet?',state:'answered',answer:'It comes on Thursday.',by:'owner'},
+   {id:'t6',at:'2026-10-19T10:00:00Z',name:'Alex',question:'When does the plumber come?',state:'waiting'},{id:'t7',at:'2026-10-15T10:00:00Z',name:'Alex',question:'Did the school write?',state:'none'},
+   {id:'t8',at:'2026-10-14T10:00:00Z',name:'Alex Moss',question:'Is the bike ready?',state:'old'}]},
+ waiting:[{id:'q_'+'3'.repeat(16),fleet:FAM,member_id:'fm_robin',name:'Robin',kind:'question',question:'“Any <b>news</b> about the carpet?”',status:'waiting',at:'2026-10-20T12:00:00Z',
+   draft:{state:'ready',text:'It ships on Thursday.',sources:[{id:41,kind:'gmail.message',title:'Your order is on its way',from:'Rugs & More',at:'2026-10-19T09:00:00Z'}]}},
+  {id:'q_'+'4'.repeat(16),fleet:FAM,member_id:'fm_alex',name:'Alex',kind:'question',question:'“What did the bank say?”',status:'waiting',at:'2026-10-20T12:30:00Z',draft:{state:'private'}},
+{id:'q_'+'1'.repeat(16),fleet:FAM,member_id:'fm_robin',name:'Robin',kind:'todo',question:'To-do: Pick up the kids, due Fri 23 Oct',status:'waiting',at:'2026-10-20T10:00:00Z'},
   {id:'q_'+'2'.repeat(16),fleet:FAM,member_id:'fm_alex',name:'Alex',kind:'event',question:'Plan: Zoo trip, Sun 25 Oct',status:'waiting',at:'2026-10-20T11:00:00Z'}],
  plan_calendar:'Home calendar',  // "I'm in" adds a plan to the owner's own calendar (family.py)
  friends:{id:FR,username:'sam',in:[],out:[],blocked:[]},
@@ -54,6 +60,14 @@ try{
   assert.match(await card.innerText(),/Robin asks you to do something/);
   calls.length=0;await card.locator('[data-choice-f="once"]').click();await landed('fleet_decide');
   assert.deepEqual(calls.at(-1),{action:'fleet_decide',args:{id:'q_'+'1'.repeat(16),choice:'once'}});
+  // A question: their words quoted as text, the messages the draft comes from, and the answer to edit, all before Send
+  const ask=page.locator('#fleet-q_'+'3'.repeat(16));await ask.waitFor();const asked=await ask.innerText();
+  for(const want of [/Robin asks your Machine/,/Any <b>news<\/b> about the carpet\?/,/From your messages/,/Your order is on its way/,/Rugs & More/,/only this goes to them/])assert.match(asked,want);
+  assert.equal(await ask.locator('[data-choice-f="always"],[data-choice-f="once"]').count(),0);
+  await ask.locator('[data-fleet-source="41"]').click();await page.locator('#email-dialog[open]').waitFor();await page.keyboard.press('Escape');
+  await ask.locator('textarea').fill('Thursday!');calls.length=0;await ask.locator('[data-fleet-send]').click();await landed('fleet_decide');
+  assert.deepEqual(calls.at(-1),{action:'fleet_decide',args:{id:'q_'+'3'.repeat(16),choice:'once',text:'Thursday!'}});
+  const quiet=page.locator('#fleet-q_'+'4'.repeat(16));assert.match(await quiet.innerText(),/No draft: this may be private/);assert.equal(await quiet.locator('textarea').inputValue(),'');
   // A plan: I'm in says which calendar it goes on, nobody invited; the toast's Undo takes the event off again
   const plan=page.locator('#fleet-q_'+'2'.repeat(16));await plan.waitFor();
   assert.match(await plan.innerText(),/Alex proposes a plan/);assert.match(await plan.innerText(),/adds it to Home calendar\. Nobody is invited\./);
@@ -70,6 +84,9 @@ try{
   for(const want of [/When are we all free/,/Sat 24 Oct 08:00–11:00/,/waiting for Alex/,/Buy milk/,/Pick up Sam/,/In: Robin/,/Add to my calendar/])assert.match(text,want);
   assert.doesNotMatch(text,/Coming later/);
   assert.equal(await fam.locator('a.family-cal').first().getAttribute('href'),view.family.plans[0].link);
+  for(const want of [/Ask someone’s Machine/,/It comes on Thursday\./,/No answer yet/,/No answer\n/,/Alex’s Machine needs an update first\./])assert.match(text,want);
+  await fam.locator('.family-question-form [name=member]').selectOption('fm_alex');await fam.locator('.family-question-form [name=text]').fill('Is the bike ready?');await acted(()=>fam.locator('.family-question-form button').click(),'family_question');
+  assert.deepEqual(calls.at(-1),{action:'family_question',args:{member_id:'fm_alex',text:'Is the bike ready?'}});
   await fam.locator('.family-free-form [name=start]').fill('2026-10-24');await acted(()=>fam.locator('.family-free-form button').click(),'family_free');
   assert.deepEqual(calls.at(-1),{action:'family_free',args:{start:'2026-10-24',days:7}});
   await fam.locator('.family-todo-form [name=title]').fill('Groceries');await fam.locator('.family-todo-form [name=due]').fill('2026-10-23');await acted(()=>fam.locator('.family-todo-form button').click(),'family_todo');
@@ -79,6 +96,8 @@ try{
   // The Family's rules: under Sharing, the same three pills per kind
   const sharing=page.locator('[data-pane="sharing"]');
   for(const k of ['availability','todo','event'])assert.equal(await sharing.locator(`.fleet-rule[data-fleet="${FAM}"][data-kind="${k}"] [data-fleet-rule]`).count(),3,k);
+  const rule=sharing.locator(`.fleet-rule[data-fleet="${FAM}"][data-kind="question"]`);assert.deepEqual(await rule.locator('[data-fleet-rule]').evaluateAll(x=>x.map(i=>i.value)),['ask','never']);
+  assert.match(await rule.innerText(),/Only what you send goes/);
   const fits=await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth);
   assert.ok(fits,`${scheme} ${width}px scrolls sideways`);
   assert.deepEqual(errors,[]);

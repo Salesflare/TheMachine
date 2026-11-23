@@ -30,6 +30,7 @@ from machine.app.connect import ConnectApp
 from machine.app.conversation import ConversationApp
 from machine.app.docs import DocsApp
 from machine.app.export import ExportApp
+from machine.app.family_questions import FamilyQuestionsApp
 from machine.app.feedback import FeedbackApp
 from machine.app.first_look import FirstLookApp
 from machine.app.first_pass import FirstPassApp
@@ -145,7 +146,7 @@ APP_MIXINS += (ProfileApp,)
 APP_MIXINS += (BrowserApp,)
 APP_MIXINS += (NotificationsApp, SettingsActionsApp)
 APP_MIXINS += (RecapSettingsApp,)
-APP_MIXINS += (SearchAskApp,)
+APP_MIXINS += (SearchAskApp, FamilyQuestionsApp)
 APP_MIXINS += (ReviewSavesApp,)
 APP_MIXINS += (CalendarClashesApp,)
 APP_MIXINS += (MeetingPrepApp,)

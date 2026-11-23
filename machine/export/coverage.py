@@ -53,7 +53,7 @@ LEFT_OUT = {
     },
     'teammates\' and other Machines\' data, not this Machine\'s learning': {
         'fleet_claims', 'fleet_handled', 'fleet_in', 'fleet_learn_read', 'fleet_learn_removed', 'fleet_learn_seen', 'fleet_learn_used',
-        'fleet_learn_vectors', 'fleet_learnings', 'fleet_log', 'fleet_notices', 'fleet_out', 'fleet_requests', 'fleet_reviews', 'fleet_rules',
+        'fleet_learn_vectors', 'fleet_learnings', 'fleet_log', 'fleet_notices', 'fleet_out', 'fleet_questions', 'fleet_requests', 'fleet_reviews', 'fleet_rules',
         'fleet_scopes', 'fleet_splits', 'network_aliases', 'network_looked', 'network_outbox', 'network_people', 'network_replies',
         'network_request_nodes', 'network_taken', 'network_twins', 'share_lines', 'share_meta', 'share_out', 'share_people', 'share_private',
         'share_rules', 'team_asks', 'team_blobs', 'team_files', 'team_pending', 'team_records', 'team_sources', 'team_wants',

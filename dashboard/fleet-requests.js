@@ -23,12 +23,6 @@ function fleetShow(el){if(chatId){history.replaceState(null,'',location.pathname
 document.addEventListener('click',e=>{const a=e.target.closest?.('[data-side-fleet]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();fleetShow(a.dataset.sideFleet)});
 // Waiting asks from the same teammate, of the same kind, in the same Fleet: one Always or Never settles them all (fleet.py settle_waiting).
 const fleetAlike=(f,w)=>(f?.waiting||[]).filter(x=>x.fleet===w.fleet&&x.member_id===w.member_id&&x.kind===w.kind&&x.status!=='answered'&&x.status!=='declined');
-// What a teammate's free question found in the owner's work accounts: a short list, each with a day as people say it
-// (Mon within the week, else Nov 9). A chat line's "#channel: Name" reads "Name in #channel".
-const fleetMatchDay=v=>{const d=new Date(String(v||'').length===10?v+'T12:00':v);if(!v||isNaN(d))return '';const n=Math.round((new Date().setHours(12,0,0,0)-new Date(d).setHours(12,0,0,0))/864e5);
- return n>=0&&n<7?(n===0?t('Today'):n===1?t('Yesterday'):localeDate(d,DL,{weekday:'short'})):localeDate(d,DL,{day:'numeric',month:'short',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
-const fleetMatchTitle=s=>{const m=/^#([^\s:]+):\s+(.+)$/.exec(s||'');return m?t('{} in #{}',m[2],m[1]):s};
-const fleetMatches=ms=>html`<p class="fleet-from">In your work accounts</p><ul class="fleet-matches">${ms.slice(0,5).map(m=>{const when=fleetMatchDay(m.at);return html`<li><span>${fleetMatchTitle(m.title)}</span>${when?html` <span class="muted">· ${when}</span>`:''}</li>`})}</ul>`;
 const fleetMore=btns=>btns.length?html`<details class="more-actions"><summary aria-label="${t('More actions')}" title="${t('More actions')}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${t('More actions')}">${btns}</div></details>`:'';
 function fleetCardsOf(f){if(!f?.on)return[];const works=(f.fleets||[]).filter(x=>x.kind==='work'),several=works.length>1,frId=f.friends?.id;
  const famId=(f.fleets||[]).find(x=>x.kind==='family')?.id,isFamily=row=>!!famId&&row.fleet===famId;
@@ -46,8 +40,7 @@ function fleetCardsOf(f){if(!f?.on)return[];const works=(f.fleets||[]).filter(x=
    html`<div class="actions">${decide(w,'once',w.kind==='todo'?'Accept':'I’m in','primary')}${decide(w,'decline',w.kind==='todo'?'Decline':'Can’t make it')}${fleetMore([decide(w,'always','Always accept'),decide(w,'never','Never from '+w.name)])}</div>`));
   else if(FLEET_REQ.includes(w.kind))out.push(card(w.id,w,t(what[w.kind],w.name),html`${theirs(w)}<p class="muted">Accepting makes a to-do from your own data. Anything it sends waits for your Send.</p>`,
    fleetNoting.has(w.id)?fleetNoteEditor(w,fleetNoting.get(w.id)):html`<div class="actions">${decide(w,'once','Accept','primary')}${decide(w,'decline','Decline')}${fleetMore([html`<button class="ghost" data-fleet-noting="${w.id}">Accept with a note</button>`,decide(w,'always','Always accept'),decide(w,'never','Never from '+w.name)])}</div>`));
-  else if(w.kind==='anything'){const d=w.draft||{};out.push(card(w.id,w,`${w.name} asks your Fleet`,html`${theirs(w)}${(d.matches||[]).length?fleetMatches(d.matches):html`<p class="muted">Nothing found in your work accounts. You can still answer.</p>`}${html`<label class="fleet-field muted" for="fleet-free-${w.id}">Your answer (only this goes to them)<textarea id="fleet-free-${w.id}" maxlength="600">${d.text||''}</textarea></label>`}`,
-   html`<div class="actions"><button class="primary" data-fleet-send="${w.id}">Send answer</button>${decide(w,'decline','Decline')}${fleetMore([decide(w,'never','Never from '+w.name)])}</div>`))}
+  else if(['anything','question'].includes(w.kind))lazyIn('fleetask')?out.push(fleetAskCard(f,w,card,theirs,decide)):lazyRun('fleetask',render);
   else{const n=fleetAlike(f,w).length;
    out.push(card(w.id,w,html`${t('{} asks:',w.name)} <span translate="no">${w.question}</span>`,html`${w.draft?.preview?html`<p class="muted">Would share: ${w.draft.preview}</p>`:''}<p class="muted">Nothing is shared until you choose. Always and Never also cover their future asks like this.</p>${n>1?html`<p class="muted fleet-bulk">${t(['{} more like this waits. Always shares it too.','{} more like this wait. Always shares them too.'],n-1)}</p>`:''}`,
    html`<div class="actions two-rows">${decide(w,'once','Share once','primary')}${decide(w,'always','Always share')}${decide(w,'decline','Decline')}${fleetMore([decide(w,'never','Never share')])}</div>`))}}

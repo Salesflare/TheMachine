@@ -914,6 +914,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'tool_approval_proposals.detail': 'a proposal', 'checkpoints.state': 'a sync cursor (MESSAGE_SEAL_AUDIT checks)', 'history_backfill.state': 'a history cursor: times and a page token (machine/store/history.py)',
             'analyses.items': 'ids and versions', 'task_pages.state': "a task page's stage (offered, shared, done)", 'meet_links.state': "a booking link's stage (open, picked, booked, closed)", 'handoff_mails.state': "a handoff by email's stage (drafted, waiting, done)", 'preparations.details': 'why a preparation stopped',
             'preparations.reason': 'a reason code', 'activity_blocks.reason': 'why a check stopped a send (the outbox job error line)', 'preparations.questions': 'what a stopped run asks the owner',
+            'fleet_questions.state': "a draft's stage (family_questions.py)",
             'android_inbox.payload': "its text sealed by the Gateway's plugin (message_seal.INBOX); deleted once read",
             'network_outbox.body': 'matched in SQL until sent; sealed end to end in transit (network_crypto)',
             'fleet_out.context': 'matched in SQL: an id',

@@ -6402,6 +6402,24 @@
    }
   },
   {
+   "key": "home:carpet",
+   "account_id": "home-gmail",
+   "kind": "gmail.message",
+   "minutes_ago": 1630,
+   "title": "Your carpet is on its way",
+   "body": "Hello Alex, your wool carpet has left our warehouse. We deliver it on Thursday between 9:00 and 12:00.",
+   "metadata": {
+    "from": "Thistle & Loom <orders@thistleloom.example>",
+    "to": "alex.morgan@mail.example",
+    "labels": [
+     "INBOX"
+    ],
+    "thread_id": "t500000000001",
+    "message-id": "<t500000000001.1@thistleloom.example>",
+    "source_url": "https://mail.example/#inbox/t500000000001"
+   }
+  },
+  {
    "key": "board:paperkite:0",
    "account_id": "work-gmail",
    "kind": "gmail.message",
@@ -8901,6 +8919,15 @@
      ],
      "role": "Dentist",
      "note": "Our dentist. She takes new patients"
+    }
+   },
+   {
+    "id": "fa_sandbox0009",
+    "fleet": "family",
+    "from": "m_fam_robin",
+    "kind": "question",
+    "question": {
+     "text": "Any news about the carpet?"
     }
    }
   ],

@@ -12,7 +12,7 @@ A Fleet lets your Machine work with the Machines of your team, family or friends
 ## Kinds of Fleet
 
 - **Work Fleet**: your team. Hand off work, ask who knows someone, get intros and a team brief.
-- **Family Fleet**: up to 6 people. When everyone's free, shared to-dos and plans. Free; hosted Machines in it have a family price. See [Family](family.md).
+- **Family Fleet**: up to 6 people. When everyone's free, shared to-dos and plans, and questions to one another's Machine. Free; hosted Machines in it have a family price. See [Family](family.md).
 - **Friends**: anyone on The Machine, one by one. Free. See [Friends](friends.md).
 
 ## The Fleet tab
