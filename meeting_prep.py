@@ -49,6 +49,7 @@ import re
 
 import timeutil
 from machine import todo_states
+from machine.store import graph_promises
 
 SCHEMA = ('CREATE TABLE IF NOT EXISTS meeting_preps(dedupe_key TEXT PRIMARY KEY,event_id INTEGER NOT NULL,suggestion_id TEXT,'
           'verdict TEXT NOT NULL,starts_at TEXT NOT NULL,created_at TEXT NOT NULL,format INTEGER,body_sha TEXT,rebuilt_at TEXT)')
@@ -368,12 +369,13 @@ def evidence(db, meeting, side, sides, owner_emails, current, open_states, resol
                                            'subject': str(r['title'] or '')[:120], 'text': excerpt(r['body'], MESSAGE_HEAD, MESSAGE_TAIL)})
             if not person['messages']:
                 del person['messages']
+            elses = graph_promises.of_others(db, node['id']) if _has(db, 'promises') else ()
             ps = db.execute("SELECT p.id,p.direction,p.what,p.due,p.account_id FROM promises p WHERE (p.status='open' OR (p.status='carded' AND NOT EXISTS "
                             f"(SELECT 1 FROM suggestions s WHERE s.id=p.suggestion_id AND s.status IN {todo_states.sql(todo_states.CLOSED)}))) "
-                            'AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) ORDER BY coalesce(p.due,p.check_at) LIMIT 6',
-                            (node['id'],)).fetchall() if _has(db, 'promises') else []
+                            'AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) ORDER BY coalesce(p.due,p.check_at) LIMIT ?',
+                            (node['id'], 6 + len(elses))).fetchall() if _has(db, 'promises') else []
             listed = []
-            for p in ps:
+            for p in [p for p in ps if p['id'] not in elses][:6]:
                 if same_side(p['account_id']) and p['id'] not in promises:
                     promises[p['id']] = p
                     listed.append({'id': f"P{p['id']}", 'promised_by': 'the owner' if p['direction'] == 'mine' else person['name'],

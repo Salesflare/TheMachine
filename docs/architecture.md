@@ -277,6 +277,7 @@ same open promise stored twice from before is kept once. Nothing shows up on Tel
   page) opens the promise's own page (`#promise/<id>`, read from `GET /api/promise?id=`): its state, the message it
   came from, the people, organization and project of that message, its to-do as a link, and a history from
   `promise_log` (kinds and dates only, never message text). Change date there is `promise_due`, owner only.
+  One named after exactly one person on its message is not on the pages of the others on it (`machine/store/graph_promises.py`).
   `assistant promises` lists them, and the weekly recap counts kept and open ones.
 
 ### Follow-ups

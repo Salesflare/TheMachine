@@ -61,7 +61,7 @@ from machine import stamps, todo_states
 from machine.kinds import KINDS, of
 from machine.names import SERVICES
 from machine.owner_error import OwnerError
-from machine.store import graph_history, graph_identifiers, review_whys
+from machine.store import graph_history, graph_identifiers, graph_promises, review_whys
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE COLLATE NOCASE,created_at TEXT NOT NULL,closed_at TEXT);
@@ -2159,9 +2159,12 @@ def open_between(db, node_id, limit=6, skip_card=None, promises_only=False, know
     ids = list(dict.fromkeys([node_id, *((json.loads(row['info'] or '{}').get('identifiers') or []) if row else [])]))
     on_node = 'SELECT 1 FROM json_each({}) j JOIN graph_events g ON g.event_id=j.value WHERE g.node_id=?'
     try:
+        elses = graph_promises.of_others(db, node_id)
         for r in db.execute("SELECT p.id,p.direction,p.who,p.what,p.due FROM promises p LEFT JOIN suggestions s ON s.id=p.suggestion_id "
                             f"WHERE (p.status='open' OR (p.status='carded' AND s.status IN {todo_states.sql(todo_states.OPEN)})) "
-                            "AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) ORDER BY coalesce(p.due,p.check_at) LIMIT ?", (node_id, limit * 2)):
+                            "AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) ORDER BY coalesce(p.due,p.check_at) LIMIT ?", (node_id, limit * 2 + len(elses))):
+            if r['id'] in elses:
+                continue
             out['you_promised' if r['direction'] == 'mine' else 'they_promised'].append({'id': r['id'], 'who': r['who'], 'what': r['what'], 'due': r['due']})
         if promises_only:  # a to-do's gap note (gap_note.person) reads only these, on every status
             return {k: v[:limit] for k, v in out.items() if v}
