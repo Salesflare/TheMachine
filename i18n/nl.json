@@ -321,6 +321,7 @@
  "Add to {}?": "Toevoegen aan {}?",
  "Add transcript": "Transcript toevoegen",
  "Add your name first, in Settings": "Voeg eerst je naam toe, in Instellingen",
+ "Add your other address too? Mail to it shows up here.": "Ook je andere adres toevoegen? Mail voor dat adres verschijnt hier.",
  "Add {}": "{} toevoegen",
  "Add {} as personal contacts": {
   "one": "Voeg {} toe als persoonlijk contact",
@@ -1151,6 +1152,10 @@
  "Connect Stripe": "Stripe koppelen",
  "Connect Stripe ↗": "Stripe koppelen ↗",
  "Connect WhatsApp": "WhatsApp koppelen",
+ "Connect WhatsApp? {} emails mention it.": {
+  "one": "WhatsApp koppelen? In {} e-mail wordt het genoemd.",
+  "other": "WhatsApp koppelen? In {} e-mails wordt het genoemd."
+ },
  "Connect a channel that can send first.": "Koppel eerst een kanaal dat kan versturen.",
  "Connect a mailbox that can send first.": "Koppel eerst een mailbox die kan versturen.",
  "Connect a source first": "Koppel eerst een bron",
@@ -1165,6 +1170,18 @@
  "Connect your calendar": "Koppel je agenda",
  "Connect your mail to get your first to-dos.": "Koppel je mail om je eerste to-do's te krijgen.",
  "Connect your own Intercom": "Koppel je eigen Intercom",
+ "Connect {0}? {1} emails from {0} this month.": {
+  "one": "{0} koppelen? Deze maand is er {1} e-mail van {0}.",
+  "other": "{0} koppelen? Deze maand zijn er {1} e-mails van {0}."
+ },
+ "Connect {0}? {1} meetings use it this month.": {
+  "one": "{0} koppelen? Deze maand wordt het gebruikt in {1} meeting.",
+  "other": "{0} koppelen? Deze maand wordt het gebruikt in {1} meetings."
+ },
+ "Connect {0}? {1} messages link to it this month.": {
+  "one": "{0} koppelen? In {1} bericht staat deze maand een link ernaartoe.",
+  "other": "{0} koppelen? In {1} berichten staat deze maand een link ernaartoe."
+ },
  "Connect {}": "{} koppelen",
  "Connected": "Gekoppeld",
  "Connected AIs": "Gekoppelde AI’s",
@@ -6450,6 +6467,8 @@
  "Try it": "Probeer het",
  "Try now": "Nu proberen",
  "Try part of a name, an address or a company.": "Probeer een deel van een naam, een adres of een bedrijf.",
+ "Try {} again? The code ran out.": "Nog eens {} proberen? De code is op.",
+ "Try {} again? The sign-in didn’t finish.": "Nog eens {} proberen? De login is niet afgerond.",
  "Try: {}": "Probeer: {}",
  "Trying again": "Opnieuw proberen",
  "Trying again around {}.": "Probeert het opnieuw rond {}.",
@@ -7507,6 +7526,7 @@
  "no grant": "geen grant",
  "no keys for the sender": "geen sleutels voor de afzender",
  "no longer shared": "niet meer gedeeld",
+ "no new to-dos": "geen nieuwe to-do's",
  "no signal recorded": "geen signaal vastgelegd",
  "none found": "geen gevonden",
  "none you made yourself": "geen die je zelf maakte",

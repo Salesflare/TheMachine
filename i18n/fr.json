@@ -321,6 +321,7 @@
  "Add to {}?": "Ajouter à {} ?",
  "Add transcript": "Ajouter une transcription",
  "Add your name first, in Settings": "Ajoutez d’abord votre nom, dans Paramètres",
+ "Add your other address too? Mail to it shows up here.": "Ajouter aussi votre autre adresse ? Les e-mails qui y sont envoyés s’affichent ici.",
  "Add {}": "Ajouter {}",
  "Add {} as personal contacts": {
   "one": "Ajouter {} comme contact personnel",
@@ -1151,6 +1152,10 @@
  "Connect Stripe": "Connecter Stripe",
  "Connect Stripe ↗": "Connecter Stripe ↗",
  "Connect WhatsApp": "Connecter WhatsApp",
+ "Connect WhatsApp? {} emails mention it.": {
+  "one": "Connecter WhatsApp ? {} e-mail le mentionne.",
+  "other": "Connecter WhatsApp ? {} e-mails le mentionnent."
+ },
  "Connect a channel that can send first.": "Connectez d’abord un canal qui peut envoyer.",
  "Connect a mailbox that can send first.": "Connectez d’abord une boîte mail qui peut envoyer.",
  "Connect a source first": "Connectez d’abord une source",
@@ -1165,6 +1170,18 @@
  "Connect your calendar": "Connecter votre agenda",
  "Connect your mail to get your first to-dos.": "Connectez vos e-mails pour recevoir vos premières tâches.",
  "Connect your own Intercom": "Connecter votre propre Intercom",
+ "Connect {0}? {1} emails from {0} this month.": {
+  "one": "Connecter {0} ? {1} e-mail de {0} ce mois-ci.",
+  "other": "Connecter {0} ? {1} e-mails de {0} ce mois-ci."
+ },
+ "Connect {0}? {1} meetings use it this month.": {
+  "one": "Connecter {0} ? {1} réunion l’utilise ce mois-ci.",
+  "other": "Connecter {0} ? {1} réunions l’utilisent ce mois-ci."
+ },
+ "Connect {0}? {1} messages link to it this month.": {
+  "one": "Connecter {0} ? {1} message y renvoie ce mois-ci.",
+  "other": "Connecter {0} ? {1} messages y renvoient ce mois-ci."
+ },
  "Connect {}": "Connecter {}",
  "Connected": "Connecté",
  "Connected AIs": "IA connectées",
@@ -6450,6 +6467,8 @@
  "Try it": "Essayer",
  "Try now": "Essayer maintenant",
  "Try part of a name, an address or a company.": "Essayez une partie d’un nom, une adresse ou une entreprise.",
+ "Try {} again? The code ran out.": "Réessayer {} ? Le code a expiré.",
+ "Try {} again? The sign-in didn’t finish.": "Réessayer {} ? La procédure de connexion n’est pas terminée.",
  "Try: {}": "Essayez : {}",
  "Trying again": "Nouvel essai",
  "Trying again around {}.": "Nouvel essai vers {}.",
@@ -7507,6 +7526,7 @@
  "no grant": "aucune autorisation",
  "no keys for the sender": "pas de clés pour l’expéditeur",
  "no longer shared": "plus partagé",
+ "no new to-dos": "aucune nouvelle tâche",
  "no signal recorded": "aucun signal enregistré",
  "none found": "aucune trouvée",
  "none you made yourself": "aucune créée par vous",

@@ -316,6 +316,7 @@
  "Add to {}?": "添加到{}？",
  "Add transcript": "添加转录稿",
  "Add your name first, in Settings": "先在设置中添加你的姓名",
+ "Add your other address too? Mail to it shows up here.": "也添加你的另一个邮箱地址？发到这里的邮件会显示在这里。",
  "Add {}": "添加{}",
  "Add {} as personal contacts": {
   "other": "将{}添加为个人联系人"
@@ -1135,6 +1136,9 @@
  "Connect Stripe": "连接Stripe",
  "Connect Stripe ↗": "连接Stripe ↗",
  "Connect WhatsApp": "连接WhatsApp",
+ "Connect WhatsApp? {} emails mention it.": {
+  "other": "连接WhatsApp？有{}封邮件提到了它。"
+ },
  "Connect a channel that can send first.": "先连接一个可以主动发送消息的渠道。",
  "Connect a mailbox that can send first.": "先连接一个可以发送邮件的邮箱。",
  "Connect a source first": "先连接一个来源",
@@ -1149,6 +1153,15 @@
  "Connect your calendar": "连接日历",
  "Connect your mail to get your first to-dos.": "连接邮箱，获取你的第一个待办。",
  "Connect your own Intercom": "连接你自己的Intercom",
+ "Connect {0}? {1} emails from {0} this month.": {
+  "other": "连接{0}？本月有{1}封来自{0}的邮件。"
+ },
+ "Connect {0}? {1} meetings use it this month.": {
+  "other": "连接{0}？本月有{1}场会议使用它。"
+ },
+ "Connect {0}? {1} messages link to it this month.": {
+  "other": "连接{0}？本月有{1}条消息链接到它。"
+ },
  "Connect {}": "连接{}",
  "Connected": "已连接",
  "Connected AIs": "已连接的AI",
@@ -6371,6 +6384,8 @@
  "Try it": "试用",
  "Try now": "立即尝试",
  "Try part of a name, an address or a company.": "请尝试输入部分姓名、地址或公司名称。",
+ "Try {} again? The code ran out.": "再试一次{}？验证码已过期。",
+ "Try {} again? The sign-in didn’t finish.": "再试一次{}？登录未完成。",
  "Try: {}": "试试：{}",
  "Trying again": "正在重试",
  "Trying again around {}.": "将在{}左右重试。",
@@ -7422,6 +7437,7 @@
  "no grant": "未授予权限",
  "no keys for the sender": "发件人没有密钥",
  "no longer shared": "已停止分享",
+ "no new to-dos": "没有新的待办",
  "no signal recorded": "没有记录信号",
  "none found": "未找到",
  "none you made yourself": "没有你自己创建的",
