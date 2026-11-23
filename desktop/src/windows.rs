@@ -425,6 +425,19 @@ pub mod linux {
         gtk_layer_shell::is_supported()
     }
 
+    /// The library next to the program can't be written over while it runs: Linux drops a library's pages when its file is
+    /// cut short, also what the program had in them, and the next call into it goes nowhere. A copy is refused then; what
+    /// makes a new file (cp -f, install, mv, tar) leaves the running one its own.
+    pub fn keep(library: &std::path::Path) {
+        use std::os::unix::fs::PermissionsExt;
+        if let Ok(now) = std::fs::metadata(library) {
+            let mode = now.permissions().mode();
+            if mode & 0o222 != 0 {
+                let _ = std::fs::set_permissions(library, std::fs::Permissions::from_mode(mode & 0o555));
+            }
+        }
+    }
+
     pub fn prepare(app: &AppHandle, window: &WebviewWindow, label: &str) -> tauri::Result<()> {
         let robot = label == "robot";
         let gtk = window.gtk_window()?;
@@ -585,6 +598,22 @@ pub fn full_screen() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn its_library_is_not_written_over() {
+        let file = std::env::temp_dir().join(format!("library-{}", std::process::id()));
+        std::fs::write(&file, "x").unwrap();
+        linux::keep(&file);
+        linux::keep(&file);
+        let root = std::os::unix::fs::MetadataExt::uid(&std::fs::metadata(&file).unwrap()) == 0;
+        assert!(root || std::fs::File::create(&file).is_err());
+        assert_eq!(std::fs::read(&file).unwrap(), b"x");
+        std::fs::write(file.with_extension("new"), "y").unwrap();
+        std::fs::rename(file.with_extension("new"), &file).unwrap(); // a new one may take its place
+        std::fs::remove_file(&file).unwrap();
+        linux::keep(&file); // not there
+    }
 
     #[test]
     fn a_drag_goes_to_the_monitor_under_the_pointer() {

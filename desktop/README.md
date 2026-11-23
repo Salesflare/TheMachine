@@ -40,7 +40,9 @@ Windows (10 or 11, 64-bit): download `the-machine-desktop-windows-unsigned` from
 `the-machine-desktop.exe`. It isn't signed, so Windows warns: **More info**, **Run anyway**.
 
 Linux (64-bit): build it (below), then start `target/release/the-machine-desktop`. It needs WebKitGTK 4.1 and
-gtk-layer-shell (`libgtk-layer-shell.so.0`, from the system or in `lib/` next to the program).
+gtk-layer-shell (`libgtk-layer-shell.so.0`, from the system or in `lib/` next to the program). The one in `lib/` is
+read-only: a plain `cp` over a running robot's library would crash it, so it is refused. Replace it with a new file (`cp
+-f`, `install`, `mv`, `tar`).
 
 The robot stands in the bottom right corner, and the first time its box opens by itself to sign in:
 
@@ -95,7 +97,8 @@ A Machine without this part gives nothing to say, and nothing changes.
 
 ## Opening a to-do
 
-A row opens the to-do in the box, which grows with it, up to a comfortable height: the dashboard's own page of one to-do (`?compact=1#card=<id>`), with **Back**,
+A row opens the to-do in the box, which grows with it, up to a comfortable height: the dashboard's own page of one to-do
+(`?compact=1#card=<id>`), with **Back**,
 a button for the app, and close. Escape closes what is open in it, then goes back. A to-do that is done or snoozed there
 goes back by itself after a few seconds. It is the dashboard, in a web view of its own over the box: signed in as the robot
 is, with nothing kept on the disk (its page goes a minute after Back, or with the box), none of the app's commands, and no
