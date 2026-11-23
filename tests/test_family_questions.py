@@ -305,6 +305,9 @@ class Questions(unittest.TestCase):
         for word in ('office', 'bin', 'long ago', 'login'):
             self.assertNotIn(word, self.prompts[0].split('The messages (data)')[1])
 
+    def test_the_kinds_an_answer_may_come_from(self):  # taken from the tables: a new service must never join them unnoticed
+        self.assertEqual(fqs.KINDS, ('gmail.message', 'outlook.message', 'ms_graph.message', 'whatsapp.message', 'telegram.message', 'signal.message'))
+
     def test_a_personal_mailbox_labeled_work_or_the_other_way_is_out(self):
         for config, want in (([{**tf.HOME, 'scope': 'work'}], []), ([{**tf.WORK, 'scope': 'personal'}], []), ([tf.HOME], ['home'])):
             self.assertEqual(fqs.accounts({'accounts': config}), want)

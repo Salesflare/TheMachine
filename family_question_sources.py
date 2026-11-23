@@ -28,10 +28,11 @@ import graph
 import knowledge
 import shared_graph_private
 import timeutil
-from machine import kinds
+from machine import kinds, services
 
-SERVICES = ('gmail', 'outlook', 'whatsapp', 'telegram', 'signal')  # mail and chats people have at home, with their labels and threads
-KINDS = tuple(k for k, row in kinds.KINDS.items() if row['service'] in SERVICES and row['family'] in (kinds.MAIL, kinds.CHAT))
+# The mail and chats people have at home, with their labels and threads: Gmail, Outlook, WhatsApp, Telegram and Signal
+MAIL_SERVICES = tuple(s for s in services.of(group=services.MAIL) if not services.SERVICES[s]['last'])
+KINDS = tuple(k for k, row in kinds.KINDS.items() if (row['family'] == kinds.MAIL and row['service'] in MAIL_SERVICES) or (row['messenger'] and row['media']))
 DAYS = 90
 SOURCES, SOURCE_CHARS, TITLE_CHARS = 8, 700, 160
 DRAFT_CHARS = 400
