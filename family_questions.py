@@ -123,22 +123,22 @@ class Questions:
         name = fleet.clean(fleet.label(member), 80)
         with self.connect() as db:
             rows = db.execute('SELECT status,at FROM fleet_out WHERE fleet=? AND member_id=? AND kind=? AND at>=?',
-                              (ref, member_id, KIND, self._ago(days=fleet.APPROVAL_DAYS))).fetchall()
+                              (ref, member_id, KIND, self.question_since(days=fleet.APPROVAL_DAYS))).fetchall()
         if sum(r['status'] in ('asked', 'waiting') for r in rows) >= OPEN:
             raise OwnerError(t('{} of your questions already wait for {}.', OPEN, name))
-        if sum(r['at'] >= self._ago(days=1) for r in rows) >= A_DAY:
+        if sum(r['at'] >= self.question_since(days=1) for r in rows) >= A_DAY:
             raise OwnerError(t('That’s enough questions for {} today.', name))
         return self.ask_context(KIND, question, CONTEXT, ref, to=[member_id])[0]
 
     @staticmethod
-    def _ago(**delta):
+    def question_since(**delta):
         return (timeutil.clock() - dt.timedelta(**delta)).isoformat(timespec='seconds')
 
     def questions_view(self, groups):
         """The owner's own questions, newest first, as they stand: waiting, answered, no answer, or a Machine that needs
         an update. groups: family_view's, of the kind question."""
         import fleet
-        out, late = [], self._ago(days=fleet.APPROVAL_DAYS)
+        out, late = [], self.question_since(days=fleet.APPROVAL_DAYS)
         for g in groups:
             a = g['answers'][0]
             answer = a['answer'] if a['status'] == 'answered' else None
@@ -172,8 +172,8 @@ class Questions:
             if status is None:
                 rule = self.rule(db, ref, member, KIND)[0]
                 asked = db.execute('SELECT status,at,choice FROM fleet_in WHERE fleet=? AND member_id=? AND kind=? AND at>=?',
-                                   (ref, member, KIND, self._ago(days=fleet.APPROVAL_DAYS))).fetchall()
-                today = [r for r in asked if r['at'] >= self._ago(days=1)]
+                                   (ref, member, KIND, self.question_since(days=fleet.APPROVAL_DAYS))).fetchall()
+                today = [r for r in asked if r['at'] >= self.question_since(days=1)]
                 over = sum(r['status'] in ('waiting', DRAFTING) for r in asked) >= OPEN or len(today) >= A_DAY
                 status, choice = ('declined', 'rule') if rule == 'never' else ('declined', 'limit') if over else (DRAFTING, None)
                 if len(today) < A_DAY * 3:  # more than the Network carries: not kept, so nobody fills the disk
@@ -220,7 +220,7 @@ class Questions:
         """A draft that takes too long, or was cut off by a restart: its question waits without one (move_in keeps only
         the first outcome, should its draft still come)."""
         with self.connect() as db:
-            rows = [r['id'] for r in db.execute('SELECT id FROM fleet_in WHERE kind=? AND status=? AND at<?', (KIND, DRAFTING, self._ago(seconds=STALE)))]
+            rows = [r['id'] for r in db.execute('SELECT id FROM fleet_in WHERE kind=? AND status=? AND at<?', (KIND, DRAFTING, self.question_since(seconds=STALE)))]
         for ask_id in rows:
             self.question_drafted(ask_id, {'state': 'failed'})
 

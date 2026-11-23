@@ -222,6 +222,13 @@ class Questions(unittest.TestCase):
         self.ask()
         self.assertEqual(self.answers(), [{'id': 'q1', 'status': 'waiting'}])
 
+    def test_no_name_of_the_mixin_hides_another_of_the_fleet(self):
+        mine = {n for n in vars(fleet.family_questions.Questions) if not n.startswith('__')}
+        for base in fleet.Fleet.__mro__[1:-1]:
+            if base is not fleet.family_questions.Questions:
+                self.assertEqual(mine & set(vars(base)), set(), base.__name__)
+        self.assertEqual(mine & set(vars(fleet.Fleet)), set())
+
     def test_only_in_a_family_and_only_where_the_network_carries_it(self):
         self.assertNotIn('question', fleet.ASKS['work'] + fleet.ASKS['friends'])
         self.assertTrue(self.fleet.family_view()['ask'])

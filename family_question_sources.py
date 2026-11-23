@@ -22,14 +22,16 @@ import json
 import re
 import sqlite3
 
-import ai_app
+import ai_access
 import family_done
 import graph
 import knowledge
 import shared_graph_private
 import timeutil
+from machine import kinds
 
-KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message', 'whatsapp.message', 'telegram.message', 'signal.message')
+SERVICES = ('gmail', 'outlook', 'whatsapp', 'telegram', 'signal')  # mail and chats people have at home, with their labels and threads
+KINDS = tuple(k for k, row in kinds.KINDS.items() if row['service'] in SERVICES and row['family'] in (kinds.MAIL, kinds.CHAT))
 DAYS = 90
 SOURCES, SOURCE_CHARS, TITLE_CHARS = 8, 700, 160
 DRAFT_CHARS = 400
@@ -174,7 +176,7 @@ def allowed(db, rows, config, company=(), team=(), clock=None):
         people = shared_graph_private.addresses(meta)
         text = f"{r['title']} {r['body']}"
         if (threads[r['id']] & (private | work) or chats.get(r['id'], set()) & private or LEFT_OUT & set(meta.get('labels') or ()) or meta.get('security_code_omitted')
-                or ai_app.SECURITY_CODE.search(text) or any(p in team or p.rsplit('@', 1)[-1] in company for p in people)):
+                or ai_access.SECURITY_CODE.search(text) or any(p in team or p.rsplit('@', 1)[-1] in company for p in people)):
             out.add(r['id'])
     return [r for r in rows if r['id'] not in out]
 

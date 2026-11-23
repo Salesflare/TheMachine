@@ -55,6 +55,10 @@ PROTOCOLS = ('2025-11-25', '2025-06-18', '2025-03-26')
 PUBLIC_GET = ('/mcp', '/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp',
               '/.well-known/oauth-authorization-server', '/.well-known/oauth-authorization-server/mcp')
 PUBLIC_POST = ('/mcp', '/oauth/token', '/oauth/register', '/oauth/revoke')
+# A one-time code or sign-in link in a message never goes out: the rule the chat sources apply when they store one
+# (assistant.whatsapp_event and the like), applied to every message an AI or a family question reads, mail too
+SECURITY_CODE = re.compile(r'(?i)verification code|security code|login code|sign-in code|one.time (?:code|password)|\bOTP\b|'
+                           r'verificatiecode|password reset|reset your password|magic link|sign-in link|login link')
 AUTHORIZE = '/oauth/authorize'
 # Known AIs by where they send the owner back: shown by name on the consent page. Anything else shows as unverified.
 KNOWN = (('claude.ai', 'Claude'), ('claude.com', 'Claude'), ('chatgpt.com', 'ChatGPT'), ('chat.openai.com', 'ChatGPT'),
