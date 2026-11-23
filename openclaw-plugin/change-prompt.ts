@@ -24,19 +24,26 @@ export async function telegramInternals() {
     import(pathToFileURL(resolve(DIST,'dist/extensions/telegram/api.js')).href),
     import(pathToFileURL(entry).href),import(pathToFileURL(sendFile).href),
     import(pathToFileURL(resolve(DIST,'node_modules/grammy/out/mod.js')).href)]);
-  const helpers:any={};
-  for(const name of ['getOrCreateAccountThrottler','createTelegramClientFetch','asTelegramClientFetch']) {
-    const alias=table?.split(',').map(x=>x.trim().split(/\s+as\s+/)).find(x=>x[0]===name)?.[1];
-    if(alias&&typeof send[alias]==='function') { helpers[name]=send[alias]; continue; }
-    // Newer builds import a helper into the send module without exporting it again: follow that import.
-    const from=[...sendSource.matchAll(/import \{([^}]*)\} from "([^"\n]+)"/g)]
-      .map(m=>[m[1].split(',').map(x=>x.trim().split(/\s+as\s+/)).find(x=>x[1]===name)?.[0],m[2]]).find(x=>x[0]);
-    const file=from&&resolve(dirname(sendFile),from[1]);
-    if(!file||!file.startsWith(resolve(DIST,'dist')+'/')) throw Error('Telegram client helper unavailable: '+name);
-    const fn=(await import(pathToFileURL(file).href))[from[0]];
-    if(typeof fn!=='function') throw Error('Telegram client helper unavailable: '+name);
-    helpers[name]=fn;
+  // Each helper by its own name in the export table of the send module or a module it reaches through its imports,
+  // nearest first: builds move them (2026.11.7 keeps the throttler with the flood gate, the fetch helpers in the
+  // outbound module, neither imported by the send module itself). Only modules inside OpenClaw's dist are read.
+  const wanted=['getOrCreateAccountThrottler','createTelegramClientFetch','asTelegramClientFetch'],helpers:any={};
+  const root=resolve(DIST,'dist')+'/',seen=new Set<string>([sendFile]),queue=[sendFile];
+  while(queue.length&&seen.size<=600&&wanted.some(n=>!helpers[n])) {
+    const file=queue.shift()!,source=file===sendFile?sendSource:await readFile(file,'utf8');
+    const exports=(file===sendFile?table:source.match(/export \{ ([^}]+) \};\s*$/)?.[1])?.split(',').map(x=>x.trim().split(/\s+as\s+/));
+    for(const name of wanted) {
+      const found=helpers[name]?null:exports?.find(x=>x[0]===name);
+      if(!found) continue;
+      const fn=(file===sendFile?send:await import(pathToFileURL(file).href))[found[1]??found[0]];
+      if(typeof fn==='function') helpers[name]=fn;
+    }
+    for(const m of source.matchAll(/from "(\.[^"\n]+)"/g)) {
+      const next=resolve(dirname(file),m[1]);
+      if(next.startsWith(root)&&!seen.has(next)) { seen.add(next); queue.push(next); }
+    }
   }
+  for(const name of wanted) if(!helpers[name]) throw Error('Telegram client helper unavailable: '+name);
   const result={resolveTelegramAccount:account.resolveTelegramAccount,sendMessageTelegram:runtime.sendMessageTelegram,
     resolveTelegramTransport:runtime.resolveTelegramTransport,makeProxyFetch:runtime.makeProxyFetch,Bot,...helpers};
   if(Object.values(result).some(x=>typeof x!=='function')) throw Error('Incomplete Telegram API');
