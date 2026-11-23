@@ -2,6 +2,7 @@
 // Messages), and a tap opens it large in its own dialog over the rest. Small ones come inline (data:), the rest from
 // api/whatsapp-photo; only those two, never another link. On a WhatsApp connection: Read photos (off until the owner
 // turns it on, work chats) and Also in personal chats. Its own style sheet (dashboard.html stays small enough to scan).
+// Opened large, it lies on black in both themes, so its × and words keep fixed colors that read on light and dark alike.
 document.head.append(Object.assign(document.createElement('style'),{id:'wa-photos',textContent:`
 .wa-photos{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
 .wa-photo{display:block;padding:0;border:1px solid var(--border);border-radius:10px;background:var(--sunken);overflow:hidden;cursor:zoom-in;width:112px;height:112px;min-height:0;line-height:0}
@@ -12,10 +13,14 @@ document.head.append(Object.assign(document.createElement('style'),{id:'wa-photo
 .wa-read small{display:block;font-size:var(--fs-xs,.78rem);color:var(--muted);opacity:.85}.wa-read .lookup-switch{min-height:0;box-shadow:inset 0 0 0 1px var(--border)}.wa-read .lookup-switch[aria-checked=true]{background:var(--mint)}
 #wa-photo-view{border:0;padding:0;background:transparent;width:fit-content;max-width:min(94vw,1100px);max-height:92vh;overflow:visible}
 #wa-photo-view::backdrop{background:rgba(0,0,0,.82)}
-#wa-photo-view img{display:block;max-width:min(94vw,1100px);max-height:88vh;object-fit:contain;border-radius:8px;background:#fff}
-#wa-photo-view .wa-photo-close{position:absolute;top:-14px;right:-14px;width:36px;height:36px;min-height:0;border-radius:50%;border:0;background:var(--surface,#fff);color:var(--ink,#111);font-size:1.3rem;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#wa-photo-view img{display:block;max-width:min(94vw,1100px);max-height:88vh;object-fit:contain;border-radius:8px;background:#fff;color:#1d1d1b}
+#wa-photo-view .wa-photo-close{position:absolute;top:-14px;right:-14px;display:grid;place-items:center;width:36px;height:36px;min-height:0;padding:0;border:2px solid #fff;border-radius:50%;background:#1d1d1b;color:#fff}
+#wa-photo-view .wa-photo-close::after{content:'';position:absolute;inset:-7px}
+#wa-photo-view .wa-photo-close svg{width:16px;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
+#wa-photo-view .wa-photo-close:hover{background:#45443f}#wa-photo-view .wa-photo-close:active{background:#5a5954}
+#wa-photo-view .wa-photo-close:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 2px #1d1d1b}
 @media(max-width:560px){#wa-photo-view:not(#palette):not(#new-card){inset:0;width:100%;max-width:100%;height:100dvh;max-height:100dvh;margin:0;padding:0;border-radius:0;background:rgba(0,0,0,.92)}
- #wa-photo-view[open]:not(#palette):not(#new-card){display:flex;align-items:center;justify-content:center}#wa-photo-view img{max-width:100vw;max-height:84dvh;border-radius:0}#wa-photo-view .wa-photo-close{top:calc(env(safe-area-inset-top,0px) + 10px);right:12px}}
+ #wa-photo-view[open]:not(#palette):not(#new-card){display:flex;align-items:center;justify-content:center}#wa-photo-view img{max-width:100vw;max-height:84dvh;border-radius:0}#wa-photo-view .wa-photo-close{top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;width:44px;height:44px}}
 `}));
 const PHOTO_DATA=/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
 // Images the owner added (chat_files.py: New to-do, a share, the chat) show the same way: a thumbnail, tap for full size.
@@ -33,7 +38,7 @@ function openPhoto(u,alt){let d=$('#wa-photo-view');
  if(!d){d=Object.assign(document.createElement('dialog'),{id:'wa-photo-view'});d.setAttribute('aria-label',t('Photo'));document.body.append(d);
   d.addEventListener('click',e=>{if(e.target===d||e.target.closest('[data-photo-close]'))d.close()})}
  if(!PHOTO_DATA.test(u)&&!/^api\/(?:whatsapp-photo\?id=wp|chat-file\?id=cf)_[0-9a-f]{20}$/.test(u))return;
- setHTML(d,html`<button type="button" class="wa-photo-close" data-photo-close aria-label="${t('Close the photo')}">×</button><img src="${u}" alt="${alt||t('Photo')}">`);d.showModal();d.querySelector('[data-photo-close]').focus()}
+ setHTML(d,html`<button type="button" class="wa-photo-close" data-photo-close aria-label="${t('Close the photo')}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 3 10 10M13 3 3 13"/></svg></button><img src="${u}" alt="${alt||t('Photo')}">`);d.showModal();d.querySelector('[data-photo-close]').focus()}
 document.addEventListener('click',e=>{const b=e.target.closest?.('button.wa-photo');if(!b)return;e.preventDefault();e.stopPropagation();openPhoto(b.dataset.photo,b.dataset.alt)},true);
 // The WhatsApp connection's switches, under Details like its other switches (whatsapp_images_app.whatsapp_photos_action):
 // Read photos (work chats), then Also in personal chats once it is on. Plain rows: the label, the switch.
