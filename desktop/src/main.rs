@@ -168,9 +168,9 @@ fn look(app: &AppHandle) -> Result<(), String> {
     }
     *shared.problem.lock().unwrap() = found.as_ref().err().cloned();
     match &found {
-        Ok(notices) => {
+        Ok((notices, meeting)) => {
             let _ = app.emit_to("robot", "news", ());
-            speak::came(app, &machine, notices);
+            speak::came(app, &machine, notices, meeting);
         }
         Err(_) => { // not reachable or signed out: nothing is known to wait, so no dot
             set_dot(app, false);
@@ -186,8 +186,8 @@ fn look(app: &AppHandle) -> Result<(), String> {
 }
 
 /// One at a time: each answer is what changed since the one before. The robot's page puts them together (ui/list.js).
-/// Gives what waits for the robot to say.
-fn ask_status(app: &AppHandle, shared: &Shared, machine: &Machine) -> Result<Value, String> {
+/// Gives what waits for the robot to say, and the meeting that starts soon.
+fn ask_status(app: &AppHandle, shared: &Shared, machine: &Machine) -> Result<(Value, Value), String> {
     let _one = shared.looking.lock().unwrap();
     let (since, fleet_held) = {
         let mut held = shared.held.lock().unwrap();
@@ -198,14 +198,14 @@ fn ask_status(app: &AppHandle, shared: &Shared, machine: &Machine) -> Result<Val
     };
     let desk = shared.saved.lock().unwrap().desk.clone();
     let mut status = machine.status(since.as_deref(), &desk, speak::up(app), &speak::got(shared))?;
-    let notices = status["notices"].take(); // not part of the status
+    let said = (status["notices"].take(), status["meeting"].take()); // not part of the status
     // The Fleet's items, when its part says they changed (a change list without that part: they didn't)
     let part = &status["fleet"];
     let due = (part["on"] == true && fleet_held.as_ref() != Some(&part["stamp"])).then(|| part["stamp"].clone());
     let fleet = due.as_ref().and_then(|_| machine.fleet().ok());
     let mut held = shared.held.lock().unwrap();
     if held.machine != machine.url {
-        return Ok(Value::Null); // signed out meanwhile
+        return Ok((Value::Null, Value::Null)); // signed out meanwhile
     }
     // One that didn't answer is asked for again, with the whole status
     held.token = if due.is_some() && fleet.is_none() { None } else { status["_token"].as_str().map(String::from) };
@@ -216,7 +216,7 @@ fn ask_status(app: &AppHandle, shared: &Shared, machine: &Machine) -> Result<Val
         held.news.clear();
     }
     held.news.push(News { machine: machine.url.clone(), status, fleet });
-    Ok(notices)
+    Ok(said)
 }
 
 fn listed(app: &AppHandle, waiting: Waiting) {
@@ -547,6 +547,13 @@ async fn bubble_open(app: AppHandle, todo: String) -> Result<(), String> {
         return Ok(());
     }
     open_path(&app, &format!("#card={todo}"))
+}
+
+/// The call of the meeting it says, in the browser.
+#[tauri::command]
+fn bubble_join(app: AppHandle, todo: String) -> Result<(), String> {
+    let link = speak::link(&app.state::<Shared>(), &todo).ok_or("failed")?;
+    app.opener().open_url(link, None::<&str>).map_err(|_| "browser".to_string())
 }
 
 #[tauri::command]
@@ -903,7 +910,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             robot_state, robot_grab, robot_drag, robot_drop, robot_click, robot_menu, robot_take, robot_list, robot_given, box_given, box_state, box_look, box_fit, box_draft, box_close,
             connect, sign_in, add_todo, add_file, remove_file, take_screenshot, todo_quick, todo_decide, todo_undo, ask, open_dashboard, menu_item,
-            card_open, card_place, card_close, set_speaks, bubble_state, bubble_fit, bubble_hold, bubble_open, bubble_done
+            card_open, card_place, card_close, set_speaks, bubble_state, bubble_fit, bubble_hold, bubble_open, bubble_join, bubble_done
         ])
         .on_window_event(|window, event| {
             // Alt+F4 closes the box. On the robot it quits, on Windows: on Linux a monitor that goes away closes it too.

@@ -1609,6 +1609,24 @@ def look():
     need(until(lambda: not app.box()), 'the box goes')
 
 
+@step('a meeting that starts soon')
+def _():
+    at = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(time.time() + 600))
+    meets = {'id': 'aa02', 'event': 7, 'at': at, 'who': 'Dana', 'others': 2, 'join': None}
+    for join, line in (('https://zoom.us.example.com/j/1', 'Meeting'), ('https://zoom.us/j/1', 'Call')):
+        machine.meeting = {**meets, 'event': len(line), 'join': join}
+        look()
+        need(until(app.bubble, 45, 0.05), 'the bubble shows')
+        need(until(lambda: says('#title', BUBBLE) in [f'{line} with Dana and 2 others in {m} min' for m in (9, 10)]), says('#panel', BUBBLE))
+        need(said() == ['Open brief', *(['Join'] if line == 'Call' else [])], str(said()))
+        png(f'a-meeting-{line.lower()}')
+        need(until(lambda: not app.bubble(), 20), 'it goes')
+    look()
+    time.sleep(3)
+    need(not app.bubble(), 'once each')
+    machine.meeting = None
+
+
 def speaks(yes):
     for _ in range(3):
         look()

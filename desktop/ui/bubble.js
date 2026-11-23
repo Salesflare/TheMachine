@@ -36,6 +36,7 @@
     const s = await invoke('bubble_state');
     if (!s.say) return;
     say = s.say;
+    if (say.meeting && !(minutes(say.meeting.at) > -2)) return done(); // it waited for the box to close
     hour12 = s.hour12;
     busy = over = picks = false;
     $('panel').hidden = false;
@@ -52,11 +53,18 @@
     drawn();
     stay(STAYS);
   }
-  const text = say => [say.title, say.line];
+  const minutes = at => Math.round((new Date(at) - Date.now()) / 60000);
+  // The first guest's first name, or the meeting's own name where none has one
+  function soon({at, who, others, join}) {
+    const name = !who ? '' : /\s/.test(who) ? who : fill(join ? t.callWith : t.meetingWith, others ? fill(others === 1 ? t.andOne : t.andMore.replace('{n}', others), who) : who);
+    const left = minutes(at);
+    return (name || (join ? t.call : t.meeting)) + ' ' + (left > 0 ? fill(t.inMinutes, left) : t.now);
+  }
+  const text = say => (say.meeting ? [soon(say.meeting), ''] : [say.title, say.line]);
   const isSnooze = q => q.act.startsWith('snooze') && say.snooze.length;
   // Snooze's choices under the buttons, as in the box
   function drawn() {
-    const buttons = [button(say.opens, open, true), ...say.quick.map(q => {
+    const buttons = [button(say.meeting ? t.openBrief : say.opens, open, true), ...(say.meeting?.join ? [Object.assign(button(t.join, join), {id: 'join'})] : []), ...say.quick.map(q => {
       const b = button(q.name, () => (isSnooze(q) ? pick(!picks) : decide(q)));
       if (isSnooze(q)) b.setAttribute('aria-expanded', String(picks));
       b.dataset.act = q.act;
@@ -72,6 +80,9 @@
   function pick(on) { picks = on; drawn(); stay(STAYS); }
   async function open() {
     try { await invoke('bubble_open', {todo: say.id}); done(); } catch (e) { fail(e); }
+  }
+  async function join() {
+    try { await invoke('bubble_join', {todo: say.id}); done(); } catch (e) { fail(e); }
   }
   // As the notification's button on the phone
   async function decide(q, until) {
