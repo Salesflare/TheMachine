@@ -812,6 +812,27 @@ class DurableQueue(Notifications):
             self.assertEqual(db.execute('SELECT title FROM notify_queue').fetchone()[0], 'New')
 
 
+    def test_a_to_do_has_one_line_in_a_waiting_email(self):
+        # A to-do that buzzed as Needs you and again a few minutes later (its run ended) was listed twice in one
+        # "3 things wait for you" email. Its newer state replaces the words and keeps the line's due time. Made-up titles.
+        clock = [10000.0]
+        at = lambda: clock[0]
+        with self.store.connect() as db:
+            notify.hold(db, 'email', 'result', 'Needs you: Share the revised screens', clock[0] + 900, ref='suggestion:' + 'a' * 16, clock=at)
+            notify.hold(db, 'email', 'result', 'Ready: Send the statements', clock[0] + 900, ref='suggestion:' + 'b' * 16, clock=at)
+            clock[0] += 270
+            notify.hold(db, 'email', 'result', 'Ready: Share the revised screens', clock[0] + 900, ref='suggestion:' + 'a' * 16, clock=at)
+            clock[0] = 10000.0 + 901  # the first line's due time, not the update's
+            _, lines = notify.take_due(db, clock=at)
+        self.assertEqual(sorted(line['title'] for line in lines), ['Ready: Send the statements', 'Ready: Share the revised screens'])
+        self.assertEqual(notify.waiting_mail(lines)['subject'], '2 things wait for you')
+        # one already on its way (batched) is never rewritten: the next state waits for the next email
+        with self.store.connect() as db:
+            notify.hold(db, 'email', 'result', 'Needs you: Share the revised screens', clock[0] + 900, ref='suggestion:' + 'a' * 16, clock=at)
+            self.assertEqual([r[0] for r in db.execute("SELECT title FROM notify_queue WHERE ref=? ORDER BY id", ('suggestion:' + 'a' * 16,))],
+                             ['Ready: Share the revised screens', 'Needs you: Share the revised screens'])
+
+
 class OwnTables(unittest.TestCase):
     """notify.py writes its own tables (the digest of each day, the held pushes); assistant.py calls it."""
     def test_digest_once_a_day_and_held_pushes_dropped(self):
