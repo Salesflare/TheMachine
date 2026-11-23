@@ -3,6 +3,7 @@
 #![cfg_attr(all(not(debug_assertions), windows), windows_subsystem = "windows")]
 
 mod address;
+mod card;
 mod front;
 mod machine;
 mod place;
@@ -65,6 +66,9 @@ pub struct Shared {
     problem: Mutex<Option<String>>,
     /// What is in For you, and whether some of it is new since the person last looked (seen.rs).
     now: Mutex<seen::Seen>,
+    /// The Machine whose dashboard has a page for one to-do, once that is known, and the one that is open (card.rs).
+    compact: Mutex<Option<String>>,
+    card: Mutex<card::Card>,
     /// What was added in the box since it opened.
     pub added: Mutex<Vec<String>>,
     dot: AtomicBool,
@@ -258,7 +262,7 @@ fn robot_take(shared: State<Shared>) -> Taken {
 
 /// The dashboard's For you, as the robot's page made it. None: it needs the whole status.
 #[tauri::command]
-fn robot_list(app: AppHandle, machine: String, todos: Option<Vec<machine::Todo>>, marks: Vec<seen::Mark>, name: String, added: Vec<machine::Added>) {
+fn robot_list(app: AppHandle, machine: String, todos: Option<Vec<machine::Todo>>, marks: Vec<seen::Mark>, name: String, hour12: bool, added: Vec<machine::Added>) {
     let shared = app.state::<Shared>();
     if shared.machine().is_none_or(|m| m.url != machine) || shared.problem.lock().unwrap().is_some() {
         return;
@@ -270,7 +274,7 @@ fn robot_list(app: AppHandle, machine: String, todos: Option<Vec<machine::Todo>>
     later(&app, move |app| {
         let here = app.state::<Shared>().added.lock().unwrap().clone();
         let added = added.into_iter().filter(|a| here.contains(&a.id)).collect();
-        listed(app, Waiting::of(todos, marks.len(), &name, added));
+        listed(app, Waiting { hour12, ..Waiting::of(todos, marks.len(), &name, added) });
         news(app, seen::now(&machine, &marks));
     });
 }
@@ -387,6 +391,8 @@ fn chosen(app: &AppHandle, id: &str) {
             *shared.held.lock().unwrap() = Held::default();
             *shared.problem.lock().unwrap() = None;
             shared.now.lock().unwrap().clear();
+            *shared.compact.lock().unwrap() = None;
+            card::forget(app);
             set_dot(app, false);
             listed(app, Waiting::default());
             open(app); // it says so
@@ -578,9 +584,9 @@ async fn todo_quick(app: AppHandle, todo: String) -> Result<Vec<machine::Quick>,
 }
 
 #[tauri::command]
-async fn todo_decide(app: AppHandle, todo: String, act: String) -> Result<Value, String> {
+async fn todo_decide(app: AppHandle, todo: String, act: String, until: Option<String>) -> Result<Value, String> {
     todo_id(&todo)?;
-    let done = with_machine(&app, move |m| m.decide(&todo, &act)).await;
+    let done = with_machine(&app, move |m| m.decide(&todo, &act, until.as_deref())).await;
     app.state::<Shared>().look_soon();
     done
 }
@@ -596,6 +602,36 @@ async fn todo_undo(app: AppHandle, todo: String, act: String) -> Result<Value, S
 #[tauri::command]
 async fn ask(app: AppHandle, text: String) -> Result<Value, String> {
     with_machine(&app, move |m| m.ask(&text)).await
+}
+
+/// Opens it in the box. The box's height with it; none: this Machine has no page for that, so it opens in the dashboard.
+#[tauri::command]
+async fn card_open(app: AppHandle, todo: String) -> Result<Option<f64>, String> {
+    todo_id(&todo)?;
+    let known = app.state::<Shared>().compact.lock().unwrap().clone();
+    let url = with_machine(&app, move |m| Ok((known.as_ref() == Some(&m.url) || m.compact()).then_some(m.url))).await?;
+    if url.is_none() {
+        return Ok(None);
+    }
+    *app.state::<Shared>().compact.lock().unwrap() = url;
+    let (tell, told) = std::sync::mpsc::channel();
+    later(&app, move |app| {
+        let _ = tell.send(windows::tall(app));
+        if card::open(app, &todo).is_err() {
+            let _ = app.emit_to("box", "card", "failed");
+        }
+    });
+    away(move || told.recv().map(Some).map_err(|_| "failed".into())).await
+}
+
+#[tauri::command]
+fn card_place(app: AppHandle, top: f64, height: f64) {
+    later(&app, move |app| card::put(app, top, height));
+}
+
+#[tauri::command]
+fn card_close(app: AppHandle) {
+    later(&app, card::back);
 }
 
 /// The dashboard, or one of its to-dos: where a draft is read and approved.
@@ -742,16 +778,17 @@ fn main() {
             });
         }))
         .plugin(tauri_plugin_deep_link::init())
-        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_opener::Builder::new().open_js_links_on_click(false).build()) // the pages have no links of their own (card.rs)
         .invoke_handler(tauri::generate_handler![
             robot_state, robot_grab, robot_drag, robot_drop, robot_click, robot_menu, robot_take, robot_list, box_state, box_look, box_fit, box_draft, box_close,
-            connect, sign_in, add_todo, add_file, remove_file, take_screenshot, todo_quick, todo_decide, todo_undo, ask, open_dashboard, menu_item
+            connect, sign_in, add_todo, add_file, remove_file, take_screenshot, todo_quick, todo_decide, todo_undo, ask, open_dashboard, menu_item,
+            card_open, card_place, card_close
         ])
         .on_window_event(|window, event| {
             // Alt+F4 closes the box. On the robot it quits, on Windows: on Linux a monitor that goes away closes it too.
             if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
-                if window.label() == "box" {
+                if window.label() != "robot" {
                     windows::close_box(window.app_handle());
                 } else if cfg!(windows) {
                     quit::quit(window.app_handle());
@@ -779,6 +816,8 @@ fn main() {
                 looker: Mutex::default(),
                 problem: Mutex::default(),
                 now: Mutex::default(),
+                compact: Mutex::default(),
+                card: Mutex::default(),
                 added: Mutex::default(),
                 dot: AtomicBool::new(false),
                 snip: AtomicBool::new(false),

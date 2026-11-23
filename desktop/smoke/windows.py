@@ -21,7 +21,7 @@ import uuid
 import zlib
 from ctypes import wintypes as w
 
-from standin import Machine, TODOS
+from standin import SNOOZE, Machine, TODOS
 
 PORT, DEBUG, ID = 8941, 9227, 'computer.themachine.desktop'
 user, gdi = ctypes.WinDLL('user32', use_last_error=True), ctypes.WinDLL('gdi32')
@@ -195,8 +195,16 @@ class App:
     def robot(self):
         return next((x for x in self.windows() if x[1].right - x[1].left < 250), None)
 
+    def wide(self):
+        return [x for x in self.windows() if x[1].right - x[1].left >= 250]
+
     def box(self):
-        return next((x for x in self.windows() if x[1].right - x[1].left >= 250), None)
+        return max(self.wide(), key=lambda x: x[1].right - x[1].left, default=None)
+
+    def card(self):
+        """A to-do open in the box. It is above the box."""
+        wide = self.wide()
+        return wide[0] if len(wide) == 2 and wide[0][0] != self.box()[0] else None
 
     def center(self):
         r = need_window(self.robot())[1]
@@ -244,12 +252,12 @@ def says(selector, name='box.html'):
     return (shown or '').strip()
 
 
-def press(app, selector):
-    """A real click on something in the box, where its page says it is."""
-    at = page('box.html', f'(() => {{ const e = document.querySelector({json.dumps(selector)}).getBoundingClientRect(); '
+def press(app, selector, name='box.html'):
+    """A real click on something in the box, or in the to-do open in it, where its page says it is."""
+    at = page(name, f'(() => {{ const e = document.querySelector({json.dumps(selector)}).getBoundingClientRect(); '
                           'return [e.x + e.width / 2, e.y + e.height / 2].map(v => v * devicePixelRatio) })()')
     point = w.POINT(0, 0)
-    user.ClientToScreen(need_window(app.box())[0], ctypes.byref(point))
+    user.ClientToScreen(need_window(app.box() if name == 'box.html' else app.card())[0], ctypes.byref(point))
     click(round(point.x + at[0]), round(point.y + at[1]))
 
 
@@ -280,8 +288,13 @@ def step(name):
             png(f'{len(results):02d}-{name.replace(" ", "-")}')
         except Exception:  # noqa: BLE001
             traceback.print_exc()
-        print('ok  ' if results[-1][1] else 'FAIL', name, results[-1][2], flush=True)
+        print(line(*results[-1]), flush=True)
     return run
+
+
+def line(name, ok, told):
+    told = str(told)
+    return f"{'FAIL' if not ok else 'skip' if told.startswith('NOT TESTED') else 'ok  '} {name}  {told}"
 
 
 def fresh():
@@ -743,15 +756,35 @@ def decided():
     return [a[1] for a in machine.actions if a[0] == 'decide'][-1]
 
 
+def picks():
+    return page('box.html', '[...document.querySelectorAll(".choices button")].map(b => b.innerText)')
+
+
 @step('snooze and undo')
 def _():
     open_it()
     need(until(lambda: row(0)['names']), 'its buttons')
     quick(0, 'snooze2h')
+    choices = [text for _, text in SNOOZE] + ['Choose date']
+    need(until(lambda: picks() == choices), str(picks()))
+    focused = lambda: page('box.html', 'document.activeElement.innerText || document.activeElement.ariaLabel')
+    need(until(lambda: focused() == '2 hours'), focused())
+    png('snooze-choices')
+    key(ESCAPE)
+    need(until(lambda: not picks()) and app.box(), 'Escape closes the choices only')
+    need(focused() == 'Snooze: ' + TODOS[0][1], focused())
+    quick(0, 'snooze2h')
+    need(until(picks), 'they open again')
+    key(0x28)
+    key(0x28)
+    need(until(lambda: focused() == choices[2]), focused())
+    key(ENTER)
     need(until(lambda: row(0)['text'].startswith('Snoozed it · ')), str(listed()))
     png('snoozed')
     told, d = row(0)['text'], decided()
-    need(d['choice'] == 'snooze' and d['snooze_option'] == '2h' and d['decision_id'].startswith('notify-'), str(d))
+    need(d['choice'] == 'snooze' and d['snooze_option'] == '3d' and d['decision_id'].startswith('notify-'), str(d))
+    day = time.strftime('%A', time.localtime(time.time() + 3 * 86400))
+    need(day in told, told)
     need(until(lambda: says('#ready-name') == 'For you 3'), says('#ready-name'))
     press(app, '#todos li:first-child .link')
     need(until(lambda: listed()[0] == TODOS[0][1]), str(listed()))
@@ -760,8 +793,36 @@ def _():
     return told
 
 
+@step('it says how Do it goes')
+def _():
+    need(until(lambda: row(0)['names'][:1] == ['Do it']), str(row(0)))
+    before = len(machine.actions)
+    quick(0, 'prepare')
+    need(until(lambda: row(0)['text'] == TODOS[0][1] + '\nPreparing…'), row(0)['text'])
+    need(until(lambda: row(0)['names'] == ['Preparing…', 'Snooze', 'Mark done']), str(row(0)))
+    for _ in range(3):
+        press(app, '#todos li:first-child [data-act=prepare]')  # off: a press more does nothing
+    need(app.box() and row(0)['text'].endswith('\nPreparing…') and not says('#said'), str(row(0)))
+    png('being-prepared')
+    need([a[1]['choice'] for a in machine.actions[before:] if a[0] == 'decide'] == ['accept'], str(machine.actions[before:]))
+    for status, word in (({'preparation_status': 'working'}, 'Working…'), ({'preparation_status': 'blocked'}, 'Stuck'), ({'status': 'prepared', 'preparation_status': 'done'}, 'Prepared')):
+        machine.status['aa01'] = {'status': 'accepted', **status}
+        need(until(lambda: row(0)['text'].endswith('\n' + word), 40), f"{word}: {row(0)['text']}")
+    need(until(lambda: row(0)['names'] == ['Snooze', 'Mark done']), str(row(0)))
+    png('prepared')
+    press(app, '#close')
+    machine.status['aa01'] = {'status': 'accepted', 'preparation_status': 'working'}  # started on another device
+    open_it()
+    need(until(lambda: row(0)['text'].endswith('\nWorking…') and row(0)['names'][:1] == ['Working…']), str(row(0)))
+    machine.status.clear()
+    need(until(lambda: row(0)['text'].endswith('Needs you') and row(0)['names'][:1] == ['Do it'], 12), str(row(0)))
+    press(app, '#close')
+
+
 @step('mark done and it goes')
 def _():
+    open_it()
+    need(until(lambda: row(1)['names']), 'its buttons')
     quick(1, 'done')
     need(until(lambda: row(1)['text'].startswith('Marked it done')), str(listed()))
     need(decided()['choice'] == 'complete', str(decided()))
@@ -780,7 +841,7 @@ def _():
     press(app, '#close')
     open_it()
     machine.no = 'Open the to-do to do this.'
-    need(until(lambda: row(0)['names']), 'its buttons')
+    need(until(lambda: row(0)['names'][:1] == ['Do it']), 'its buttons')
     quick(0, 'prepare')
     need(until(lambda: says('#said') == machine.no), says('#said'))
     need(listed()[0] == TODOS[0][1], 'the row is back')
@@ -788,9 +849,89 @@ def _():
     machine.no = None
     machine.stop()
     quick(0, 'prepare')
-    need(until(lambda: 'reach' in says('#said'), 40), says('#said'))
+    need(until(lambda: 'reach' in says('#state'), 40), says('#state'))
+    time.sleep(2)
+    need(says('#panel').count('reach') == 1, 'once: ' + says('#panel'))
+    png('cannot-reach')
     again()
     press(app, '#close')
+
+
+CARD = 'compact=1'
+
+
+def carded(todo):
+    need(until(app.card, 20), f'the to-do shows {says("#panel")}')
+    need(until(lambda: says('h1', CARD) == 'To-do ' + todo), says('h1', CARD))
+    (_, b), (_, c) = app.box(), app.card()
+    need(b.left < c.left < c.right < b.right and b.top < c.top < c.bottom < b.bottom, 'within the box')
+
+
+def small(h=400):
+    b = need_window(app.box())[1]
+    return b.bottom - b.top < h
+
+
+@step('a to-do in the box')
+def _():
+    open_it()
+    machine.compact = True
+    since = time.time()
+    press(app, '#todos li:nth-child(2) .name')
+    carded('aa02')
+    took = time.time() - since
+    need(says('#ipc', CARD) == 'refused', 'nothing of the app for it: ' + says('#ipc', CARD))
+    r = app.box()[1]
+    need(r.top >= 0 and not small(), 'taller, within the screen')
+    png('a-to-do-in-the-box')
+    press(app, '#more', CARD)
+    need(until(lambda: says('dialog', CARD)), 'a dialog of its own')
+    key(ESCAPE)
+    need(until(lambda: not says('dialog', CARD)) and app.card(), 'Escape closes that')
+    time.sleep(1)
+    need(app.card(), 'only that')
+    press(app, 'a[href="/elsewhere"]', CARD)
+    time.sleep(1)
+    need(says('h1', CARD) == 'To-do aa02', 'it stays on its page')
+    b = app.box()[1]
+    click((b.left + b.right) // 2, b.top + 30)
+    time.sleep(0.5)
+    need(app.card(), 'above the box, also after a click on that')
+    press(app, 'h1', CARD)
+    key(ESCAPE)
+    need(until(lambda: not app.card() and app.box() and small()), 'Escape: back to the list')
+    need(until(lambda: len(listed()) == 4), str(listed()))
+    return f'{took:.1f} s'
+
+
+@step('the next one, done there')
+def _():
+    since = time.time()
+    press(app, '#todos li:nth-child(1) .name')
+    carded('aa01')
+    took = time.time() - since
+    press(app, '#done', CARD)
+    time.sleep(3)
+    need(app.card(), 'it stays a moment, for its Undo')
+    need(until(lambda: not app.card(), 12), 'back by itself')
+    press(app, '#close')
+    return f'{took:.1f} s'
+
+
+@step('a date, and close')
+def _():
+    open_it()
+    quick(0, 'snooze2h')
+    need(until(picks), 'its choices')
+    press(app, '.choices [data-until=date]')
+    carded('aa01')
+    press(app, '#card-close')
+    need(until(lambda: not app.wide()), 'both go')
+    need(not any(CARD in p['url'] for p in json.load(urllib.request.urlopen(f'http://127.0.0.1:{DEBUG}/json', timeout=5))), 'its page goes')
+    open_it()
+    need(not app.card() and small(), 'the next time it is the list')
+    press(app, '#close')
+    machine.compact = False
 
 
 def plus():
@@ -1312,6 +1453,21 @@ def _():
     need(app.again() == 0 and app.process.poll() is None, 'the second one ends')
 
 
+@step('a to-do in the box, with an account')
+def _():
+    machine.compact = True
+    open_it()
+    press(app, '#todos li:nth-child(2) .name')
+    carded('aa02')
+    del machine.seen[:]
+    press(app, 'a[target]', CARD)
+    need(until(lambda: any(s.get('at') == '#person=7' for s in machine.seen), 40), f'the link opens {machine.seen}')
+    need(until(lambda: not app.wide()), 'the box goes')
+    browsers_closed()
+    machine.compact = False
+    return 'signed in' if machine.cards[-1] else 'NOT TESTED: a browser sends the session only to https, here it is http'
+
+
 @step('quit from the menu')
 def _():
     click(*app.center(), right=True)
@@ -1365,6 +1521,9 @@ def _():
 
 
 failed = [r for r in results if not r[1]]
-(out / 'results.txt').write_text('\n'.join(f'{"ok  " if ok else "FAIL"} {name}  {told}' for name, ok, told in results) + '\n', encoding='utf-8')
-print(f'{len(results) - len(failed)} of {len(results)} steps')
+lines = [line(*r) for r in results]
+skipped = sum(x.startswith('skip') for x in lines)
+lines.append(f'{len(results) - len(failed) - skipped} ok, {len(failed)} failed, {skipped} skipped')
+(out / 'results.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+print(lines[-1])
 sys.exit(bool(failed))

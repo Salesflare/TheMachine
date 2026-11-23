@@ -1,20 +1,20 @@
-//! The two windows: the robot, and the box that opens at it. On Wayland with layer-shell (Hyprland, Sway, KDE) both are
+//! The windows: the robot, the box that opens at it, and a to-do over the box (card.rs). On Wayland with layer-shell (Hyprland, Sway, KDE) they are
 //! layer surfaces: a normal Wayland window can't stay on top or choose its place. Elsewhere they are borderless windows
 //! that stay on top, out of the taskbar. All of this runs on the main thread.
-use crate::place::{box_at, peek, Corner, Rect, BOX_WIDTH, ROBOT, SHADOW};
+use crate::place::{self, box_at, peek, Corner, Rect, BOX_WIDTH, ROBOT, SHADOW};
 use crate::Shared;
 use std::sync::atomic::Ordering;
 #[cfg(not(windows))]
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
-/// A closed box's page stays loaded this long, so it opens at once again; then its memory goes. Not on Windows: there both
+/// A closed box's page stays loaded this long, so it opens at once again; then its memory goes. Not on Windows: there the
 /// windows are made at the start and stay, as one that is made later, inside a page's call or a message, can wait forever.
 #[cfg(not(windows))]
 const KEEP: Duration = Duration::from_secs(120);
 
 /// What Tauri asks of WebView2 itself. A sandbox build can also open its pages to smoke/windows.py, which reads them.
-fn browser() -> String {
+pub fn browser() -> String {
     let args = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection".to_string();
     match std::env::var("MACHINE_SANDBOX_DEBUG").ok().and_then(|p| p.parse::<u16>().ok()) {
         Some(port) if cfg!(feature = "sandbox") => format!("{args} --remote-debugging-port={port}"),
@@ -52,7 +52,7 @@ fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri
 
 /// Windows opens a window's menu on Alt alone: here an unseen one, that keeps the page waiting until a click. No menu then.
 #[cfg(windows)]
-fn no_menu(window: &WebviewWindow) {
+pub fn no_menu(window: &WebviewWindow) {
     use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
     use windows_sys::Win32::UI::Shell::{DefSubclassProc, SetWindowSubclass};
     use windows_sys::Win32::UI::WindowsAndMessaging::{SC_KEYMENU, WM_SYSCOMMAND};
@@ -73,6 +73,8 @@ pub fn start(app: &AppHandle) -> tauri::Result<()> {
     build(app, "robot", "The Machine", ROBOT)?;
     #[cfg(windows)]
     build_box(app)?;
+    #[cfg(windows)]
+    crate::card::build(app)?;
     show_robot(app);
     Ok(())
 }
@@ -151,6 +153,7 @@ pub fn close_box(app: &AppHandle) {
         shared.added.lock().unwrap().clear();
         shared.waiting.lock().unwrap().added.clear();
     }
+    crate::card::close(app);
     if let Some(window) = app.get_webview_window("box") {
         let _ = window.hide();
     }
@@ -244,6 +247,11 @@ pub fn follow_screens(app: &AppHandle) {
     }
 }
 
+/// How tall the box is with a to-do open in it.
+pub fn tall(app: &AppHandle) -> f64 {
+    screen(app).map_or(480.0, |(_, s)| place::tall(corner(app, &s).robot(s.area), s.area))
+}
+
 pub fn place(app: &AppHandle) {
     let Some((index, screen)) = screen(app) else { return };
     let shared = app.state::<Shared>();
@@ -252,7 +260,8 @@ pub fn place(app: &AppHandle) {
         robot = peek(robot, screen.area);
     }
     let around = box_at(robot, screen.area, *shared.height.lock().unwrap());
-    for (label, at) in [("robot", robot), ("box", around)] {
+    for (label, at) in [("robot", Some(robot)), ("box", Some(around)), ("card", crate::card::at(app, around))] {
+        let Some(at) = at else { continue };
         let Some(window) = app.get_webview_window(label) else { continue };
         #[cfg(target_os = "linux")]
         if shared.layer {

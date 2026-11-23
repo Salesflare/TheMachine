@@ -21,7 +21,8 @@ pub struct Machine {
 }
 
 /// The quick buttons of a to-do's notification that do something (PushText in the phone app): the Machine's name for each,
-/// its choice and, for a snooze, until when. Its others (open, the draft, an answer, signing in) open the to-do, as its row does.
+/// its choice and, for a snooze, until when, where the to-do names no choices of its own (an older Machine). Its others
+/// (open, the draft, an answer, signing in) open the to-do, as its row does.
 const QUICK: [(&str, &str, Option<&str>); 4] =
     [("prepare", "accept", None), ("snooze", "snooze", Some("tomorrow")), ("snooze2h", "snooze", Some("2h")), ("done", "complete", None)];
 
@@ -33,21 +34,29 @@ pub struct Quick {
     said: String,
 }
 
-/// One of them. No id: a Fleet item, or a board's follow-ups.
+/// One of them: what the dashboard calls its state, whether the Machine is on it, and the choices of its Snooze (option,
+/// words). No id: a Fleet item, or a board's follow-ups.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct Todo {
     pub id: Option<String>,
     pub title: String,
+    #[serde(default)]
+    pub state: String,
+    #[serde(default)]
+    pub working: bool,
+    #[serde(default)]
+    pub snooze: Vec<(String, String)>,
 }
 
-/// One that was just added in the box: what the dashboard calls its state, whether the Machine is on it, and whether it is
-/// in For you.
+/// One that was just added in the box, and whether it is in For you.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct Added {
     pub id: String,
     pub title: String,
     pub state: String,
     pub working: bool,
+    #[serde(default)]
+    pub snooze: Vec<(String, String)>,
     pub listed: bool,
 }
 
@@ -58,6 +67,8 @@ pub struct Waiting {
     pub count: usize,
     /// The owner's first name, as the Machine gave it; '' when it gave none.
     pub name: String,
+    /// Its times are 12-hour ones.
+    pub hour12: bool,
     /// The Machine said what is there: none is none.
     pub known: bool,
 }
@@ -172,8 +183,14 @@ impl Machine {
         Ok(if status == 200 { quick(&notice) } else { Vec::new() })
     }
 
-    pub fn decide(&self, todo: &str, act: &str) -> Result<Value, String> {
-        let (_, choice, until) = QUICK.iter().find(|(name, ..)| *name == act).ok_or("failed")?;
+    /// `until`: one of the to-do's own Snooze choices. The Machine takes only those.
+    pub fn decide(&self, todo: &str, act: &str, until: Option<&str>) -> Result<Value, String> {
+        let (_, choice, usual) = QUICK.iter().find(|(name, ..)| *name == act).ok_or("failed")?;
+        let plain = |o: &&str| *choice == "snooze" && (1..=20).contains(&o.len()) && o.bytes().all(|b| b.is_ascii_alphanumeric());
+        let until = match until {
+            Some(option) => Some(Some(option).filter(plain).ok_or("failed")?),
+            None => *usual,
+        };
         let mut args = json!({"suggestion_id": todo, "choice": choice, "feedback": "", "decision_id": format!("notify-{}", uuid())});
         if let Some(until) = until {
             args["snooze_option"] = json!(until);
@@ -189,6 +206,11 @@ impl Machine {
             _ => return Err("failed".into()),
         };
         self.action("decide", json!({"suggestion_id": todo, "choice": choice, "feedback": "", "decision_id": uuid()}), false, 30)
+    }
+
+    /// Whether its dashboard has the compact page of one to-do (card.rs).
+    pub fn compact(&self) -> bool {
+        self.get("api/session").is_ok_and(|(status, session)| status == 200 && session["compact"] == 1)
     }
 
     pub fn ask(&self, text: &str) -> Result<Value, String> {
@@ -235,7 +257,7 @@ fn uuid() -> String {
 /// What the robot's page made of it (ui/list.js): the first of the dashboard's For you, and how many there are.
 impl Waiting {
     pub fn of(todos: Vec<Todo>, count: usize, name: &str, added: Vec<Added>) -> Waiting {
-        let cut = |t: Todo| Todo { id: t.id, title: t.title.chars().take(200).collect() };
+        let cut = |t: Todo| Todo { title: t.title.chars().take(200).collect(), ..t };
         let count = count.max(todos.len());
         Waiting {
             todos: todos.into_iter().take(LISTED).map(cut).collect(),
@@ -243,6 +265,7 @@ impl Waiting {
             count,
             name: name.trim().chars().filter(|c| !c.is_control()).take(40).collect(),
             known: true,
+            hour12: false,
         }
     }
 }
@@ -253,7 +276,7 @@ mod tests {
 
     #[test]
     fn the_first_three_and_how_many() {
-        let todos: Vec<Todo> = (0..5).map(|i| Todo { id: Some(i.to_string()), title: "é".repeat(300) }).collect();
+        let todos: Vec<Todo> = (0..5).map(|i| Todo { id: Some(i.to_string()), title: "é".repeat(300), state: "Needs you".into(), working: false, snooze: vec![] }).collect();
         let w = Waiting::of(todos, 9, " Sam\n", vec![]);
         assert_eq!((w.todos.len(), w.count, w.todos[0].title.chars().count()), (3, 9, 200));
         assert_eq!((w.name.as_str(), w.known), ("Sam", true));
@@ -272,7 +295,10 @@ mod tests {
         assert_eq!(acts, [("snooze2h", "Snooze".into()), ("done", "Mark done".into())]);
         assert!(quick(&json!({"gone": true})).is_empty() && quick(&Value::Null).is_empty());
         let m = Machine { url: "http://127.0.0.1:9/".into(), cookie: None };
-        assert_eq!((m.decide("a", "send"), m.undo("a", "prepare")), (Err("failed".into()), Err("failed".into())));
+        assert_eq!((m.decide("a", "send", None), m.undo("a", "prepare")), (Err("failed".into()), Err("failed".into())));
+        for (act, until) in [("done", "tomorrow"), ("prepare", "2h"), ("snooze", ""), ("snooze", "2h&x"), ("snooze", "2026-11-24T09:00")] {
+            assert_eq!(m.decide("a", act, Some(until)), Err("failed".into()), "{act} {until}");
+        }
         let id = uuid();
         assert!(id.len() == 36 && &id[14..15] == "4" && id != uuid(), "{id}");
     }

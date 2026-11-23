@@ -28,7 +28,7 @@
     for (const n of news) {
       if (n.machine !== of) { of = n.machine; list = new window.ForYou(); }
       const fits = list.take(n), all = fits ? list.list() : [];
-      await invoke('robot_list', {machine: of, todos: fits ? all.slice(0, 3) : null, marks: all.map(x => x.mark), name: fits ? list.name() : '', added: fits ? list.added(added, all) : []});
+      await invoke('robot_list', {machine: of, todos: fits ? all.slice(0, 3) : null, marks: all.map(x => x.mark), name: fits ? list.name() : '', hour12: fits && list.hour12(), added: fits ? list.added(added, all) : []});
     }
   }
   let turn = Promise.resolve();

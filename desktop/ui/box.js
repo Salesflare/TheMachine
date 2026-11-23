@@ -1,6 +1,6 @@
 // The box at the robot: sign in, a new to-do (with files or a screenshot), a question, and the first of For you, each with
-// the quick buttons of its notification. There is no Send and no Approve here: a to-do opens in the dashboard, where its
-// draft is read first.
+// the quick buttons of its notification. There is no Send and no Approve here: a to-do opens as the dashboard shows it,
+// where its draft is read first.
 (function () {
   'use strict';
   const t = window.MachineText, native = window.Native;
@@ -10,9 +10,11 @@
 
   for (const [id, text] of Object.entries({
     'signin-intro': t.signInIntro, 'signin-go': t.signIn, 'notice-text': t.hidden, 'notice-ok': t.ok, connect: t.connect, 'kind-todo': t.todo, 'kind-ask': t.ask,
+    'card-back-name': t.back, 'card-opening': t.opening,
   })) $(id).textContent = text;
-  for (const [id, text] of Object.entries({close: t.close, more: t.menu, address: t.address, kinds: t.kind})) $(id).setAttribute('aria-label', text);
-  $('close').title = t.close;
+  for (const [id, text] of Object.entries({close: t.close, 'card-close': t.close, 'card-app': t.openApp, more: t.menu, address: t.address, kinds: t.kind})) $(id).setAttribute('aria-label', text);
+  $('close').title = $('card-close').title = t.close;
+  $('card-app').title = t.openApp;
   $('more').title = t.menu;
   $('address').placeholder = t.address;
 
@@ -51,7 +53,7 @@
     $('signin').hidden = connected || notice;
     $('compose').hidden = !connected || notice;
     if (!connected || notice) $('answer').hidden = true;
-    if (was && !machine) { $('text').value = ''; files = []; draft = ''; mine = []; went.clear(); $('live').textContent = ''; showFiles(); } // signed out
+    if (was && !machine) { $('text').value = ''; files = []; draft = ''; mine = []; went.clear(); seenWorking.clear(); $('live').textContent = ''; showFiles(); } // signed out
     showReady(connected && !notice ? s.waiting : {todos: [], count: 0});
     if (was && !connected) signinBy(byAddress);
     ready();
@@ -85,7 +87,7 @@
   }
   // A row that was decided says so a while, in its place
   let rows = [], shown = {todos: [], count: 0}, mine = []; // mine: what was just added here, the newest first
-  const went = new Map(), quick = new Map();
+  const went = new Map(), quick = new Map(), seenWorking = new Set();
   function showReady(waiting) {
     shown = waiting;
     for (const x of waiting.added || []) Object.assign(mine.find(m => m.id === x.id) || {}, {title: x.title, state: x.state, working: x.working, listed: x.listed});
@@ -105,11 +107,18 @@
     $('ready').hidden = !todos.length || !here;
     $('ready-name').hidden = !count;
     $('ready-name').textContent = fill(t.ready, count);
-    const focused = document.activeElement?.closest?.('.todos li')?.dataset.id;
+    const at = document.activeElement, focused = at?.closest?.('.todos li')?.dataset.id;
+    const active = at?.dataset.act ? `[data-act="${at.dataset.act}"]` : at?.dataset.until ? `[data-until="${at.dataset.until}"]` : '';
     rows = todos;
+    if (!todos.concat(elsewhere).some(x => x.id === snooze)) snooze = null;
     $('todos').replaceChildren(...todos.map(x => row(x)), ...(more > 0 ? [el('li', {}, el('button', {type: 'button', className: 'name more', textContent: fill(t.more, more), onclick: () => native.openDashboard().catch(fail)}))] : []));
-    if (focused) document.querySelector(`.todos li[data-id="${CSS.escape(focused)}"] button`)?.focus();
+    if (focused) rowOf(focused, active)?.focus();
+    if (working()) follow();
   }
+  const rowOf = (id, part = '') => {
+    const li = document.querySelector(`.todos li[data-id="${CSS.escape(id)}"]`);
+    return li && (part && li.querySelector(part) || li.querySelector('button'));
+  };
   function row(x, named) {
     const w = went.get(x.id), li = el('li', {});
     if (x.id) li.dataset.id = x.id;
@@ -121,46 +130,98 @@
       return li;
     }
     li.classList.toggle('busy', !!w);
-    const name = el('button', {type: 'button', className: 'name', onclick: () => x.id !== undefined && native.openDashboard(x.id).catch(fail)});
-    const title = el('span', {textContent: x.title}), sub = x.since && [named || !x.id ? '' : t.justAdded, x.state].filter(Boolean).join(' · ');
-    name.append(title, ...(sub ? [el('span', {className: 'sub', textContent: sub})] : []));
+    const name = el('button', {type: 'button', className: 'name', onclick: () => x.id !== undefined && openTodo(x)});
+    // Its state, on one that was just added or that the Machine is on, and what came of it while the box is open
+    if (x.working) seenWorking.add(x.id);
+    const sub = x.since ? [named || !x.id ? '' : t.justAdded, x.state] : seenWorking.has(x.id) ? [x.state] : [];
+    const title = el('span', {textContent: x.title}), says = sub.filter(Boolean).join(' · ');
+    name.append(title, ...(says ? [el('span', {className: 'sub'}, ...(x.working ? [el('span', {className: 'turning'})] : []), says)] : []));
     name.onpointerenter = name.onfocus = () => { name.title = title.scrollWidth > title.clientWidth ? x.title : ''; }; // only what is cut off
     li.append(name);
-    const buttons = x.id && quick.get(x.id)?.buttons || [];
+    let buttons = x.id && quick.get(x.id)?.buttons || [];
+    // It is at it: Do it stays where it was, off, so a press more does nothing
+    if (x.id && x.working) buttons = [{act: 'prepare', name: x.state, off: true}, ...buttons.filter(b => b.act !== 'prepare')];
     if (buttons.length) li.append(el('span', {className: 'quick'}, ...buttons.map(b => {
-      const button = el('button', {type: 'button', className: 'icon', title: b.name, onclick: () => decide(x, b)}, icon(b.act));
+      const picks = isSnooze(b) && x.snooze?.length;
+      const button = el('button', {type: 'button', className: 'icon', title: b.name, disabled: !!b.off, onclick: () => (picks ? snoozing(snooze === x.id ? null : x.id) : decide(x, b))}, icon(b.act));
       button.setAttribute('aria-label', b.name + ': ' + x.title);
+      if (picks) button.setAttribute('aria-expanded', String(snooze === x.id));
       button.dataset.act = b.act;
       return button;
     })));
+    // The dashboard's own choices (todos-snooze.js): its last one, a date, is picked there
+    const b = snooze !== null && snooze === x.id && x.snooze?.length && buttons.find(isSnooze);
+    if (b) {
+      const choice = (until, text, run) => { const c = el('button', {type: 'button', className: 'name', textContent: text, onclick: run}); c.dataset.until = until; return c; };
+      const list = el('div', {className: 'choices'}, ...x.snooze.map(([until, text]) => choice(until, text, () => { snooze = null; decide(x, b, until); })),
+        choice('date', t.chooseDate, () => { snooze = null; openTodo(x); }));
+      list.setAttribute('role', 'group');
+      list.setAttribute('aria-label', t.snoozeUntil + ': ' + x.title);
+      list.onkeydown = e => {
+        const step = {ArrowDown: 1, ArrowUp: -1}[e.key], all = [...list.querySelectorAll('button')];
+        if (!step) return;
+        e.preventDefault();
+        all[(all.indexOf(document.activeElement) + step + all.length) % all.length].focus();
+      };
+      li.classList.add('open');
+      li.append(list);
+    }
     return li;
+  }
+  const isSnooze = b => b.act.startsWith('snooze');
+  let snooze = null; // whose choices are open
+  function snoozing(id) {
+    const was = snooze;
+    snooze = id;
+    showReady(shown);
+    if (id) rowOf(id, '.choices button')?.focus();
+    else if (was) rowOf(was, '[data-act^=snooze]')?.focus();
   }
   // The buttons the Machine names for each, as it is now
   async function buttons() {
-    const ids = [...new Set([...mine, ...shown.todos].map(x => x.id).filter(Boolean))];
+    const ids = [...new Set(listed().map(x => x.id).filter(Boolean))];
     await Promise.all(ids.map(async id => { quick.set(id, {buttons: await native.quick(id).catch(() => [])}); }));
     for (const id of quick.keys()) if (!ids.includes(id)) quick.delete(id);
     showReady(shown);
   }
   // As the notification's button on the phone. "Snoozed it · tomorrow 9:00"
-  async function decide(x, b) {
+  async function decide(x, b, until) {
+    if (went.has(x.id)) return; // once
     say('');
+    if (b.act === 'prepare') return prepare(x, b);
     went.set(x.id, {title: x.title, at: Math.max(0, rows.findIndex(r => r.id === x.id)), busy: true});
     showReady(shown);
     try {
-      const done = await native.decide(x.id, b.act), undo = b.act !== 'prepare' && b.act;
+      const done = await native.decide(x.id, b.act, until), undo = b.act;
       const line = [b.said, when(done?.snoozed_until)].filter(Boolean).join(' · ');
       Object.assign(went.get(x.id) || {}, {busy: false, line, undo, act: b.act});
       $('live').textContent = line;
-      const m = mine.find(m => m.id === x.id);
-      if (m) follow(m);
-      setTimeout(() => { if (went.get(x.id)?.line === line) gone(x.id); }, undo ? 15000 : 4000);
+      if (mine.some(m => m.id === x.id)) follow(true);
+      setTimeout(() => { if (went.get(x.id)?.line === line) gone(x.id); }, 15000);
     } catch (e) {
       went.delete(x.id);
       fail(e);
     }
     showReady(shown);
-    if (went.get(x.id)?.undo) document.querySelector(`.todos li[data-id="${CSS.escape(x.id)}"] button`)?.focus();
+    if (went.get(x.id)?.undo) rowOf(x.id)?.focus();
+  }
+  // Do it: its row stays, and says how it goes
+  async function prepare(x, b) {
+    went.set(x.id, {title: x.title, at: Math.max(0, rows.findIndex(r => r.id === x.id)), busy: true});
+    showReady(shown);
+    let error = null;
+    try {
+      await native.decide(x.id, b.act);
+      $('live').textContent = b.said;
+      const working = {state: t.preparing, working: true};
+      for (const r of [...mine, ...shown.todos]) if (r.id === x.id) Object.assign(r, working);
+    } catch (e) { error = e; }
+    went.delete(x.id);
+    if (error) fail(error);
+    showReady(shown);
+    if (!error) rowOf(x.id)?.focus();
+    follow(true); // also when it was refused: something else is so by now
+    buttons();
   }
   // Its line goes; the to-do itself is out of the list, unless the Machine still has it there
   function gone(id) {
@@ -180,8 +241,8 @@
     const at = until ? new Date(until) : null;
     if (!at || isNaN(at)) return '';
     const day = v => new Date(v).setHours(0, 0, 0, 0), days = Math.round((day(at) - day(Date.now())) / 864e5);
-    const time = at.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'});
-    return days <= 0 ? time : days === 1 ? fill(t.tomorrow, time) : at.toLocaleDateString([], {weekday: 'long'}) + ' ' + time;
+    const time = at.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', hourCycle: shown.hour12 ? 'h12' : 'h23'});
+    return days <= 0 ? time : days === 1 ? fill(t.tomorrow, time) : at.toLocaleDateString([], days < 7 ? {weekday: 'long'} : {day: 'numeric', month: 'short'}) + ' ' + time;
   }
 
   // Sign-in
@@ -255,7 +316,15 @@
     x.style.height = Math.min(x.scrollHeight, 120) + 'px';
   }
   const say = (text, error) => { $('said').replaceChildren(text); $('said').classList.toggle('error', !!error); };
-  const fail = e => say(words(e), true);
+  // That it can't be reached, or isn't signed in, is the line at the top: once
+  async function fail(e) {
+    if (machine && ['unreachable', 'notowner'].includes(e)) {
+      say('');
+      await native.look().catch(() => {});
+      if ((await show()).problem) return;
+    }
+    say(words(e), true);
+  }
   $('text').addEventListener('input', () => { say(''); grow(); ready(); });
   $('text').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('compose').requestSubmit(); }
@@ -304,7 +373,7 @@
   }
   // Its row is there at once, the first of the list, and stays there while the box is open
   async function addTodo(text, with_, key) {
-    const m = {title: text || with_[0].name, state: t.adding, since: Date.now(), listed: null};
+    const m = {title: text || with_[0].name, state: t.adding, working: true, since: Date.now(), listed: null};
     mine.unshift(m);
     files = [];
     draft = '';
@@ -316,7 +385,7 @@
     try {
       const made = await native.addTodo(m.title, key, with_.map(f => f.id));
       if (!made?.id) throw 'failed';
-      Object.assign(m, {id: String(made.id), title: made.title || m.title, state: made.status === 'prepared' ? '' : t.needsYou, since: Date.now()});
+      Object.assign(m, {id: String(made.id), title: made.title || m.title, state: made.status === 'prepared' ? '' : t.needsYou, working: false, since: Date.now()});
     } catch (e) {
       mine = mine.filter(x => x !== m);
       files = [...with_, ...files];
@@ -327,20 +396,25 @@
     }
     $('live').textContent = t.added;
     showReady(shown);
-    follow(m);
+    follow(true);
   }
-  // How it goes: at once, soon after, and as long as the Machine is on it
-  async function follow(m) {
-    if (m.followed) return;
-    m.followed = true;
-    for (const wait of [0, 2000, 4000, ...Array(60).fill(5000)]) {
+  // How it goes, while the box is open: at once and soon after something was done here, then as long as the Machine is on
+  // one of them. Past five minutes the robot's own look will do.
+  const listed = () => [...mine, ...shown.todos], working = () => listed().some(x => x.id && x.working);
+  let soon = [], following = 0, followers = 0;
+  async function follow(done) {
+    if (done) soon = [0, 2000, 4000];
+    else if (following) return;
+    const me = ++followers, until = Date.now() + 300000;
+    following = me;
+    for (;;) {
+      const wait = soon.length ? soon.shift() : working() && Date.now() < until ? 5000 : null;
+      if (wait === null) break;
       await new Promise(ok => setTimeout(ok, wait));
-      const s = await native.state();
-      if (!s.open || !mine.includes(m) || wait === 5000 && !m.working) break;
+      if (following !== me || !(await native.state()).open) break;
       await native.look().catch(() => {});
-      if (!wait) buttons();
     }
-    m.followed = false;
+    if (following === me) following = 0;
   }
 
   // Files: they go up at once under this to-do's own key, and join it when it is added (as in New to-do, chat_files.py)
@@ -422,11 +496,61 @@
   });
   function toTodo() { if (kind !== 'todo') document.querySelector('[name=kind][value=todo]').click(); }
 
+  // One to-do in the box, by its Machine's own dashboard; where that has no page for it, the app or the browser
+  let card = null, over = 0;
+  async function openTodo(x) {
+    if (!x.id) return native.openDashboard().catch(fail);
+    say('');
+    try {
+      const tall = await native.cardOpen(x.id);
+      if (!tall) return await native.openDashboard(x.id);
+      card = x;
+      $('panel').style.height = tall + 'px';
+      $('panel').classList.add('card');
+      $('card').hidden = false;
+      $('card-back').focus();
+      over = setTimeout(() => cardSaid('failed'), 15000);
+      cardFit();
+    } catch (e) { fail(e); }
+  }
+  function cardFit() {
+    const r = $('card-place').getBoundingClientRect();
+    if (card) native.cardPlace(r.top, r.height);
+  }
+  new ResizeObserver(cardFit).observe($('card-place'));
+  // Closed by the person, or a while after it was done there
+  function cardBack() {
+    if (!card) return;
+    const id = card.id;
+    card = null;
+    clearTimeout(over);
+    native.cardClose();
+    $('card').hidden = true;
+    $('panel').classList.remove('card');
+    $('panel').style.height = '';
+    (rowOf(id) || $('text')).focus();
+    native.look().catch(() => {});
+  }
+  function cardSaid(state) {
+    if (!card) return;
+    clearTimeout(over);
+    const id = card.id;
+    if (state === 'done' || state === 'snoozed') over = setTimeout(cardBack, 8000);
+    if (['back', 'gone', 'offline'].includes(state)) cardBack();
+    if (state === 'failed' || state === 'signed-out') { cardBack(); native.openDashboard(id).catch(fail); }
+  }
+  native.onCard(cardSaid);
+  $('card-back').addEventListener('click', cardBack);
+  $('card-app').addEventListener('click', () => card && native.openDashboard(card.id).catch(fail));
+
   const close = () => native.close();
   $('close').addEventListener('click', close);
+  $('card-close').addEventListener('click', close);
   $('notice-ok').addEventListener('click', close);
   addEventListener('keydown', e => { 
     if (e.key !== 'Escape') return;
+    if (card) return cardBack();
+    if (snooze !== null) return snoozing(null);
     if (!$('adds').hidden) { adds(false); return $('plus').focus(); }
     if ($('menu').hidden) return native.close();
     menu(false);
@@ -439,7 +563,7 @@
     showReady(connected && !notice ? s.waiting : {todos: [], count: 0});
     buttons();
   }));
-  native.onOpened(() => { say(fresh ? t.welcome : ''); fresh = false; menu(false); adds(false); if (!shooting) { went.clear(); mine = []; } load(); });
+  native.onOpened(() => { say(fresh ? t.welcome : ''); fresh = false; menu(false); adds(false); cardBack(); snooze = null; if (!shooting) { went.clear(); seenWorking.clear(); mine = []; } load(); });
   signinBy(false);
   load();
 })();

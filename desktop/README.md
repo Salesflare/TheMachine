@@ -5,13 +5,18 @@ files or a screenshot), ask about your messages, and see the first of For you, w
 notification. A dot shows when something is new since you last looked.
 The dashboard, the phone app and the Machine don't change for it. It is not part of a release, and off means not started.
 
-It never sends or approves anything. A to-do opens in the dashboard, where its draft is read first. It starts with
+It never sends or approves anything itself. A to-do opens as the dashboard shows it, where its draft is read first. It starts with
 nothing of its own: no start at login, no hotkey. On Windows it has an icon by the clock while it runs, with the same dot
 (Windows may put it behind the arrow there).
 
 **Quick buttons.** On a row, with the mouse over it or the keys in it: those of its notification on Android that do
-something (Do it, Snooze, Mark done), in your Machine's words. The row then says what happened, with Undo for a snooze and
-for Mark done, and goes. Your Machine takes nothing else from them. A Fleet item and a board's follow-ups have none.
+something (Do it, Snooze, Mark done), in your Machine's words. Snooze offers the to-do's own choices, as the dashboard's
+picker does; **Choose date** opens the to-do, where that is. The row then says what happened and until when, with Undo, and
+goes. Your Machine takes nothing else from them. A Fleet item and a board's follow-ups have none.
+
+**Being prepared.** After Do it the row stays and says how it goes in the dashboard's own words (Preparing…, Working…,
+Prepared, Needs you, Stuck), with a moving sign while your Machine is on it. So does a row it was already on, or that was
+started elsewhere. Do it is off meanwhile, and the row has the buttons of its new state after.
 
 **Just added.** A to-do added here is the first row at once, lit for a moment, with "Just added" and the dashboard's own
 word for its state under it, which follows while the box is open. The count stays the dashboard's: one it has outside For
@@ -61,7 +66,15 @@ the dashboard. Follow-ups of a board and Fleet items open with the dashboard.
 
 ## Opening a to-do
 
-What the box opens goes to the Machine's installed app when there is one, in the window that is open, else to the
+A row opens the to-do in the box, which grows: the dashboard's own page of one to-do (`?compact=1#card=<id>`), with **Back**,
+a button for the app, and close. Escape closes what is open in it, then goes back. A to-do that is done or snoozed there
+goes back by itself after a few seconds. It is the dashboard, in a web view of its own over the box: signed in as the robot
+is, with nothing kept on the disk (its page goes a minute after Back, or with the box), none of the app's commands, and no
+way to any other page: a link in it opens the app, or the browser when it isn't your Machine's. What is sent or approved
+there is so by you, as in the dashboard. On a Machine whose dashboard hasn't that page (`compact` in `api/session`) the row
+opens the app.
+
+What opens outside the box goes to the Machine's installed app when there is one, in the window that is open, else to the
 browser. The robot finds the app where Chrome or Edge listed it when you installed it (Linux: the applications menu;
 Windows: the Start menu and installed apps), only for the Machine you are signed in to, and starts that browser with the
 app's id and the address. No shell, no setting and no prompt. Signing in stays in the browser.
@@ -106,6 +119,7 @@ Tauri 2: a small Rust program and the system's own web view. Three parts, each r
 | Part | Files | Knows |
 |---|---|---|
 | Windows | `src/windows.rs`, `src/place.rs` | Where the robot and the box are. Nothing of the Machine. |
+| A to-do in the box | `src/card.rs` | Which page it may be, and where its links go. |
 | Pages | `ui/` | What is in them. `robot.js` only clicks and drags; `box.js` asks `native.js` for everything. |
 | The Machine | `src/machine.rs`, `src/signin.rs`, `src/address.rs`, `src/saved.rs` | The same requests and address rules as the phone app (`mobile/`). |
 | A screenshot | `src/snip.rs` | The system's own tool. |
@@ -115,11 +129,11 @@ Tauri 2: a small Rust program and the system's own web view. Three parts, each r
 `ui/for-you.js` is `dashboard/todos-for-you.js` as it is, and `ui/list.js` the few names it needs. When the dashboard's file
 changes, copy it again: `tests/test_for_you_rules_dashboard.mjs` compares both, and the two lists for every state.
 
-`src/main.rs` joins them. `build.rs` names every command and `capabilities/` says which window may call which; the pages
-load nothing from elsewhere (`tauri.conf.json`, `csp`). The address and a hosted Machine's session are in one file only
+`src/main.rs` joins them. `build.rs` names every command and `capabilities/` says which window may call which (the to-do's has none); the
+pages load nothing from elsewhere (`tauri.conf.json`, `csp`). The address and a hosted Machine's session are in one file only
 its owner can read (`app.json` in the folder above).
 
-To a Machine it sends `GET manifest.webmanifest`, `api/session`, `api/status`, `api/fleet` and `api/notice`, and the actions
+To a Machine it sends `GET manifest.webmanifest`, `api/session`, `api/status`, `api/fleet` and `api/notice`, the page of a to-do open in the box, and the actions
 `card_new`, `chat_upload`, `chat_file_remove`, `search_ask` and `decide` (as a notification's buttons do, and Undo), with
 the dashboard's own token and Origin. No others.
 
@@ -142,7 +156,7 @@ cargo test --manifest-path desktop/Cargo.toml
 CI also uses the Windows build, with real mouse and keys against a made-up Machine (`smoke/windows.py`), and keeps the
 screenshots with the run. It moves the mouse and changes the resolution, so it is for a throwaway computer.
 
-On Windows, never make a window from a page's call or a message: it can wait for itself (`later` in `src/main.rs`). Both
+On Windows, never make a window from a page's call or a message: it can wait for itself (`later` in `src/main.rs`). All
 windows are made at the start.
 
 ## Before a release

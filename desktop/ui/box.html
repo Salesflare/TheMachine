@@ -17,6 +17,15 @@
   </header>
   <ul id="menu" class="rows" hidden></ul>
 
+  <section id="card" hidden>
+    <div class="card-bar">
+      <button id="card-back" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 3.5L5 8l4.5 4.5"/></svg><span id="card-back-name"></span></button>
+      <button id="card-app" type="button" class="icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5L9 7M6.5 13.5h-4v-4M2.5 13.5L7 9"/></svg></button>
+      <button id="card-close" type="button" class="icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </div>
+    <div id="card-place" role="status"><span class="turning"></span><span id="card-opening"></span></div>
+  </section>
+
   <section id="notice" hidden>
     <p id="notice-text" role="status"></p>
     <button id="notice-ok" type="button" class="primary"></button>
