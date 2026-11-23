@@ -1,6 +1,7 @@
 // After a check that saw new messages (state.mail_check, check_now.mail_check), from every source it read (email,
 // chats, phone notifications, the rest): one line above the to-dos, "Checked 13 messages at 16:11 · no new to-dos",
-// so new messages with no to-do read as checked, not as broken. It speaks of this check only: "nothing needs you"
+// so new messages with no to-do read as checked, not as broken. On a phone its size steps down (todos-mail-check.css)
+// so the whole line is one line in every language. It speaks of this check only: "nothing needs you"
 // above to-dos still marked Needs you read as a contradiction. A tap opens one row per thread or chat: its source's
 // one-color mark (todos-logos.js: Gmail or Outlook by its account, a phone notification by its app), who, the subject or first words, and its new to-do (held until when, if it waits) or the
 // check's reason it needed nothing; a row opens its newest message in the message viewer (openEvent).

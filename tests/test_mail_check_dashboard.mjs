@@ -111,17 +111,16 @@ try{
   const cat=JSON.parse(await readFile(new URL(`../i18n/${lang}.json`,import.meta.url),'utf8'));
   const now=cat['Checked {} messages at {}'],was=cat['Checked {} new emails at {}'];
   for(const form of Object.keys(was))assert.ok(now[form].length<=was[form].length,`${lang} ${form}: "${now[form]}" is longer than "${was[form]}"`);
-  // until the daily translator adds "no new to-dos", the language's old words for that spot stand in for its length
-  const none=[cat['no new to-dos'],cat['nothing needs you'],'no new to-dos'].find(s=>typeof s==='string');
-  lines.push([lang,fill(now.other,13,'08:41')+' · '+none]);
+  // as the app shows it: the language's words, English until the daily translator has them; a three-digit count too
+  const none=typeof cat['no new to-dos']==='string'?cat['no new to-dos']:'no new to-dos';
+  for(const n of [13,113])lines.push([lang,fill(now.other,n,'08:41')+' · '+none]);
  }
  await page.evaluate(()=>document.fonts.ready.then(()=>{}));
  const heights=await page.evaluate(lines=>{const span=document.querySelector('#suggestions .mc-line span'),b=span.closest('.mc-line'),kept=span.textContent;
-  const out=lines.map(([lang,text])=>{span.textContent=text;return [lang,text,b.getBoundingClientRect().height]});span.textContent=kept;return out},lines);
- // measured against the English line as it read before "no new to-dos" (as tall as it ever was): the shorter English
- // words alone must not make the other languages' lines fail here
- const one=Math.max(heights[0][2],await page.evaluate(()=>{const span=document.querySelector('#suggestions .mc-line span'),b=span.closest('.mc-line'),kept=span.textContent;
-  span.textContent='Checked 13 messages at 08:41 · nothing needs you';const h=b.getBoundingClientRect().height;span.textContent=kept;return h}));
+  span.textContent='13';const one=b.getBoundingClientRect().height;
+  const out=lines.map(([lang,text])=>{span.textContent=text;return [lang,text,b.getBoundingClientRect().height]});span.textContent=kept;return out.map(r=>[...r,one])},lines);
+ // against a line that surely is one line (a number alone), never against another language's line that may wrap too
+ const one=heights[0][3];
  for(const [lang,text,h] of heights)assert.ok(h<=one+1,`${lang} wraps at 390: "${text}" (${h}px, one line is ${one}px)`);
  // A long check reads like an inbox and hides nothing: the first 10 rows, "Show N more" for the rest, a row's new
  // messages as "(3)" so the rows add up to the line's total, the time, and a Slack DM with no name yet as "Slack DM"
