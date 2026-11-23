@@ -28,6 +28,7 @@
     onListed: run => listen('listed', run),
     onFailed: run => listen('failed', e => run(e.payload)),
     onCard: run => listen('card', e => run(e.payload)),
+    onTall: run => listen('tall', e => run(e.payload)),
     onSignIn: run => listen('signin', e => run(e.payload)),
   };
 })();

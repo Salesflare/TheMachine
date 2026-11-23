@@ -21,6 +21,14 @@ const ESCAPE: &str = r#"addEventListener('keydown', e => {
   setTimeout(() => { if (!open && !e.defaultPrevented) location.href = 'https://robot.invalid/back'; });
 }, true);"#;
 
+/// How tall its page is; all the room there is for its chat, and while a dialog or menu would be cut off. 0: as it is.
+const TALL: &str = r#"(() => {
+  const open = [...document.querySelectorAll('dialog[open],.more-actions[open],.row-menu,.project-picker,#share-pop,#cm-menu')].filter(x => x.getClientRects().length);
+  const cut = x => { const r = x.getBoundingClientRect(); return r.top < 0 || r.bottom > innerHeight + 1 || x.scrollHeight > x.clientHeight + 1; };
+  if (document.body.classList.contains('chat-open') || open.some(x => [x, ...x.children].some(cut))) return 9999;
+  return open.length ? 0 : Math.ceil(document.body.getBoundingClientRect().height);
+})()"#;
+
 #[derive(Default)]
 pub struct Card {
     /// The to-do that is open, and how far its page is.
@@ -30,6 +38,8 @@ pub struct Card {
     loaded: Option<Url>,
     /// Its place in the box's window: from the top, and how tall.
     place: Option<(f64, f64)>,
+    /// How tall its page was last.
+    tall: f64,
 }
 
 /// What the page is: the Machine's own address with compact=1. Frames of what a mail has are about:srcdoc.
@@ -148,7 +158,7 @@ pub fn open(app: &AppHandle, todo: &str) -> tauri::Result<()> {
     let Ok(url) = Url::parse(&format!("{}?compact=1#card={todo}", machine.url)) else { return Ok(()) };
     let was = std::mem::take(&mut *shared.card.lock().unwrap()).loaded;
     let drawn = was.as_ref() == Some(&url);
-    *shared.card.lock().unwrap() = Card { todo: Some(todo.into()), drawn, loaded: Some(url.clone()), place: None };
+    *shared.card.lock().unwrap() = Card { todo: Some(todo.into()), drawn, loaded: Some(url.clone()), place: None, tall: 0.0 };
     let window = match app.get_webview_window("card") {
         Some(w) => w,
         None => build(app)?,
@@ -209,7 +219,28 @@ fn show(app: &AppHandle) {
         let _ = window.show();
         windows::place(app);
         let _ = window.set_focus();
+        let todo = shared.card.lock().unwrap().todo.clone();
+        after(app, Duration::from_millis(100), move |app| measure(app, todo)); // it shows a moment later
     }
+}
+
+/// The box follows its page's height while it is open.
+fn measure(app: &AppHandle, todo: Option<String>) {
+    let Some(window) = app.get_webview_window("card") else { return };
+    if app.state::<Shared>().card.lock().unwrap().todo != todo || !window.is_visible().unwrap_or(false) {
+        return;
+    }
+    let told = app.clone();
+    let _ = window.eval_with_callback(TALL, move |answer| {
+        let Ok(tall) = answer.trim_matches('"').parse::<f64>() else { return };
+        let shared = told.state::<Shared>();
+        let mut card = shared.card.lock().unwrap();
+        if card.todo.is_some() && card.tall != tall && tall > 0.0 {
+            card.tall = tall;
+            let _ = told.emit_to("box", "tall", tall);
+        }
+    });
+    after(app, Duration::from_millis(400), move |app| measure(app, todo));
 }
 
 /// Back to the list. Its page stays a minute, for the next one.

@@ -30,13 +30,14 @@ tell();
 # The dashboard's page of one to-do (?compact=1#card=<id>): its state in its title, a dialog of its own, links out
 COMPACT = b'''<!doctype html><title>The Machine</title><style>body{margin:0;padding:12px;background:#fff;font:14px sans-serif}</style>
 <h1></h1><p id="ipc"></p><button id="done">Done here</button> <button id="more">More</button> <a target="_blank" href="/#person=7">A person</a> <a href="/elsewhere">Away</a>
-<dialog>Something open <button>Close</button></dialog><script>
+<button id="long">Long</button><div id="longer"></div><dialog>Something open <button>Close</button></dialog><script>
 let id, done = false;
 const draw = () => { id = (location.hash.match(/card=(\\w+)/) || [])[1]; document.querySelector('h1').textContent = 'To-do ' + id;
   document.title = (done ? 'done' : /^gone/.test(id) ? 'gone' : 'open') + ': To-do ' + id;
   };
 onhashchange = draw;
 document.querySelector('#done').onclick = () => { done = true; draw() };
+document.querySelector('#long').onclick = () => { const s = document.querySelector('#longer').style; s.height = s.height ? '' : '300px' };
 document.querySelector('#more').onclick = () => document.querySelector('dialog').showModal();
 const i = window.__TAURI_INTERNALS__;
 (i ? i.invoke('box_state').then(() => 'ALLOWED', () => 'refused') : Promise.resolve('none')).then(x => document.querySelector('#ipc').textContent = x);

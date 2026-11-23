@@ -882,8 +882,18 @@ def _():
     took = time.time() - since
     need(says('#ipc', CARD) == 'refused', 'nothing of the app for it: ' + says('#ipc', CARD))
     r = app.box()[1]
-    need(r.top >= 0 and not small(), 'taller, within the screen')
+    need(r.top >= 0 and small(), 'a short one: the box is not tall for it')
     png('a-to-do-in-the-box')
+    short = r.bottom - r.top
+    press(app, '#long', CARD)
+    need(until(lambda: not small(short + 60)), 'a longer one: the box grows with it')
+    r = app.box()[1]
+    need(r.top >= 0, 'within the screen')
+    grown = r.bottom - r.top
+    press(app, '#long', CARD)
+    time.sleep(1.5)
+    r = app.box()[1]
+    need(r.bottom - r.top == grown, 'and stays so')
     press(app, '#more', CARD)
     need(until(lambda: says('dialog', CARD)), 'a dialog of its own')
     key(ESCAPE)

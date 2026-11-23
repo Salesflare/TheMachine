@@ -66,7 +66,7 @@ the dashboard. Follow-ups of a board and Fleet items open with the dashboard.
 
 ## Opening a to-do
 
-A row opens the to-do in the box, which grows: the dashboard's own page of one to-do (`?compact=1#card=<id>`), with **Back**,
+A row opens the to-do in the box, which grows with it, up to a comfortable height: the dashboard's own page of one to-do (`?compact=1#card=<id>`), with **Back**,
 a button for the app, and close. Escape closes what is open in it, then goes back. A to-do that is done or snoozed there
 goes back by itself after a few seconds. It is the dashboard, in a web view of its own over the box: signed in as the robot
 is, with nothing kept on the disk (its page goes a minute after Back, or with the box), none of the app's commands, and no
