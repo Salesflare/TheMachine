@@ -45,15 +45,17 @@ html,body{overflow-anchor:none}
 /* design-tokens:end */
 @font-face{font-family:"Source Serif 4";font-style:normal;font-weight:200 900;font-display:swap;src:url(brand/serif.woff2) format("woff2")}
 @font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url(brand/sans.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url(brand/sans-cyrillic.woff2) format("woff2");unicode-range:U+301,U+400-45F,U+490-491,U+4B0-4B1,U+2116}
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url(brand/sans-cyrillic-ext.woff2) format("woff2");unicode-range:U+460-52F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F}
 /* CJK: the system's font after the Latin brand fonts (nothing downloaded), the language's line breaks, no tracking */
 :root:lang(zh){--sans:Inter,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;--serif:"Source Serif 4","Songti SC","Noto Serif CJK SC",SimSun,serif}
 :root:lang(ja){--sans:Inter,"Hiragino Sans","Yu Gothic UI",Meiryo,"Noto Sans CJK JP",sans-serif;--serif:"Source Serif 4","Hiragino Mincho ProN","Yu Mincho","Noto Serif CJK JP",serif}
 :root:lang(ko){--sans:Inter,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans CJK KR",sans-serif;--serif:"Source Serif 4",AppleMyungjo,"Noto Serif CJK KR",Batang,serif;word-break:keep-all;overflow-wrap:break-word}
 :root:is(:lang(zh),:lang(ja)){line-break:strict}
 :root:is(:lang(zh),:lang(ja),:lang(ko)) *{letter-spacing:0!important}
-/* Russian: the brand fonts are Latin only, so Cyrillic came from another font than the Latin words beside it (Machine,
-   Fleet, OpenClaw). The device's font for both. */
-:root:lang(ru){--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans","Helvetica Neue",Arial,sans-serif;--serif:"PT Serif",Georgia,"Noto Serif","Times New Roman",serif}
+/* Russian: Source Serif 4 is Latin only, so Cyrillic would come from another font than the Latin words beside it
+   (Machine, Fleet, OpenClaw). The device's serif for both. Inter has both. */
+:root:lang(ru){--serif:"PT Serif",Georgia,"Noto Serif","Times New Roman",serif}
 /* Languages in another script: the coding font only for Latin letters and digits, the rest falls back to the
    language's sans (never a system monospace), and times ("35 минут назад", "34分前") read in the sans as a whole */
 @font-face{font-family:"Mono Latin";src:local("SF Mono"),local("Menlo"),local("Consolas"),local("JetBrains Mono"),local("DejaVu Sans Mono"),local("Liberation Mono"),local("Noto Sans Mono");unicode-range:U+0000-02AF,U+2000-206F,U+20A0-20CF,U+2100-21FF}

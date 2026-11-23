@@ -36,14 +36,15 @@ const state=()=>({suggestions:[{id:'a1'.repeat(8),title:'Answer Jonah about API 
  promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{last_completed:at(-9)},review_runs:[],review_live:{runs:[]},connectors:[{id:'work-outlook',service:'outlook',email:'pat@example.com'}],
  check:{reviewed:at(-9),waiting:0},mail_check:mail,
  locale:{locale:'en-GB',region:'GB',language:'en',language_set:true,clock:'24',hour12:false,auto_hour12:false,date_locale:'en-GB',languages:{en:'English'},saveable:true}});
-const FONTS={'/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
+const fonts=[],FONTS={'/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2',
+ '/brand/sans-cyrillic.woff2':'brand/fonts/inter-cyrillic.woff2','/brand/sans-cyrillic-ext.woff2':'brand/fonts/inter-cyrillic-ext.woff2'};
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/originals'&&url.searchParams.get('event')){const id=url.searchParams.get('event');opened.push(id);
   res.end(JSON.stringify({originals:[{id:+id,kind:'whatsapp',title:'Book club',body:'Did anyone finish chapter 4?',from:'Noor Pell',occurred_at:at(-30),metadata:{chat_name:'Book club',sender_display:'Noor Pell'}}]}));return}
  // the brand's fonts, so a line's width is the one an owner sees and not this computer's fallback font
- if(FONTS[url.pathname]){readFile(new URL('../'+FONTS[url.pathname],import.meta.url)).then(b=>{res.setHeader('Content-Type','font/woff2');res.end(b)});return}
+ if(FONTS[url.pathname]){fonts.push(url.pathname);readFile(new URL('../'+FONTS[url.pathname],import.meta.url)).then(b=>{res.setHeader('Content-Type','font/woff2');res.end(b)});return}
  if(url.pathname.startsWith('/brand/')){res.statusCode=404;res.end();return}
  res.end(url.pathname==='/api/events'?'[]':'{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -115,10 +116,18 @@ try{
   const none=typeof cat['no new to-dos']==='string'?cat['no new to-dos']:'no new to-dos';
   for(const n of [13,113])lines.push([lang,fill(now.other,n,'08:41')+' · '+none]);
  }
+ // a face with a unicode-range (Inter's Cyrillic) loads only once its letters show: a Latin page asked for neither file
+ assert.deepEqual(fonts.filter(p=>/cyrillic/.test(p)),[],'a Latin page loads no Cyrillic');
+ // load each line's faces before measuring, in its language's own page (a language can have its own fonts)
+ const faces=await page.evaluate(async lines=>{const html=document.documentElement,kept=html.lang,out=new Set();
+  for(const [lang,text] of lines){html.lang=lang;const s=getComputedStyle(document.querySelector('#suggestions .mc-line span'));
+   for(const f of await document.fonts.load(`${s.fontWeight} ${s.fontSize} ${s.fontFamily}`,text))out.add(f.unicodeRange)}
+  html.lang=kept;return [...out]},lines);
+ assert.ok(faces.some(r=>/U\+0*400-0*45F/i.test(r)),`Inter's Cyrillic is loaded: ${faces}`);
  await page.evaluate(()=>document.fonts.ready.then(()=>{}));
  const heights=await page.evaluate(lines=>{const span=document.querySelector('#suggestions .mc-line span'),b=span.closest('.mc-line'),kept=span.textContent;
-  span.textContent='13';const one=b.getBoundingClientRect().height;
-  const out=lines.map(([lang,text])=>{span.textContent=text;return [lang,text,b.getBoundingClientRect().height]});span.textContent=kept;return out.map(r=>[...r,one])},lines);
+  span.textContent='13';const one=b.getBoundingClientRect().height,html=document.documentElement,keptLang=html.lang;
+  const out=lines.map(([lang,text])=>{html.lang=lang;span.textContent=text;return [lang,text,b.getBoundingClientRect().height]});span.textContent=kept;html.lang=keptLang;return out.map(r=>[...r,one])},lines);
  // against a line that surely is one line (a number alone), never against another language's line that may wrap too
  const one=heights[0][3];
  for(const [lang,text,h] of heights)assert.ok(h<=one+1,`${lang} wraps at 390: "${text}" (${h}px, one line is ${one}px)`);
