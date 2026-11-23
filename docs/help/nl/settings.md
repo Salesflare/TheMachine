@@ -28,7 +28,7 @@ Een tabblad zonder inhoud is verborgen.
 - **Dit apparaat**: **App installeren**, **Meldingen** met **Test versturen**, en **Lichte modus**, alleen voor deze browser of telefoon. Zie [De app installeren en meldingen aanzetten](phone-app.md). Op [Omarchy](omarchy.md) staat ook **Omarchy-thema**.
 - **Spraakinvoer**: hoe wat je zegt tekst wordt, en welke stem Talk live gebruikt. Zie [Spraakinvoer](voice-input.md) en [Live praten](talk-live.md).
 - **De browser van je Machine openen ↗**: de browser die je Machine gebruikt voor sites zoals LinkedIn.
-- **Fleet-regels**: zie [Deelregels](sharing-rules.md).
+- **Fleet-regels**: zie [Regels voor delen](sharing-rules.md).
 - **Exporteren**:
   - **Alles**: alles wat je Machine weet, in één versleuteld bestand om te bewaren of over te zetten, en **Importeren** om een bestand te importeren. Zie [Verplaatsen naar een andere computer](moving.md).
   - **Kennis voor een andere AI**: wat je Machine heeft geleerd, in bestanden die elke AI kan lezen. Zie [Kennis voor een andere AI](knowledge-export.md).
