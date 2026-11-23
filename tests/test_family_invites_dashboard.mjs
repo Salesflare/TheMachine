@@ -42,8 +42,8 @@ try{
    await page.locator('#task-c1').screenshot({path:`${process.env.SHOTS}/todo-card-${width}-${scheme}.png`})}
   calls.length=0;await note.locator('[data-family-invite="later"]').click();await page.waitForTimeout(200);
   assert.deepEqual(calls[0],{action:'family_invite',args:{suggestion_id:'c1',do:'later'}});
-  // Invite: the new tab opens from the link itself; the dashboard only records the tap. The dashboard's tab is brought
-  // back to the front: one left behind a tab draws no frames on macOS, and a click waits for frames
+  // Invite: the new tab opens from the link itself; the dashboard only records the tap. The dashboard's tab is in
+  // front again once the invite's closes, as it is for an owner
   calls.length=0;const opened=context.waitForEvent('page');await link.click();const tab=await opened;await tab.close().catch(()=>{});await page.bringToFront();await page.waitForTimeout(200);
   assert.deepEqual(calls[0],{action:'family_invite',args:{suggestion_id:'c1',do:'open'}});
   // Settings, Fleet: the switch

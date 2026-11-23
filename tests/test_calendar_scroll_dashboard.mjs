@@ -12,6 +12,8 @@ const {chromium}=await import('./browser.mjs');
 // October. Nothing is wider than the screen at 390 and 1440, and viewing sends nothing.
 // The clock is fixed, in this process and the pages, on a Tuesday: its next week has only four days with a meeting,
 // too few to fill the screen below its Monday, and › still brings that Monday to the top.
+// The page end gives way and springs back here as it does on a Mac (ElasticOverscroll), also on Linux: a wheel turn past
+// the end is still springing back when the page is next measured, and Chrome turns what is left into a scroll.
 // CALENDAR_SHOT=<dir> also writes screenshots.
 process.env.TZ='Europe/Brussels';
 const dashboard=await dashboardPage();
@@ -50,7 +52,7 @@ const fits=(page,where)=>page.evaluate(()=>({page:document.documentElement.scrol
 const headBottom=page=>page.evaluate(()=>document.querySelector('#page-head').getBoundingClientRect().bottom);
 const topOf=(page,k)=>page.evaluate(k=>document.querySelector(`#calendar-view [data-day="${k}"]`)?.getBoundingClientRect().top,k);
 try{
- browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+ browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=ElasticOverscroll']});
  // Calendar weeks and their labels, over a year's end and the clock change on Sunday 25 October 2026
  {const {context,page}=await open(1440,900);await page.locator('#task-'+cards[0].id).waitFor();
   const r=await page.evaluate(()=>({sun:localDay(calMonday(new Date(2026,9,25,12))),mon:localDay(calMonday(new Date(2026,9,26,0,30))),
@@ -76,8 +78,10 @@ try{
   v=await view(page);assert.equal(v.now,false);assert.ok(Math.abs(await topOf(page,nextMon)-await headBottom(page))<16,'next Monday at the top');
   await page.goBack();await page.waitForFunction(k=>location.hash.endsWith(k),thisMon);
   await page.locator('[data-cal-go="0"]').click();await page.waitForFunction(()=>document.querySelector('.cal-today').classList.contains('now'));
-  // Scrolling down loads the following weeks, a calendar week per ask
-  const had=(await view(page)).days.length;asks=[];for(let i=0;i<12&&(await view(page)).days.length<had+14;i++){await page.mouse.wheel(0,2500);await page.waitForTimeout(250)}
+  // Scrolling down loads the following weeks, a calendar week per ask. The wheel turns to the end and not past it.
+  const had=(await view(page)).days.length;asks=[];for(let i=0,n=had;i<12&&n<had+14;i++,n=(await view(page)).days.length){
+   await page.mouse.wheel(0,await page.evaluate(()=>Math.floor(document.documentElement.scrollHeight-innerHeight-scrollY)));
+   await page.waitForFunction(n=>document.querySelectorAll('#calendar-view [data-day]').length>n,n)}
   v=await view(page);assert.ok(v.days.length>=had+14,'later weeks came in: '+v.days.length);assert.ok(asks.length&&asks.every(([a,b])=>a.getDay()===1&&b.getDay()===1));
   assert.ok(await page.locator('.cal-wk').count(),'each new week is named');
   // ... and the header follows the week on screen, in the address too
