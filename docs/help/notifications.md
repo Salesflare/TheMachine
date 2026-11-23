@@ -82,7 +82,7 @@ The push says the same without links. Tap it, or the link at the end of the emai
 
 It comes once on work days at its time in **Work hours**, by default 15 minutes before **Until**, the ways you picked in its row above. It only comes on a day you were there: you used the dashboard, or made a choice on a to-do there, in Telegram, in chat or by voice. A day without a to-do done or a meeting held gets none.
 
-It starts with the day in a count, like "Evening Sam, 4 to-dos done today", then a **Work** part and a **Personal** part. A part with nothing in it is left out. Each has:
+It starts with the day in a count, like "Evening Sam, 4 to-dos done today", then a **Work** part and a **Personal** part. A part with nothing in it is left out. An alert about your Machine itself is in neither. Each has:
 
 - **Done today**: up to three to-dos you or your Machine finished, then "+12 more" and the day's meetings, like "+3 meetings: Pricing call and 2 more";
 - **Open for tomorrow** (on a Friday, your next work day): the first meetings and what's due.

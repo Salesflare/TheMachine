@@ -355,6 +355,8 @@ class NotificationsApp:
         unsure = 'work' if any(todo_areas.area_of_account(a) not in (None, todo_areas.PERSONAL) for a in accounts) else 'personal'
         side = lambda area: 'personal' if area == todo_areas.PERSONAL else 'work' if area else unsure
         by_id = {a.get('id'): a for a in accounts}
+        # One only about the Machine itself (a program that crashed) is neither, as in area_rows and the To-dos filter
+        done, due = ([r for r in rows if not todo_areas.machine_own(r.get('account_ids'), accounts, r.get('area'))] for rows in (done, due))
         for r in done + due:
             r['area'] = side(todo_areas.current(r.get('account_ids'), accounts, r.get('area')))
         for m in held + ahead:
