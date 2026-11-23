@@ -85,8 +85,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `support_app.py` (`SupportApp`): Help and Report a bug.
   - `calendar_app.py` (`CalendarApp`): the Calendar's actions.
   - `skills_app.py` (`SkillsApp`): the skill actions and the skills kept here.
-  - `learned_skills_app.py` (`LearnedSkillsApp`): a Do it run's procedure, its check by meaning, and the learned skills
-    it writes, updates and retires (`learned_skills.py`; written through `skills.Skills`).
+  - `learned_skills_app.py` (`LearnedSkillsApp`): a Do it run's procedure, its check by meaning, the learned skills
+    it writes, updates and retires (`learned_skills.py`; written through `skills.Skills`), and which skills a run opened.
   - `agents_app.py` (`AgentsApp`): Hand to Claude Code / Codex (the hand-off actions and where agents run).
   - `gbrain_app.py` (`GBrainApp`): GBrain on and off, its view and its sync thread.
   - `shared_graph_app.py` (`SharedGraphApp`): the Shared Graph's controls (`GRAPH_SHARE_ACTIONS`).

@@ -32,7 +32,9 @@ from timeutil import now
 LOG = logging.getLogger('personal-assistant')
 
 KEEP_DAYS = 60   # a use older than this is gone (fewer at the Careful level, as for a run's tool calls)
-PURPOSES = ('review', 'preparation', 'ask', 'routine', 'talk', 'chat', 'todo_chat')
+# The prompt it went into; run: no prompt, what a run itself did with a skill (learned_skills.py), with a how of its own:
+# opened (it read its SKILL.md), failed (it did, and said its steps no longer work).
+PURPOSES = ('review', 'preparation', 'ask', 'routine', 'talk', 'chat', 'todo_chat', 'run')
 # What a piece of memory is, by the table its row id is in:
 # fact, rule: facts (kind fact, draft); promise: promises; history: suggestions (the owner's recent to-dos, 30 days);
 # record: graph_nodes (a person or project); signal: events; skill: skills (by slug); team_learning: by fingerprint;
@@ -204,7 +206,7 @@ def forget_person(db, needles):
 
 def last_used(db, kind, row_ids=None):
     """{row id: when a prompt last read it} for a kind, from the log (so within KEEP_DAYS)."""
-    sql, args = 'SELECT row_id,max(at) FROM memory_use WHERE kind=?', [kind]
+    sql, args = "SELECT row_id,max(at) FROM memory_use WHERE kind=? AND purpose!='run'", [kind]
     if row_ids is not None:
         ids = [str(i) for i in row_ids]
         if not ids:
@@ -238,7 +240,7 @@ def outcomes(db, suggestion_id):
     if not row:
         return None
     memory = [{'at': r[0], 'purpose': r[1], 'run': r[2], 'kind': r[3], 'row_id': r[4], 'how': r[5], 'score': r[6], 'chars': r[7]}
-              for r in db.execute('SELECT at,purpose,run_id,kind,row_id,how,score,chars FROM memory_use WHERE suggestion_id=? ORDER BY id', (suggestion_id,))]
+              for r in db.execute("SELECT at,purpose,run_id,kind,row_id,how,score,chars FROM memory_use WHERE suggestion_id=? AND purpose!='run' ORDER BY id", (suggestion_id,))]
     return {'todo': suggestion_id, 'outcome': row[0],
             'edits': db.execute("SELECT count(*) FROM draft_edits WHERE suggestion_id=? AND source!='agent'", (suggestion_id,)).fetchone()[0],
             'decisions': {r[0]: r[1] for r in db.execute('SELECT choice,count(*) FROM decisions WHERE suggestion_id=? GROUP BY choice', (suggestion_id,))},
@@ -253,7 +255,7 @@ def summary(db):
         out = {}
         sql = (f'SELECT {key},o.outcome,count(DISTINCT m.run_id) FROM memory_use m JOIN '
                f'(SELECT s.id,{_OUTCOME} outcome FROM suggestions s WHERE s.id IN (SELECT suggestion_id FROM memory_use)) o '
-               f"ON o.id=m.suggestion_id WHERE m.suggestion_id!='' GROUP BY {key},o.outcome")
+               f"ON o.id=m.suggestion_id WHERE m.suggestion_id!='' AND m.purpose!='run' GROUP BY {key},o.outcome")
         for *name, outcome, n in db.execute(sql):
             entry = out.setdefault(name[0] if len(name) == 1 else tuple(name), {'prompts': 0, **{o: 0 for o in OUTCOMES}})
             entry['prompts'] += n
