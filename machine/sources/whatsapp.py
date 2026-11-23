@@ -123,6 +123,7 @@ def reply_spots(config, db, event_ids):
                       (event_ids or '[]',)).fetchall()
     spots = []
     for row in rows:
+        evidence = row['kind'] != 'fleet.message'  # the to-do's own message, not one a teammate's Machine carried in
         if row['kind'] == 'fleet.message':
             own = [r for r in db.execute("SELECT id,account_id,kind,body,metadata,occurred_at FROM events WHERE occurred_at=? AND deleted=0 "
                                          "AND kind IN ('slack.message','whatsapp.message')", (row['occurred_at'],))
@@ -144,7 +145,7 @@ def reply_spots(config, db, event_ids):
             members = sorted({r[0] for r in db.execute("SELECT DISTINCT json_extract(metadata,'$.user_id') FROM events WHERE account_id=? AND kind='slack.message' "
                                                         "AND json_extract(metadata,'$.channel_id')=?", (row['account_id'], channel))
                               if r[0] and r[0] != account.get('user_id')}) if dm else []
-            spots.append({'service': 'slack', 'account_id': row['account_id'], 'channel_id': channel, 'ts': ts,
+            spots.append({'service': 'slack', 'account_id': row['account_id'], 'evidence': evidence, 'channel_id': channel, 'ts': ts,
                           'thread_ts': thread if re.fullmatch(r'[0-9]{6,12}\.[0-9]{1,8}', thread) else ts, 'dm': dm,
                           'channel_name': str(m.get('channel_name') or ''), 'sender_id': m.get('user_id'),
                           'sender_name': str(m.get('sender_display') or ''), 'own': bool(account.get('user_id')) and m.get('user_id') == account.get('user_id'),

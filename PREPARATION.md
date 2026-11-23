@@ -98,15 +98,15 @@ Choose the useful NEXT ACTION on the finished result, not more preparation for i
 
 ### LinkedIn message
 
-Reply in a conversation from the task's linkedin.message evidence: `{kind:linkedin,label:Send reply,account_id:<task LinkedIn account>,conversation_id:<its metadata.conversation_id>,body:<message>}`; or, only when the owner named the person and gave or confirmed their linkedin.com/in/<slug>: `{kind:linkedin,label:Send,account_id:...,profile:<slug>,to_name:<name as on the profile>,body:...}`. Plain text, short, the owner's LinkedIn voice (job message, else USER.md), no signature.
+Reply in a conversation from the task's linkedin.message evidence: `{kind:linkedin,label:Send reply,account_id:<the account it came in on>,conversation_id:<its thread, listed in the job message>,body:<message>}`; or, only when the owner named the person and gave or confirmed their linkedin.com/in/<slug>: `{kind:linkedin,label:Send,account_id:...,profile:<slug>,to_name:<name as on the profile>,body:...}`. Plain text, short, the owner's LinkedIn voice (job message, else USER.md), no signature.
 
 ### X reply or message (the task's X account)
 
-Reply to a post from this task's x.mention evidence with `{kind:x,label:Reply on X,account_id:<task X account ID>,reply_to:<that event's metadata.tweet_id>,body:<reply>}`, or answer an x.dm with `{kind:x,label:Send,account_id:...,conversation_id:<its metadata.conversation_id>,body:...}`. Plain text, no media; a reply at most 280 characters (links count 23), a DM 10000. Public replies stay short and keep private or customer details out. It's sent through the owner's own x.com session after their Send now, or send_now when they asked you to send it.
+Reply to a post from this task's x.mention evidence with `{kind:x,label:Reply on X,account_id:<task X account ID>,reply_to:<that event's metadata.tweet_id>,body:<reply>}`, or answer an x.dm with `{kind:x,label:Send,account_id:...,conversation_id:<its thread>,body:...}`. Plain text, no media; a reply at most 280 characters (links count 23), a DM 10000. Public replies stay short and keep private or customer details out. It's sent through the owner's own x.com session after their Send now, or send_now when they asked you to send it.
 
 ### WhatsApp or Telegram message
 
-`{kind:whatsapp,label:Send reply,account_id:<WhatsApp account>,chat_id:<task's metadata.chat_id>,body}`; Telegram: kind:telegram; Teams chat (no channel): kind:teams. If the owner talks to them there, switch: to_name:<name> instead of chat_id finds their chat. Short plain text in that channel's voice. Existing chats only; never send_now. A Machine limit is never a question: with no chat, body:<the text>, needs:<what they can do>. Intercom: reply there `{kind:intercom,account_id,conversation_id,body}`; email only if asked (by_email:true) or refused.
+`{kind:whatsapp,label:Send reply,account_id:<WhatsApp account>,chat_id:<its thread>,body}`; Telegram: kind:telegram; Teams chat (no channel): kind:teams. If the owner talks to them there, switch: to_name:<name> instead of chat_id finds their chat. Short plain text in that channel's voice. Existing chats only; never send_now. A Machine limit is never a question: with no chat, body:<the text>, needs:<what they can do>. Intercom: reply there `{kind:intercom,account_id,conversation_id,body}`; email only if asked (by_email:true) or refused.
 
 ### Slack message, and handing a task to someone
 

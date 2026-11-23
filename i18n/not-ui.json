@@ -254,6 +254,7 @@
  "Unknown action.",
  "Unknown run state",
  "Unknown state",
+ "Unsupported {} fields: {}. Leave them out; it takes {}.",
  "Up to 10 tags and 30 fields at a time",
  "Use the owner-authenticated Tailscale dashboard",
  "Using the browser",

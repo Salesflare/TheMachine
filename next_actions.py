@@ -220,7 +220,7 @@ INTERCOM_FALLBACK = {'shared': 'Intercom is shared with you to read only, so thi
                      'missing': 'Intercom isn’t connected on this Machine, so this goes by email.'}
 
 
-def intercom_channel(value, result, config, allowed_accounts, conversations):
+def intercom_channel(value, result, config, conversations):
     """An email to the customer of the task's Intercom conversation: the reply belongs in that conversation. When this
     Machine can reply there, the email is refused (unless the owner asked for email: by_email); when it can't, the email
     goes ahead marked with why (INTERCOM_FALLBACK), so the card says so. None when the email isn't to that customer."""
@@ -237,7 +237,7 @@ def intercom_channel(value, result, config, allowed_accounts, conversations):
         account = next((a for a in config['accounts'] if c.get('account_id') and a['id'] == c['account_id'] and a.get('service') == 'intercom'), None)
         if not account:
             reasons.append('missing')
-        elif account['id'] in allowed_accounts and intercom_replies_on(account):
+        elif intercom_replies_on(account):
             raise ValueError(f"This conversation is in Intercom: reply there with {{kind:intercom,account_id:{account['id']},conversation_id:{cid},body}}. "
                              'Email them only when the owner asked for email; then add by_email:true.')
         else:
@@ -352,6 +352,12 @@ def slack_thread(action, spots):
         return None
     return {'channel_id': spot['channel_id'], 'ts': str(spot.get('thread_ts') or spot['ts']), 'dm': bool(spot.get('dm')),
             **({} if spot.get('dm') else {'channel_name': str(spot.get('channel_name') or 'channel')[:80]})}
+
+
+def slack_home(value, spots):
+    """A Slack reply to who wrote the to-do's own message, in the account it came in on (as reply_home does for email)."""
+    who = '' if value.get('user_id') else str(value.get('to_name') or '')  # an id is exact: the name alone doesn't vouch for it
+    return not value.get('delegate') and reply_spot({**value, 'to_name': who}, [s for s in spots or () if s.get('evidence')])[0] is not None
 
 
 def whatsapp_quote(action, spots):
@@ -544,6 +550,23 @@ def reply_origin(result, account, config, replied):
         result['reply_to_id'] = original['id']
 
 
+def only_fields(value, fields, what):
+    """Refuses a draft with a field its kind doesn't have, naming it and what the kind takes: the run fixes it in one go."""
+    extra = sorted(str(k)[:40] for k in set(value) - fields)
+    if extra:
+        raise ValueError(f"Unsupported {what} fields: {', '.join(extra)}. Leave them out; it takes {', '.join(sorted(fields))}.")
+
+
+def linkedin_reply(value, threads):
+    """A LinkedIn draft that names no conversation and no profile answers the to-do's only one in that account (with
+    to_name, the only one with them)."""
+    if value.get('conversation_id') or value.get('profile'):
+        return value
+    found = [c for c, t in threads.items() if t['account_id'] == value.get('account_id')
+             and (not value.get('to_name') or names_agree(str(value['to_name']), t['name']))]
+    return {**value, 'conversation_id': found[0]} if len(found) == 1 else value
+
+
 # How a follow-up's label (kind:prepare) starts: another Do it turn drafts, checks, researches or applies a change.
 FOLLOW_UP_VERBS = ('Draft', 'Prepare', 'Investigate', 'Check', 'Compare', 'Research', 'Apply', 'Fix', 'Update', 'Implement', 'Test',
                    'Set up', 'Configure')
@@ -645,8 +668,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
                   'delegate', 'wait_days', 'to_name', 'by_email'}
         if 'by_email' in value and value['by_email'] is not True:
             raise ValueError('by_email is true (the owner asked for email), or left out')
-        if set(value) - fields:
-            raise OwnerError('Unsupported email fields')
+        only_fields(value, fields, 'email')
         if not isinstance(value.get('signature', True), bool):
             raise ValueError('signature is true (default: your signature is added) or false')
         # Any of the owner's Gmail or Outlook accounts for the same company (or the same address) as the task's signals: a task
@@ -670,7 +692,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
                     for a in addresses):
                 raise OwnerError('Recipients must be explicit email addresses')
             result[field] = addresses
-        fallback = intercom_channel(value, result, config, allowed_accounts, intercom_conversations)
+        fallback = intercom_channel(value, result, config, intercom_conversations)
         if fallback:
             result['intercom_fallback'] = fallback
             if 'email' not in result.get('label', '').lower():
@@ -730,23 +752,26 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     elif value.get('kind') == 'linkedin':
         # A LinkedIn message: a reply in a conversation from this task's own signals, or a new
         # message to a profile slug the owner gave. Sent only after the owner's approval.
-        if set(value) - {'kind', 'label', 'account_id', 'conversation_id', 'profile', 'to_name', 'body'}:
-            raise OwnerError('Unsupported LinkedIn message fields')
+        only_fields(value, {'kind', 'label', 'account_id', 'conversation_id', 'profile', 'to_name', 'body'}, 'LinkedIn message')
+        threads = linkedin_threads or {}
+        value = linkedin_reply(value, threads)
+        conversation = value.get('conversation_id') and threads.get(str(value['conversation_id']))
+        if value.get('conversation_id') and not conversation:
+            raise ValueError('Reply only in a LinkedIn conversation from this task’s own messages; conversation_id is one of: '
+                             + ('; '.join(f"{c} ({t['name']}, account_id {t['account_id']})" for c, t in list(threads.items())[:5]) or 'none here'))
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'linkedin'), None)
-        if not account or account['id'] not in allowed_accounts:
+        # A reply goes where its thread lives, as reply_home has it; a new message only from the task's own accounts.
+        if not account or (account['id'] != conversation['account_id'] if conversation else account['id'] not in allowed_accounts):
             raise OwnerError('Use the LinkedIn account belonging to this task')
         result = {'kind': 'linkedin', 'account_id': account['id']}
         if value.get('label'):
             if value['label'] != 'Send' and not value['label'].startswith('Send '):
                 raise OwnerError('LinkedIn button labels must say Send, such as Send reply')
             result['label'] = value['label']
-        threads = linkedin_threads or {}
         if bool(value.get('conversation_id')) == bool(value.get('profile')):
             raise ValueError('A LinkedIn message needs either the conversation_id from this task or a profile slug, not both')
-        if value.get('conversation_id'):
-            if value['conversation_id'] not in threads:
-                raise OwnerError('Reply only in a LinkedIn conversation from this task’s own messages')
-            result.update(conversation_id=value['conversation_id'], to_name=threads[value['conversation_id']])
+        if conversation:
+            result.update(conversation_id=str(value['conversation_id']), to_name=conversation['name'])
         else:
             if not isinstance(value['profile'], str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_%-]{1,99}', value['profile']):
                 raise ValueError('profile is the slug from linkedin.com/in/<slug>/')
@@ -761,10 +786,9 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     elif value.get('kind') == 'x':
         # An X reply to a post, or a DM, from this task's own X signals; integrations/x_inbox.py sends it
         # through the owner's signed-in x.com session in the OpenClaw browser, only after their Send now.
-        if set(value) - {'kind', 'label', 'account_id', 'reply_to', 'conversation_id', 'body'}:
-            raise OwnerError('Unsupported X fields; plain text only, no media')
+        only_fields(value, {'kind', 'label', 'account_id', 'reply_to', 'conversation_id', 'body'}, 'X')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'x'), None)
-        if not account or account['id'] not in allowed_accounts:
+        if not account:  # the one the post or chat came in on, checked below
             raise OwnerError('Use the X account belonging to this task')
         result = {'kind': 'x', 'account_id': account['id'], 'handle': account['handle']}
         if value.get('label'):
@@ -792,11 +816,11 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     elif value.get('kind') == 'slack':
         # A Slack direct message from the owner's own Slack account, mostly to hand a task to a
         # colleague. Any Slack account in the task's boundary; sent only after the owner's Send now.
-        if set(value) - {'kind', 'label', 'account_id', 'user_id', 'to_email', 'to_name', 'body', 'delegate', 'wait_days'}:
-            raise OwnerError('Unsupported Slack message fields')
+        only_fields(value, {'kind', 'label', 'account_id', 'user_id', 'to_email', 'to_name', 'body', 'delegate', 'wait_days'}, 'Slack message')
         boundaries = {a.get('boundary') for a in config['accounts'] if a['id'] in allowed_accounts}
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'slack'), None)
-        if not account or (account['id'] not in allowed_accounts and account.get('boundary') not in boundaries):
+        if not account or (account['id'] not in allowed_accounts and account.get('boundary') not in boundaries
+                           and not slack_home(value, reply_spots)):
             raise OwnerError('Use the Slack account of this task’s company')
         result = {'kind': 'slack', 'account_id': account['id']}
         if value.get('label'):
@@ -867,8 +891,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # A Telegram message in an existing private chat or small group the owner's own account reads, sent by the
         # Telegram mirror only after the owner's Send on this exact text. Text only. The chat is one from this task's
         # own Telegram messages, or the person's chat in that account that the service looked up (telegram_chats).
-        if set(value) - {'kind', 'label', 'account_id', 'chat_id', 'to_name', 'body'}:
-            raise OwnerError('Unsupported Telegram fields; plain text only, no media')
+        only_fields(value, {'kind', 'label', 'account_id', 'chat_id', 'to_name', 'body'}, 'Telegram')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'telegram'), None)
         if not account or account.get('shared'):
             raise OwnerError('Use one of the owner’s Telegram accounts')
@@ -890,10 +913,9 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # A reply in an Intercom conversation from this task's own messages, as the owner's own Intercom admin (the one
         # who signed in with Intercom for replies). It goes out only after the owner's Send on this exact text. A plain
         # comment: never a note, an assignment, a close or a tag. A token shared through a Fleet only reads.
-        if set(value) - {'kind', 'label', 'account_id', 'conversation_id', 'body'}:
-            raise OwnerError('Unsupported Intercom fields; a plain reply only: no notes, assigning, closing or tags')
+        only_fields(value, {'kind', 'label', 'account_id', 'conversation_id', 'body'}, 'Intercom')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'intercom'), None)
-        if not account or account['id'] not in allowed_accounts:
+        if not account:  # the one its conversation came in on, checked below
             raise OwnerError('Use the Intercom account belonging to this task')
         if not intercom_replies_on(account):
             raise ValueError('Replies are not on for this Intercom account: the owner turns them on by signing in with Intercom '
@@ -914,15 +936,14 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
             raise OwnerError('Provide the concrete Intercom reply, at most 10000 characters')
         result['body'] = body.strip()
     elif value.get('kind') == 'teams':  # in the Teams chat it came from, never a channel (teams_send.py)
-        result = teams_send.check(value, config, allowed_accounts, teams_chats)
+        result = teams_send.check(value, config, teams_chats)
     elif value.get('kind') == 'doc_reply':
         # A reply to a comment on a Google Doc from this task's own doc events (connectors/docs.py), as the owner, posted
         # only after their Post on this exact text, and only with the separate reply consent. Word comments can't be
         # answered through Microsoft Graph: there the reply stays text for the owner to post.
-        if set(value) - {'kind', 'label', 'account_id', 'comment_id', 'body'}:
-            raise OwnerError('Unsupported doc reply fields; a plain reply to one comment only')
+        only_fields(value, {'kind', 'label', 'account_id', 'comment_id', 'body'}, 'doc reply')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') in abilities.DOC_SERVICES), None)
-        if not account or account['id'] not in allowed_accounts:
+        if not account:  # the one its comment came in on, checked below
             raise OwnerError('Use the Docs account belonging to this task')
         comment = (doc_comments or {}).get(str(value.get('comment_id') or ''))
         if not comment or comment.get('account_id') != account['id']:
@@ -945,8 +966,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # Hand the task to a teammate in the owner's Work Fleet, through The Machine (docs/fleet.md): their
         # Machine gets it as a handoff to accept. Nothing goes by itself: the button opens the Fleet handoff
         # form with this text, for the owner to read, edit and send. The caller checks they are a teammate.
-        if set(value) - {'kind', 'label', 'to_email', 'to_name', 'body'}:
-            raise OwnerError('Unsupported handoff fields')
+        only_fields(value, {'kind', 'label', 'to_email', 'to_name', 'body'}, 'handoff')
         result = {'kind': 'handoff'}
         if value.get('label'):
             if not value['label'].startswith('Hand off'):

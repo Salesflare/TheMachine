@@ -42,8 +42,10 @@ def _who(value):
     return str(value or '')
 
 
-def source_line(row):
-    """One message the to-do came from as a header line: id, kind, when, from, to, subject, thread. No body."""
+def source_line(row, threads=None):
+    """One message the to-do came from as a header line: id, kind, when, account, from, to, subject, thread. No body.
+    The thread is whole, since a reply names it (a LinkedIn conversation's id is over 140 characters), and once: a later
+    message in it points to the first (threads: {thread: event id}). Tool results leave it out (compact_metadata)."""
     try:
         meta = json.loads(row['metadata'] or '{}')
     except (TypeError, ValueError):
@@ -51,6 +53,7 @@ def source_line(row):
     meta = meta if isinstance(meta, dict) else {}
     when = local_when(row['occurred_at'])
     parts = [f"event {row['id']} ({row['kind']}, " + (f'{when} local time)' if when else f"{str(row['occurred_at'])[:16]} UTC)")]
+    parts.append(f"on {row['account_id']}")
     if meta.get('from'):
         parts.append('from ' + clamp(_who(meta['from']), 160))
     if meta.get('to'):
@@ -59,7 +62,8 @@ def source_line(row):
         parts.append('"' + clamp(' '.join(str(row['title']).split()), 140) + '"')
     thread = meta.get('thread_id') or meta.get('conversation_id') or meta.get('chat_id') or meta.get('channel_id')
     if thread:
-        parts.append('thread ' + clamp(str(thread), 80))
+        first = row['id'] if threads is None else threads.setdefault(str(thread), row['id'])
+        parts.append(f'same thread as event {first}' if first != row['id'] else 'thread ' + str(thread)[:400])
     return '- ' + ', '.join(parts)
 
 
@@ -74,7 +78,7 @@ def review_brief(db, suggestion_id):
     except (TypeError, ValueError):
         ids = []
     found = {r['id']: r for r in db.execute(
-        f"SELECT id,kind,occurred_at,title,metadata FROM events WHERE id IN ({','.join('?' * len(ids))}) AND deleted=0", ids)} if ids else {}
+        f"SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE id IN ({','.join('?' * len(ids))}) AND deleted=0", ids)} if ids else {}
     lines = ['- To-do: ' + clamp(' '.join(str(row.get('title') or '').split()), 160)]
     if row.get('body'):
         lines.append('- Its summary now: ' + clamp(' '.join(str(row['body']).split()), 700))
@@ -83,7 +87,8 @@ def review_brief(db, suggestion_id):
             lines.append(f'- {label}: ' + clamp(str(row[key]), 160))
     if row.get('based_on'):
         lines.append(f"- Follows event {row['based_on']} (someone else's input)")
-    heads = [source_line(found[i]) for i in ids if i in found]
+    threads = {}
+    heads = [source_line(found[i], threads) for i in ids if i in found]
     if heads:
         lines.append('- The messages it came from, which the review read whole:')
         lines += heads

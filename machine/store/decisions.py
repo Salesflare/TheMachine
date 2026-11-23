@@ -1698,7 +1698,9 @@ class DecisionsStore:
         started = []
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            rows = db.execute("SELECT s.id,s.next_action,s.account_ids FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id "
+            # the accounts its messages came in on (its area's are another company's after a placement or move)
+            rows = db.execute("SELECT s.id,s.next_action,(SELECT json_group_array(e.account_id) FROM events e JOIN json_each(s.event_ids) j "
+                              "ON j.value=e.id) account_ids FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id "
                               f"WHERE s.status IN {todo_states.sql(todo_states.PREPARED, todo_states.ACCEPTED)} AND p.status='done' AND s.next_action IS NOT NULL "
                               "AND NOT EXISTS(SELECT 1 FROM decisions d WHERE d.id='intercom-replies:'||s.id) "
                               "AND NOT EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status NOT IN ('cancelled','rejected'))").fetchall()

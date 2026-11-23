@@ -553,7 +553,7 @@ For a teammate in your Work Fleet, the result is a Fleet handoff instead (`kind:
 
 ### LinkedIn messages
 
-- The `linkedin` action either replies in a conversation from the task's own LinkedIn signals (`conversation_id`), or writes to a profile slug you gave (`profile` plus `to_name`).
+- The `linkedin` action either replies in a conversation from the task's own LinkedIn signals (`conversation_id`, from the account the message came in on, whatever the to-do's area; filled in when there is only one), or writes to a profile slug you gave (`profile` plus `to_name`, from an account in the to-do's area).
 - Preflight resolves the recipient without sending. A profile whose name doesn't match `to_name` blocks the send.
 - `LinkedInTransport` runs `linkedin_inbox.py send --yes` with the job ID as token. The reader logs its intent before the one write (fsynced, token admission locked) and never reuses a token.
 - An unclear outcome stays uncertain and is checked through `linkedin_inbox.py verify` by exact message identity, not by matching text or time. Missing or damaged send evidence stays uncertain and is never resent.

@@ -3,7 +3,8 @@
 A to-do's area comes from its accounts (assistant.suggestion_scope): what it may read and send from, and whether it
 counts as Work for timing, sharing and handoffs, all follow them. The owner can move a to-do to another of their areas
 (More, Move to Work): its accounts become that area's, so everything that follows the accounts follows the move. The
-messages it came from stay where they are; only the to-do moves. Its run can ask for a move (preparation_blocked
+messages it came from stay where they are; only the to-do moves, and a reply in one of their threads still goes from the
+account it came in on (next_actions.reply_home and the send kinds' own checks): its area decides what else it may use. Its run can ask for a move (preparation_blocked
 move_to): when the messages it came from all came in on that area (sources_area), it moves there by itself and carries
 on, since that takes it where its sources already are; otherwise the to-do shows the move as a button for the owner's
 tap.
