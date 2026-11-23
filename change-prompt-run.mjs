@@ -3,6 +3,7 @@
 import {open,rename,mkdir} from 'node:fs/promises';
 import {join,isAbsolute} from 'node:path';
 import {OPENCLAW} from './openclaw-root.mjs';
+console.log=console.info=console.warn=console.error;  // OpenClaw's own notes ("outbound send ok") go to stderr: stdout is the answer
 let sending=false;
 // The receipt folder is the service's own, set in the environment and never taken from the request: an absolute,
 // already normal path (no . or .. parts), or no send.
