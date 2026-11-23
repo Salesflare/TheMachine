@@ -89,7 +89,7 @@ svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke
 /* What was just added: marked a moment */
 li.new{animation:new 3s ease-out both}
 @keyframes new{0%,45%{background:color-mix(in srgb,var(--accent) 18%,transparent)}to{background:transparent}}
-.rows button.name:hover,.rows li:hover>.name,.rows li:focus-within>.name{background:var(--raised)}
+.rows button.name:hover,.rows li:not(#menu-speak):hover>.name,.rows li:not(#menu-speak):focus-within>.name{background:var(--raised)}
 /* A row's quick buttons, over its end, on hover and with the keys */
 .todos li{position:relative;border-radius:8px}
 .quick{position:absolute;inset-block:0;inset-inline-end:0;display:flex;align-items:center;padding-inline:20px 3px;border-radius:8px;background:linear-gradient(to left,var(--raised) 74%,transparent);opacity:0;pointer-events:none}
