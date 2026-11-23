@@ -20,6 +20,7 @@ if ($to -ne 'read') {
   if (-not $switch) { 'NOSWITCH ' + (($all | ForEach-Object { $_.Current.Name + '/' + $_.Current.AutomationId }) -join '; '); exit 1 }
   $toggle = $switch.GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
   if (($toggle.Current.ToggleState -eq 'On') -ne ($to -eq 'on')) { $toggle.Toggle() }
+  foreach ($i in 1..20) { if (($toggle.Current.ToggleState -eq 'On') -eq ($to -eq 'on')) { break }; Start-Sleep -Milliseconds 250 }
   Start-Sleep 3
   Get-Process SystemSettings -ErrorAction SilentlyContinue | Stop-Process -Force
   Start-Sleep 1
