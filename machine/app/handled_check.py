@@ -258,8 +258,9 @@ class HandledCheckApp:
             every = max(slack_limits(account)['floor'], int(self.config.get('slack_read_seconds', slack_limits(account)['read_seconds']))) + 15
             return (f"Before this goes to the owner: Slack reads the conversations with {names} first ({', '.join(pending)}), one "
                     'every few minutes, since it may be done there already. '
-                    + ('This call waited for them already: save again as it is (it waits again).' if wait else
-                       f'Sleep {every} with exec, then save again as it is.'))
+                    + ('This call waited for them already: save again as it is (it waits again), ' if wait else
+                       f'Sleep {every} with exec, then save again as it is, ')
+                    + 'its steps included. Nothing else is yours to do meanwhile; the wait ends by itself.')
         with self.store.connect() as db:
             found = self.handled_since(db, ids, people)
             accounts = sorted({r[0] for r in db.execute(f"SELECT DISTINCT account_id FROM events WHERE id IN ({','.join('?' * len(found))})",
@@ -274,7 +275,7 @@ class HandledCheckApp:
         return (f'Before this goes to the owner, read what came after its messages with {names} (it may be done already):\n{lines}\n'
                 f"Read them with events {{account_ids:{json.dumps(accounts)}, event_ids:{json.dumps([x['id'] for x in new])}}}. If they show it is "
                 "done already (they were asked or told, answered or agreed), save outcome:'already_done' with no next_actions and a body "
-                'that says who did it and when, in a few words; otherwise save again as it is.')
+                'that says who did it and when, in a few words; otherwise save again as it is, its steps included.')
 
     def handled_close(self, suggestion_id, job_id, body):
         """A run that saved already_done after handled_gate showed it newer messages: the to-do closes by itself."""

@@ -31,7 +31,7 @@ from machine.sources.slack import call_wait
 from machine.sources.telegram import owner_telegram_chats
 from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
 import meeting_prep
-from machine import action_basis, new_post, todo_kinds
+from machine import action_basis, hand_back, new_post, todo_kinds
 from models import model_ready
 import next_actions
 from machine.store import outcomes
@@ -208,6 +208,16 @@ class CardActionsApp:
         return self.task_import(str(args.get('link') or ''))
 
     def prepare_action(self, name, args, owner_dashboard=False):
+        # The steps of a save that didn't go through are kept until one does, and given back once (hand_back.py)
+        unsaved=self.__dict__.setdefault('_unsaved_steps',{})
+        try:saved=self.save_prepared(name,args,unsaved)
+        except ValueError:
+            hand_back.keep(unsaved,args.get('job_id'),args,next_actions.WAITING_KINDS)
+            raise
+        unsaved.pop(args.get('job_id'),None)
+        return saved
+
+    def save_prepared(self, name, args, unsaved):
         with self.store.connect() as db:
             row=db.execute('SELECT account_ids,event_ids,body FROM suggestions WHERE id=?',(args['suggestion_id'],)).fetchone()
         if not row:raise ValueError('Unknown suggestion')
@@ -342,6 +352,9 @@ class CardActionsApp:
                 # The owner wants this card itself back later: the card's own snooze, not a separate reminder.
                 outcome={'state':'snoozed','until':asked_snooze_time(args.get('snooze_until'))}
             else:raise ValueError("Say whether the job is finished: outcome:'done' (the task itself is complete; nothing left for the owner but to check it), outcome:'answered' (you only answered a question, explained or planned; the task itself is still to do), outcome:'already_done' (it turned out to be done already or no longer needed, nothing left for anyone), outcome:'waiting' with waiting_on (a step still open on someone else's side), outcome:'your_step' with step:<submit, pay, book, sign, confirm, order or apply> (all ready, the owner makes that final click), or outcome:'needs_you' with needs:<what they have to do, e.g. approve the send, sign in, pick an option>")
+        if outcome and not args.get('finish_state'):
+            why=hand_back.lost(unsaved,args.get('job_id'),outcome['state'],[a['kind'] for a in next_actions.actions(action)],next_actions.WAITING_KINDS)
+            if why:raise ValueError(why)
         if outcome and outcome['state']=='needs_you':
             with self.store.connect() as db:outcome=nudge_wait(db,args['suggestion_id'],args.get('job_id'),outcome,next_actions.actions(action))
         if 'do_now' in args and not isinstance(args['do_now'],bool):raise ValueError('do_now is true or false')
