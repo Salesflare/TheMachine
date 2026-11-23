@@ -95,7 +95,8 @@ class LearnedSkillsApp:
         if not drafts:
             return {}
         try:
-            page = learned_skills.check_page(drafts)
+            with self.store.connect() as db:
+                page = learned_skills.check_page(learned_skills.with_owners(db, drafts))
             if ask:
                 reply = ask(page)
             else:

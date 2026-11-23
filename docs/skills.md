@@ -112,7 +112,8 @@ follow it. It shows in Settings > Skills with **Learned from a task**.
 - **Guidance, never permission.** Its SKILL.md says so: your own rules, notes and skills come first, and sending, paying
   or submitting still waits for you.
 - **Your skills stay yours.** Learning never edits a skill of yours. When one of yours already covers that site or
-  workflow, nothing is learned. **Edit** a learned skill and it becomes yours: learning stops changing it.
+  workflow, nothing is learned. The same model turn judges that by meaning, from what your closest skills are for and
+  their own lines on the site: a skill that only names the site doesn't cover it, and when unsure nothing is learned. **Edit** a learned skill and it becomes yours: learning stops changing it.
 - **It keeps itself current.** A task counts only when its run opened the skill, not because it is about the same site.
   It counts against the skill only when that run says the skill's own steps no longer work; a sign-in, an outage, another
   app or a question for you doesn't. Three to-dos in a row turn it off, shown as **Off: its steps stopped working**. A
