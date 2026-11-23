@@ -1,4 +1,4 @@
-// What the box and the bubble share: the pictures by path, as the dashboard's, and when a snooze is until.
+// What the windows share: the pictures by path, as the dashboard's, when a snooze is until, and what is dropped on them.
 (function () {
   'use strict';
   const t = window.MachineText;
@@ -23,5 +23,19 @@
     const time = hour12 ? at.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', hour12}) : at.getHours() + ':' + String(at.getMinutes()).padStart(2, '0');
     return days <= 0 ? time : days === 1 ? fill(t.tomorrow, time) : at.toLocaleDateString([], days < 7 ? {weekday: 'long'} : {day: 'numeric', month: 'short'}) + ' ' + time;
   }
-  window.Parts = {icon, when, fill};
+  // Files, else a link with its name, else text. Read at once: a drop's data is gone after its event
+  const takes = data => [...(data?.types || [])].some(x => x === 'Files' || x === 'text/uri-list' || x === 'text/plain');
+  function dropped(data) {
+    const files = [...(data?.files || [])], read = kind => (files.length ? '' : data?.getData(kind) || '').replace(/\r\n?/g, '\n').trim();
+    const link = read('text/uri-list').split('\n').find(l => /^https?:\/\//i.test(l)), text = read('text/plain');
+    const [, name] = read('text/x-moz-url').split('\n');
+    return {files, text: link ? [name?.trim() !== link && name?.trim(), link].filter(Boolean).join('\n') : /^file:/i.test(text) ? '' : text};
+  }
+  const base64 = f => new Promise((ok, no) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(',')[1] || '');
+    r.onerror = no;
+    r.readAsDataURL(f);
+  });
+  window.Parts = {icon, when, fill, takes, dropped, base64, MAX_FILES: 5, MAX_BYTES: 10 * 1024 * 1024};
 })();

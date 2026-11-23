@@ -438,6 +438,54 @@ pub mod linux {
         }
     }
 
+    /// Files dropped on it: WebKitGTK gives its page none. Links and text are the page's.
+    fn files(app: &AppHandle, label: &str, page: &impl IsA<gtk::Widget>) {
+        use std::path::PathBuf;
+        use std::rc::Rc;
+        let over: Rc<RefCell<Vec<PathBuf>>> = Rc::default();
+        let held = over.clone();
+        page.connect_drag_data_received(move |_, _, _, _, data, _, _| {
+            let uris = data.uris();
+            if !uris.is_empty() {
+                let found: Vec<PathBuf> = uris.iter().filter_map(|u| gtk::glib::filename_from_uri(u).ok().filter(|(_, host)| host.is_none()).map(|(path, _)| path)).collect();
+                *held.borrow_mut() = if found.len() == uris.len() { found } else { Vec::new() };
+            }
+        });
+        // WebKit's yes comes after the motion it is to, and only counts with the next one: a quick drop would be refused
+        let here = Rc::new(std::cell::Cell::new(false));
+        let on = here.clone();
+        page.connect_drag_motion(move |_, drag, _, _, time| {
+            on.set(true);
+            let (on, drag) = (on.clone(), drag.clone());
+            if drag.list_targets().iter().any(|t| ["text/uri-list", "text/plain", "text/plain;charset=utf-8", "UTF8_STRING"].contains(&t.name().as_str())) {
+                gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(30), move || {
+                    if on.get() {
+                        drag.drag_status(gdk::DragAction::COPY, time);
+                    }
+                });
+            }
+            false
+        });
+        // It leaves before it drops
+        let held = over.clone();
+        page.connect_drag_leave(move |_, _, _| {
+            here.set(false);
+            let held = held.clone();
+            gtk::glib::idle_add_local_once(move || held.borrow_mut().clear());
+        });
+        let (app, label) = (app.clone(), label.to_string());
+        page.connect_drag_drop(move |_, drag, _, _, time| {
+            let paths = std::mem::take(&mut *over.borrow_mut());
+            if paths.is_empty() {
+                return false;
+            }
+            drag.drop_finish(true, time);
+            let (app, label) = (app.clone(), label.clone());
+            std::thread::spawn(move || crate::take_given(&app, &label, crate::given::Given::read(&paths)));
+            true
+        });
+    }
+
     pub fn prepare(app: &AppHandle, window: &WebviewWindow, label: &str) -> tauri::Result<()> {
         let robot = label == "robot";
         let gtk = window.gtk_window()?;
@@ -464,6 +512,10 @@ pub mod linux {
                     gtk::glib::Propagation::Proceed
                 });
             })?;
+        }
+        if label == "robot" || label == "box" {
+            let (app, label) = (app.clone(), label.to_string());
+            window.with_webview(move |page| files(&app, &label, &page.inner()))?;
         }
         if label == "bubble" {
             // WebKit doesn't tell the page that the pointer left its window

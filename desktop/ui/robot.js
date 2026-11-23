@@ -68,6 +68,23 @@
   addEventListener('contextmenu', e => { e.preventDefault(); invoke('robot_menu'); });
   robot.addEventListener('keydown', e => { if (e.key === 'F10') { e.preventDefault(); invoke('robot_menu'); } });
 
+  // Dropped on it: the box opens with it
+  const {takes, dropped, base64, MAX_FILES, MAX_BYTES} = window.Parts;
+  const over = on => robot.classList.toggle('over', on);
+  addEventListener('dragover', e => { if (!takes(e.dataTransfer)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; over(true); });
+  addEventListener('dragleave', e => { if (!e.relatedTarget) over(false); });
+  addEventListener('drop', async e => {
+    e.preventDefault();
+    over(false);
+    const {text, files} = dropped(e.dataTransfer), kept = [];
+    let error = files.length > MAX_FILES ? 'files' : null;
+    for (const f of files.slice(0, MAX_FILES)) {
+      if (f.size > MAX_BYTES) { error = 'size'; continue; }
+      try { kept.push({name: f.name || 'image.png', kind: f.type, data: await base64(f)}); } catch { error = 'file'; } // a folder
+    }
+    if (text || kept.length || error) invoke('robot_given', {given: {text, files: kept, error}});
+  });
+
   const still = matchMedia('(prefers-reduced-motion: reduce)');
   function blink() {
     if (!still.matches && !document.hidden) {

@@ -5,6 +5,7 @@
 mod address;
 mod card;
 mod front;
+mod given;
 mod machine;
 mod place;
 mod quit;
@@ -18,6 +19,7 @@ mod windows;
 
 use machine::{Machine, Waiting};
 use saved::Saved;
+use given::Given;
 use serde::Serialize;
 use serde_json::Value;
 use std::path::PathBuf;
@@ -75,6 +77,7 @@ pub struct Shared {
     tall: Mutex<f64>,
     /// The to-do the box opens on.
     pub wanted: Mutex<Option<String>>,
+    given: Mutex<Option<Given>>,
     /// What was added in the box since it opened.
     pub added: Mutex<Vec<String>>,
     dot: AtomicBool,
@@ -321,6 +324,33 @@ fn robot_drop(app: AppHandle) {
 }
 
 #[tauri::command]
+fn robot_given(app: AppHandle, given: Given) -> Result<(), String> {
+    take_given(&app, "robot", given.within().ok_or("size")?);
+    Ok(())
+}
+
+/// On the robot, the box opens with it; a hidden robot comes back.
+pub fn take_given(app: &AppHandle, at: &str, given: Given) {
+    let shared = app.state::<Shared>();
+    *shared.given.lock().unwrap() = Some(given);
+    if at == "box" {
+        let _ = app.emit_to("box", "given", ());
+        return;
+    }
+    later(app, |app| {
+        if app.state::<Shared>().hidden.load(Ordering::Relaxed) {
+            show(app);
+        }
+        open(app);
+    });
+}
+
+#[tauri::command]
+fn box_given(shared: State<Shared>) -> Option<Given> {
+    shared.given.lock().unwrap().take()
+}
+
+#[tauri::command]
 fn robot_click(app: AppHandle) {
     later(&app, show_or_toggle);
 }
@@ -408,6 +438,7 @@ fn chosen(app: &AppHandle, id: &str) {
             shared.now.lock().unwrap().clear();
             *shared.compact.lock().unwrap() = None;
             card::forget(app);
+            *shared.given.lock().unwrap() = None;
             speak::hush(app, true);
             set_dot(app, false);
             listed(app, Waiting::default());
@@ -870,7 +901,7 @@ fn main() {
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::Builder::new().open_js_links_on_click(false).build()) // the pages have no links of their own (card.rs)
         .invoke_handler(tauri::generate_handler![
-            robot_state, robot_grab, robot_drag, robot_drop, robot_click, robot_menu, robot_take, robot_list, box_state, box_look, box_fit, box_draft, box_close,
+            robot_state, robot_grab, robot_drag, robot_drop, robot_click, robot_menu, robot_take, robot_list, robot_given, box_given, box_state, box_look, box_fit, box_draft, box_close,
             connect, sign_in, add_todo, add_file, remove_file, take_screenshot, todo_quick, todo_decide, todo_undo, ask, open_dashboard, menu_item,
             card_open, card_place, card_close, set_speaks, bubble_state, bubble_fit, bubble_hold, bubble_open, bubble_done
         ])
@@ -917,6 +948,7 @@ fn main() {
                 added: Mutex::default(),
                 speaking: Mutex::default(),
                 wanted: Mutex::default(),
+                given: Mutex::default(),
                 tall: Mutex::new(90.0),
                 dot: AtomicBool::new(false),
                 snip: AtomicBool::new(false),

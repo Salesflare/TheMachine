@@ -73,6 +73,8 @@ window.MachineText = {
     failed: 'That didn’t work. Try again.',
     size: 'Files can be up to 10 MB.',
     files: 'Up to 5 files.',
+    file: 'That can’t be added. Try a file.',
+    long: 'Cut to 2,000 characters.',
     shot: 'Couldn’t take a screenshot.',
   },
 };
