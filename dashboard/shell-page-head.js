@@ -94,8 +94,8 @@ let saved;try{const args={choice,feedback,decision_id:prefix+crypto.randomUUID()
 catch(err){refresh().catch(()=>{});throw err}  // the card may be stale: redraw it
 // Offline: it waits on the device, so the editor closes
 if(saved?.waiting){changing.delete(id);dismissing.delete(id);focusKept(render);return}
-// Its new status shows with the toast; the full status follows
-changing.delete(id);const s=/^(pe|ac|pr|in|sn)/.test(saved?.status)&&state.suggestions.find(x=>x.id===id);if(s)s.status=saved.status;
+// Its new status shows with the toast, theirs from here on (early, Store._decide); the full status follows
+changing.delete(id);const s=/^(pe|ac|pr|in|sn)/.test(saved?.status)&&state.suggestions.find(x=>x.id===id);if(s)s.status=saved.status,s.early=0;
 localEdits++;focusKept(render);refresh().catch(()=>{});
 // Try again on a to-do that already carried on: say so.
 if(saved?.already){toast({done:'Already done. See the to-do.',closed:'Nothing is waiting to try again here.'}[saved.already]||'Already carrying on with it.');return}

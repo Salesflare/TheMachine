@@ -1,0 +1,16 @@
+/*@lazy*/
+/* One to-do on its own (todos-compact.js): the page around it is left out, and the to-do fills the window, from 300px */
+.one-todo{--bg:var(--c-surface)!important;--c-bg:var(--c-surface)!important;scrollbar-gutter:auto}
+.one-todo body{min-height:0;background:var(--c-surface)}
+.one-todo body>:is(.topbar,.app-side,.update-float,.site-footer),.one-todo main>:not(#inbox,#toast,#offline-bar,dialog),.one-todo #inbox>:not(#suggestions){display:none}
+.one-todo main{max-width:none;margin:0;padding:0 16px}
+.one-todo article.card{margin:0;padding:16px 0 0;border:0;border-radius:0;background:none;box-shadow:none;outline:none}
+.one-todo .card>.card-foot{row-gap:10px}
+/* What to press stays in view under a long draft */
+.one-todo .card>.actions:not(.result-actions){position:sticky;bottom:0;z-index:2;margin-top:4px;padding:12px 0 16px;background:var(--c-surface);box-shadow:0 -8px 8px var(--c-surface)}
+.one-todo .card.is-closed{padding-bottom:16px}.one-todo .card.is-closed>.actions{position:static;padding:0}
+.one-todo [data-chat-drawer]{display:none!important}
+.one-todo .skeleton>:not(:nth-child(2)){display:none}.one-todo .sk-card{padding:16px 0;border:0;background:none}
+.one-todo #offline-bar{margin-top:12px}.one-todo #toast{bottom:136px}
+.one-line{margin:0;padding:16px 0;color:var(--c-text-2)}
+.one-todo .empty{padding:16px 0}.one-todo .empty img{display:none}

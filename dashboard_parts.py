@@ -81,6 +81,7 @@ LAZY = {
     'older': ('todos-older.css', 'todos-older.js'),
     'areadigest': ('todos-area-digest.css', 'todos-area-digest.js'),
     'talk': ('todos-chat-talk-view.js', 'todos-chat-talk-live.js'),
+    'compact': ('todos-compact.css', 'todos-compact.js'),
     'whatsnew': ('shell-whats-new.css', 'shell-whats-new.js'),
 }
 # Groups the page fetches together with its main script (a preload link, serving.py) and runs at start: they draw over the

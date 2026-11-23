@@ -121,7 +121,7 @@ html,body{overflow-anchor:none}
 .theme-toggle[aria-checked="true"] .k-moon{opacity:0;transform:rotate(90deg) scale(.5)}
 @media(prefers-reduced-motion:reduce){.theme-toggle .knob,.theme-toggle .knob svg{transition:none}}
 *{box-sizing:border-box}
-html{background:var(--bg)}
+html{background:var(--bg)}.compact>body>:not(.load-failed){visibility:hidden}
 body{margin:0;min-height:100dvh;font:15.5px/1.55 system-ui,-apple-system,"Segoe UI",Inter,sans-serif;color:var(--text);background:radial-gradient(900px 420px at 12% -120px,#58516e40,transparent 70%),radial-gradient(700px 360px at 100% -160px,#bccba814,transparent 70%),var(--bg)}
 body{display:flex;flex-direction:column}main{width:100%;max-width:1040px;margin:0 auto;padding:28px 24px 48px;flex:1 0 auto}
 h1,h2,h3{color:var(--cream);margin:0;line-height:1.25}
