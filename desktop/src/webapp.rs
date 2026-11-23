@@ -30,9 +30,12 @@ fn start(entry: Entry, address: &str) -> bool {
     true
 }
 
-/// The Machine's own page, with at most a place in it (#card=...).
+/// The Machine's own page, with at most which robot opens it (?desk=) and a place in it (#card=...).
 fn own(machine: &str, address: &str) -> bool {
     address.strip_prefix(machine).is_some_and(|rest| {
+        let hex = |d: &str| d.len() == 32 && d.bytes().all(|b| b.is_ascii_hexdigit());
+        let rest = rest.strip_prefix("?desk=").map_or(Some(rest), |r| r.get(32..).filter(|_| hex(&r[..32])));
+        let Some(rest) = rest else { return false };
         rest.is_empty() || rest.strip_prefix('#').is_some_and(|r| r.bytes().all(|b| b.is_ascii_alphanumeric() || b"=-_/&".contains(&b)))
     })
 }
@@ -238,10 +241,10 @@ mod tests {
     #[test]
     fn only_this_machines_page() {
         let machine = "https://my.example.com/assistant/";
-        for fine in ["", "#card=244d6ae4cf6842a2", "#settings/general"] {
+        for fine in ["", "?desk=0123456789abcdef0123456789abcdef", "?desk=0123456789abcdef0123456789abcdef#card=244d6ae4cf6842a2", "#card=244d6ae4cf6842a2", "#settings/general"] {
             assert!(own(machine, &format!("{machine}{fine}")), "{fine}");
         }
-        for other in ["https://my.example.com/", "https://my.example.com/assistant/../", "https://my.example.com/assistant/#card=a b",
+        for other in ["https://my.example.com/", "https://my.example.com/assistant/?desk=a", "https://my.example.com/assistant/?x=0123456789abcdef0123456789abcdef", "https://my.example.com/assistant/../", "https://my.example.com/assistant/#card=a b",
             "https://my.example.com/assistant/#card=\"", "https://my.example.com.evil.example/assistant/", "file:///etc/passwd"] {
             assert!(!own(machine, other), "{other}");
         }

@@ -26,8 +26,11 @@ pub struct Machine {
 const QUICK: [(&str, &str, Option<&str>); 4] =
     [("prepare", "accept", None), ("snooze", "snooze", Some("tomorrow")), ("snooze2h", "snooze", Some("2h")), ("done", "complete", None)];
 
+/// Those that only open the to-do, where the rest is done.
+const OPENS: [&str; 4] = ["open", "draft", "answer", "signin"];
+
 /// A quick button, in the Machine's words: its name, and what happened after.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Clone, Serialize, Debug, PartialEq)]
 pub struct Quick {
     act: &'static str,
     name: String,
@@ -217,11 +220,23 @@ impl Machine {
         self.action("search_ask", json!({"query": text}), false, 120)
     }
 
+    /// What this to-do's notification says now, and its buttons, as the phone app asks it. None: it no longer waits.
+    pub fn notice(&self, todo: &str, kind: &str) -> Result<Option<crate::speak::Say>, String> {
+        let plain = |s: &str| !s.is_empty() && s.len() <= 64 && s.bytes().all(|b| b.is_ascii_alphanumeric());
+        if !plain(todo) {
+            return Ok(None);
+        }
+        let kind = if plain(kind) { format!("&kind={kind}") } else { String::new() };
+        let (status, notice) = self.get(&format!("api/notice?v=2&tag={todo}{kind}"))?;
+        Ok(said(todo, &notice).filter(|_| status == 200))
+    }
+
     /// What the dashboard's list is made of: its status (with a token of an earlier one, what changed since) and, when
     /// that asks for it, the Fleet's items. `look`: this is no one opening the dashboard.
-    pub fn status(&self, since: Option<&str>) -> Result<Value, String> {
+    /// `desk`: this robot's name, and whether it may speak, and what it got the time before (speak.rs).
+    pub fn status(&self, since: Option<&str>, desk: &str, up: bool, got: &[String]) -> Result<Value, String> {
         let since = since.filter(|t| t.bytes().all(|b| b.is_ascii_alphanumeric() || b"-_".contains(&b)));
-        self.page(&format!("api/status?look=1{}", since.map(|t| format!("&since={t}")).unwrap_or_default()))
+        self.page(&format!("api/status?look=1&desk={desk}&up={}&got={}{}", u8::from(up), got.join(","), since.map(|t| format!("&since={t}")).unwrap_or_default()))
     }
 
     pub fn fleet(&self) -> Result<Value, String> {
@@ -244,6 +259,25 @@ fn quick(notice: &Value) -> Vec<Quick> {
         .filter_map(|(act, ..)| Some(Quick { act, name: words("labels", act)?, said: words("events", act)? }))
         .take(3)
         .collect()
+}
+
+/// The notification, as a bubble. Its first button that only opens names the one that does.
+fn said(todo: &str, notice: &Value) -> Option<crate::speak::Say> {
+    let words = |v: &Value, most: usize| v.as_str().map(|w| w.split_whitespace().collect::<Vec<_>>().join(" ").chars().take(most).collect::<String>()).filter(|w| !w.is_empty());
+    let opens = notice["actions"].as_array().into_iter().flatten().filter_map(Value::as_str).find(|a| OPENS.contains(a)).unwrap_or("open");
+    Some(crate::speak::Say {
+        id: todo.into(),
+        title: words(&notice["title"], 160)?,
+        line: words(&notice["body"], 200).unwrap_or_default(),
+        opens: words(&notice["labels"][opens], 30).unwrap_or_else(|| "Open".into()),
+        quick: quick(notice),
+        ..Default::default()
+    })
+}
+
+/// 32 hex digits.
+pub fn random() -> String {
+    uuid().replace('-', "")
 }
 
 fn uuid() -> String {
@@ -301,6 +335,17 @@ mod tests {
         }
         let id = uuid();
         assert!(id.len() == 36 && &id[14..15] == "4" && id != uuid(), "{id}");
+    }
+
+    #[test]
+    fn a_notification_as_a_bubble() {
+        let notice = json!({"title": "Ready: Reply to\n Dana", "body": "Hi.", "actions": ["draft", "snooze2h", "done"],
+            "labels": {"open": "Open", "draft": "Open draft", "snooze2h": "Snooze", "done": "Mark done"}, "events": {"snooze2h": "Snoozed it", "done": "Marked it done"}});
+        let say = said("a1", &notice).unwrap();
+        assert_eq!((say.title.as_str(), say.opens.as_str(), say.quick.len()), ("Ready: Reply to Dana", "Open draft", 2));
+        assert!(said("a1", &json!({"gone": true})).is_none());
+        assert_eq!(said("a1", &json!({"title": "T", "actions": ["prepare"]})).unwrap().opens, "Open");
+        assert_eq!(random().len(), 32);
     }
 
     #[test]

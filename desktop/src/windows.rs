@@ -1,7 +1,7 @@
-//! The windows: the robot, the box that opens at it, and a to-do over the box (card.rs). On Wayland with layer-shell (Hyprland, Sway, KDE) they are
-//! layer surfaces: a normal Wayland window can't stay on top or choose its place. Elsewhere they are borderless windows
-//! that stay on top, out of the taskbar. All of this runs on the main thread.
-use crate::place::{self, box_at, peek, Corner, Rect, BOX_WIDTH, ROBOT, SHADOW};
+//! The windows: the robot, the box that opens at it, a to-do over the box (card.rs), and the robot's bubble. On Wayland with
+//! layer-shell (Hyprland, Sway, KDE) they are layer surfaces: a normal Wayland window can't stay on top or choose its
+//! place. Elsewhere they are borderless windows that stay on top, out of the taskbar. All of this runs on the main thread.
+use crate::place::{self, box_at, peek, tail, Corner, Rect, BOX_WIDTH, BUBBLE_WIDTH, ROBOT, SHADOW};
 use crate::Shared;
 use std::sync::atomic::Ordering;
 #[cfg(not(windows))]
@@ -23,7 +23,7 @@ pub fn browser() -> String {
 }
 
 fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri::Result<WebviewWindow> {
-    let robot = label == "robot";
+    let keys = label == "box"; // only the box takes the keys
     let window = WebviewWindowBuilder::new(app, label, WebviewUrl::App(format!("{label}.html").into()))
         .title(title)
         .inner_size(w, h)
@@ -36,15 +36,15 @@ fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri
         .always_on_top(true)
         .visible_on_all_workspaces(true)
         .skip_taskbar(true)
-        .focused(!robot)
-        .focusable(!robot || cfg!(not(target_os = "linux")) || app.state::<Shared>().layer) // X11: it comes back by itself, so it never takes the keys
+        .focused(keys)
+        .focusable(keys || cfg!(not(target_os = "linux")) || app.state::<Shared>().layer) // X11: it comes back by itself, so it never takes the keys
         .visible(false)
         .disable_drag_drop_handler() // the page takes dropped files itself
         .additional_browser_args(&browser())
         .on_navigation(|url| url.scheme() == "tauri" || url.host_str() == Some("tauri.localhost")) // only its own pages
         .build()?;
     #[cfg(target_os = "linux")]
-    linux::prepare(app, &window, robot)?;
+    linux::prepare(app, &window, label)?;
     #[cfg(windows)]
     no_menu(&window);
     Ok(window)
@@ -75,6 +75,7 @@ pub fn start(app: &AppHandle) -> tauri::Result<()> {
     build_box(app)?;
     #[cfg(windows)]
     crate::card::build(app)?;
+    build_bubble(app)?;
     show_robot(app);
     Ok(())
 }
@@ -82,6 +83,54 @@ pub fn start(app: &AppHandle) -> tauri::Result<()> {
 fn build_box(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let height = *app.state::<Shared>().height.lock().unwrap();
     build(app, "box", "The Machine", (BOX_WIDTH + 2.0 * SHADOW, height + 2.0 * SHADOW))
+}
+
+fn build_bubble(app: &AppHandle) -> tauri::Result<WebviewWindow> {
+    let height = *app.state::<Shared>().tall.lock().unwrap();
+    build(app, "bubble", "The Machine", (BUBBLE_WIDTH + 2.0 * SHADOW, height + 2.0 * SHADOW))
+}
+
+/// The robot says something (speak.rs). Its page says how tall it is, then it shows: fit_bubble.
+pub fn open_bubble(app: &AppHandle) {
+    match app.get_webview_window("bubble") {
+        Some(window) => {
+            let _ = window.emit("say", ());
+        }
+        None => {
+            if let Err(error) = build_bubble(app) {
+                eprintln!("could not open the bubble: {error}");
+            }
+        }
+    }
+}
+
+/// The bubble's page has its words: it shows, never taking the focus.
+pub fn fit_bubble(app: &AppHandle, height: f64) {
+    *app.state::<Shared>().tall.lock().unwrap() = height.clamp(40.0, 400.0);
+    let Some(window) = app.get_webview_window("bubble") else { return };
+    if crate::speak::now(&app.state::<Shared>()).is_some() {
+        place(app);
+        if !window.is_visible().unwrap_or(false) {
+            seen(&window, true);
+            place(app);
+        }
+    }
+}
+
+pub fn close_bubble(app: &AppHandle) {
+    let Some(window) = app.get_webview_window("bubble") else { return };
+    #[cfg(windows)]
+    seen(&window, false);
+    #[cfg(not(windows))]
+    let _ = window.destroy();
+}
+
+/// Where the bubble's tail is, and whether the bubble is below the robot.
+pub fn bubble_tail(app: &AppHandle) -> (f64, bool) {
+    let Some((_, screen)) = screen(app) else { return (BUBBLE_WIDTH - 44.0, false) };
+    let robot = corner(app, &screen).robot(screen.area);
+    let at = box_at(robot, screen.area, BUBBLE_WIDTH, *app.state::<Shared>().tall.lock().unwrap());
+    (tail(robot, at), at.y > robot.y)
 }
 
 pub fn show_robot(app: &AppHandle) {
@@ -102,20 +151,22 @@ pub fn show_or_not(app: &AppHandle) {
         seen(&robot, wanted);
         if wanted {
             place(app);
+        } else {
+            crate::speak::hush(app, true);
         }
     }
 }
 
-/// Shows or hides the robot, never taking the focus: Tauri's show() does, on Windows.
-fn seen(robot: &WebviewWindow, shown: bool) {
+/// Shows or hides the robot or its bubble, never taking the focus: Tauri's show() does, on Windows.
+fn seen(window: &WebviewWindow, shown: bool) {
     #[cfg(windows)]
-    if let Ok(hwnd) = robot.hwnd() {
+    if let Ok(hwnd) = window.hwnd() {
         use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_HIDE, SW_SHOWNOACTIVATE};
         // SAFETY: the program's own window, on its own thread.
         unsafe { ShowWindow(hwnd.0, if shown { SW_SHOWNOACTIVATE } else { SW_HIDE }) };
     }
     #[cfg(not(windows))]
-    let _ = if shown { robot.show() } else { robot.hide() };
+    let _ = if shown { window.show() } else { window.hide() };
 }
 
 pub fn box_open(app: &AppHandle) -> bool {
@@ -126,6 +177,7 @@ pub fn open_box(app: &AppHandle) -> tauri::Result<()> {
     let shared = app.state::<Shared>();
     shared.open.store(true, Ordering::Relaxed);
     crate::looked(app);
+    crate::speak::hush(app, false);
     show_or_not(app);
     shared.opened.fetch_add(1, Ordering::Relaxed);
     let window = match app.get_webview_window("box") {
@@ -158,6 +210,8 @@ pub fn close_box(app: &AppHandle) {
         let _ = window.hide();
     }
     show_or_not(app);
+    *shared.wanted.lock().unwrap() = None;
+    crate::speak::closed(app);
     let _ = app.emit_to("robot", "box", false);
     #[cfg(not(windows))]
     {
@@ -259,8 +313,9 @@ pub fn place(app: &AppHandle) {
     if shared.hidden.load(Ordering::Relaxed) {
         robot = peek(robot, screen.area);
     }
-    let around = box_at(robot, screen.area, *shared.height.lock().unwrap());
-    for (label, at) in [("robot", Some(robot)), ("box", Some(around)), ("card", crate::card::at(app, around))] {
+    let around = box_at(robot, screen.area, BOX_WIDTH, *shared.height.lock().unwrap());
+    let bubble = box_at(robot, screen.area, BUBBLE_WIDTH, *shared.tall.lock().unwrap());
+    for (label, at) in [("robot", Some(robot)), ("box", Some(around)), ("card", crate::card::at(app, around)), ("bubble", Some(bubble))] {
         let Some(at) = at else { continue };
         let Some(window) = app.get_webview_window(label) else { continue };
         #[cfg(target_os = "linux")]
@@ -290,6 +345,7 @@ pub struct Grab {
 /// The robot is picked up at this point of its window.
 pub fn grab(app: &AppHandle, x: f64, y: f64) {
     close_box(app);
+    crate::speak::hush(app, false);
     #[cfg(target_os = "linux")]
     let Some((_, screen)) = screen(app) else { return };
     #[cfg(target_os = "linux")]
@@ -369,20 +425,21 @@ pub mod linux {
         gtk_layer_shell::is_supported()
     }
 
-    pub fn prepare(app: &AppHandle, window: &WebviewWindow, robot: bool) -> tauri::Result<()> {
+    pub fn prepare(app: &AppHandle, window: &WebviewWindow, label: &str) -> tauri::Result<()> {
+        let robot = label == "robot";
         let gtk = window.gtk_window()?;
         if app.state::<crate::Shared>().layer {
             if gtk.is_realized() {
                 gtk.unrealize();
             }
             gtk.init_layer_shell();
-            gtk.set_namespace(if robot { "the-machine-robot" } else { "the-machine-box" });
+            gtk.set_namespace(&format!("the-machine-{label}"));
             gtk.set_layer(Layer::Top); // under full-screen windows
             gtk.set_exclusive_zone(0);
             for edge in [Edge::Right, Edge::Bottom] {
                 gtk.set_anchor(edge, true);
             }
-            gtk.set_keyboard_mode(if robot { KeyboardMode::None } else { KeyboardMode::OnDemand });
+            gtk.set_keyboard_mode(if label == "box" || label == "card" { KeyboardMode::OnDemand } else { KeyboardMode::None });
         }
         if robot && app.state::<crate::Shared>().layer {
             let app = app.clone();
@@ -395,7 +452,19 @@ pub mod linux {
                 });
             })?;
         }
-        if window.label() == "card" {
+        if label == "bubble" {
+            // WebKit doesn't tell the page that the pointer left its window
+            let app = app.clone();
+            window.with_webview(move |page| {
+                page.inner().connect_event(move |_, e| {
+                    if let gdk::EventType::EnterNotify | gdk::EventType::LeaveNotify = e.event_type() {
+                        let _ = tauri::Emitter::emit_to(&app, "bubble", "over", e.event_type() == gdk::EventType::EnterNotify);
+                    }
+                    gtk::glib::Propagation::Proceed
+                });
+            })?;
+        }
+        if label == "card" {
             // As tall as it is asked to be: a web view's own wish is its whole page, an overlay's is none
             window.with_webview(move |page| {
                 let (page, over) = (page.inner(), gtk::Overlay::new());
