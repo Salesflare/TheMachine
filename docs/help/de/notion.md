@@ -5,53 +5,53 @@ summary: Kommentare, Erwähnungen und dir zugewiesene Aufgaben in Notion. Antwor
 covers: connector:notion
 code: connectors/notion.py, doc_writes.py, notion_heads_up.py
 site: Sign in with Notion, Connect, More sources, Remove
-translated: 8544baf8c60cc40b
+translated: 2e93c261cc09e401
 ---
-## Was sie liest
+## Was Notion liest
 
-Die Seiten, die deine Notion-Verbindung sehen kann. Sie bringt Folgendes ein:
+Die Seiten, auf die deine Notion-Verbindung zugreifen kann. Sie bringt Folgendes ein:
 
-- Kommentare auf deinen Seiten, Antworten in Diskussionen, an denen du teilnimmst, und Kommentare, in denen du erwähnt wirst. Wenn du etwas tun musst, wird daraus eine Aufgabe.
-- Datenbankeinträge, die dir zugewiesen sind, samt Fälligkeitsdatum und Status. Aus jedem wird eine Aufgabe, und das Fälligkeitsdatum wird im **Kalender** angezeigt. Wenn der Eintrag in Notion erledigt ist, wird die Aufgabe automatisch geschlossen. Mit **Rückgängig** öffnest du sie wieder.
+- Kommentare auf deinen Seiten, Antworten in Diskussionen, an denen du beteiligt bist, und Kommentare, in denen du erwähnt wirst. Ein Kommentar, der deine Aufmerksamkeit braucht, wird zu einer Aufgabe.
+- Datenbankeinträge, die dir zugewiesen sind, einschließlich Fälligkeitsdatum und Status. Jeder Eintrag wird zu einer Aufgabe, und sein Fälligkeitsdatum erscheint im **Kalender**. Sobald der Eintrag in Notion erledigt ist, wird die Aufgabe automatisch geschlossen. **Rückgängig** öffnet sie wieder.
 - Neue Seiten, die andere hinzufügen und die du sehen kannst.
-- Einen stillen Hinweis, wenn jemand eine Seite ändert, die du ändern lassen wolltest. Es gibt nie einen Signalton.
+- Einen unaufdringlichen Hinweis, wenn jemand eine Seite ändert, deren Änderung du angefragt hast. Es gibt keinen Signalton.
 
-Der erste Abgleich reicht 7 Tage zurück. Personen werden anhand ihrer E-Mail-Adresse mit deinem [Graph](graph.md) verknüpft. Wenn Notion keine E-Mail-Adresse teilt, erfolgt die Verknüpfung nur anhand des vollständigen Namens, wenn genau eine Person in deinem Graph diesen Namen hat.
+Die erste Synchronisierung reicht 7 Tage zurück. Personen werden über ihre E-Mail-Adresse mit deinem [Graph](graph.md) verknüpft. Wenn Notion keine E-Mail-Adresse teilt, wird stattdessen der vollständige Name verwendet, sofern genau eine Person in deinem Graph diesen Namen hat.
 
-Damit sie nur Dinge erledigt, deaktiviere **Liefert Signale** unter **Details**.
+Wenn du Notion nur zum Erledigen von Aufgaben verwenden möchtest, deaktiviere **Liefert Signale** unter **Details**.
 
-## Was sie tun kann
+## Was Notion tun kann
 
-Wenn eine Aufgabe oder ein Termin den Text einer Seite benötigt, liest deine Machine diese Seite, und zwar nur, während sie daran arbeitet.
+Wenn eine Aufgabe oder ein Termin den Text einer Seite benötigt, liest deine Machine diese eine Seite, und zwar nur, während sie daran arbeitet. Bei einer Datei auf der Seite sieht sie nur den Namen. Seiten findet sie anhand ihres Titels, nicht anhand der Dateien darauf.
 
-Jede dieser Aktionen wartet auf deine Zustimmung bei der jeweiligen Aufgabe:
+Für jede dieser Aktionen wartet Notion bei der jeweiligen Aufgabe auf deine Zustimmung:
 
 - Auf einen Kommentar in der zugehörigen Diskussion antworten.
-- Eine neue Seite erstellen. Sie ist privat, bis du sie teilst.
-- Eine Seite bearbeiten. Drücke **Änderungen prüfen**, um jeden Absatz vorher und nachher anzusehen, und dann **Speichern**. Geschrieben wird nur in die Seite, wie du sie gesehen hast. Wenn jemand die Seite zwischenzeitlich geändert hat, wird nichts übernommen und die Aufgabe weist dich darauf hin.
+- Eine neue Seite erstellen. Sie bleibt privat, bis du sie teilst.
+- Eine Seite bearbeiten. Wähle „**Änderungen prüfen**“, um jeden Absatz vorher und nachher zu sehen, und dann „**Speichern**“. Notion schreibt nur in die Seite, so wie du sie gesehen hast. Wenn in der Zwischenzeit jemand Änderungen vorgenommen hat, wird nichts geschrieben und die Aufgabe weist dich darauf hin.
 - Eine dir zugewiesene Aufgabe als erledigt markieren. Dabei ändert sich nur ihr Status.
 
-Sie löscht, teilt oder verschiebt niemals eine Seite.
+Notion löscht, teilt oder verschiebt niemals eine Seite.
 
-## Verbindung herstellen
+## Notion verbinden
 
-1. Im Dashboard: **Verbindungen**, **Dokumente und Dateien**, Notion. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Notion. Auf deinem eigenen Computer musst du ihn zuerst mit deinem Konto koppeln.
-2. Drücke **Mit Notion anmelden**, wähle deinen Workspace und die Seiten aus, die sie sehen darf, und erteile den Zugriff.
-3. Zurück in The Machine prüft sie sofort die Anmeldung und zeigt den Namen des Workspaces an.
+1. Öffne im Dashboard **Verbindungen** und **Dokumente und Dateien**, dann Notion. Oder öffne auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup **Weitere Quellen** und dann Notion. Auf deinem eigenen Computer musst du zuerst dein Konto damit verknüpfen.
+2. Wähle „**Mit Notion anmelden**“, dann deinen Arbeitsbereich und die Seiten, auf die Notion zugreifen darf, und erteile den Zugriff.
+3. Zurück in The Machine prüft sie sofort die Anmeldung und zeigt den Namen des Arbeitsbereichs an.
 
-Für einen weiteren Workspace füge Notion erneut hinzu.
+Für einen weiteren Arbeitsbereich kannst du Notion erneut hinzufügen.
 
 ## Stattdessen ein Token einfügen
 
-Drücke unter **Oder füge ein Integrationstoken ein** auf **Token holen**. Notion öffnet die Integrationsseite: Erstelle eine interne Integration, erlaube das Lesen und Einfügen von Inhalten und Kommentaren sowie das Lesen von Nutzerinformationen mit E-Mail-Adressen. Kopiere das Token, füge es ein und drücke **Verbinden**.
+Wähle unter **Oder füge ein Integrationstoken ein** die Option „**Token holen**“. Notion öffnet die Integrationsseite. Erstelle eine interne Integration und erlaube ihr, Inhalte und Kommentare zu lesen und einzufügen sowie Nutzerinformationen mit E-Mail-Adressen zu lesen. Kopiere das Token, füge es ein und wähle „**Verbinden**“.
 
-Teile die Seiten anschließend in Notion unter **Verbindungen** auf jeder Seite mit der Integration. Auf deinem eigenen Computer fragt auch `assistant connect notion` danach.
+Teile anschließend deine Seiten in Notion unter **Verbindungen** auf jeder Seite mit der Integration. Auf deinem eigenen Computer fragt `assistant connect notion` ebenfalls danach.
 
-## Verbindung entfernen
+## Notion entfernen
 
-- Im Dashboard: **Verbindungen**, öffne Notion und wähle **Details** und dann **Trennen**. Bereits importierte Inhalte bleiben erhalten.
-- Auf einer gehosteten Machine kannst du sie auch über **Entfernen** neben Notion auf der Einrichtungsseite entfernen.
+- Öffne im Dashboard **Verbindungen**, wähle Notion und dann **Details**. Wähle anschließend „**Trennen**“. Bereits übernommene Inhalte bleiben erhalten.
+- Auf einer gehosteten Machine kannst du Notion auch auf der Einrichtungsseite daneben über „**Entfernen**“ entfernen.
 
 ## Zugriff in Notion widerrufen
 
-In Notion: **Einstellungen**, **Verbindungen** und dann The Machine trennen. Wenn du ein Token eingefügt hast, lösche die Integration auf der Integrationsseite.
+Wähle in Notion **Einstellungen** und dann **Verbindungen**, und trenne The Machine. Bei einem eingefügten Token: Lösche die Integration auf der Integrationsseite.
