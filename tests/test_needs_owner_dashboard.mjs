@@ -17,6 +17,8 @@ const NEED='Which of the two quotes should it accept?';
 let ready=true;
 const cards=()=>[
  card('q','Pick a quote for the new printer','prepared',h(1),{outcome:JSON.stringify({state:'needs_you',needs:NEED}),needs_owner:NEED}),
+ // a run that only answered, with nothing ready: the task is still to do, so Needs you, with Do it first
+ card('a','Confirm the delivery date with the client','prepared',h(3),{outcome:JSON.stringify({state:'answered'}),needs_owner:'Answered. Nothing done yet.'}),
  ...(ready?[card('r','Reply to Pat about the pilot','prepared',h(2),{outcome:JSON.stringify({state:'needs_you',needs:'check the draft and send it'}),next_actions:[DRAFT]})]:[])];
 const state=()=>({suggestions:cards(),promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -41,6 +43,9 @@ try{
   assert.equal(await chip(page,'q').textContent(),'Needs you');
   assert.match(await page.locator(sel('q')).getAttribute('class'),/\bt-amber\b/);
   assert.equal(await page.locator(sel('q')+' .status-line.outcome').textContent(),NEED);
+  assert.equal(await chip(page,'a').textContent(),'Needs you');
+  assert.equal(await page.locator(sel('a')+' .status-line').textContent(),'Answered. Nothing done yet.');
+  assert.doesNotMatch(await page.locator(sel('a')).textContent(),/Prepared/);
   // Prepared: a ready draft keeps its label and tone
   assert.equal(await chip(page,'r').textContent(),'Prepared');
   assert.doesNotMatch(await page.locator(sel('r')).getAttribute('class'),/\bt-amber\b/);

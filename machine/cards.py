@@ -582,7 +582,9 @@ def needs_owner(row, db=None):
     only for a ready draft, step, file or skill. A run that saved outcome needs_you with none of those (a fact only the
     owner has, a sign-in, a choice), or with only links beside its question to them, isn't: it reads Needs you, with its
     needs as the reason, everywhere the to-do's state shows (card, list, notifications, digests, chat). Taken from the
-    run's own outcome, never from words. db: look up the file and skill a light row doesn't carry (a digest's)."""
+    run's own outcome, never from words. db: look up the file and skill a light row doesn't carry (a digest's).
+    A run that only answered, explained or planned (outcome answered) with nothing ready is not Prepared either: the
+    task is still to do, so it reads Needs you, with "Answered. Nothing done yet." as the reason (Do it leads)."""
     if row.get('status') != 'prepared' or row.get('handled_hint') or row.get('preparation_status') == 'blocked':
         return ''
     try:
@@ -592,7 +594,9 @@ def needs_owner(row, db=None):
         steps = row['next_actions'] if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     except (ValueError, TypeError, AttributeError, KeyError):
         return ''
-    if outcome.get('state') != 'needs_you' or not needs or any(a.get('kind') != 'open' or not needs.endswith('?') for a in steps):
+    if outcome.get('state') == 'answered' and not any(a.get('kind') != 'open' for a in steps):
+        needs = i18n.t('Answered. Nothing done yet.')
+    elif outcome.get('state') != 'needs_you' or not needs or any(a.get('kind') != 'open' or not needs.endswith('?') for a in steps):
         return ''
     files = row['result_files'] if 'result_files' in row else RESULT_FILE.search(str(row.get('body') or ''))
     skill = row.get('proposed_skill') if 'proposed_skill' in row or db is None else proposed_skill(db, row.get('id'))

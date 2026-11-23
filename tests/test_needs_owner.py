@@ -40,6 +40,15 @@ class Rule(unittest.TestCase):
         self.assertEqual(machine_cards.needs_owner(self.row('check the report', body='Done: [Report](memory/assistant/r.md)')), '')
         self.assertEqual(machine_cards.needs_owner(self.row('approve the skill', proposed_skill={'id': 's1'})), '')
 
+    def test_a_run_that_only_answered_with_nothing_ready_reads_needs_you(self):
+        answered = {'outcome': json.dumps({'state': 'answered'})}
+        self.assertEqual(machine_cards.needs_owner({**self.row(''), **answered}), 'Answered. Nothing done yet.')
+        self.assertEqual(machine_cards.needs_owner({**self.row('', [LINK]), **answered}), 'Answered. Nothing done yet.')
+        # an answer beside a ready draft, file or skill stays Prepared
+        self.assertEqual(machine_cards.needs_owner({**self.row('', [DRAFT]), **answered}), '')
+        self.assertEqual(machine_cards.needs_owner({**self.row('', result_files=[{'path': 'memory/assistant/r.md'}]), **answered}), '')
+        self.assertEqual(machine_cards.needs_owner({**self.row('', proposed_skill={'id': 's1'}), **answered}), '')
+
     def test_other_states_are_not_this(self):
         self.assertEqual(machine_cards.needs_owner(self.row('x', status='pending')), '')
         self.assertEqual(machine_cards.needs_owner(self.row('x', preparation_status='blocked')), '')
@@ -94,6 +103,16 @@ class Everywhere(unittest.TestCase):
         self.assertEqual(self.lead(), ('Needs you', 'Needs you'))  # its notification: "Needs you: <title>", never "Ready:"
         headline = self.digest()['text'].split('\n')[0]
         self.assertNotIn('ready', headline)  # not counted as ready in the morning digest
+
+    def test_a_run_that_only_answered_reads_needs_you_everywhere(self):
+        self.save(outcome='answered')
+        view = self.row()
+        self.assertEqual(view['status'], 'prepared')
+        self.assertEqual(view['needs_owner'], 'Answered. Nothing done yet.')  # the card's chip reads Needs you
+        self.assertIn('Answered. Nothing done yet.', machine_cards.card(view))  # Telegram's card keeps its own line
+        self.assertEqual(machine_cards.todo_state(view), 'needs you')
+        self.assertEqual(self.lead(), ('Needs you', 'Needs you'))  # never "Ready:" for a task still to do
+        self.assertNotIn('ready', self.digest()['text'].split('\n')[0])
 
     def test_a_ready_draft_stays_prepared_everywhere(self):
         self.save(next_actions=[DRAFT], outcome='needs_you', needs='check the draft and send it')
