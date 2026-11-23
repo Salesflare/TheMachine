@@ -1,5 +1,5 @@
 import {readFile} from 'node:fs/promises';
-import {existsSync, readFileSync, realpathSync} from 'node:fs';
+import {existsSync, readdirSync, readFileSync, realpathSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {homedir} from 'node:os';
@@ -331,8 +331,19 @@ export function repeatsMachineRules(event: any): boolean {
     const file = pathParams(params).map(p => resolve(WORKSPACE, p.replace(/^~(?=\/|$)/, HOME))).find(p => p.startsWith(workshop + '/') && p.endsWith('/SKILL.md'));
     if (file) skill = file.slice(workshop.length + 1, -'/SKILL.md'.length);
   }
+  return repeatsRules(workshop, skill);
+}
+const repeatsRules = (workshop: string, skill: string): boolean => {
   if (!/^[a-z0-9][a-z0-9_-]{0,100}$/i.test(skill)) return false;
   try { return readFileSync(resolve(workshop, skill, 'SKILL.md'), 'utf8').includes('assistant_signals'); } catch { return false; }
+};
+// OpenClaw lists those skills to a preparation like any other, so most tried one and were refused, a step each time
+// (2026-11-23). Its context names them; with none, it is the same as before. In a fixed order, for the prompt cache.
+export function skipRuleSkills(): string {
+  const workshop = resolve(agentDirOf(), 'workshop-skills');
+  let names: string[] = [];
+  try { names = readdirSync(workshop).filter(name => repeatsRules(workshop, name)).sort(); } catch { return ''; }
+  return names.length ? ' These skills are older copies of those rules: do not read them (' + names.join(', ') + ').' : '';
 }
 
 // USER.md is not loaded into isolated sessions by default; reviews and preparations need it.
@@ -425,7 +436,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
       // was saved into the session each turn, so a Do it after a prepare-ahead, or a to-do chat after it, carried two,
       // three or more copies (about 18,000 tokens each) on every step until compaction. It has none of the workspace's
       // own files (preparation-run.mjs), so USER.md, where the owner's rules on how drafts come out live, comes from here.
-      const context = (NOT_FIRST_CHAT + ' ' + OWNER_RULES_HERE + (await ownerContext()) + (await preparationRules())).trim();
+      const context = (NOT_FIRST_CHAT + ' ' + OWNER_RULES_HERE + skipRuleSkills() + (await ownerContext()) + (await preparationRules())).trim();
       return context ? {prependSystemContext: context} : undefined;
     }
     // These get none of the workspace's files (preparation-run.mjs), so USER.md comes from here, as it did for a profile
