@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import sqlite3
 import tempfile
+import threading
+import time
 import unittest
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
@@ -282,6 +284,29 @@ class ChatStopFiles(unittest.TestCase):
             self.assertEqual(db.execute('SELECT count(*) FROM chat_files').fetchone()[0], 0)
         made = self.new_card([], text='No files here')
         self.assertNotIn('files', made)
+
+    def test_a_pdf_made_to_be_slow_does_not_block_the_service(self):
+        slow = b'%PDF-1.4\n1 0 obj ' + b'/Font<<' * 100_000 + b' endobj'  # minutes of work for the reader
+        files = [self.draft_upload(f'Slow{n}.pdf', slow + b'%d' % n)['id'] for n in range(3)] + [self.draft_upload('Note.txt', b'Call the venue')['id']]
+        ticks, done = [], threading.Event()
+
+        def tick():  # the service's other threads: they keep going while the file is read
+            while not done.wait(0.02):
+                ticks.append(time.monotonic())
+        other = threading.Thread(target=tick)
+        with patch.object(chat_files.file_text, 'APART_SECONDS', 1):
+            other.start()
+            started = time.monotonic()
+            made = self.new_card(files, text='Look at these')
+            took = time.monotonic() - started
+        done.set()
+        other.join()
+        self.assertLess(took, 5)  # the three together, not each
+        self.assertLess(max((b - a for a, b in zip(ticks, ticks[1:])), default=0), 1)
+        self.assertEqual(len(made['files']), 4)  # every file is on the to-do, read or not
+        with self.store.connect() as db:
+            view = a.review_view(dict(db.execute('SELECT * FROM events WHERE id=?', (made['event_id'],)).fetchone()))
+        self.assertEqual(view['owner_card']['file_texts'], [{'name': 'Note.txt', 'text': 'Call the venue'}])
 
     def test_a_shared_pdf_alone_makes_a_to_do_the_review_fills_in_from_its_text(self):
         # Shared from the phone with no words: the file is the to-do. Its first title is the file's name; the review

@@ -7,8 +7,8 @@ can read it with their own tools. Plain text files are read as UTF-8. Nothing le
 the bytes it already keeps.
 
 Bounded on purpose, since a file comes from anywhere: at most INFLATE_BYTES inflated in all (STREAM_BYTES per
-stream), MAX_OBJECTS objects, and at most `limit` characters out. A file it can't read gives ''. A file someone else
-may have put there (connectors/docs.py) is read `apart`: in a process of its own, with a time and memory limit."""
+stream), MAX_OBJECTS objects, and at most `limit` characters out. A file it can't read gives ''. A PDF is always
+read `apart`: in a process of its own, with a time and memory limit, so a file made to keep it busy blocks nothing."""
 from __future__ import annotations
 
 import re
@@ -32,10 +32,17 @@ _WS = b' \t\r\n\f\x00'
 _DELIM = b'()<>[]{}/%'
 
 
-def excerpt(data, mime, limit=TEXT_LIMIT):
-    """Up to `limit` characters of a file's text, tidied (one space between words, at most one blank line), or ''."""
+def excerpt(data, mime, limit=TEXT_LIMIT, seconds=APART_SECONDS):
+    """Up to `limit` characters of a file's text, tidied (one space between words, at most one blank line), or ''. A PDF
+    gets at most `seconds`."""
+    if mime == 'application/pdf':
+        return apart(data, limit, seconds)
+    return _read(data, mime, limit)
+
+
+def _read(data, mime, limit):
     try:
-        if mime == 'application/pdf':
+        if mime == 'application/pdf':  # only in the process apart() starts
             text = pdf_text(data, limit * 2)
         elif any(str(mime).startswith(t) for t in TEXT_TYPES):
             text = data[:limit * 4].decode('utf-8', 'replace')
@@ -46,11 +53,13 @@ def excerpt(data, mime, limit=TEXT_LIMIT):
     return tidy(text, limit)
 
 
-def apart(data, limit=TEXT_LIMIT):
+def apart(data, limit=TEXT_LIMIT, seconds=APART_SECONDS):
     """excerpt of a PDF, read in a process of its own: one made to keep the reader busy or fill memory ends there, and
     gives '' like any file without text."""
+    if seconds <= 0 or not data.startswith(b'%PDF-'):
+        return ''
     try:
-        done = subprocess.run([sys.executable, '-I', __file__, str(limit)], input=data, capture_output=True, timeout=APART_SECONDS)
+        done = subprocess.run([sys.executable, '-I', __file__, str(limit)], input=data, capture_output=True, timeout=seconds)
     except (subprocess.TimeoutExpired, OSError):
         return ''
     return done.stdout.decode('utf-8', 'replace') if done.returncode == 0 else ''
@@ -435,4 +444,4 @@ if __name__ == '__main__':  # apart(): the PDF on stdin, its text on stdout
         resource.setrlimit(resource.RLIMIT_CPU, (APART_SECONDS, APART_SECONDS))
     except (ImportError, OSError, ValueError):  # Windows has none of this: the time limit alone
         pass
-    sys.stdout.buffer.write(excerpt(sys.stdin.buffer.read(), 'application/pdf', int(sys.argv[1])).encode())
+    sys.stdout.buffer.write(_read(sys.stdin.buffer.read(), 'application/pdf', int(sys.argv[1])).encode())

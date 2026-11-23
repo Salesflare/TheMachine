@@ -27,6 +27,7 @@ import datetime as dt
 import os
 import re
 import secrets
+import time
 from pathlib import Path
 
 import file_text
@@ -202,8 +203,9 @@ def adopt(db, draft, suggestion_id, ids):
 
 def texts(db, config, draft, ids, each=file_text.TEXT_LIMIT, total=2 * file_text.TEXT_LIMIT):
     """{file id: text} of a New to-do form's PDFs and text files (file_text.py), for the review that fills the to-do in.
-    At most `each` characters a file and `total` together. Read here, on the Machine, from the files it keeps."""
-    out, left = {}, total
+    At most `each` characters a file and `total` together. Read here, on the Machine, from the files it keeps; all the
+    PDFs together get file_text.APART_SECONDS, so the form never waits longer on files that are slow to read."""
+    out, left, until = {}, total, time.monotonic() + file_text.APART_SECONDS
     if not DRAFT.fullmatch(str(draft or '')) or not isinstance(ids, list):
         return out
     for file_id in ids[:MAX_FILES]:
@@ -215,7 +217,7 @@ def texts(db, config, draft, ids, each=file_text.TEXT_LIMIT, total=2 * file_text
             data = _open(db, (folder(config) / row['id']).read_bytes())
         except (OSError, ValueError, message_seal.SealError):
             continue
-        text = file_text.excerpt(data, row['mime'], min(each, left))
+        text = file_text.excerpt(data, row['mime'], min(each, left), seconds=until - time.monotonic())
         if text:
             out[row['id']] = text
             left -= len(text)
