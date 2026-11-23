@@ -121,7 +121,7 @@ class Network:
         if kind == 'anything':
             return {'text': ['Not that I know of. Tomasz met them in September, I think.', 'Yes, I spoke to their ops lead on Monday.'][index % 2]}
         if kind == 'question':
-            return {'text': 'It comes on Thursday, between 9 and 12.', 'by': 'owner'}
+            return {'text': 'It comes on Thursday, between 9 and 12.'}
         if kind in ('intro', 'handoff', 'followup'):
             return {'stage': 'accepted'}
         if kind == 'contact':

@@ -5,7 +5,7 @@ news about the carpet?", and that member's Machine answers from its own owner's 
   read, the one model turn and its checks; machine/app/family_questions.py runs it). The owner gets a to-do with the
   question quoted, the messages the draft comes from and the draft, to edit. Only their Send sends it.
 - Never: not drafted, not shown to act on.
-There is no Always for the Family as a whole, and none from a notification or Telegram: there, a question only opens.
+There is no Always: every answer is read by its owner, and from a notification or Telegram a question only opens.
 
 What the asker's Machine hears is the same for every other outcome. It is told once that the question waits, and
 nothing more when the owner declines, has it on Never, lets it expire, when no draft could be made, or when the asker
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS fleet_questions(id TEXT PRIMARY KEY,state TEXT NOT NU
 '''
 # state: pending (no draft yet), running, then ready, empty, private, none (no safe draft), held (a usage limit or the
 # day's drafts are used up) or failed. draft: {'text', 'sources': [{id, kind, title, from, at}]}. answer: what went,
-# {'text', 'by', 'sources': [ids]}. day: the day its turn ran.
+# {'text', 'sources': [ids]}. day: the day its turn ran.
 
 
 def ensure(db):
@@ -55,7 +55,7 @@ def parse(question):
 def clean_answer(answer):
     import fleet
     text = fleet.free_text(answer.get('text'), ANSWER_CHARS) if isinstance(answer, dict) else ''
-    return {'text': text, 'by': 'machine' if answer.get('by') == 'machine' else 'owner'} if text else None
+    return {'text': text} if text else None
 
 
 def question_text(question):
@@ -85,7 +85,7 @@ def activity(db, limit):
         answer = _load(r['answer'])
         what = t('{} asked: {}', r['name'], question_text(_load(r['question'])))
         if answer and r['status'] == 'answered':
-            outcome, status = 'done', t('Answered by itself') if answer.get('by') == 'machine' else t('Answered')
+            outcome, status = 'done', t('Answered')
         elif r['status'] in ('waiting', DRAFTING):
             outcome, status = 'pending', t('Waiting for you')
         else:
@@ -145,7 +145,7 @@ class Questions:
             state = ('answered' if answer else 'old' if a['status'] == 'declined' else
                      'none' if a['status'] == 'expired' or g['at'] < late else 'waiting')
             out.append({'id': g['id'], 'at': g['at'], 'name': a['name'], 'question': g['question'].get('text', ''), 'state': state,
-                        **({'answer': answer['text'], 'by': answer.get('by')} if answer else {})})
+                        **({'answer': answer['text']} if answer else {})})
         return out[:10]
 
     def question_answered(self, row, answer):
@@ -153,7 +153,7 @@ class Questions:
         if answer and self.tell and row['status'] != 'answered':
             first = row['name'].split()[0] if row['name'].split() else row['name']
             said = question_text(answer)
-            self.tell(t('{}’s Machine answered: {}', first, said) if answer.get('by') == 'machine' else t('{} answered: {}', first, said), row['id'])
+            self.tell(t('{} answered: {}', first, said), row['id'])
 
     # -- a member asks
     def take_question(self, ask, teammate, ref, question, name):
@@ -249,7 +249,7 @@ class Questions:
             said = fleet.free_text(text, ANSWER_CHARS)
             if not said:  # also a Send without the answer in it, as a notification's would be: the owner reads it first
                 raise OwnerError('Write an answer first, or decline')
-            answer = {'text': said, 'by': 'owner'}
+            answer = {'text': said}
         with self.connect() as db:
             row = db.execute("SELECT * FROM fleet_in WHERE id=? AND status='waiting'", (str(ask_id),)).fetchone()
             if not row or not self.move_in(db, ask_id, 'waiting', 'answered' if answer else 'declined', choice, fleet.now()):

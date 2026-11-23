@@ -25,7 +25,7 @@ const view={on:true,kinds:{relationships:'who knows someone',availability:'free/
   todos:[{id:'t2',title:'Buy milk',name:'Alex',stage:'accepted',due:'2026-10-24'}],
   plans:[{id:'t3',title:'Dinner at grandma’s with a rather long name that should wrap nicely',start:'2026-10-25T18:00+02:00',place:'Grandma’s',yes:['Robin'],no:[],waiting:['Alex'],link:'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Dinner'}],
   mine:[{id:'t4',title:'Pick up Sam',name:'Robin',stage:'accepted',due:'2026-10-21'}],
-  ask:true,questions:[{id:'t5',at:'2026-10-20T10:00:00Z',name:'Robin',question:'Any news about the carpet?',state:'answered',answer:'It comes on Thursday.',by:'owner'},
+  ask:true,questions:[{id:'t5',at:'2026-10-20T10:00:00Z',name:'Robin',question:'Any news about the carpet?',state:'answered',answer:'It comes on Thursday.'},
    {id:'t6',at:'2026-10-19T10:00:00Z',name:'Alex',question:'When does the plumber come?',state:'waiting'},{id:'t7',at:'2026-10-15T10:00:00Z',name:'Alex',question:'Did the school write?',state:'none'},
    {id:'t8',at:'2026-10-14T10:00:00Z',name:'Alex Moss',question:'Is the bike ready?',state:'old'}]},
  waiting:[{id:'q_'+'3'.repeat(16),fleet:FAM,member_id:'fm_robin',name:'Robin',kind:'question',question:'“Any <b>news</b> about the carpet?”',status:'waiting',at:'2026-10-20T12:00:00Z',

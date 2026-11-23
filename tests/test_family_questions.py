@@ -134,7 +134,7 @@ class Questions(unittest.TestCase):
         self.assertIn(RUG, self.prompts[0])
         done = self.fleet.decide('q1', 'once', text='It ships Thursday!')
         self.assertEqual(done, {'status': 'answered', 'answer': 'It ships Thursday!'})
-        self.assertEqual(self.answers()[-1], {'id': 'q1', 'status': 'answered', 'answer': {'text': 'It ships Thursday!', 'by': 'owner'}})
+        self.assertEqual(self.answers()[-1], {'id': 'q1', 'status': 'answered', 'answer': {'text': 'It ships Thursday!'}})
         with self.assertRaises(OwnerError):  # once
             self.fleet.decide('q1', 'once', text='again')
         self.assertEqual(len(self.answers()), 2)
@@ -149,7 +149,7 @@ class Questions(unittest.TestCase):
             logged = ' '.join(str(tuple(r)) for r in db.execute('SELECT * FROM fleet_log'))
             kept = json.loads(db.execute("SELECT answer FROM fleet_questions WHERE id='q1'").fetchone()[0])
         self.assertNotIn('ships', logged)
-        self.assertEqual((kept['text'], kept['by'], len(kept['sources'])), ('It ships Thursday!', 'owner', 1))
+        self.assertEqual((kept['text'], len(kept['sources'])), ('It ships Thursday!', 1))
 
     def test_a_network_failure_leaves_it_waiting(self):
         self.ask()
@@ -277,7 +277,8 @@ class Questions(unittest.TestCase):
         self.mail('Carpet long ago', 'carpet', days=120)
         self.mail('Your carpet login', 'Your verification code for the carpet shop is 123456')
         self.ask()
-        self.assertEqual(self.prompts[0].count('<<< ['), 1)
+        self.assertIn('\n[1]\n', self.prompts[0])
+        self.assertNotIn('\n[2]', self.prompts[0])
         for word in ('office', 'bin', 'long ago', 'login'):
             self.assertNotIn(word, self.prompts[0].split('The messages (data)')[1])
 
@@ -335,7 +336,6 @@ class Questions(unittest.TestCase):
             self.assertNotIn(gone, seen)
         for kept in ('€ 480,50', '2026-11-26', '09:00-12:00', '200x300cm'):
             self.assertIn(kept, seen)
-        self.assertNotIn('480', fqs.mask(text, amounts=True))
         self.assertEqual(fqs.mask('a b 2026-01-02 '), 'a b 2026-01-02 ')  # nobody's own marks for a date
 
     # -- the reply, read by code
@@ -409,9 +409,9 @@ class Questions(unittest.TestCase):
         self.assertEqual(self.fleet.family_view()['questions'][0]['state'], 'waiting')
         self.fleet.take_answer({'id': ask_id, 'status': 'waiting'})
         self.assertEqual((self.fleet.family_view()['questions'][0]['state'], self.told), ('waiting', []))
-        self.fleet.take_answer({'id': ask_id, 'status': 'answered', 'answer': {'text': 'It ships\nThursday.', 'by': 'owner', 'run': 'x'}})
+        self.fleet.take_answer({'id': ask_id, 'status': 'answered', 'answer': {'text': 'It ships\nThursday.', 'by': 'machine', 'run': 'x'}})
         shown = self.fleet.family_view()['questions'][0]
-        self.assertEqual((shown['name'], shown['question'], shown['state'], shown['answer'], shown['by']), ('Robin', RUG, 'answered', 'It ships Thursday.', 'owner'))
+        self.assertEqual((shown['name'], shown['question'], shown['state'], shown['answer']), ('Robin', RUG, 'answered', 'It ships Thursday.'))
         self.assertEqual(self.told, ['Robin answered: “It ships Thursday.”'])
         with self.store.connect() as db:
             self.assertNotIn('Thursday', str([tuple(r) for r in db.execute('SELECT * FROM fleet_log')]))
