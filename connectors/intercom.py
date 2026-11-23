@@ -325,6 +325,8 @@ def event(account, raw, helpers):
                                 if isinstance(c, dict) and c.get('id')][:10],
                 'contact_name': ' '.join(str(customer.get('name') or '').split())[:100],
                 'author_roles': roles, 'channel': str(source.get('type') or '')[:40],
+                # How the first message came: customer_initiated, admin_initiated, operator_initiated, automated, campaigns_initiated
+                'delivered_as': str(source.get('delivered_as') or '')[:40],
                 'subject': ' '.join(plain(raw.get('title') or source.get('subject') or '').split())[:300],
                 'last_author_type': str(last.get('type') or '') if isinstance(last, dict) else '', 'parts_returned': len(parts),
                 'parts_reported': reported, 'truncated': truncated, 'source_redacted': bool(source.get('redacted')),

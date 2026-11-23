@@ -18,7 +18,7 @@ import todo_org
 import locale_prefs
 import meeting_mail
 import meeting_prep
-from machine.store import outcomes
+from machine.store import message_view, outcomes
 from machine.cards import current_title, delivery_time, group_sender
 from machine.config import LOG
 from machine.sources.android import android_app_shown
@@ -404,7 +404,7 @@ def source_text(row):
     if row['kind'] == 'fleet.brief':  # a team brief line (fleet_brief_todos.py): "From your Fleet", never "signal from"
         return f'your Fleet · {when}'
     if row['kind'] == 'intercom.conversation':  # the customer by name, as an email shows its sender
-        m = {**m, 'sender_display': m.get('sender_display') or m.get('contact_name') or m.get('from_name')}
+        m = {**m, 'sender_display': m.get('sender_display') or message_view.intercom_customer(m) or m.get('from_name')}
     if row['kind'] == 'android.notification' and m.get('package_name'):  # the app by name, never its package
         m = {**m, 'app_name': android_app_shown(m['package_name'], m.get('app_name'))}
     who = (m.get('sender_display') or m.get('from') or m.get('chat_name') or m.get('app_name')

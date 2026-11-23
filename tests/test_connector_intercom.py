@@ -170,6 +170,32 @@ class IntercomTests(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(tuple(db.execute('SELECT count(*),max(version) FROM events').fetchone()), (1, 1))
 
+    def test_a_conversation_the_team_opened_says_so(self):
+        # Intercom's source: {author, delivered_as} (API reference, The conversation model)
+        raw = conversation(body='<p>The fair’s program is out</p>')
+        raw['source'].update(type='conversation', delivered_as='campaigns_initiated', author={'type': 'admin', 'id': '7', 'name': 'Mira Holt', 'email': 'mira@fair.example'})
+        raw['conversation_parts']['conversation_parts'][0].update(body='<p>Which day?</p>', author={'type': 'user', 'name': 'Toby Lark', 'email': 'Toby@lark.example'})
+        meta = intercom.event(ACCOUNT, raw, self.helpers)['metadata']
+        self.assertEqual((meta['delivered_as'], meta['from_name'], meta['contact_name'], meta['contact_email']), ('campaigns_initiated', 'Mira Holt', 'Toby Lark', 'toby@lark.example'))
+        self.assertEqual(meta['author_roles'], {'Mira Holt': 'team', 'Toby Lark': 'customer'})
+        self.assertEqual(meta['customer_at'], 90)  # the opening isn't theirs
+        from machine.store import message_view
+        for kind, role in (('bot', 'bot'), ('admin', 'team'), ('user', 'customer')):
+            raw['source']['author'] = {'type': kind, 'name': 'Sam Opener', 'email': 'sam@x.example'}
+            self.assertEqual(message_view.intercom_opener(intercom.event(ACCOUNT, raw, self.helpers)['metadata'])[0], role)
+
+    def test_how_it_was_opened_is_kept_without_a_new_review(self):
+        self.sync()
+        with self.store.connect() as db:
+            before = db.execute('SELECT version,metadata FROM events').fetchone()
+        event = intercom.event(ACCOUNT, conversation(), self.helpers)
+        event['metadata']['delivered_as'] = 'admin_initiated'
+        self.store.commit_page(ACCOUNT['id'], {}, [event], None)
+        with self.store.connect() as db:
+            after = db.execute('SELECT version,metadata FROM events').fetchone()
+        self.assertEqual(after['version'], before['version'])
+        self.assertEqual(json.loads(after['metadata'])['delivered_as'], 'admin_initiated')
+
     def test_long_conversations_keep_the_opening_and_the_latest_and_say_so(self):
         raw = conversation()
         raw['conversation_parts']['total_count'] = 501

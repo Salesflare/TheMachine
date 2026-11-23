@@ -16,7 +16,7 @@ With your own **Sign in with Intercom**, it can reply in a conversation as you, 
 
 ## To-dos from Intercom
 
-A to-do from Intercom shows the customer, and **Read message** opens the conversation, with a link to it in Intercom. Its reply goes out in that conversation, unless you ask for an email.
+A to-do from Intercom shows the customer, and **Read message** opens the conversation, with a link to it in Intercom. Each message is under who wrote it: the customer on one side, your team and its bot on the other, also when a teammate or a campaign started the conversation. Its reply goes out in that conversation, unless you ask for an email.
 
 Only conversations assigned to you, or to no one yet, become to-dos. When a teammate takes one in Intercom, its to-do closes by itself, with **Undo**. On an Intercom shared with you, your conversations are the ones assigned to the teammate you write as.
 

@@ -20,7 +20,7 @@ import next_actions
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
-from machine.store import first_pass, review_last_look, review_saves, review_wait, todo_likely
+from machine.store import first_pass, message_view, review_last_look, review_saves, review_wait, todo_likely
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import _address, clamp, encoded
 import own_addresses
@@ -264,7 +264,7 @@ REVIEW_METADATA_SKIP = {
     'parts_returned', 'message_id', 'chat_id', 'sender_id', 'channel_id', 'message_ts', 'thread_ts', 'user_id',
     'bot_id', 'conversation_id', 'created_at', 'updated_at', 'post_time_ms', 'source_url', 'thread_id',
     'admin_assignee_id', 'team_assignee_id', 'assignee_name', 'assignee_email', 'admin_emails', 'list_id',
-    'team_closed', 'team_reply', 'customer_at', 'page_text'}
+    'team_closed', 'team_reply', 'customer_at', 'delivered_as', 'page_text'}
 
 
 def compact_metadata(metadata, budget=2500):
@@ -331,7 +331,7 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief
     if brief and not row.get('deleted') and bulk_kind(row['kind'], metadata, row['title'], owner_in_thread):
         return title_view(row, metadata)
     compact, metadata_clipped = compact_metadata({k: v for k, v in metadata.items() if not (k == 'files' and row['kind'] == 'owner.card')})
-    text = re.sub(r'\s+', ' ', row['body']).strip()
+    text = re.sub(r'\s+', ' ', message_view.intercom_body(row['kind'], metadata, row['body'])).strip()  # who opened it, when not the customer
     matched = bool(passage) and not offset and len(text) > preview
     offset = passage if matched else offset
     view = {'id': row['id'], 'account_id': row['account_id'], 'source_id': clamp(row['source_id'], 500), 'kind': row['kind'], 'occurred_at': row['occurred_at'],

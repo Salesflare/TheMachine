@@ -328,8 +328,8 @@ LAST_CHECK = {'minutes': (24, 19), 'todo_events': ['story:pricing:2'], 'emails':
     ('check:phone:1', 'com.parcelpal.mobile.android', 'Your parcel is in the locker on Station Street', 31, 'A delivery notice, the parcel is in'),
     # a group's summary notification: no words of its own, stored with its package as the text (shown as the app alone)
     ('check:phone:2', 'com.parcelpal.mobile.android', 'com.parcelpal.mobile.android', 32, None),
-], 'support': [  # key, opened by (a relay address, mail_senders.RELAY, and the bot's name), the customer (address, name), what they asked, minutes ago, reason
-    ('check:intercom:0', ('operator+demo1@noreply.intercom.example', 'Fin'), ('wren@saltmarshmedia.example', 'Wren Calloway'),
+], 'support': [  # key, the customer who opened it (address, name), what they asked, minutes ago, reason
+    ('check:intercom:0', ('wren@saltmarshmedia.example', 'Wren Calloway'),
      'Can I export my pipeline to a spreadsheet?', 36, 'Fin answered with the export steps, nothing left to do'),
 ]}
 
@@ -351,10 +351,10 @@ def last_check_data():
     for key, package, text, minutes, _ in LAST_CHECK['phone']:  # stored as the phone's feed stores an app it has no label for
         events.append({'key': key, 'account_id': 'home-phone', 'kind': 'android.notification', 'minutes_ago': minutes, 'title': text, 'body': text,
                        'metadata': {'package_name': package, 'app_name': package, 'notification_key_hash': key.replace(':', '-'), 'truncated': True}})
-    for key, (bot, bot_name), (address, name), text, minutes, _ in LAST_CHECK['support']:  # as connectors/intercom.py stores one its bot opened
+    for key, (address, name), text, minutes, _ in LAST_CHECK['support']:  # as connectors/intercom.py stores one a customer opened
         cid = '7700' + str(minutes)
         events.append({'key': key, 'account_id': 'work-intercom', 'kind': 'intercom.conversation', 'minutes_ago': minutes, 'title': text,
-                       'body': text, 'metadata': {'conversation_id': cid, 'from': bot, 'from_name': bot_name, 'contact_email': address,
+                       'body': text, 'metadata': {'conversation_id': cid, 'from': address, 'from_name': name, 'contact_email': address,
                                                   'contact_name': name, 'state': 'closed', 'last_author_type': 'bot',
                                                   'source_url': 'https://app.intercom.example/a/inbox/demo/inbox/shared/all/conversation/' + cid}})
     reasons = {key: why for key, *_, why in LAST_CHECK['emails'] + LAST_CHECK['chats'] + LAST_CHECK['phone'] + LAST_CHECK['support'] if why}

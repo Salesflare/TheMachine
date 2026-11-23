@@ -34,7 +34,7 @@ import meeting_prep
 from machine import action_basis, new_post, todo_kinds
 from models import model_ready
 import next_actions
-from machine.store import outcomes
+from machine.store import message_view, outcomes
 from machine.store.core import checkpoint as core_checkpoint
 import own_addresses
 import recurring
@@ -260,7 +260,7 @@ class CardActionsApp:
             # replying in Intercom (next_actions.validate). One a handoff carried that this Machine doesn't read
             # (fleet.intercom) can't be replied to here.
             intercom_conversations={m['conversation_id']:{'account_id':r[0] if r[2]=='intercom.conversation' else None,
-                                                          'name':m.get('from_name') or m.get('from') or 'Intercom conversation',
+                                                          'name':message_view.intercom_customer(m) or 'Intercom conversation',
                                                           'contact':str(m.get('contact_email') or '').lower()} for r in db.execute(
                 "SELECT e.account_id,e.metadata,e.kind FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind IN ('intercom.conversation','fleet.intercom') ORDER BY e.kind='intercom.conversation',e.occurred_at",(row['event_ids'],))
                 for m in (json.loads(r[1]),) if m.get('conversation_id')}
