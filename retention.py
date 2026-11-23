@@ -10,6 +10,7 @@ run), the service:
 - clears the evidence a profile or learnings run read (`profile_runs.evidence`) 90 days (Careful: 30) after it ended (the run, its
   times and its result stay);
 - deletes the log of what prompts read of memory (`memory_use`, ids and numbers only) older than 60 days (Careful: 30);
+- deletes procedures that wait for a learned skill's check (`learned_drafts`) after 7 days;
 - gives the freed space back: the first time with one VACUUM, which also switches the database to incremental
   vacuuming, then each night `PRAGMA incremental_vacuum` in small steps. The VACUUM only runs when no review,
   preparation or profile run is going on, and deletes go in small batches, so the service keeps working meanwhile;
@@ -33,6 +34,7 @@ import sys
 import time
 from zoneinfo import ZoneInfo
 
+import learned_skills
 import memory_use
 from machine import todo_states
 import timeutil
@@ -364,6 +366,10 @@ def run(connect, database, now=None, live=(), rotate=True, busy=None, local_tz=N
         report['memory_use'] = memory_use.prune(connect, now, _keep_days(connect, memory_use.KEEP_DAYS))
     except sqlite3.Error as error:  # tried again tomorrow
         report['memory_use'] = {'failed': type(error).__name__}
+    try:  # procedures that wait for a learned skill's check, a few days at most
+        report['learned_drafts'] = learned_skills.prune(connect, now)
+    except sqlite3.Error as error:  # tried again tomorrow
+        report['learned_drafts'] = {'failed': type(error).__name__}
     try:
         report['space'] = give_back_space(connect, database, busy)
     except sqlite3.Error as error:  # tried again tomorrow

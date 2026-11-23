@@ -25,6 +25,7 @@ from machine.graph import setup as graph_setup
 import graph_board_reviews
 import graph_show
 import graph_updates
+import learned_skills
 import mail_senders
 from machine.actions import CRM_ACTIONS
 from machine.app import ask_memory
@@ -945,6 +946,7 @@ class GraphActionsApp:
         with self.store.connect() as db:
             done = graph.delete_person(db, node_id, self.config, now())
             memory_use.forget_person(db, done['needles'])  # the log of what prompts read never keeps their address
+            learned_skills.forget(db)  # nor a procedure that still waits for its check
         notes = forget_in_notes((workspace or WORKSPACE) / 'memory', done.pop('needles'))
         self.graph_later()  # their rows are gone already (graph.delete_person); what was worked out from them goes in the worker's build
         return {**done, 'notes': notes}

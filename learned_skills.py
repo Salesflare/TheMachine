@@ -5,7 +5,8 @@ A procedure is a normal skill (skills.py) of origin 'learned'. Its description n
 working on portal.example.com: ...", "Use for expense report tasks: ..."), so OpenClaw and a preparation's skill list
 match it to later tasks by meaning; its instructions follow one template: Steps, Didn't work, Workarounds, Done when.
 The origin is the only thing that marks it: it lets learning update or retire it by itself, and keeps learning off the
-owner's own skills. This module holds no table: it decides, and skills.Skills.learn and retire write.
+owner's own skills. This module decides, and skills.Skills.learn and retire write. Its one table, learned_drafts, holds what waits for the
+check, scrubbed and sealed (message_seal.py), a few days at most, so a restart loses none (keep, claim, take).
 
 What a run hands in: a run the owner started (Do it, not prepared ahead) that got its task done gives procedure= on
 prepare (clean). Only the generic method is kept:
@@ -35,19 +36,24 @@ count over. The next run that gets it done hands in what works now, which replac
 again. The record is in the log of what prompts read (memory_use.py, purpose run, how opened or failed): ids, no text."""
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
+import secrets
 import urllib.parse
 
 import skills
 import team_learnings as tl
+import timeutil
 
 SUCCESS = ('done', 'your_step', 'needs_you', 'waiting')  # outcomes of a run that got its task done (or ready for the owner)
 OPENING = ('read', 'file_fetch', 'skills_read', 'exec', 'bash', 'shell', 'shell_command', 'exec_command', 'local_shell')  # calls that open a file
 STEPS_MAX, LIST_MAX = 12, 5
 LINE_MAX, LABEL_MIN, LABEL_MAX = 240, 5, 60
 RETIRE = 3          # to-dos in a row on which its steps no longer worked that turn a learned skill off
-TRIES = 3           # check turns a draft may go without an answer before it goes
+TRIES = 3           # check turns a draft may go without an answer before it goes, one cut off by a restart included
+WAITING, KEEP_DAYS = 20, 7  # drafts that wait for the check, and how long at most
+LEASE = 15          # minutes a check turn has its drafts for itself; after that it died, and another may take them
 BATCH = 4           # drafts one check turn reads
 OWNERS, OWNER_LINES, OWNER_CHARS = 4, 8, 200  # the owner's skills a draft is compared with, and how much of each
 TIMEOUT = 120
@@ -339,6 +345,67 @@ def conclude(drafts, reply, names=()):
         else:
             dropped += 1
     return kept, waiting, dropped
+
+
+# ---------------------------------------------------------------- what waits for the check
+def ensure(db):
+    db.execute('CREATE TABLE IF NOT EXISTS learned_drafts(suggestion_id TEXT PRIMARY KEY,data TEXT NOT NULL,at TEXT NOT NULL,'
+               'tries INTEGER NOT NULL DEFAULT 0,claim TEXT,claimed_at TEXT)')
+
+
+def keep(db, suggestion_id, task, item):
+    """A scrubbed procedure waits for the check: one per to-do, its latest, and the newest WAITING in all."""
+    db.execute('DELETE FROM learned_drafts WHERE suggestion_id=?', (str(suggestion_id),))
+    db.execute('INSERT INTO learned_drafts(suggestion_id,data,at) VALUES(?,?,?)', (str(suggestion_id), json.dumps({'task': task, 'item': item}), timeutil.now()))
+    db.execute('DELETE FROM learned_drafts WHERE suggestion_id NOT IN (SELECT suggestion_id FROM learned_drafts ORDER BY at DESC,rowid DESC LIMIT ?)', (WAITING,))
+
+
+def _ago(**span):
+    return (timeutil.clock() - dt.timedelta(**span)).isoformat()
+
+
+def waiting(db):
+    """Whether a draft waits that no check turn has now."""
+    return bool(db.execute('SELECT 1 FROM learned_drafts WHERE at>=? AND (claim IS NULL OR claimed_at<?) LIMIT 1',
+                           (_ago(days=KEEP_DAYS), _ago(minutes=LEASE))).fetchone())
+
+
+def claim(db):
+    """The oldest drafts, for one check turn: [{'id', 'task', 'item', 'claim'}]. Its try is spent here, so a turn that
+    never ends (a restart) counts, and no other turn reads them while it runs."""
+    token = secrets.token_hex(8)
+    db.execute('DELETE FROM learned_drafts WHERE at<? OR (tries>=? AND (claim IS NULL OR claimed_at<?))', (_ago(days=KEEP_DAYS), TRIES, _ago(minutes=LEASE)))
+    db.execute('UPDATE learned_drafts SET claim=?,claimed_at=?,tries=tries+1 WHERE suggestion_id IN (SELECT suggestion_id FROM learned_drafts '
+               'WHERE claim IS NULL OR claimed_at<? ORDER BY at,rowid LIMIT ?)', (token, timeutil.now(), _ago(minutes=LEASE), BATCH))
+    out = []
+    for r in db.execute('SELECT suggestion_id,data FROM learned_drafts WHERE claim=? ORDER BY at,rowid', (token,)).fetchall():
+        out.append({'id': r['suggestion_id'], 'claim': token, **json.loads(r['data'])})
+    return out
+
+
+def back(db, draft, spent=True):
+    """A draft the check didn't answer waits again, or goes after TRIES; spent=False: the turn never ran."""
+    db.execute('UPDATE learned_drafts SET claim=NULL,claimed_at=NULL,tries=tries-? WHERE suggestion_id=? AND claim=?', (0 if spent else 1, draft['id'], draft['claim']))
+    db.execute('DELETE FROM learned_drafts WHERE tries>=? AND claim IS NULL', (TRIES,))
+
+
+def take(db, draft):
+    """A draft goes, once: whether this turn still had it. False when its to-do, account or a person went, or a newer
+    draft or turn took its place, so it writes nothing."""
+    return bool(db.execute('DELETE FROM learned_drafts WHERE suggestion_id=? AND claim=?', (draft['id'], draft['claim'])).rowcount)
+
+
+def forget(db):
+    """A person is deleted: every waiting draft goes, whoever it was about (it is scrubbed, so who can't be matched)."""
+    db.execute('DELETE FROM learned_drafts')
+
+
+def prune(connect, when):
+    """Drafts older than KEEP_DAYS go (retention.py). Returns how many."""
+    with connect() as db:
+        if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='learned_drafts'").fetchone():
+            return 0
+        return db.execute('DELETE FROM learned_drafts WHERE at<?', ((when.astimezone(dt.timezone.utc) - dt.timedelta(days=KEEP_DAYS)).isoformat(),)).rowcount
 
 
 # ---------------------------------------------------------------- as a skill

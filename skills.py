@@ -646,13 +646,16 @@ class Skills:
         return self.view()
 
     # -- learned from Do it (learned_skills.py decides what; this is where it is written)
-    def learn(self, name, description, body, replaces=None):
+    def learn(self, name, description, body, replaces=None, once=None):
         """A checked procedure as a skill of origin 'learned', on at once: a new one, or `replaces` (a learned skill for
         the same site or workflow) rewritten as a whole, a new version, and on again if it had been retired. Never one
-        of the owner's: a skill they edited is theirs ('mine'). Returns its id, or None."""
+        of the owner's: a skill they edited is theirs ('mine'). `once` (db) runs in the same transaction, and a false answer
+        writes nothing: the draft it is made from is taken there. Returns its id, or None."""
         name, description, body = validate(name, description, body)
         stamp, sha = now(), digest(name, description, body)
         with self.connect() as db:
+            if once and not once(db):
+                return None
             if replaces:
                 row = db.execute("SELECT * FROM skills WHERE id=? AND origin='learned' AND status IN ('on','off')", (replaces,)).fetchone()
                 if not row:
