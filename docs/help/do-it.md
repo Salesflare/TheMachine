@@ -16,6 +16,8 @@ Before a follow-up or handoff, it checks for newer replies, also from a teammate
 
 When a hard task works out on a site or in a workflow, your Machine keeps the steps as a skill, without anyone's details. Later to-dos on that site get them as a guide, never as permission: sending or paying still waits for you. They show in **Settings > Skills** as **Learned from a task**.
 
+When such a skill's steps stop working on three to-dos in a row, your Machine turns it off, until a later to-do shows what works now or you turn it on again.
+
 ## Nothing goes out before your yes
 
 - A reply comes back as a draft. **Review and send** opens it ready to edit; it only goes out when you press **Send now**.

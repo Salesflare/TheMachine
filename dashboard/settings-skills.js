@@ -2,7 +2,7 @@
 // settings-shared.js): the owner's how-tos, written to OpenClaw's workspace; shared ones are read here and installed by the owner.
 function skillMeta(s){if(s.status==='incoming')return `${esc(t(s.update?'Update by {} · version {}':'Shared by {} · version {}',s.author||t('a teammate'),s.version))}${s.note?` · <span translate="no">“${esc(s.note)}”</span>`:''}`;
  if(s.status==='proposed')return (s.update?'Update proposed by your Machine':'Proposed by your Machine')+(s.note?`: ${esc(s.note)}`:'');
- const bits=[];if(s.status==='off')bits.push('Off');if(s.imported)bits.push(`Imported from ${{claude:'Claude',chatgpt:'ChatGPT'}[s.imported.from]||'elsewhere'}`);if(s.origin==='learned')bits.push('Learned from a task');if(s.origin==='shared')bits.push(`From ${esc(s.author||'a teammate')}, version ${s.version}`);
+ const bits=[];if(s.status==='off')bits.push(s.retired?'Off: its steps stopped working':'Off');if(s.imported)bits.push(`Imported from ${{claude:'Claude',chatgpt:'ChatGPT'}[s.imported.from]||'elsewhere'}`);if(s.origin==='learned')bits.push('Learned from a task');if(s.origin==='shared')bits.push(`From ${esc(s.author||'a teammate')}, version ${s.version}`);
  if(s.shares?.length)bits.push(t('Shared: {}',s.shares.map(x=>`${esc(x.name)} ${esc(x.status)}`).join(', ')));if(s.changed)bits.push('Changed since you shared it');return bits.join(' · ')}
 function skillRow(s,targets){const wait=s.status==='incoming'||s.status==='proposed',meta=skillMeta(s);
  // A proposed update opens its before and after; Update skill there is the only way it changes the skill.

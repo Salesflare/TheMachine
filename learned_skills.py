@@ -5,7 +5,7 @@ A procedure is a normal skill (skills.py) of origin 'learned'. Its description n
 working on portal.example.com: ...", "Use for expense report tasks: ..."), so OpenClaw and a preparation's skill list
 match it to later tasks by meaning; its instructions follow one template: Steps, Didn't work, Workarounds, Done when.
 The origin is the only thing that marks it: it lets learning update or retire it by itself, and keeps learning off the
-owner's own skills. This module holds no table: it decides, and skills.Skills.learn and learned_result write.
+owner's own skills. This module holds no table: it decides, and skills.Skills.learn and retire write.
 
 What a run hands in: a run the owner started (Do it, not prepared ahead) that got its task done gives procedure= on
 prepare (clean). Only the generic method is kept:
@@ -24,9 +24,13 @@ What it never does: it is guidance, never permission (its SKILL.md says so, belo
 skills); it never edits a skill of the owner's (one the owner edited is theirs, origin mine), and a site or workflow one
 of the owner's skills already covers learns nothing. It stays on this Machine unless the owner shares it, like any skill.
 
-Upkeep, with nothing asked: a run on a to-do that touches a learned skill's site or workflow settles it: done clears its
-count of stuck runs, stuck adds one, and RETIRE in a row turn it off. The next run that gets it done hands in what works
-now, which replaces it as a new version and turns it on again."""
+Upkeep, with nothing asked, from what happened (opened, failed_in_a_row): a run counts for a skill only when it opened
+the skill's SKILL.md, which its recorded calls show, never because the to-do names the site. It counts against one only
+when the run says the skill's own steps no longer work (skill_failed on its save; the SKILL.md asks for it): a sign-in, an
+outage, another app or a question to the owner is no reason, and needs no list of reasons here. RETIRE to-dos in a row
+turn it off, shown in Settings > Skills, where the owner can turn it on again; a to-do that worked out with it starts the
+count over. The next run that gets it done hands in what works now, which replaces it as a new version and turns it on
+again. The record is in the log of what prompts read (memory_use.py, purpose run, how opened or failed): ids, no text."""
 from __future__ import annotations
 
 import json
@@ -37,15 +41,15 @@ import skills
 import team_learnings as tl
 
 SUCCESS = ('done', 'your_step', 'needs_you', 'waiting')  # outcomes of a run that got its task done (or ready for the owner)
+OPENING = ('read', 'file_fetch', 'skills_read', 'exec', 'bash', 'shell', 'shell_command', 'exec_command', 'local_shell')  # calls that open a file
 STEPS_MAX, LIST_MAX = 12, 5
 LINE_MAX, LABEL_MIN, LABEL_MAX = 240, 5, 60
-RETIRE = 3          # stuck runs in a row that turn a learned skill off
+RETIRE = 3          # to-dos in a row on which its steps no longer worked that turn a learned skill off
 TRIES = 3           # check turns a draft may go without an answer before it goes
 BATCH = 4           # drafts one check turn reads
 TIMEOUT = 120
 PARTS = ('steps', 'failed', 'workarounds')
 HOST = re.compile(r'(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}')
-FOUND_HOST = re.compile(r'(?i)(?<![\w@.-])(?:https?://)?((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24})(?![\w-])')
 LINK = re.compile(r'(?i)\bhttps?://\S+|(?<![\w@.-])(?:[a-z0-9-]+\.)+[a-z]{2,24}(?![\w@-])(?:/\S*)?')
 ID_PART = re.compile(r'(?i)^(?:\d{3,}|[0-9a-f]{12,}|[0-9a-f-]{20,})$')
 # What team learnings' strip doesn't take: an amount written with a currency code first or with separators, and a
@@ -322,45 +326,59 @@ def place(db, item):
     return learned, mine
 
 
-# ---------------------------------------------------------------- the to-dos it touches
-def task_text(db, suggestion_id):
-    """(the to-do's own words, its sources' text, the addresses its messages came from)."""
-    row = db.execute('SELECT title,body,owner_words,event_ids FROM suggestions WHERE id=?', (str(suggestion_id),)).fetchone()
-    if not row:
-        return '', '', []
-    own = '\n'.join(str(x or '') for x in (row['title'], row['owner_words'], row['body']))
-    texts, senders = [], []
-    for e in db.execute('SELECT title,body,metadata FROM events WHERE id IN (SELECT value FROM json_each(?)) LIMIT 5', (row['event_ids'] or '[]',)):
-        texts.append(f"{e['title'] or ''}\n{str(e['body'] or '')[:3000]}")
-        try:
-            senders.append(str((json.loads(e['metadata'] or '{}') or {}).get('from') or ''))
-        except (ValueError, TypeError, AttributeError):
-            pass
-    return own, '\n'.join(texts), senders
+# ---------------------------------------------------------------- what a run did with the skills, and how it turned out
+def opened(db, job_id):
+    """The Machine's skills this run opened: {slug: when, the last time}. From its own calls as the bridge records them
+    (preparation_calls: a file read or a command that names its SKILL.md, or OpenClaw's skills_read), that came back
+    without an error, also those of earlier runs in the same session (a Try again goes on with what that one read). A
+    skill that was only in the prompt's list isn't in it, and neither is a version written after it was opened."""
+    folder = re.compile(r'(?:^|[/"\'\s])' + re.escape(skills.FOLDER) + r'/([a-z0-9-]+)/SKILL\.md')
+    calls = db.execute(f"""SELECT c.tool,c.params,c.started_at FROM preparation_calls c JOIN preparation_runs r ON r.job_id=c.job_id
+        WHERE r.session_job_id=(SELECT session_job_id FROM preparation_runs WHERE job_id=?) AND c.finished_at IS NOT NULL AND c.error IS NULL
+        AND c.tool IN ({','.join('?' * len(OPENING))}) ORDER BY c.started_at""", (str(job_id), *OPENING)).fetchall()
+    out = {}
+    for c in calls:
+        params = str(c['params'] or '')
+        if c['tool'] == 'skills_read':
+            try:
+                found = [str(json.loads(params).get('name') or '').strip()]
+            except (ValueError, TypeError, AttributeError):
+                continue
+        else:
+            found = folder.findall(re.sub(r'\\+', '/', params))
+        out.update({slug: c['started_at'] for slug in found})
+    current = {r['slug']: r['updated_at'] for r in db.execute("SELECT slug,updated_at FROM skills WHERE status IN ('on','off')")}
+    return {slug: at for slug, at in out.items() if slug in current and at >= current[slug]}
 
 
-def sites_in(text):
-    return {domain_of(m.group(1).lower()) for m in FOUND_HOST.finditer(str(text or '')) if host_of(m.group(1))}
-
-
-def touching(db, suggestion_id, own_domains=()):
-    """The learned skills that are on for the sites and workflows this to-do touches: a site named in the to-do or its
-    messages (a link, a host, the domain a message came from, other than the owner's own unless the to-do names it), a
-    workflow that shares at least two words with the to-do's own. As skill rows (id, slug, name)."""
-    rows = [dict(r) for r in db.execute("SELECT id,slug,name,description FROM skills WHERE origin='learned' AND status='on'")]
-    if not rows:
-        return []
-    own, sources, senders = task_text(db, suggestion_id)
-    mine = {domain_of(d) for d in own_domains if d}
-    domains = sites_in(own + '\n' + sources) | {domain_of(s.rpartition('@')[2].strip('> ').lower()) for s in senders if '@' in s}
-    domains -= {d for d in mine if d not in sites_in(own)}
-    words = _stems(own)
-    out = []
+def failed_in_a_row(db, slug, since):
+    """On how many to-dos in a row, latest first, a run that followed this skill said its steps no longer work
+    (memory_use: how 'failed'). A to-do that worked out with it (worked) ends the row; any other says nothing. A to-do
+    counts once however often it ran, and only what was recorded since `since` (this version, or the owner's last On)."""
+    rows = db.execute("""SELECT max(m.how='failed') failed,s.status,s.outcome,s.done_elsewhere,s.expired_at,s.closed_decision_id
+        FROM memory_use m LEFT JOIN suggestions s ON s.id=m.suggestion_id
+        WHERE m.purpose='run' AND m.kind='skill' AND m.row_id=? AND m.at>=? GROUP BY m.suggestion_id ORDER BY max(m.id) DESC""",
+                      (slug, since)).fetchall()
+    n = 0
     for r in rows:
-        kind, where = where_of(r['description'])
-        if (kind == 'site' and domain_of(where) in domains) or (kind == 'workflow' and len((_stems(where) | _stems(r['name'])) & words) >= 2):
-            out.append(r)
-    return out
+        if r['failed']:
+            n += 1
+        elif worked(r):
+            break
+    return n
+
+
+def worked(row):
+    """Whether a to-do turned out done on its run's work, read now from its stored state: it is in Done (a reopened one
+    isn't), and its last run saved a result for it (SUCCESS) rather than finding it done or explaining it. Saving that
+    result is not enough: needs_you and waiting are only prepared, and done can still be reopened. Not needed, expired
+    and done by someone else say nothing about the steps."""
+    try:
+        state = (json.loads(row['outcome'] or '{}') or {}).get('state')
+    except (ValueError, TypeError, AttributeError):
+        state = None
+    return (row['status'] == 'completed' and state in SUCCESS and not row['done_elsewhere'] and not row['expired_at']
+            and not str(row['closed_decision_id'] or '').startswith(('handled:', 'looks-done:')))
 
 
 LEARN = ('\n\nWhen this run gets the task done on a website or through a multi-step workflow, and it took real work (several '

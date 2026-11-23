@@ -1,13 +1,16 @@
 """Learned skills, the App's part: a domain mixin of App (only machine/main.py composes it; docs/code-map.md).
 
-A run's procedure on prepare (learned_check before the save, learned_saved after it), a stuck run (learned_failed),
-and the check turn for what runs handed in (learned_step, learned_run), which writes what it kept as skills of origin
-'learned' (skills.Skills.learn). The rules are in learned_skills.py; the skills table is skills.py's."""
+A run's procedure on prepare (learned_check before the save, learned_saved after it), the skills a run opened and what it
+says of them (learned_used, after either save), and the check turn for what runs handed in (learned_step, learned_run),
+which writes what it kept as skills of origin 'learned' (skills.Skills.learn). The rules are in learned_skills.py; the
+skills table is skills.py's."""
 import logging
 import threading
 
 import help_chat
 import learned_skills
+from machine import cards
+import memory_use
 from models import background_model
 import team_learnings
 
@@ -17,14 +20,30 @@ LOG = logging.getLogger('personal-assistant')
 class LearnedSkillsApp:
     ACTIONS = {}  # no actions of its own: learned skills show, change and go in the Skills list (skills.py)
 
-    def own_domains(self):
-        return {str(a.get('email') or '').rpartition('@')[2].lower() for a in self.config.get('accounts') or [] if isinstance(a, dict) and '@' in str(a.get('email') or '')}
-
-    def learned_settle(self, suggestion_id, ok):
-        """A run on this to-do ended: the learned skills for the sites and workflows it touches count it."""
-        with self.store.connect() as db:
-            ids = [r['id'] for r in learned_skills.touching(db, suggestion_id, self.own_domains())]
-        return self.skills.learned_result(ids, ok, learned_skills.RETIRE) if ids else []
+    def learned_used(self, suggestion_id, job_id, failed=None):
+        """A run saved its result or its blocker: the skills it opened go in the log (memory_use: opened), and the learned
+        ones of them it says no longer work (failed: skill_failed on its save, a slug or a list) as failed. RETIRE to-dos
+        in a row turn one off. Returns the slugs turned off. Never raises: a save is never lost over it."""
+        off = []
+        try:
+            with self.store.connect() as db:
+                seen = learned_skills.opened(db, job_id)
+                if not seen:
+                    return off
+                learned = {r['slug']: dict(r) for r in db.execute("SELECT id,slug,updated_at FROM skills WHERE origin='learned' AND status='on'")}
+                said = {str(x).strip() for x in (failed if isinstance(failed, list) else [failed]) if x} & set(seen) & set(learned)
+                had = {tuple(r) for r in db.execute("SELECT row_id,how FROM memory_use WHERE purpose='run' AND kind='skill' AND run_id=? AND suggestion_id=?", (str(job_id), str(suggestion_id)))}
+            rows = [(slug, 'failed' if slug in said else 'opened') for slug in seen]
+            memory_use.record(self.store, 'run', [['skill', slug, how, None, 0, 0] for slug, how in rows if (slug, how) not in had],
+                              job_id, suggestion_id)
+            for slug in said:
+                with self.store.connect() as db:
+                    n = learned_skills.failed_in_a_row(db, slug, learned[slug]['updated_at'])
+                if n >= learned_skills.RETIRE and self.skills.retire(learned[slug]['id'], n):
+                    off.append(slug)
+        except Exception as error:  # noqa: BLE001 - a result or a blocker is saved whatever happens here
+            LOG.error('learned skill use error=%s', type(error).__name__)
+        return off
 
     def learned_check(self, args, outcome, early):
         """Before the save: the run's procedure in its fixed form (ValueError says what to fix), or (None, why it isn't
@@ -39,28 +58,20 @@ class LearnedSkillsApp:
         return item, None
 
     def learned_saved(self, suggestion_id, item, outcome):
-        """After the save: a run that got its task done settles the learned skills it touched, and its own procedure,
-        with personal details out, waits in memory for the check. Returns what the run is told, or None."""
-        if (outcome or {}).get('state') not in learned_skills.SUCCESS:
-            return None
-        self.learned_settle(suggestion_id, True)
-        if not item:
+        """After the save: the procedure of a run that got its task done, with personal details out, waits in memory for
+        the check. One that ends on a question to the owner isn't there yet. Returns what the run is told, or None."""
+        if not item or (outcome or {}).get('state') not in learned_skills.SUCCESS:
             return None
         with self.store.connect() as db:
-            row = db.execute('SELECT title FROM suggestions WHERE id=?', (str(suggestion_id),)).fetchone()
+            row = db.execute('SELECT * FROM suggestions WHERE id=?', (str(suggestion_id),)).fetchone()
+            if row and cards.result_ask({**dict(row), 'outcome': outcome}, db):
+                return 'not kept: the task still waits for the owner\'s answer; give it again when it is done'
             names = sorted(set(team_learnings.known_names(db, self.config)) | set(learned_skills.people_on(db, suggestion_id)), key=lambda n: -len(n[0]))
         task = learned_skills.scrub_text(row['title'] if row else '', item.get('site') or '', names)
         drafts = self.__dict__.setdefault('learned_drafts', [])
         drafts[:] = [d for d in drafts if d['id'] != str(suggestion_id)][-20:]
         drafts.append({'id': str(suggestion_id), 'task': task, 'item': learned_skills.scrub(item, names), 'names': names, 'tries': 0})
         return 'kept: after a check it becomes a skill for later tasks on this site or workflow'
-
-    def learned_failed(self, suggestion_id):
-        """A run on this to-do got stuck: the learned skills it touched count it (RETIRE in a row turn one off)."""
-        try:
-            self.learned_settle(suggestion_id, False)
-        except Exception as error:  # noqa: BLE001 - a blocker is saved whatever happens here
-            LOG.error('learned skill settle error=%s', type(error).__name__)
 
     def learned_step(self):
         """Start the check of what runs handed in, when there is some and the budget allows; it runs in its own thread.

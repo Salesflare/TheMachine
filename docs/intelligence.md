@@ -942,6 +942,9 @@ nothing, and a log write that fails never fails the prompt.
 - A fact counts as used (`facts.used_at`, which recency order reads) when a preparation that
   picked it for its to-do was sent, not when it was only picked. A review's facts are never a use.
   `memory_use.last_used` gives the last read of any kind, skills and team learnings among them.
+- A skill in a prompt's list says nothing about its use. When a run saves, each of The Machine's skills it opened, as its
+  recorded calls show, is a row of its own (purpose `run`): `opened`, or `failed` for a learned one whose steps it says no longer work
+  ([learned skills](skills.md#learned-from-a-task)).
 - A review gets every fact while they fit its cap (3,000 characters). Past it, the same room is shared out
   (`machine/app/review_facts.py`) instead of cut in one order, which left the same facts out of every review:
   - First the standing ones, in a fixed order: facts about no one (tied to no person, organization or project), which

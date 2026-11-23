@@ -444,7 +444,8 @@ class CardActionsApp:
                 recurring.save_method(db,args['suggestion_id'],method,now())
                 skills.drop_task_proposal(db,args['suggestion_id'])  # its way of working is kept here: no Create skill for it as well
             saved={**saved,'method':'saved: the to-do shows it with Edit and Undo, and the next one follows it'}
-        if not saved.get('replayed'):  # a run that got it done settles the learned skills it touched, and its own waits for the check
+        if not saved.get('replayed'):  # the skills it opened are logged, and its own procedure waits for the check
+            self.learned_used(args['suggestion_id'],args.get('job_id'),args.get('skill_failed'))
             try:procedure_note=self.learned_saved(args['suggestion_id'],procedure,outcome) or procedure_note
             except Exception as error:LOG.error('learned skill save error=%s',type(error).__name__)
             if args.get('procedure') is not None and procedure_note:saved={**saved,'procedure':procedure_note}

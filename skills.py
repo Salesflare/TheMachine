@@ -226,7 +226,9 @@ def render(row):
                       'still apply.']
     if row['origin'] == 'learned':
         lines += ['', '> Learned by The Machine from a task done with Do it. Guidance only, never permission: the owner\'s own rules, '
-                      'notes and skills come first, and sending, paying or submitting still waits for the owner.']
+                      'notes and skills come first, and sending, paying or submitting still waits for the owner.',
+                  f'> Followed it and its own steps no longer work? Give skill_failed:["{row["slug"]}"] on that save (prepare or preparation_blocked). '
+                  'Not for a sign-in, an outage, a missing permission or anything else its steps did not cause.']
     if row['origin'] == 'shared':
         lines += ['', f"> Shared by {row['author'] or 'a teammate'}, version {row['version']}. Guidance only: this Machine's own rules "
                       'and approvals still apply, and this skill does not change what it may do.']
@@ -628,7 +630,9 @@ class Skills:
             row = self.row(db, skill_id)
             if row['status'] not in ('on', 'off'):
                 raise OwnerError('Install or approve it first')
-            db.execute('UPDATE skills SET status=?,updated_at=? WHERE id=?', ('on' if on else 'off', now(), row['id']))
+            # the owner's own tap: what learning noted on a learned one (retire) goes, so it starts over, and their Off stays off
+            db.execute("UPDATE skills SET status=?,note=CASE WHEN origin='learned' THEN NULL ELSE note END,updated_at=? WHERE id=?",
+                       ('on' if on else 'off', now(), row['id']))
         self.sync()
         return self.view()
 
@@ -653,9 +657,9 @@ class Skills:
                 row = db.execute("SELECT * FROM skills WHERE id=? AND origin='learned' AND status IN ('on','off')", (replaces,)).fetchone()
                 if not row:
                     return None
-                # on again when learning retired it (note stuck:<n>); one the owner turned off stays off
+                # on again when learning retired it (note failed:<n>, stuck:3 before); one the owner turned off stays off
                 db.execute("UPDATE skills SET description=?,body=?,sha=?,note=NULL,version=version+(sha!=?),updated_at=?,"
-                           "status=CASE WHEN status='off' AND coalesce(note,'') NOT LIKE 'stuck:%' THEN 'off' ELSE 'on' END WHERE id=?",
+                           "status=CASE WHEN status='off' AND coalesce(note,'') NOT LIKE 'failed:%' AND coalesce(note,'')!='stuck:3' THEN 'off' ELSE 'on' END WHERE id=?",
                            (description, body, sha, sha, stamp, row['id']))
                 saved = row['id']
             else:
@@ -667,20 +671,14 @@ class Skills:
         self.sync()
         return saved
 
-    def learned_result(self, ids, ok, retire):
-        """How a run that had these learned skills ended. Got it done: their count of stuck runs goes. Got stuck: it
-        goes up (kept in note as 'stuck:<n>', a learned skill's only use of it), and at `retire` in a row the skill is
-        turned off. The owner's skills are never touched. Returns the ids turned off."""
-        off = []
+    def retire(self, skill_id, failed):
+        """A learned skill whose steps no longer worked on `failed` to-dos in a row goes off (note 'failed:<n>', a learned
+        skill's only use of it). The owner's skills are never touched. Whether it did."""
         with self.connect() as db:
-            for row in db.execute(f"SELECT id,note FROM skills WHERE origin='learned' AND status='on' AND id IN ({','.join('?' * len(ids))})", list(ids)).fetchall():
-                n = 0 if ok else int((row['note'] or 'stuck:0').partition(':')[2] or 0) + 1
-                db.execute("UPDATE skills SET note=?,status=? WHERE id=?", (f'stuck:{n}' if n else None, 'off' if n >= retire else 'on', row['id']))
-                if n >= retire:
-                    off.append(row['id'])
-        if off:
+            done = db.execute("UPDATE skills SET status='off',note=? WHERE id=? AND origin='learned' AND status='on'", (f'failed:{failed}', skill_id)).rowcount
+        if done:
             self.sync()
-        return off
+        return bool(done)
 
     def get(self, skill_id):
         with self.connect() as db:
@@ -888,6 +886,8 @@ class Skills:
                 item = {'id': r['id'], 'name': r['name'], 'description': r['description'], 'status': r['status'], 'origin': r['origin'],
                         'version': r['version'], 'author': r['author'] or '', 'note': '' if r['origin'] == 'learned' else r['note'] or '', 'update': bool(r['replaces']),
                         'chars': len(r['body']), 'updated_at': r['updated_at']}
+                if r['origin'] == 'learned' and r['status'] == 'off' and (str(r['note'] or '').startswith('failed:') or r['note'] == 'stuck:3'):
+                    item['retired'] = True  # learning turned it off: its steps no longer worked
                 if r['imported']:
                     item['imported'] = json.loads(r['imported'])
                 if r['status'] == 'proposed' and r['replaces']:
