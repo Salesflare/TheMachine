@@ -691,6 +691,15 @@ class GogDocs(unittest.TestCase):
                 return types.SimpleNamespace(returncode=1, stdout='{"error":{"message":"{\\"code\\": 404}"}}', stderr='404')
         return types.SimpleNamespace(returncode=0, stdout=json.dumps(out), stderr='')
 
+    def test_the_run_is_told_how_to_search_that_drive(self):
+        """doc-find reads Docs connections only: a file in the Drive of a gog sign-in was called missing (2026-11-23)."""
+        from machine.sources.connectors import doc_write_prompt
+        found = w.targets(self.config, docs, self.helpers)
+        with patch.object(w, 'targets', return_value=found):
+            self.assertIn(f"--readonly drive search '<words>'. doc-find doesn't look there: {OWNER}.", doc_write_prompt(self.config))
+            found['acme-gmail'].pop('gog')  # a Docs connection instead: doc-find reads it
+            self.assertNotIn('drive search', doc_write_prompt(self.config))
+
     def test_a_new_google_doc_with_the_gog_sign_in(self):
         self.assertTrue(docs.gog_google(self.account))
         found = w.targets(self.config, docs, self.helpers)

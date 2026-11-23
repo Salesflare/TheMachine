@@ -456,11 +456,22 @@ class Preparation(unittest.TestCase):
         self.assertIn("say plainly what is missing",prompt)
         self.assertNotIn("still draft the step that can go now",prompt)
         rules=(machine_config.ROOT/'PREPARATION.md').read_text()
-        line=next(x for x in rules.splitlines() if x.startswith('- When what is owed is something you could not find or make'))
+        line=next(x for x in rules.splitlines() if x.startswith('- When nothing of what is owed could be found or made'))
         self.assertIn("a reply that only acknowledges or says it will follow delivers nothing: don't draft one",line)
         self.assertIn("outcome:'needs_you' with needs:<exactly that, as a question> and no next action",line)
         self.assertIn("the owner asked for one, or the other side asked for a date or confirmation the evidence gives",line)  # the honest short reply stays
         self.assertLessEqual(len(rules),30000)  # the plugin's limit for these rules
+
+    def test_the_job_is_the_outcome_the_source_asks_for(self):
+        # An offer that named only the look made the advice the whole job, saved as done with nothing carried out (2026-11-23)
+        rules=(machine_config.ROOT/'PREPARATION.md').read_text()
+        self.assertIn("The job is the outcome its source asks for: a look is only the first part, also when the title or offer names just that, unless its answer is all that's wanted.",rules)
+        self.assertIn("Decisions you recommend come back as steps to approve",rules)
+        self.assertIn("the result is the answer to that person: a draft with every point you verified",rules)
+        self.accept();prompt=machine_app_preparation.preparation_prompt(self.job())
+        self.assertIn("outcome:'done' only when what the source asks for is done",prompt)
+        self.assertIn("(advice or a look counts only when that is all it asks: a decision still to be taken or carried out is not done)",prompt)  # a reading to-do still ends done
+        self.assertIn("Title and offer name the outcome the message asks for",(machine_config.ROOT/'AGENTS.md').read_text())
 
     def test_owner_requested_service_setting_is_not_a_blanket_security_refusal(self):
         self.accept();job=self.job();prompt=machine_app_preparation.preparation_prompt(job)
