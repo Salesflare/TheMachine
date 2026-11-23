@@ -164,6 +164,13 @@ class Checks(unittest.TestCase):
         self.assertEqual(T.string_problems('Open {}', 'Ouvrir {}', 'fr', words), [])
         self.assertEqual(T.string_problems('{} from {}', '{1} de {0}', 'fr', words), [], 'numbered to reorder')
         self.assertTrue(T.string_problems('{} from {}', '{0} de {0}', 'fr', words))
+        key = 'Connect {0}? {1} emails from {0} this month.'
+        self.assertEqual(T.string_problems(key, '{0} koppelen? {1} e-mails van {0} deze maand.', 'nl', words), [],
+                         'a key that repeats {0} repeats it')
+        self.assertEqual(T.string_problems(key, '{1} e-mails van {0} deze maand: {0} koppelen?', 'nl', words), [])
+        self.assertTrue(T.string_problems(key, '{0} koppelen? {1} e-mails deze maand.', 'nl', words), 'one {0} dropped')
+        self.assertTrue(T.string_problems(key, '{} koppelen? {} e-mails van {} deze maand.', 'nl', words), 'no third arg')
+        self.assertTrue(T.string_problems(key, '{0} koppelen? {1} e-mails van {1} deze maand.', 'nl', words))
         self.assertTrue(T.string_problems('Open the Graph', 'Ouvrir le graphe', 'fr', words), 'a name stays')
         self.assertTrue(T.string_problems('Snooze it', 'Faites-le', 'fr', words), 'a glossary term')
         self.assertTrue(T.string_problems('Done', 'Fait — oui', 'fr', words), 'no em dash')
@@ -232,6 +239,19 @@ class Help(unittest.TestCase):
     def test_an_answer_that_loses_structure_is_left_out(self):
         broken = 'Je Machine.\n\n## Een project\n\n- Een regel.'
         self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer(broken)), 1)
+        self.assertFalse((self.help / 'nl' / 'projects.md').exists())
+
+    def test_wording_the_catalog_test_refuses_is_asked_again_then_left_out(self):
+        # The second answer was once kept anyway, and the pull request's own tests refused the article it wrote.
+        payloads = []
+
+        def ask(lang, instruction, payload, cache_key):
+            payloads.append(payload)
+            src = json.loads(payload[payload.index('\n{'):])
+            return {'title': 'Projecten', 'summary': 'Wat er speelt.', 'body': src['body'].replace('Your Machine', 'The Machine')}
+        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=ask), 1)
+        self.assertEqual(len(payloads), 2)
+        self.assertIn('not The Machine (in \'The Machine names projects.', payloads[1])
         self.assertFalse((self.help / 'nl' / 'projects.md').exists())
 
     def test_an_em_dash_is_asked_again_with_where_it_is(self):

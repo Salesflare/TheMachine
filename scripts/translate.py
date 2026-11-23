@@ -14,8 +14,8 @@ the English text, so new English is a new key), or an entry of another shape (a 
 Entries English no longer has are dropped. A translated article carries the hash of the English it was made from
 (`translated:` in its front matter), written only here: a translation without one is out of date, and a pull request
 never moves a stamp by hand (an English edit that changes no meaning still puts its translations out of date for a
-day). Each answer is checked before it is written (the English's shape, a string or count forms, the same placeholders,
-names and glossary terms, field names, values and date formats a model reads, the same headings, paragraphs and list
+day). Each answer is checked before it is written (the English's shape, a string or count forms, the same placeholders as
+often, names and glossary terms, field names, values and date formats a model reads, the same headings, paragraphs and list
 items, link targets and code, no em dash); an answer that fails is asked again once with what was wrong, then left
 out, so the app shows English there until the next run. In an article, a **label** the app has reads as the app's
 translation and a link whose English text is the target's title reads as its translated title: both are put right
@@ -278,13 +278,19 @@ def wording_problems(english, text, lang):
     return out
 
 
+def hole_positions(holes):
+    """The argument each placeholder fills, sorted: {} in order, {0} {1} by number (None when the two are mixed)."""
+    numbered = [h[1:-1] for h in holes if h != '{}']
+    if not numbered:
+        return [str(i) for i in range(len(holes))]
+    return sorted(numbered) if len(numbered) == len(holes) else None
+
+
 def holes_ok(key, text):
-    """As many placeholders as the key; numbered ones ({0}, {1}) cover each position once."""
-    want, got = HOLE.findall(key), HOLE.findall(text)
-    if len(want) != len(got):
-        return False
-    numbered = [h[1:-1] for h in got if h != '{}']
-    return not numbered or (len(numbered) == len(got) and sorted(numbered) == [str(i) for i in range(len(got))])
+    """The same placeholders as the key: each argument filled as many times ({} may be numbered {0}, {1} to reorder,
+    and a key that repeats {0} keeps repeating it)."""
+    got = hole_positions(HOLE.findall(text))
+    return got is not None and got == hole_positions(HOLE.findall(key))
 
 
 def string_problems(key, text, lang, words):
@@ -670,10 +676,11 @@ def translate_article(lang, path, words=None, ask=ask):
                     problems.append(f'a one-line {k}')
                 elif '—' in text:
                     problems.append(no_em_dash(text, f' in the {k}'))
-        # a label not as the app shows it is asked again once; the second time the article is kept anyway
+        # a label not as the app shows it is asked again once; the second time the article is kept anyway. Wording
+        # that says another thing than the English is never kept: the catalog test refuses it in a current article.
         wrong = [f'write **{tr}** for {en}' for en, tr in labels.items() if f'**{tr}' not in got['body']]
         pairs = [(src['title'], got.get('title')), (src['summary'], got.get('summary'))] + list(zip(units(body.strip()), units(got['body'])))
-        wrong += sorted({p for e, t in pairs if e and isinstance(t, str) for p in wording_problems(e, t, lang)})
+        problems += sorted({f'{p} (in {t[:60]!r})' for e, t in pairs if e and isinstance(t, str) for p in wording_problems(e, t, lang)})
         if not problems and (not wrong or attempt):
             return got
         notes = problems + wrong
