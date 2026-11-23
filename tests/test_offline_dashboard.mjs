@@ -177,6 +177,22 @@ try{
   if(shots)await p.screenshot({path:`${shots}/offline-${w}-${scheme}.png`});
   await p.evaluate(()=>{for(const x of [...outbox.items])outboxCancel(x.id)});await ctx.close()}
 
+ // 10b. Inter's Cyrillic letters: not downloaded up front, kept once a page shows them, so offline reads the same after
+ {const ctx=await browser.newContext({viewport:{width:390,height:844}});
+  await ctx.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));mode='ok';await p.goto(base);await p.locator('#suggestions article[id]').first().waitFor();
+  await p.evaluate(()=>navigator.serviceWorker.ready);
+  await poll(p,async()=>{const c=await caches.open('tm-assets-2');return (await c.keys()).length>=16&&!!(await c.match(location.origin+'/brand/sans.woff2'))},null,'the brand files are kept up front');
+  await p.reload();await until(p,()=>!!navigator.serviceWorker.controller,null,'controlled');
+  const letters=()=>p.evaluate(async()=>(await (await caches.open('tm-assets-2')).keys()).map(r=>new URL(r.url).pathname).filter(x=>x.includes('cyrillic')));
+  assert.deepEqual(await letters(),[],'a Latin page keeps no Cyrillic');
+  const show=()=>p.evaluate(()=>{const d=document.createElement('p');d.textContent='Нет новых задач';document.body.prepend(d)});
+  await show();await poll(p,async()=>!!(await (await caches.open('tm-assets-2')).match(location.origin+'/brand/sans-cyrillic.woff2')),null,'kept once shown');
+  assert.deepEqual(await letters(),['/brand/sans-cyrillic.woff2'],'only the letters shown');
+  await ctx.setOffline(true);await p.reload();await p.locator('#suggestions article[id]').first().waitFor();await show();
+  await poll(p,()=>[...document.fonts].some(f=>f.status==='loaded'&&/U\+0*400-0*45F/i.test(f.unicodeRange)),null,'Cyrillic reads in Inter offline');
+  await ctx.close()}
+
  // 11. Gone offline under the Check now row (the page drew online first): the banner keeps the header's gap under
  // the row, also on a phone, where the head otherwise has no bottom margin (shell-sidebar.css, .page-head.greet.busy)
  withCheck=true;mode='ok';
