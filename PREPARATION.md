@@ -102,7 +102,7 @@ Reply in a conversation from the task's linkedin.message evidence: `{kind:linked
 
 ### X reply or message (the task's X account)
 
-Reply to a post from this task's x.mention evidence with `{kind:x,label:Reply on X,account_id:<task X account ID>,reply_to:<that event's metadata.tweet_id>,body:<reply>}`, or answer an x.dm with `{kind:x,label:Send,account_id:...,conversation_id:<its thread>,body:...}`. Plain text, no media; a reply at most 280 characters (links count 23), a DM 10000. Public replies stay short and keep private or customer details out. It's sent through the owner's own x.com session after their Send now, or send_now when they asked you to send it.
+Reply to a post from this task's x.mention evidence with `{kind:x,label:Reply on X,account_id:<task X account ID>,reply_to:<that event's metadata.tweet_id>,body:<reply>}`, or answer an x.dm with `{kind:x,label:Send,account_id:...,conversation_id:<its thread>,body:...}`. Plain text, no media; a reply at most 280 characters (links count 23), a DM 10000. Public replies stay short and keep private or customer details out. It's sent through the owner's own x.com session after their Send now, or send_now when they asked you to send it. A new post (X, LinkedIn, anywhere) is a last step, never kind:x or an Open link.
 
 ### WhatsApp or Telegram message
 
@@ -131,13 +131,13 @@ A small fix to a recorded error merges by itself: at most 3 Python files of the 
 
 ### The last step: Submit, Pay, Book…
 
-When a prepared-ahead task ends in a click that commits something (submitting a form, paying, booking, ordering, publishing, signing, accepting), do everything before it and offer the click as `{kind:finish,label:Submit expense claim,instructions:<the exact step>,preview:<what goes out>,url:<the page>}`:
+When a task ends in a click that commits something (submitting a form, paying, booking, ordering, publishing, posting, signing, accepting), do everything before it and offer the click as `{kind:finish,label:Submit expense claim,instructions:<the exact step>,preview:<what goes out>,url:<the page>}`:
 
-- `label` starts with what the click does: Submit, Pay, Book, Confirm, Order, Publish, Sign, Accept, Cancel, Register, Renew…
+- `label` starts with what the click does: Submit, Pay, Book, Confirm, Order, Publish, Post, Sign, Accept, Cancel, Register, Renew…
 - `instructions`: the exact step with every value it needs (where to go, what to fill in or pick, which button), so the confirmed run can redo it from the start when the tab or session has expired.
 - `preview`: what goes out, as the owner should check it: amounts, dates, names, the text, the account it comes from.
 - `url`: the page where it happens, when there is one.
-- When the step posts a message (a reply in a support inbox, a chat or DM in a web app, a help desk…), also `message`: its exact text, and `to_name`: who gets it. Type it into the page as the draft, but don't submit. The card shows this text like an email draft and the owner can edit it; Confirm then types exactly the confirmed text, replacing what was typed before.
+- When the step posts a message (a reply in a support inbox, a chat or DM in a web app, a help desk…), also `message`: its exact text, and `to_name`: who gets it. Type it into the page as the draft, but don't submit. The card shows it like an email draft the owner can edit; Confirm types exactly the confirmed text, replacing what was typed.
 
 The owner reviews the preview and taps Confirm; that runs a Do it turn for only this step, which stops with a blocker if anything differs from the preview. Text the owner edited wins over the instructions and anything typed on the page earlier. `finish_state:completed` closes the card once no other step (a draft, Confirm) waits. Messages keep their own send actions (email, LinkedIn, Slack, X, WhatsApp, Teams) and fixes to The Machine `kind:merge`.
 
