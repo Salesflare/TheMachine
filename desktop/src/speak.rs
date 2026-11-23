@@ -44,7 +44,12 @@ pub struct Speaking {
 /// It may speak: the person sees the robot, and nothing says not to disturb them.
 pub fn up(app: &AppHandle) -> bool {
     let shared = app.state::<Shared>();
-    showing(&shared) && !crate::front::full() && !quiet::now()
+    let may = showing(&shared) && !crate::front::full() && !quiet::now();
+    #[cfg(feature = "sandbox")]
+    if !may {
+        eprintln!("doesn't speak: showing {}, full screen {}, quiet {}", showing(&shared), crate::front::full(), quiet::now());
+    }
+    may
 }
 
 fn showing(shared: &Shared) -> bool {
@@ -232,15 +237,25 @@ mod quiet {
     pub fn now() -> bool {
         use windows_sys::Win32::System::SystemInformation::GetTickCount;
         use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO};
-        use windows_sys::Win32::UI::Shell::{SHQueryUserNotificationState, QUNS_ACCEPTS_NOTIFICATIONS, QUNS_APP};
+        use windows_sys::Win32::UI::Shell::{SHQueryUserNotificationState, QUNS_ACCEPTS_NOTIFICATIONS};
         let mut state = QUNS_ACCEPTS_NOTIFICATIONS;
+        #[cfg(feature = "sandbox")]
+        if let Some(said) = std::env::var("MACHINE_SANDBOX_STATE").ok().and_then(|f| std::fs::read_to_string(f).ok()?.trim().parse::<i32>().ok()) {
+            return quiet(said);
+        }
         let mut last = LASTINPUTINFO { cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
         // SAFETY: the one argument of each is a valid place for the answer.
         unsafe {
             let told = SHQueryUserNotificationState(&mut state) == 0;
             let idle = GetLastInputInfo(&mut last) != 0 && GetTickCount().wrapping_sub(last.dwTime) > 5 * 60 * 1000;
-            told && state != QUNS_ACCEPTS_NOTIFICATIONS && state != QUNS_APP || idle
+            told && quiet(state) || idle
         }
+    }
+
+    #[cfg(windows)]
+    fn quiet(state: i32) -> bool {
+        use windows_sys::Win32::UI::Shell::{QUNS_ACCEPTS_NOTIFICATIONS, QUNS_APP};
+        state != QUNS_ACCEPTS_NOTIFICATIONS && state != QUNS_APP
     }
 
     #[cfg(not(any(windows, target_os = "linux")))]
