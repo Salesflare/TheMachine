@@ -497,7 +497,8 @@
   function toTodo() { if (kind !== 'todo') document.querySelector('[name=kind][value=todo]').click(); }
 
   // One to-do in the box, by its Machine's own dashboard; where that has no page for it, the app or the browser
-  let card = null, over = 0;
+  const LEAST = 340, ALL = 9999;
+  let card = null, most = 0, own = 0, over = 0;
   async function openTodo(x) {
     if (!x.id) return native.openDashboard().catch(fail);
     say('');
@@ -505,13 +506,23 @@
       const tall = await native.cardOpen(x.id);
       if (!tall) return await native.openDashboard(x.id);
       card = x;
-      $('panel').style.height = tall + 'px';
+      most = tall;
+      own = Math.min(LEAST, most);
+      $('panel').style.height = own + 'px';
       $('panel').classList.add('card');
       $('card').hidden = false;
       $('card-back').focus();
       over = setTimeout(() => cardSaid('failed'), 15000);
       cardFit();
     } catch (e) { fail(e); }
+  }
+  // As tall as its page, and never less tall again while it is open: what is in it stays where it is. A dialog may have
+  // more room while it is there.
+  function cardTall(tall) {
+    if (!card) return;
+    const wanted = Math.min(most, $('panel').offsetHeight - $('card-place').offsetHeight + tall);
+    if (tall < ALL) own = Math.max(own, wanted);
+    $('panel').style.height = (tall < ALL ? own : most) + 'px';
   }
   function cardFit() {
     const r = $('card-place').getBoundingClientRect();
@@ -540,6 +551,7 @@
     if (state === 'failed' || state === 'signed-out') { cardBack(); native.openDashboard(id).catch(fail); }
   }
   native.onCard(cardSaid);
+  native.onTall(cardTall);
   $('card-back').addEventListener('click', cardBack);
   $('card-app').addEventListener('click', () => card && native.openDashboard(card.id).catch(fail));
 

@@ -395,6 +395,17 @@ pub mod linux {
                 });
             })?;
         }
+        if window.label() == "card" {
+            // As tall as it is asked to be: a web view's own wish is its whole page, an overlay's is none
+            window.with_webview(move |page| {
+                let (page, over) = (page.inner(), gtk::Overlay::new());
+                let Some(vbox) = page.parent().and_downcast::<gtk::Box>() else { return };
+                vbox.remove(&page);
+                over.add_overlay(&page);
+                vbox.pack_start(&over, true, true, 0);
+                over.show();
+            })?;
+        }
         if robot {
             // Only the robot itself takes clicks: an ellipse, the window's corners let them through
             gtk.connect_size_allocate(|gtk, a| {
