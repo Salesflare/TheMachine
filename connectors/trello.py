@@ -18,6 +18,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import i18n
+
 KINDS = {'trello.action': 'Trello'}
 # How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
 # (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
@@ -113,6 +115,67 @@ def plain(value):
     # Do not collect explicitly labeled passwords or one-time codes in comments.
     return re.sub(r'(?i)\b(password|passcode|one[- ]time code|verification code|otp)\s*[:=]\s*\S+',
                   r'\1: [omitted]', text)
+
+
+def stored_fields(body):
+    """The fields of a stored action (event's lines): {'Action', 'Board', 'text', 'listAfter': {...}, ...}."""
+    found, last = {}, None
+    for line in str(body or '').split('\n'):
+        field = re.match(r'([A-Za-z]+): ?(.*)', line)
+        # after a comment's text only Trello's own data starts a field: "Note: call them" is still the comment
+        if field and field[1] not in found and (last != 'text' or field[2][:1] in ('{', '[') or field[1] == 'dateLastEdited'):
+            last = field[1]
+            found[last] = field[2]
+        elif last:  # a comment of several lines
+            found[last] += '\n' + line
+    for key, value in found.items():
+        if value[:1] == '{':
+            try:
+                found[key] = json.loads(value)
+            except ValueError:
+                found[key] = {}
+    return found
+
+
+def read_as(kind, title, body, metadata):
+    """How an action reads in the message viewer: what happened in plain words, on which board. Never Trello's own action
+    name, its ids or its data."""
+    f = stored_fields(body)
+    if 'Action' not in f:
+        return {}
+    name = lambda key: str((f.get(key) if isinstance(f.get(key), dict) else {}).get('name') or '').strip()
+    action, old = str(f['Action']).strip(), f.get('old') if isinstance(f.get('old'), dict) else {}
+    if action == 'commentCard':
+        said = str(f.get('text') or '')
+    elif name('listBefore') and name('listAfter'):
+        said = i18n.t('Moved from {} to {}', name('listBefore'), name('listAfter'))
+    elif action == 'createCard':
+        said = i18n.t('Added to {}', name('list')) if name('list') else i18n.t('Added to the board')
+    elif action == 'updateCheckItemStateOnCard' and name('checkItem'):
+        done = f['checkItem'].get('state') == 'complete'
+        said = i18n.t('Checked off: {}', name('checkItem')) if done else i18n.t('Unchecked: {}', name('checkItem'))
+    elif action == 'addAttachmentToCard' and name('attachment'):
+        said = i18n.t('Attached: {}', name('attachment'))
+    elif action == 'addMemberToCard' and name('member'):
+        said = i18n.t('Added {}', name('member'))
+    elif action == 'removeMemberFromCard' and name('member'):
+        said = i18n.t('Removed {}', name('member'))
+    elif action == 'addChecklistToCard' and name('checklist'):
+        said = i18n.t('Checklist added: {}', name('checklist'))
+    elif action == 'deleteCard':
+        said = i18n.t('Deleted')
+    elif 'closed' in old:
+        said = i18n.t('Back on the board') if old['closed'] else i18n.t('Archived')
+    elif 'due' in old:
+        said = i18n.t('The due date changed')
+    elif 'desc' in old:
+        said = i18n.t('The description changed')
+    elif old.get('name'):
+        said = i18n.t('Renamed from {}', str(old['name']))
+    else:
+        said = i18n.t('Changed')
+    board = str(f.get('Board') or '').strip()
+    return {'body': said.strip(), **({'card': {'ref': board}} if board else {})}
 
 
 def event(account, item, board, helpers):

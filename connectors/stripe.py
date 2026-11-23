@@ -24,6 +24,7 @@ Optional: "large_subscription_monthly" (default 500, in the price currency): new
 at or above this monthly value become events; smaller ones are routine.
 """
 import datetime as dt
+from decimal import Decimal
 import http.client
 import json
 import re
@@ -32,6 +33,9 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+
+import i18n
+import locale_prefs
 
 KINDS = {'stripe.event': 'Stripe'}
 # How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
@@ -54,6 +58,34 @@ TYPES = ('invoice.payment_failed', 'customer.subscription.deleted', 'customer.su
          'customer.subscription.created', 'charge.dispute.created')
 PATHS = ('v1/account', 'v1/events', 'v1/customers/')
 API = 'https://api.stripe.com/'
+# Stripe's codes in plain words. Why an invoice was made (its event never says why a payment failed: that is on the
+# payment, which this doesn't read), why a payment is disputed, why a subscription ended, and a subscription's state.
+BILLING = {'subscription_create': 'First payment of a new subscription', 'subscription_cycle': 'Renewal of a subscription',
+           'subscription_update': 'Change to a subscription', 'subscription_threshold': 'Usage billed before the period ended',
+           'subscription': 'Payment for a subscription', 'manual': 'One-off invoice', 'quote_accept': 'Invoice for an accepted quote',
+           'automatic_pending_invoice_item_invoice': 'Invoice for pending items'}
+DISPUTES = {'bank_cannot_process': 'The bank couldn’t process it', 'check_returned': 'The check was returned',
+            'credit_not_processed': 'A promised refund didn’t arrive', 'customer_initiated': 'The customer disputes it',
+            'debit_not_authorized': 'The debit wasn’t authorized', 'duplicate': 'Charged twice', 'fraudulent': 'Reported as fraud',
+            'general': 'No specific reason', 'incorrect_account_details': 'The account details were wrong',
+            'insufficient_funds': 'Not enough money on the account', 'noncompliant': 'It broke the card network’s rules',
+            'product_not_received': 'Product or service not received', 'product_unacceptable': 'Product or service not as described',
+            'subscription_canceled': 'The subscription was canceled', 'unrecognized': 'Payment not recognized'}
+ENDED = {'cancellation_requested': 'Cancellation requested', 'payment_disputed': 'A payment was disputed', 'payment_failed': 'Payments failed',
+         'canceled_by_retention_policy': 'Canceled by a retention policy'}
+FEEDBACK = {'customer_service': 'Customer service', 'low_quality': 'Low quality', 'missing_features': 'Missing features',
+            'other': 'Another reason', 'switched_service': 'Switched to another service', 'too_complex': 'Too complex',
+            'too_expensive': 'Too expensive', 'unused': 'Not used enough'}
+STATUS = {'active': 'Active', 'trialing': 'In its trial', 'past_due': 'Past due', 'unpaid': 'Unpaid', 'paused': 'Paused', 'canceled': 'Canceled',
+          'incomplete': 'First payment not made yet', 'incomplete_expired': 'First payment never made'}
+# How each event's title reads beside its customer, who the viewer names on a line of their own
+TITLES = {'Payment failed': 'Payment failed: {}', 'Dispute': 'Dispute: {}', 'Subscription ended': 'Subscription ended: {}',
+          'New subscription': 'New subscription: {}', 'Cancellation scheduled': 'Cancellation scheduled: {}',
+          'Subscription past due': 'Subscription past due: {}', 'Subscription unpaid': 'Subscription unpaid: {}'}
+NOBODY = 'A customer'  # the title's customer when Stripe has no name or address for them
+# Currencies Stripe counts in whole units or in thousandths, not hundredths
+WHOLE = frozenset('BIF CLP DJF GNF JPY KMF KRW MGA PYG RWF VND VUV XAF XOF XPF'.split())
+THOUSANDTHS = frozenset('BHD JOD KWD OMR TND'.split())
 _tokens = {}
 _lock = threading.Lock()
 
@@ -214,7 +246,74 @@ def day(timestamp):
 
 
 def money(amount, currency):
-    return f"{(amount or 0) / 100:,.2f} {str(currency or '').upper()}".replace('.00 ', ' ')
+    currency = str(currency or '').upper()
+    digits = 0 if currency in WHOLE else 3 if currency in THOUSANDTHS else 2
+    return re.sub(r'\.0+ ', ' ', f'{(amount or 0) / 10 ** digits:,.{digits}f} {currency}')
+
+
+def words(table, code):
+    """A code as the table says it; one Stripe added since as its words ("new_code" is "New code"); '' for none."""
+    code = str(code or '').strip()
+    return table.get(code) or code.replace('_', ' ').capitalize()
+
+
+def said(table, text):
+    """What a stored line says, in the owner's language: plain words, or the code lines held before the words came."""
+    text = str(text or '').strip()
+    return '' if text.lower() in ('', 'unknown', 'not given') else i18n.t(words(table, text))
+
+
+def read_as(kind, title, body, metadata):
+    """How an event reads in the message viewer (machine/store/message_view.py): {'title', 'from', 'body'}. The customer
+    on a line of their own and not again in the title, the amount and dates as the owner writes them, and Stripe's codes
+    in plain words, also in events stored with the codes."""
+    out, lines = {'title': title, 'body': body}, str(body or '').split('\n')
+    named = re.fullmatch(r'([A-Z][a-z ]+): (.+), ([\d,]+(?:\.\d+)?) ([A-Z]{3})(/month)?', str(title or ''))
+    what = named[1] if named else ''
+    if what in TITLES:
+        amount = locale_prefs.money_text(Decimal(named[3].replace(',', '')), named[4])
+        out.update(title=i18n.t(TITLES[what], i18n.t('{} a month', amount) if named[5] else amount))
+        if '@' not in named[2]:  # an address reads as whoever it is (metadata's from)
+            out['from'] = '' if named[2] == NOBODY else named[2]
+    if lines and lines[0].rstrip('.') == str(title or '').rstrip('.'):
+        lines = lines[1:]
+    shown = []
+    for line in lines:
+        if found := re.fullmatch(r'Email: (\S+)', line):
+            if found[1] != (out.get('from') or metadata.get('from')):
+                shown.append(i18n.t('Email: {}', found[1]))
+        elif found := re.fullmatch(r'Attempt (\d+); (?:Stripe retries (\S+)\.|no automatic retry scheduled\.)', line):
+            shown.append(i18n.t('Attempt {}. Stripe tries again on {}.', found[1], day_shown(found[2])) if found[2]
+                         else i18n.t('Attempt {}. No automatic retry is scheduled.', found[1]))
+        elif what == 'Payment failed' and (found := re.fullmatch(r'(?:Reason: (\w+)|(.+))\.', line)) and (found[1] or found[2] in BILLING.values()):
+            why = BILLING.get(found[1]) or found[2]  # a code it doesn't know: nothing
+            shown.insert(-1, why and i18n.t(why) + '.')  # what it was for, before the attempt
+        elif what == 'Dispute' and (found := re.fullmatch(r'Reason: (.+?)\.(?: Evidence due (\S+)\.)?', line)):
+            reason = said(DISPUTES, found[1])
+            shown += [reason and i18n.t('Reason: {}', reason), found[2] and i18n.t('Evidence due {}', day_shown(found[2]))]
+        elif what == 'Subscription ended' and (found := re.fullmatch(r'Reason: (.+?)\.(?: Feedback: (.+?)\.)?(?: Comment: (.*))?', line)):
+            reason, feedback = said(ENDED, found[1]), said(FEEDBACK, found[2])
+            shown += [reason and i18n.t('Reason: {}', reason), feedback and i18n.t('Feedback: {}', feedback), found[3] and i18n.t('Comment: {}', found[3])]
+        elif what == 'New subscription' and (found := re.fullmatch(r'Status: (.+)\.', line)):
+            shown.append(i18n.t('Status: {}', said(STATUS, found[1])))
+        elif what == 'Cancellation scheduled' and (found := re.fullmatch(r'Ends (\d{4}-\d\d-\d\d)\.', line)):
+            shown.append(i18n.t('Ends {}', day_shown(found[1])))
+        elif what.startswith('Subscription ') and (found := re.fullmatch(r'Was (.+)\.', line)):
+            shown.append(i18n.t('Before: {}', said(STATUS, found[1])))
+        elif line == 'Ends at the end of the period.':
+            shown.append(i18n.t('Ends at the end of the period'))
+        else:
+            shown.append(line)
+    out['body'] = '\n'.join(x for x in shown if x)
+    return out
+
+
+def day_shown(text):
+    """'2026-10-18' as the owner writes a day."""
+    try:
+        return locale_prefs.day_text(dt.date.fromisoformat(text))
+    except ValueError:
+        return text
 
 
 def monthly(subscription):
@@ -252,19 +351,19 @@ def event(account, item, source, helpers):
     if kind not in TYPES:
         return None
     customer = source.customer(obj.get('customer')) if not obj.get('customer_name') else {}
-    who = obj.get('customer_name') or customer.get('name') or obj.get('customer_email') or customer.get('email') or 'A customer'
+    who = obj.get('customer_name') or customer.get('name') or obj.get('customer_email') or customer.get('email') or NOBODY
     email = obj.get('customer_email') or customer.get('email') or ''
     dashboard = 'https://dashboard.stripe.com/' + ('' if item.get('livemode', True) else 'test/')
     if kind == 'invoice.payment_failed':
         title = f"Payment failed: {who}, {money(obj.get('amount_due'), obj.get('currency'))}"
         retry = obj.get('next_payment_attempt')
         lines = [f"Attempt {obj.get('attempt_count') or 1}; " + (f"Stripe retries {day(retry)}." if retry else 'no automatic retry scheduled.'),
-                 f"Reason: {obj.get('billing_reason') or 'unknown'}."]
+                 obj.get('billing_reason') in BILLING and BILLING[obj['billing_reason']] + '.']
         url = dashboard + 'invoices/' + str(obj.get('id'))
     elif kind == 'charge.dispute.created':
         due = (obj.get('evidence_details') or {}).get('due_by')
         title = f"Dispute: {who}, {money(obj.get('amount'), obj.get('currency'))}"
-        lines = [f"Reason: {obj.get('reason') or 'unknown'}." + (f" Evidence due {day(due)}." if due else '')]
+        lines = [f"Reason: {words(DISPUTES, obj.get('reason')) or 'unknown'}." + (f" Evidence due {day(due)}." if due else '')]
         url = dashboard + 'disputes/' + str(obj.get('id'))
     else:
         amount, currency = monthly(obj)
@@ -273,18 +372,18 @@ def event(account, item, source, helpers):
         if kind == 'customer.subscription.deleted':
             title = f"Subscription ended: {who}, {value}"
             reason = obj.get('cancellation_details') or {}
-            lines = [f"Reason: {reason.get('reason') or 'not given'}." + (f" Feedback: {reason.get('feedback')}." if reason.get('feedback') else '') +
+            lines = [f"Reason: {words(ENDED, reason.get('reason')) or 'not given'}." + (f" Feedback: {words(FEEDBACK, reason.get('feedback'))}." if reason.get('feedback') else '') +
                      (f" Comment: {reason.get('comment')}" if reason.get('comment') else '')]
         elif kind == 'customer.subscription.created':
             title = f"New subscription: {who}, {value}"
-            lines = [f"Status: {obj.get('status')}."]
+            lines = [f"Status: {words(STATUS, obj.get('status'))}."]
         elif cancelling(obj, before):
             title = f"Cancellation scheduled: {who}, {value}"
             end = obj.get('cancel_at') or obj.get('current_period_end')
             lines = [f"Ends {day(end)}." if end else 'Ends at the end of the period.']
         else:
             title = f"Subscription {obj['status'].replace('_', ' ')}: {who}, {value}"
-            lines = [f"Was {before['status']}."]
+            lines = [f"Was {words(STATUS, before['status'])}."]
     body = '\n'.join(x for x in [title + '.', email and 'Email: ' + email] + lines if x)
     return {'account_id': account['id'], 'source_id': item['id'], 'kind': 'stripe.event', 'occurred_at': helpers.iso(int(item['created'])),
             'title': title[:1000], 'body': body[:40000], 'deleted': False,

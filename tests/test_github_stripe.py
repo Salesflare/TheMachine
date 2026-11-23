@@ -103,6 +103,9 @@ class Stripe(Base):
         failed, cancel, big = rows
         self.assertEqual(failed['title'], 'Payment failed: Acme BV, 39 EUR')
         self.assertIn('Attempt 2; Stripe retries 2026-10-18.', failed['body'])
+        self.assertIn('Renewal of a subscription.', failed['body'])  # never Stripe's own code (subscription_cycle)
+        self.assertNotIn('subscription_cycle', failed['body'])
+        self.assertEqual([stripe.money(1500, c) for c in ('eur', 'jpy', 'kwd')], ['15 EUR', '1,500 JPY', '1.500 KWD'])  # each in its own unit
         self.assertEqual(failed['metadata']['source_url'], 'https://dashboard.stripe.com/invoices/in_1')
         self.assertEqual(failed['metadata']['from'], 'billing@acme.example')
         self.assertEqual(cancel['title'], 'Cancellation scheduled: Acme BV, 200 EUR/month')  # 2 × 1200/year

@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
@@ -110,13 +111,18 @@ SAMPLES = {
                                  'from': 'sweeper[bot]', 'source_url': 'https://github.example/acme/widgets/issues/812'}),
     'github.ci': ev('gh', 'ci:1', 'github.ci', '[widgets] Tests failed on main', 'Commit: Fix the export limit\nBy: kit',
                     **{'repo': 'acme/widgets', 'from': 'kit', 'source_url': 'https://github.example/acme/widgets/actions/runs/1'}),
-    'shortcut.move': ev('sc', 's1', 'shortcut.move', 'Export to CSV', 'Moved: In progress → Done',
-                        **{'source_url': 'https://app.shortcut.example/story/1'}),
-    'trello.action': ev('tr', 'tr1', 'trello.action', 'Venue shortlist', 'Venue shortlist\nMoved to Doing by Kit Navarro',
-                        **{'source_url': 'https://trello.example/c/1'}),
-    'stripe.event': ev('st', 'st1', 'stripe.event', 'Payment failed: Harbor Ltd, €49.00',
-                       'Payment failed: Harbor Ltd, €49.00.\nEmail: billing@harbor.example\nAttempt 2 of 4',
-                       **{'source_url': 'https://dashboard.stripe.example/invoices/in_1'}),
+    'shortcut.move': ev('sc', 's1', 'shortcut.move', 'Export to CSV',
+                        'Moved: In progress → Done\nCurrent story context (may be newer than this move):\nCurrent state ID: 500000012\n'
+                        'Owner IDs: 6512c1d2-1111-4222-8333-944455556666\nRequested by: 6512c1d2-1111-4222-8333-944455556666\nDeadline: 2026-11-13T00:00:00Z\n'
+                        'Blocked: False; completed: False\nOne file per month.',
+                        **{'sender_display': 'Kit Navarro', 'from': '6512c1d2-1111-4222-8333-944455556666', 'source_url': 'https://app.shortcut.example/story/1'}),
+    'trello.action': ev('tr', 'tr1', 'trello.action', 'Venue shortlist', 'Action: updateCard\nBoard: Spring fair\nlistAfter: {"id": "65f0c1d2e3a4b5c6d7e8f901", "name": "Doing"}\n'
+                        'listBefore: {"id": "65f0c1d2e3a4b5c6d7e8f902", "name": "Ideas"}\nold: {"idList": "65f0c1d2e3a4b5c6d7e8f902"}',
+                        **{'sender_display': 'Kit Navarro', 'from': '65f0c1d2e3a4b5c6d7e8f903', 'source_url': 'https://trello.example/c/1'}),
+    'stripe.event': ev('st', 'st1', 'stripe.event', 'Payment failed: Harbor Ltd, 1,049.50 EUR',  # as stored before the codes read in words
+                       'Payment failed: Harbor Ltd, 1,049.50 EUR.\nEmail: billing@harbor.example\nAttempt 1; no automatic retry scheduled.\n'
+                       'Reason: subscription_create.',
+                       **{'from': 'billing@harbor.example', 'customer_name': 'Harbor Ltd', 'source_url': 'https://dashboard.stripe.example/invoices/in_1'}),
     'salesforce.opportunity': ev('sf', 'o1', 'salesforce.opportunity', 'Deal: Harbor renewal', 'Stage: Proposal\nAmount: 12,000',
                                  **{'source_url': 'https://acme.salesforce.example/006'}),
     'salesforce.task': ev('sf', 't1', 'salesforce.task', 'Call back about pricing', 'Due: Friday\nWith: Sam Rivera', **{}),
@@ -171,7 +177,9 @@ SAMPLES = {
 
 TIMESTAMP = re.compile(r'(?<!\d)1[5-9]\d{8}(?!\d)')
 INTERNAL = re.compile(r'\b(?:conversation_attribute_updated\w*|part_type|admin_assignee_id|why you got it|[a-z]+\.[a-z_]+\.?(?:message|notification|event))\b')
-RAW = re.compile(r'<[@#!][A-Z0-9^]|<https?://|\b[UWC]0[A-Z0-9]{8,10}\b|\bcom\.\w+\.\w+|operator\+\S*@intercom\.io')
+RAW = re.compile(r'<[@#!][A-Z0-9^]|<https?://|\b[UWC]0[A-Z0-9]{8,10}\b|\bcom\.\w+\.\w+|operator\+\S*@intercom\.io'
+                 # a service's codes and ids: subscription_create, updateCard, {"id": …}, 24 hex digits, a uuid
+                 r'|\b(?:Reason|Status|Was): [a-z]+_|\b(?:update|comment|create)Card\b|\{"|\b[0-9a-f]{24}\b|\b[0-9a-f]{8}-[0-9a-f]{4}-')
 
 
 def fixture(folder):
@@ -391,8 +399,59 @@ class Rules(unittest.TestCase):
         self.assertEqual(sender_name('slack.message', {'from': 'Kit Navarro <U0KITNAVA1>'}), 'Kit Navarro')
 
     def test_cards_drop_a_first_line_that_repeats_the_title(self):
-        self.assertTrue(self.items['trello.action']['body'].startswith('Moved to Doing'))
+        self.assertEqual(self.items['trello.action']['body'], 'Moved from Ideas to Doing')
         self.assertTrue(self.items['stripe.event']['body'].startswith('Email:'))
+
+    def test_a_services_codes_read_in_plain_words_also_in_a_stored_event(self):
+        o = self.items['stripe.event']
+        self.assertEqual((o['title'], o['from']), ('Payment failed: €1,049.50', 'Harbor Ltd'))  # the name once
+        self.assertEqual(o['body'], 'Email: billing@harbor.example\nFirst payment of a new subscription.\nAttempt 1. No automatic retry is scheduled.')
+        o = self.items['shortcut.move']
+        self.assertEqual((o['from'], o['body']), ('Kit Navarro', 'Moved from In progress to Done\nDeadline: Fri, Nov 13\n\nOne file per month.'))
+        o = self.items['trello.action']
+        self.assertEqual((o['from'], o['card']), ('Kit Navarro', {'ref': 'Spring fair'}))
+        row = message_view.list_row('stripe.event', SAMPLES['stripe.event']['title'], SAMPLES['stripe.event']['body'], SAMPLES['stripe.event']['metadata'])
+        self.assertEqual((row['title'], row['who']), ('Payment failed: €1,049.50', 'Harbor Ltd'))
+        self.assertNotIn('subscription_create', row['text'])
+        self.assertEqual(message_view.sender_name('trello.action', {'from': '65f0c1d2e3a4b5c6d7e8f903'}), '')  # an id is nobody's name
+
+        def shown_as(kind, title, *lines):
+            return message_view.shape(kind, {'title': title, 'body': '\n'.join(lines), 'from': '', 'url': None}, {})
+        for line in ('Reason: subscription_create.', 'First payment of a new subscription.'):  # stored before and since
+            self.assertEqual(shown_as('stripe.event', 'Payment failed: Harbor Ltd, 48 EUR', 'Payment failed: Harbor Ltd, 48 EUR.',
+                                      'Attempt 2; Stripe retries 2026-10-18.', line)['body'],
+                             'First payment of a new subscription.\nAttempt 2. Stripe tries again on Sun, Oct 18.')
+        self.assertEqual(shown_as('stripe.event', 'Payment failed: Harbor Ltd, 48 EUR', 'Attempt 1; no automatic retry scheduled.', 'Reason: brand_new_code.')['body'],
+                         'Attempt 1. No automatic retry is scheduled.')
+        for title, line, body in [
+                ('Dispute: Harbor Ltd, 48 EUR', 'Reason: product_not_received. Evidence due 2026-10-18.', 'Reason: Product or service not received\nEvidence due Sun, Oct 18'),
+                ('Subscription ended: Harbor Ltd, 48 EUR/month', 'Reason: cancellation_requested. Feedback: too_expensive. Comment: Back next year',
+                 'Reason: Cancellation requested\nFeedback: Too expensive\nComment: Back next year'),
+                ('Subscription ended: Harbor Ltd, 48 EUR/month', 'Reason: not given.', ''),
+                ('New subscription: Harbor Ltd, 48 EUR/month', 'Status: trialing.', 'Status: In its trial'),
+                ('Subscription past due: Harbor Ltd, 48 EUR/month', 'Was incomplete_expired.', 'Before: First payment never made'),
+                ('Cancellation scheduled: Harbor Ltd, 48 EUR/month', 'Ends 2026-11-13.', 'Ends Fri, Nov 13')]:
+            o = shown_as('stripe.event', title, title + '.', line)
+            self.assertEqual((o['title'], o['from'], o['body']), (title.replace('Harbor Ltd, 48 EUR', '€48').replace('/month', ' a month'), 'Harbor Ltd', body))
+        o = shown_as('stripe.event', 'Payment failed: A customer, 48 EUR', 'Attempt 3; no automatic retry scheduled.')
+        self.assertEqual((o['title'], o['from']), ('Payment failed: €48', ''))
+        for lines, body in [(('Action: commentCard', 'Board: Fair', 'list: {"name": "Doing"}', 'text: Two things:', 'Note: call the hall', 'dateLastEdited: 2026-10-01'),
+                             'Two things:\nNote: call the hall'),
+                            (('Action: updateCard', 'Board: Fair', 'old: {"closed": false}'), 'Archived'),
+                            (('Action: updateCard', 'Board: Fair', 'old: {"due": null}'), 'The due date changed'),
+                            (('Action: updateCheckItemStateOnCard', 'Board: Fair', 'checkItem: {"id": "x", "name": "Book the hall", "state": "complete"}'),
+                             'Checked off: Book the hall'),
+                            (('Action: copyCommentCard', 'Board: Fair', 'list: {"name": "Doing"}'), 'Changed')]:
+            self.assertEqual(shown_as('trello.action', 'Venue shortlist', *lines)['body'], body)
+
+    def test_an_amount_reads_as_the_owner_writes_it(self):
+        from decimal import Decimal
+        import locale_prefs
+        for language, locale, euro, whole, francs in [('en', 'en-US', '€1,234.50', '€348', 'CHF\xa012'), ('nl', 'nl-BE', '€\xa01.234,50', '€\xa0348', 'CHF\xa012'),
+                                                      ('de', 'de-DE', '1.234,50\xa0€', '348\xa0€', '12\xa0CHF'), ('fr', 'fr-FR', '1\u202f234,50\xa0€', '348\xa0€', '12\xa0CHF'),
+                                                      ('ja', 'ja-JP', '€1,234.50', '€348', 'CHF\xa012')]:
+            with patch.object(locale_prefs, '_current', {**locale_prefs._current, 'locale': locale, 'language': language}):
+                self.assertEqual([locale_prefs.money_text(Decimal(n), c) for n, c in (('1234.50', 'EUR'), ('348', 'EUR'), ('12', 'CHF'))], [euro, whole, francs])
 
     def test_a_page_change_reads_as_was_and_now_by_its_site(self):
         o = self.items['web_page.change']

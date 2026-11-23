@@ -325,6 +325,26 @@ def short_text(moment):
     return weekday_name(moment) + ' ' + clock_text(moment)
 
 
+# How amounts are written (as the dashboard's Intl does): the thousands and decimal marks by language, English and the
+# rest '1,234.50'; the languages that put the sign after ('348 €'), and before it with a space ('€ 348'). Spaces never break.
+MARKS = {'nl': '.,', 'de': '.,', 'es': '.,', 'it': '.,', 'pt-BR': '.,', 'fr': '\u202f,', 'ru': '\u00a0,'}
+SIGN_AFTER, SIGN_SPACED = frozenset(('de', 'es', 'fr', 'it', 'ru')), frozenset(('nl', 'pt-BR'))
+SIGNS = {'EUR': '€', 'GBP': '£', 'JPY': '¥', 'INR': '₹', 'KRW': '₩'}
+
+
+def money_text(amount, currency):
+    """'€348', '€1,234.50', 'CHF 12' in English; '€ 1.234,50' in Dutch, '1.234,50 €' in German: whole amounts without
+    decimals. amount: a Decimal in whole units (348), currency its code."""
+    lang, text = language(), f'{amount:,f}' if amount != amount.to_integral() else f'{amount:,.0f}'
+    group, point = MARKS.get(lang, ',.')
+    text = text.translate({ord(','): group, ord('.'): point})
+    dollar = '$' if lang in ('de', 'ja', 'ru') or lang == 'en' and (region(_current['locale']) or DEFAULT_REGION) in MONTH_FIRST else 'US$'
+    sign = dollar if currency == 'USD' else SIGNS.get(currency)
+    if lang in SIGN_AFTER:
+        return f'{text}\u00a0{sign or currency}'
+    return f'{sign}{text}' if sign and lang not in SIGN_SPACED else f'{sign or currency}\u00a0{text}'
+
+
 def range_text(start, end):
     """'2:00 PM–3:00 PM' or '14:00–15:00'."""
     return clock_text(start) + '–' + clock_text(end)
