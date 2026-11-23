@@ -18,8 +18,12 @@ The table stays on this Machine: it is in the owner's full export and goes with 
 suggestion_id, forget_person for a deleted person's records), and nothing shares it. Rows older than KEEP_DAYS go in
 the nightly retention pass (retention.run).
 
-outcomes() and summary() join the log with what the owner then did with the to-do (sent as written, edited,
-dismissed, snoozed): numbers only, for the learning loop to read later. Nothing reads them yet."""
+outcomes() and summary() join the log with what the owner then did with the to-do (sent as written, edited, done,
+dismissed, snoozed): numbers only. They are a report: nothing picks memory by them. How a to-do went says little about
+one item in its prompt: it is one of many there, most items are in only a few to-dos, the ones in many follow the topic
+(writing-heavy to-dos get more changes), and a to-do with more turns has more prompts, so it looks worse for whatever
+they read. What does change selection is what the owner says: a corrected or removed fact leaves it at once, and the
+learning loop reads their edits and notes."""
 from __future__ import annotations
 
 import contextvars
@@ -43,7 +47,7 @@ KINDS = ('fact', 'rule', 'promise', 'history', 'record', 'signal', 'skill', 'tea
 # words), about (it is on the to-do's signals, or in the question's scope), search (the search's best matches),
 # rotation (its turn: the one a review saw longest ago, review_facts.py).
 HOWS = ('always', 'own', 'closeness', 'weight', 'recency', 'match', 'about', 'search', 'rotation')
-OUTCOMES = ('sent_unchanged', 'sent_edited', 'dismissed', 'snoozed', 'open')
+OUTCOMES = ('sent_unchanged', 'sent_edited', 'done', 'dismissed', 'snoozed', 'open')
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS memory_use(
@@ -220,11 +224,12 @@ def counts(db):
             'kinds': {r[0]: r[1] for r in db.execute('SELECT kind,count(*) FROM memory_use GROUP BY kind')}}
 
 
-# What the owner did with a to-do, as one word. Sent wins over a later dismissal; an edit is the owner's own change
-# to a draft (not an agent's rewrite), as Store.behaviour counts it.
+# What the owner did with a to-do, as one word. Sent wins over a later dismissal; done is in Done now without a send,
+# not one that expired; an edit is the owner's own change to a draft (not an agent's rewrite), as Store.behaviour counts it.
 _OUTCOME = '''CASE
   WHEN EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status='sent') THEN
     CASE WHEN EXISTS(SELECT 1 FROM draft_edits e WHERE e.suggestion_id=s.id AND e.source!='agent') THEN 'sent_edited' ELSE 'sent_unchanged' END
+  WHEN s.status='completed' AND s.expired_at IS NULL THEN 'done'
   WHEN EXISTS(SELECT 1 FROM decisions d WHERE d.suggestion_id=s.id AND d.choice='reject') THEN 'dismissed'
   WHEN EXISTS(SELECT 1 FROM decisions d WHERE d.suggestion_id=s.id AND d.choice='snooze') THEN 'snoozed'
   ELSE 'open' END'''
