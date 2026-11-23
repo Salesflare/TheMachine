@@ -1678,8 +1678,12 @@ def _():
 @step('what Windows itself says: notifications off, Do Not Disturb')
 def _():
     path = r'Software\Microsoft\Windows\CurrentVersion\PushNotifications'
-    plain = windows_says()
-    told = [f'as it is {plain}']
+    told = [f'as it is {windows_says()}']
+    plain = windows_says('off')  # a runner may start with it on
+    told.append(f'Do Not Disturb off {plain}')
+    switch = plain.split()[0].isdigit()
+    if not switch:
+        plain = windows_says()
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, path) as key:
         winreg.SetValueEx(key, 'ToastEnabled', 0, winreg.REG_DWORD, 0)
     try:
@@ -1693,12 +1697,15 @@ def _():
     finally:
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, path) as key:
             winreg.SetValueEx(key, 'ToastEnabled', 0, winreg.REG_DWORD, 1)
-    on = windows_says('on')
-    told.append(f'Do Not Disturb {on}')
-    if on.split()[0].isdigit():
-        png('do-not-disturb')
+    if switch:
+        on = windows_says('on')
+        told.append(f'Do Not Disturb on {on}')
+        need(on.split()[0] == plain.split()[0] and on.split()[1] != plain.split()[1], f'in the mode and nowhere else: {told}')
+        comes('aa02')
+        png('always-in-do-not-disturb')
+        away()
+        need(until(lambda: not app.bubble(), 20), 'it goes')
         told.append(f'and off again {windows_says("off")}')
-        need(on.split()[0] == plain.split()[0] and on != plain, f'in the mode and nowhere else: {told}')
     return ', '.join(told)
 
 
