@@ -314,7 +314,7 @@ class EventsStore:
                         if old['title'] != event['title']:
                             db.execute('UPDATE events SET title=? WHERE id=?', ((self.sealer.seal if self.protected else str)(event['title']), old['id']))
                     elif digest_event is not event:
-                        db.execute('UPDATE events SET metadata=? WHERE id=?', (encoded(event['metadata']),old['id']))
+                        db.execute('UPDATE events SET metadata=? WHERE id=?', ((self.sealer.seal_json if self.protected else str)(encoded(event['metadata'])), old['id']))
                     continue
                 changed.add(event['source_id'])
                 seal = self.sealer.seal if self.protected else (lambda value: value)
