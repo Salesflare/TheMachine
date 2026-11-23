@@ -253,7 +253,7 @@ class Microsoft(unittest.TestCase):
         mail_grants.put(self.config, 'microsoft', OWNER, 'refresh-1')
         import ms_graph
         ms_graph._tokens.clear()
-        self.requests, self.changes = [], []
+        self.requests, self.changes, self.retired = [], [], None
         self.file = docx(comments=[('0', 'Robin Reviewer', 'Is this final?')], changes=[('1', 'Robin Reviewer', 'net 30')])
         patch('urllib.request.OpenerDirector.open', side_effect=self.respond).start()
         self.addCleanup(patch.stopall)
@@ -271,6 +271,10 @@ class Microsoft(unittest.TestCase):
             return Response(self.file)
         self.assertEqual((url.netloc, request.get_method()), ('graph.microsoft.com', 'GET'))
         self.requests.append(('GET', url.path))
+        if url.path == '/v1.0/me/drive/sharedWithMe' and self.retired is not None:
+            if isinstance(self.retired, int):
+                raise urllib.error.HTTPError(request.full_url, self.retired, 'retired', {}, io.BytesIO(b'{}'))
+            return Response(json.dumps(self.retired).encode())
         if url.path == '/v1.0/me/drive/sharedWithMe':
             return Response(json.dumps({'value': [{'remoteItem': {
                 'id': 'i9', 'name': 'Pricing.xlsx', 'webUrl': 'https://partner.sharepoint.com/x', 'parentReference': {'driveId': 'd9'},
@@ -365,6 +369,44 @@ class Microsoft(unittest.TestCase):
         # the same file again: nothing twice
         docs.sync(self.store, self.config, ACCOUNT, helpers_for('2026-10-27T10:30:00+00:00'))
         self.assertEqual(len(self.events()), 3)
+
+    def asks(self):
+        return len([p for k, p in self.requests if p == '/v1.0/me/drive/sharedWithMe'])
+
+    def test_the_retired_shared_list_is_no_problem_of_the_connection(self):
+        docs.sync(self.store, self.config, ACCOUNT, helpers_for())
+        self.assertEqual([e['kind'] for e in self.events()], ['docs.shared'])
+        before = self.events()[0]
+        self.changes = [{'id': 'i1', 'name': 'SOW.docx', 'parentReference': {'driveId': 'd1'}}]
+        hour = 10
+        for gone in ({'value': []}, {}, [], 400, 403, 404, 410, 429, 501, 503):
+            hour += 2
+            self.retired = gone
+            docs.sync(self.store, self.config, ACCOUNT, helpers_for(f'2026-10-{27 + hour // 24}T{hour % 24:02}:15:00+00:00'))
+            state = self.store.checkpoint(ACCOUNT['id'])
+            self.assertEqual((state['coverage'], state['coverage_complete']), ('Word and OneDrive caught up.', True), gone)
+        # the share from before stays as it was, and the owner's own files are read as before
+        self.assertEqual([e['kind'] for e in self.events()], ['docs.shared', 'docs.comment', 'docs.suggestion'])
+        self.assertEqual(self.events()[0], before)
+        # an outage or a lost consent is still one: the owner's own files say so
+        with patch.object(docs.Microsoft, 'delta', side_effect=sources.SourceError('docs_not_connected', 403)), \
+                self.assertRaises(sources.SourceError) as caught:
+            docs.sync(self.store, self.config, ACCOUNT, helpers_for('2026-10-29T10:15:00+00:00'))
+        self.assertEqual(caught.exception.category, 'docs_not_connected')
+
+    def test_a_refused_shared_list_is_asked_again_an_hour_later_and_misses_no_share(self):
+        self.retired = {'value': []}
+        docs.sync(self.store, self.config, ACCOUNT, helpers_for('2026-10-27T07:30:00+00:00'))
+        self.retired = 503
+        asked = self.asks()
+        for minute in ('08:15', '08:30', '08:45', '09:00'):  # a share comes in at 08:00, while the list fails
+            docs.sync(self.store, self.config, ACCOUNT, helpers_for(f'2026-10-27T{minute}:00+00:00'))
+        self.assertEqual(self.asks(), asked + 1)
+        self.assertEqual(self.events(), [])
+        self.retired = None
+        docs.sync(self.store, self.config, ACCOUNT, helpers_for('2026-10-27T09:20:00+00:00'))
+        self.assertEqual([e['kind'] for e in self.events()], ['docs.shared'])
+        self.assertIsNone(self.store.checkpoint(ACCOUNT['id'])['shared_again'])
 
     def test_docs_alone_reads_with_its_own_sign_in_and_mail_and_calendar_ignore_it(self):
         import own_addresses
