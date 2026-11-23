@@ -19,6 +19,7 @@ from machine.store.review import AUTOMATED_LABELS, CARD_OPEN, own_message, ROBOT
 from machine.store.voices import OWN_KINDS
 from machine.text import _address, encoded
 import memory_use
+import todo_areas
 from timeutil import local_tz, now
 from machine import todo_states
 from machine.owner_error import OwnerError
@@ -345,6 +346,13 @@ def retitle_cut_promises(db):
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
 
 
+def place_promise(db, promise_id, area):
+    """The review's word on an open promise it already has (todo_areas.said): none said leaves it as it was. Once it is
+    a to-do, that to-do's own area counts (Store.suggest)."""
+    if area:
+        db.execute("UPDATE promises SET area=? WHERE id=? AND status='open'", (area, promise_id))
+
+
 class PromisesStore:
     """Store methods for promises."""
 
@@ -367,6 +375,7 @@ class PromisesStore:
                 raise ValueError('due must be the promised date as YYYY-MM-DD, or left out when none was said') from None
         if args.get('refund') is not None and direction != 'theirs':
             raise ValueError("refund is money someone owes the owner back: direction 'theirs'")
+        area = todo_areas.said(args, getattr(self, 'accounts', None) or [])
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             event = db.execute('SELECT id,account_id,kind,occurred_at,title,body,metadata FROM events WHERE id=? AND deleted=0', (args.get('event_id'),)).fetchone()
@@ -398,6 +407,7 @@ class PromisesStore:
             row = next((r for r in db.execute('SELECT id,status,what FROM promises WHERE event_id=? AND direction=? AND who=?',
                                               (event['id'], direction, who)) if r['what'] == what), None)
             if row:
+                place_promise(db, row['id'], area)
                 return {'id': row['id'], 'status': row['status'], 'duplicate': True}
             # A plan made together ("let's do it Sunday" and the yes to it) reads as a promise from both
             # sides, in two messages: one open promise with that person for the same thing is enough
@@ -409,13 +419,14 @@ class PromisesStore:
                     db.execute("UPDATE promises SET together=1,direction='mine',check_at=?,updated_at=? WHERE id=?",
                                (promise_check_at('mine', row['due'], row['made_at'], digest_at), stamp, row['id']))
                     promise_logged(db, row['id'], 'together', event['id'])
+                place_promise(db, row['id'], area)
                 return {'id': row['id'], 'status': row['status'], 'duplicate': True}
             # From a sender the owner doesn't know: kept, marked unverified (their word only), never dropped
             unverified = int(direction == 'theirs' and unknown_sender(db, dict(event), self.review_own_addresses(db)))
-            cursor = db.execute('INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,watch,status,created_at,updated_at,owner_step,unverified,refund) '
-                                "VALUES(?,?,?,?,?,?,?,?,'open',?,?,?,?,?) ON CONFLICT(event_id,direction,who,what) DO NOTHING",
+            cursor = db.execute('INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,watch,status,created_at,updated_at,owner_step,unverified,refund,area) '
+                                "VALUES(?,?,?,?,?,?,?,?,'open',?,?,?,?,?,?) ON CONFLICT(event_id,direction,who,what) DO NOTHING",
                                 (direction, who, what, due, check_at, event['id'], event['account_id'], encoded({**watch, 'promise': True}) if watch else None, stamp, stamp,
-                                 int(direction == 'mine' and args.get('owner_step') is True), unverified, encoded(refund) if refund else None))
+                                 int(direction == 'mine' and args.get('owner_step') is True), unverified, encoded(refund) if refund else None, area))
         return {'id': cursor.lastrowid, 'status': 'open', 'check_at': check_at, **({'unverified': True} if unverified else {}),
                 'note': ('Recorded, no card. The service watches for the money back; if it is not in by due, a chase to-do comes.' if refund else
                          'Recorded, no card. It is checked when due; if still open then, a card comes.')}
@@ -433,6 +444,8 @@ class PromisesStore:
             live_card = row['status'] == 'carded' and not status and args.get('due') and source in ('assistant', 'dashboard') and promise_open_card(db, row)
             if row['status'] != 'open' and not live_card:
                 raise ValueError('This promise is no longer open: its card is out, use looks_handled on that card' if row['status'] == 'carded' else 'This promise is no longer open')
+            if source == 'assistant':
+                place_promise(db, row['id'], todo_areas.said(args, getattr(self, 'accounts', None) or []))
             if status in ('kept', 'dropped'):
                 if source == 'assistant' and len(reason) < 3:
                     raise ValueError('Say in a few words what shows it kept or no longer needed (reason), with the event_ids')
@@ -601,7 +614,7 @@ class PromisesStore:
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat()
         with self.connect() as db:
             rows = [dict(r) for r in db.execute(
-                'SELECT p.id,p.direction,p.who,p.what,p.due,p.check_at,p.status,p.note,p.suggestion_id,p.account_id,p.event_id,p.created_at,p.updated_at,p.together,p.unverified,'
+                'SELECT p.id,p.direction,p.who,p.what,p.due,p.check_at,p.status,p.note,p.suggestion_id,p.account_id,p.event_id,p.created_at,p.updated_at,p.together,p.unverified,p.area,'
                 'e.occurred_at made_at,s.status card_status FROM promises p JOIN events e ON e.id=p.event_id LEFT JOIN suggestions s ON s.id=p.suggestion_id '
                 "WHERE p.status IN ('open','carded') OR p.updated_at>=? ORDER BY coalesce(p.due,substr(p.check_at,1,10)),p.id", (since,))]
             for row in rows:

@@ -22,6 +22,7 @@ from machine.text import encoded
 from models import background_model, openclaw_model
 from machine.store import message_view, outcomes
 import locale_prefs
+import todo_areas
 from timeutil import local_tz, now
 from machine import owner_name
 from machine import todo_states
@@ -468,8 +469,13 @@ class PromiseChecksApp:
         # owner promised more after closing it.
         if p.get('refund'):  # a refund's chase: its draft is plain code (refund_card), and its day is theirs, not the owner's
             ahead = False
+        # Where the review placed it when it noted it (company, personal); a company no longer set up is no word
+        area = p.get('area')
+        accounts = todo_areas.placed(area, self.config.get('accounts'))
+        company = area if accounts and area != todo_areas.PERSONAL else None
         saved = self.store.suggest('promise:%d' % p['id'], promise_title(p, title), body[:700], evidence, 'now', self.config.get('digest_at', '08:30'),
-                                   work=self.is_work([p['account_id']]), due=None if p.get('refund') else p['due'], ahead=ahead, _db=_db,
+                                   work=area != todo_areas.PERSONAL and self.is_work(accounts or [p['account_id']]),
+                                   company=company, personal=area == todo_areas.PERSONAL, due=None if p.get('refund') else p['due'], ahead=ahead, _db=_db,
                                    owner_step=bool(p.get('owner_step')), quiet=quiet,
                                    **({'card_id': home['id'], 'match': True, 'reopen': 'due'} if home is not None else {}))
         with contextlib.nullcontext(_db) as db:
