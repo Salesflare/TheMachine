@@ -28,6 +28,7 @@ dialog:not(#palette):not(#new-card)[data-line] .snooze-heading h2{flex:1;min-wid
 @media(max-width:560px){
   dialog{--head-line:calc(55px + env(safe-area-inset-top));--head-top:calc(12px + env(safe-area-inset-top));--head-up:0px;--head-rule:var(--border)}
   html.m-modal{overflow:hidden;scrollbar-gutter:auto}
+  .snooze-heading>button:last-child{position:relative}:is(.snooze-heading>button:last-child,.wn-x)::after{content:'';position:absolute;inset:-8px -6px -4px}
   dialog:not(#palette):not(#new-card){position:fixed;inset:var(--vv-top,0px) 0 auto;width:100%;max-width:100%;height:var(--vv-h,100dvh);max-height:var(--vv-h,100dvh);margin:0;box-sizing:border-box;padding:0 16px;border:0;border-radius:0;background:var(--surface-2);overflow:auto;overscroll-behavior:contain;scroll-padding:calc(72px + env(safe-area-inset-top)) 0 96px}
   dialog:not(#palette):not(#new-card)[open]{display:flex;flex-direction:column;gap:0}
   dialog:not(#palette):not(#new-card)[open]>:not(.fr-list){flex-shrink:0}

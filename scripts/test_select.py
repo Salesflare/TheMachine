@@ -60,6 +60,8 @@ ALWAYS = {
     'test_delivery_labels.py',
     # every write of a to-do's status goes through todo_moves.transition()
     'test_todo_moves.py',
+    # every token the dashboard and the app's screens use
+    'test_css_tokens.py',
 }
 # Python that only puts the dashboard page together from its parts and serves it: a part's change reaches the Python
 # tests that look at the page, and those name dashboard_parts or the page (they're picked by name), not every test that

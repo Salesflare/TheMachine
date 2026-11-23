@@ -177,7 +177,7 @@ summary:hover{color:var(--text)}
 .draft .db{font:400 16px/1.55 var(--serif);color:var(--text)}
 .draft .dm{font-size:var(--fs-xs);color:var(--faint)}
 .draft .draft-why{margin:0 0 6px;font-size:var(--fs-xs);color:var(--muted);overflow-wrap:anywhere}
-.draft .draft-connect{color:var(--accent);white-space:nowrap}
+.draft .draft-connect{color:var(--text);white-space:nowrap}
 .head-side>.settings-link,.head-side>.live,.head-side .head-link{font:var(--fw-medium) var(--fs-xs)/1 var(--sans);min-height:32px;padding:0 12px;background:transparent;border:1px solid var(--border);color:var(--muted)}
 .head-side>.settings-link:hover{background:var(--tile);color:var(--text)}
 

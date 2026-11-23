@@ -103,7 +103,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 .bug-sent{display:flex;flex-direction:column;gap:10px;max-height:min(56dvh,520px);overflow:auto}#bug-queued{margin-top:14px;gap:6px;font-size:.9rem}#bug-queued[hidden]{display:none}.bug-sent h3{margin:0;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.bug-sent p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .bug-sent img{max-height:140px;width:auto;align-self:flex-start}.bug-parts{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
 .bug-sent pre,#support-access pre{margin:0;max-height:260px;overflow:auto;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--sunken);font-size:.75rem;white-space:pre-wrap;overflow-wrap:anywhere}
-#help-panel .actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}#bug-error:empty{display:none}#bug-error{margin:0;color:var(--red,#e07070)}
+#help-panel .actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}#bug-error:empty{display:none}#bug-error{margin:0;color:var(--orange)}
 .sa-log{margin:8px 0 0;font-size:.85rem}
 /* Settings, Activity: a day's heading, then one line per thing done (what and how it went, then when · where · who) */
 .act-bar{margin:0 0 10px}.act-bar select{max-width:100%}
@@ -113,7 +113,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 .act-top{display:flex;align-items:baseline;gap:10px;justify-content:space-between;min-width:0}
 .act-what{min-width:0;overflow-wrap:anywhere}
 .act-status{flex:none;max-width:50%;overflow:hidden;text-overflow:ellipsis;font-size:.78rem;color:var(--muted);white-space:nowrap}
-.act-refused .act-status,.act-failed .act-status{color:var(--red,#d05050);font-weight:600}
+.act-refused .act-status,.act-failed .act-status{color:var(--orange);font-weight:600}
 .act-undone .act-what{color:var(--muted)}
 .act-meta{display:block;margin-top:2px;color:var(--faint);font-size:.8rem;overflow-wrap:anywhere}
 .act-acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px;min-width:0}
