@@ -12,6 +12,7 @@ import shutil
 import signal
 import time
 
+import answers
 import mac_tools
 from mac_tools import ID, LIBRARY, PORT, App, click, finish, fresh, in_front, move, need, other, out, page, png, run, sandbox, saved, step, until
 from standin import Machine
@@ -24,7 +25,7 @@ DEFAULT = run('security', 'default-keychain', '-d', 'user').stdout.strip().strip
 machine = Machine(PORT)
 machine.window = machine.compact = True
 app = None
-mac_tools.hangs['wanted'] = True  # each step looks itself
+answers.wanted = True  # each step looks itself
 
 
 def log():

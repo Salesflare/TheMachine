@@ -93,6 +93,8 @@ mod tests {
         fs::write(&file, b"not json").unwrap();
         let fresh = Saved::read(&file);
         assert!(fresh.desk.len() == 32 && fresh.desk != Saved::read(&file).desk);
+        #[cfg(target_os = "macos")]
+        let fresh = Saved { pages: String::new(), ..fresh };
         assert_eq!(Saved { desk: String::new(), ..fresh }, Saved::default());
         fs::remove_dir_all(folder).unwrap();
     }

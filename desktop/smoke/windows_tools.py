@@ -15,6 +15,8 @@ import urllib.request
 import winreg
 import uuid
 import zlib
+
+import answers
 from ctypes import wintypes as w
 
 PORT, DEBUG, ID, BUBBLE = 8941, 9227, 'computer.themachine.desktop', 'bubble.html'
@@ -95,6 +97,12 @@ def mouse(flags, x=0, y=0):
     send(Input(0, Either(mouse=Mouse(x, y, 0, flags, 0, 0))))
 
 
+def pointer():
+    at = w.POINT()
+    user.GetCursorPos(ctypes.byref(at))
+    return at.x, at.y
+
+
 def move(x, y):
     left, top, wide, high = SM(76), SM(77), SM(78), SM(79)
     mouse(0xC001, round((x - left) * 65535 / (wide - 1)), round((y - top) * 65535 / (high - 1)))
@@ -162,7 +170,7 @@ def need(ok, text):
 
 
 class App:
-    last = None
+    last = last_app = None
 
     def __init__(self, program, *args, debug=True, over=None, window=False, account=None):
         if App.last and App.last.poll() is None:  # a step before this one failed
@@ -315,6 +323,10 @@ def step(name):
         except Exception as e:  # noqa: BLE001 (the next steps still tell something)
             results.append((name, False, f'{type(e).__name__}: {e}'))
             traceback.print_exc()
+        app = App.last_app
+        robot = app and App.last.poll() is None and answers.after(pathlib.Path(os.environ['APPDATA'], ID, 'hangs.log'), out, len(results), app.center, pointer, move, lambda: page('robot.html', '1', 4))
+        if robot and results[-1][1]:
+            results[-1] = (name, False, f'{robot}; {results[-1][2]}')
         try:
             png(f'{len(results):02d}-{name.replace(" ", "-")}')
         except Exception:  # noqa: BLE001
