@@ -13,7 +13,7 @@ const SETTLE: Duration = Duration::from_millis(300);
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Front {
     App,
-    /// The robot or its box.
+    /// The robot or its box, or a file opened from there or from the dashboard.
     Own,
     Other,
     #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
@@ -53,7 +53,7 @@ fn follow(app: &AppHandle, changes: &Receiver<()>) {
         while changes.recv_timeout(SETTLE).is_ok() {}
         let shared = app.state::<Shared>();
         let now = shared.signed_in().map_or(Front::Other, |(machine, alone)| system::front(&webapp::ids(&machine, alone)));
-        let now = if dash::front() { Front::App } else if now == Front::Nothing && windows::box_open(app) { Front::Own } else { now };
+        let now = if dash::file_front() { Front::Own } else if dash::front() { Front::App } else if now == Front::Nothing && windows::box_open(app) { Front::Own } else { now };
         let todo = change(was, now);
         was = now;
         if let Some(gone) = todo {

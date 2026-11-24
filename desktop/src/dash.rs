@@ -25,6 +25,8 @@ pub const NO_SPEECH: &str = if cfg!(target_os = "macos") { "delete window.webkit
 
 /// The window, or one with a file, is in front.
 static FRONT: AtomicBool = AtomicBool::new(false);
+/// It is the one with a file.
+static FILE: AtomicBool = AtomicBool::new(false);
 
 /// What the app's own page says.
 #[derive(Clone, Copy, Debug, Default, PartialEq, serde::Serialize)]
@@ -75,6 +77,11 @@ pub fn here() -> bool {
 
 pub fn front() -> bool {
     FRONT.load(Ordering::Relaxed)
+}
+
+/// A file is in front: the robot stays as it was, with the to-do it may be from.
+pub fn file_front() -> bool {
+    front() && FILE.load(Ordering::Relaxed)
 }
 
 pub fn label(label: &str) -> bool {
@@ -461,7 +468,9 @@ pub fn close(app: &AppHandle) {
 }
 
 pub fn focused(app: &AppHandle, of: &str, on: bool) {
-    FRONT.store(on || in_front(app).is_some_and(|w| w.label() != of), Ordering::Relaxed);
+    let now = if on { Some(of.to_string()) } else { in_front(app).map(|w| w.label().to_string()).filter(|l| l != of) };
+    FILE.store(now.as_ref().is_some_and(|l| l != LABEL), Ordering::Relaxed);
+    FRONT.store(now.is_some(), Ordering::Relaxed);
     if on {
         crate::looked(app);
         crate::speak::hush(app, true);

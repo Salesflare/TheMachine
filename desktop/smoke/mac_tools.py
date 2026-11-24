@@ -272,9 +272,28 @@ def says(selector, name='box'):
 
 def press(app, selector, name='box'):
     """A real click on something in a page, where it says it is."""
-    at = page(name, f'(() => {{ const e = document.querySelector({json.dumps(selector)}).getBoundingClientRect(); return [e.x + e.width / 2, e.y + e.height / 2] }})()')
-    r = need_window({'box': app.box, 'card': app.card, 'bubble': app.bubble}[name]())
-    click(round(r.left + at[0]), round(r.top + at[1]))
+    def there():
+        at = page(name, f'(() => {{ const e = document.querySelector({json.dumps(selector)}).getBoundingClientRect(); return [e.x + e.width / 2, e.y + e.height / 2] }})()')
+        r = need_window({'box': app.box, 'card': app.card, 'bubble': app.bubble}[name]())
+        return round(r.left + at[0]), round(r.top + at[1])
+    was, at = None, there()
+    for _ in range(20):  # it may still be getting as tall as what is in it
+        if at == was:
+            break
+        time.sleep(0.2)
+        was, at = at, there()
+    click(*at)
+
+
+def no_browser():
+    """Safari ends, also when it is stuck, as it is at times on a busy computer."""
+    quits = subprocess.Popen(['osascript', '-e', 'tell application "Safari" to quit'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    runs = lambda: run('pgrep', '-x', 'Safari').stdout.split()
+    if not until(lambda: not runs(), 12):
+        for pid in runs():
+            os.kill(int(pid), 9)
+        until(lambda: not runs(), 8)
+    quits.terminate()
 
 
 def shut(app):
