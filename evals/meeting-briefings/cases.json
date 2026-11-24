@@ -3129,6 +3129,69 @@
    "never": [],
    "series": "ivers",
    "before": "**Who:** Dean Ivers, Iversgate."
+  },
+  {
+   "id": "c-chat-feedback",
+   "set": "development",
+   "title": "Coffee with Mila",
+   "about": "",
+   "guests": [["mila@orchardway.example", "Mila Serrano"]],
+   "meetings": [], "mails": [], "promises": [], "done": [], "merges": [],
+   "chats": [{"days": 5, "lines": [
+    ["own", "hey Mila"], ["own", "we opened the route planner for a few friendly companies"], ["own", "would you try it and tell me what is wrong with it?"],
+    ["own", "free for the rest of the year in return"], ["guest", "ha, always"], ["guest", "I do have to say we use Wayline for this now"], ["guest", "and it works fine for our six vans"],
+    ["guest", "but their driver app is slow"], ["own", "oh good to know"], ["own", "ours works offline"], ["guest", "now you have my attention"],
+    ["guest", "this week is full, I am traveling"], ["guest", "coffee next week?"], ["own", "sounds good"], ["own", "pick a time from my link"], ["guest", "done"], ["own", "👍"]]}],
+   "want": ["Mila was asked to try the route planner and give feedback", "It is free for the rest of the year in return", "They use Wayline now", "Wayline's driver app is slow"],
+   "never": ["Robin uses Wayline"]
+  },
+  {
+   "id": "c-chat-and-mail",
+   "set": "development",
+   "title": "Pilot Brackenford",
+   "about": "",
+   "guests": [["owen@brackenford.example", "Owen Pryce"]],
+   "meetings": [], "promises": [], "done": [], "merges": [],
+   "mails": [{"days": 30, "from": ["owen@brackenford.example", "Owen Pryce"], "subject": "Pilot", "text": "Hi Robin, we would like to try the scanners in two shops. What does a pilot cost?"},
+    {"days": 12, "from": "own", "subject": "Pilot", "text": "Hi Owen, a pilot in two shops is 900 euros for six weeks."},
+    {"days": 11, "from": ["owen@brackenford.example", "Owen Pryce"], "subject": "Pilot", "text": "Thanks, I will take it to our board."}],
+   "chats": [{"days": 4, "lines": [
+    ["guest", "Morning!"], ["guest", "board is in"], ["guest", "they say yes to the pilot"], ["guest", "but three shops, not two"], ["guest", "Hull, Goole and Selby"], ["own", "great news"],
+    ["own", "three is fine"], ["own", "same price"], ["guest", "you are a star"], ["guest", "start on 1 December?"], ["own", "let me check stock"], ["guest", "sure"], ["guest", "talk Tuesday"]]}],
+   "want": ["The board said yes to the pilot", "The pilot is in three shops", "The price stays 900 euros (the same price)", "Whether it can start on 1 December is still open"],
+   "never": ["The pilot is in two shops (as current)"]
+  },
+  {
+   "id": "h-chat-nl",
+   "set": "held-out",
+   "title": "Bijpraten met Teun",
+   "about": "",
+   "guests": [["teun@duinhoek.example", "Teun Vermaat"]],
+   "meetings": [], "mails": [], "promises": [], "done": [], "merges": [],
+   "chats": [{"days": 20, "lines": [
+    ["guest", "hoi Robin"], ["guest", "wij zoeken iets voor onze planning"], ["guest", "nu nog alles in Excel"], ["own", "dag Teun"], ["own", "met hoeveel zijn jullie?"], ["guest", "14 monteurs"]]},
+    {"days": 6, "lines": [
+    ["own", "heb je de demo gezien?"], ["guest", "ja"], ["guest", "mooi"], ["guest", "mijn vennoot Ans wil wel eerst weten waar de data staat"], ["own", "in Frankfurt"], ["guest", "ok top"],
+    ["guest", "en of het met Exact werkt"], ["own", "dat zoek ik uit"], ["guest", "merci"], ["guest", "tot dinsdag"], ["own", "tot dan 👋"]]}],
+   "want": ["They plan in Excel now", "There are 14 technicians", "Ans, his partner, wanted to know where the data is kept", "Whether it works with Exact is still to be found out"],
+   "never": ["Where the data is kept still has to be answered"]
+  },
+  {
+   "id": "h-chat-long",
+   "set": "held-out",
+   "title": "Call with Nadia",
+   "about": "",
+   "guests": [["nadia@coppergrove.example", "Nadia Ferrand"]],
+   "meetings": [], "promises": [], "done": [], "merges": [],
+   "mails": [{"days": 45, "from": "own", "subject": "Hello", "text": "Hi Nadia, nice to meet you at the fair. Would Coppergrove want to sell our sensors in France?"}],
+   "chats": [{"days": 9, "lines": [
+    ["guest", "Hi Robin"], ["guest", "about France"], ["guest", "we would want to be the only ones selling them"], ["own", "for how long?"], ["guest", "two years"], ["own", "hm"], ["own", "one year I can do"],
+    ["guest", "let me think"], ["own", "sure"], ["guest", "weather here is awful by the way"], ["own", "same"], ["own", "my train was an hour late"], ["guest", "ours never ran"], ["guest", "strike again"]]},
+    {"days": 3, "lines": [
+    ["guest", "ok"], ["guest", "one year works"], ["guest", "but then with 35% margin"], ["own", "30 was the plan"], ["guest", "I know"], ["guest", "our costs went up"], ["own", "let us settle that on the call"],
+    ["guest", "fine"], ["guest", "can you send the test report before?"], ["own", "yes will do"], ["guest", "thanks!"], ["guest", "à mardi"]]}],
+   "want": ["Nadia agreed to one year (of selling alone in France)", "She asks for a margin of 35% (30% was the plan)", "The margin is still open", "Robin is to send the test report before the call"],
+   "never": ["They agreed on two years (as current)", "They agreed on a margin of 35%"]
   }
  ]
 }

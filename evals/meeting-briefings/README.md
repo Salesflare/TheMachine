@@ -9,8 +9,8 @@ Portuguese, Japanese.
 
 | Set | Cases | What it is for |
 | --- | --- | --- |
-| development | 27 | what the prompt and limits were tuned on |
-| held-out | 30 | the same kinds of case, never tuned on |
+| development | 29 | what the prompt and limits were tuned on |
+| held-out | 32 | the same kinds of case, never tuned on |
 
 The kinds: plain notes, long notes, a point settled later (by mail, in passing, by a promise or a to-do), newer notes or
 a mail that changes older ones, only an agenda, a transcript, notes the meeting app mailed, a series, another address of
@@ -20,6 +20,8 @@ written in the notes, and no notes at all.
 First meetings (`f-`): only the booking mail or nothing yet, and what the web has (`web`: the organization's home page and
 the results of a search on the person). Meetings that repeat (`r-`): what came since the one before, and the series' last
 briefing (`before`). In a `quiet` case there is nothing to say, so no briefing is right. A case that isn't quiet needs one.
+
+Chats (`c-chat`, `h-chat`): what was said in many short messages, alone or next to mail.
 
     OPENAI_BASE_URL=... OPENAI_API_KEY=... python3 evals/meeting-briefings/run.py --model <model> --runs 2 --set held-out
     ... --root <another checkout>    # the same cases on that code's briefings
@@ -71,6 +73,16 @@ repeats, no page of their own site read, no search on a first name):
 Three lines of the instructions were changed once after a first run of all of them (held-out 31 of 36 then): no word on what isn't
 known, no forced link to the owner's organization, and what was agreed last time is kept. The other 36 cases stayed as they were (recalled 87 of 95, one run).
 What a first meeting means for the owner is still sometimes a stretch.
+
+Chats (the 4 cases, two runs each, 2026-11-24; before: each chat message counted as one. The other cases' turns are the same text):
+
+| | Held-out, before | Held-out, now | Development, before | Development, now |
+| --- | --- | --- | --- | --- |
+| facts recalled | 0 of 16 | 16 of 16 | 0 of 16 | 16 of 16 |
+| wrong or stale | 0 of 6 | 0 of 6 | 2 of 4 | 0 of 4 |
+| statements not supported | 5 | 0 | 4 | 0 |
+| briefings made | 2 of 4 | 4 of 4 | 2 of 4 | 4 of 4 |
+| turn tokens in, average (largest) | 1,083 (1,089) | 1,191 (1,254) | 1,081 (1,088) | 1,152 (1,200) |
 
 Where this is weak: the cases were written with the change, and one model wrote and checked the briefings. Only two cases
 have long notes, so the limit rests on little. "Wrong or stale" counts only the statements a case names. One held-out
