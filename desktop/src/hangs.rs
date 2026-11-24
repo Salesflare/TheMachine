@@ -107,14 +107,10 @@ fn pages(app: &AppHandle) {
                 }
             });
             // An answer that comes too late is of another page than is waited for
-            let until = Instant::now() + Duration::from_secs(8);
-            let answers = loop {
-                match told.recv_timeout(until.saturating_duration_since(Instant::now())) {
-                    Ok(Some(of)) if of != i => {}
-                    Ok(_) => break true,
-                    Err(_) => break false,
-                }
-            };
+            let answers = (0..32).any(|_| match told.recv_timeout(STEP) {
+                Ok(of) => of.is_none_or(|of| of == i),
+                Err(_) => false,
+            });
             missed[i] = if answers { 0 } else { missed[i] + 1 };
             if answers {
                 continue;

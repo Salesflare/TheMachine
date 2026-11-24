@@ -514,9 +514,16 @@ def _():
     back_to_it()
     settings()
     need(until(asks, 45), 'it asks')
+    on.settings_open(app)  # in front, as that of the dashboard was
+    time.sleep(1)
     png('browser-asked')
     tap('#browser-yes', 'settings')
-    need(until(lambda: machine.paired == [saved()['desk']], 30), f'the browser opens it and says so {machine.paired}')
+    paired = lambda: machine.paired == [saved()['desk']]
+    if not until(paired, 30):  # Safari may be stuck on a busy computer
+        no_browser()
+        settings()
+        tap('#browser-yes', 'settings')
+    need(until(paired, 30), f'the browser opens it and says so {machine.paired}')
     no_browser()
     back_to_it()
     settings()

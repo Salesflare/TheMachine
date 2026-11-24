@@ -249,8 +249,10 @@ def drop_from(app, *files):
 
 
 def choose(file):
-    time.sleep(1)
-    write(str(file))
+    time.sleep(3)  # typed, it loses some while it still fills its list
+    clipboard(str(file))
+    hit('all')
+    hit('paste')
     time.sleep(0.5)
     key(ENTER)
 
