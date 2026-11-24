@@ -10,10 +10,12 @@ import threading
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
 from machine.sources import slack as slack_source  # noqa: E402
+from machine import model_reply  # noqa: E402
 from machine.app import handled_check  # noqa: E402
 from machine.store import todo_moves  # noqa: E402
 import datetime as dt
@@ -238,6 +240,25 @@ class HandledElsewhere(unittest.TestCase):
         app._handled_judged = {}
         app.handled_check_model = lambda config, text: json.dumps([{'todo': sid, 'state': 'done', 'event_id': self.ask, 'reason': 'Answered Ana in Slack'}])
         self.assertEqual(app.handled_step(), 1)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()[0], 'completed')
+
+    def test_a_reply_that_cannot_be_read_judges_nothing_and_is_asked_a_few_times_only(self):
+        sid = self.store.suggest('work:ana-off', 'Answer Ana about tomorrow', 'Ana is off tomorrow.', [self.event('U0ANA00001', DM)])['id']
+        good = json.dumps([{'todo': sid, 'state': 'done', 'event_id': self.ask, 'reason': 'Answered Ana in Slack'}])
+        app, calls, replies = self.app(), [], iter(['Looks done to me.', good[:-8], good[:-8], good])
+        app.handled_check_model = lambda config, text: (calls.append(text), next(replies))[1]
+        self.assertEqual(app.handled_step(), 0)
+        self.assertEqual((len(calls), app.__dict__.get('_handled_judged')), (2, {}))
+        self.assertEqual(app.handled_step(), 0)  # it rests first
+        self.assertEqual(len(calls), 2)
+        with patch.object(model_reply, 'REST_SECONDS', 0):
+            broken, asked = self.app(), []
+            broken.handled_check_model = lambda config, text: (asked.append(text), '[{"todo"')[1]
+            for _ in range(10):
+                broken.handled_step()
+            self.assertEqual(len(asked), 2 * model_reply.TRIES)
+            self.assertEqual(app.handled_step(), 1)  # read on the second ask
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()[0], 'completed')
 

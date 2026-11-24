@@ -30,7 +30,7 @@ from machine.sources.calendar import company_domains
 from machine.sources.slack import slack_limits, slack_read_asked, slack_read_drop, slack_read_now, wait_until
 from models import background_model, openclaw_model
 from timeutil import now
-from machine import todo_states
+from machine import model_reply, todo_states
 from machine.store import judged_words
 from machine.kinds import TO_PERSON
 
@@ -294,7 +294,11 @@ class HandledCheckApp:
         last word on the to-do count. A to-do with no message to send (an answer or decision the owner owes) is read
         the same way when its own conversation went on, or the owner wrote to its people since (2026-11-12: owners
         answered in Slack or Gmail and the to-do stayed on their list). Ones that look done or wait on someone else
-        are left to close_looks_done and the review."""
+        are left to close_looks_done and the review. After a reply that couldn't be read there is no turn for a while, and
+        a to-do whose replies stayed unreadable is left alone for the day (model_reply.Waiting)."""
+        wait = model_reply.waiting(self, 'handled-check')
+        if wait.resting():
+            return 0
         stand_in = getattr(self, 'handled_check_model', None)  # tests and the sandbox: (config, prompt)
         if not stand_in and not openclaw_model(self.config):
             return 0
@@ -310,6 +314,8 @@ class HandledCheckApp:
                               "AND handled_hint IS NULL AND ifnull(json_extract(outcome,'$.state'),'') NOT IN ('waiting','already_done') "
                               'AND created_at>=? ORDER BY created_at DESC LIMIT 120', (since,)).fetchall()
             for row in rows:
+                if wait.spent(row['id']):
+                    continue
                 try:
                     actions = next_actions.actions(row['next_action']) if row['next_action'] else []
                 except (ValueError, TypeError, AttributeError):
@@ -363,23 +369,26 @@ class HandledCheckApp:
                 'only), "reason": for done, one short clause in the owner\'s language naming who did what and when}]')
 
     def handled_check_run(self, pages):
-        """One turn for those to-dos: the ones shown done close by themselves; every message read counts as judged."""
+        """One turn for those to-dos: the ones shown done close by themselves; every message read counts as judged. With a
+        reply that can't be read (asked once more) nothing is judged, and a later pass reads them again."""
         import help_chat
         stand_in = getattr(self, 'handled_check_model', None)
-        answers = {}
+
+        def turn(text):
+            if stand_in:
+                return stand_in(self.config, text)
+            swap = background_model(self.config)
+            return help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=self.HANDLED_CHECK_SECONDS)
         try:
             with self.store.connect() as db:
                 text = self.handled_check_text(db, pages)
-            if stand_in:
-                reply = stand_in(self.config, text)
-            else:
-                swap = background_model(self.config)
-                reply = help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=self.HANDLED_CHECK_SECONDS)
-            start, end = reply.find('['), reply.rfind(']')
-            parsed = json.loads(reply[start:end + 1]) if start >= 0 and end > start else []
-            answers = {str(x['todo']): x for x in parsed if isinstance(x, dict) and x.get('todo')}
+            answers = model_reply.ask(turn, text, lambda reply: {str(x['todo']): x for x in model_reply.rows(reply, 'todo')})
         except help_chat.Unavailable:
             LOG.info('handled check: no model now')
+            return 0
+        except model_reply.Unreadable:
+            model_reply.waiting(self, 'handled-check').missed([card['id'] for card, _ in pages])
+            LOG.warning('handled check reply unreadable')
             return 0
         except (ValueError, TypeError, KeyError, sqlite3.Error, OSError) as failure:
             LOG.warning('handled check error=%s', type(failure).__name__)

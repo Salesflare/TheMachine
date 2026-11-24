@@ -190,6 +190,10 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     none when there is nothing useful; once per meeting, by its iCalUID. Each briefing carries its format
     (`meeting_prep.FORMAT`); once after an upgrade that raises it, open, unedited briefings for meetings still ahead
     are written again (`stale`, `meeting_prep_rebuild`; done per format in `learning_state`).
+  - `machine/model_reply.py`: the JSON in a small background turn's reply (`read`, `rows`), the one more ask when it can't
+    be read (`ask`), and the rest and cap after that (`waiting`, in memory, no table). Used where an unreadable reply
+    would otherwise stand as an answer: briefings, the checks that close to-dos and promises, person summaries; the first
+    pass only reads with it. A new small turn that keeps a verdict uses it too.
   - `machine/upkeep/agent_workspaces.py`: the nightly cleanup of Claude Code and Codex job folders nothing needs any
     more (retention.py runs it; it only reads `agent_jobs`, `suggestions` and `agent_relayed`).
   - `machine/upkeep/memory_rebuild.py`: an OpenClaw memory index rebuild that never ends by itself (the installer

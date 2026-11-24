@@ -11,6 +11,7 @@ import time
 
 import graph
 import locale_prefs
+from machine import model_reply
 from models import background_model
 import person_summary
 import project_about
@@ -37,7 +38,7 @@ class SummariesApp:
         if not self.background_spaced() or self.background_pause(job='person-summary'):
             return None
         with self.store.connect() as db:
-            people = person_summary.due(db)
+            people = person_summary.due(db, skip=model_reply.waiting(self, 'person-summary').spent)
         if not people:
             return None
         self.background_started()
@@ -72,6 +73,9 @@ class SummariesApp:
                         written += 1
         except help_chat.Unavailable:
             status, error = 'failed', 'model'
+        except model_reply.Unreadable:
+            model_reply.waiting(self, 'person-summary').missed([p['id'] for p in people])
+            status, error = 'failed', 'unreadable'
         except (sqlite3.Error, ValueError, KeyError, TypeError, OSError) as failure:
             status, error = 'failed', type(failure).__name__
         with self.store.connect() as db:
@@ -83,16 +87,20 @@ class SummariesApp:
     @staticmethod
     def summary_checked(ask, pages, lang):
         """The pass's lines, each past the check (person_summary.check_prompt): a rejected line is written again once
-        with the reason and checked again; one that still fails is dropped. ask(text) runs one model turn. A first check
-        that can't be read fails the pass (ValueError), so nothing unchecked is saved and the people stay due."""
-        found = person_summary.parse(ask(person_summary.prompt(pages, lang)), pages)
+        with the reason and checked again; one that still fails is dropped. ask(text) runs one model turn. Lines that can't
+        be read (asked once more) or a first check that can't be read fail the pass (ValueError), so nothing unchecked is
+        saved and the people stay due."""
+        found = model_reply.ask(ask, person_summary.prompt(pages, lang), lambda reply: person_summary.parse(reply, pages))
         if not any(found.values()):
             return found
         text, index = person_summary.check_prompt(found, pages)
         kept, rejected = person_summary.judged(found, index, person_summary.verdicts(ask(text), index))
         if not rejected:
             return kept
-        again = person_summary.parse(ask(person_summary.rewrite_prompt(pages, kept, rejected, lang)), pages)
+        try:
+            again = person_summary.parse(ask(person_summary.rewrite_prompt(pages, kept, rejected, lang)), pages)
+        except model_reply.Unreadable:  # the rewrites go, what passed stays
+            again = {}
         again = {node_id: lines for node_id, lines in again.items() if node_id in rejected and lines}
         if again:
             text, index = person_summary.check_prompt(again, pages)

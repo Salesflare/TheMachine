@@ -104,7 +104,7 @@ Before a meeting with people from outside your company, The Machine makes one to
 - **Who:** who they are, from your Graph, with something from their background when it's known.
 - **Organization:** what their company does that matters for the meeting.
 - **So far:** what you discussed, asked and offered, and where it stands. Those messages are the to-do's sources, after the meeting.
-- **Open promises:** what you or they still owe.
+- **Open promises:** what you or they still owe, from the promises on your Machine.
 - **Open questions:** what is still unanswered.
 - **Decide or bring:** what to settle or bring along, and what they'll likely care about.
 

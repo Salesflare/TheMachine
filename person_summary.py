@@ -49,7 +49,7 @@ import locale_prefs
 from machine.store import graph_promises
 from machine.store.graph_history import live
 import timeutil
-from machine import todo_states
+from machine import model_reply, todo_states
 from machine.owner_error import OwnerError
 
 SCHEMA = '''
@@ -204,10 +204,11 @@ def changes(db, since):
     return out
 
 
-def due(db, current=None, limit=PER_PASS):
+def due(db, current=None, limit=PER_PASS, skip=lambda node_id: False):
     """The people whose summary a pass rewrites now ([] when none, or a pass ran too recently or too often today).
     Someone a matter changed with since their summary (changes) comes first, also within PERSON_HOURS (EARLY_HOURS).
-    Past PASSES_PER_DAY, only those, each marked 'extra' (start_run counts it against EARLY_PASSES)."""
+    Past PASSES_PER_DAY, only those, each marked 'extra' (start_run counts it against EARLY_PASSES). skip(node_id): left
+    out (their turns' replies couldn't be read)."""
     current = current or timeutil.clock()
     ensure(db)
     last = db.execute('SELECT max(started_at) FROM person_summary_runs').fetchone()[0]
@@ -223,6 +224,8 @@ def due(db, current=None, limit=PER_PASS):
     moved = changes(db, fresh)
     early, picked = [], []
     for person in active(db, current):
+        if skip(person['id']):
+            continue
         row = _row(db, person['id'])
         if row:
             touched = max(row['written_at'] or '', row['proposed_at'] or '')
@@ -461,17 +464,15 @@ People:
 
 
 def parse(answer, people):
-    """{node_id: [line, ...]} from the turn's answer: only lines that cite at least one id that person was given."""
-    text = str(answer or '')
-    start, end = text.find('{'), text.rfind('}')
-    try:
-        found = json.loads(text[start:end + 1]) if start >= 0 < end else {}
-    except ValueError:
-        return {}
+    """{node_id: [line, ...]} from the turn's answer: only lines that cite at least one id that person was given. Raises
+    model_reply.Unreadable when it is no answer: nothing is known about anyone then."""
+    found = model_reply.read(answer)
+    if not isinstance(found.get('people'), list):
+        raise model_reply.Unreadable('no people')
     given = {p['node_id']: {i['id'] for key in ('facts', 'open_promises', 'signals', 'ai_lines') for i in p.get(key) or ()} for p in people}
     pages = {p['node_id']: p for p in people}
     out = {}
-    for item in (found.get('people') if isinstance(found, dict) else None) or ():
+    for item in found['people']:
         if not isinstance(item, dict) or item.get('node_id') not in given:
             continue
         lines = []
