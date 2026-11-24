@@ -20,7 +20,7 @@ import next_actions
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
-from machine.store import first_pass, message_view, review_last_look, review_saves, review_wait, review_whys, todo_likely
+from machine.store import evidence_moments, first_pass, message_view, review_last_look, review_saves, review_wait, review_whys, todo_likely
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import _address, clamp, encoded
 import own_addresses
@@ -528,13 +528,16 @@ def waiting_cards(db, rows, owner_slack_ids=()):
             theirs = {p['id'] for p in graph.card_people(db, ids, limit=10)[0]}
         except (sqlite3.Error, ValueError, TypeError):
             continue
-        newest = db.execute('SELECT max(occurred_at) FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids).fetchone()[0] or ''
+        moments = evidence_moments.Moments(db, ids)
         try:
             who = str((json.loads(card['outcome'] or '{}') or {}).get('waiting_on') or '')[:200]
         except (TypeError, ValueError):
             who = ''
         for r in rows:
-            if r['id'] in found or r['id'] in ids or r['occurred_at'] <= newest or not (theirs & people[r['id']]):
+            if r['id'] in found or r['id'] in ids or not (theirs & people[r['id']]):
+                continue
+            m = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
+            if r['occurred_at'] <= (moments.of(r['account_id'], r['kind'], m) or ''):
                 continue
             found[r['id']] = {'card_id': card['id'], 'title': str(card['title'] or '')[:120], **({'waiting_on': who} if who else {}),
                               'yours': own_message(r, owner_slack_ids)}

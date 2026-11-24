@@ -24,14 +24,14 @@ import graph
 import i18n
 import next_actions
 from machine.app.follow_ups import activity_who
-from machine.app.promise_checks import activity_since
+from machine.app.promise_checks import activity_since, newest_since
 from machine.config import LOG
 from machine.sources.calendar import company_domains
 from machine.sources.slack import slack_limits, slack_read_asked, slack_read_drop, slack_read_now, wait_until
 from models import background_model, openclaw_model
 from timeutil import now
 from machine import model_reply, todo_states
-from machine.store import judged_words
+from machine.store import evidence_moments, judged_words
 from machine.kinds import TO_PERSON
 
 
@@ -211,24 +211,26 @@ class HandledCheckApp:
         teammates = {x['email']: x['name'] for x in self.teammate_addresses()}
         found = activity_since(db, event_ids, self.store.owner_user_ids, teammates, company_domains(self.config), limit=8, people=people)
         ids = [i for i in event_ids or () if isinstance(i, int)]
-        latest = db.execute(f"SELECT max(occurred_at) FROM events WHERE id IN ({','.join('?' * len(ids))})", ids).fetchone()[0] if ids else None
+        moments = evidence_moments.Moments(db, ids)
         channels = self.slack_channels()
-        if not latest or not channels:
+        if not moments.everywhere or not channels:
             return found
         kinds = {(a, c['id']): c.get('type') for a, listed in channels.items() for c in listed}
         members = slack_members(db, people)
         seen = set(ids) | {x['id'] for x in found}
         for account_id, channel_id, _ in shared_conversations(db, people, channels):
+            channel = kinds.get((account_id, channel_id)) == 'channel'  # it holds many matters; a DM or group DM is one conversation
+            latest = moments.everywhere if channel else moments.channel(account_id, 'slack.message', channel_id)
             for e in db.execute("SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE account_id=? AND kind='slack.message' AND deleted=0 "
                                 "AND occurred_at>? AND occurred_at<=? AND json_extract(metadata,'$.channel_id')=? ORDER BY occurred_at DESC LIMIT 8",
                                 (account_id, latest, now(), channel_id)):
                 m = json.loads(e['metadata'] or '{}')
-                if e['id'] in seen or (kinds.get((account_id, channel_id)) == 'channel' and m.get('user_id') not in members):
+                if e['id'] in seen or (channel and m.get('user_id') not in members):
                     continue
                 seen.add(e['id'])
                 found.append({'id': e['id'], 'at': e['occurred_at'], 'channel': 'slack', 'where': 'elsewhere',
                               'who': activity_who(e, m, self.store.owner_user_ids, teammates, company_domains(self.config))})
-        return sorted(found, key=lambda x: x['at'])[-8:]
+        return newest_since(found, 8)
 
     def handled_gate(self, suggestion_id, job_id, actions, wait=0):
         """Before a run's message or handoff for someone is saved for the owner: None to save, else what the run does
@@ -336,6 +338,8 @@ class HandledCheckApp:
                     break
         if not pages:
             return 0
+        left_out = self.__dict__.setdefault('_handled_left_out', set())
+        pages = [p for p in pages if p[0]['id'] in left_out][:1] or pages  # one an answer left out: asked once more, alone
         if stand_in:
             return self.handled_check_run(pages)
         if self.background_pause(job='handled-check'):
@@ -370,9 +374,14 @@ class HandledCheckApp:
 
     def handled_check_run(self, pages):
         """One turn for those to-dos: the ones shown done close by themselves; every message read counts as judged. With a
-        reply that can't be read (asked once more) nothing is judged, and a later pass reads them again."""
+        reply that can't be read (asked once more) nothing is judged, and a later pass reads them again. One a readable
+        answer for several to-dos leaves out is asked once more, alone (handled_step); left out there too, it waits for a
+        newer message."""
         import help_chat
         stand_in = getattr(self, 'handled_check_model', None)
+        left_out = self.__dict__.setdefault('_handled_left_out', set())
+        if len(pages) == 1:
+            left_out.discard(pages[0][0]['id'])
 
         def turn(text):
             if stand_in:
@@ -395,6 +404,9 @@ class HandledCheckApp:
             return 0
         judged, closed = self.__dict__.setdefault('_handled_judged', {}), 0
         for card, found in pages:
+            if len(pages) > 1 and card['id'] not in answers:
+                left_out.add(card['id'])
+                continue
             judged[card['id']] = max([judged.get(card['id'], 0)] + [x['id'] for x in found])
             x = answers.get(card['id']) or {}
             reason = ' '.join(str(x.get('reason') or '').split())[:200]
