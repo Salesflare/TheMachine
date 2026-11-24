@@ -1,52 +1,52 @@
 ---
 title: Perguntas frequentes
 area: getting-started
-summary: Respostas rápidas às dúvidas mais comuns, inclusive quando a resposta é que não dá para fazer isso.
+summary: Respostas curtas às perguntas mais comuns, inclusive quando não dá para fazer o que você quer.
 covers:
 code: machine/app/mail.py, dashboard/shell-keys.js
 order: 20
-translated: 64cb081943022424
+translated: 1f3b5cbfad2ee323
 ---
-## Enviar um e-mail mais tarde, em um horário específico
+## Enviar um e-mail mais tarde, em um horário definido
 
-Não é possível: um rascunho nunca é enviado sozinho no horário que você escolher. **Adie** a tarefa até esse horário. O rascunho fica aguardando a tarefa, e você pressiona **Enviar agora** quando ela voltar. [Follow-ups](follow-ups.md) é a exceção: essas mensagens podem ser enviadas automaticamente se você ativar essa opção.
+Toque em **Enviar mais tarde**, ao lado de **Enviar agora**, e escolha um horário. O e-mail será enviado exatamente como você aprovou. Se a pessoa responder antes, ele volta a aguardar você. Veja [Enviar mais tarde](send-later.md). Não dá para adiar mensagens do LinkedIn e do X: **Adie** a tarefa e toque em **Enviar agora** quando ela voltar.
 
-## Cancelar o envio de um e-mail ou mensagem
+## Desfazer o envio de um e-mail ou mensagem
 
-Não é possível depois que a mensagem é enviada. Nada é enviado sem sua aprovação, então leia primeiro em **Revisar e enviar**. Ainda dá para interromper duas coisas: em [Conversa ao vivo](talk-live.md), **Desfazer** aparece por alguns segundos depois que você aprova o envio; e **Parar o envio** impede o envio das mensagens restantes em uma sequência de [follow-ups](follow-ups.md).
+Não é possível depois que a mensagem é enviada. Nada é enviado sem sua aprovação, então leia antes em **Revisar e enviar**. Ainda dá para interromper algumas coisas: toque em **Cancelar** em algo que [será enviado mais tarde](send-later.md); em [Conversa ao vivo](talk-live.md), **Desfazer** aparece por alguns segundos depois que você aprova; e **Parar o envio** impede o envio do restante de uma sequência de [follow-ups](follow-ups.md).
 
 ## Onde encontrar um rascunho
 
-Um rascunho fica na tarefa correspondente. Se não estiver mais em **Para você**, procure em **Aguardando outras pessoas**, **Volta mais tarde**, **Mais antigos** ou **Feito / descartado**, ou encontre a tarefa com **Pesquisar**. As versões anteriores ficam no chat da tarefa, marcadas como **Rascunho anterior**. O que você digitou em **Novo e-mail** não é salvo quando você fecha essa janela.
+O rascunho fica na tarefa. Se não estiver mais em **Para você**, procure em **Aguardando outras pessoas**, **Volta mais tarde**, **Mais antigos** ou **Feito / descartado**, ou encontre a tarefa com **Pesquisar**. As versões anteriores ficam no chat da tarefa, identificadas como **Rascunho anterior**. Um novo e-mail que você ainda não enviou fica acima das tarefas (veja [Escrever um novo e-mail](email-composer.md)).
 
-## Tema claro ou escuro
+## Modo claro ou escuro
 
-O painel usa o tema escuro, a menos que **Modo claro** esteja ativado. Para usar o tema escuro, desative essa opção. Para usar o tema claro, ative-a em **Configurações** › **Geral**, em **Este dispositivo**. A configuração vale apenas para esse navegador ou celular. Se estiver usando um teclado, digite "dark" ou "light" em **Pesquisar e comandos**.
+O painel fica no modo escuro, a menos que **Modo claro** esteja ativado. Para usar o modo escuro, desative essa opção. Para usar o modo claro, ative-a em **Configurações** › **Geral**, na seção **Este dispositivo**. A opção vale apenas para esse navegador ou celular. Se estiver usando um teclado, digite "dark" ou "light" em **Pesquisar e comandos**.
 
 ## Menos tarefas
 
-Pressione **Não precisa** no que você não quer ver e escolha o motivo: sua Machine aprende com isso. Ou diga isso no chat de uma tarefa, por exemplo: "Nunca preciso dessas coisas". Para parar uma fonte inteira, abra **Conexões**, toque em **Detalhes** e desative **Traz sinais**. **Descartar tudo** remove de uma vez tudo o que está em **Mais antigos**.
+Toque em **Não precisa** no que você não quer ver e escolha o motivo. Sua Machine aprende com isso. Você também pode explicar no chat de uma tarefa, por exemplo: "Nunca preciso disso". Para interromper uma fonte inteira, abra **Conexões**, toque em **Detalhes** e desative **Traz sinais**. **Descartar tudo** remove de uma vez tudo o que está em **Mais antigos**.
 
 ## Quem pode ver suas tarefas
 
-Só você. Sua Machine é só sua, e nossas ferramentas de suporte não podem acessar suas mensagens. Outra pessoa só vê uma tarefa quando você a compartilha, por exemplo, com **Passar…**. O Fleet de Trabalho vê o trabalho dos clientes compartilhado pelo seu [Graph da equipe](team-graph.md), nunca o que é pessoal. As [Regras de compartilhamento](sharing-rules.md) definem o que sua Machine pode responder.
+Só você. Sua Machine é só sua, e nossas ferramentas de suporte não conseguem abrir suas mensagens. Outra pessoa só vê uma tarefa se você compartilhar com ela, por exemplo, com **Passar…**. Um Fleet de Trabalho vê o trabalho dos clientes que o [Graph da equipe](team-graph.md) compartilha, nunca o que é pessoal. As [Regras de compartilhamento](sharing-rules.md) definem o que sua Machine pode responder.
 
-## Encaminhar um e-mail para sua Machine
+## Encaminhar um e-mail para ela
 
-Não existe um endereço para encaminhar e-mails, e você não precisa de um: sua Machine lê as caixas de e-mail que você conecta. Para algo que está em outro lugar, pressione **Nova tarefa** e anexe a mensagem ou um arquivo, ou envie para sua Machine pelo celular. Consulte o artigo [Aplicativo para celular](mobile-app.md#share-to-the-machine).
+Não há um endereço para encaminhar e-mails, e você não precisa de um: sua Machine lê as caixas de e-mail que você conecta. Para algo que esteja em outro lugar, toque em **Nova tarefa** e anexe a mensagem ou um arquivo, ou compartilhe a mensagem pela The Machine usando seu celular. Veja [App para celular](mobile-app.md#share-to-the-machine).
 
-## Respostas automáticas e aviso de ausência
+## Ausência e respostas automáticas
 
-Não é possível: The Machine não configura respostas automáticas. Configure-as no próprio Gmail ou Outlook. The Machine continua preparando rascunhos enquanto você está fora, e eles ficam aguardando você.
+Não dá para fazer isso: a The Machine não configura respostas automáticas. Configure-as diretamente no Gmail ou no Outlook. A The Machine continua criando rascunhos enquanto você está fora, e eles ficam aguardando você.
 
 ## Reservar, pedir ou pagar algo
 
-[Fazer](do-it.md) pode pesquisar, escolher opções e preencher o formulário no navegador da sua Machine, por exemplo, para reservar uma mesa ou comprar um ingresso. A etapa de fazer a reserva ou o pagamento fica aguardando sua aprovação. Uma conta bancária a pagar aparece como uma tarefa com os dados de pagamento, e você faz o pagamento por conta própria.
+[Faça isso](do-it.md) pode pesquisar, escolher e preencher formulários no navegador da sua Machine, como para reservar uma mesa ou comprar um ingresso. A etapa de reservar ou pagar fica aguardando você. Uma conta para pagar pelo banco aparece como uma tarefa com os dados do pagamento, e você paga por conta própria.
 
-## Entrar em uma ligação ou reunião
+## Participar de uma chamada ou reunião
 
-Não é possível: The Machine não participa de ligações. Ela prepara você antes de uma reunião e, depois, lê o resumo ou a transcrição do [Zoom](zoom.md), [Google Meet](google-meet.md), [Teams](teams.md) ou [Granola](granola.md).
+Não dá para fazer isso: a The Machine não participa de chamadas. Ela prepara você antes de uma reunião e lê o resumo ou a transcrição depois, usando [Zoom](zoom.md), [Google Meet](google-meet.md), [Teams](teams.md) ou [Granola](granola.md).
 
 ## Imprimir
 
-The Machine não tem botão de impressão. Use a opção de impressão do próprio navegador para imprimir a página que você está vendo.
+A The Machine não tem botão para imprimir. Use a função de impressão do navegador para imprimir a página que está vendo.
