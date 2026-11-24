@@ -317,7 +317,10 @@ def card(row):
                       'snoozed': t('Back, as you asked.'),
                       'already_done': t('Looks done already. Mark it done if that’s right.'),
                       'waiting': t('Waiting on: {}', sentence(outcome.get('waiting_on') or ''))}.get(outcome['state']) or (
-                t('Needs you: {}', sentence(outcome['needs'])) if needs_owner(row) else sentence(outcome['needs'])[:1].upper() + sentence(outcome['needs'])[1:])  # beside a ready draft: plain
+                t('Needs you: {}', sentence(outcome['needs'])) if needs_owner(row) else
+                (t('The draft is ready. One question: {}', ready_as_is(row)) if any(a.get('kind') in SEND for a in row.get('next_actions') or [])
+                 else t('The result is ready. One question: {}', ready_as_is(row))) if ready_as_is(row) else
+                sentence(outcome['needs'])[:1].upper() + sentence(outcome['needs'])[1:])  # beside a ready draft: plain
         except (ValueError, KeyError, TypeError, AttributeError):
             outcome = {}
     if row.get('early') and row['status'] == 'prepared' and not outcome.get('needs') and outcome.get('state') != 'already_done' and any(
@@ -558,15 +561,36 @@ def retry_pointless(row):
 
 def ask_question(row, actions):
     """A card waiting on the owner's answer: Answer leads (the Change path), Mark done beside it. Either a run that
-    stopped to ask (ask_blocked) or a result that asks (result_ask), with nothing to send. Same rule as askQuestion() in
-    the dashboard."""
+    stopped to ask (ask_blocked) or a result that asks (result_ask), with nothing to send, or nothing that can go before
+    they answer (needs_first). Same rule as askQuestion() in the dashboard."""
     if row['status'] in todo_states.CLOSED_OR_SNOOZED or row.get('handled_hint'):
         return ''
     if ask_blocked(row):
         return ask_text(row)
-    if row['status'] != 'prepared' or row.get('preparation_status') == 'blocked' or any(a.get('kind') != 'open' for a in actions):
+    if row['status'] != 'prepared' or row.get('preparation_status') == 'blocked' or any(a.get('kind') != 'open' for a in actions) and not needs_first(row):
         return ''
     return result_ask(row)
+
+
+def needs_first(row):
+    """What the run said of what it made next to a need of the owner's: True when it can't be used until they answer (a
+    proposal without its price, blanks to fill in), False when it can go as it is and the answer would only change or
+    improve it, None when it didn't say. Its own outcome (needs_first), never read from the words."""
+    try:
+        outcome = row['outcome'] or {}
+        said = (json.loads(outcome) if isinstance(outcome, str) else outcome).get('needs_first')
+    except (ValueError, TypeError, AttributeError, KeyError, IndexError):
+        return None
+    return said if isinstance(said, bool) else None
+
+
+def ready_as_is(row):
+    """A Prepared to-do whose run said its work can go as it is, next to a question for the owner: that question, or ''.
+    Its line says what is ready first, the question after it."""
+    if needs_first(row) is not False or needs_owner(row):
+        return ''
+    needs = str(json.loads(row['outcome']).get('needs') or '').strip()
+    return needs if needs.endswith('?') else ''
 
 
 def result_ask(row, db=None):
@@ -580,7 +604,7 @@ def result_ask(row, db=None):
         needs = ' '.join(str(outcome.get('needs') or '').split()) if outcome.get('state') == 'needs_you' else ''
     except (ValueError, TypeError, AttributeError):
         return ''
-    if needs.endswith('?') or not needs:
+    if not needs or needs.endswith('?') and needs_first(row) is not False:
         return needs
     if outcome.get('owner_step') or row.get('owner_step') or row.get('handoff_still'):
         return ''
@@ -596,6 +620,8 @@ def needs_owner(row, db=None):
     owner has, a sign-in, a choice), or with only links beside its question to them, isn't: it reads Needs you, with its
     needs as the reason, everywhere the to-do's state shows (card, list, notifications, digests, chat). Taken from the
     run's own outcome, never from words. db: look up the file and skill a light row doesn't carry (a digest's).
+    A run that left something and a need says whether that can be used before they answer (needs_first): when it can't,
+    it reads Needs you too, with what it made still on it. A question next to only a file, where the run didn't say, asks.
     A run that only answered, explained or planned (outcome answered) with nothing ready is not Prepared either: the
     task is still to do, so it reads Needs you, with "Answered. Nothing done yet." as the reason (Do it leads)."""
     if row.get('status') != 'prepared' or row.get('handled_hint') or row.get('preparation_status') == 'blocked':
@@ -609,11 +635,16 @@ def needs_owner(row, db=None):
         return ''
     if outcome.get('state') == 'answered' and not any(a.get('kind') != 'open' for a in steps):
         needs = i18n.t('Answered. Nothing done yet.')
-    elif outcome.get('state') != 'needs_you' or not needs or any(a.get('kind') != 'open' or not needs.endswith('?') for a in steps):
+    elif outcome.get('state') != 'needs_you' or not needs:
+        return ''
+    elif needs_first(row):
+        return needs
+    elif any(a.get('kind') != 'open' or not needs.endswith('?') for a in steps):
         return ''
     files = row['result_files'] if 'result_files' in row else RESULT_FILE.search(str(row.get('body') or ''))
     skill = row.get('proposed_skill') if 'proposed_skill' in row or db is None else proposed_skill(db, row.get('id'))
-    return '' if files or skill else needs
+    unsaid = files and outcome.get('state') == 'needs_you' and needs.endswith('?') and needs_first(row) is None
+    return needs if not skill and (not files or unsaid) else ''
 
 
 def proposed_skill(db, task):
@@ -694,6 +725,8 @@ def controls(row, root=''):
     if row['status'] == 'pending' and row.get('labels'):
         choices = [(row['labels'].get(choice, label), choice) for label, choice in choices]
     buttons=[]
+    if row['status']=='prepared' and ask_question(row,actions) and needs_first(row):  # Answer before a draft that can't go yet
+        buttons.append({'label':choices[0][0],'action':{'type':'callback','value':f"assistant:{row['id']}:{choices[0][1]}"}});choices=choices[1:]
     link=(row.get('preparation_browser') or {}).get('link') or ''
     signin=(row.get('preparation_browser') or {}).get('signin_url') or ''
     if signin.startswith('https://') and row['status'] in todo_states.PREPARING:

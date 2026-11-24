@@ -651,10 +651,11 @@ first_name = owner_name.first_name  # for the greeting, '' when it doesn't look 
 
 def asks(outcome):
     """Whether a to-do's result (its outcome JSON) needs the owner and says so with a question: it waits on their answer,
-    so it isn't one to clear at a tap (machine/cards.py ask_question, needsAsk() in the dashboard)."""
+    so it isn't one to clear at a tap (machine/cards.py ask_question, needsAsk() in the dashboard). Not when its run said
+    what it made can go as it is (needs_first false)."""
     try:
         result = json.loads(outcome or '{}')
-        return result.get('state') == 'needs_you' and str(result.get('needs') or '').strip().endswith('?')
+        return result.get('state') == 'needs_you' and str(result.get('needs') or '').strip().endswith('?') and result.get('needs_first') is not False
     except (ValueError, TypeError, AttributeError):
         return False
 

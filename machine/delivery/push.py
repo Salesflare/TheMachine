@@ -127,7 +127,7 @@ def nudge_wait(db, suggestion_id, job_id, outcome, actions):
     nudge or a handoff: the next step is still theirs, so it waits under Waiting on others with the nudge ready there,
     not in Ready. Asked for by the owner, with a question for them, or with any other step, it stays needs_you."""
     needs = str(outcome.get('needs') or '').strip()
-    if not actions or needs.endswith('?') or any(a.get('kind') not in NUDGE_KINDS for a in actions):
+    if not actions or needs.endswith('?') or outcome.get('needs_first') or any(a.get('kind') not in NUDGE_KINDS for a in actions):
         return outcome
     row = db.execute('SELECT dedupe_key FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
     key = str(row['dedupe_key'] if row else '')
@@ -509,7 +509,7 @@ def app_next_step(row, blocked=False):
         needs = plain(outcome.get('needs') or '')
         # What the owner does: a question for them leads; for a draft, the draft itself says more than "check the
         # draft and send it" (who it goes to and how it starts)
-        if needs and (needs.endswith('?') or not (step and step.get('kind') in next_actions.APPROVE_KINDS)):
+        if needs and (needs.endswith('?') and outcome.get('needs_first') is not False or outcome.get('needs_first') or not (step and step.get('kind') in next_actions.APPROVE_KINDS)):
             return needs
         if outcome.get('state') == 'waiting' and outcome.get('waiting_on'):
             return i18n.t('Waiting on: {}', plain(outcome['waiting_on']))

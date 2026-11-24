@@ -194,7 +194,9 @@ STORIES = [
      'title': 'Tell Dana if you can water the plants next week', 'body': 'Dana asked on Signal while they are away from Monday to Friday.',
      'chat': ('Dana Kerrigan', [(260, False, 'Away Monday to Friday. Could you water the plants once or twice?'),
                                 (258, False, 'Key is under the blue pot.')]),
-     'draft': ('signal', 'Sure, I will stop by on Tuesday and Thursday.')},
+     'draft': ('signal', 'Sure, I will stop by on Tuesday and Thursday.'),
+     # A draft that can go as it is, with a question: Prepared, and its line says the draft is ready first (ready_as_is)
+     'outcome': {'state': 'needs_you', 'needs': 'Do Tuesday and Thursday suit you?', 'needs_first': False}},
 ]
 SIGNAL_CHAT = '5a5d1e00-0000-4000-8000-00000000da0a'  # Dana's made-up Signal account ID
 

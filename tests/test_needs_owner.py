@@ -9,9 +9,11 @@ import unittest
 from pathlib import Path
 
 import test_ux as ux
+import machine.app.preparation as machine_app_preparation
 import machine.cards as machine_cards
 import machine.delivery.push as machine_delivery_push
 import machine.main as machine_main
+import notify
 import machine.store.decisions as machine_store_decisions
 from test_honest_status import GMAIL, SLACK, email
 
@@ -40,6 +42,34 @@ class Rule(unittest.TestCase):
         self.assertEqual(machine_cards.needs_owner(self.row('check the report', result_files=[{'path': 'memory/assistant/r.md'}])), '')
         self.assertEqual(machine_cards.needs_owner(self.row('check the report', body='Done: [Report](memory/assistant/r.md)')), '')
         self.assertEqual(machine_cards.needs_owner(self.row('approve the skill', proposed_skill={'id': 's1'})), '')
+
+    def test_work_that_cant_be_used_before_the_answer_reads_needs_you(self):
+        files = [{'path': 'memory/assistant/p.md'}]
+        first = {'outcome': json.dumps({'state': 'needs_you', 'needs': 'What price and scope?', 'needs_first': True})}
+        for made in ({'result_files': files}, {'next_actions': [DRAFT]}, {'proposed_skill': {'id': 's1'}}, {'body': '[Proposal](memory/assistant/p.md)'}, {}):
+            with self.subTest(made):
+                self.assertEqual(machine_cards.needs_owner({**self.row(''), **first, **made}), 'What price and scope?')
+        # written as a statement too: blanks in a draft are still blanks
+        blanks = {'outcome': json.dumps({'state': 'needs_you', 'needs': 'fill in the two dates', 'needs_first': True})}
+        self.assertEqual(machine_cards.needs_owner({**self.row('', [DRAFT]), **blanks}), 'fill in the two dates')
+        # a question next to only a file, where the run didn't say (a run from before): it asks, as its Answer already did
+        self.assertEqual(machine_cards.needs_owner(self.row('What price and scope?', result_files=files)), 'What price and scope?')
+        self.assertEqual(machine_cards.needs_owner(self.row('What price and scope?', result_files=files, proposed_skill={'id': 's1'})), '')
+
+    def test_work_that_can_go_as_it_is_stays_prepared(self):
+        can = {'outcome': json.dumps({'state': 'needs_you', 'needs': 'Tuesday or Wednesday?', 'needs_first': False})}
+        for made in ({'next_actions': [DRAFT]}, {'result_files': [{'path': 'memory/assistant/p.md'}]}):
+            with self.subTest(made):
+                row = {**self.row(''), **can, **made}
+                self.assertEqual(machine_cards.needs_owner(row), '')
+                self.assertEqual(machine_cards.result_ask(row), '')
+                self.assertEqual(machine_cards.ready_as_is(row), 'Tuesday or Wednesday?')
+        # with nothing made it is a question after all
+        self.assertEqual(machine_cards.needs_owner({**self.row(''), **can}), 'Tuesday or Wednesday?')
+        self.assertEqual(machine_cards.result_ask({**self.row(''), **can}), 'Tuesday or Wednesday?')
+        # only its own true or false counts
+        odd = {'outcome': json.dumps({'state': 'needs_you', 'needs': 'Tuesday or Wednesday?', 'needs_first': 'yes'})}
+        self.assertEqual(machine_cards.needs_owner({**self.row('', [DRAFT]), **odd}), '')
 
     def test_a_run_that_only_answered_with_nothing_ready_reads_needs_you(self):
         answered = {'outcome': json.dumps({'state': 'answered'})}
@@ -169,6 +199,55 @@ class Everywhere(unittest.TestCase):
         self.assertEqual(machine_cards.todo_state(view), 'needs you')
         self.assertEqual(self.lead(), ('Needs you', 'Needs you'))  # never "Ready:" for a task still to do
         self.assertNotIn('ready', self.digest()['text'].split('\n')[0])
+
+    def test_a_draft_that_waits_on_the_answer_reads_needs_you_everywhere(self):
+        self.save(next_actions=[DRAFT], outcome='needs_you', needs='What price and scope do I quote?', needs_first=True)
+        view = self.row()
+        self.assertEqual(view['needs_owner'], 'What price and scope do I quote?')
+        self.assertIn('Needs you: What price and scope do I quote?', machine_cards.card(view))
+        self.assertEqual(machine_cards.todo_state(view), 'needs you')
+        self.assertEqual(self.lead(), ('Needs you', 'Needs you'))
+        labels = [b['label'] for b in sum((x['buttons'] for x in machine_cards.controls(view)['blocks']), [])]
+        self.assertEqual(labels[0], 'Answer')
+        self.assertIn('Send reply', labels)  # the draft stays a tap away
+        self.assertEqual(labels.count('Answer'), 1)
+        notice = machine_delivery_push.app_notice(self.store, {'accounts': [GMAIL]}, self.sid, 'result', 2)
+        self.assertEqual((notice['actions'][0], notice['body']), ('answer', 'What price and scope do I quote?'))
+        with self.store.connect() as db:
+            asked = machine_store_decisions.waiting_questions(db, db.execute('SELECT * FROM suggestions WHERE id=?', (self.sid,)).fetchone())
+        self.assertEqual(asked, ['What price and scope do I quote?'])
+        self.assertTrue(notify.asks(view['outcome']))
+        self.assertNotIn('ready', self.digest()['text'].split('\n')[0])
+        # they put the price in themselves: it can go, so it is Prepared again with Send in front
+        self.store.revise_draft(self.sid, view['next_actions'][0]['revision'], 'dashboard', body='Hi,\n\nIt is 900 euros.\n\nCheers,\n\nAlex')
+        view = self.row()
+        self.assertNotIn('needs_owner', view)
+        self.assertEqual(machine_cards.todo_state(view), 'prepared')
+        self.assertEqual(machine_cards.controls(view)['blocks'][0]['buttons'][0]['label'], 'Send reply')
+
+    def test_a_draft_that_can_go_as_it_is_says_so_before_its_question(self):
+        self.save(next_actions=[DRAFT], outcome='needs_you', needs='Which budget range fits?', needs_first=False)
+        view = self.row()
+        self.assertNotIn('needs_owner', view)
+        self.assertIn('The draft is ready. One question: Which budget range fits?', machine_cards.card(view))
+        self.assertEqual(self.lead(), ('Ready', 'Ready'))
+        self.assertEqual(machine_cards.controls(view)['blocks'][0]['buttons'][0]['label'], 'Send reply')
+        notice = machine_delivery_push.app_notice(self.store, {'accounts': [GMAIL]}, self.sid, 'result', 2)
+        self.assertIn('The invoice is fixed', notice['body'])  # what is ready, not the question
+        self.assertFalse(notify.asks(view['outcome']))  # one to clear at a tap
+        self.assertIn('1 reply is ready to send', self.digest()['text'].split('\n')[0])
+
+    def test_their_ok_is_never_an_answer_first(self):
+        # "Approve the send" is a need too: only something missing from what the run made waits on an answer
+        prompt = machine_app_preparation.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'})
+        self.assertIn('needs_first:true only when something is missing from it', prompt)
+        self.assertIn('their OK to send, check or sign is never that', prompt)
+        with self.assertRaisesRegex(ValueError, 'never for their OK to send, check or sign'):
+            self.save(outcome='needs_you')
+
+    def test_a_step_of_theirs_is_never_also_an_answer_first(self):
+        self.save(next_actions=[DRAFT], outcome='needs_you', needs='pay the deposit in your bank', owner_step=True, needs_first=True)
+        self.assertNotIn('needs_first', json.loads(self.row()['outcome']))
 
     def test_a_ready_draft_stays_prepared_everywhere(self):
         self.save(next_actions=[DRAFT], outcome='needs_you', needs='check the draft and send it')
