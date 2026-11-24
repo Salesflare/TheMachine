@@ -83,7 +83,7 @@ class MeetingPrepApp:
                     meeting_prep.keep(db, meeting, 'taken', None, now())
                     continue
                 side = sides.get(meeting['account_id'])
-                evidence = meeting_prep.evidence(db, meeting, side, sides, emails, current, CARD_OPEN, graph.resolve,
+                evidence = meeting_prep.evidence(db, meeting, side, sides, emails, domains, current, CARD_OPEN, calendar_owned, graph.resolve,
                                                  person_summary.prep_lines, graph.excerpt)
                 if not meeting_prep.worth_asking(evidence):
                     continue  # quality or nothing: no turn, no to-do
@@ -148,8 +148,15 @@ class MeetingPrepApp:
             LOG.warning('meeting prep research error=%s', type(error).__name__)
         swap = background_model(self.config)  # the model meeting_prep_model_turn runs on, for its own bias correction
         note = bias.model_note('/'.join(swap) if swap else openclaw_model(self.config))
+        if meeting['evidence'].get('notes'):
+            meeting['evidence']['owner_name'] = self.owner_full_name()  # the notes name who does what: which of them is the owner
         text = meeting_prep.prompt(meeting, meeting['evidence'], local_tz(), i18n.prompt_rule(locale_prefs.language_of(self.config)), note)
         return model_reply.ask(self.meeting_prep_model_turn, text, lambda reply: meeting_prep.parse(reply, meeting['evidence']))
+
+    def meeting_prep_cites(self, meeting):
+        """What each source of the briefing is called after a point from it: "Kickoff call, Nov 3"."""
+        tz = local_tz()
+        return meeting_prep.cites(meeting['evidence'], lambda at: locale_prefs.day_text(at.astimezone(tz), weekday=False))
 
     def meeting_prep_unreadable(self, meeting):
         """The reply couldn't be read, twice: no verdict, a later pass asks again (model_reply.Waiting)."""
@@ -180,7 +187,7 @@ class MeetingPrepApp:
                 LOG.info('meeting prep verdict=%s', 'personal' if found else 'nothing')
                 return None
             title = found['title'] if found['title'] else i18n.t('Prepare for {}', meeting['title'][:70])
-            body = meeting_prep.body_text(found['fields'], i18n.t, found.get('links'))
+            body = meeting_prep.body_text(found['fields'], i18n.t, found.get('links'), self.meeting_prep_cites(meeting))
             try:
                 saved = self.store.suggest(meeting['key'], title[:90], body, [meeting['id'], *found['sources']], 'now', self.config.get('digest_at', '08:30'),
                                            work=True, _db=db, expires_at=meeting['start'].isoformat(), expires_what=title[:80])
@@ -209,11 +216,11 @@ class MeetingPrepApp:
             emails, domains = self.meeting_prep_owner(db)
             for meeting in meeting_prep.stale(db, OPEN_NOT_SNOOZED, current, emails, domains, i18n.t):
                 side = sides.get(meeting['account_id'])
-                found = meeting_prep.evidence(db, meeting, side, sides, emails, current, CARD_OPEN, graph.resolve,
+                found = meeting_prep.evidence(db, meeting, side, sides, emails, domains, current, CARD_OPEN, calendar_owned, graph.resolve,
                                               person_summary.prep_lines, graph.excerpt)
-                if not meeting_prep.worth_asking(found) or wait.spent(meeting['key']):
+                if not meeting_prep.worth_asking(found) or wait.spent(meeting['key']) or meeting['format'] == 2 and not found['notes']:
                     meeting_prep.stamp(db, meeting['key'], db.execute('SELECT body FROM suggestions WHERE id=?', (meeting['suggestion_id'],)).fetchone()[0])
-                    continue  # nothing to write it from now: it stays as it is
+                    continue  # nothing to write it from now, or nothing that format 3 adds to it: it stays as it is
                 picked.append({**meeting, 'side': side, 'evidence': found})
                 return None  # one at a time: the pass is done once none is left
             return []
@@ -252,7 +259,7 @@ class MeetingPrepApp:
             ahead = meeting['start'] - dt.datetime.fromisoformat(now()) > meeting_prep.REBUILD_LEAD
             as_left = (row['status'] in OPEN_NOT_SNOOZED and meeting_prep.body_sha(row['body']) == meeting['was']
                        and row['title_source'] == 'auto' and not row['outcome'])
-            body = meeting_prep.body_text(found['fields'], i18n.t, found.get('links')) if found and found['area'] == 'work' else ''
+            body = meeting_prep.body_text(found['fields'], i18n.t, found.get('links'), self.meeting_prep_cites(meeting)) if found and found['area'] == 'work' else ''
             if not (body and ahead and as_left):
                 meeting_prep.stamp(db, meeting['key'], row['body'], now())
                 LOG.info('meeting prep rebuild kept')

@@ -104,15 +104,20 @@ Before a meeting with people from outside your company, The Machine makes one to
 - **Who:** who they are, from your Graph, with something from their background when it's known.
 - **Organization:** what their company does that matters for the meeting.
 - **So far:** what you discussed, asked and offered, and where it stands. Those messages are the to-do's sources, after the meeting.
+- **Agreed earlier:**, **Changed since:** and **Still open:** what came out of earlier meetings with the same people, each line with the meeting or message it comes from.
 - **Open promises:** what you or they still owe, from the promises on your Machine.
 - **Open questions:** what is still unanswered.
 - **Decide or bring:** what to settle or bring along, and what they'll likely care about.
 
 It comes on the morning of a work day: the meeting's own day when it's in the afternoon, else the work day before. It is only for reading: **Done** when you have read it. A promise or question in it that needs doing has its own to-do.
 
+Earlier meetings count when someone from outside is in both, whatever the meeting was called and whichever address they used. It reads the notes your Machine has: yours, your meeting app's, or the notes it mailed you, else the transcript or the notes in the calendar event. The newest ones weigh most, and a point settled later isn't shown as open.
+
+A work briefing reads no personal notes, and nothing from someone else's Machine. No briefing reads [History](history.md). With no notes, those lines aren't there.
+
 It uses what is already on your Machine. For a first meeting with someone at a company, it also does a short web search on their name and company, and shows a link next to what it found. Only their public name, company name and website go to the search, never your messages. A search is reused for 30 days. With **Look up work contacts** off (Settings, Security), there's no search.
 
-No useful history means no to-do. Recurring, internal, personal and declined meetings get none. A meeting that moves keeps its one to-do, at the new time. A dismissed one doesn't come back, and a canceled meeting's closes by itself.
+With nothing useful to say, there's no to-do. Recurring, internal, personal and declined meetings get none. A meeting that moves keeps its one to-do, at the new time. A dismissed one doesn't come back, and a canceled meeting's closes by itself.
 
 When an update changes what a briefing holds, open briefings for meetings still ahead are written again once, in the new form. Their title, sources and place in your list stay. One you changed, snoozed or closed stays as it is, and so does one for a meeting starting in the next few minutes.
 
