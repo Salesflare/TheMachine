@@ -3,13 +3,16 @@
 use crate::{away, later, login, notify, speak, updates, windows, Shared};
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use std::sync::Mutex;
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 const LABEL: &str = "settings";
 const WIDTH: f64 = 420.0;
 
 /// Shown once its page says how tall it is; a page that is only read again says so too.
 static OPENING: AtomicBool = AtomicBool::new(false);
+/// How tall its page said it is.
+static HEIGHT: Mutex<f64> = Mutex::new(300.0);
 
 #[derive(Serialize)]
 pub struct Settings {
@@ -69,16 +72,51 @@ pub fn settings_fit(app: AppHandle, height: f64) {
     later(&app, move |app| {
         let Some(window) = app.get_webview_window(LABEL) else { return };
         let height = height.clamp(120.0, 700.0);
-        #[cfg(not(target_os = "linux"))]
-        let _ = window.set_size(tauri::LogicalSize::new(WIDTH, height));
-        #[cfg(target_os = "linux")]
-        windows::linux::size(&window, crate::place::Rect { x: 0.0, y: 0.0, w: WIDTH, h: height });
+        *HEIGHT.lock().unwrap() = height;
+        size(&window, height);
         if OPENING.swap(false, Ordering::Relaxed) {
             let _ = window.center();
             let _ = window.show();
             windows::front(&window);
         }
     });
+}
+
+#[cfg(target_os = "macos")]
+fn size(window: &WebviewWindow, height: f64) {
+    let _ = window.set_size(tauri::LogicalSize::new(WIDTH, height));
+}
+
+#[cfg(target_os = "linux")]
+fn size(window: &WebviewWindow, height: f64) {
+    windows::linux::size(window, crate::place::Rect { x: 0.0, y: 0.0, w: WIDTH, h: height });
+}
+
+/// Also as large as the person's Text size, while its monitor has room, and all of it there.
+#[cfg(windows)]
+fn size(window: &WebviewWindow, height: f64) {
+    let Some(m) = window.current_monitor().ok().flatten().or(window.primary_monitor().ok().flatten()) else { return };
+    let (work, plain) = (m.work_area(), m.scale_factor());
+    let (wide, high) = (f64::from(work.size.width), f64::from(work.size.height));
+    const TITLE: f64 = 48.0; // its title bar and edges
+    let scale = windows::with_text(plain, wide, high).min((high - TITLE * plain) / height).max(plain);
+    windows::draw_at(window, scale);
+    let _ = window.set_size(tauri::PhysicalSize::new((WIDTH * scale).round(), (height * scale).round()));
+    if let (Ok(at), Ok(outer)) = (window.outer_position(), window.outer_size()) {
+        let inside = |at: i32, from: i32, size: u32, most: u32| at.min(from + most as i32 - size as i32).max(from);
+        let to = tauri::PhysicalPosition::new(inside(at.x, work.position.x, outer.width, work.size.width), inside(at.y, work.position.y, outer.height, work.size.height));
+        if to != at {
+            let _ = window.set_position(to);
+        }
+    }
+}
+
+/// The text, the scale or a monitor is another one.
+#[cfg(windows)]
+pub fn again(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window(LABEL) {
+        size(&window, *HEIGHT.lock().unwrap());
+    }
 }
 
 #[tauri::command]

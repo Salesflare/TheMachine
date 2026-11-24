@@ -63,6 +63,7 @@ fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri
     {
         no_menu(&window);
         crate::windows_app::lives(&window);
+        place(app); // its page is as wide as it will be, also while it only measures itself
     }
     #[cfg(target_os = "macos")]
     crate::mac::prepare(&window);
@@ -347,7 +348,7 @@ pub fn fit_box(app: &AppHandle, height: f64) -> f64 {
     screen(app).map_or(f64::MAX, |(_, s)| place::room(corner(app, &s).robot(s.area), s.area))
 }
 
-/// A monitor: its name, its work area and its scale.
+/// A monitor: its name, its work area and its scale, on Windows with the person's Text size in it.
 #[derive(Debug)]
 struct Screen {
     name: String,
@@ -379,6 +380,8 @@ fn screens(app: &AppHandle) -> Vec<Screen> {
     }
     app.available_monitors().unwrap_or_default().into_iter().enumerate().map(|(i, m)| {
         let (work, scale) = (m.work_area(), m.scale_factor());
+        #[cfg(windows)]
+        let scale = with_text(scale, work.size.width.into(), work.size.height.into());
         Screen {
             name: m.name().cloned().unwrap_or_else(|| i.to_string()),
             area: Rect {
@@ -423,7 +426,35 @@ pub fn follow_screens(app: &AppHandle) {
     if new && shared.grab.lock().unwrap().is_none() {
         *shared.screens.lock().unwrap() = now;
         place(app);
+        crate::settings::again(app);
     }
+}
+
+/// Windows' Text size (Settings, Accessibility), 100 to 225%: WebView2 draws its pages that much larger, and tells nobody.
+/// All of it grows with that, while a screen of this size, in real pixels, has room.
+#[cfg(windows)]
+pub fn with_text(scale: f64, w: f64, h: f64) -> f64 {
+    let text = windows_registry::CURRENT_USER.open("Software\\Microsoft\\Accessibility").and_then(|key| key.get_u32("TextScaleFactor"));
+    let text = text.map_or(1.0, |percent| (f64::from(percent) / 100.0).clamp(1.0, 2.25));
+    scale * place::larger(text, w / scale, h / scale)
+}
+
+/// Its page is drawn at this scale, the one its window is sized by, and no longer by what WebView2 finds itself.
+#[cfg(windows)]
+pub fn draw_at(window: &WebviewWindow, scale: f64) {
+    use ::windows::core::Interface;
+    use webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Controller3;
+    let _ = window.with_webview(move |page| {
+        let mut now = 0.0;
+        // SAFETY: the window's own page, on its own thread, and a valid place.
+        let _ = unsafe {
+            page.controller().cast::<ICoreWebView2Controller3>().and_then(|page| {
+                page.SetShouldDetectMonitorScaleChanges(false)?;
+                page.RasterizationScale(&mut now)?;
+                if (now - scale).abs() < 0.001 { Ok(()) } else { page.SetRasterizationScale(scale) }
+            })
+        };
+    });
 }
 
 /// How tall the box is with a to-do open in it.
@@ -456,6 +487,8 @@ pub fn place(app: &AppHandle) {
             crate::mac::put(&window, at);
             continue;
         }
+        #[cfg(windows)]
+        draw_at(&window, screen.scale);
         let _ = window.set_position(PhysicalPosition::new((at.x * screen.scale).round(), (at.y * screen.scale).round()));
         // By its monitor's scale, not the window's: on the way to another monitor those differ
         let _ = window.set_size(PhysicalSize::new((at.w * screen.scale).round(), (at.h * screen.scale).round()));
