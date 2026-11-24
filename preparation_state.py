@@ -104,10 +104,17 @@ def start_settled(db, job_id):
 
 
 # A page address a to-do prepared ahead didn't read and that could carry what it read (the plugin's outbound-urls.ts
-# says which: unread_address). Opening it would hand that to the site's owner with nobody asked; SECURITY.md.
+# says which: unread_address). Opening it would hand that to the site's owner with nobody asked; SECURITY.md. The way on
+# is one this Machine has: web_search where a search provider is set up, else a search page (its result links count as read).
 UNREAD_ADDRESS = ('A to-do prepared ahead only opens an address it read (in a message, a search result or a page) or a '
-                  'plain page address without a query. Search for it with web_search and open a result, or open the '
-                  'address exactly as it was written.')
+                  'plain page address without a query. Search for it {} and open a result, or open the address exactly '
+                  'as it was written.')
+
+
+def unread_address(web_search):
+    return UNREAD_ADDRESS.format('with web_search' if web_search else 'on a search page in the browser')
+
+
 OWNER_ASKED = ('todo', 'telegram', 'voice', 'chat', 'doit')  # action_basis kinds: the owner's own tap or words
 
 
@@ -132,7 +139,7 @@ def tool_intent(db, args, stamp):
     if earlier and not run['history_read'] and not args.get('read_only') and not finishing(args):
         return {'active': False, 'reason': 'Read preparation_history first, then reconcile completed or uncertain steps before continuing. Do not repeat the whole task.'}
     if args.get('unread_address') and prepared_ahead(db, run):
-        return {'active': True, 'refused': UNREAD_ADDRESS}
+        return {'active': True, 'refused': unread_address(args.get('web_search') is True)}
     db.execute('INSERT OR IGNORE INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)',
                (args['job_id'], args['call_id'], args['tool'], json.dumps(args.get('params',{}),ensure_ascii=False), stamp))
     note_basis(db, run, args)
