@@ -26,7 +26,7 @@ Las pestañas sin contenido se ocultan.
 - **Idioma y región**: la **Región** determina cómo se muestran las fechas, horas y números (24 oct o 24 oct). **Formato de hora** permite elegir entre el formato de 12 horas (2:05 PM) y el de 24 horas (14:05). Las tareas, Telegram, el resumen y los mensajes de Fleet siguen estos dos ajustes. En una Machine alojada, se usa inicialmente la zona horaria que elegiste al registrarte.
 - **Idioma**: inglés, neerlandés, francés, alemán, español, italiano, portugués (Brasil), chino simplificado, japonés, coreano o ruso. Se elige inicialmente según el idioma de tu navegador. El panel, la ayuda, las notificaciones, Telegram, el resumen semanal y las tareas que redacta tu Machine cambian al idioma elegido en cuanto lo seleccionas. El texto anterior no cambia. Tus compañeros reciben las preguntas de Fleet y Family en su propio idioma, y los borradores para otras personas siguen en el idioma de la conversación.
 - **Este dispositivo**: **Instalar app**, **Notificaciones** con **Enviar una prueba** y **Modo claro**, solo para este navegador o móvil. Consulta [Instala la app y activa las notificaciones](phone-app.md). Si usas [Omarchy](omarchy.md), también aparece **Tema de Omarchy**.
-- **Entrada de voz**: cómo se convierte lo que dices en texto y qué voz usa Talk live. Consulta [Entrada de voz](voice-input.md) y [Habla en vivo](talk-live.md).
+- **Entrada de voz**: cómo se convierte lo que dices en texto y qué voz usa Talk live. Consulta [Entrada de voz](voice-input.md) y [Hablar en vivo](talk-live.md).
 - **Abrir el navegador de la Machine ↗**: el navegador que usa tu Machine para sitios como LinkedIn.
 - **Reglas de Fleet**: consulta [Reglas para compartir](sharing-rules.md).
 - **Exportar**:
