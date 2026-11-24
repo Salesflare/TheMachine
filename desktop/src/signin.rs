@@ -16,8 +16,6 @@ use url::Url;
 
 pub const SCHEME: &str = "computer.themachine.app";
 const LASTS: Duration = Duration::from_secs(15 * 60);
-/// The account's server sends the browser there (its back_in_app); one that doesn't yet refuses the address.
-const PORT: bool = cfg!(feature = "sandbox");
 
 pub struct Pending {
     verifier: String,
@@ -67,7 +65,7 @@ pub fn start(came: impl Fn(&str) -> bool + Send + Sync + 'static) -> Result<Pend
     getrandom::fill(&mut raw).map_err(|_| "failed")?;
     let verifier = URL_SAFE_NO_PAD.encode(raw);
     let over = Arc::<AtomicBool>::default();
-    let port = PORT.then(|| listen(challenge(&verifier), over.clone(), came)).flatten();
+    let port = listen(challenge(&verifier), over.clone(), came);
     Ok(Pending { verifier, since: Instant::now(), port, over })
 }
 
