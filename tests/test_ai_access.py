@@ -615,6 +615,208 @@ class Calls(Base):
             self.assertIs(hints['openWorldHint'], False, name)
 
 
+class Arguments(Base):
+    """A call's arguments are checked against the tool's schema before it runs: everything wrong in one message, what
+    was certainly meant taken as such, and what the known clients send today still works."""
+
+    def setUp(self):
+        super().setUp()
+        self.bearer = self.signed_in('draft')[1]['access_token']
+
+    def wrong(self, tool, **args):
+        error, text = self.tool(self.bearer, tool, **args)
+        self.assertTrue(error, text)
+        self.assertEqual((self.activity()[-1]['tool'], self.activity()[-1]['outcome']), (tool, 'error'))
+        return text
+
+    def raw(self, tool, arguments):
+        result = self.call(self.bearer, params={'name': tool, 'arguments': arguments})[2]['result']
+        return result['isError'], result['content'][0]['text']
+
+    def test_what_is_wrong_comes_back_in_one_message(self):
+        self.assertEqual(self.wrong('list_todos', state='snoozed'), 'list_todos takes status, area, limit and offset, not state')
+        self.assertEqual(self.wrong('get_todo', todo_id=self.work_card), 'get_todo takes id, not todo_id; id is missing')
+        self.assertEqual(self.wrong('list_todos', status='all', area='home', limit='all'),
+                         'status is open, snoozed or done; area is work or personal; limit is a whole number from 1 to 50')
+        self.assertEqual(self.wrong('create_draft', to='Sam', subject=['x']), 'to is a list of email addresses; subject is text; body is missing')
+        self.assertEqual(self.wrong('create_todo', text='Call Sam', due='tomorrow'), 'due is YYYY-MM-DD')
+        self.assertEqual(self.wrong('save_fact', id='x', text='y', until='soon'), 'until is YYYY-MM-DD')
+        self.assertEqual(self.wrong('update_record', id='x', details='CFO', add_tags='A, B'), 'details is an object; add_tags is a list of text')
+        self.assertEqual(self.wrong('update_record', id='x', fields={'Budget': float('inf')}), 'fields is an object')
+        for limit in (float('inf'), float('nan'), 0, -1, 2.5, True, [5]):
+            self.assertEqual(self.wrong('list_todos', limit=limit), 'limit is a whole number from 1 to 50', limit)
+        self.assertEqual(self.wrong('list_todos', offset=-1), 'offset is a whole number, 0 or more')
+        self.assertTrue(self.raw('list_todos', 'open ones')[0])
+        self.assertTrue(self.raw('list_todos', ['open'])[0])
+
+    def test_a_message_id_past_any_id_is_refused(self):
+        with self.db() as db:
+            db.execute('UPDATE ai_connections SET messages=1')
+        self.assertEqual(self.wrong('read_thread', id='9' * 30), 'id is a whole number')
+        self.assertEqual(self.wrong('read_thread', id='9' * 18), 'No such message here')
+
+    def test_what_is_certainly_meant_is_taken(self):
+        for args in ({'limit': '1'}, {'limit': 1.0}, {'limit': 1, 'area': None, 'status': ''}, {'limit': 1, 'status': 'Open'}, {'limit': 1, '_meta': {}}):
+            error, out = self.tool(self.bearer, 'list_todos', **args)
+            self.assertFalse(error, (args, out))
+            self.assertEqual(len(out['todos']), 1)
+        self.assertFalse(self.tool(self.bearer, 'list_todos', limit=500)[0])  # the most it gives, and how many there are
+        self.assertFalse(self.raw('list_todos', json.dumps({'limit': 1}))[0])
+        for empty in (None, '', [], {}):
+            self.assertFalse(self.raw('list_todos', empty)[0], empty)
+        self.assertFalse(self.tool(self.bearer, 'create_draft', to='sam@client.example', subject='One', body='Hello Sam.')[0])
+        self.assertFalse(self.tool(self.bearer, 'create_draft', to='["sam@client.example"]', subject='Two', body='Hello Sam.')[0])
+
+    def test_what_clients_add_around_a_call_is_left_out(self):
+        error, out = self.tool(self.bearer, 'list_todos', sessionId='s', action='sendMessage', chatInput='hi', toolCallId='t')  # n8n
+        self.assertFalse(error, out)
+        self.assertIn('not action', self.wrong('list_todos', action='done'))
+        error, out = self.tool(self.bearer, 'get_team_brief', random_string='x')  # it takes nothing, so nothing is misread
+        self.assertFalse(error, out)
+
+    def test_recipients_past_the_limit_are_refused(self):
+        to = [f's{n}@client.example' for n in range(11)]
+        self.assertEqual(self.wrong('create_draft', to=to, subject='Hi', body='Hello.'), 'to takes at most 10, and you gave 11')
+        error, made = self.tool(self.bearer, 'create_draft', to=to[:10], subject='Hi', body='Hello.')
+        self.assertFalse(error, made)
+        with self.db() as db:
+            action = json.loads(db.execute('SELECT next_action FROM suggestions WHERE id=?', (made['id'],)).fetchone()[0])
+        self.assertEqual(action['to'], to[:10])
+
+    def test_lists_say_how_many_there_are_and_how_to_get_the_rest(self):
+        for n in range(61):
+            self.store.suggest(f'm:{n}', f'Task number {n}', 'Body', [1], when='now', work=True)
+        with self.db() as db:
+            db.execute('UPDATE suggestions SET deliver_after=NULL')
+        error, out = self.tool(self.bearer, 'list_todos', limit=50)
+        self.assertEqual((len(out['todos']), out['total'], out['next']), (50, 63, 'Call again with offset 50 for the next ones.'))
+        error, rest = self.tool(self.bearer, 'list_todos', limit=50, offset=50)
+        self.assertEqual((len(rest['todos']), rest['total'], 'next' in rest), (13, 63, False))
+        self.assertEqual(len({t['id'] for t in out['todos'] + rest['todos']}), 63)
+        error, out = self.tool(self.bearer, 'list_todos', area='personal')
+        self.assertEqual((out['total'], 'next' in out), (1, False))
+        rows = [{'id': n, 'state': 'open', 'direction': 'mine', 'account_id': 'w', 'who': 'Sam', 'what': 'x', 'due': None, 'made_at': a.now(),
+                 'suggestion_id': None} for n in range(3)]
+        with patch.object(self.store, 'promises', return_value=rows):
+            error, out = self.tool(self.bearer, 'list_promises', limit=2)
+            self.assertEqual(([p['id'] for p in out['promises']], out['total'], out['next']), ([0, 1], 3, 'Call again with offset 2 for the next ones.'))
+            error, out = self.tool(self.bearer, 'list_promises', limit=2, offset=2)
+            self.assertEqual(([p['id'] for p in out['promises']], 'next' in out), ([2], False))
+        with self.db() as db:
+            a.crm.ensure(db)
+            for n in range(3):
+                db.execute('INSERT INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,?,?,?,?,?,?)',
+                           (f'email:s{n}@client.example', 'person', f'Sam {n}', 1.0, a.now(), 3, '{"side": "work"}'))
+        error, out = self.tool(self.bearer, 'search_graph', query='Sam', limit=2)
+        self.assertEqual((len(out['found']), out['total'], 'more' in out), (2, 3, True))
+        error, out = self.tool(self.bearer, 'search_graph', query='s1@client')
+        self.assertEqual((len(out['found']), out['total'], 'more' in out), (1, 1, False))
+
+    def test_a_record_says_when_it_lists_only_some_of_its_to_dos(self):
+        with self.db() as db:
+            a.crm.ensure(db)
+            db.execute('INSERT INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,?,?,?,?,?,?)',
+                       (WORK_PERSON, 'person', 'Sam Client', 1.0, a.now(), 3, '{"side": "work"}'))
+            db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,1)', (WORK_PERSON, 1, a.now()))
+        error, out = self.tool(self.bearer, 'get_graph_record', id=WORK_PERSON)
+        self.assertEqual((len(out['todos']), 'todos_total' in out), (1, False))
+        for n in range(21):
+            self.store.suggest(f'm:{n}', f'Task number {n}', 'Body', [1], when='now', work=True)
+        error, out = self.tool(self.bearer, 'get_graph_record', id=WORK_PERSON)
+        self.assertEqual((len(out['todos']), out['todos_total']), (20, 22))
+
+
+class Again(Base):
+    """The same add by the same connection within AGAIN_MINUTES is a retry: its first result, nothing new."""
+
+    def setUp(self):
+        super().setUp()
+        self.bearer = self.signed_in('draft')[1]['access_token']
+
+    def add(self, text='Call the plumber', bearer=None):
+        error, out = self.tool(bearer or self.bearer, 'create_todo', text=text)
+        self.assertFalse(error, out)
+        return out
+
+    def added(self):
+        with self.db() as db:
+            return db.execute("SELECT count(*) FROM suggestions WHERE dedupe_key LIKE 'ai:%'").fetchone()[0]
+
+    def test_a_retry_gets_the_first_result(self):
+        first = self.add()
+        self.assertEqual(self.add(), first)
+        draft = {'to': ['sam@client.example'], 'subject': 'Hi', 'body': 'Hello Sam.'}
+        _, made = self.tool(self.bearer, 'create_draft', **draft)
+        self.assertEqual(self.tool(self.bearer, 'create_draft', **draft), (False, made))
+        self.assertEqual(self.added(), 2)
+        self.assertEqual([x['outcome'] for x in self.activity() if x['tool'].startswith('create_')], ['ok', 'again', 'ok', 'again'])
+        with self.db() as db:
+            cid = db.execute('SELECT id FROM ai_connections').fetchone()[0]
+            self.assertEqual(ai_access.created_today(db, cid), 2)
+            line = a.activity_log.page(db, self.app.config, kind='ai')['items'][0]
+        self.assertEqual((line['outcome'], line['what'], line['todo']['id']), ('done', 'Asked to add an email draft', made['id']))
+
+    def test_another_add_another_connection_or_later_is_new(self):
+        first = self.add()
+        self.assertNotEqual(self.add('Call the electrician')['id'], first['id'])
+        self.assertNotEqual(self.add(bearer=self.signed_in('draft')[1]['access_token'])['id'], first['id'])
+        later = ai_access.timeutil.clock() + dt.timedelta(minutes=ai_access.AGAIN_MINUTES + 1)
+        with patch.object(ai_access, '_now', return_value=later):
+            self.assertNotEqual(self.add()['id'], first['id'])
+        with self.db() as db:  # the hash goes once no retry can reach it
+            self.assertEqual(db.execute('SELECT count(*) FROM ai_activity WHERE args IS NOT NULL').fetchone()[0], 1)
+
+    def test_after_the_first_was_closed_it_is_new(self):
+        for choice in ('complete', 'reject'):
+            first = self.add()
+            self.store.decide(first['id'], choice, '', 'd-' + choice, 'dashboard')
+            self.assertNotEqual(self.add()['id'], first['id'])
+
+    def test_a_retry_of_the_last_one_allowed_is_not_refused(self):
+        with patch.object(ai_access, 'CREATES_PER_DAY', 1):
+            first = self.add()
+            self.assertEqual(self.add(), first)
+            self.assertTrue(self.tool(self.bearer, 'create_todo', text='One more')[0])
+
+    def test_two_at_once_make_one(self):
+        out, start = [], threading.Barrier(4)
+
+        def go():
+            start.wait()
+            out.append(self.add()['id'])
+        threads = [threading.Thread(target=go) for _ in range(4)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.assertEqual((len(out), len(set(out)), self.added()), (4, 1, 1))
+
+
+class DraftChecked(Base):
+    """A connected AI's draft passes the same check as a preparation's before anything is made (next_actions.check)."""
+
+    def test_its_problems_are_said_and_nothing_is_made(self):
+        bearer = self.signed_in('draft')[1]['access_token']
+        with self.db() as db:
+            before = [db.execute(f'SELECT count(*) FROM {t}').fetchone()[0] for t in ('suggestions', 'events')]
+        for args, said in (({'body': 'Dear [First name], hello.'}, 'placeholder ([First name])'),
+                           ({'body': 'Hi Sam, please find attached the quote.'}, 'has no attachments'),
+                           ({'to': ['Pat@acme.example']}, 'only goes to your own address'),
+                           ({'body': 'x' * 12001}, '12000 characters')):
+            error, text = self.tool(bearer, 'create_draft', **{'to': ['sam@client.example'], 'subject': 'Hi', 'body': 'Hello.', **args})
+            self.assertTrue(error, args)
+            self.assertIn(said, text)
+        both = self.tool(bearer, 'create_draft', to=['pat@home.example'], subject='[Name]', body='I have attached it.')[1]
+        self.assertTrue(all(s in both for s in ('placeholder', 'mentions an attachment', 'your own address')), both)
+        with self.db() as db:
+            self.assertEqual([db.execute(f'SELECT count(*) FROM {t}').fetchone()[0] for t in ('suggestions', 'events')], before)
+
+    def test_a_connection_learns_nothing_about_addresses_outside_its_area(self):
+        bearer = self.signed_in('draft', area='work')[1]['access_token']
+        error, made = self.tool(bearer, 'create_draft', to=['pat@home.example'], subject='Hi', body='Hello.')
+        self.assertFalse(error, made)
+
+
 def ai_access_actions():
     return sorted(a.AI_ACTIONS)
 

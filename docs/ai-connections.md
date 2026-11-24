@@ -144,7 +144,30 @@ name, an organization or role, a Work or Personal side, sharing or an owner: tho
 **To-dos from an AI** are marked reviewed, like a Fleet request (`App.fleet_card`): no review or preparation reads them
 by themselves, and the owner sees "From Claude" on them. A draft goes out only when the owner taps Send.
 
-**Limits.** At most 20 new to-dos and 50 Graph changes a day per connection.
+**Limits.** At most 20 new to-dos and 50 Graph changes a day per connection, and 10 recipients on a draft.
+
+**Arguments** are checked against the tool's schema before it runs (`ai_access.check_args`). One it doesn't take, one
+that is missing and a value that doesn't fit come back as an error (`isError`) that names them all in one message, with
+what the tool takes. What was certainly meant is taken: null or blank as left out, a number or a JSON object or list
+written as text, one address where a list goes, upper or lower case, a `limit` past the most as the most. What n8n adds
+around every call (`WRAPPED`) is left out, and so is anything given to a tool that takes nothing.
+
+**Lists.** `list_todos` and `list_promises` say how many there are (`total`) and, when there are more, the `offset` for
+the next ones (`next`). `search_graph` gives `total` (up to 1000 matches) and says when to narrow the search (`more`), as
+`search_messages` and `read_thread` do when they leave some out. A Graph record lists up to 20 to-dos and 20 promises,
+with `todos_total` or `promises_total` when there are more.
+
+**Retries.** The same add (`create_todo`, `create_draft`) by the same connection with the same arguments within 10
+minutes gives the first result again while that to-do is open (`ai_access.added_before`). It makes nothing new and
+doesn't count toward the daily limit. Activity keeps a hash of the arguments for those 10 minutes, so it holds across a
+restart.
+
+**Drafts are checked** like a preparation's (`next_actions.check`) before anything is made: a placeholder left in, an
+attachment that isn't there, an email only to the owner's own address (of the accounts the connection sees). The
+problems go back to the AI.
+
+**Replies come twice**, as text and as `structuredContent`, on purpose. The MCP spec asks for both. Claude Code and
+Codex give the model `structuredContent` when it is there, and Cursor drops a reply without text.
 
 **Marked untrusted.** Text that came from other people, or that The Machine wrote from what they sent, goes out inside
 `<untrusted source="...">` and `</untrusted>` (`ai_access.untrusted`): message subjects, senders and text (source: the

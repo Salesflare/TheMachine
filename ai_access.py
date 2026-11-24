@@ -15,12 +15,14 @@ work only with it on, and while it is on a Read & edit connection's Graph change
 from __future__ import annotations
 
 import base64
+import contextlib
 import datetime as dt
 import hashlib
 import hmac
 import html
 import ipaddress
 import json
+import math
 import re
 import secrets
 import sqlite3
@@ -31,6 +33,7 @@ import urllib.parse
 import activity_log
 import fleet
 import i18n
+from machine import todo_states
 from machine.owner_error import OwnerError
 import timeutil
 
@@ -44,6 +47,7 @@ CLIENT_UNUSED_HOURS = 24       # a registration nobody connected with goes after
 REGISTRATIONS_PER_HOUR = 30
 CALLS_PER_MINUTE = 120         # per connection
 CREATES_PER_DAY = 20           # new to-dos (with or without a draft) per connection
+AGAIN_MINUTES = 10             # the same add again within this is a retry: its first result, nothing new
 WRITES_PER_DAY = 50            # Graph changes (facts, details, fields, tags, summary lines) per connection
 KEEP_DAYS = 90                 # activity
 KEEP_LINES = 2000              # activity lines per connection
@@ -93,24 +97,26 @@ CREATE TABLE IF NOT EXISTS ai_folded(id INTEGER PRIMARY KEY,at TEXT NOT NULL,con
 """
 # Added after the tables first shipped: (table, column, its definition)
 COLUMNS = (('ai_connections', 'messages', 'INTEGER NOT NULL DEFAULT 0'), ('ai_writes', 'waiting', 'INTEGER NOT NULL DEFAULT 0'),
-           ('ai_activity', 'todo_id', 'TEXT'))
+           ('ai_activity', 'todo_id', 'TEXT'), ('ai_activity', 'args', 'TEXT'))
 # ai_writes.waiting: 0 applied (Undo in Activity), 1 waits for the owner's OK (Apply or Dismiss), -1 dismissed
 # ai_activity.todo_id: the to-do a call read or added (TODO_TOOLS), so its line in Activity links to it
+# ai_activity.args: an add's arguments as a hash, for AGAIN_MINUTES (added_before); nothing else is kept of them
 
 # The tools: name -> (level it needs, description, input schema). The App answers them (ai_app.AiApp.ai_tool).
 _AREA = {'type': 'string', 'enum': ['work', 'personal'], 'description': 'Only Work or only Personal; left out: whatever this connection may see.'}
 _NODE = {'type': 'string', 'description': 'A person or organization id from search_graph'}
+_OFFSET = {'type': 'integer', 'minimum': 0, 'description': 'How many to skip, for the next ones'}
 CHANNELS = ('email', 'slack', 'whatsapp', 'telegram', 'signal', 'linkedin', 'intercom', 'x')  # search_messages' channel (follow_ups.CHANNEL_KINDS)
 TOOLS = {
     'list_todos': ('read', "The owner's to-dos in The Machine: open ones by default, newest first.", {
         'type': 'object', 'properties': {
             'status': {'type': 'string', 'enum': ['open', 'snoozed', 'done'], 'description': 'open (default), snoozed, or done in the last 30 days'},
-            'area': _AREA, 'limit': {'type': 'integer', 'minimum': 1, 'maximum': 50}}}),
+            'area': _AREA, 'limit': {'type': 'integer', 'minimum': 1, 'maximum': 50}, 'offset': _OFFSET}}),
     'get_todo': ('read', 'One to-do: its text, its ready draft if it has one, and where it came from.', {
         'type': 'object', 'properties': {'id': {'type': 'string'}}, 'required': ['id']}),
     'list_promises': ('read', 'Promises the owner made, and promises made to them, that are still open.', {
         'type': 'object', 'properties': {'direction': {'type': 'string', 'enum': ['mine', 'theirs']}, 'area': _AREA,
-                                         'limit': {'type': 'integer', 'minimum': 1, 'maximum': 50}}}),
+                                         'limit': {'type': 'integer', 'minimum': 1, 'maximum': 50}, 'offset': _OFFSET}}),
     'search_graph': ('read', "People, organizations and projects in the owner's Graph that match a name, email address or company.", {
         'type': 'object', 'properties': {'query': {'type': 'string'}, 'limit': {'type': 'integer', 'minimum': 1, 'maximum': 25}},
         'required': ['query']}),
@@ -167,6 +173,7 @@ TITLES = {'list_todos': 'List to-dos', 'get_todo': 'Get a to-do', 'list_promises
           'get_graph_record': 'Get a Graph record', 'get_team_brief': 'Get team briefs', 'create_todo': 'Add a to-do',
           'create_draft': 'Add an email draft', 'save_fact': 'Save a fact', 'update_record': 'Update a Graph record',
           'add_summary_line': 'Add a summary line', 'search_messages': 'Search messages', 'read_thread': 'Read a thread'}
+ADDS = ('create_todo', 'create_draft')  # each adds a to-do; the same again soon after is a retry (added_before)
 WRITES = ('save_fact', 'update_record', 'add_summary_line')  # Graph changes: each has Undo in Activity (ai_writes)
 MESSAGE_TOOLS = ('search_messages', 'read_thread')  # only with the connection's Messages on (ai_app.ai_tool_search_messages)
 INSTRUCTIONS = ("The Machine is the owner's assistant for email and work. Through this connection you can read their to-dos, "
@@ -192,6 +199,107 @@ def untrusted(text, source):
     if not text:
         return text
     return f'<untrusted source="{source}">' + _MARKER.sub(r'&lt;\1', text) + '</untrusted>'
+
+
+# ------------------------------------------------------------------ a call's arguments
+
+DATES, EMAILS = ('due', 'until'), ('to',)  # the arguments that are a day, or email addresses (no JSON Schema format: some AIs refuse those)
+# What n8n's AI Agent adds around every call. "action" is only its own next to one of the others.
+WRAPPED = ('sessionId', 'chatInput', 'toolCallId')
+EMAIL = re.compile(r'[^@\s<>",;]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}')
+
+
+def _listed(words, last):
+    words = list(words)
+    return words[0] if len(words) == 1 else f'{", ".join(words[:-1])} {last} {words[-1]}'
+
+
+def _fit(name, spec, value):
+    """(value as the tool takes it, None), or (None, what it takes) when what was meant isn't certain. Certain: a number
+    or a JSON object or list written as text, one text where a list of them goes, upper or lower case, and a limit past the
+    most it gives (the reply says how many there are and how to get the next ones)."""
+    kind = spec['type']
+    number = isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+    if kind == 'string':
+        value = str(value) if number else value
+        if 'enum' in spec:
+            found = value.strip().casefold() if isinstance(value, str) else None
+            return (found, None) if found in spec['enum'] else (None, f"{name} is {_listed(spec['enum'], 'or')}")
+        if name in DATES:
+            try:
+                dt.date.fromisoformat(value if name == 'due' else value[:10])
+            except (TypeError, ValueError):
+                return None, f'{name} is YYYY-MM-DD'
+        return (value, None) if isinstance(value, str) else (None, f'{name} is text')
+    if kind == 'integer':
+        if isinstance(value, str) and re.fullmatch(r'\s*-?[0-9]{1,18}\s*', value):
+            value = int(value)
+        elif number and value == int(value):
+            value = int(value)
+        else:
+            value = None
+        low, high = spec.get('minimum', 0), spec.get('maximum')
+        if value is None or not low <= value < 2 ** 63:
+            return None, f'{name} is a whole number' + (f' from {low} to {high}' if high else f', {low} or more' if 'minimum' in spec else '')
+        return (min(value, high) if high else value), None
+    if isinstance(value, str) and value.strip()[:1] == ('{' if kind == 'object' else '['):
+        try:
+            value = json.loads(value)
+        except (ValueError, RecursionError):
+            pass
+    if kind == 'object':
+        if not isinstance(value, dict) or not _finite(value):
+            return None, f'{name} is an object'
+        return value, None
+    if isinstance(value, str) and not re.search(r'[,;\n]', value):
+        value = [value]
+    items = [_fit(name, spec['items'], v) for v in value] if isinstance(value, list) else [(None, True)]
+    if name in EMAILS and not all(v is not None and EMAIL.fullmatch(v.strip()) for v, _ in items):
+        return None, f'{name} is a list of email addresses'
+    if any(wrong for _, wrong in items):
+        return None, f'{name} is a list of text'
+    if len(items) > spec['maxItems']:
+        return None, f"{name} takes at most {spec['maxItems']}, and you gave {len(items)}"
+    return [v for v, _ in items], None
+
+
+def _finite(value):
+    try:
+        json.dumps(value, allow_nan=False)
+    except (ValueError, RecursionError):
+        return False
+    return True
+
+
+def check_args(tool, given):
+    """(arguments, None) as the tool takes them, or (None, everything wrong with them in one message for the AI): one it
+    doesn't take, one that is missing, or a value that doesn't fit (_fit). Null or blank is left out."""
+    schema = TOOLS[tool][2]
+    takes, required = schema['properties'], schema.get('required', ())
+    if isinstance(given, str):
+        try:
+            given = json.loads(given) if given.strip() else {}
+        except (ValueError, RecursionError):
+            pass
+    given = {} if given is None or given == [] else given
+    if not isinstance(given, dict):
+        return None, 'arguments is an object' + (f" with {_listed(takes, 'and')}" if takes else '')
+    given = {k: v for k, v in given.items() if v is not None and not (isinstance(v, str) and not v.strip()) and k != '_meta'}
+    if any(k in given for k in WRAPPED):
+        given = {k: v for k, v in given.items() if k not in (*WRAPPED, 'action')}
+    args, wrong = {}, []
+    unknown = [k for k in given if k not in takes] if takes else []  # a tool with no arguments: nothing to misread
+    if unknown:
+        named = [' '.join(k.encode('ascii', 'replace').decode().split())[:40] for k in unknown[:5]]
+        wrong.append(f"{tool} takes {_listed(takes, 'and')}, not {_listed(named, 'or')}")
+    for name, spec in takes.items():
+        if name in given:
+            args[name], problem = _fit(name, spec, given[name])
+            if problem:
+                wrong.append(problem)
+        elif name in required:
+            wrong.append(f'{name} is missing')
+    return (None, '; '.join(wrong)) if wrong else (args, None)
 
 
 class Refused(ValueError):
@@ -633,7 +741,7 @@ TOOL_WORDS = {'list_todos': 'Read the to-dos', 'get_todo': 'Read a to-do', 'list
               'update_record': 'Changed a Graph record', 'add_summary_line': 'Added a summary line', 'connect': 'Connected',
               'search_messages': 'Searched messages', 'read_thread': 'Read a thread',
               'settings': 'Access changed', 'sign-in': 'Sign-in'}
-OUTCOMES = {'ok': 'done', 'refused': 'refused', 'error': 'failed'}
+OUTCOMES = {'ok': 'done', 'again': 'done', 'refused': 'refused', 'error': 'failed'}
 # A Graph change that waited for the owner's OK (Messages on), until it is applied
 ASKED_WORDS = {'save_fact': 'Asked to save a fact', 'update_record': 'Asked to change a Graph record',
                'add_summary_line': 'Asked to add a summary line'}
@@ -756,12 +864,15 @@ def new_key(db, name, level, area, expiry):
     return {'id': cid, 'key': key}
 
 
-def log(db, connection_id, tool, outcome, detail='', at=None, write=None, size=200, todo=None):
+def log(db, connection_id, tool, outcome, detail='', at=None, write=None, size=200, todo=None, args=None):
     """One line of a connection's activity; write: the Graph change (note_write) this call made, for its Undo. size:
-    the detail's length (a message read lists its threads: READ_DETAIL). todo: the to-do it read or added."""
-    line = db.execute('INSERT INTO ai_activity(connection_id,at,tool,outcome,detail,todo_id) VALUES(?,?,?,?,?,?)',
+    the detail's length (a message read lists its threads: READ_DETAIL). todo: the to-do it read or added.
+    args: an add's arguments as a hash (args_key), dropped once a retry of it is out of reach."""
+    line = db.execute('INSERT INTO ai_activity(connection_id,at,tool,outcome,detail,todo_id,args) VALUES(?,?,?,?,?,?,?)',
                       (connection_id, stamp(at), str(tool)[:40], outcome, str(detail or '')[:size],
-                       str(todo)[:64] if todo else None)).lastrowid
+                       str(todo)[:64] if todo else None, args)).lastrowid
+    if args:
+        db.execute('UPDATE ai_activity SET args=NULL WHERE args IS NOT NULL AND at<?', (stamp(_now() - dt.timedelta(minutes=AGAIN_MINUTES)),))
     if write:
         db.execute('UPDATE ai_writes SET activity_id=? WHERE id=?', (line, write))
     return line
@@ -818,6 +929,18 @@ def created_today(db, connection_id, tools=('create_todo', 'create_draft')):
     since = stamp(_now() - dt.timedelta(days=1))
     return db.execute(f"SELECT count(*) FROM ai_activity WHERE connection_id=? AND tool IN ({','.join('?' * len(tools))}) AND outcome='ok' AND at>?",
                       (connection_id, *tools, since)).fetchone()[0]
+
+
+def args_key(args):
+    return digest(json.dumps(args, sort_keys=True))
+
+
+def added_before(db, connection_id, tool, key):
+    """The activity line (todo_id, detail) of the same add by the same connection in the last AGAIN_MINUTES whose to-do is
+    still open, or None: a client that got no answer asks again, and that is no second to-do."""
+    return db.execute(f"SELECT a.todo_id,a.detail FROM ai_activity a JOIN suggestions s ON s.id=a.todo_id WHERE a.connection_id=? AND a.tool=? "
+                      f"AND a.args=? AND a.outcome='ok' AND a.at>=? AND s.status IN {todo_states.sql(todo_states.OPEN)} ORDER BY a.id DESC LIMIT 1",
+                      (connection_id, tool, key, stamp(_now() - dt.timedelta(minutes=AGAIN_MINUTES)))).fetchone()
 
 
 def prune(db):
@@ -928,7 +1051,8 @@ def refusal(why, level=None):
 
 def handle(db_open, message, connection, why, answer, limiter):
     """One JSON-RPC message from a signed-in connection (why: None, 'off' or 'expired'), its reply out (None for a
-    notification). answer(connection, tool, args) -> (result, summary) does the tool's work."""
+    notification). answer(connection, tool, args, again) -> (result, summary) does the tool's work; again: the to-do the
+    same add made a moment ago, whose result it gives once more."""
     if not isinstance(message, dict) or message.get('jsonrpc') != '2.0':
         return _error(None, -32600, 'Invalid request')
     method, ident, params = message.get('method'), message.get('id'), message.get('params')
@@ -950,7 +1074,6 @@ def handle(db_open, message, connection, why, answer, limiter):
     name = params.get('name')
     if name not in TOOLS:
         return _error(ident, -32602, 'Unknown tool')
-    args = params.get('arguments') if isinstance(params.get('arguments'), dict) else {}
     level = TOOLS[name][0]
     refused = why or ('level' if level == 'draft' and connection['level'] != 'draft' else None)
     if not refused and name in MESSAGE_TOOLS and not connection.get('messages'):
@@ -959,11 +1082,29 @@ def handle(db_open, message, connection, why, answer, limiter):
         refused = 'rate'
         if not limiter.tell(connection['id']):
             return _ok(ident, {'content': [{'type': 'text', 'text': refusal('rate')}], 'isError': True})
-    if not refused and level == 'draft':
+    args, wrong = (None, None) if refused else check_args(name, params.get('arguments'))
+    if wrong:
         with db_open() as db:
+            log(db, connection['id'], name, 'error', wrong)
+            used(db, connection['id'])
+        return _ok(ident, {'content': [{'type': 'text', 'text': wrong}], 'isError': True})
+    with ADDING if name in ADDS else contextlib.nullcontext():  # a retry waits for the first try, then finds what it made
+        return _call(db_open, ident, connection, name, args, refused, answer)
+
+
+ADDING = threading.Lock()
+ERROR_CHARS = 1000  # of a call's error, to the AI; its line in Activity keeps 200
+
+
+def _call(db_open, ident, connection, name, args, refused, answer):
+    """One tools/call whose arguments fit (refused: why it may not run), its reply out."""
+    again, key = None, args_key(args) if name in ADDS and not refused else None
+    if not refused and TOOLS[name][0] == 'draft':
+        with db_open() as db:
+            again = added_before(db, connection['id'], name, key) if key else None
             if name in WRITES:
                 refused = 'writes' if created_today(db, connection['id'], WRITES) >= WRITES_PER_DAY else None
-            elif created_today(db, connection['id']) >= CREATES_PER_DAY:
+            elif not again and created_today(db, connection['id']) >= CREATES_PER_DAY:
                 refused = 'creates'
     if refused:
         with db_open() as db:
@@ -971,19 +1112,19 @@ def handle(db_open, message, connection, why, answer, limiter):
         return _ok(ident, {'content': [{'type': 'text', 'text': refusal(refused)}], 'isError': True})
     write_id, said = None, None
     try:
-        result, summary, *more = answer(connection, name, args)
+        result, summary, *more = answer(connection, name, args, again['todo_id']) if again else answer(connection, name, args)
         write_id = more[0] if more else None
-        outcome = 'ok'
+        outcome, summary = ('again', again['detail']) if again else ('ok', summary)
     except Refused as error:  # outside its area: refused, in the owner's words in the log, the AI told only what it may know
         result, summary, said, outcome = None, str(error)[:200], error.said, 'refused'
     except ValueError as error:
-        result, summary, outcome = None, str(error)[:200], 'error'
-    todo = result.get('id') if outcome == 'ok' and name in TODO_TOOLS and isinstance(result, dict) else None
+        result, summary, outcome = None, str(error)[:ERROR_CHARS], 'error'
+    todo = result.get('id') if name in TODO_TOOLS and isinstance(result, dict) else None
     with db_open() as db:
         log(db, connection['id'], name, outcome, said or summary, write=write_id, size=READ_DETAIL if name in MESSAGE_TOOLS else 200,
-            todo=todo)
+            todo=todo, args=key if outcome == 'ok' else None)
         used(db, connection['id'])
-    if outcome != 'ok':
+    if result is None:
         return _ok(ident, {'content': [{'type': 'text', 'text': summary}], 'isError': True})
     reply = {'content': [{'type': 'text', 'text': json.dumps(result, ensure_ascii=False)}], 'isError': False}
     if isinstance(result, dict):

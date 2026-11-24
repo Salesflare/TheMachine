@@ -17,6 +17,8 @@ Each change shows in **Activity** with **Undo**. They never merge, delete or sha
 
 A draft waits until you read it and press Send yourself. A connected AI never sends anything and never acts for you.
 
+A draft with something left to fill in, a file it mentions but doesn't have, or only your own address on it goes back to the AI to fix first. When an AI asks for the same to-do or draft twice in a row, you get one.
+
 ## Connect one
 
 Open **Settings**, **Apps**. Below **The Machine apps** come **Add in ChatGPT** and **Add in Claude**. Under **Or add it by address** are the official app's one address for every Machine, `https://mcp.themachine.computer/mcp`, and **Your address**, `https://<your name>.mcp.themachine.computer/mcp`, each with **Copy**.

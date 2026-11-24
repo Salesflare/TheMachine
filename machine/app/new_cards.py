@@ -260,7 +260,8 @@ class NewCardsApp:
         """A to-do a connected AI added (ai_app.py, docs/ai-connections.md), made like a Fleet request's (fleet_card): its
         first evidence is an event on one of the owner's accounts in that area, marked reviewed so no review or
         preparation reads it by itself, and it says which AI it is from. With a draft, an email draft from one of the
-        owner's mail accounts in that area, which goes out only with the owner's own Send."""
+        owner's mail accounts in that area, which goes out only with the owner's own Send. The draft is checked as a
+        preparation's is (next_actions.check) before anything is made, and its problems are said to the AI."""
         accounts = [a for a in self.config.get('accounts', []) if area is None or graph.account_side(a) == area]
         if draft:
             accounts = [a for a in accounts if mail_account(a)]
@@ -269,6 +270,13 @@ class NewCardsApp:
         if not accounts:
             raise ValueError('No Gmail or Outlook account here to write it from' if draft else 'No account here for this')
         account = accounts[0]['id']
+        if draft:
+            action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account, 'to': draft['to'],
+                                            'subject': draft['subject'], 'body': draft['body']}, self.config, [account])
+            own = [a.get('email', '') for a in self.config['accounts'] if area is None or graph.account_side(a) == area]  # only what it may see
+            problems = next_actions.check(action, draft['body'], own)
+            if problems:
+                raise ValueError('Not added: ' + '; '.join(problems) + '. Fix it and try again (a draft from here has no attachments).')
         stamp, key = now(), 'ai:' + uuid.uuid4().hex[:16]
         name = ' '.join(str(who or 'AI').split())[:60]
         title = owner_title(text)
@@ -282,8 +290,6 @@ class NewCardsApp:
             with self.store.connect() as db:
                 db.execute('UPDATE suggestions SET deliver_after=NULL WHERE id=?', (card['id'],))
         if draft and not card.get('duplicate'):
-            action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account, 'to': draft['to'],
-                                            'subject': draft['subject'], 'body': draft['body']}, self.config, [account])
             with self.store.connect() as db:
                 todo_moves.transition(db, card['id'], todo_states.ACCEPTED, 'email_draft', only=todo_states.PENDING)
             self.store.prepare(card['id'], body[:1000], next_action=action, outcome={'state': 'needs_you', 'needs': 'read and send the email'})
