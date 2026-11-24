@@ -364,12 +364,42 @@ mod quiet {
         }
     }
 
-    #[cfg(not(any(windows, target_os = "linux")))]
+    /// Locked, the screen shown twice, or nothing was touched for five minutes. Full screen is front::full.
+    #[cfg(target_os = "macos")]
+    pub fn away() -> bool {
+        use objc2_foundation::{ns_string, NSDictionary, NSNumber, NSString};
+        #[link(name = "CoreGraphics", kind = "framework")]
+        extern "C" {
+            fn CGEventSourceSecondsSinceLastEventType(source: i32, event: u32) -> f64;
+            fn CGSessionCopyCurrentDictionary() -> *mut NSDictionary<NSString>;
+            fn CGGetOnlineDisplayList(most: u32, displays: *mut u32, count: *mut u32) -> i32;
+            fn CGDisplayIsInMirrorSet(display: u32) -> u32;
+        }
+        let (mut displays, mut count) = ([0; 16], 0);
+        // SAFETY: plain calls, the list with its own size; the dictionary is this one's own, or nothing.
+        unsafe {
+            let locked = objc2::rc::Retained::from_raw(CGSessionCopyCurrentDictionary())
+                .and_then(|s| s.objectForKey(ns_string!("CGSSessionScreenIsLocked")))
+                .and_then(|v| v.downcast::<NSNumber>().ok())
+                .is_some_and(|v| v.boolValue());
+            let told = CGGetOnlineDisplayList(16, displays.as_mut_ptr(), &mut count) == 0;
+            let twice = told && displays.iter().take(count as usize).any(|d| CGDisplayIsInMirrorSet(*d) != 0);
+            locked || twice || CGEventSourceSecondsSinceLastEventType(0, u32::MAX) > 5.0 * 60.0
+        }
+    }
+
+    /// Whether a Focus is on, macOS only tells with a permission.
+    #[cfg(target_os = "macos")]
+    pub fn disturb() -> bool {
+        false
+    }
+
+    #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
     pub fn away() -> bool {
         false
     }
 
-    #[cfg(not(any(windows, target_os = "linux")))]
+    #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
     pub fn disturb() -> bool {
         false
     }

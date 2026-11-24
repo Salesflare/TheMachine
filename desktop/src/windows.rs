@@ -4,13 +4,14 @@
 use crate::place::{self, box_at, peek, tail, Corner, Rect, BOX_WIDTH, BUBBLE_WIDTH, ROBOT, SHADOW};
 use crate::Shared;
 use std::sync::atomic::Ordering;
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 /// A closed box's page stays loaded this long, so it opens at once again; then its memory goes. Not on Windows: there the
 /// windows are made at the start and stay, as one that is made later, inside a page's call or a message, can wait forever.
-#[cfg(not(windows))]
+/// Nor on macOS, where a window becomes another kind once it is made (mac.rs).
+#[cfg(target_os = "linux")]
 const KEEP: Duration = Duration::from_secs(120);
 
 /// What Tauri asks of WebView2 itself. A sandbox build can also open its pages to smoke/windows.py, which reads them.
@@ -39,6 +40,7 @@ fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri
         .focused(keys)
         .focusable(keys || cfg!(not(target_os = "linux")) || app.state::<Shared>().layer) // X11: it comes back by itself, so it never takes the keys
         .visible(false)
+        .accept_first_mouse(true) // macOS: a click counts while another program is in front
         .disable_drag_drop_handler() // the page takes dropped files itself
         .additional_browser_args(&browser())
         .on_navigation(|url| url.scheme() == "tauri" || url.host_str() == Some("tauri.localhost")) // only its own pages
@@ -47,7 +49,17 @@ fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri
     linux::prepare(app, &window, label)?;
     #[cfg(windows)]
     no_menu(&window);
+    #[cfg(target_os = "macos")]
+    crate::mac::prepare(&window);
     Ok(window)
+}
+
+/// The keys go to it. On macOS it shows with that, without the program coming to the front.
+pub fn focus(window: &WebviewWindow) {
+    #[cfg(target_os = "macos")]
+    crate::mac::focus(window);
+    #[cfg(not(target_os = "macos"))]
+    let _ = window.set_focus();
 }
 
 /// Windows opens a window's menu on Alt alone: here an unseen one, that keeps the page waiting until a click. No menu then.
@@ -71,9 +83,9 @@ pub fn no_menu(window: &WebviewWindow) {
 
 pub fn start(app: &AppHandle) -> tauri::Result<()> {
     build(app, "robot", "The Machine", ROBOT)?;
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     build_box(app)?;
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     crate::card::build(app)?;
     build_bubble(app)?;
     show_robot(app);
@@ -119,9 +131,9 @@ pub fn fit_bubble(app: &AppHandle, height: f64) {
 
 pub fn close_bubble(app: &AppHandle) {
     let Some(window) = app.get_webview_window("bubble") else { return };
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     seen(&window, false);
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
     let _ = window.destroy();
 }
 
@@ -136,6 +148,7 @@ pub fn bubble_tail(app: &AppHandle) -> (f64, bool) {
 pub fn show_robot(app: &AppHandle) {
     place(app);
     if let Some(robot) = app.get_webview_window("robot") {
+        #[cfg(not(target_os = "macos"))]
         let _ = robot.show();
         seen(&robot, true);
         place(app); // some window managers only take a place once the window is there
@@ -157,13 +170,17 @@ pub fn show_or_not(app: &AppHandle) {
     }
 }
 
-/// Shows or hides the robot or its bubble, never taking the focus: Tauri's show() does, on Windows.
+/// Shows or hides the robot or its bubble, never taking the focus: Tauri's show() does, on Windows and macOS.
 fn seen(window: &WebviewWindow, shown: bool) {
     #[cfg(windows)]
     if let Ok(hwnd) = window.hwnd() {
         use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_HIDE, SW_SHOWNOACTIVATE};
         // SAFETY: the program's own window, on its own thread.
         unsafe { ShowWindow(hwnd.0, if shown { SW_SHOWNOACTIVATE } else { SW_HIDE }) };
+    }
+    #[cfg(target_os = "macos")]
+    if shown {
+        return crate::mac::show(window);
     }
     #[cfg(not(windows))]
     let _ = if shown { window.show() } else { window.hide() };
@@ -188,9 +205,10 @@ pub fn open_box(app: &AppHandle) -> tauri::Result<()> {
         None => build_box(app)?,
     };
     place(app);
+    #[cfg(not(target_os = "macos"))]
     window.show()?;
     place(app);
-    let _ = window.set_focus();
+    focus(&window);
     let _ = app.emit_to("robot", "box", true);
     Ok(())
 }
@@ -213,7 +231,9 @@ pub fn close_box(app: &AppHandle) {
     *shared.wanted.lock().unwrap() = None;
     crate::speak::closed(app);
     let _ = app.emit_to("robot", "box", false);
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    crate::mac::give_back();
+    #[cfg(target_os = "linux")]
     {
         let (app, opened) = (app.clone(), shared.opened.load(Ordering::Relaxed));
         std::thread::spawn(move || {
@@ -263,6 +283,10 @@ fn screens(app: &AppHandle) -> Vec<Screen> {
     if app.state::<Shared>().layer {
         return linux::screens();
     }
+    #[cfg(target_os = "macos")]
+    if !app.state::<Shared>().layer {
+        return crate::mac::screens().into_iter().map(|(name, area)| Screen { name, area, scale: 1.0 }).collect();
+    }
     app.available_monitors().unwrap_or_default().into_iter().enumerate().map(|(i, m)| {
         let (work, scale) = (m.work_area(), m.scale_factor());
         Screen {
@@ -281,6 +305,7 @@ fn screens(app: &AppHandle) -> Vec<Screen> {
 /// The saved monitor when it is there, else the main one. Its place in the list, for layer-shell.
 fn screen(app: &AppHandle) -> Option<(usize, Screen)> {
     let wanted = app.state::<Shared>().saved.lock().unwrap().monitor.clone();
+    // On macOS those have other names: there the main one is the first
     let main = app.primary_monitor().ok().flatten().and_then(|m| m.name().cloned());
     let mut all: Vec<_> = screens(app).into_iter().enumerate().collect();
     let found = [wanted, main].into_iter().flatten().find_map(|name| all.iter().position(|(_, s)| s.name == name)).unwrap_or(0);
@@ -326,6 +351,11 @@ pub fn place(app: &AppHandle) {
             linux::size(&window, at); // what Tauri's set_size leaves at 200 by 200 at least
         }
         let _ = index;
+        #[cfg(target_os = "macos")]
+        if !shared.layer {
+            crate::mac::put(&window, at);
+            continue;
+        }
         let _ = window.set_position(PhysicalPosition::new((at.x * screen.scale).round(), (at.y * screen.scale).round()));
         // By its monitor's scale, not the window's: on the way to another monitor those differ
         let _ = window.set_size(PhysicalSize::new((at.w * screen.scale).round(), (at.h * screen.scale).round()));
@@ -384,9 +414,13 @@ pub fn drag(app: &AppHandle) {
         return;
     }
     let Some(held) = shared.grab.lock().unwrap().as_ref().map(|g| g.held) else { return };
-    let Ok(pointer) = app.cursor_position() else { return };
-    let Some(screen) = screens(app).into_iter().find(|s| s.has(pointer.x, pointer.y)).or_else(|| screen(app).map(|s| s.1)) else { return };
-    let at = screen.corner(pointer.x, pointer.y, held);
+    #[cfg(not(target_os = "macos"))]
+    let pointer = app.cursor_position().ok().map(|p| (p.x, p.y));
+    #[cfg(target_os = "macos")]
+    let pointer = crate::mac::pointer();
+    let Some((x, y)) = pointer else { return };
+    let Some(screen) = screens(app).into_iter().find(|s| s.has(x, y)).or_else(|| screen(app).map(|s| s.1)) else { return };
+    let at = screen.corner(x, y, held);
     put_down(app, screen.name, at);
 }
 

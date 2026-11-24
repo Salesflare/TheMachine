@@ -86,5 +86,6 @@ window.MachineText = {
     file: 'That can’t be added. Try a file.',
     long: 'Cut to 2,000 characters.',
     shot: 'Couldn’t take a screenshot.',
+    screen: 'Allow The Machine in System Settings, Privacy & Security, Screen & System Audio Recording. Then quit it and open it again.',
   },
 };

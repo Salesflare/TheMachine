@@ -4148,9 +4148,13 @@ name = "the-machine-desktop"
 version = "0.0.1"
 dependencies = [
  "base64 0.23.1",
+ "block2",
  "getrandom 0.4.3",
  "gtk",
  "gtk-layer-shell",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
  "png",
  "serde",
  "serde_json",
