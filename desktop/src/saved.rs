@@ -3,7 +3,8 @@
 //! what was in For you (seen.rs).
 use crate::place::Corner;
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, fs, io, path::Path};
+use serde_json::Value;
+use std::{collections::BTreeMap, fs, io, path::{Path, PathBuf}};
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -39,8 +40,16 @@ pub struct Saved {
 }
 
 impl Saved {
+    /// What was kept, or else its second copy. One that is there and can't be read is never written over: it is put aside.
     pub fn read(file: &Path) -> Saved {
-        let mut saved: Saved = fs::read(file).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
+        let found = parsed(file).or_else(|| {
+            let second = parsed(&second(file));
+            if file.exists() {
+                let _ = fs::rename(file, aside(file));
+            }
+            second
+        });
+        let mut saved = found.unwrap_or_default();
         if saved.desk.len() != 32 || !saved.desk.bytes().all(|b| b.is_ascii_hexdigit()) {
             saved.desk = crate::machine::random();
         }
@@ -55,18 +64,61 @@ impl Saved {
         if let Some(folder) = file.parent() {
             fs::create_dir_all(folder)?;
         }
-        let fresh = file.with_extension("new");
-        let mut options = fs::OpenOptions::new();
-        options.write(true).create(true).truncate(true);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt;
-            let _ = fs::remove_file(&fresh); // the mode only counts for a new file
-            options.mode(0o600);
+        let what = serde_json::to_vec_pretty(self)?;
+        whole(file, &what)?;
+        whole(&second(file), &what)?;
+        if self.cookie.is_none() {
+            let _ = fs::remove_file(aside(file)); // signed out: no session is left anywhere
         }
-        io::Write::write_all(&mut options.open(&fresh)?, &serde_json::to_vec_pretty(self)?)?;
-        fs::rename(fresh, file)
+        Ok(())
     }
+}
+
+fn second(file: &Path) -> PathBuf {
+    file.with_extension("copy")
+}
+
+fn aside(file: &Path) -> PathBuf {
+    file.with_extension("unread")
+}
+
+/// All of it is there, or what was there before: another program's own (a second one of this) never mixes with it.
+fn whole(file: &Path, what: &[u8]) -> io::Result<()> {
+    let fresh = file.with_extension(format!("{}.new", std::process::id()));
+    let mut options = fs::OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        let _ = fs::remove_file(&fresh); // the mode only counts for a new file
+        options.mode(0o600);
+    }
+    let done = options.open(&fresh).and_then(|mut to| {
+        io::Write::write_all(&mut to, what)?;
+        to.sync_all()
+    }).and_then(|()| patient(|| fs::rename(&fresh, file)));
+    if done.is_err() {
+        let _ = fs::remove_file(&fresh);
+    }
+    done
+}
+
+/// On Windows another program may have the file for a moment (a virus scanner, a backup).
+fn patient<T>(what: impl Fn() -> io::Result<T>) -> io::Result<T> {
+    for _ in 0..if cfg!(windows) { 20 } else { 0 } {
+        match what() {
+            Err(error) if error.kind() != io::ErrorKind::NotFound => std::thread::sleep(std::time::Duration::from_millis(50)),
+            done => return done,
+        }
+    }
+    what()
+}
+
+/// A part that this version doesn't know the shape of (another version wrote it) goes; the rest stays.
+fn parsed(file: &Path) -> Option<Saved> {
+    let Value::Object(all) = serde_json::from_slice(&patient(|| fs::read(file)).ok()?).ok()? else { return None };
+    let fits = |part: (String, Value)| serde_json::from_value::<Saved>(Value::Object([part.clone()].into_iter().collect())).is_ok().then_some(part);
+    serde_json::from_value(Value::Object(all.into_iter().filter_map(fits).collect())).ok()
 }
 
 #[cfg(test)]
@@ -91,11 +143,86 @@ mod tests {
             assert_eq!(fs::metadata(&file).unwrap().permissions().mode() & 0o777, 0o600);
         }
         fs::write(&file, b"not json").unwrap();
+        fs::remove_file(second(&file)).unwrap();
         let fresh = Saved::read(&file);
         assert!(fresh.desk.len() == 32 && fresh.desk != Saved::read(&file).desk);
         #[cfg(target_os = "macos")]
         let fresh = Saved { pages: String::new(), ..fresh };
         assert_eq!(Saved { desk: String::new(), ..fresh }, Saved::default());
+        fs::remove_dir_all(folder).unwrap();
+    }
+
+    fn folder(name: &str) -> PathBuf {
+        let folder = std::env::temp_dir().join(format!("machine-desktop-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&folder);
+        fs::create_dir_all(&folder).unwrap();
+        folder
+    }
+
+    fn one() -> Saved {
+        Saved { machine: Some("https://my.example.com/".into()), cookie: Some("a=b".into()), quits: true, ..Default::default() }
+    }
+
+    #[test]
+    fn a_file_that_cant_be_read_is_put_aside_and_its_copy_read() {
+        let folder = folder("copy");
+        let file = folder.join("app.json");
+        one().write(&file).unwrap();
+        for broken in [&b""[..], b"{\"machine\": \"https://my.ex", b"\0\0\0\0", b"[]"] {
+            fs::write(&file, broken).unwrap();
+            let read = Saved::read(&file);
+            assert_eq!((read.machine, read.cookie, read.quits), (one().machine, one().cookie, true), "{broken:?}");
+            assert_eq!(fs::read(aside(&file)).unwrap(), broken);
+            assert!(!file.exists());
+        }
+        // Both: nothing is lost either
+        fs::write(&file, b"half").unwrap();
+        fs::write(second(&file), b"half too").unwrap();
+        let read = Saved::read(&file);
+        assert_eq!(read.machine, None);
+        assert_eq!(fs::read(aside(&file)).unwrap(), b"half");
+        read.write(&file).unwrap(); // signed out: what was put aside has no session in it any more
+        assert!(!aside(&file).exists());
+        fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
+    fn what_another_version_wrote_costs_only_itself() {
+        let folder = folder("version");
+        let file = folder.join("app.json");
+        one().write(&file).unwrap();
+        let mut all: Value = serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
+        (all["speak"], all["window"], all["later"]) = ("sometimes".into(), "left".into(), 1.into());
+        fs::write(&file, all.to_string()).unwrap();
+        let read = Saved::read(&file);
+        assert_eq!((read.machine, read.cookie, read.quits, read.speak, read.window), (one().machine, one().cookie, true, Default::default(), None));
+        fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
+    fn two_that_write_at_once_never_leave_half_a_file() {
+        let folder = folder("two");
+        let file = folder.join("app.json");
+        one().write(&file).unwrap();
+        let (writes, reads) = (file.clone(), file.clone());
+        let writer = std::thread::spawn(move || (0..40).all(|n| Saved { zoom: f64::from(n), ..one() }.write(&writes).is_ok()));
+        for _ in 0..200 {
+            assert_eq!(parsed(&reads).and_then(|s| s.cookie), one().cookie);
+        }
+        assert!(writer.join().unwrap());
+        assert_eq!(fs::read_dir(&folder).unwrap().count(), 2); // and nothing else
+        fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
+    fn signing_out_leaves_no_session_behind() {
+        let folder = folder("out");
+        let file = folder.join("app.json");
+        one().write(&file).unwrap();
+        Saved { machine: None, cookie: None, ..one() }.write(&file).unwrap();
+        for left in fs::read_dir(&folder).unwrap() {
+            assert!(!fs::read_to_string(left.unwrap().path()).unwrap().contains("a=b"));
+        }
         fs::remove_dir_all(folder).unwrap();
     }
 }

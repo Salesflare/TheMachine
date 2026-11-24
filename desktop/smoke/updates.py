@@ -96,6 +96,9 @@ if WINDOWS:
 
     def start():
         return App(str(program))
+
+    def refused():
+        return ''
 else:
     HOME = out.parent / 'applications' / 'The Machine.app'
     program = HOME
@@ -108,6 +111,9 @@ else:
 
     def start():
         return App(str(program), window=True, more=KEYS)
+
+    def refused():
+        return on.mac_tools.asks()
 
 before = left() if WINDOWS else None
 
@@ -171,7 +177,11 @@ def _():
     need(page('settings', 'document.querySelector("#update-hint").innerText') == f'{NEW} is ready', 'says so')
     on.click(*on.here(app, '#update', 'settings'))
     need(until(lambda: version() == NEW, 90), f'it is in place: {version()}')
-    need(until(lambda: running() and not set(running()) & set(was), 60), f'it runs again: {was} {running()}')
+    again = lambda: running() and not set(running()) & set(was)
+    if not until(lambda: again() or refused(), 60) or not again():
+        png('updated')
+        need(refused(), f'it runs again: {was} {running()}')
+        return f'NOT TESTED: that it starts again; macOS opens no new app that Apple did not notarize: {refused()}'
     time.sleep(6)
     png('updated')
     need(len(running()) == 1, running())
@@ -184,11 +194,20 @@ def _():
         app.kill()
         for pid in running():
             os.kill(pid, 9)
+        subprocess.run(['killall', 'CoreServicesUIAgent'], capture_output=True)  # what it still asks
         shutil.rmtree(HOME.parent)  # so that nothing after this opens it
         return 'NOT TESTED: a Mac app is deleted by the person'
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\Windows\CurrentVersion\Run') as key:
         winreg.SetValueEx(key, 'The Machine', 0, winreg.REG_SZ, f'"{program}" --login')
     had = left()
+    kept = pathlib.Path(os.environ['APPDATA'], 'computer.themachine.desktop', 'app.json')
+    kept.parent.mkdir(exist_ok=True)
+    kept.write_text('{}')
+    # As the installer does it, when the person has it take the older one away first
+    subprocess.run(f'"{HOME}\\uninstall.exe" /S _?={HOME}', timeout=300)
+    need(not program.exists() and kept.exists(), f'a newer one after it finds what was kept: {left()}')
+    setup(on.sandbox)
+    need(program.exists() and kept.read_text() == '{}', 'installed again')
     setup(str(HOME / 'uninstall.exe'))
     need(until(lambda: not left(), 60), f'left: {left()} of {had}')
     need(not running(), 'it runs no more')

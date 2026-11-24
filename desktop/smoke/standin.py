@@ -144,7 +144,7 @@ class Machine(http.server.ThreadingHTTPServer):
             tls.load_cert_chain(certificate / 'cert.pem', certificate / 'key.pem')
             self.socket = tls.wrap_socket(self.socket, server_side=True, do_handshake_on_connect=False)  # on each one's own thread
         self.port, self.actions, self.cookies, self.links, self.challenges = port, [], set(), [], {}
-        self.seen, self.cards, self.left, self.opened, self.hops = [], [], [], [], []
+        self.seen, self.cards, self.left, self.opened, self.hops, self.asked = [], [], [], [], [], []
         self.account = self.machine = None  # its account's address; whose account this is
         self.window, self.away = False, None  # the dashboard is the app's window's; where a signed-out one is sent
         self.desks, self.notices, self.meeting = [], [], None  # what the robot says of itself with each look; what waits for it to say
@@ -153,6 +153,7 @@ class Machine(http.server.ThreadingHTTPServer):
         self.named, self.odd = [], None  # the to-dos whose words it asked; the status that answers it instead
         self.todos, self.name = list(TODOS), 'Sam'
         self.refuse = False
+        self.loopback = False  # its account sends the browser back to the app's own port
         self.compact = False  # its dashboard has the page of one to-do
         self.no = None  # why it doesn't take a decision
         self.gone, self.status = {}, {}  # a to-do's own state
@@ -183,9 +184,12 @@ class Page(http.server.BaseHTTPRequestHandler):
             own = m.machine or m
             if 'c' not in q:
                 return self.answer(b'<title>Stand-in account</title>', kind='text/html')
+            m.asked.append(q)
             own.challenges[t] = q['c']
             back = urllib.parse.quote(f'{own.at}/_machine/auth?t={t}&to=app', safe='')
             m.links.append('computer.themachine.app://signed-in?u=' + back)
+            if m.loopback and 'p' in q:  # as the account does
+                return self.answer(b'', 302, Location=f'http://127.0.0.1:{q["p"]}/{q["c"]}?u={back}', Referrer_Policy='no-referrer')
             return self.answer(b'<title>Stand-in account</title>Signed in', kind='text/html')
         if u.path == '/_machine/auth':
             made = base64.urlsafe_b64encode(hashlib.sha256(q.get('v', '').encode()).digest()).rstrip(b'=').decode()

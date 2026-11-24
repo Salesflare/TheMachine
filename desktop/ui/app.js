@@ -20,7 +20,13 @@
     $('go').textContent = off ? t.retry : t.signIn;
     by(byAddress);
   }
+  let waits = 0;
+  function waiting(on) {
+    clearTimeout(waits);
+    if (on) waits = setTimeout(() => { $('line').textContent = t.nothingBack; $('go').textContent = t.retry; }, 20000);
+  }
   function by(address) {
+    waiting(false);
     byAddress = address;
     $('go').hidden = address;
     $('by-address').hidden = !address;
@@ -35,7 +41,7 @@
   $('go').addEventListener('click', async () => {
     $('error').textContent = '';
     if (view === 'offline') return invoke('app_retry');
-    try { await invoke('sign_in'); $('line').textContent = t.waitingBrowser; } catch (e) { $('error').textContent = words(e); }
+    try { await invoke('sign_in'); $('line').textContent = t.waitingBrowser; waiting(true); } catch (e) { $('error').textContent = words(e); }
   });
   $('by-address').addEventListener('submit', async e => {
     e.preventDefault();

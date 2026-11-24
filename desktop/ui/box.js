@@ -235,7 +235,14 @@
     gone(id);
   }
   // Sign-in
+  let waits = 0;
+  function waiting(on) {
+    clearTimeout(waits);
+    $('signin-go').textContent = t.signIn;
+    if (on) waits = setTimeout(() => { $('signin-intro').textContent = t.nothingBack; $('signin-go').textContent = t.retry; }, 20000);
+  }
   function signinBy(address) {
+    waiting(false);
     byAddress = address;
     $('by-account').hidden = address;
     $('by-address').hidden = !address;
@@ -246,7 +253,7 @@
   $('signin-other').addEventListener('click', () => { signinBy(!byAddress); focus(); });
   $('signin-go').addEventListener('click', async () => {
     $('signin-error').textContent = '';
-    try { await native.signIn(); $('signin-intro').textContent = t.waitingBrowser; } catch (e) { $('signin-error').textContent = words(e); }
+    try { await native.signIn(); $('signin-intro').textContent = t.waitingBrowser; waiting(true); } catch (e) { $('signin-error').textContent = words(e); }
   });
   $('signin').addEventListener('submit', async e => {
     e.preventDefault();
@@ -263,6 +270,7 @@
   });
   native.onSignIn(error => {
     if (error) { signinBy(false); $('signin-error').textContent = words(error); return; }
+    waiting(false);
     fresh = true; // the box opens on it
     say(t.welcome);
     load();

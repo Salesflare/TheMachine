@@ -60,15 +60,20 @@ gtk-layer-shell (`libgtk-layer-shell.so.0`, from the system or in `lib/` next to
 read-only: a plain `cp` over a running robot's library would crash it, so it is refused. Replace it with a new file (`cp
 -f`, `install`, `mv`, `tar`).
 
+On Windows it needs no administrator: started as one, it starts again as you. There is only ever one: another start, also of a
+copy elsewhere, brings the one that runs forward.
+
 The robot stands in the bottom right corner, and the first time the window opens by itself to sign in:
 
-- **Sign in** opens your account in your browser and comes back, for a hosted Machine or one on The Machine Network.
+- **Sign in** opens your account in your browser and comes back, for a hosted Machine or one on The Machine Network. When
+  nothing came back after 20 seconds, it says so: **Try again**.
 - **Self-hosted?** takes your Machine's own address. Like the dashboard, it only works where you are its owner: a computer
   on your Tailscale network.
 
 The box greets you by the first name your Machine knows, by this computer's clock, and says so when nothing needs you; or
 that you aren't signed in, or that your Machine doesn't answer. Click the robot to open and close it, and drag the robot to
-move it, also to another monitor. The box comes above it, below it where that fits better, or else beside it. Right-click it, or **...** in the box, for where you are signed in, **Open dashboard**,
+move it, also to another monitor. The box comes above it, below it where that fits better, or else beside it.
+On Windows all of it grows with your Text size (Settings, Accessibility), as far as the screen has room. Right-click it, or **...** in the box, for where you are signed in, **Open dashboard**,
 **Hide**, **Sign out** and **Quit**. For a key of your own, bind it to the program with `--toggle`.
 
 A hidden robot never goes away altogether: it looks over the bottom edge of the screen, dot and all. Click it and it is
@@ -220,7 +225,11 @@ program, and delete its folders:
 
 For a hosted Machine, sign it out on your account page too (**Security**).
 
-Signing in with an account registers `computer.themachine.app:` links while the browser is open, and takes that back
+`app.copy` next to `app.json` is the same, in case that one can't be read: then it is kept as `app.unread`, until you sign
+out.
+
+Signing in with an account waits for the browser at a port of this computer (127.0.0.1), for at most 15 minutes: only the
+page with that sign-in's own name is taken, and only once. It also registers `computer.themachine.app:` links while the browser is open, and takes that back
 when it returns, the app quits or it next starts. After a crash in between, what is left is
 `HKCU\Software\Classes\computer.themachine.app` on Windows, and on Linux
 `~/.local/share/applications/the-machine-desktop-handler.desktop` with its line in `~/.config/mimeapps.list`. On a Mac the
@@ -274,7 +283,9 @@ cargo test --manifest-path desktop/Cargo.toml
 ```
 
 CI also uses the Windows and the Mac build, with real mouse and keys against a made-up Machine (`smoke/windows.py` and
-`smoke/mac.py` the robot, `smoke/window.py` the window, `smoke/updates.py` the installer and an update), and keeps the screenshots with the run. They move the mouse and
+`smoke/mac.py` the robot, `smoke/window.py` the window, `smoke/text.py` Windows' Text size and scales,
+`smoke/signin.py` a sign-in with a second copy or an administrator's beside it,
+`smoke/updates.py` the installer and an update), and keeps the screenshots with the run. They move the mouse and
 change the screen, so they are for a throwaway computer. `smoke/linux.sh` runs `window.py` on a screen that isn't there,
 with a home of its own: nothing of the desktop it is started on is seen or touched. Also over https, as a hosted Machine: with a certificate made for that run
 (`smoke/certificate.sh`), which only a sandbox build and that computer trust, until it ends.
