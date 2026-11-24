@@ -348,9 +348,9 @@ function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hos
 const ON_DASHBOARD=['github','whatsapp','android','codex'];
 function openSignedInLink(){const m=/^#signed-in=([a-z_]{1,32})(\/again)?$/.exec(location.hash);if(!m)return;
  history.replaceState(null,'',location.pathname+location.search);showTab('health');const s=m[1].split('_');connectionsSettle();
- if(Object.hasOwn(SIGNIN_COPY,m[1])&&!ON_DASHBOARD.includes(m[1]))
+ if(Object.keys(SIGNIN_COPY).includes(m[1])&&!ON_DASHBOARD.includes(m[1]))
   toast(t(m[2]?'Reconnected to {}.':'Connected to {}.',s[0]=='microsoft'&&s[1]?(s[1]=='teams'?'Microsoft Teams':'Microsoft OneDrive'):s.slice(0,2).map(w=>w[0].toUpperCase()+w.slice(1)).join(' ')))}
-async function openConnectLinkNow(){const m=/^#connect=([a-z_]+)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url||!Object.hasOwn(SIGNIN_COPY,m[1]))return;
+async function openConnectLinkNow(){const m=/^#connect=([a-z_]+)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url||!Object.keys(SIGNIN_COPY).includes(m[1]))return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
  const src={microsoft_docs_write:'microsoft_docs',google_docs_files:'google_docs'}[m[1]],docs=src&&connectList?.sources.find(v=>v.hosted_signin===src);  // Allow edits, Allow Sheets and Slides: its Docs source
  const x=m[1]==='codex'?connectList?.codex&&codexSource():docs?{...docs,hosted_signin:m[1]}:connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
