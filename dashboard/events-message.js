@@ -69,7 +69,7 @@ function foldLong(box){if(box.classList.contains('msg-fold-open')||box.nextEleme
 async function fillMessage(container,o,id){
 const box=container.querySelector('.email-body');if(!box||box.dataset.filled)return;box.dataset.filled='1';
 const said=String(o.body||'').replace(/\r\n/g,'\n').split('\n').filter(l=>!(o.kind==='calendar'&&/^Participants: /.test(l))).join('\n').trim();  // an invite's raw guest addresses: the meeting's With has them by name
-const text=()=>{setHTML(box,o.changes?.length?pageChangesHTML(o):said?o.format==='markdown'?html`<div class="msg-md">${chatMarkdown(said)}</div>`:mailText(said):o.view==='notification'||o.view==='card'&&o.card?'':html`<p class="muted">${t('No description.')}</p>`);requestAnimationFrame(()=>foldLong(box))};
+const text=()=>{setHTML(box,o.changes?.length?pageChangesHTML(o):said?o.format==='markdown'?html`<div class="msg-md">${chatMarkdown(said)}</div>`:mailText(said):o.view==='notification'||o.view==='card'&&o.card?'':html`<p class="muted">${t(o.unreadable||'No description.')}</p>`);requestAnimationFrame(()=>foldLong(box))};
 if(o.kind!=='email'||o.near){text();return}  // a message around the source reads as its stored text
 const view=await emailViewFor(id,o.event_id);if(!view.html){text();if(view.failed)emailRetry(container,box,o,id);return}
 lazyPart('emailframe').then(()=>emailFrame(box,view,o,id),text)}  // its frame (events-email-frame.js)

@@ -75,7 +75,7 @@ def intercom_seen(old, metadata, stamp):
 
 MAIL_KINDS = event_kinds.of(timeline='email')
 # What collecting a mail says about how its text was read, not what the mail is
-READ_AS = ('truncated', 'quoted_history_chars', 'quoted_history_shortened', verified_sender.KEY)
+READ_AS = ('truncated', 'quoted_history_chars', 'quoted_history_shortened', 'unreadable', verified_sender.KEY)
 
 
 def reread(old, event):
@@ -323,9 +323,9 @@ class EventsStore:
                     # Its call's link is kept beside, never a new version: a calendar read again for it is not reviewed again
                     digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items() if k != 'video'}}
                 mail = event['kind'] == 'gmail.message'
-                if mail:  # a verified sender and "no files" are kept with a message, never a new version of one read before
+                if mail:  # a verified sender, "no files" and a text that can't be read are kept with a message, never a new version of one read before
                     digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items()
-                                                          if k != verified_sender.KEY and not (k == 'attachments' and not v)}}
+                                                          if k not in (verified_sender.KEY, 'unreadable') and not (k == 'attachments' and not v)}}
                 slack = event['kind'] == 'slack.message' and isinstance(event.get('metadata'), dict)
                 if slack:  # its title names people as they become known: the same message, not an edit (slack_raw_title)
                     digest_event = {**event, 'title': slack_raw_title(event)}
