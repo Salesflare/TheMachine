@@ -191,10 +191,10 @@ def _():
 @step('it goes, and leaves nothing')
 def _():
     if not WINDOWS:
+        need(until(lambda: not on.mac_tools.asks('Done'), 30), 'what macOS asks is answered')  # it stays in front of what is tried next
         app.kill()
         for pid in running():
             os.kill(pid, 9)
-        subprocess.run(['killall', 'CoreServicesUIAgent'], capture_output=True)  # what it still asks
         shutil.rmtree(HOME.parent)  # so that nothing after this opens it
         return 'NOT TESTED: a Mac app is deleted by the person'
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\Windows\CurrentVersion\Run') as key:
@@ -206,8 +206,10 @@ def _():
     # As the installer does it, when the person has it take the older one away first
     subprocess.run(f'"{HOME}\\uninstall.exe" /S _?={HOME}', timeout=300)
     need(not program.exists() and kept.exists(), f'a newer one after it finds what was kept: {left()}')
+    was = kept.read_text()  # the one that ran wrote its own when it quit
     setup(on.sandbox)
-    need(program.exists() and kept.read_text() == '{}', 'installed again')
+    need(program.exists(), 'installed again')
+    need(kept.read_text() == was, f'what was kept is as it was: {kept.read_text()}')
     setup(str(HOME / 'uninstall.exe'))
     need(until(lambda: not left(), 60), f'left: {left()} of {had}')
     need(not running(), 'it runs no more')
