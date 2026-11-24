@@ -360,7 +360,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   go unscanned), so a bigger one ships unchecked (see the size rule below).
 - **Markup in the dashboard:** build elements with `make()`, or write markup with ``html`...` `` and put it in the page
   with `setHTML(el, h)`. In ``html`` `` every `${}` is escaped unless it is itself an ``html`` `` result (or `raw()` of
-  a vetted constant), so no `esc()` call can be forgotten; `setHTML` takes nothing else. Older renderers that build
+  a vetted constant), so no `esc()` call can be forgotten; `setHTML` takes nothing else. An ``html`` `` result that is
+  joined, added to a string or passed to `t()` is text again, and its tags show on screen: put the array in ``html`` ``
+  (``${parts.map((x,i)=>html`${i?' · ':''}${x}`)}``), and use `htmlT()` for a sentence with markup in it. Older renderers that build
   strings with `esc()` move to ``html`` `` one at a time.
 
 ## The rules and their checks
@@ -378,6 +380,7 @@ test_app_mixins.py` (they run in CI with every suite).
 | Every text column of the database is sealed (`message_seal.DERIVED`) or in `tests/plain_columns.py`: a code, or words that stay plain with the reason. Words written to a code column fail the suites `scripts/test.py` runs guarded (`PLAIN_CHECKED`). | `tests/test_message_seal.py` |
 | Only the Store and App (`machine/main.py`, `machine/store/*`) write `events`, the sealed table (and the sandbox's fixture loader, through the sealed connection). Covers subfolders. | `tests/test_message_seal.py` |
 | Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once, its include line is in its place (a script, the stylesheet, the markup), and it is whole (statements that parse on their own, whole rules, whole elements); the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
+| No ``html`` `` result of the dashboard is used as plain text (joined, added to a string, in an attribute, through `t()`), where its tags would show on screen, and no escaped text is escaped twice. | `tests/test_html_flow.mjs` |
 | Every CSS custom property the dashboard or the app's own screens use is defined there: in a stylesheet, an inline style or a script. A name nothing defines takes its fixed fallback color, which follows no theme. | `tests/test_css_tokens.py` |
 | No action is mapped by two mixins, no member is defined in two of them or in both `App` and a mixin, every handler is a method, every name in `OWNER_ACTIONS` or `DASHBOARD_ACTIONS` reaches a mixin's handler or a branch of `App.action`, no branch of `App.action` names an action a mixin maps (it would never run), and every action the dashboard sends is in `DASHBOARD_ACTIONS` and has a handler. Each routine template runs keys no other one runs, names a to-do kind the registry has, maps its actions to its own methods and hides no App member. | `tests/test_app_mixins.py` |
 | Code in `machine/` imports only from its own layer or the ones below it, and any root module, never with `import *`; `machine/__init__.py` imports nothing. Each area declares its layer, `LAYER = <n>` at the top of its module or its package's `__init__.py`, from 0 (leaves such as `owner_error` and `todo_states`) up to 4 (`app`, `main`); a new area declares it in the pull request that adds it. `python3 tests/test_architecture.py --layers` prints them. | `tests/test_architecture.py` |
