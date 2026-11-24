@@ -88,7 +88,9 @@ pub fn start(app: &AppHandle) -> tauri::Result<()> {
     #[cfg(any(windows, target_os = "macos"))]
     crate::card::build(app)?;
     build_bubble(app)?;
-    if !app.state::<Shared>().saved.lock().unwrap().no_robot {
+    let shared = app.state::<Shared>();
+    let off = shared.saved.lock().unwrap().no_robot || shared.away.load(Ordering::Relaxed);
+    if !off {
         show_robot(app);
     }
     Ok(())

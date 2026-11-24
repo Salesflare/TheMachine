@@ -324,6 +324,14 @@ fn load(app: &AppHandle, window: &WebviewWindow, machine: &Machine) {
 /// Nothing answered: the page that is there is the dashboard's own kept one, or it is none of the Machine's.
 fn unreached(app: &AppHandle, load: u64) {
     let Some(window) = window(app) else { return };
+    let (this, there) = {
+        let shared = app.state::<Shared>();
+        let dash = shared.dash.lock().unwrap();
+        (dash.loads == load, matches!(dash.at, At::Machine(_, true)))
+    };
+    if this && !there {
+        return view(app, View::Offline); // no page that could be asked
+    }
     let here = app.clone();
     let _ = window.eval_with_callback("!!document.querySelector('link[rel=manifest]')", move |kept| {
         later(&here, move |app| {
@@ -659,6 +667,7 @@ fn gone(app: &AppHandle, name: &str, over: bool) {
 pub fn close_file(app: &AppHandle, label: &str) {
     if let Some(window) = app.get_webview_window(label) {
         let _ = window.destroy();
+        focused(app, label, false);
     }
 }
 

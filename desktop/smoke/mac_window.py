@@ -8,7 +8,11 @@ import sys
 import threading
 import time
 
-from mac_tools import *  # noqa: F403 (the steps are written in it)
+from mac_tools import (
+    A, C, CMD, CTRL, ENTER, ESCAPE, F, ID, LIBRARY, MAIL, NAME, PORT, Q, V, VERSION, W, all_windows, App, click, drag,
+    finish, fresh, in_front, key, need, need_window, other, out, page, png, press, run, sandbox, saved, says, screens,
+    step, until, work_area, write,
+)
 from standin import Machine
 
 HERE = f'http://127.0.0.1:{PORT}'
@@ -436,8 +440,8 @@ def _():
 
 @step('its place is kept')
 def _():
-    ask('set position of (first window whose name is "The Machine") to {60, 70}')
-    ask('set size of (first window whose name is "The Machine") to {700, 560}')
+    ask('set position of (first window whose subrole is "AXStandardWindow") to {60, 70}')
+    ask('set size of (first window whose subrole is "AXStandardWindow") to {700, 560}')
     time.sleep(1)
     at = repr(app.window())
     need('700x560' in at, at)
@@ -562,12 +566,13 @@ def _():
     png('robot-menu')
     press(app, '#menu-dashboard')
     need(until(app.window, 8), 'Open dashboard is this window')
+    need(until(lambda: ID in in_front(), 5), 'in front: ' + in_front())
     need(until(lambda: not app.box(), 5), 'the box closes')
 
 
 @step('the box and the window together')
 def _():
-    ask('set size of (first window whose name is "The Machine") to {640, 560}')
+    ask('set size of (first window whose subrole is "AXStandardWindow") to {640, 560}')
     app.again('--toggle')
     need(until(app.box, 8), 'the box over it')
     need(until(lambda: says('#todos'), 10), 'its list')
@@ -651,8 +656,8 @@ def _():
 def _():
     area = work_area()
     for name, w, h in (('1024', 1024, 640), ('large', area[2] - area[0], area[3] - area[1])):
-        ask(f'set position of (first window whose name is "The Machine") to {{{area[0]}, {area[1]}}}')
-        ask(f'set size of (first window whose name is "The Machine") to {{{w}, {h}}}')
+        ask(f'set position of (first window whose subrole is "AXStandardWindow") to {{{area[0]}, {area[1]}}}')
+        ask(f'set size of (first window whose subrole is "AXStandardWindow") to {{{w}, {h}}}')
         for on in (False, True):
             dark(on)
             time.sleep(2)
@@ -672,8 +677,8 @@ def second(look):
             return print('no second screen here', flush=True)
         time.sleep(2)
         area = work_area(1)
-        ask(f'set position of (first window whose name is "The Machine") to {{{area[0] + 20}, {area[1] + 20}}}')
-        ask('set size of (first window whose name is "The Machine") to {1200, 700}')
+        ask(f'set position of (first window whose subrole is "AXStandardWindow") to {{{area[0] + 20}, {area[1] + 20}}}')
+        ask('set size of (first window whose subrole is "AXStandardWindow") to {1200, 700}')
         time.sleep(3)
         look()
     finally:
@@ -707,8 +712,8 @@ def _():
         time.sleep(6)
         area = work_area()
         for name, w, h in (('1024', 1024, 640), ('large', area[2] - area[0], area[3] - area[1])):
-            ask(f'set position of (first window whose name is "The Machine") to {{{area[0]}, {area[1]}}}')
-            ask(f'set size of (first window whose name is "The Machine") to {{{w}, {h}}}')
+            ask(f'set position of (first window whose subrole is "AXStandardWindow") to {{{area[0]}, {area[1]}}}')
+            ask(f'set size of (first window whose subrole is "AXStandardWindow") to {{{w}, {h}}}')
             for on in (False, True):
                 dark(on)
                 time.sleep(3)

@@ -73,7 +73,12 @@
 
   // Dropped on it: the box opens with it
   const {takes, dropped, base64, MAX_FILES, MAX_BYTES} = window.Parts;
-  const over = on => robot.classList.toggle('over', on);
+  let left;
+  const over = on => {
+    robot.classList.toggle('over', on);
+    clearTimeout(left);
+    if (on) left = setTimeout(() => over(false), 1500); // a drag that ended without a word of it
+  };
   addEventListener('dragover', e => { if (!takes(e.dataTransfer)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; over(true); });
   addEventListener('dragleave', e => { if (!e.relatedTarget) over(false); });
   addEventListener('drop', async e => {
