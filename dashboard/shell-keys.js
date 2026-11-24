@@ -80,7 +80,7 @@ const kbChatInput=id=>{if(chatId!==id)chatGo(id);let n=0;const go=()=>{const i=$
 actionAdd(
  {id:'card-open',group:'This to-do',label:'Open the chat',keywords:'to-do card chat open',when:c=>c.card&&!c.chat,run:c=>chatGo(c.id)},
  {id:'card-chat',group:'This to-do',label:'Write in the chat',keywords:'message reply ask composer',keys:'r',when:c=>!!c.card,run:c=>kbChatInput(c.id)},
- {id:'card-rename',group:'This to-do',label:'Rename',keywords:'edit title',keys:'e',when:c=>!!c.card,run:c=>renameAt(c.id,titleEl(c.id))},
+ {id:'card-rename',group:'This to-do',label:'Rename',keywords:'edit title',keys:'e',when:c=>!!c.card,run:c=>renameAt(c.id)},
  {id:'card-project',group:'This to-do',label:'Put on a project',keywords:'project board link change',when:c=>!!c.card,run:c=>cardProjectPick(c.id,document.getElementById('task-'+c.id)||document.body)},
  {id:'card-snooze',group:'This to-do',label:'Snooze',keywords:'later remind',keys:'s',when:c=>!!kbBtn(c,'[data-choice="snooze"]'),run:c=>openSnooze(c.id)},
  {id:'card-done',group:'This to-do',label:'Mark done',keywords:'complete finish',keys:'d',when:c=>!!kbBtn(c,'[data-choice="complete"]'),run:c=>kbBtn(c,'[data-choice="complete"]').click()},

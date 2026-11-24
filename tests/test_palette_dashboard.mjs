@@ -144,7 +144,7 @@ try{
    assert.equal(await page.evaluate(()=>document.activeElement.id),'task-'+id(n),'J gets to the to-do')};
   await jTo(1);await page.keyboard.press('s');await page.locator('#snooze-dialog').waitFor();await page.keyboard.press('Escape');await page.locator('#snooze-dialog').waitFor({state:'hidden'});
   assert.equal(sent('decide').length,0,'S only opens the picker');
-  await focusOn(page.locator('#task-'+id(1)));await page.keyboard.press('e');await page.locator('.rename-box input').waitFor();await page.keyboard.press('Escape');
+  await focusOn(page.locator('#task-'+id(1)));await page.keyboard.press('e');await page.locator('.rename-box textarea').waitFor();await page.keyboard.press('Escape');
   // the done to-do leaves the list before J walks on: from where it was, J only goes down and never reaches the one above
   await focusOn(page.locator('#task-'+id(1)));await page.keyboard.press('d');await page.locator('#task-'+id(1)).waitFor({state:'hidden'});
   await settled(()=>sent('decide').length,1,'the card hides before its request lands');

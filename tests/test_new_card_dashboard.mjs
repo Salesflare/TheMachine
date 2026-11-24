@@ -53,7 +53,7 @@ const until=async(f,what)=>{for(let i=0;i<50;i++){if(await f())return;await new 
 // A tap opens a chat only once the page has stopped scrolling (chatRealTap: the tap that ends a fling or a scroll
 // doesn't count). Under load a scroll lands late, so a tap waits for the page to be still, never a fixed time.
 const still=page=>page.waitForFunction(()=>Date.now()-chatScrolledAt>300);
-const renameTo=async(page,text)=>{const input=page.locator('.rename-box input');await input.waitFor();await input.fill(text);await input.press('Enter');await page.locator('.rename-box').waitFor({state:'detached'})};
+const renameTo=async(page,text)=>{const input=page.locator('.rename-box textarea');await input.waitFor();await input.fill(text);await input.press('Enter');await page.locator('.rename-box').waitFor({state:'detached'})};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  // The read of "Friday", "in 2 weeks", "24 Oct": from a Thursday
@@ -137,10 +137,10 @@ try{
   // Rename from the sidebar: the ⋯ on hover, a right click, a double click
   const row=n=>page.locator(`#side-cards a[href="#chat=${id(n)}"]`);
   await row(1).hover();const more=page.locator('.row-more');await more.waitFor();await more.click();await page.locator('.row-menu [data-row-rename]').click();
-  assert.equal(await page.locator('.rename-box input').inputValue(),'Send Sam the signed contract');await renameTo(page,'  Contract   for Sam ');
+  assert.equal(await page.locator('.rename-box textarea').inputValue(),'Send Sam the signed contract');await renameTo(page,'  Contract   for Sam ');
   assert.equal(await row(1).textContent(),'Contract for Sam','saved at once');await until(()=>sent('card_rename').length===1,'rename');
   assert.deepEqual(sent('card_rename')[0].args.title,'Contract for Sam');assert.equal(await page.locator('#task-'+id(1)+' h3').textContent(),'Contract for Sam');
-  await row(3).click({button:'right'});await page.locator('.row-menu [data-row-rename]').click();await page.locator('.rename-box input').press('Escape');
+  await row(3).click({button:'right'});await page.locator('.row-menu [data-row-rename]').click();await page.locator('.rename-box textarea').press('Escape');
   assert.equal(sent('card_rename').length,1,'Esc cancels');
   // From the top of the page: the double click's first click opens the chat at the top, and a page scrolled down would move the row from under the second
   await page.evaluate(()=>scrollTo(0,0));await quiet(page);

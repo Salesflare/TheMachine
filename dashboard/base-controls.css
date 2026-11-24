@@ -13,11 +13,8 @@ h1{font-size:1.75rem;letter-spacing:-.035em;font-weight:750}
 nav{display:flex;gap:4px;padding:5px;margin:0 -1px 22px;border:1px solid var(--border);border-radius:13px;background:#26292fe6;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 nav button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;background:transparent;color:var(--muted);font-weight:600;padding:9px 12px;border-radius:9px}
 @media(hover:hover) and (pointer:fine){nav button:hover{color:var(--cream);background:#ffffff08;border-color:transparent}}
-nav button.active{background:var(--mint);color:var(--charcoal)}
 nav button.active:hover,[data-theme="light"] nav button.active:hover{background:var(--mint);color:var(--charcoal)}  /* hover (sticky after a tap) never hides the current tab */
 .badge{min-width:20px;height:20px;padding:0 6px;border-radius:999px;display:inline-grid;place-items:center;font:600 .72rem/1 var(--mono);background:#ffffff14;color:var(--cream)}
-.badge.warn{background:#eca45b33;color:var(--amber)}
-nav button.active .badge{background:#22252b26;color:var(--charcoal)}
 .badge:empty{display:none}
 
 /* Controls */
@@ -27,7 +24,6 @@ button:hover{border-color:var(--mint);color:var(--cream)}
 button:active{transform:translateY(1px)}
 button:disabled{opacity:.5;cursor:default}
 button.primary{background:var(--mint);border-color:var(--mint);color:var(--charcoal);font-weight:650}
-button.primary:hover{background:#cad6b9;color:var(--charcoal)}
 button.ghost{background:transparent}
 button.quiet{background:transparent;border-color:transparent;color:var(--muted)}
 .talk-sample{flex:none;width:40px;height:40px;padding:0;display:grid;place-items:center;border-radius:50%;color:var(--text)}button.quiet.talk-sample{border-color:var(--border);background:var(--surface,transparent)}.talk-sample svg{width:15px;height:15px;fill:currentColor}
@@ -49,14 +45,12 @@ select{appearance:none;padding-right:34px;background:var(--surface-2) url("data:
 .section-head{display:flex;align-items:baseline;gap:10px;margin:30px 0 12px}
 .day-head{font-size:.8rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
 .section-head h2{font-size:1rem;letter-spacing:.02em}
-.section-head .count{font:600 .78rem var(--mono);color:var(--muted)}
 .just-done-head .just-done-seen{margin-left:auto}
 #later-list>summary{display:flex;align-items:baseline;gap:10px;font-size:inherit;color:var(--text)}#later-list>summary::before{align-self:center}
 .section-head p{margin:0 0 0 auto;font-size:.85rem;color:var(--muted)}
 #settings .section-head{flex-direction:column;align-items:flex-start;gap:3px}
 #settings .section-head p{margin:0}
 a.btn-link{display:inline-flex;align-items:center;flex:0 0 auto;white-space:nowrap;font-weight:550;border:1px solid var(--border-strong);border-radius:10px;padding:8px 14px;color:inherit;text-decoration:none;transition:border-color .15s,color .15s}
-a.btn-link:hover{border-color:var(--mint);color:var(--cream)}
 a.btn-link[hidden]{display:none}
 #settings-account>div{flex-wrap:wrap}#settings-more{min-width:120px}#settings-cloud{margin-left:auto}.account-actions:not(:has(>:not([hidden]))){display:none}
 .alpha{margin-left:6px;padding:1px 7px;border-radius:999px;font:600 .68rem/1.5 var(--mono);letter-spacing:.04em;text-transform:uppercase;background:#eca45b33;color:var(--amber);vertical-align:middle}
@@ -75,5 +69,3 @@ a.btn-link[hidden]{display:none}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .stat{padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
 .stat b{display:block;font:650 1.65rem/1.1 var(--mono);letter-spacing:-.03em;color:var(--cream)}
-.stat span{font-size:.8rem;color:var(--muted)}
-.stat.t-amber b{color:var(--amber)}.stat.t-lavender b{color:var(--lavender)}.stat.t-mint b{color:var(--mint)}
