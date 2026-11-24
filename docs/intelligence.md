@@ -380,7 +380,10 @@ email signature, or them saying where they work in their own message.
   headline, Oct 15" with a link to the organization.
 - A stated name joins the organization with that name or domain, or stands as its own (`org:named:acme`, never looked
   up). The owner's own company marks a colleague instead.
-- A work address wins over a review's statement; your own word (Edit or Add on the person page) wins over both.
+- With several work domains it is the one they last wrote from, going by mail whose sender was checked
+  (`verified_sender`) when there is any (`people.company_now`).
+- A work address wins over a review's statement, unless they said it after they last wrote from one. Your own word
+  (Edit or Add on the person page) wins over both.
 - Nothing else is read from it: no seniority, no role. Reviews get up to five people with a headline and no
   organization, each once a month; one organizations pass (`profile_runs` kind `orgs`) runs once per install.
 
@@ -528,7 +531,8 @@ Tables: `project_stall_runs` (counts only), `project_stall_items` (which to-do w
   (decided, asked, planned, promised), everyone in it named as the evidence names them, no guessed roles. It judges
   meaning, not words. A rejected line is written again once with the reason and checked again; one that still fails is
   dropped. With nothing specific left, a summary The Machine wrote goes, and the page shows none. A check that can't
-  be read saves nothing, and the people stay due.
+  be read saves nothing, and the people stay due. Lines that can't be read are asked once more; then nothing is saved
+  either, and after three such passes in a day those people wait until the next.
 - Your edit wins: a rewrite then shows a **Suggested update** with Use it and Keep mine. **Let The Machine write it**
   gives it back.
 - Preparations add a "summary:" part with only the lines whose sources are in the to-do's area (a personal line never
@@ -874,6 +878,10 @@ Voice and style learn only from what the owner wrote themselves (`authorship.py`
   starts with (20 characters or more, so a short reply the owner typed still counts as theirs).
 - A draft the owner changed before sending teaches only through that change (`draft_edits`, what they cut and added).
 - An agent's rewrite (source `agent`) teaches nothing.
+- A draft they answered themselves teaches only through a message that answers it: anything they write in a direct
+  message or a chat with one person; in a Slack channel only a reply in the to-do's own thread; in a group chat only one
+  that quotes its message (Telegram says which); in an email thread only mail addressed To someone the draft is for
+  (under any address of theirs). Anything else in there may be another matter, so it teaches nothing.
 
 ## Keeps learning
 
@@ -1304,8 +1312,9 @@ the error, never what caused it (`error_feed.py`). See also [Error reports](help
 
 - the service's logged errors and dead threads (`FaultLog`);
 - the dashboard's uncaught errors and unhandled rejections (posted as `client_error`, normalized again by the service);
-- failed reviews (their error code and phase) and coding-agent jobs (their error codes only). A review that stopped
-  on the plan's usage limit is not one: it waits for the reset;
+- failed reviews (their error code and phase), failed preparations (the runner's error code and reason, the phase, and
+  whether it is tried again by itself or stopped) and coding-agent jobs (their error codes only). A review or
+  preparation that stopped on the plan's usage limit is not one: it waits for the reset;
 - failed syncs (the source's service and the error type). A transient one (a rate limit, the service's own 500, 502,
   503 or 504, or the network) only after 20 in a row; a 429 or such a 5xx is retried once after 15 seconds, or its
   Retry-After when that is a minute or less. A sign-in or permission error such as 401 or 403 is reported at once.

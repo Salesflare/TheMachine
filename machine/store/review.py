@@ -437,11 +437,13 @@ def service_review_ended(db, analysis):
     return bool(run and run['status'] in REVIEW_TERMINAL and run['finished_at'])
 
 
-def own_message(event, owner_slack_ids=()):
-    """Whether a collected message is the owner's own: sent email, their Slack user, a from_me chat."""
+def own_message(event, owner_slack_ids=(), own=()):
+    """Whether a collected message is the owner's own: sent email, their Slack user, a from_me chat. What decides
+    anything by itself goes by that alone: the sent label of a mailbox of theirs can't be made up, a From can. What only
+    shows who wrote a message also counts mail from another address of theirs (own: own_addresses), sent elsewhere."""
     m = event['metadata'] if isinstance(event['metadata'], dict) else json.loads(event['metadata'])
     if event['kind'] == 'gmail.message':
-        return 'SENT' in m.get('labels', [])
+        return 'SENT' in (m.get('labels') or ()) or bool(own) and _address(m.get('from')) in own
     if event['kind'] == 'slack.message':
         return m.get('user_id') in owner_slack_ids
     return bool(m.get('from_me'))

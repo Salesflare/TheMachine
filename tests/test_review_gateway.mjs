@@ -67,6 +67,10 @@ for(const [response,error,phase] of [
 // A generic runtime error keeps a reason from a fixed list (2026-10-30: the Gateway's MCP runtime limit stalled reviews).
 for(const [text,reason] of [
   ['bundle-mcp: live runtime limit (256) reached; stop or reset unused sessions private','mcp_runtime_limit'],
+  ['The AI service is temporarily overloaded. Please try again in a moment. | server_is_overloaded private','provider_overloaded'],
+  ['request failed status=503 private','provider_error'],
+  ['OpenClaw stopped this turn after 3 consecutive identical tool failures. private','repeated_tool_error'],
+  ['worker task capacity reached: code=overloaded private','unclassified'],
   ['unexpected private email text','unclassified'],
 ]){
   r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:text}]);

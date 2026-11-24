@@ -36,7 +36,7 @@ from machine.cards import group_sender
 from machine.sources.android import android_app_shown, android_text_shown
 from machine.sources.slack import slack_plain
 from machine.store import graph_identifiers
-from machine.text import intercom_note
+from machine.text import _address, intercom_note
 from mail_senders import relay
 
 VIEWS =('email', 'chat', 'notification', 'card')
@@ -143,11 +143,6 @@ def header_lines(body):
     if not n or not {'from', 'to'} & set(found) or (n < len(lines) and lines[n].strip()):
         return {}, body
     return found, '\n'.join(lines[n:]).strip('\n')
-
-
-def _address(value):
-    m = re.search(r'[\w.+-]+@[\w-]+(?:\.[\w-]+)+', str(value or ''))
-    return m[0].lower() if m else ''
 
 
 # A name-less address: "ann@client.com" or "<ann@client.com>", nothing else

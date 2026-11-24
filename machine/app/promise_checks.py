@@ -26,7 +26,7 @@ import locale_prefs
 import todo_areas
 from timeutil import local_tz, now
 from machine import owner_name
-from machine import todo_states
+from machine import model_reply, todo_states
 from machine.owner_error import OwnerError
 
 
@@ -166,8 +166,9 @@ class PromiseChecksApp:
         are held back for that turn; the rest, and all of them when the turn can't go now (the usage budget), become
         to-dos as before. A promise checked against the same messages goes on to its to-do. Before all that, the Slack
         conversations with its people (the one it was promised to and the one it names, group DMs too) are read first
-        when they rest (handled_check.py): one done there must not come as a to-do. Returns the ids held back."""
-        pages, waiting = [], set()
+        when they rest (handled_check.py): one done there must not come as a to-do. One whose check couldn't be read is
+        held back for a later one, a few times at most (model_reply.Waiting). Returns the ids held back."""
+        pages, waiting, unread = [], set(), model_reply.waiting(self, 'promise-check')
         with self.store.connect() as db:
             for p in due:
                 if self.handled_wait(db, 'promise:%d' % p['id'], [p['event_id']], p['what']):
@@ -179,12 +180,15 @@ class PromiseChecksApp:
                     continue
                 newest = max((x['id'] for x in found), default=0)
                 checked = db.execute("SELECT max(CAST(detail AS INTEGER)) FROM promise_log WHERE promise_id=? AND kind='checked'", (p['id'],)).fetchone()[0]
-                if checked is None or checked < newest:
+                if (checked is None or checked < newest) and not unread.spent(p['id']):
                     pages.append((p, found))
-        if not pages:
+        if not pages or unread.out():  # out: too many checks couldn't be read today, the to-dos come as before
             return waiting
+        if unread.resting():
+            return {p['id'] for p, _ in pages} | waiting
         if getattr(self, 'promise_check_model', None):  # tests and the sandbox: the turn in line, the open ones carded this pass
-            self.promise_check_run(pages)
+            if self.promise_check_run(pages) is None and not unread.out():
+                return waiting | {p['id'] for p, _ in pages if not unread.spent(p['id'])}
             return waiting
         if not openclaw_model(self.config):
             return waiting  # no model to ask: the to-dos come as before
@@ -405,23 +409,28 @@ class PromiseChecksApp:
 
     def promise_check_run(self, pages):
         """One turn for the held promises: kept ones close with the message that shows it (the owner sees it on the
-        promise), the rest are marked checked against what came since and become to-dos on the next pass."""
+        promise), the rest are marked checked against what came since and become to-dos on the next pass. A reply that can't
+        be read (asked once more) marks nothing: a later pass checks them (None)."""
         import help_chat
         stand_in = getattr(self, 'promise_check_model', None)  # tests and the sandbox: (config, prompt)
         answers = {}
+
+        def turn(text):
+            if stand_in:
+                return stand_in(self.config, text)
+            swap = background_model(self.config)
+            return help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=self.PROMISE_CHECK_SECONDS)
         try:
             with self.store.connect() as db:
                 text = self.promise_check_text(db, pages)
-            if stand_in:
-                reply = stand_in(self.config, text)
-            else:
-                swap = background_model(self.config)
-                reply = help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=self.PROMISE_CHECK_SECONDS)
-            start, end = reply.find('['), reply.rfind(']')
-            parsed = json.loads(reply[start:end + 1]) if start >= 0 and end > start else []
-            answers = {int(x['promise']): x for x in parsed if isinstance(x, dict) and str(x.get('promise', '')).isdigit()}
+            answers = model_reply.ask(turn, text, lambda reply: {int(x['promise']): x for x in model_reply.rows(reply, 'promise')
+                                                                 if str(x['promise']).isdigit()})
         except help_chat.Unavailable:
             LOG.info('promise check: no model now')
+        except model_reply.Unreadable:
+            model_reply.waiting(self, 'promise-check').missed([p['id'] for p, _ in pages])
+            LOG.warning('promise check reply unreadable')
+            return None
         except (ValueError, TypeError, KeyError, sqlite3.Error, OSError) as failure:
             LOG.warning('promise check error=%s', type(failure).__name__)
         kept = 0

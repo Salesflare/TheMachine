@@ -227,7 +227,9 @@ A new signal about something that already has a to-do updates that to-do instead
 Each review prompt also gets up to five "Possibly slipped" lines of each kind:
 
 - **Your unanswered asks:** your own sent emails whose new text asks something (a ? in a link doesn't count) and whose
-  thread has had nothing since, 4 to 21 days later. Only in threads the other person started, or to people who had
+  thread has had no answer since, 4 to 21 days later: nothing from anyone you asked, at any address of theirs, or from
+  someone at their company (`promises.someone_answered`). An out-of-office, a notice naming them or somebody else in the
+  thread is no answer. Only in threads the other person started, or to people who had
   written to you before you started the thread, so your outreach never shows up. Three or more emails sent the same
   day with the same subject pattern count as outreach too and are left out.
 - **Questions to you:** questions addressed directly to you (at most two To recipients, not Gmail's Updates,
@@ -256,8 +258,9 @@ same open promise stored twice from before is kept once. Nothing shows up on Tel
 
 - **When it's checked:** yours the morning before it's due (at `digest_at`, never sooner than three hours after it was
   recorded), theirs the morning after their date. Without a date: yours after 3 days, theirs after a week.
-- **When they reply:** a reply is no sign it was kept (an auto-reply, a "Sure", part of it). When someone else's email
-  promise gets a reply from that sender in the original thread (sender-only fallback if no thread was recorded), it is
+- **When they reply:** a reply is no sign it was kept (a "Sure", part of it). When someone else's email
+  promise gets a reply that sender wrote (from any address the Graph knows them by, never an automatic one) in the
+  original thread (sender-only fallback if no thread was recorded), it is
   logged once as `replied` and the promise stays open. Chat promises have no watch at all. Their new message is
   reviewed as usual: every review prompt lists the open promises, and the review closes one (`kept` or `dropped`, with
   the reason) or moves its date when a later message shows it. A reply that delivers only part of it keeps nothing. If

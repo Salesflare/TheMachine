@@ -93,6 +93,16 @@ class EvidenceMoments(unittest.TestCase):
             found = app_follow_ups.newer_activity(db, ids[:1], limit=3)
         self.assertEqual([x['id'] for x in found], ids[-3:])
 
+    def test_an_answer_in_a_telegram_or_signal_chat_is_found(self):
+        for kind in ('telegram.message', 'signal.message'):
+            ask, answer, _ = self.commit(*[
+                {'account_id': kind[:3], 'source_id': f'{kind}{n}', 'kind': kind, 'occurred_at': f'2026-10-1{n}T09:00:00+00:00', 'title': 'Sam Lee',
+                 'body': 'Words.', 'deleted': False, 'metadata': {'chat_id': chat, 'chat_kind': 'dm', 'from_me': mine, 'message_id': str(n)}}
+                for n, chat, mine in ((5, 'c1', False), (6, 'c1', True), (7, 'c2', True))])
+            with self.store.connect() as db:
+                found = app_follow_ups.newer_activity(db, [ask])
+            self.assertEqual([(x['id'], x['channel'], x['who']) for x in found], [(answer, kind.split('.')[0], 'the owner')])
+
     def test_a_group_dm_counts_from_its_own_message(self):
         with self.store.connect() as db:
             graph.ensure(db)
@@ -206,6 +216,13 @@ class EvidenceMoments(unittest.TestCase):
         self.commit(mail('b3', '2026-10-17T10:00:00+00:00', thread='t2', sent=True, who='bo@other.example'))
         app.handled_step()
         self.assertEqual(len(calls), 3)
+
+    def test_a_reply_that_cant_be_read_leaves_none_out(self):
+        self.two_to_dos()
+        app = self.app()
+        app.handled_check_model = lambda config, text: 'not json'
+        app.handled_step()
+        self.assertEqual((app.__dict__.get('_handled_left_out'), app.__dict__.get('_handled_judged') or {}), (set(), {}))
 
     def test_a_turn_that_fails_alone_goes_back_with_the_others(self):
         first, second = self.two_to_dos()

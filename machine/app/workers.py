@@ -412,6 +412,7 @@ class WorkersApp:
     def style_step(self):
         """Every ten minutes: a finished profile's channel lines fill voices still empty, and a draft the owner
         answered themselves instead of sending becomes a lesson for the next drafts, and that to-do closes by itself."""
+        self.store.drop_wrong_answers_once()  # one time: lessons from a message that answered something else go (voices.answers)
         seeded, learned = self.store.seed_voices(), self.store.learn_sent_elsewhere()
         self.store.answered_elsewhere()
         self.store.imports_unquoted_once()  # one time: imported lines lose the quote marks around them (memory_import.parse)

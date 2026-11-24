@@ -69,13 +69,16 @@ function failure(result,status){
   const reason=error==='runtime_error'&&!silentEnd?(REASONS.find(([pattern])=>pattern.test(text))?.[1]||'unclassified'):null;
   return {error,error_phase:phase,...(silentEnd?{silent_end:true}:{}),...(reason?{reason}:{})};
 }
-// Kept in sync with REVIEW_REASONS in assistant.py.
+// Kept in sync with REVIEW_REASONS in preparation_state.py.
 const REASONS=[
   [/live runtime limit|runtime limit \(\d+\) reached/i,'mcp_runtime_limit'],
   [/context (?:window|length|overflow)|maximum context|too many tokens|prompt is too long/i,'context_overflow'],
   [/unknown model|model[^.]{0,40}not (?:found|available|allowed|supported)/i,'model_unavailable'],
   [/unauthori[sz]ed|\b40[13]\b|forbidden|invalid api key|authentication|sign in again|not signed in/i,'auth_failed'],
   [/no (?:api key|credentials|auth profile)|missing (?:api key|credentials)/i,'auth_missing'],
+  [/server_is_overloaded|overloaded_error|servers are (?:currently )?overloaded|AI service is (?:temporarily )?overloaded/i,'provider_overloaded'],
+  [/\b(?:HTTP|status)[ :=]*(?:code[ :=]*)?5\d\d\b|\b529\b|internal server error|bad gateway|service unavailable/i,'provider_error'],
+  [/consecutive identical tool failures|openclaw_repeated_tool_error/i,'repeated_tool_error'],
 ];
 // Every Gateway session keeps its own MCP connections until it is stopped or reset, and the Gateway holds at most 256
 // (2026-10-30: past that every new turn failed, reviews stalled for hours). A review, profile, skills or routine session is

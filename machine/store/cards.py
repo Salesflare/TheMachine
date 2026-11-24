@@ -16,9 +16,10 @@ import graph
 import i18n
 import todo_org
 import locale_prefs
+import mail_senders
 import meeting_mail
 import meeting_prep
-from machine.store import message_view, outcomes
+from machine.store import graph_identifiers, message_view, outcomes
 from machine.cards import current_title, delivery_time, group_sender
 from machine.config import LOG
 from machine.sources.android import android_app_shown
@@ -110,16 +111,26 @@ def awaiting_key(event, owner_slack_ids=()):
     return None
 
 
-def awaiting_match(watch, event, owner_slack_ids=()):
+def awaited_addresses(db, watch):
+    """The addresses an email from whom a to-do waits on may come from: the one it was asked at and any other the Graph
+    knows them by (awaiting_match's theirs)."""
+    return graph_identifiers.known_addresses(db, watch.get('from')) if watch.get('kind') == 'gmail.message' else set()
+
+
+def awaiting_match(watch, event, owner_slack_ids=(), theirs=()):
+    """Whether an event is what the watch waits for: a message of that person's own (email: from any of `theirs`,
+    awaited_addresses), never one their mailbox sent by itself (an out-of-office), someone else's in the same thread or
+    a notice that only names them."""
     m = event['metadata'] if isinstance(event['metadata'], dict) else json.loads(event['metadata'])
-    if watch['kind'] == 'gmail.message' and watch.get('promise'):
-        return ('SENT' not in m.get('labels', []) and _address(m.get('from')) == watch.get('from') and
-                (not watch.get('thread_id') or m.get('thread_id') == watch['thread_id']))
-    if watch['kind'] == 'gmail.message' and watch.get('delegated'):
-        return ('SENT' not in m.get('labels', []) and _address(m.get('from')) == watch['from'] and
-                ((watch.get('thread_id') and m.get('thread_id') == watch['thread_id']) or (watch.get('reply_to') and watch['reply_to'] in (m.get('in-reply-to') or ''))))
     if watch['kind'] == 'gmail.message':
-        return 'SENT' not in m.get('labels', []) and (m.get('thread_id') == watch.get('thread_id') or _address(m.get('from')) == watch['from'])
+        if 'SENT' in (m.get('labels') or ()) or not mail_senders.wrote(m, {*theirs, mail_senders.untagged(watch.get('from'))} - {''}):
+            return False
+        same_thread = bool(watch.get('thread_id')) and m.get('thread_id') == watch['thread_id']
+        if watch.get('promise'):
+            return not watch.get('thread_id') or same_thread
+        if watch.get('delegated'):
+            return same_thread or bool(watch.get('reply_to')) and watch['reply_to'] in (m.get('in-reply-to') or '')
+        return True
     if watch['kind'] == 'slack.message':
         return m.get('channel_id') == watch['channel_id'] and m.get('user_id') == watch['user_id']
     if m.get('from_me') or (m.get('chat_id') or m.get('conversation_id')) != watch['conversation']:
@@ -1218,8 +1229,9 @@ class CardsStore:
         for row in db.execute("SELECT s.id,s.awaiting FROM suggestions s JOIN deliveries d ON d.suggestion_id=s.id WHERE s.awaiting IS NOT NULL "
                               f"AND d.message_id IS NULL AND d.status='queued' AND s.status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)}").fetchall():
             watch = json.loads(row['awaiting'])
+            theirs = awaited_addresses(db, watch)
             answer = next((e for e in db.execute('SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE account_id=? AND kind=? AND occurred_at>? AND deleted=0 ORDER BY occurred_at',
-                                                 (watch['account_id'], watch['kind'], watch['since'])) if awaiting_match(watch, dict(e), self.owner_user_ids)), None)
+                                                 (watch['account_id'], watch['kind'], watch['since'])) if awaiting_match(watch, dict(e), self.owner_user_ids, theirs)), None)
             if not answer:
                 continue
             stamp = now()
@@ -1242,8 +1254,9 @@ class CardsStore:
         # With a done when (outcomes.py) their answer isn't the result: it waits for that instead.
         for row in db.execute(f"SELECT * FROM suggestions WHERE status IN {todo_states.sql(todo_states.SNOOZED, todo_states.PREPARED)} AND json_extract(awaiting,'$.delegated')=1").fetchall():
             watch = json.loads(row['awaiting'])
+            theirs = awaited_addresses(db, watch)
             answer = next((e for e in db.execute('SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE account_id=? AND kind=? AND occurred_at>? AND deleted=0 ORDER BY occurred_at',
-                                                 (watch['account_id'], watch['kind'], watch['since'])) if awaiting_match(watch, dict(e), self.owner_user_ids)), None)
+                                                 (watch['account_id'], watch['kind'], watch['since'])) if awaiting_match(watch, dict(e), self.owner_user_ids, theirs)), None)
             if not answer:
                 continue
             stamp = now()

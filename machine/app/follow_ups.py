@@ -38,7 +38,7 @@ LOG = logging.getLogger('personal-assistant')
 # A to-do's projects and boards, for the skills that fit its preparation: its event ids bound as one JSON list
 PREP_PROJECTS_SQL = ('SELECT DISTINCT p.name,b.name AS board FROM event_projects e JOIN projects p ON p.id=e.project_id '
                      'LEFT JOIN boards b ON b.id=p.board_id WHERE e.event_id IN (SELECT value FROM json_each(?))')
-NEWER_KINDS = ('gmail.message', 'slack.message', 'teams.message', 'whatsapp.message', 'linkedin.message', 'x.dm')
+NEWER_KINDS = ('gmail.message', 'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'signal.message', 'linkedin.message', 'x.dm')
 
 
 def newer_activity(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=5, after='', moments=None):

@@ -47,6 +47,7 @@ from pathlib import Path
 from machine.owner_error import OwnerError
 from machine.prompts.review import OWED_NOW, WHOSE_WORK
 from machine.store import review_whys
+from machine.text import _address
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS missed_audits(id TEXT PRIMARY KEY,started_at TEXT NOT NULL,finished_at TEXT,status TEXT NOT NULL,
@@ -199,11 +200,6 @@ def thread_of(row, metadata=None):
         if metadata.get(key):
             return kind, row['account_id'], f'{key}:{metadata[key]}'
     return None
-
-
-def _address(value):
-    found = re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', str(value or ''))
-    return found[0].lower() if found else ''
 
 
 def mine(row, metadata, own):
