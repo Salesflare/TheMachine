@@ -22,7 +22,7 @@ HERE = Path(__file__).resolve().parent
 NOW = dt.datetime(2026, 11, 9, 9, tzinfo=dt.timezone.utc)  # a Monday; the meetings are on Tuesday at 10:00
 ACCOUNTS = [{'id': i, 'service': s, 'boundary': b, 'email': e} for i, s, b, e in (
     ('wcal', 'calendar', 'work:Larkspur', 'robin@larkspur.example'), ('wmail', 'gmail', 'work:Larkspur', 'robin@larkspur.example'),
-    ('wmeet', 'zoom', 'work:Larkspur', 'robin@larkspur.example'), ('pcal', 'calendar', 'personal:home', 'robin@home.example'),
+    ('wmeet', 'zoom', 'work:Larkspur', 'robin@larkspur.example'), ('wteams', 'teams', 'work:Larkspur', 'robin@larkspur.example'), ('pcal', 'calendar', 'personal:home', 'robin@home.example'),
     ('pmail', 'gmail', 'personal:home', 'robin@home.example'))]
 ME = {'email': 'robin@larkspur.example', 'displayName': 'Robin Hale', 'self': True, 'responseStatus': 'accepted'}
 JUDGE = ('Below is a briefing a person gets before a meeting ("the owner" is Robin Hale; a step without a name is Robin\'s), and statements. For each '
@@ -115,6 +115,13 @@ def prepare(case, text, folder, history=False):
         sender, to = (['robin@larkspur.example', 'Robin Hale'], who) if own else (who, ['robin@larkspur.example', 'Robin Hale'])
         page({'account_id': 'wmail', 'source_id': f'mail{n}', 'kind': 'gmail.message', 'occurred_at': ago(m['days'], 15).isoformat(), 'title': m['subject'], 'body': m['text'],
               'metadata': {'from': f'{sender[1]} <{sender[0]}>', 'to': f'{to[1]} <{to[0]}>', 'labels': ['SENT'] if own else ['INBOX'], 'thread_id': f'{case["id"]}{n}'}, 'deleted': False})
+    for c in case.get('chats', ()):  # a day of a Teams chat with the first guest, its messages a minute apart
+        (email, name), others = case['guests'][0], ['robin@larkspur.example']
+        for n, (who, said) in enumerate(c['lines']):
+            own, at = who == 'own', ago(c['days'], 14) + dt.timedelta(minutes=n)
+            page({'account_id': 'wteams', 'source_id': f'chat{c["days"]}-{n}', 'kind': 'teams.message', 'occurred_at': at.isoformat(), 'title': f'{name}: {said}'[:1000], 'body': said,
+                  'metadata': {'chat_id': '19:' + email, 'chat_kind': 'oneOnOne', 'chat_name': name, 'message_id': f'{c["days"]}-{n}', 'from_me': own, 'to': [email] if own else others,
+                               'from_email': others[0] if own else email, 'sender_display': 'Robin Hale' if own else name}, 'deleted': False})
     page = lambda e: store.commit_page(e['account_id'], {}, [e])
     page(meeting('next', NOW.replace(day=10, hour=10), case['title'], case['about'], case['guests'], me=case.get('me', 'accepted'),
                  **({'recurring_event_id': case['series'], 'original_start': {'dateTime': '2026-11-10T10:00:00+00:00'}} if case.get('series') else {})))
@@ -168,6 +175,7 @@ def facts(case, text):
     if any('team' in m for m in case['meetings']):
         out.append('Lars and Petra are colleagues of Robin.')
     out += [f"Mail on {day(m['days'])} from {'Robin' if m['from'] == 'own' else m['from'][1]}, {m['subject']}: {m['text']}" for m in case['mails']]
+    out += [f"Teams chat on {day(c['days'])}:\n" + '\n'.join(f"{'Robin' if who == 'own' else case['guests'][0][1]}: {said}" for who, said in c['lines']) for c in case.get('chats', ())]
     out += [f"Promise by Robin, {p['status']} since {day(6)}: {p['what']}" for p in case['promises']] + [f"Done on {day(6)}: {d['title']}" for d in case['done']]
     web = case.get('web') or {}
     out += [f"{domain}'s own website: {p['title']}: {p['description']}" for domain, p in (web.get('site') or {}).items()]

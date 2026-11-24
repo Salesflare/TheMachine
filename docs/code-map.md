@@ -187,7 +187,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     read by one small background call for a few mails at a time, so it lands on its trip too.
   - `meeting_prep.py` with `machine/app/meeting_prep.py` (`MeetingPrepApp`): before a meeting with people
     from outside (a recurring one only when something is new since the one before it: `repeated`, `news`), one briefing to-do from what the Machine already has (the Graph, looked-up profiles, where the
-    conversation started and its latest messages, open promises, and the notes of earlier meetings with the same people:
+    conversation started and its latest messages (a day of one chat as one: `_folded`), open promises, and the notes of earlier meetings with the same people:
     `earlier_notes.py`, which meetings, which record of each, how much, and what happened since; no table; its eval is
     `evals/meeting-briefings/`; messages and notes may come from history, `graph_history.BOTH`) and, for a first meeting, the organization's
     own home page (`enrichment.site_text`) and, where OpenClaw has a search provider, a short web search on their name and organization (`openclaw infer web
