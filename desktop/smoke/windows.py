@@ -23,7 +23,7 @@ import uuid
 import zlib
 from ctypes import wintypes as w
 
-from standin import SNOOZE, Machine, TODOS
+from standin import LEAVES, SNOOZE, Machine, TODOS
 
 PORT, DEBUG, ID = 8941, 9227, 'computer.themachine.desktop'
 user, gdi = ctypes.WinDLL('user32', use_last_error=True), ctypes.WinDLL('gdi32')
@@ -48,6 +48,7 @@ CERTIFICATE = pathlib.Path(sys.argv[4]).resolve() if len(sys.argv) > 4 else None
 results = []
 STATE = (out / 'state.txt').resolve()  # what the app takes for Windows' word on notifications
 STATE.write_text('5')
+MAIL = (out / 'mail.txt').resolve()  # where the app leaves an address for the mail app
 SNIP = (out / 'snip.cmd').resolve()  # what the app takes for Windows' own snip, while it is there
 
 
@@ -174,7 +175,7 @@ class App:
         if App.last and App.last.poll() is None:  # a step before this one failed
             App.last.kill()
             App.last.wait()
-        env = dict(os.environ, MACHINE_SANDBOX_ACCOUNT=f'http://127.0.0.1:{PORT}', MACHINE_SANDBOX_SNIP=str(SNIP), MACHINE_SANDBOX_STATE=str(STATE))
+        env = dict(os.environ, MACHINE_SANDBOX_ACCOUNT=f'http://127.0.0.1:{PORT}', MACHINE_SANDBOX_SNIP=str(SNIP), MACHINE_SANDBOX_STATE=str(STATE), MACHINE_SANDBOX_MAIL=str(MAIL))
         if over:
             env.update(MACHINE_SANDBOX_ACCOUNT=over.at, MACHINE_SANDBOX_ROOT=str(CERTIFICATE / 'root.pem'))
         if debug:
@@ -872,6 +873,12 @@ def _():
 CARD, BUBBLE = 'compact=1', 'bubble.html'
 
 
+def browsers_closed():
+    for name in ('msedge.exe', 'chrome.exe'):
+        subprocess.run(['taskkill', '/f', '/t', '/im', name], capture_output=True)
+    time.sleep(1)
+
+
 def carded(todo):
     need(until(app.card, 20), f'the to-do shows {says("#panel")}')
     need(until(lambda: says('h1', CARD) == 'To-do ' + todo), says('h1', CARD))
@@ -954,6 +961,42 @@ def _():
     need(not app.card() and small(), 'the next time it is the list')
     press(app, '#close')
     machine.compact = False
+
+
+@step('what leaves a to-do')
+def _():
+    machine.compact = True
+    wrong = []
+    for selector, kind, at in LEAVES:
+        if not app.card():
+            open_it()
+            press(app, '#todos li:nth-child(3) .name')
+            carded('aa03')
+            need(until(lambda: says('#leave', CARD)), 'its links')
+            time.sleep(1)
+        del machine.left[:], machine.seen[:]
+        MAIL.unlink(missing_ok=True)
+        press(app, selector, CARD)
+        if kind == 'nowhere':
+            time.sleep(4)
+            went = True
+        else:
+            went = until(lambda: {'browser': lambda: machine.left, 'mail': MAIL.exists, 'dashboard': lambda: any(s.get('at') == at for s in machine.seen)}[kind](), 40)
+        time.sleep(1)
+        found = machine.left + [s.get('at') for s in machine.seen] + ([MAIL.read_text()] if MAIL.exists() else [])
+        stays = bool(app.card()) and says('h1', CARD) == 'To-do aa03'
+        if not went or stays != (kind != 'dashboard') or (found != ([at] if at else []) and kind != 'dashboard'):
+            wrong.append(f'{selector}: {found}, {"stays" if stays else "goes"}')
+            png('left-' + selector[1:])
+        if kind == 'dashboard':
+            browsers_closed()
+    if app.card():
+        press(app, '#card-close')
+        need(until(lambda: not app.wide()), 'both go')
+    machine.compact = False
+    browsers_closed()
+    need(not wrong, str(wrong))
+    return f'{len(LEAVES)} kinds'
 
 
 def plus():
@@ -1106,12 +1149,6 @@ def _():
 
 OTHER = Machine(PORT + 1)  # another Machine, with an app of its own
 HERE, THERE = f'http://127.0.0.1:{PORT}/', f'http://127.0.0.1:{PORT + 1}/'
-
-
-def browsers_closed():
-    for name in ('msedge.exe', 'chrome.exe'):
-        subprocess.run(['taskkill', '/f', '/t', '/im', name], capture_output=True)
-    time.sleep(1)
 
 
 def in_front():

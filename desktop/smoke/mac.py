@@ -1,8 +1,10 @@
 """Runs the app on a Mac as a person would: real mouse and keys, against a made-up Machine, with a screenshot of each step.
 For CI's own throwaway computer (desktop.yml): it moves the mouse, changes the screen, the Dock and dark mode.
 
-  python3 smoke/mac.py <sandbox build> <build for people> <folder for the pictures>
+  python3 smoke/mac.py <sandbox build> <build for people> <folder for the pictures> [<folder of certificate.sh>]
   python3 smoke/mac.py - <signed build for people> <folder for the pictures>
+
+The last folder for the steps over https, where its root is trusted.
 """
 import base64
 import ctypes
@@ -18,7 +20,7 @@ import time
 import traceback
 import uuid
 
-from standin import SNOOZE, Machine, TODOS
+from standin import LEAVES, SNOOZE, Machine, TODOS
 
 PORT, DEBUG, ID, NAME = 8941, 9227, 'computer.themachine.desktop', 'the-machine-desktop'
 cg = ctypes.CDLL('/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices')
@@ -38,7 +40,9 @@ for f, r, a in ((cg.CGEventCreateMouseEvent, P, [P, U, Point, U]), (cg.CGEventCr
     f.restype, f.argtypes = r, a
 
 out = pathlib.Path(sys.argv[3]).resolve()
+MAIL = out / 'mail.txt'  # where the app leaves an address for the mail app
 out.mkdir(parents=True, exist_ok=True)
+CERTIFICATE = pathlib.Path(sys.argv[4]).resolve() if len(sys.argv) > 4 else None
 results = []
 
 
@@ -179,12 +183,14 @@ class Rect:
 
 
 class App:
-    def __init__(self, bundle, debug=True):
+    def __init__(self, bundle, debug=True, over=None):
         self.bundle, self.program = bundle, str(pathlib.Path(bundle, 'Contents/MacOS', NAME))
         for pid in self.pids():  # a step before this one failed
             os.kill(pid, 9)
         until(lambda: not self.pids(), 5)
-        env = {'MACHINE_SANDBOX_ACCOUNT': f'http://127.0.0.1:{PORT}', **({'MACHINE_SANDBOX_DEBUG': str(DEBUG)} if debug else {})}
+        env = {'MACHINE_SANDBOX_ACCOUNT': f'http://127.0.0.1:{PORT}', 'MACHINE_SANDBOX_MAIL': str(MAIL), **({'MACHINE_SANDBOX_DEBUG': str(DEBUG)} if debug else {})}
+        if over:
+            env.update(MACHINE_SANDBOX_ACCOUNT=over.at, MACHINE_SANDBOX_ROOT=str(CERTIFICATE / 'root.pem'))
         self.env = dict(os.environ, **env)
         made = run('open', '-n', bundle, *[x for k, v in env.items() for x in ('--env', f'{k}={v}')])  # as Finder does
         need(made.returncode == 0, made.stderr)
@@ -890,6 +896,55 @@ def _():
     return f'{took:.1f} s'
 
 
+@step('what leaves a to-do')
+def _():
+    machine.compact = True
+    wrong = []
+    for selector, kind, at in LEAVES:
+        if not app.card():
+            open_it()
+            press(app, '#todos li:nth-child(3) .name')
+            carded('aa03')
+            need(until(lambda: says('#leave', 'card')), 'its links')
+            time.sleep(1)
+        del machine.left[:], machine.seen[:]
+        MAIL.unlink(missing_ok=True)
+        press(app, selector, 'card')
+        if kind == 'nowhere':
+            time.sleep(4)
+            went = True
+        else:
+            went = until(lambda: {'browser': lambda: machine.left, 'mail': MAIL.exists, 'dashboard': lambda: any(s.get('at') == at for s in machine.seen)}[kind](), 40)
+        time.sleep(1)
+        found = machine.left + [s.get('at') for s in machine.seen] + ([MAIL.read_text()] if MAIL.exists() else [])
+        stays = bool(app.card()) and says('h1', 'card') == 'To-do aa03'
+        if not went or stays != (kind != 'dashboard') or (found != ([at] if at else []) and kind != 'dashboard'):
+            wrong.append(f'{selector}: {found}, {"stays" if stays else "goes"}')
+            png('left-' + selector[1:])
+        if kind == 'dashboard':
+            run('osascript', '-e', 'tell application "Safari" to quit')
+    if app.card():
+        press(app, '#card-close')
+        need(until(lambda: not app.wide()), 'both go')
+    machine.compact = False
+    need(not wrong, str(wrong))
+    return f'{len(LEAVES)} kinds'
+
+
+@step('a to-do in the dashboard, from its page')
+def _():
+    machine.compact = True
+    open_it()
+    press(app, '#todos li:nth-child(2) .name')
+    carded('aa02')
+    del machine.seen[:]
+    press(app, '#card-app')
+    need(until(lambda: any(s.get('at') == '#card=aa02' for s in machine.seen), 40), f'opened {machine.seen}')
+    need(until(lambda: not app.wide()), 'both go')
+    run('osascript', '-e', 'tell application "Safari" to quit')
+    machine.compact = False
+
+
 # A screenshot: with macOS' permission and without
 
 def allow(yes):
@@ -1486,9 +1541,90 @@ def _():
 app.kill()
 
 
+# As a hosted Machine is: over https, with an account's session, which a browser sends only there
+
+fresh()
+hosted = Machine(PORT + 2, CERTIFICATE) if CERTIFICATE else None
+app = App(sandbox, over=hosted) if hosted else app
+
+
+@step('account sign-in over https')
+def _():
+    if not hosted:
+        return 'NOT TESTED: no certificate'
+    need(until(app.box, 30) and until(lambda: says('#signin-go')), 'it offers the sign-in')
+    need(not says('#signin-error'), says('#panel'))
+    press(app, '#signin-go')
+    need(until(lambda: hosted.links, 60), 'the browser opens the account')
+    need(run('open', '-a', sandbox, hosted.links[-1]).returncode == 0, 'the link it goes to')
+    need(until(lambda: says('#compose'), 25), f'signed in {says("#panel")}')
+    need(saved()['machine'] == hosted.at + '/' and saved()['cookie'] in hosted.cookies, 'with its session')
+    run('osascript', '-e', 'tell application "Safari" to quit')
+    return hosted.at
+
+
+@step('a to-do in the box, with an account')
+def _():
+    if not hosted:
+        return 'NOT TESTED: a browser sends the session only to https, here it is http'
+    hosted.compact = True
+    open_it()
+    press(app, '#todos li:nth-child(2) .name')
+    carded('aa02')
+    need(hosted.cards[-1] and all(hosted.cards), f'its page has the session {hosted.cards}')
+    need(page('card', 'location.origin') == hosted.at and page('card', 'document.cookie') == '', 'which no script can read')
+    png('signed-in-to-do')
+    need(until(lambda: says('#done', 'card')), 'it is drawn')
+    press(app, 'a[target]', 'card')
+    need(until(lambda: any(s.get('at') == '#person=7' for s in hosted.seen), 40), f'the link opens {hosted.seen}')
+    need(until(lambda: not app.wide()), 'the box goes')
+    run('osascript', '-e', 'tell application "Safari" to quit')
+    return 'signed in'
+
+
+@step('a to-do in the box, after the next start')
+def _():
+    global app
+    if not hosted:
+        return 'NOT TESTED: no certificate'
+    app.again('--quit')
+    need(app.ended(), 'the process is gone')
+    app = App(sandbox, over=hosted)
+    need(until(app.robot, 30), 'the robot shows')
+    time.sleep(4)
+    del hosted.cards[:]
+    open_it()
+    press(app, '#todos li:nth-child(1) .name')
+    carded('aa01')
+    need(hosted.cards and all(hosted.cards), f'its page has the session {hosted.cards}')
+
+
+@step('signed out over https')
+def _():
+    if not hosted:
+        return 'NOT TESTED: no certificate'
+    if app.card():
+        key(ESCAPE)
+        need(until(lambda: not app.card()), 'back to the list')
+    need(until(app.box), 'the box is there')
+    press(app, '#more')
+    press(app, '#menu-signout')
+    time.sleep(1)
+    if not app.box():
+        click(*app.center())
+    need(until(lambda: says('#state') == 'Not signed in'), says('#state'))
+    need(not saved()['cookie'], 'its session is gone')
+    app.again('--quit')
+    need(app.ended(), 'the process is gone')
+
+
+app.kill()
+
+
 @step('nothing is left')
 def _():
     need(until(lambda: not app.pids(), 5), 'no process')
+    need(not hosted or not hosted.actions, 'nothing done there')
     sent = {a for a, _, _ in machine.actions}
     need(sent <= {'card_new', 'search_ask', 'decide', 'chat_upload', 'chat_file_remove'}, str(sent))
     crashes = [p.name for p in (LIBRARY / 'Logs/DiagnosticReports').glob(NAME + '*')]
