@@ -11,18 +11,21 @@ import uuid
 
 import bounces
 import chat_files
+import enrichment
 import graph
 import graph_board_reviews
 import project_org_checks
 from machine.config import LOG
+from machine.mail_quotes import sends_on
+import mail_senders
 import meeting_mail
 import next_actions
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
-from machine.store import evidence_moments, first_pass, message_view, review_last_look, review_saves, review_wait, review_whys, todo_likely
+from machine.store import evidence_moments, first_pass, graph_identifiers, message_view, review_last_look, review_saves, review_wait, review_whys, todo_likely
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
-from machine.text import UNREADABLE, _address, clamp, encoded
+from machine.text import UNREADABLE, _address, clamp, encoded, mail_people
 import own_addresses
 from machine.store import outcomes
 import project_success
@@ -572,12 +575,40 @@ def remember_name(db, identifier, name, address):
 
 
 def answered(db, row):
-    """The owner sent mail in this message's thread after it."""
+    """The owner sent mail in this message's thread after it, other than only forwarding it: a forward that reaches
+    neither who wrote it nor anyone at their company, on it or named in it answers nobody (forwarded_away)."""
     m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
-    return bool(m.get('thread_id') and db.execute(
-        "SELECT 1 FROM events WHERE account_id=? AND kind='gmail.message' AND deleted=0 AND occurred_at>? "
-        "AND json_extract(metadata,'$.thread_id')=? AND instr(metadata,'\"SENT\"')>0 LIMIT 1",
-        (row['account_id'], row['occurred_at'], m['thread_id'])).fetchone())
+    if not m.get('thread_id'):
+        return False
+    theirs = None
+    for sent in db.execute("SELECT id,title,metadata FROM events WHERE +account_id=? AND kind='gmail.message' AND deleted=0 AND occurred_at>? "
+                           "AND json_extract(metadata,'$.thread_id')=? AND instr(metadata,'\"SENT\"')>0",
+                           (row['account_id'], row['occurred_at'], m['thread_id'])):
+        if theirs is None:
+            theirs = graph_identifiers.known_addresses(db, _address(m.get('from'))) | {
+                mail_senders.untagged(a) for k in ('reply-to', 'original_from') for _, a in mail_senders.addresses(m.get(k))}
+        if not forwarded_away(db, row, m, theirs, sent):
+            return True
+    return False
+
+
+def forwarded_away(db, row, m, theirs, sent):
+    """Whether a mail the owner sent only passes a message on: a forward (told by the mail it holds, mail_quotes) to
+    nobody of theirs (its sender's addresses), at their company, on the message or named in it (an introduction, "talk
+    to Ann"). Anything unsure is an answer: it never makes someone wait who doesn't."""
+    sm = sent['metadata'] if isinstance(sent['metadata'], dict) else json.loads(sent['metadata'] or '{}')
+    to = {mail_senders.untagged(a): name for k in ('to', 'cc', 'bcc') for name, a in mail_senders.addresses(sm.get(k))}
+    companies = {a.rpartition('@')[2] for a in theirs} - graph.FREEMAIL
+    if not to or theirs & to.keys() or any(enrichment.same_company(d, a.rpartition('@')[2]) for a in to for d in companies):
+        return False
+    mine = mail_senders.untagged(_address(sm.get('from')))
+    on = {mail_senders.untagged(a) for k in ('to', 'cc') for _, a in mail_senders.addresses(m.get(k))} - {mine}
+    said = f"{row['title']}\n{row['body']}".casefold()
+    words = set(re.findall(r'[^\W\d_]+', said))
+    if any(a in on or a in said or any(w in words and w != a.rpartition('@')[2].split('.')[0] for w in re.findall(r'[^\W\d_]{3,}', name.casefold())[:1]) for a, name in to.items()):
+        return False
+    body = db.execute('SELECT body FROM events WHERE id=?', (sent['id'],)).fetchone()['body']
+    return sends_on(body, sent['title'], mail_people(sm))
 
 
 def owner_wrote_in(db, account_id, metadata):

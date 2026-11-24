@@ -92,7 +92,7 @@ You don't have to ask for that preview. With reviews still off, once OpenClaw ha
 
 **The quick pass:** the 20 signals of the last 7 days that most likely need you, whatever their age within the week, as soon as the first page of mail is in, so the first to-dos come within minutes. What most likely needs you is worked out on your Machine, with no model call, mainly from who wrote to whom:
 
-1. people writing to you directly whom you haven't answered in that thread, and direct messages (Slack, LinkedIn, X, WhatsApp);
+1. people writing to you directly whom you haven't answered in that thread (forwarding it to someone else is no answer), and direct messages (Slack, LinkedIn, X, WhatsApp);
 2. your appointments (the soonest first);
 3. mail you were one of many on, or answered since;
 4. automated mail and your own mail last.

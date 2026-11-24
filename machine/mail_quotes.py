@@ -274,6 +274,28 @@ def quoted(lines, subject='', people=''):
     return out
 
 
+def sends_on(text, subject='', people=''):
+    """Whether a mail forwards another: told by that mail's own header in it, from someone this mail isn't with (people,
+    as for quoted()). An answer goes to who it quotes."""
+    lines = str(text or '').replace('\r', '').split('\n')
+    i = 0
+    while i < len(lines) and people:
+        if _mark(lines[i]):
+            end = _run_end(lines, i)
+            if _attribution(lines, i, [False] * len(lines)) is None and _sent_on(lines[i:end], subject, people):
+                return True
+            i = end
+            continue
+        if FORWARDED.match(lines[i]):
+            sender = _header(lines, _next(lines, i + 1), subject, people)
+            return bool(sender) and not _with(sender, people)
+        sender = _header(lines, i, subject, people)
+        if sender is not None:
+            return _forward(sender, subject, people)
+        i += 1
+    return False
+
+
 # -------------------------------------------------------------------------------------------------------------- HTML
 
 VOID = {'br', 'img', 'hr', 'meta', 'link', 'input', 'area', 'base', 'col', 'embed', 'source', 'track', 'wbr', 'param'}
