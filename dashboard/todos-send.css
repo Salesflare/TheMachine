@@ -1,9 +1,8 @@
 /* Cards like the site's demo card: rounded surface, status pill, inset draft, faint source line, filled button tiles. */
-:root{--tile:#ffffff12;--tile-hover:#ffffff1f;--card-shadow:0 1px 0 #ffffff08 inset,0 16px 40px -18px #000c}
 :root[data-theme="light"]{--tile:#3d375212;--tile-hover:#3d37521f;--card-shadow:0 1px 0 #fff inset,0 12px 30px -18px #3d375240}
 .card,.card.card{padding:18px 18px 16px;border-radius:18px;background:var(--surface);border-color:var(--border);box-shadow:var(--card-shadow)}
 .card::before{display:none}
-.card .meta{align-items:center;margin-bottom:8px}.card .meta:has(.card-badges:empty){margin-bottom:2px}
+.card .meta{align-items:center}.card .meta:has(.card-badges:empty){margin-bottom:2px}
 .card .chip{font-size:.8rem;line-height:1.5;padding:2px 10px 2px 8px}
 .card h3{color:var(--text);font-size:1.1rem;font-weight:700;line-height:1.3;letter-spacing:-.005em;margin:0 0 6px}
 .card .body{margin:0;font-size:1rem;line-height:1.5;color:var(--muted)}.card .body strong{color:var(--amber)}
@@ -13,7 +12,7 @@
 /* A lookalike sender (lookalike.py): plain and easy to see, right under the body */.card .note.lookalike{color:var(--orange);font-weight:600;margin:6px 0 0;overflow-wrap:anywhere}
 /* Its Connect: a quiet text link at the end of the line, like the others under a to-do */.card .note.gap-line button.gap-connect{display:inline;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-weight:500;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer;white-space:nowrap}
 /* Based on: opens that message here (Read message), a quiet underlined line like the link it was */.card .note.based-on button.link{display:inline;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-align:left;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.card .note.based-on button.link:hover{color:var(--text)}
-.card .draft{max-width:680px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--sunken);font-size:.92rem;line-height:1.5;color:var(--text)}
+.card .draft{max-width:680px;margin:12px 0 0;border:1px solid var(--border);background:var(--sunken);font-size:.92rem;line-height:1.5;color:var(--text)}
 .card .draft .dm{margin:0 0 6px;font-size:.8rem;color:var(--faint);overflow-wrap:anywhere}
 .card .draft .db{white-space:pre-wrap;overflow-wrap:anywhere}
 .dw{white-space:normal}.dw .dw-p{margin:2px 0 6px;white-space:pre-wrap}.dw .dw-h1{font-weight:700;font-size:1.12em}.dw .dw-h2{font-weight:700;font-size:1.04em}.dw .dw-h3{font-weight:600}.dw .dw-ch+.dw-ch{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}.dw .dw-k,.dw .dw-n{font-size:.8rem;color:var(--faint);margin:6px 0 2px}.dw .dw-n{color:var(--muted);font-weight:600}.dw del{background:color-mix(in srgb,var(--orange) 22%,transparent);text-decoration:line-through;border-radius:3px}.dw ins{background:color-mix(in srgb,var(--mint) 30%,transparent);text-decoration:none;border-radius:3px}
@@ -42,10 +41,10 @@
 @media(max-width:640px){.card .first-tip .tip-x{width:32px;height:32px;margin:-8px -8px -8px 0}}
 /* Button tiles: equal height, the primary action in mint first; on a phone three per row, the rest share the next row. */
 .card .actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-.card .actions:not(.result-actions)>:is(button,a.open){flex:0 0 auto;min-width:104px;min-height:40px;margin:0;padding:8px 16px;display:inline-flex;align-items:center;justify-content:center;text-align:center;border:0;border-radius:12px;font-size:.92rem;font-weight:500;line-height:1.25;white-space:normal;text-decoration:none;color:var(--text)}
+.card .actions:not(.result-actions)>:is(button,a.open){flex:0 0 auto;min-width:104px;min-height:40px;margin:0;padding:8px 16px;display:inline-flex;align-items:center;justify-content:center;text-align:center;border:0;font-size:.92rem;line-height:1.25;white-space:normal;text-decoration:none;color:var(--text)}
 .card .actions:not(.result-actions)>:is(button,a.open):not(.primary){background:var(--tile)}
 .card .actions:not(.result-actions)>:is(button,a.open):not(.primary):hover{background:var(--tile-hover);color:var(--text)}
-.card .actions:not(.result-actions)>button.quiet{color:var(--muted)}.card .actions:not(.result-actions)>button.quiet:hover{color:var(--orange)}
+.card .actions:not(.result-actions)>button.quiet{color:var(--muted)}
 .card .actions:not(.result-actions)>:is(button,a.doc-open).primary{background:var(--mint);color:var(--charcoal);font-weight:650}
 .card .actions:not(.result-actions)>:is(button,a.doc-open).primary:hover{background:#cad6b9;color:var(--charcoal)}[data-theme="light"] .card .actions:not(.result-actions)>:is(button,a.doc-open).primary:hover{background:#3f582a;color:#fff}
 .card .change-editor{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--border)}
@@ -54,9 +53,9 @@
 /* More: the rarer actions, in a small menu under the last tile. A to-do's and a routine's ⋯ alike: the row's full
    height, so it shares the buttons' center line (no details{margin-top} from todos-cards.css) */
 :is(.card,.rt) .actions>.more-actions{position:relative;display:flex;align-self:stretch;margin:0}.card .more-actions>summary::before{content:none}
-.card .more-actions>summary{list-style:none;flex:1;height:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 16px;border-radius:12px;background:var(--tile);color:var(--muted);font-size:.92rem;font-weight:500;cursor:pointer;user-select:none}
-.card .more-actions>summary::-webkit-details-marker{display:none}.card .more-actions>summary::after{content:'';width:6px;height:6px;border:solid currentColor;border-width:0 1.6px 1.6px 0;transform:translateY(-2px) rotate(45deg)}
-.card .more-actions>summary:hover,.card .more-actions[open]>summary{background:var(--tile-hover);color:var(--text)}
+.card .more-actions>summary{list-style:none;flex:1;height:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;font-size:.92rem;font-weight:500;cursor:pointer;user-select:none}
+.card .more-actions>summary::-webkit-details-marker{display:none}.card .more-actions>summary::after{width:6px;height:6px;border:solid currentColor;border-width:0 1.6px 1.6px 0;transform:translateY(-2px) rotate(45deg)}
+.card .more-actions>summary:hover,.card .more-actions[open]>summary{color:var(--text)}
 :is(.card,.rt) .more-menu{position:absolute;right:0;bottom:calc(100% + 6px);z-index:5;display:flex;flex-direction:column;gap:1px;width:max-content;min-width:180px;max-width:calc(100vw - 32px);padding:5px;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:0 12px 30px #0005}
 :is(.card,.rt) .actions .more-menu button{margin:0;padding:6px 12px;border:0;border-radius:8px;background:none;color:var(--text);font-size:.92rem;line-height:1.35;font-weight:500;text-align:left;min-height:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 :is(.card,.rt) .actions .more-menu button:hover{background:var(--tile)}.card .actions .more-menu button.quiet{color:var(--muted)}
@@ -75,7 +74,7 @@
   .card,.card.card{padding:22px 24px 20px}
   .card h3{font-size:1.28rem;margin-bottom:8px}
   .card .body{font-size:1.08rem;line-height:1.55}
-  .card .draft{max-width:none;margin-top:16px;padding:14px 16px;font-size:1.02rem;line-height:1.55}
+  .card .draft{max-width:none;margin-top:16px;font-size:1.02rem;line-height:1.55}
   .card .draft .dm{font-size:.88rem;margin-bottom:8px}
   .card .card-foot{margin-top:14px;font-size:.92rem}.card .checkin-line{font-size:.92rem}
   .card .actions:not(.result-actions){display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px;margin-top:16px}
@@ -87,7 +86,7 @@
   .card,.card.card{padding:16px 16px 14px}
   .card .actions:not(.result-actions)>:is(button,a.open){flex:1 1 28%;min-width:max-content;min-height:44px;padding:8px 10px;font-size:.9rem;white-space:nowrap}  /* a label never wraps: whole buttons take the next row */
   .card .actions>button.quiet{margin-left:0}
-  .card .actions:not(.result-actions)>.more-actions{flex:1 1 28%;min-width:0}.card .more-actions>summary{min-height:44px;padding:8px 6px;font-size:.9rem}
+  .card .actions:not(.result-actions)>.more-actions{min-width:0}.card .more-actions>summary{min-height:44px;font-size:.9rem}
   .card .foot-links{margin-left:0}
 }
 /* A to-do's project picker: the select takes the box's width (a long name is cut off inside it, never past the to-do),
@@ -228,7 +227,7 @@
 .seg label input:checked+span{background:var(--mint);color:var(--charcoal);font-weight:650}.seg input:disabled{cursor:not-allowed}.seg input:disabled+span{opacity:.45}.fleet-careful{margin:6px 0 0;font-size:.85rem}.sec-pick{margin:4px 0 6px}#sec-note{margin:6px 0 14px;font-size:.88rem;color:var(--muted)}.sec-fleets{margin:10px 2px 0}.sec-fleets p{margin:4px 0;font-size:.85rem;color:var(--muted)}.sec-fleets strong{color:var(--text)}.lookup-switch:disabled{opacity:.5;cursor:not-allowed}.sec-forget{display:block;margin:4px 0 0;padding:0;min-height:0;border:0;background:none;font:inherit;color:var(--muted);text-decoration:underline;cursor:pointer}.seg label input[value="ask"]:checked+span{background:var(--lavender)}.seg label input[value="never"]:checked+span{background:var(--orange)}
 .fleet-scope{flex:1 1 100%;font-size:.85rem;min-width:0}.fleet-scope summary{cursor:pointer;color:var(--muted);width:max-content;max-width:100%}.fleet-scope label{display:grid;gap:3px;margin:8px 0 2px;max-width:420px}.fleet-scope input:not([type=checkbox]){font:inherit;min-width:0}.fleet-scope label.fleet-scope-work{display:flex;gap:6px;align-items:center}.fleet-preview{flex:1 1 100%;margin:0;font-size:.82rem;line-height:1.4}.fleet-rules-head{margin:22px 0 10px}.fleet-rules-head h3{margin:0}.fleet-rules-head p{margin:3px 0 0;font-size:.88rem}.fleet-ex-row{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.82rem}.fleet-ex{display:inline-flex;align-items:center;gap:4px;padding:2px 4px 2px 10px;border:1px solid var(--border-strong);border-radius:999px;background:var(--tile)}.fleet-ex button{border:0;background:none;padding:0 6px;min-height:0;font-size:1rem;line-height:1;color:var(--muted);cursor:pointer}.fleet-ex button:hover{color:var(--text)}.fleet-ex-add summary{cursor:pointer;color:var(--muted)}.fleet-ex-pick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}.fleet-ex-pick select{font:inherit;max-width:100%}
 @media(max-width:600px){.fleet-mate{padding:6px 12px 2px}.fleet-rule{grid-template-columns:minmax(0,1fr)}.fleet-rule-kind{padding-top:0;font-weight:600}.seg{display:flex;width:100%}.seg label{flex:1 1 0}.seg span{text-align:center;padding:7px 4px;white-space:normal}}
-#needs-you{margin:0 0 16px;padding:12px 16px;border-radius:14px;border:1px solid #eca45b55;background:#eca45b14}#needs-you>strong{display:block;color:var(--orange);font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}#needs-you ul{list-style:none;margin:0;padding:0}#needs-you li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0}#needs-you li+li{border-top:1px solid var(--border)}#needs-you li>span{min-width:0}#needs-you code{white-space:nowrap}#needs-you .head-link{flex:0 0 auto;background:none;font:inherit;font-size:.85rem;cursor:pointer}
+#needs-you{margin:0 0 16px;padding:12px 16px;border-radius:14px;border:1px solid #eca45b55;background:#eca45b14}#needs-you ul{list-style:none;margin:0;padding:0}#needs-you li{display:flex;align-items:center;justify-content:space-between;gap:12px}#needs-you li+li{border-top:1px solid var(--border)}#needs-you li>span{min-width:0}#needs-you code{white-space:nowrap}#needs-you .head-link{flex:0 0 auto;font:inherit;font-size:.85rem;cursor:pointer}
 .net-reasons{margin:0 0 8px;padding-left:18px}.net-reasons li{margin:2px 0}.meet-line b{font-weight:600}
 .fleet-people{list-style:none;padding:0;margin:0 0 12px;display:grid;gap:8px}.fleet-people li{line-height:1.35}.fleet-people small{overflow-wrap:anywhere}
 /* Fleet tab: a pill row picks one view (each Fleet, Friends, Sharing, Activity); each view is a few calm boxes. */
@@ -240,7 +239,7 @@
 #fleet-view,.fleet-box,.fleet-card{min-width:0;overflow-wrap:anywhere}#fleet-view select{max-width:100%;min-width:0;text-overflow:ellipsis}#fleet-view form label{max-width:100%}
 strong.nb{white-space:nowrap}
 :is(.fleet-tabs,.sub-tabs) button{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-weight:600;font-size:.9rem;padding:6px 12px;border-radius:999px;white-space:nowrap;cursor:pointer}
-:is(.fleet-tabs,.sub-tabs) button:hover{color:var(--text)}:is(.fleet-tabs,.sub-tabs) button[aria-selected="true"]{background:var(--mint);border-color:var(--mint);color:var(--charcoal)}:is(.fleet-tabs,.sub-tabs) button[aria-selected="true"] .badge{background:#22252b26;color:var(--charcoal)}
+:is(.fleet-tabs,.sub-tabs) button:hover{color:var(--text)}:is(.fleet-tabs,.sub-tabs) button[aria-selected="true"] .badge{background:#22252b26}
 /* Settings tabs: the same pill row. Account: the account in short, each button a page of it in a new tab */
 .stab-off{display:none!important}
 .acct-list form{margin:0;display:flex;flex:0 0 auto;align-self:center}.acct-list .head-link,.acct-foot .head-link,#acct-out .head-link,.addr-list .head-link{margin:0;min-height:34px;padding:0 14px;box-sizing:border-box;font:inherit;font-size:.85rem;background:none;cursor:pointer}
@@ -254,34 +253,33 @@ strong.nb{white-space:nowrap}
 .fleet-pane-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 14px}.fleet-pane-head h2{margin:0;font-size:1.15rem}
 .fleet-acct{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-1) var(--sp-4);margin:var(--sp-4) 0;font-size:.85rem}.fleet-pane-head+.fleet-acct{margin:calc(-1*var(--sp-2)) 0 var(--sp-4)}.fleet-acct form{margin:0;display:inline}.fleet-acct-link,.fleet-pane .fleet-acct button.fleet-acct-link{background:none;border:0;padding:var(--sp-1) 0;font:inherit;color:var(--muted);text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:3px;cursor:pointer}.fleet-acct-link:hover{color:var(--text);text-decoration-color:currentColor}.fleet-pane .fleet-acct .fleet-leave .fleet-acct-link{text-decoration:none;opacity:.8}.fleet-pane .fleet-acct .fleet-leave .fleet-acct-link:hover{opacity:1;text-decoration:underline}
 .share-pick{display:flex;gap:8px;align-items:baseline;padding:4px 0;flex-wrap:wrap}.share-new summary{cursor:pointer;margin-top:8px}.share-replace input{width:100%;max-width:420px}
-.fleet-box{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:16px 20px;margin:0 0 14px;min-width:0}
+.fleet-box{border:1px solid var(--border);margin:0 0 14px;min-width:0}
 .fleet-box>h3{margin:0 0 4px;font-size:1rem}.fleet-box>.sub{margin:0 0 12px;color:var(--muted);font-size:.88rem;line-height:1.45}.fleet-box>h3+:not(.sub){margin-top:10px}
 .fleet-box .fleet-people{margin:0}.fleet-box .fleet-ask{margin:0 0 4px}.fleet-box .list{margin-top:12px}.fleet-box>:last-child{margin-bottom:0}
 /* Family (family.py): compact, self-contained */
 .family .fleet-ask input[type=date],.family .fleet-ask input[type=datetime-local],.family .fleet-ask select{flex:0 1 auto;min-width:0}.family-slots{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.family-list{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:6px}.family-list li{line-height:1.35;overflow-wrap:anywhere}.family-sub{margin:10px 0 0;font-weight:600;font-size:.85rem}.family-cal{font-size:.85rem;white-space:nowrap}
 .fleet-pane>.fleet-rules-head{margin:22px 0 10px}.fleet-pane>.fleet-rules-head h3{margin:0 0 2px}.fleet-pane>.fleet-rules-head p{margin:0}
-.fleet-legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 4px;font-size:.88rem;color:var(--muted)}.fleet-legend b{color:var(--text);font-weight:650;margin-right:4px}
+.fleet-legend{flex-wrap:wrap;color:var(--muted)}.fleet-legend b{color:var(--text);font-weight:650;margin-right:4px}
 .fleet-never{margin:0 0 4px;font-size:.85rem}.fleet-rule-kind small{display:block;margin-top:2px;font-weight:400;font-size:.8rem;color:var(--muted)}
 .fleet-pane>.fleet-settings{margin-top:22px}.fleet-pane-sub{margin:-6px 0 14px;font-size:.9rem}.fleet-fine{margin:6px 0 0;font-size:.85rem}.fleet-box .fleet-people li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}.fleet-box .fleet-people li .actions{margin:0 0 0 auto}.fleet-people li.fp-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 12px}.fleet-people li.fp-row .actions{margin:0;flex-wrap:nowrap}.fp-who{min-width:0}@media(max-width:620px){.fleet-people li.fp-wrap{grid-template-columns:minmax(0,1fr)}.fleet-people li.fp-wrap .actions{flex-wrap:wrap}}.fleet-box ul.list{list-style:none;padding:0;margin:0}
-.fleet-box .list{border:0;background:none;box-shadow:none;border-radius:0;display:grid;gap:8px}.fleet-box .list>article{margin:0;padding:10px 14px;border-radius:10px;background:var(--sunken);box-shadow:none}.fleet-box .list>article p{margin:0}.fleet-box .list>article p+p{margin-top:4px}
+.fleet-box .list{display:grid;gap:8px}.fleet-box .list>article p+p{margin-top:4px}
 .share-auto-fine{margin:-4px 0 10px 26px;font-size:var(--fs-sm);color:var(--muted)}
 .fleet-box .list>li{border:0;padding:6px 0;border-top:1px solid var(--border)}.fleet-box .list>li:first-child{border-top:0}
 .fleet-discover:empty{display:none}
-@media(max-width:600px){.fleet-box{padding:14px 14px}.fleet-legend{gap:4px 14px}:is(.fleet-tabs,.sub-tabs){gap:4px}:is(.fleet-tabs,.sub-tabs) button{padding:6px 11px;font-size:.85rem}}
+@media(max-width:600px){:is(.fleet-tabs,.sub-tabs){gap:4px}:is(.fleet-tabs,.sub-tabs) button{padding:6px 11px;font-size:.85rem}}
 /* Settings gear: same row and height as the time pill. */
 .head-side{display:flex;align-items:stretch;gap:8px;align-self:center;margin-top:0}
 .head-side>.live,.head-side>.head-link{margin-top:0;align-self:auto}
-.head-side>.settings-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:0;margin:0;padding:0 10px 0 9px;font:inherit;font-size:.72rem;font-weight:inherit;line-height:1;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--muted);box-shadow:none}
+.head-side>.settings-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;margin:0;border-radius:999px;box-shadow:none}
 [data-theme="light"] .head-side>.settings-link{background:#ffffffb3}
 .head-side>.settings-link[hidden]{display:none}@media(max-width:560px){#open-browser{display:none}}.settings-browser{margin:14px 0 22px}.settings-browser .head-link{display:inline-flex;font-size:.85rem}.head-side>.settings-link svg{width:15px;height:15px}
-.head-side>.settings-link:hover{border-color:var(--mint);color:var(--text)}
+.head-side>.settings-link:hover{border-color:var(--mint)}
 /* A new version waits for a quiet moment; this loads it at once. In the sidebar on a computer, a small pill at the bottom on a phone (at the top in a chat, clear of its message box). */
 .head-side>.update-ready svg,.update-float svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .app-side .head-side>.settings-link.update-ready,.app-side .head-side>.settings-link.update-ready:hover{color:var(--text);font-weight:600}.app-side .head-side>.settings-link.update-ready svg{stroke:var(--mint);stroke-width:2}
 .update-float{display:none}
 @media(max-width:1023px){.update-float:not([hidden]){position:fixed;z-index:45;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);display:inline-flex;align-items:center;gap:6px;padding:8px 14px 8px 11px;border:0;border-radius:999px;background:var(--text);color:var(--bg);font:600 .82rem/1 inherit;font-family:inherit;box-shadow:0 4px 16px #0005;cursor:pointer}.update-float svg{width:15px;height:15px}body.m-chat .update-float{bottom:auto;top:calc(10px + env(safe-area-inset-top))}}
-.head-side>.settings-link[aria-current="page"]{background:var(--mint);border-color:var(--mint);color:var(--charcoal)}
-@media(max-width:560px){.head-side>.settings-link{padding:0 7px;font-size:.75rem}.head-side>.settings-link .lbl{display:none}}
+@media(max-width:560px){.head-side>.settings-link .lbl{display:none}}
 
 .skills-list .skill-buttons{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.skills-list .skill-buttons button{min-height:32px;padding:4px 10px;font-size:.82rem}
 .skills-list{grid-template-columns:minmax(0,1fr)}.skills-list>div{min-width:0}.skills-list .grow{min-width:0}
@@ -291,7 +289,7 @@ strong.nb{white-space:nowrap}
 .voice-form .sig-head input{max-width:220px}.sig-form [role=status]{color:var(--orange);margin:0;font-size:var(--fs-sm)}.sig-form .actions{margin:0}@media(max-width:420px){.sig-code{display:none}.sig-tools{gap:0}.sig-tools button,.sig-color{padding:0 6px}}
 .skill-form{min-width:0}.skill-form select,.skill-form input,.skill-form textarea{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
 .skills-list .skill-wait{border-color:var(--mint)}.skills-list .skill-off strong{color:var(--muted)}
-.skills-new{margin:8px 0 0}.skill-form{display:grid;gap:10px;max-width:560px;margin-top:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:16px 18px}
+.skills-new{margin:8px 0 0}.skill-form{display:grid;gap:10px;max-width:560px;margin-top:12px;border:1px solid var(--border);padding:16px 18px}
 .skill-form h3{margin:0}.skill-form label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}.skill-form input,.skill-form textarea,.skill-form select{font:inherit;color:var(--text)}
 .skill-form textarea{min-height:200px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem}
 .skill-form .fine,.skill-form p[role=status]{margin:0}#skill-error,#skill-share-error,#skill-read-error{color:var(--orange,#e8a33d)}

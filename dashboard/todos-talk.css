@@ -77,7 +77,6 @@ body.m-talk .site-footer{display:none}
   .chat-compose{position:relative;flex:none}
 }
 @media(max-width:860px){
-  .chat-layout{grid-template-columns:minmax(0,1fr)}
   body.m-chat .site-footer{display:none}
   /* The chat column is fixed over the page here: it is solid, so nothing left in the page shows through it. A usage limit
      stays in view as a bar over the column, which starts under it (--chat-banner-h, shell-banners.js) */
