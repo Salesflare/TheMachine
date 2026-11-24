@@ -307,6 +307,9 @@ export const NOT_FIRST_CHAT = 'This is a background run, not the owner\'s first 
 // Without the workspace's files in its prompt, a sandbox Do it listed the workspace and read AGENTS.md in 4 of 11 runs:
 // the owner's chat rules, which can be long, back on every later step. What a Machine run needs is in its context.
 export const OWNER_RULES_HERE = 'The owner\'s rules for this work are below: USER.md and the preparation rules. AGENTS.md, SOUL.md and IDENTITY.md in the workspace are for the owner\'s own chat: do not read them unless the to-do is about those files.';
+// A search through the whole home folder never came back when a network drive in it hung. What such a command costs is
+// bounded by commandLimit (below); this keeps a run from starting one, and says how a long command gets its time.
+export const COMMANDS_HERE = 'Look for files in the workspace and the folders the to-do names rather than through the whole home folder (network drives in it can hang). A command you wait for is stopped after a few minutes unless you give it timeoutSeconds: give a download, build or test run enough.';
 export const READ_ONLY_RUN ='This run only reads and needs no skills: do not call skills_read or open a SKILL.md. Tool search\'s dispatch_action allows no more than calling the tool directly.';
 const narrowed = (ctx: any) => {
   const tools = embeddedRuntime(ctx) ? turnTools(ctx.sessionKey) : undefined;
@@ -389,9 +392,33 @@ const assistantInstructions = () => contextFile('AGENTS', 'Assistant instruction
 
 // The review run that currently owns each session, recorded by the prompt hook. The tool's own
 // execute() reads it to bind ownership. The hook must not rewrite tool parameters: Codex
-// app-server refuses a tool call whose parameters a hook rewrote (seen live on October 11).
+// app-server refuses a tool call whose parameters a hook rewrote (seen live on October 11). The one exception, a limit on
+// an awaited command (commandLimit), is on OpenClaw's own exec, which Codex turns don't have.
 const sessionRuns = new Map<string, string>();
 export const currentReviewRun = (sessionKey: string) => sessionRuns.get(sessionKey);
+
+// One slow command must not hold a background run. With awaitResults (in Code Mode, every command of a cell that has it)
+// OpenClaw never hands the command to the background, and its own default limit is 1800 seconds, longer than the run's
+// 1200: a `find` over a home folder with a hung network drive held a preparation until the run itself was ended. So an
+// awaited command that names no limit of its own gets one; past it OpenClaw stops it and tells the run ("Command timed out
+// after 120 seconds", what it printed, and that a higher limit is possible), and the run goes on. Untouched: a command with
+// its own timeoutSeconds (0 included), one that isn't awaited (it goes to the background after at most 2 minutes), and
+// every command when the owner's OpenClaw config sets tools.exec.timeoutSeconds. Codex's and Claude Code's own shells have
+// no awaitResults and their calls can't be rewritten; they are never touched either.
+export const COMMAND_SECONDS = {ahead: 120, asked: 600};  // work nobody asked for yet (and routines, which only read); Do it and the owner's chat
+export const ownCommandLimit = (config: any) => [config?.tools, config?.agents?.entries?.main?.tools,
+  ...(Array.isArray(config?.agents?.list) ? config.agents.list : []).filter((a: any) => a?.id === 'main').map((a: any) => a.tools)]
+  .some((tools: any) => tools?.exec?.timeoutSeconds != null || tools?.exec?.timeoutSec != null);
+export function awaitedCommand(event: any, ctx: any): boolean {
+  const params = event.params || {};
+  return (preparationSession(ctx.sessionKey) || routineSession(ctx.sessionKey)) && !toolRunner(event, ctx) &&
+    SHELL_TOOLS.has(plainToolName(event.toolName)) && params.awaitResults === true && params.timeoutSeconds == null && params.timeout == null;
+}
+// A command told to wait (the browser lease's claim --wait 10, in minutes) keeps that time on top.
+export function commandLimit(params: any, ahead: boolean): number {
+  const wait = /\bclaim\b[^\n;|&]*\s--wait[ =](\d{1,3})\b/.exec(commandText(params));
+  return (ahead ? COMMAND_SECONDS.ahead : COMMAND_SECONDS.asked) + (wait ? Number(wait[1]) * 60 : 0);
+}
 
 // How long a review's prompt waits for the service's word on an unfinished review (review_context).
 export const REVIEW_CONTEXT_MS = 3000;
@@ -436,7 +463,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
       // was saved into the session each turn, so a Do it after a prepare-ahead, or a to-do chat after it, carried two,
       // three or more copies (about 18,000 tokens each) on every step until compaction. It has none of the workspace's
       // own files (preparation-run.mjs), so USER.md, where the owner's rules on how drafts come out live, comes from here.
-      const context = (NOT_FIRST_CHAT + ' ' + OWNER_RULES_HERE + skipRuleSkills() + (await ownerContext()) + (await preparationRules())).trim();
+      const context = (NOT_FIRST_CHAT + ' ' + OWNER_RULES_HERE + ' ' + COMMANDS_HERE + skipRuleSkills() + (await ownerContext()) + (await preparationRules())).trim();
       return context ? {prependSystemContext: context} : undefined;
     }
     // These get none of the workspace's files (preparation-run.mjs), so USER.md comes from here, as it did for a profile
@@ -468,7 +495,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
   }, {timeoutMs: 15000});
 
   // Gate review tools and note which run touched a review. Ownership itself is bound in the
-  // tool's execute() from host-owned context; this hook only ever blocks, never rewrites.
+  // tool's execute() from host-owned context; this hook blocks, and rewrites only an awaited command's limit.
   api.on('before_tool_call', async (event: any, ctx: any) => {
     if (machineSession(ctx.sessionKey) && repeatsMachineRules(event)) {
       return {block: true, blockReason: 'This run already has the Machine\'s own rules; that skill repeats them. Carry on without it.'};
@@ -489,6 +516,8 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
       const refused = outboundCheck(ctx.sessionKey, plainToolName(event.toolName), event.params, ownerDomains());
       if (refused) return {block: true, blockReason: refused};
     }
+    const awaited = awaitedCommand(event, ctx);
+    let ahead = routineSession(ctx.sessionKey);
     const policy = preparationSession(ctx.sessionKey) ? preparationToolPolicy(event, ctx) : undefined;
     if (policy && 'block' in policy) return {block: true, blockReason: policy.block};
     // Tool search's lookups and its runner are journaled like Code Mode's: not at all, the tool they run is, by its own name.
@@ -501,14 +530,17 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
         const unread=outboundCheck(ctx.sessionKey,plainToolName(event.toolName),event.params,ownerDomains());
         const admitted=await call('preparation_tool_intent',{job_id,call_id:ctx.toolCallId || event.toolCallId || `${event.toolName}:${JSON.stringify(event.params)}`,
           tool:plainToolName(event.toolName),tool_action:typeof event.params?.action==='string' ? event.params.action : null,
-          params:journalValue(event.params),read_only:preparationReadOnly(event),...(unread ? {unread_address:true} : {})});
+          params:journalValue(event.params),read_only:preparationReadOnly(event),...(unread ? {unread_address:true} : {}),...(awaited ? {awaited:true} : {})});
         if (!admitted.active) return {block:true,blockReason:admitted.reason || 'This task is no longer running. End this turn.'};
         if (admitted.refused) return {block:true,blockReason:String(admitted.refused)};
+        ahead=admitted.ahead===true;
       }
     }
     const owner = runs.get(ctx.runId || event.runId);
     if (owner && owner.session === ctx.sessionKey && plainToolName(event.toolName) === 'assistant_signals' &&
         ['begin_analysis', 'finish_analysis'].includes(event.params?.action)) owner.reviewTouched = true;
+    if (awaited && !ownCommandLimit(api.runtime?.config?.current?.() ?? api.config))
+      return {params: {...event.params, timeoutSeconds: commandLimit(event.params, ahead)}};
   });
 
   api.on('after_tool_call',async (event:any,ctx:any)=>{

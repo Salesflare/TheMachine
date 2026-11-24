@@ -136,7 +136,9 @@ def tool_intent(db, args, stamp):
     db.execute('INSERT OR IGNORE INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)',
                (args['job_id'], args['call_id'], args['tool'], json.dumps(args.get('params',{}),ensure_ascii=False), stamp))
     note_basis(db, run, args)
-    return {'active': True}
+    # A command the run waits for (the plugin asks with awaited): nobody asked for work prepared ahead, so it gets the
+    # shorter time limit (review-recovery.ts commandLimit).
+    return {'active': True, 'ahead': True} if args.get('awaited') and prepared_ahead(db, run) else {'active': True}
 
 
 # A browser step that can change something on a page (a click, typing, an upload, a dialog's answer): Activity lists a
