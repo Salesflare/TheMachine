@@ -32,6 +32,7 @@ from machine.sources.exclusions import excluded_by_rules, routine_rules
 from machine.sources.gmail import machine_notice
 from machine.sources.slack import slack_named, slack_raw_title
 from machine.store import history as history_store
+from machine import kinds as event_kinds
 from machine.text import encoded, same_text
 import meeting_notes
 import message_seal
@@ -72,7 +73,7 @@ def intercom_seen(old, metadata, stamp):
     return out
 
 
-MAIL_KINDS = ('gmail.message', 'salesflare.email')
+MAIL_KINDS = event_kinds.of(timeline='email')
 # What collecting a mail says about how its text was read, not what the mail is
 READ_AS = ('truncated', 'quoted_history_chars', 'quoted_history_shortened', verified_sender.KEY)
 
