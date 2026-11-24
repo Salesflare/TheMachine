@@ -205,6 +205,13 @@ self.addEventListener('message', event => {
     event.waitUntil(quickTake(quick).then(d => port.postMessage(d), e => { swReport(e, 'quickTake'); port.postMessage(null); }));
 });
 
+// It showed (a browser whose notifications are off never gets here): the Machine then leaves out the email about it
+// (machine/delivery/push.py shown). Offline or signed out it doesn't hear it, and the email goes.
+function shown(data) {
+  if (!data.shown || !data.tag) return;
+  return fetch(new URL('api/notice?tag=' + encodeURIComponent(data.tag) + '&shown=' + encodeURIComponent(data.shown), scopeUrl()).href,
+    {credentials: 'same-origin', redirect: 'manual', cache: 'no-store', signal: AbortSignal.timeout(15e3)}).then(() => {}, () => {});
+}
 self.addEventListener('push', event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch { data = {title: event.data?.text() || ''}; }
@@ -217,7 +224,7 @@ self.addEventListener('push', event => {
     // Quick buttons (machine/delivery/push.py QUICK), at most two. Fleet questions: Answer once and Decline open the
     // dashboard at the question, which asks to confirm. Stop, on an answer that goes by itself, stops it there at once.
     actions: Array.isArray(data.actions) ? data.actions.slice(0, 2) : [],
-  }).catch(e => swReport(e, 'push')));
+  }).then(() => shown(data), e => swReport(e, 'push')));
 });
 
 // A to-do's Snooze (2 hours, or tomorrow on a reminder) or Mark done: a browser can't ask for an unlock first, so it never runs from here. The

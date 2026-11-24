@@ -49,12 +49,12 @@ class Repeats(unittest.TestCase):
                                       {'accounts': [{'id': 'work', 'service': 'gmail', 'transport': 'gog', 'email': 'owner@example.com', 'boundary': 'work:Example'}]}, ['work'])
         self.store.prepare(self.sid, body, job_id=job, next_action=draft, outcome={'state': 'needs_you', 'needs': 'check the reply'})
 
-    def deliver(self):
+    def deliver(self):  # no real Telegram message (a web- id): what one reached has no email line (test_waiting_email.py)
         def push_send(store, config, subs, payload, label, sender=None, kind=None, **extra):
             self.pushed.append(payload)
             return [{'status': 201}]
         with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'push_send', push_send), \
-                patch_everywhere(a, 'telegram', side_effect=lambda config, row, action, message_id=None: self.told.append(dict(row)) or {'messageId': str(len(self.told) + 100)}):
+                patch_everywhere(a, 'telegram', side_effect=lambda config, row, action, message_id=None: self.told.append(dict(row)) or {'messageId': f'web-{len(self.told) + 100}'}):
             return a.deliver_one(self.store, self.config, edit_cards=False)
 
     def held_titles(self):

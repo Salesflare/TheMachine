@@ -17,9 +17,15 @@ to email notifications"):
 - While in use, nothing buzzes: no push to any device, Telegram arrives silently, and what came in counts as seen.
 - Push when away: right away when the owner has been away a while, else AWAY_GRACE after they left (Slack: mobile one
   minute after the desktop locks). Left out when they came back and saw it in the meantime.
-- Email for what can't wait (calm_reason) and is still unseen and still waiting EMAIL_AFTER later, bundled into one, at
-  most once per EMAIL_EVERY (Slack: bundled every 15 minutes or hourly, only while inactive). Morning summary (the
-  digest, compose) on work days.
+- Email for what can't wait (calm_reason) when no push or Telegram message about it reached the owner (reached), still
+  unseen and still waiting EMAIL_AFTER later, bundled into one, at most once per EMAIL_EVERY (Slack: bundled every 15
+  minutes or hourly, only while inactive). Morning summary (the digest, compose) on work days.
+- Reached means shown, not only accepted: a push service also takes what a phone that is off or has notifications
+  turned off never shows. A browser says it showed the notification (sw.js, push.shown), the phone app asks for its
+  words only when it may show them (api/notice), the desktop robot names what it got (desk.py), Telegram gives a message
+  id. Anything else (an expired subscription, no device, a wakeup that didn't go, quiet hours, a batch's later to-do the
+  phone app isn't woken for) leaves the email as it was. A computer alone isn't enough for what is urgent or due
+  (ON_A_COMPUTER): the owner may be out with only their phone.
 - A teammate's handoff to an owner their Machine can't ping (no phone or Telegram): one email of its own for it, also
   EMAIL_AFTER later and only while still unseen and waiting (take_handoffs, handoff_mail).
 - A batch buzzes once (assistant.deliver_one); nothing goes out outside work hours (Slack: notification schedule).
@@ -53,8 +59,9 @@ LOG = logging.getLogger('personal-assistant')
 
 KINDS = ('todo', 'result', 'reminder', 'digest', 'evening')
 CHANNELS = ('push', 'telegram', 'email')
-# Email is on for every kind: many people never get push working, and it only goes for what is still unseen and
-# waiting after EMAIL_AFTER, bundled. The digest is a push and an email; Telegram already has the weekly recap.
+# Email is on for every kind: many people never get push working, and it only goes for what nothing else reached them
+# about (reached), still unseen and waiting after EMAIL_AFTER, bundled. The digest is a push and an email; Telegram
+# already has the weekly recap.
 DEFAULTS = {'todo': {'push': True, 'telegram': True, 'email': True}, 'result': {'push': True, 'telegram': True, 'email': True},
             'reminder': {'push': True, 'telegram': True, 'email': True}, 'digest': {'push': True, 'telegram': False, 'email': True},
             'evening': {'push': True, 'telegram': False, 'email': True}}  # the evening digest: as the morning's
@@ -66,6 +73,7 @@ AWAY_GRACE = 60  # seconds after the owner left the dashboard before a push goes
 EMAIL_AFTER = 15 * 60  # still unseen and waiting this long after it came in: an email
 EMAIL_EVERY = 60 * 60  # at most one such email per hour, all that waits in it
 EMAIL_STALE = 3 * 60 * 60  # not emailed by then (outside hours, the cap): the dashboard and the digest have it
+EMAIL_ONCE = 7 * 24 * 60 * 60  # a Telegram message that keeps failing holds an email once in this long (hold_once)
 HANDOFF_STALE = 24 * 60 * 60  # a handoff email still not taken by then (the mailer down, an unsure send): the dashboard has it
 # A held push that still couldn't go after EMAIL_AFTER is dropped: the email for what still waits takes over by then
 QUEUE = ('CREATE TABLE IF NOT EXISTS notify_queue(id INTEGER PRIMARY KEY,channel TEXT NOT NULL,kind TEXT NOT NULL,ref TEXT,'
@@ -90,6 +98,7 @@ APP_LINES_TABLE = "CREATE TABLE IF NOT EXISTS notify_app_lines(tag TEXT PRIMARY 
 APP_LINE, APP_LINES, APP_LINE_DAYS, APP_BODY = 60, 200, 3, 120
 # Calm: what can't wait (calm_reason). A safety net, not a budget: a busy day of real deadlines still gets through.
 URGENT_WHY = ('urgent', 'due', 'reminder')  # what still buzzes on a day off
+ON_A_COMPUTER = ('urgent', 'due')  # shown on a computer only, these still get their email (reached)
 PUSH_CAP = 8  # pushes a day at most
 AWAY_DAYS = 3  # no dashboard visit (or decision) in this many days: only the morning summary
 VISIT_EVERY = 600  # seconds: the kept visit time moves at most this often
@@ -280,12 +289,40 @@ def hold(db, channel, kind, title, due, ref=None, payload=None, show=True, clock
     a second line for the same to-do. It keeps its due time; it counts as new (created) for seen and drop_covered."""
     ensure(db)
     if channel == 'email' and ref and db.execute(
-            'UPDATE notify_queue SET kind=?,title=?,show=?,created=? WHERE id=(SELECT id FROM notify_queue WHERE '
+            'UPDATE notify_queue SET kind=?,title=?,payload=?,show=?,created=? WHERE id=(SELECT id FROM notify_queue WHERE '
             "channel='email' AND ref=? AND batch IS NULL ORDER BY id DESC LIMIT 1)",
-            (kind, title[:200], 1 if show else 0, clock(), ref)).rowcount:
+            (kind, title[:200], json.dumps(payload) if payload is not None else None, 1 if show else 0, clock(), ref)).rowcount:
         return
     db.execute('INSERT INTO notify_queue(channel,kind,ref,title,payload,show,created,due,delivery) VALUES(?,?,?,?,?,?,?,?,?)',
                (channel, kind, ref, title[:200], json.dumps(payload) if payload is not None else None, 1 if show else 0, clock(), due, uuid.uuid4().hex))
+
+
+def reached(db, tag, how):
+    """A notification with this tag (a to-do's id, 'fleet-<question>') was shown to the owner: how is 'phone' (the phone
+    app, or a phone's browser), 'telegram' or 'computer'. Its waiting email line goes, also one held for an earlier state
+    of that to-do; the next notification about it holds its own. Shown on a computer only, what is urgent or due keeps
+    its line. Returns how many lines went."""
+    ensure(db)
+    gone = []
+    for row in db.execute("SELECT id,payload FROM notify_queue WHERE channel='email'").fetchall():
+        about = json.loads(row['payload'] or '{}')
+        if tag and about.get('tag') == tag and not (how == 'computer' and about.get('why') in ON_A_COMPUTER):
+            gone.append(row['id'])
+    db.executemany('DELETE FROM notify_queue WHERE id=?', [(i,) for i in gone])
+    if gone:
+        LOG.info('notify email dropped reached=%s lines=%d', how, len(gone))
+    return len(gone)
+
+
+def hold_once(db, ref, clock=wall):
+    """Whether a to-do whose Telegram message failed may hold an email now: Telegram is tried again for as long as it
+    fails, and each try would hold another."""
+    ensure(db)
+    db.execute("DELETE FROM notify_queue WHERE channel='once' AND created<?", (clock() - EMAIL_ONCE,))
+    if db.execute("SELECT 1 FROM notify_queue WHERE channel='once' AND ref=?", (ref,)).fetchone():
+        return False
+    hold(db, 'once', 'todo', '', 0, ref=ref, clock=clock)
+    return True
 
 
 def take_due(db, still_open=lambda ref: True, clock=wall):
@@ -298,12 +335,12 @@ def take_due(db, still_open=lambda ref: True, clock=wall):
     at, seen = clock(), last_seen(clock)
     # Why a waiting email never went, in the log (seen on a dashboard, too old, handled), so "no email" can be checked
     dropped = {'seen': db.execute("SELECT count(*) FROM notify_queue WHERE channel='email' AND created<=?", (seen,)).fetchone()[0]}
-    db.execute('DELETE FROM notify_queue WHERE created<=?', (seen,))
+    db.execute("DELETE FROM notify_queue WHERE created<=? AND channel!='once'", (seen,))
     dropped['stale'] = db.execute("DELETE FROM notify_queue WHERE channel='email' AND created<?", (at - EMAIL_STALE,)).rowcount
     # Kept until a receipt, but never retried forever: a push only while it is still news, a handoff for a day
     db.execute("DELETE FROM notify_queue WHERE (channel='push' AND due<?) OR (channel='handoff' AND created<?)",
                (at - EMAIL_AFTER, at - HANDOFF_STALE))
-    rows = [dict(r) for r in db.execute('SELECT * FROM notify_queue WHERE claimed_until<=? ORDER BY created,id', (at,))]
+    rows = [dict(r) for r in db.execute("SELECT * FROM notify_queue WHERE claimed_until<=? AND channel!='once' ORDER BY created,id", (at,))]
     gone = [r['id'] for r in rows if r['ref'] and not still_open(r['ref'])]
     dropped['handled'] = sum(r['channel'] == 'email' for r in rows if r['id'] in gone)
     if any(dropped.values()):
@@ -404,7 +441,7 @@ def waiting_mail(lines, root=''):
     body.append('')
     if root:
         body.append(t('Open The Machine: {}', root))
-    body.append(t('You get this when something waits for you and you haven’t seen it on the dashboard. Change it in Settings, Notifications.'))
+    body.append(t('You get this when something waits for you and no notification about it reached you. Change it in Settings, Notifications.'))
     return {'subject': subject, 'text': '\n'.join(body).strip()}
 
 

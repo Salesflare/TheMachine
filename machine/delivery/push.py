@@ -3,6 +3,7 @@ lines and buttons (app_notice, app_wake), reminders and setup hints, and what th
 assistant.py as is."""
 import datetime as dt
 import functools
+import hashlib
 import json
 import re
 import subprocess
@@ -591,15 +592,18 @@ def push_reach(store, config):
     return subscriptions, phones if phones and cloud_target(config) else 0
 
 
-def hold_mail(store, config, kind, title, ref, work=False):
-    """Something now waits for the owner: an email EMAIL_AFTER from now if they still haven't seen it then and aren't
-    using a dashboard (notify.take_due). Nothing when email is off for this kind or can't go."""
+def hold_mail(store, config, kind, title, ref, work=False, tag=None, why='', once=False):
+    """Something now waits for the owner: an email EMAIL_AFTER from now if no notification about it reached them by then
+    (notify.reached, by its tag and why_now's why), they still haven't seen it and aren't using a dashboard
+    (notify.take_due). Held before its push goes, so what the device says about that push finds it. once: its Telegram
+    message failed (notify.hold_once). Nothing when email is off for this kind or can't go."""
     if not mail_ready(config):
         return False
     with store.connect() as db:
-        if not notify.allowed(db, kind, 'email'):
+        if not notify.allowed(db, kind, 'email') or (once and not notify.hold_once(db, ref + ':' + kind)):
             return False
-        notify.hold(db, 'email', kind, title, time.time() + notify.EMAIL_AFTER, ref=ref, show=security_levels.notify_text(db, work))
+        notify.hold(db, 'email', kind, title, time.time() + notify.EMAIL_AFTER, ref=ref, show=security_levels.notify_text(db, work),
+                    payload={'tag': tag or ref.partition(':')[2], 'why': why})
     LOG.info('notify email held kind=%s ref=%s', kind, ref)
     return True
 
@@ -699,8 +703,29 @@ def waiting_count(db):
     return sum(1 for r in rows if r[0] not in later)
 
 
+def shown_key(endpoint):
+    """The name a browser's push carries for it, which the browser says back with what it showed (shown)."""
+    return hashlib.sha256(str(endpoint).encode()).hexdigest()[:32]
+
+
+def shown(store, tag, key='', agent=''):
+    """A device showed the notification with this tag (GET api/notice): a browser by its own key (shown_key), else the
+    phone app by its User-Agent (Android's own, or Apple's CFNetwork), which asks with its wakeup's kind only when it
+    may show it (Android: notifications on; iOS runs its extension only for one it shows). notify.reached then drops
+    its waiting email. A computer's desktop app asks here too, and says what it showed its own way (desk.py)."""
+    with store.connect() as db:
+        if key:
+            rows = [dict(r) for r in db.execute('SELECT endpoint,computer FROM push_subscriptions')]
+            found = next((r for r in rows if shown_key(r['endpoint']) == key), None)
+            how = found and ('phone' if found['computer'] == 'other' else 'computer')  # not known yet: not taken for a phone
+        else:
+            how = 'phone' if re.search(r'Android|CFNetwork', str(agent or '')) and notify.app_devices(db) else None
+        return notify.reached(db, tag, how) if how else 0
+
+
 def web_send(store, config, subscriptions, payload, label, sender=None):
     """The web pushes themselves: one result per subscription. One that is gone is forgotten."""
+    subscriptions = [{**s, 'shown': shown_key(s['endpoint'])} for s in subscriptions]  # the browser's name for itself (shown)
     try:
         results = (sender or (lambda request: push_node(config, request)))({'action': 'send', 'subscriptions': subscriptions, 'payload': payload})['results']
     except (subprocess.TimeoutExpired, ValueError, KeyError) as error:

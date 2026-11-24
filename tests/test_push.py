@@ -171,7 +171,7 @@ class PhoneNotifications(unittest.TestCase):
             db.execute("UPDATE suggestions SET created_at='2026-10-14T09:00:00+00:00' WHERE id=?", (follow,))  # goes first
             db.execute("INSERT INTO follow_up_cards(suggestion_id,project_id,board_id,grouped,n,of_max,channel,after_event,after_at,created_at) "
                        "VALUES(?,7,3,1,3,3,'email',1,'2026-10-10T09:00:00+00:00',?)", (follow, a.now()))
-        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', return_value={'messageId': '101'}) as send, \
+        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', return_value={'messageId': 'web-101'}) as send, \
                 patch_everywhere(a, 'push_notify') as push, patch_everywhere(a, 'hold_mail') as mail:
             self.assertTrue(a.deliver_one(self.store, self.config, edit_cards=False))
             # In the list (and Telegram's chat, without a buzz), but no push and no email

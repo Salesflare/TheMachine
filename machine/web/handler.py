@@ -34,7 +34,7 @@ from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS, UPLOAD_ACTIONS
 from machine.browser import browser_link, PANE_QUERY
 from machine.config import BRAND_ASSETS, LOG, ROOT
 from machine.delivery import desk
-from machine.delivery.push import app_notice, push_key
+from machine.delivery.push import app_notice, push_key, shown
 from machine.faults import fault_frames, fault_message, fault_where, source_url
 from machine import omarchy
 from machine.sources.calendar import calendar_account_owner, company_domains, invite_people, team_people
@@ -505,6 +505,11 @@ def make_handler(app):
             # gets (app_notice), over the owner's own sign-in, so no to-do text passes through the push
             query = urllib.parse.parse_qs(path.query)
             tag, kind = (query.get('tag') or [''])[0], (query.get('kind') or [''])[0]
+            key = (query.get('shown') or [''])[0]  # a browser's service worker: it showed this one (push.shown)
+            if key or kind:  # the app gives the kind of the wakeup it shows; without one it only asks what it says
+                shown(app.store, tag, key, self.headers.get('User-Agent'))
+            if key:
+                return self.output(200, {})
             version = 2 if (query.get('v') or [''])[0] == '2' else 1  # an app with the quick buttons (QUICK)
             self.output(200, app_notice(app.store, app.config, tag, kind if kind in notify.KINDS else None, version))
 
