@@ -365,7 +365,7 @@ class CardChatApp:
                     owner.append({'kind': 'event', 'text': outcomes.chat_line(card['done_when']), 'at': at})
                 continue
             if r['id'].startswith(promises.OWED_PREFIX):  # the reply only promised the work: it stays open (promises.keep_owed)
-                owner.append({'kind': 'event', 'text': promises.owed_line(), 'at': at})
+                owner.append({'kind': 'event', 'text': promises.owed_line(), 'at': at + 1})  # under its send, also in the same millisecond
                 continue
             if r['id'].startswith(WROTE_AGAIN_PREFIX):  # they replied on their promise; it stays open (Store.settle_awaiting)
                 owner.append({'kind': 'event', 'text': i18n.t('They wrote again'), 'at': at})
@@ -468,7 +468,7 @@ class CardChatApp:
         if recipe:
             owner.append({**recipe, 'at': chat_ms(recipe['at'])})
         owner.extend({**x, 'at': chat_ms(x['at'])} for x in corrections.chat_items(db, suggestion_id))  # fixed where it came from
-        for r in db.execute('SELECT payload,status,source,created_at,approval_id,retry_at FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
+        for r in db.execute('SELECT payload,status,source,created_at,updated_at,approval_id,retry_at FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
             try:
                 payload = json.loads(r['payload'])
             except ValueError:
@@ -488,7 +488,8 @@ class CardChatApp:
                     who = clamp(' '.join(str(payload.get('as_name') or 'your Intercom admin').split()), 100)
                     text = {'sent': f'Sent as {who} in Intercom', 'cancelled': 'Send canceled', 'failed': 'Didn’t go out in Intercom'}.get(r['status'], f'Sending as {who} in Intercom…')
                 owner.append({'kind': 'event', 'text': text, 'sent': draft['body'] if r['status'] == 'sent' else None,
-                              'mine': r['source'] != 'auto' and r['status'] != 'failed', 'at': chat_ms(r['created_at'])})
+                              'mine': r['source'] != 'auto' and r['status'] != 'failed',
+                              'at': chat_ms(r['updated_at'] if r['status'] == 'sent' else r['created_at'])})  # when it went, not when it was approved
             elif isinstance(payload.get('label'), str) and payload['label'].strip():
                 # A step without a draft (a calendar change, a merge, a finish): its label, and how it went unless it went
                 label, how = clamp(payload['label'], 120), CHAT_STEP_HOW.get(r['status'], '')

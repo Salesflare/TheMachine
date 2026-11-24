@@ -265,7 +265,7 @@ The to-do's own text stays its status (where it stands, what is ready). An answe
 - A handoff to a teammate's Machine is a line with its time ("Handed off to Pat's Machine · 14:02"), then their answer when it comes ("Pat declined it. Their note: …").
 - Back for a check-in with no answer, "No answer from Pat yet" sits under it, with Mark done, Snooze and Not needed instead of Do it. One that didn't go out says so, with **Try again**.
 - A step without a draft (a calendar change, a merge) says when it didn't work or was canceled.
-- Your own taps are small muted lines, verb first ("Chose Do it", "Snoozed it 5 times", "Sent to Sam"), lined up with the right edge of your messages. A tap you took back within a minute is left out.
+- Your own taps are small muted lines, verb first ("Chose Do it", "Snoozed it 5 times", "Sent to Sam · 10:21"), lined up with the right edge of your messages. A tap you took back within a minute is left out.
 - Replies are redacted like Technical details and leave out the agent's bookkeeping. A learned skill shows only as "Saved to what I’ve learned" right under the reply’s text, linked to Learning, saved files as chips, and "Codex sent nothing" as a quiet note (left out when something went out after).
 - A reply that left a page open in the Machine's browser offers **View in Machine browser**.
 - A file a reply points to (a draft, sources) is a chip that opens it, never a bare title.
@@ -294,7 +294,9 @@ At the bottom are a status line with its one way back ("Snoozed until Fri 09:00 
 
 **Drafts are never sent in the same reply.** A draft written or changed in a chat reply is shown first, also when your message says what to do ("email Sam now"). You read it and tap Send, or say "send it" in a later message. The service checks this itself: the Machine sends for you only a draft that was on the to-do, unchanged, before the message that approves it.
 
-A message you send from the chat shows on its draft: **Sending…** with a bar, then who it went to, how and when ("Sent to Sam by email · 10:21", and then **Mark done** is the next step), or why it didn't go out, with **Try again**.
+A message you send from the chat shows on its draft: **Sending…** with a bar, then **Sent**, or why it didn't go out, with **Try again**. One line under it is the record: who it went to and when ("Sent to Sam · 10:21"). The to-do's buttons sit under that line, not on the sent message, since they are about what's left: **Mark done** when nothing is, **Do it** when the reply only promised the work ("Kept open for the work the reply promised").
+
+Ask whether a message went out, and your Machine answers from its own outbox: whether it was sent, when and to whom.
 
 ### Live updates
 
