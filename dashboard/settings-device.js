@@ -23,6 +23,10 @@ if(inApp())devStore.set('app-installed','1');
 // On window: after the page's own handlers (a to-do's link that opens the viewer instead)
 const gmailIntent=u=>'intent://'+u.slice(8)+'#Intent;scheme=https;package=com.google.android.gm;S.browser_fallback_url='+encodeURIComponent(u)+';end';
 if(DEV.android&&!DEV.phoneApp)addEventListener('click',e=>{const a=e.target.closest?.('a[href^="https://mail.google.com/"]');if(a&&!e.defaultPrevented){e.preventDefault();location.href=gmailIntent(a.href)}});
+// The phone app opens the account's pages in the phone's browser, where only their address says they are the app's: the
+// account then shows no plans or prices. A hosted Machine's account buttons are hops, which the account marks itself.
+const acctUrl=u=>{try{const a=new URL(u);if(DEV.phoneApp&&state?.account_url&&a.origin===new URL(state.account_url).origin&&/^\/(account|support|connectors)(\/|$)/.test(a.pathname)){a.searchParams.set('from','app');return a.href}}catch{}return u};
+if(DEV.phoneApp)addEventListener('click',e=>{const a=e.target.closest?.('a[href^="https:"]');if(a)a.href=acctUrl(a.href)},true);
 const appInstalled=()=>inApp()||!installEvt&&(relatedInstalled||devStore.get('app-installed')==='1');
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;devStore.set('app-installed',null);deviceRender()});
 // Installed (setup to-do, Settings or the browser's menu): a toast, once.

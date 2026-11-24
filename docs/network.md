@@ -47,7 +47,8 @@ Network identity on import, and your teammates and friends see a key-change noti
   can link to it.
 - **Your account in Settings.** A paired Machine asks for your account in short (`GET /api/fleet/account`: your email,
   your Fleets as counts, links to the account's pages), at most once a minute, for its own token's owner only. Its
-  buttons are plain links: no token on your Machine opens a signed-in account page.
+  buttons are plain links: no token on your Machine opens a signed-in account page. In the phone app they add
+  `from=app`, so the account leaves out plans and prices, as it does throughout the app.
 - **Learnings for The Machine team** ([Sharing learnings](intelligence.md#sharing-learnings)): only after the owner's
   Send on exactly what they saw. `POST /api/fleet/learnings` gets the team's public keys (checked against a fingerprint
   pinned in the code) and then the learnings sealed for them, signed by a key for learnings only. The control plane sees
