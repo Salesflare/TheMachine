@@ -21,7 +21,7 @@ from machine.kinds import CHAT, KINDS
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.slack import slack_ids_named
 from machine.store import outcomes
-from machine.text import clamp, encoded
+from machine.text import clamp, encoded, unquoted
 import i18n
 import memory_use
 import next_actions
@@ -158,7 +158,7 @@ def own_predicate(kind, owner_slack_ids=()):
 
 def own_text(body):
     """What the owner wrote in a message, without the quoted history below it."""
-    return (body or '').split('[Quoted earlier messages', 1)[0].strip()
+    return unquoted(body)
 
 
 def tune_voice(channel, text, current):

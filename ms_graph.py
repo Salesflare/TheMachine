@@ -705,7 +705,8 @@ def payload(mime):
                'headers': [{'name': k, 'value': _header(k, v)} for k, v in node.raw_items()]}
         if node.is_multipart():
             children = node.get_payload()
-            out['body'] = {'size': 0}
+            whole = (_quietly(lambda: children[0].as_bytes(), b'') or b'') if kind == 'message/rfc822' else b''  # an attached mail is a file too
+            out['body'] = {'size': len(whole), **({'data': base64.urlsafe_b64encode(whole).decode().rstrip('=')} if whole else {})}
             out['parts'] = [part(child, f'{part_id}.{i}' if part_id else str(i)) for i, child in enumerate(children)]
             return out
         try:

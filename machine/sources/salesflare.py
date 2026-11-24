@@ -15,6 +15,7 @@ import urllib.request
 import enrichment
 from machine.config import LOG
 from machine.sources.exclusions import email_subject_excluded
+from machine.mail_quotes import mail_html
 from machine.text import QUOTED_HISTORY_KEPT, encoded, plain_html, trim_quoted_history
 from sources import SourceError, credential
 from timeutil import now
@@ -192,7 +193,9 @@ def salesflare_email_event(account, info, contacts, item, config=None):
     # Email that involves the owner already arrives through Gmail; keep only the rest.
     if email.get('user_id') == account['user_id'] or any(address in owner for _, _, address in people):
         return None
-    text, quoted = trim_quoted_history(plain_html('\n'.join(str(part.get('content') or '') for part in email.get('body') or [] if isinstance(part, dict))), email.get('subject') or '')
+    subject, on_it = email.get('subject') or '', ' '.join(f'{name} {address}' for _, name, address in people).casefold()
+    whole = '\n'.join(str(part.get('content') or '') for part in email.get('body') or [] if isinstance(part, dict))
+    text, quoted = trim_quoted_history(mail_html(whole, subject, on_it), subject, on_it)
     header = '\n'.join(f"{field.title()}: {name} <{address}>" if name else f"{field.title()}: {address}" for field, name, address in people)
     involved = [c for c in contacts.values() if c['email'] and c['email'] in {a for _, _, a in people}]
     return {'account_id': account['id'], 'source_id': 'email:' + str(item['id']), 'kind': 'salesflare.email',

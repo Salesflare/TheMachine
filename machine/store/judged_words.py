@@ -6,7 +6,7 @@ import json
 from machine import kinds
 from machine.sources.slack import slack_ids_named
 from machine.store import message_view
-from machine.text import own_part
+from machine.text import mail_people, own_part
 
 # Mail the owner writes fits almost always, chats always; the longest are conversations whose newest part is at the end
 WORDS = 1500
@@ -31,7 +31,7 @@ def words(kind, meta, title, body):
     repeat of its first line is left out: graph.slack_title)."""
     title, body = str(title or ''), str(body or '')
     if kinds.KINDS.get(kind, {}).get('family') == kinds.MAIL:
-        return f'{title} — {own_part(body, title)}'
+        return f'{title} — {own_part(body, title, mail_people(meta))}'
     body = message_view.intercom_body(kind, meta, body)
     if kind == 'slack.message' and body.strip():
         title = title.split(': ', 1)[0]

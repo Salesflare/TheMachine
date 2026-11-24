@@ -11,7 +11,7 @@ import bookings
 import bounces
 from machine.sources.exclusions import email_subject_excluded
 from machine.sources.rows import SKIPPED, Skips
-from machine.text import QUOTED_HISTORY_KEPT, _address, email_body, trim_quoted_history
+from machine.text import QUOTED_HISTORY_KEPT, _address, mail_people, message_body, trim_quoted_history
 import ms_graph
 from sources import MICROSOFT_SERVICES, SourceError, gog_read, transient
 from timeutil import now
@@ -147,7 +147,8 @@ def message_event(account, raw, config=None):
                *bodies['text/plain'], *bodies['text/html']]
     if any(term in html.unescape(value).casefold() for term in terms for value in content):
         return None
-    body, quoted = trim_quoted_history(email_body('\n'.join(bodies['text/plain']), bodies['text/html']), headers.get('subject', ''))
+    subject, people = headers.get('subject', ''), mail_people(headers)
+    body, quoted = trim_quoted_history(message_body(raw.get('payload'), subject, people), subject, people)
     metadata = {key: headers.get(key, '') for key in ['from', 'to', 'cc', 'date', 'message-id', 'in-reply-to']}
     for key in ('reply-to', 'bcc', 'sender'):  # the viewer's Details: Bcc on sent mail, a Sender that isn't the From
         if headers.get(key):

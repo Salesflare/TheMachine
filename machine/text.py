@@ -16,6 +16,7 @@ import unicodedata
 
 import message_seal
 import portable
+from machine.mail_quotes import FORWARD_SUBJECT, PREFIX, REPLY_HEADER, mail_html, quoted  # noqa: F401 - REPLY_HEADER: importable from here
 
 LAYER = 0  # message parsing
 
@@ -65,20 +66,8 @@ def plain_html(value):
     return '\n'.join(line.strip() for line in ''.join(parser.parts).splitlines() if line.strip())
 
 
-# Where an email reply's quoted history starts: a top-level reply header such as
-# "On Thu, 8 Oct 2026, Ann <a@b.c> wrote:" (often wrapped over two or three lines,
-# in several languages) or an Outlook "Original Message"/"From: … Sent:" block.
-REPLY_HEADER = re.compile(
-    r'^(?:On|Le|Op|Am|El|Il|Den|Em)\b[^\n]{0,250}(?:\r?\n(?!>)[^\n]{0,250}){0,2}?'
-    r'\s(?:wrote|a\s+écrit|schreef|schrieb|escribió|ha\s+scritto|skrev|escreveu)\b[^\n]{0,200}?(?:\r?\n(?!>)[^\n]{0,200}?)?:[ \t]*\r?$'
-    r'|^-{2,}\s*Original Message\s*-{2,}[ \t]*\r?$'
-    r'|^From:[ \t]\S[^\n]*\r?\nSent:[ \t]', re.M | re.I)
-
-
-FORWARD_SUBJECT = re.compile(r'(?i)^\s*(?:fwd?|tr|wg|doorst)\s*:')
-
-
 QUOTED_HISTORY_KEPT = 3000
+BODY_KEPT = 40000  # characters of a mail's text a source keeps
 
 
 # Text parts that only tell the reader to open the HTML version.
@@ -88,25 +77,52 @@ PLAIN_PLACEHOLDER = re.compile(r'(?i)plain[- ]text version (?:is )?not available
                                r'online versie van (?:deze|dit) (?:e-?mail|bericht)')
 
 
-def split_quoted_history(text, subject=''):
-    """Return (new text, quoted history). Forwarded messages are kept whole: they are the content."""
-    if FORWARD_SUBJECT.match(subject or ''):
-        return text, ''
-    match = REPLY_HEADER.search(text)
-    if not match or not text[:match.start()].strip():
-        return text, ''
-    return text[:match.start()].rstrip(), text[match.start():]
+def mail_people(meta):
+    """Everyone on a mail, in lower case, from its metadata (from, to, cc, reply-to): what tells a forward without its
+    prefix from an answer (mail_quotes.quoted). '' when it names no one it went to."""
+    meta = meta or {}
+    if not (meta.get('to') or meta.get('cc')):
+        return ''
+    return ' '.join(str(meta.get(k) or '') for k in ('from', 'to', 'cc', 'reply-to')).casefold().strip()
 
 
-def trim_quoted_history(text, subject=''):
+def split_quoted_history(text, subject='', people=''):
+    """Return (new text, quoted history): the history under the sender's last own line, so answers written between
+    quoted lines stay in the new text with what they answer. Forwarded messages are kept whole: they are the content."""
+    lines = text.splitlines(keepends=True)
+    marks = quoted([x.rstrip('\r\n') for x in lines], subject, people)
+    own = [n for n, line in enumerate(lines) if line.strip() and not marks[n]]
+    last = own[-1] + 1 if own else len(lines)
+    if not re.search(r'\w', ''.join(x for x, m in zip(lines[last:], marks[last:]) if m)):
+        return text, ''
+    return ''.join(lines[:last]).rstrip(), ''.join(lines[last:]).lstrip('\r\n')
+
+
+def _fit(text, subject, people):
+    """A mail too long to keep whole, with what it quotes above the sender's own words cut short, so those stay."""
+    lines = text.split('\n')
+    marks = quoted([x.rstrip('\r') for x in lines], subject, people)
+    room, out = max(0, BODY_KEPT - QUOTED_HISTORY_KEPT - sum(len(x) + 1 for x, m in zip(lines, marks) if not m)), []
+    for line, mark in zip(lines, marks):
+        room -= (len(line) + 1) * mark
+        if not mark or room >= 0:
+            out.append(line)
+        elif out[-1:] != ['> […]']:
+            out.append('> […]')
+    return '\n'.join(out)
+
+
+def trim_quoted_history(text, subject='', people=''):
     """Each reply quotes the whole thread below it, and the earlier messages are their own
     signals. Keep the new text whole and only the start of the quoted history."""
-    new, quoted = split_quoted_history(text, subject)
-    if not quoted:
-        return text, 0
-    kept = quoted[:QUOTED_HISTORY_KEPT]
-    return (new + f'\n\n[Quoted earlier messages: first {len(kept):,} of {len(quoted):,} characters kept. '
-            'Earlier messages in this thread are separate signals.]\n' + kept), len(quoted)
+    new, history = split_quoted_history(text, subject, people)
+    if len(new) > BODY_KEPT - QUOTED_HISTORY_KEPT:
+        new = _fit(new, subject, people)
+    if not history:
+        return new if len(text) > BODY_KEPT else text, 0
+    kept = history[:QUOTED_HISTORY_KEPT]
+    return (new + f'\n\n[Quoted earlier messages: first {len(kept):,} of {len(history):,} characters kept. '
+            'Earlier messages in this thread are separate signals.]\n' + kept), len(history)
 
 
 # The line trim_quoted_history puts between a reply and its quoted history. It tells the model the earlier messages are
@@ -127,14 +143,41 @@ def shown_body(text):
     return (before + '\n\n' + after if before and after else before or after), clipped
 
 
-def own_part(text, subject=''):
-    """What someone wrote themselves in an email: without the quoted history, the lines quoted with > and the signature
-    under "-- ". A forward keeps its lines: they are what it sends."""
-    text = '\n'.join(x.rstrip() for x in split_quoted_history(str(text or '').replace('\r', ''), subject)[0].split('\n'))
-    if not FORWARD_SUBJECT.match(subject or ''):
-        text = '\n'.join(x for x in QUOTED_MARK.split(text, maxsplit=1)[0].split('\n') if not x.lstrip().startswith('>'))
-        text = re.split(r'\n--\n', text, maxsplit=1)[0]
-    return re.sub(r'\n{3,}', '\n\n', text).strip()
+def _marked(text, subject='', people=''):
+    """A mail's lines, as collected or as stored, and which are quoted. Under the stored marker all is, except what the
+    sender wrote between marked lines (mail stored before those answers stayed above it)."""
+    found = QUOTED_MARK.search(text)
+    above = text[:found.start()].rstrip().split('\n') if found else text.split('\n')
+    under = ['', *text[found.end():].lstrip('\n').split('\n')] if found else []
+    lines = [x.rstrip() for x in (above if any(x.strip() for x in above) else []) + under]
+    marks, cut = quoted(lines, subject, people), len(lines) - len(under)
+    if under and not marks[cut + 1]:
+        marks[cut:] = [True] * len(under)
+    return lines, marks
+
+
+def unquoted(text, subject='', people=''):
+    """What someone wrote themselves in an email, stored or as it came: its lines that quote no one, also the answers
+    between quoted lines. A forward keeps its lines: they are what it sends."""
+    lines, marks = _marked(str(text or '').replace('\r', ''), subject, people)
+    own = [x for x, m in zip(lines, marks) if not m]
+    if not any(own) and not PREFIX.match(subject or ''):  # nothing of its own, and no answer: what isn't marked as quoted
+        own = [x for x in lines if not x.lstrip().startswith('>')]
+    return re.sub(r'\n{3,}', '\n\n', '\n'.join(own)).strip()
+
+
+def quoted_history(text, subject='', people=''):
+    """A stored mail from its first quoted line on, for its fold under the sender's own words; '' when it quotes none."""
+    lines, marks = _marked(str(text or '').replace('\r', ''), subject, people)
+    if True not in marks or not any(x and not m for x, m in zip(lines, marks)):
+        return ''
+    return '\n'.join(lines[marks.index(True):]).strip()
+
+
+def own_part(text, subject='', people=''):
+    """unquoted(), without the signature under "-- "."""
+    text = unquoted(text, subject, people)
+    return text if FORWARD_SUBJECT.match(subject or '') else re.split(r'\n--\n', text, maxsplit=1)[0].strip()
 
 
 # Zero-width and filler characters newsletters use to pad preview text.
@@ -198,32 +241,128 @@ def quoted_in(quote, message):
     return ' '.join(base[said[at][1]:said[at + len(key) - 1][1] + 1].split())
 
 
-def email_body(plain, html_parts):
+def email_body(plain, html_parts, subject='', people=''):
     """Prefer the text part, unless it is empty, only points to the HTML version, or is a
     token stub (like "empty") while the HTML has the real message."""
     plain = visible_text(plain)
-    rendered = visible_text(plain_html('\n'.join(html_parts))) if html_parts else ''
+    rendered = visible_text('\n'.join(x for x in (mail_html(v, subject, people) for v in html_parts) if x))
     stub = len(plain.strip()) < 40 and len(rendered.strip()) > 200
+    if not stub and len(plain.strip()) < 500 and len(rendered) > 3 * len(plain):  # "Your program can't show this mail"
+        said = set(_words(plain).split())
+        stub = len(said - set(_words(rendered).split())) * 2 > len(said)
     placeholder = len(plain.strip()) < 500 and PLAIN_PLACEHOLDER.search(plain)  # a booking's "sent in HTML" note runs a few lines
     if plain.strip() and not stub and not placeholder:
         return plain
     return rendered if rendered.strip() else plain
 
 
+def _part_text(part):
+    """(kind, text) of a message's own text part, or None: files and attached messages are not its body."""
+    kind = str(part.get('mimeType') or '').lower()
+    data = (part.get('body') or {}).get('data')
+    if kind not in ('text/plain', 'text/html') or part.get('filename') or not data:
+        return None
+    disposition = next((str(h.get('value', '')) for h in part.get('headers') or () if isinstance(h, dict)
+                        and str(h.get('name', '')).lower() == 'content-disposition'), '')
+    if disposition.strip().lower().startswith('attachment'):
+        return None
+    return kind, base64.urlsafe_b64decode(data + '=' * (-len(data) % 4)).decode('utf-8', errors='replace')
+
+
+def _attached(part):
+    """A message attached to this one (a forwarded .eml): its text is its own."""
+    return str(part.get('mimeType') or '').lower().startswith('message/')
+
+
+def _attached_messages(part):
+    """The messages attached to one, not those inside them."""
+    if _attached(part):
+        return [part]
+    return [x for child in part.get('parts') or () for x in _attached_messages(child)]
+
+
+def _header_value(part, name):
+    return next((' '.join(str(h.get('value') or '').split()) for h in part.get('headers') or () if isinstance(h, dict)
+                 and str(h.get('name') or '').lower() == name.lower()), '')
+
+
+def body_parts(payload):
+    """A message's own text as [(plain, [html])], in order: the versions of one text (multipart/alternative) together,
+    every other part by itself, so a mailing list's plain footer never stands in for an HTML mail."""
+    out = []
+
+    def leaves(part):
+        if _attached(part):
+            return
+        found = _part_text(part)
+        if found:
+            yield found
+        for child in part.get('parts') or ():
+            yield from leaves(child)
+
+    def one(found):
+        found = list(found)
+        if found:
+            out.append(('\n'.join(t for k, t in found if k == 'text/plain'), [t for k, t in found if k == 'text/html']))
+
+    def walk(part):
+        if _attached(part):
+            return
+        kind, children = str(part.get('mimeType') or '').lower(), part.get('parts') or ()
+        if kind == 'multipart/alternative' or children and not kind:
+            one(leaves(part))
+        elif children:
+            for child in children:
+                walk(child)
+        else:
+            one(leaves(part))
+
+    walk(payload or {})
+    return out
+
+
+def message_body(payload, subject='', people=''):
+    """A message's own text: each part's plain version or its HTML (email_body). A part that repeats another one's words
+    (a sender that puts both versions side by side) is left out. With no text of its own, the messages attached to it
+    are what it sends, each under its own header, as a forward in the text has them."""
+    parts = [(p, h, email_body(p, h, subject, people)) for p, h in body_parts(payload)]
+    said = [_words(text) for _, _, text in parts]
+    kept = []
+    for n, (_, html_parts, text) in enumerate(parts):
+        others = [s for k, s in enumerate(said) if k != n and bool(parts[k][1]) != bool(html_parts) and len(s) > 40]
+        if html_parts:  # its plain version is there too, with most of it
+            twice = any(said[n] and said[n] in s or s in said[n] and len(s) * 2 >= len(said[n]) for s in others)
+        else:
+            twice = len(said[n]) > 40 and any(said[n] in s and len(said[n]) * 2 < len(s) for s in others)
+        if said[n] and not twice:
+            kept.append(text)
+    if not kept:
+        for part in _attached_messages(payload or {}):
+            inner = (part.get('parts') or [part])[0]
+            text = message_body(inner, _header_value(inner, 'subject'))
+            if text.strip():
+                names = [f'{name}: {value}' for name in ('From', 'Date', 'Subject', 'To') if (value := _header_value(inner, name))]
+                kept.append('\n'.join(['---------- Forwarded message ---------', *names, '', text]))
+    return '\n'.join(kept)
+
+
 ATTACHMENT_INLINE = {'application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp'}
 
 
 def message_attachments(payload):
-    """Real attachments of a Gmail message, without embedded signature/logo images."""
+    """Real attachments of a Gmail message, without embedded signature/logo images. A message attached to it too, named
+    by its subject when it has no name, and the files in it."""
     found = []
     def walk(part):
-        body = part.get('body') or {}
-        if part.get('filename') and (body.get('attachmentId') or body.get('data')):
+        body, name = part.get('body') or {}, part.get('filename')
+        if not name and _attached(part) and part.get('parts'):
+            name = (_header_value(part['parts'][0], 'subject') or 'message') + '.eml'
+        if name and (body.get('attachmentId') or body.get('data')):
             headers = {h['name'].lower(): h.get('value', '') for h in part.get('headers', [])}
             embedded = (headers.get('content-id') and part.get('mimeType', '').startswith('image/')
                         and not headers.get('content-disposition', '').lower().startswith('attachment'))
             if not embedded:
-                found.append({'part': str(part.get('partId', '')), 'name': part['filename'][:200],
+                found.append({'part': str(part.get('partId', '')), 'name': name[:200],
                               'mime': part.get('mimeType', 'application/octet-stream')[:100], 'size': int(body.get('size') or 0)})
         for child in part.get('parts', []):
             walk(child)
@@ -249,6 +388,8 @@ def message_images(payload):
 def message_html(payload):
     """The message's own HTML body (not an attached .html file), or ''."""
     def walk(part):
+        if _attached(part):
+            return ''
         if part.get('mimeType') == 'text/html' and not part.get('filename') and (part.get('body') or {}).get('data'):
             data = part['body']['data']
             return base64.urlsafe_b64decode(data + '=' * (-len(data) % 4)).decode('utf-8', errors='replace')

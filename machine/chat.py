@@ -203,9 +203,9 @@ def chat_final_step(action):
             'label': clamp(str(action.get('label') or ''), 120), 'body': chat_text(text, chars=8000), 'reply': False}
 
 
-def chat_excerpt(body, subject=''):
+def chat_excerpt(body, subject='', people=''):
     """The new part of a message: its quoted history and signature left out, the first lines kept."""
-    return chat_text(own_part(body, subject), chars=1500)
+    return chat_text(own_part(body, subject, people), chars=1500)
 
 
 def chat_person(name):

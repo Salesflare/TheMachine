@@ -72,6 +72,25 @@ def intercom_seen(old, metadata, stamp):
     return out
 
 
+MAIL_KINDS = ('gmail.message', 'salesflare.email')
+# What collecting a mail says about how its text was read, not what the mail is
+READ_AS = ('truncated', 'quoted_history_chars', 'quoted_history_shortened', verified_sender.KEY)
+
+
+def reread(old, event):
+    """Whether a stored mail (a row) is this same mail, only its text read differently: by a later version of the code
+    that tells a reply from what it quotes (machine/mail_quotes.py). A mail that arrived or went out never changes, so
+    it stays as stored: no new version, no second review. A draft's text does change."""
+    if event.get('deleted') or old['deleted'] or 'DRAFT' in (event['metadata'].get('labels') or ()):
+        return False
+    try:
+        before = json.loads(old['metadata'])
+    except ValueError:
+        return False
+    plain = lambda meta: encoded({k: v for k, v in meta.items() if k not in READ_AS and not (k == 'attachments' and not v)})
+    return old['title'] == event['title'] and old['occurred_at'] == event['occurred_at'] and plain(before) == plain(event['metadata'])
+
+
 def found_news_line(last_success):
     """From when found mail counts as news: the last sync less FOUND_NEWS_SLACK, None when the account never synced."""
     try:
@@ -312,10 +331,11 @@ class EventsStore:
                 digest = hashlib.sha256(encoded(digest_event).encode()).hexdigest()
                 facts = event['kind'] == 'intercom.conversation' and isinstance(event.get('metadata'), dict)
                 old = db.execute('SELECT id,content_hash' + (',title' if slack else '') + (',metadata' if facts else '')
+                                 + (',title,occurred_at,metadata,deleted' if event['kind'] in MAIL_KINDS else '')
                                  + ' FROM events WHERE account_id=? AND source_id=?', (account, event['source_id'])).fetchone()
                 if facts and not history:
                     event = {**event, 'metadata': intercom_seen(old['metadata'] if old else None, event['metadata'], now())}
-                if old and (history or old['content_hash'] == digest):
+                if old and (history or old['content_hash'] == digest or event['kind'] in MAIL_KINDS and reread(old, event)):
                     if history:
                         continue
                     if slack:
