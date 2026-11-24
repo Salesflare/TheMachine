@@ -388,7 +388,7 @@ mod quiet {
         }
     }
 
-    /// Whether a Focus is on, macOS only tells with a permission.
+    /// Whether a Focus is on, macOS only tells with a permission: the box doesn't offer the choice there.
     #[cfg(target_os = "macos")]
     pub fn disturb() -> bool {
         false

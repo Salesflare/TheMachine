@@ -1031,6 +1031,8 @@ fn main() {
                 #[cfg(feature = "sandbox")]
                 mac::debug(app.handle());
             }
+            #[cfg(target_os = "macos")]
+            mac::fresh_shaders(app.handle());
             windows::start(app.handle())?;
             #[cfg(any(windows, target_os = "macos"))]
             tray(app.handle())?;
