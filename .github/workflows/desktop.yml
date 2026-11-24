@@ -67,7 +67,7 @@ jobs:
   mac:
     if: github.head_ref != 'desktop-bubble' # its push has it
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 80
     outputs:
       sha: ${{ steps.build.outputs.sha }}
     defaults:
@@ -103,7 +103,7 @@ jobs:
           retention-days: 14
       - name: Use it, with a made-up Machine
         id: use
-        timeout-minutes: 30
+        timeout-minutes: 45
         run: | # its own certificate is trusted on this runner while this runs, for 127.0.0.1 only, and never by the build for people
           grep -q MACHINE_SANDBOX_ROOT "sandbox-build/The Machine.app/Contents/MacOS/the-machine-desktop"
           if grep -q MACHINE_SANDBOX_ROOT "out/The Machine.app/Contents/MacOS/the-machine-desktop"; then exit 1; fi
@@ -111,7 +111,10 @@ jobs:
           smoke/certificate.sh "$certificate"
           trap 'sudo security delete-certificate -c "Made-up Machine root" "$system"' EXIT
           sudo security add-trusted-cert -d -r trustRoot -p ssl -k "$system" "$certificate/root.pem"
-          python3 smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots "$certificate"
+          failed=0
+          python3 smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots "$certificate" || failed=1
+          python3 smoke/mac_window.py "sandbox-build/The Machine.app" "out/The Machine.app" shots/window "$certificate" || failed=1
+          exit $failed
       - name: Its certificate is trusted no more
         if: always() && steps.use.outcome != 'skipped'
         run: if security verify-cert -c "$RUNNER_TEMP/certificate/cert.pem" -p ssl -s 127.0.0.1 -L; then exit 1; fi
@@ -156,9 +159,12 @@ jobs:
           security import "$p12" -k "$keychain" -P "$PASSWORD" -T /usr/bin/codesign > /dev/null
           security set-key-partition-list -S apple-tool:,apple: -s -k "$own" "$keychain" > /dev/null
           security list-keychains -d user -s "$keychain" login.keychain-db
-          codesign --force --sign "$IDENTITY" --keychain "$keychain" --options runtime --timestamp "app/The Machine.app"
+          # As desktop/mac/entitlements.plist, which isn't here, and nothing of what the file itself says it has
+          plutil -create xml1 entitlements.plist
+          plutil -insert 'com\.apple\.security\.device\.audio-input' -bool true entitlements.plist
+          codesign --force --sign "$IDENTITY" --keychain "$keychain" --options runtime --entitlements entitlements.plist --timestamp "app/The Machine.app"
           codesign --verify --strict --verbose=2 "app/The Machine.app"
-          codesign --display --verbose=4 "app/The Machine.app"
+          codesign --display --verbose=4 --entitlements - "app/The Machine.app"
       - name: The key is gone
         if: always()
         run: |

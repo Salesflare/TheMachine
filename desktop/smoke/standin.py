@@ -1,4 +1,4 @@
-"""A made-up Machine and account sign-in on 127.0.0.1 for windows.py: just the routes the app calls, as a sandbox build
+"""A made-up Machine and account sign-in on 127.0.0.1 for windows.py and the Mac's: just the routes the app calls, as a sandbox build
 takes them. It keeps what it was asked. Over https with the certificate of certificate.sh (its folder)."""
 import base64
 import datetime
@@ -28,6 +28,48 @@ if (window.launchQueue) launchQueue.setConsumer(p => { const u = p.targetURL && 
 onfocus = tell;
 tell();
 </script>'''
+# The dashboard in the app's own window: what it does with a browser around it (mac_window.py)
+WINDOW = b'''<!doctype html><link rel="manifest" href="manifest.webmanifest"><title>Stand-in</title><style>body{margin:0;padding:16px;background:light-dark(#f8f7f3,#1b1c1f);color:light-dark(#222,#eee);color-scheme:light dark;font:15px sans-serif}
+#drop{border:1px dashed;padding:20px;width:260px}iframe{width:300px;height:60px;border:1px solid}p{margin:8px 0}</style>
+<h1>Stand-in dashboard</h1><p id="told"></p><p id="ipc"></p><p><input id="field" value="some words"> <input id="pick" type="file" multiple> <span id="picked"></span></p>
+<p><a id="web" target="_blank" rel="noopener" href="OUT?web">Web</a> <a id="here" href="OUT?here">Here</a> <a id="mail" href="mailto:a@b.example?subject=new">Mail</a> <a id="mailnew" target="_blank" href="mailto:a@b.example?subject=newer">Mail too</a>
+<a id="own" target="_blank" href="/#person=7">Own</a> <button id="opens">window.open</button> <button id="goes">location</button> <button id="blank">a window, then location</button> <button id="hop">Account</button></p>
+<p><a id="file" target="_blank" rel="noopener" download="a.txt" href="api/chat-file?id=1">File</a> <a id="save" download="b.txt" href="api/chat-file?id=3">Save</a> <button id="blob">blob</button> <a id="sent" href="api/attachment?id=4&sent=1">Sent as a file</a>
+<a id="sentnew" target="_blank" href="api/attachment?id=5&sent=1">Sent, in a window</a> <a id="pdf" target="_blank" href="api/attachment?id=6&pdf=1">PDF</a></p>
+<p><button id="alert">alert</button> <button id="confirm">confirm</button> <button id="prompt">prompt</button> <button id="mic">microphone</button></p>
+<div id="drop">Drop here</div><p><iframe id="frame" srcdoc="<body style='font:15px sans-serif'><p id=words>In a frame</p><a id=framed target=_blank href='OUT?framed'>Framed</a></body>"></iframe></p>
+<p>The needle is here. And a second needle there.</p><div style="height:1600px"></div><p>The last needle.</p><script>
+const me = Math.random().toString(36).slice(2), $ = s => document.querySelector(s), says = x => { $('#told').textContent = x };
+const tell = () => { document.title = 'Stand-in ' + location.hash; $('h1').textContent = 'Stand-in dashboard ' + location.hash;
+  fetch('seen?' + new URLSearchParams({me, at: location.hash, desktop: window.machineDesktop ? machineDesktop.version : ''})) };
+addEventListener('hashchange', tell);
+tell();
+const on = (s, run) => { $(s).onclick = run };
+on('#opens', () => window.open('OUT?opens', '_blank', 'noopener'));
+on('#goes', () => { location.href = 'OUT?goes' });
+on('#blank', () => { const w = window.open('about:blank'); if (w) w.location = 'OUT?blank'; else location.assign('OUT?blank') });
+on('#hop', () => { const f = Object.assign(document.createElement('form'), {method: 'post', action: '/_machine/account-hop'}); document.body.append(f); f.submit() });
+on('#blob', () => Object.assign(document.createElement('a'), {href: URL.createObjectURL(new Blob(['x'])), download: 'c.txt'}).click());
+on('#alert', () => { alert('Something\\nto know'); says('alerted') });
+on('#confirm', () => says('confirm ' + confirm('Delete this?')));
+on('#prompt', () => says('prompt ' + prompt('What name?', 'Sam')));
+on('#mic', () => { says('asking'); navigator.mediaDevices.getUserMedia({audio: true}).then(s => says('microphone ' + s.getAudioTracks().length), e => says('microphone ' + e.name)) });
+$('#pick').onchange = e => { $('#picked').textContent = [...e.target.files].map(f => f.name).join(', ') };
+$('#drop').ondragover = e => e.preventDefault();
+$('#drop').ondrop = e => { e.preventDefault(); says('dropped ' + [...e.dataTransfer.files].map(f => f.name).join(', ')) };
+addEventListener('machinedesktop', e => says(JSON.stringify(e.detail)));
+const i = window.__TAURI_INTERNALS__;
+(i ? Promise.all(['app_state', 'settings_state', 'box_state'].map(c => i.invoke(c).then(() => 'ALLOWED', () => 'refused'))).then(x => [...new Set(x)].join()) : Promise.resolve('none')).then(x => { $('#ipc').textContent = x });
+</script>'''
+PDF = b'''%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 400 300]/Contents 4 0 R/Resources<</Font<</F1<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>>>>>>>endobj
+4 0 obj<</Length 44>>stream
+BT /F1 24 Tf 60 150 Td (A made-up PDF) Tj ET
+endstream endobj
+trailer<</Root 1 0 R>>
+%%EOF'''
 # The dashboard's page of one to-do (?compact=1#card=<id>): its state in its title, a dialog of its own, links out
 COMPACT = b'''<!doctype html><title>The Machine</title><style>body{margin:0;padding:12px;background:#fff;font:14px sans-serif}</style>
 <h1></h1><p id="ipc"></p><button id="done">Done here</button> <button id="more">More</button> <a target="_blank" href="/#person=7">A person</a> <a href="/elsewhere">Away</a>
@@ -73,7 +115,9 @@ class Machine(http.server.ThreadingHTTPServer):
             tls.load_cert_chain(certificate / 'cert.pem', certificate / 'key.pem')
             self.socket = tls.wrap_socket(self.socket, server_side=True, do_handshake_on_connect=False)  # on each one's own thread
         self.port, self.actions, self.cookies, self.links, self.challenges = port, [], set(), [], {}
-        self.seen, self.cards, self.left = [], [], []
+        self.seen, self.cards, self.left, self.opened, self.hops = [], [], [], [], []
+        self.account = self.machine = None  # its account's address; whose account this is
+        self.window, self.away = False, None  # the dashboard is the app's window's; where a signed-out one is sent
         self.desks, self.notices, self.meeting = [], [], None  # what the robot says of itself with each look; what waits for it to say
         self.todos, self.name = list(TODOS), 'Sam'
         self.refuse = False
@@ -104,8 +148,11 @@ class Page(http.server.BaseHTTPRequestHandler):
         q = dict(urllib.parse.parse_qsl(u.query))
         if u.path == '/open':  # the account: the browser shows this, and windows.py opens the link it would go to
             t = secrets.token_urlsafe(32)
-            m.challenges[t] = q['c']
-            back = urllib.parse.quote(f'{m.at}/_machine/auth?t={t}&to=app', safe='')
+            own = m.machine or m
+            if 'c' not in q:
+                return self.answer(b'<title>Stand-in account</title>', kind='text/html')
+            own.challenges[t] = q['c']
+            back = urllib.parse.quote(f'{own.at}/_machine/auth?t={t}&to=app', safe='')
             m.links.append('computer.themachine.app://signed-in?u=' + back)
             return self.answer(b'<title>Stand-in account</title>Signed in', kind='text/html')
         if u.path == '/_machine/auth':
@@ -119,6 +166,13 @@ class Page(http.server.BaseHTTPRequestHandler):
             return self.answer(MANIFEST, kind='application/manifest+json')
         if u.path == '/icon.png':
             return self.answer(ICON, kind='image/png')
+        if u.path == '/api/attachment' and 'pdf' in q:
+            return self.answer(PDF, kind='application/pdf', Content_Disposition="inline; filename*=UTF-8''Plan%20B.pdf")
+        if u.path == '/api/attachment' and 'sent' in q:
+            return self.answer(b'made up', kind='application/octet-stream', Content_Disposition=f"attachment; filename*=UTF-8''sent%20{q['id']}.bin")
+        if u.path == '/hop':
+            m.hops.append(q)
+            return self.answer(b'<title>Stand-in account</title>The account', kind='text/html')
         if u.path in ('/out', '/api/chat-file', '/api/attachment'):
             if not self.headers.get('Referer'):  # the browser's, not the page's own
                 m.left.append(self.path)
@@ -149,10 +203,15 @@ class Page(http.server.BaseHTTPRequestHandler):
         if q.get('compact') == '1':
             m.cards.append(self.headers.get('Cookie') in m.cookies)
             return self.answer(COMPACT.replace(b'OUT', f'http://localhost:{m.port}/out'.encode()), kind='text/html')
-        self.answer(DASHBOARD, kind='text/html')
+        if m.away:
+            return self.answer(b'', 302, Location=m.away)
+        m.opened.append(self.headers.get('Cookie') in m.cookies)
+        self.answer(WINDOW.replace(b'OUT', f'http://localhost:{m.port}/out'.encode()) if m.window else DASHBOARD, kind='text/html')
 
     def do_POST(self):
         m = self.server
+        if self.path == '/_machine/account-hop' and m.account:
+            return self.answer(b'', 302, Location=m.account + '/hop?t=made-up')
         asked = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
         own = self.headers.get('Origin') == m.at and self.headers.get('X-CSRF-Token') == 'made-up'
         if self.path != '/api/action' or not own:
