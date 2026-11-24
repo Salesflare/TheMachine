@@ -22,6 +22,7 @@ import chat_model
 import corrections
 import embeddings
 import error_feed
+import file_needs
 import follow_ups
 import graph
 import graph_boards
@@ -433,6 +434,7 @@ class StoreCore:
             activity.ensure(db)  # daily activity counts for the hosted health report (activity.py)
             activity_log.ensure(db)  # Activity: the connections it has seen, for added and removed lines (activity_log.py)
             ai_access.ensure(db)  # connected AIs: their connections, sign-ins and activity (ai_access.py)
+            file_needs.ensure(db)  # how often a preparation links to or misses a file (file_needs.py)
             pacing.ensure(db)  # how often background work paced (pacing.py): made here, not inside someone's write
             learning_loop.ensure(db)  # the learning loop's changes, each undoable (learning_loop.py)
             person_summary.ensure(db)  # the summary on top of a person's page (person_summary.py)

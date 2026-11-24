@@ -67,7 +67,7 @@ _BY_PART = {
     'memories': _names('''facts fact_about bring_in_items bring_in_lines bring_in_state person_summaries person_summary_runs gbrain_meta gbrain_notes gbrain_pages
         note_kinds memory_use'''),
     'preferences': _names('''learned_fixes learning_changes learning_signals learning_state rule_changes voices voice_merges voice_prefs
-        pacing_prefs pacing_starts security_prefs enrich_prefs notify_prefs error_feed_prefs handoff_mail_prefs
+        pacing_prefs pacing_starts file_need_prefs file_need_runs security_prefs enrich_prefs notify_prefs error_feed_prefs handoff_mail_prefs
         whatsapp_photo_prefs team_learning_prefs digest_interests subs_kept touch_people secondhand_searches'''),
     'graph': _names('''graph_nodes graph_identifiers graph_edits graph_events graph_history graph_history_events graph_imports graph_links graph_merges graph_names graph_offers
         graph_org_asks graph_relations graph_resources graph_role_asks graph_same graph_state graph_unnamed manual_nodes

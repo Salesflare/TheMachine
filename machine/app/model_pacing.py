@@ -9,6 +9,7 @@ import threading
 import time
 
 import embeddings
+import file_needs
 import graph
 import graph_board_reviews
 from machine import ai_training
@@ -291,6 +292,22 @@ class ModelPacingApp:
             return pacing.send(self.store.connect, self.fleet.relay.call)
         except Exception as error:  # the Network or the control plane is away: next time
             LOG.warning('pacing report error=%s', type(error).__name__)
+            return 0
+
+    def file_needs_note(self, args):
+        """A preparation saved its result or blocker: which kinds of file it links to and misses, for a count (file_needs.py)."""
+        try:
+            with self.store.connect() as db:
+                file_needs.note(db, args['suggestion_id'], args.get('job_id'), args.get('file_missing'))
+        except Exception as error:  # counting never holds up the work itself
+            LOG.warning('file needs error=%s', type(error).__name__)
+
+    def file_needs_send(self):
+        """Once a day, with error reports on: the finished days' numbers to the control plane."""
+        try:
+            return file_needs.send(self.store.connect, self.fleet.relay.call)
+        except Exception as error:  # the Network or the control plane is away: next time
+            LOG.warning('file needs report error=%s', type(error).__name__)
             return 0
 
     def short_window(self):

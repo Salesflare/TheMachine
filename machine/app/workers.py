@@ -437,6 +437,7 @@ class WorkersApp:
             self.help_topics_send()  # what Help was asked, as topics (help_topics.py)
             self.error_reports_step()
             self.pacing_send()  # how often background work paced, counts only (pacing.py)
+            self.file_needs_send()  # how often a preparation links to or misses a file, numbers only (file_needs.py)
         self.apply_skill_clusters()  # a Create skill tapped on Telegram
         self.summary_step()  # people's summaries, when their evidence changed (person_summary.py)
         self.about_step()  # project descriptions, when their evidence changed (project_about.py)

@@ -23,7 +23,7 @@ calendar_writes.result card_moves.area card_moves.accounts_before card_moves.are
 chat_stops.via checkpoints.last_success crm_fields.type data_stamps.name draft_seen.digest
 email_bounce_events.via email_bounce_cc_scan.flagged event_vector_skips.reason
 facts.merged_into facts.side fact_search_config.k fact_search_config.v family_invite_log.what fault_versions.fingerprint
-faults.fingerprint faults.origin first_pass.verdict first_pass.what fleet_briefs.every fleet_claims.offer
+faults.fingerprint faults.origin file_need_runs.job file_need_runs.linked file_need_runs.missing first_pass.verdict first_pass.what fleet_briefs.every fleet_claims.offer
 fleet_learn_removed.fp fleet_learn_seen.fp fleet_learn_used.fp fleet_learn_vectors.fp fleet_learnings.fp fleet_notices.reason
 fleet_out.context fleet_questions.hold fleet_splits.meeting fleet_reviews.scope fleet_reviews.decided fleet_rules.rule fleet_scopes.scope folder_overviews.basis
 follow_up_basis.basis follow_up_cards.channel follow_up_cards.why follow_up_holds.why follow_up_pauses.scope follow_up_rules.scope
@@ -100,7 +100,7 @@ WORDS = {
         board_fit_undo.steps project_splits.steps recurring_series.project projects.stage projects.about_basis project_moves.stage crm_tags.tag''',
     "the owner's own setup: boards, fields, searches and settings": '''
         boards.name boards.stages boards.about board_suggestions.name board_suggestions.stages crm_fields.name crm_fields.choices
-        bring_in_state.value enrich_prefs.value error_feed_prefs.value fleet_meta.value gbrain_meta.value handoff_mail_prefs.value
+        bring_in_state.value enrich_prefs.value error_feed_prefs.value file_need_prefs.value fleet_meta.value gbrain_meta.value handoff_mail_prefs.value
         meet_prefs.value memory_seed_pages.page memory_seed_state.value milestones.detail notify_prefs.value pacing_prefs.value
         secondhand_searches.url secondhand_searches.filters security_prefs.value share_meta.value team_learning_prefs.value routines.why
         fleet_briefs.view fleet_notices.view merge_effects.receipt note_page_lines.item section_topics.section topic_aliases.target

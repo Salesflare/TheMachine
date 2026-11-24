@@ -1356,6 +1356,14 @@ stretch, when it started, the window (`5h` or `week`), the threshold, how long i
 waited. Once a day the finished days go over the Network (`POST /errors` with `{"action": "pacing", ...}`) for a card on
 the control plane's /admin. Counts and minutes only; job ids stay on the Machine. The owner sees nothing new.
 
+**Linked files.** Off (`file_needs.OPEN`) until the privacy policy, the help and the setting's own words say so. Then,
+under the same switch, `file_needs.py` counts, once per preparation that saved a result or a blocker,
+which kinds of linked file other than a Google Doc its messages and chat have (`sheet`, `slides`, `pdf`, `drive` for a
+Word or other file in Google Drive, `cloud` for another cloud drive), by the link alone, and the kind the run says it
+needed and couldn't open or find (`file_missing` on its save: `doc`, `sheet`, `slides`, `pdf`, `word`, `other`; part of the
+save, no model call of its own). Once a day the finished days go over the Network (`POST /errors` with
+`{"action": "file_needs", ...}`), as numbers per kind for a card on /admin. Never a name, a link or a file's contents.
+
 ## Deleting someone
 
 **Delete permanently…**, in the ⋯ menu on a person's page, removes them and everything The Machine knows about them:
