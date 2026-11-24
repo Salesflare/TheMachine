@@ -1092,6 +1092,8 @@ def photos_step(connect, now, limit=PHOTOS_PER_PASS, fetch=None):
 # organizations the owner deals with. Only the organization's own site is asked. None found: asked again in 30 days.
 SITE_LOGOS_PER_PASS = 10
 PAGE_BYTES = 512_000
+SITE_BYTES = 2_000_000  # a home page read for its text (site_text)
+SITE_TEXT = 3000        # characters of it
 
 
 def logo_type(data):
@@ -1147,6 +1149,81 @@ def site_logo(domain, timeout=8, tries=4):
         if kind:
             return got[0], kind
     return None
+
+
+class _Page(HTMLParser):
+    """A page's title, the description it gives itself and its text, without menus, scripts and styles."""
+    SKIP = ('script', 'style', 'noscript', 'svg', 'template', 'nav', 'footer', 'select', 'iframe')
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.title, self.about, self.lines, self.inside = '', '', [], []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = {k.lower(): v or '' for k, v in attrs}
+        if tag == 'meta' and (attrs.get('name') or attrs.get('property') or '').lower() in ('description', 'og:description'):
+            self.about = self.about or attrs.get('content', '')
+        elif tag in ('main', 'h1') and 'nav' in self.inside:
+            self.inside = []  # a menu that is never closed
+        if tag in self.SKIP or tag == 'title':
+            self.inside.append(tag)
+
+    def handle_endtag(self, tag):
+        if tag in self.inside:
+            del self.inside[self.inside.index(tag):]
+
+    def handle_data(self, data):
+        text = ' '.join(data.split())
+        if text and self.inside == ['title']:
+            self.title = self.title or text
+        elif text and not self.inside and text not in self.lines[-200:]:
+            self.lines.append(text)
+
+
+PRICE = re.compile(r'[$€£¥₹]\s?\d|\d\s?(?:[$€£¥₹円]|(?:EUR|USD|GBP|CHF|SEK|NOK|DKK|PLN|kr|zł)\b)')
+
+
+def page_parts(text, n, prices=1000):
+    """A long page in n characters: its start, and the part further on with the most prices, when there is one."""
+    if len(text) <= n:
+        return text
+    head = text[:n - prices - 3]
+    at = [m.start() for m in PRICE.finditer(text) if m.start() >= len(head)]
+    if not at:
+        return text[:n]
+    start = max(len(head), max(at, key=lambda a: (sum(a <= b < a + prices - 200 for b in at), -a)) - 150)
+    return f'{head} … {text[start:start + prices]}'
+
+
+def site_text(domain, timeout=8):
+    """What an organization's own home page says, as {'title', 'url', 'description'} (plain text, untrusted: meeting_prep.py
+    quotes it), or None: https only, a few redirects, each to a public address (_download)."""
+    host = urllib.parse.urlsplit(website(domain)).hostname or ''
+    for start in dict.fromkeys(['https://' + host + '/', 'https://www.' + host + '/']):
+        got = _download(start, 'text/html', SITE_BYTES, timeout, redirects=3)
+        if not got or got[1] not in ('text/html', 'application/xhtml+xml') or shared_host(got[2]):
+            continue
+        charset = re.search(rb'<meta[^>]{0,200}charset=["\']?([\w-]{2,20})', got[0][:4000], re.I)
+        try:
+            text = got[0].decode(charset[1].decode() if charset else 'utf-8', 'replace')
+        except LookupError:
+            text = got[0].decode('utf-8', 'replace')
+        page = _Page()
+        try:
+            page.feed(text)
+        except Exception:  # a broken page: whatever was read so far
+            pass
+        about = ' '.join(page.about.split())
+        said = ' '.join([about, *(line for line in page.lines if line != about)]).strip()
+        if said:
+            return {'title': page.title, 'url': 'https://' + (urllib.parse.urlsplit(got[2]).hostname or host) + '/', 'description': page_parts(said, SITE_TEXT)}
+    return None
+
+
+def profile_of(db, domain):
+    """The looked-up profile of one organization's domain, or None."""
+    row = db.execute("SELECT profile FROM org_profiles WHERE domain=? AND status='found'", (domain,)).fetchone()
+    return usable(domain, json.loads(row[0] or 'null')) if row else None
 
 
 def site_logos_step(connect, now, limit=SITE_LOGOS_PER_PASS, fetch=None):

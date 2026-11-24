@@ -753,7 +753,7 @@ its own budget.
   `{last_name}` and `{key}`. The `peopledatalabs` and `hunter` presets have one, and Salesflare's lead API gets
   `…/enrich/people?name={name}&domain={domain}` by itself. `people_fields` adds paths like `fields`.
 - Turn it off in Settings, Security: **Look up work contacts** (also stops the Gravatar tries and meeting prep's web
-  search, `meeting_prep.py`). Never in a Careful Work Fleet.
+  search and website read, `meeting_prep.py`). Never in a Careful Work Fleet.
 
 ### Who is looked up
 

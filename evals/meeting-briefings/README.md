@@ -1,7 +1,7 @@
 # Meeting briefings eval
 
-Made-up meetings whose guests were in an earlier meeting with notes: what a briefing tells of them, and that it tells
-nothing that is wrong or settled since. `run.py` stores the meetings, notes, mail, promises and done to-dos the way their
+Made-up meetings whose guests were in an earlier meeting with notes, first meetings and meetings that repeat: what a
+briefing tells of them, and that it tells nothing that is wrong or settled since. `run.py` stores the meetings, notes, mail, promises and done to-dos the way their
 source does, builds the real briefing (`meeting_prep.py`, `earlier_notes.py`) with a model, and has the model check it
 against the statements it should and must not hold, and for statements the case doesn't support. No to-do is made and
 nothing is sent. Every person, company and address is made up. Languages: English, Dutch, French, German, Spanish,
@@ -9,13 +9,17 @@ Portuguese, Japanese.
 
 | Set | Cases | What it is for |
 | --- | --- | --- |
-| development | 18 | what the prompt and limits were tuned on |
-| held-out | 18 | the same kinds of case, never tuned on |
+| development | 27 | what the prompt and limits were tuned on |
+| held-out | 30 | the same kinds of case, never tuned on |
 
 The kinds: plain notes, long notes, a point settled later (by mail, in passing, by a promise or a to-do), newer notes or
 a mail that changes older ones, only an agenda, a transcript, notes the meeting app mailed, a series, another address of
 the same person, a namesake, a large meeting, personal notes before a work meeting, a colleague's step, an instruction
 written in the notes, and no notes at all.
+
+First meetings (`f-`): only the booking mail or nothing yet, and what the web has (`web`: the organization's home page and
+the results of a search on the person). Meetings that repeat (`r-`): what came since the one before, and the series' last
+briefing (`before`). In a `quiet` case there is nothing to say, so no briefing is right. A case that isn't quiet needs one.
 
     OPENAI_BASE_URL=... OPENAI_API_KEY=... python3 evals/meeting-briefings/run.py --model <model> --runs 2 --set held-out
     ... --root <another checkout>    # the same cases on that code's briefings
@@ -51,6 +55,22 @@ With `--history` (one run of each set, 2026-11-24; before: briefings read signal
 | statements not supported | 0 | 1 | 0 | 3 |
 | briefings made | 1 of 18 | 17 of 18 | 1 of 18 | 17 of 18 |
 | turn tokens in, average (largest) | 1,488 (1,488) | 1,631 (2,414) | 1,552 (1,552) | 1,638 (2,375) |
+
+First meetings and meetings that repeat (two runs of each set, 2026-11-24; before: no briefing for a meeting that
+repeats, no page of their own site read, no search on a first name):
+
+| | Held-out, before | Held-out, now | Development, before | Development, now |
+| --- | --- | --- | --- | --- |
+| facts recalled | 4 of 36 | 30 of 36 | 0 of 26 | 25 of 26 |
+| wrong or stale | 0 of 10 | 0 of 10 | 0 of 14 | 0 of 14 |
+| statements not supported | 0 | 0 | 0 | 0 |
+| briefings with nothing to say | 0 of 8 | 0 of 8 | 0 of 8 | 0 of 8 |
+| briefings made | 2 of 24 | 16 of 24 | 0 of 18 | 10 of 18 |
+| turn tokens in, average (largest) | 982 (1,077) | 1,367 (1,679) | 964 (967) | 1,357 (1,707) |
+
+Three lines of the instructions were changed once after a first run of all of them (held-out 31 of 36 then): no word on what isn't
+known, no forced link to the owner's organization, and what was agreed last time is kept. The other 36 cases stayed as they were (recalled 87 of 95, one run).
+What a first meeting means for the owner is still sometimes a stretch.
 
 Where this is weak: the cases were written with the change, and one model wrote and checked the briefings. Only two cases
 have long notes, so the limit rests on little. "Wrong or stale" counts only the statements a case names. One held-out

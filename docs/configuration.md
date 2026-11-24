@@ -86,7 +86,7 @@
 | `enrichment` | off | Optional [organization data](intelligence.md#organization-data-optional-enrichment): `provider` or `url`, `headers`, `key_file`/`key_env`, `fields`, `per_day` (50; 1000 when paired with the Network); for [work contacts](intelligence.md#people-data) `people_url`, `people_fields`, `people_per_day` (50; 3000 when paired) |
 | `memory_rebuild_hours` | `[23, 7]` | A quiet window each night for an OpenClaw memory rebuild that keeps getting cut off; `false` turns it off ([Install](operations.md#install)) |
 | `meeting_prep` | on | A briefing to-do before a meeting with people from outside, while reviews are on; `false` turns it off |
-| `meeting_prep_research` | on | For a first meeting, a short web search on the guest's public name and organization through OpenClaw's web search (only while Look up work contacts is on); `false` turns it off |
+| `meeting_prep_research` | on | For a first meeting, the organization's own home page and a short web search on the guest's public name and organization through OpenClaw's web search (only while Look up work contacts is on); `false` turns it off |
 | `calendar_clashes` | on | A to-do when a work meeting and a personal event overlap; `false` turns it off |
 | `owner_phones` | `[]` | Your own phone numbers (also per account), as About you in Settings sets them |
 | `message_key_store` | file | `keyring` keeps the message key in your desktop keyring ([below](#the-key-in-your-keyring-linux-desktop)) |
