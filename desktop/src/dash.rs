@@ -406,7 +406,7 @@ fn unreached(app: &AppHandle, load: u64) {
     };
     let (here, told) = (app.clone(), std::sync::Arc::new(AtomicBool::new(false)));
     let tells = told.clone();
-    let _ = window.eval_with_callback("!!document.querySelector('link[rel=manifest]')", move |kept| {
+    let _ = window.eval_with_callback("!!document.querySelector('link[rel=manifest]')&&!window.machineReloads", move |kept| {
         tells.store(true, Ordering::Relaxed);
         later(&here, move |app| ends(app, kept.trim() == "true"));
     });
@@ -689,6 +689,7 @@ pub fn reload(app: &AppHandle) {
     if window.label() == LABEL && now(app) != View::Blank {
         return retry(app);
     }
+    let _ = window.eval("window.machineReloads=true"); // WebKit on a Mac leaves the page that is there when nothing answers
     let _ = window.reload();
     if let (true, Some(machine)) = (window.label() == LABEL, app.state::<Shared>().machine()) {
         let load = {
