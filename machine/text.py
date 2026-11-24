@@ -14,6 +14,7 @@ import re
 import sqlite3
 import unicodedata
 
+import google_links
 from mail_senders import header_address as _address  # noqa: F401 (imported from here)
 import message_seal
 import portable
@@ -294,7 +295,13 @@ def email_body(plain, html_parts, subject='', people=''):
         said = set(_words(plain).split())
         stub = len(said - set(_words(rendered).split())) * 2 > len(said)
     placeholder = len(plain.strip()) < 500 and PLAIN_PLACEHOLDER.search(plain)  # a booking's "sent in HTML" note runs a few lines
-    if plain.strip() and not stub and not placeholder:
+    # a program whose text part leaves out where a link to a Google file goes (Apple Mail): the HTML has it
+    lost = {f for v in html_parts[:10] for _, f, _ in google_links.find(v)} if rendered.strip() else ()
+    if lost:
+        said = {f for _, f, _ in google_links.find(plain)}
+        shown = {f for _, f, _ in google_links.find(rendered)}
+        lost = [f for f in lost if f in shown and not any(f.startswith(s) for s in said)]
+    if plain.strip() and not stub and not placeholder and not lost:
         return plain
     return rendered if rendered.strip() else plain
 
@@ -369,7 +376,7 @@ def message_body(payload, subject='', people=''):
     (a sender that puts both versions side by side) is left out. With no text of its own, the messages attached to it
     are what it sends, each under its own header, as a forward in the text has them."""
     parts = [(p, h, email_body(p, h, subject, people)) for p, h in body_parts(payload)]
-    said = [_words(text) for _, _, text in parts]
+    said = [_words(google_links.ADDED.sub('', text)) for _, _, text in parts]
     kept = []
     for n, (_, html_parts, text) in enumerate(parts):
         others = [s for k, s in enumerate(said) if k != n and bool(parts[k][1]) != bool(html_parts) and len(s) > 40]

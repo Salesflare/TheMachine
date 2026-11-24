@@ -40,6 +40,7 @@ import datetime as dt
 from html.parser import HTMLParser
 import hashlib
 import re
+import google_links
 import timeutil
 import urllib.parse
 
@@ -302,7 +303,8 @@ def message_event(account, chat, raw, members, me):
     if not who or not raw.get('id') or not at:
         raise ValueError('not a person message')
     uid, name = who
-    body = html_text(raw.get('body'))
+    body = raw.get('body')
+    body = html_text({**body, 'content': google_links.keep_links(body.get('content'))} if isinstance(body, dict) else body)
     attachments = [a for a in raw.get('attachments') or [] if isinstance(a, dict)]
     if attachments:
         names = [str(a.get('name') or '').strip() for a in attachments if a.get('contentType') == 'reference' and a.get('name')]

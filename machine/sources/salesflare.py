@@ -13,6 +13,7 @@ import urllib.parse
 import urllib.request
 
 import enrichment
+import google_links
 from machine.config import LOG
 from machine.sources.exclusions import email_subject_excluded
 from machine.mail_quotes import mail_html
@@ -210,7 +211,7 @@ def salesflare_email_event(account, info, contacts, item, config=None):
 
 
 def salesflare_meeting_event(account, info, contacts, item):
-    notes = plain_html(item.get('notes'))
+    notes = plain_html(google_links.keep_links(item.get('notes')))
     if not notes:
         return None  # only meetings with written notes are signals
     involved = []
@@ -221,7 +222,7 @@ def salesflare_meeting_event(account, info, contacts, item):
         involved.append(known or {'id': person.get('id'), 'name': person.get('name') or '',
                                   'email': (person.get('email') or '').lower(), 'role': None})
     attendees = ', '.join(p.get('name') or p.get('email') or '' for p in item.get('participants') or [] if isinstance(p, dict))
-    description = plain_html(item.get('description'))
+    description = plain_html(google_links.keep_links(item.get('description')))
     body = f"Attendees: {attendees}\n\nNotes:\n{notes}" + (f"\n\nDescription:\n{description}" if description else '')
     return {'account_id': account['id'], 'source_id': 'meeting:' + str(item['id']), 'kind': 'salesflare.meeting',
             'occurred_at': salesflare_time(item.get('time')).isoformat(),
