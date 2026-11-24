@@ -65,9 +65,12 @@ class StillOwed(unittest.TestCase):
             self.app().action_step(T())
 
     def test_a_reply_that_only_promises_the_work_keeps_the_to_do_open_with_its_promise(self):
+        with self.store.connect() as db:  # what its draft followed (based_on): said about the draft, so it goes with it
+            db.execute('UPDATE suggestions SET based_on=(SELECT max(id) FROM events)')
         self.send(self.draft(still_owed=OWED))
         row = self.suggestion()
         self.assertEqual((row['status'], row['due'], row['next_action'], row['outcome']), ('pending', '2026-10-20', None, None))
+        self.assertIsNone(row['based_on'])
         self.assertRegex(row['body'], r'^Replied to Ash Moore on .+\. The work is still to do\.$')  # not the draft's line
         self.assertNotIn('Nothing has been sent', row['body'])
         with self.store.connect() as db:

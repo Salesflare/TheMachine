@@ -11,6 +11,7 @@ import machine.main as machine_main
 import machine.prompts.review as machine_prompts_review
 import machine.store.cards as machine_store_cards
 import machine.store.views as machine_store_views
+import message_seal
 
 
 def intercom():
@@ -31,10 +32,14 @@ def slack(ts, text, user, when, thread=None, channel='support', display=None):
 
 
 class BasedOn(unittest.TestCase):
+    sealed = False
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite', protect=self.sealed)
+        with self.store.connect() as db:
+            self.assertEqual(message_seal.is_protected(db), self.sealed)
         self.store.owner_user_ids = {'U0OWNER001'}
         self.app = object.__new__(machine_main.App)
         self.app.store = self.store
@@ -92,6 +97,76 @@ class BasedOn(unittest.TestCase):
         self.assertEqual(self.shown(sid)['based_on']['who'], 'Robin')
         self.assertEqual(json.loads(self.card(sid)['event_ids']).count(self.reply), 1)
 
+    def later(self, text='Any news on the bounty?', ts='1793800000.000100', user='U0KIM00001'):
+        self.store.commit_page('sl', {}, [slack(ts, text, user, '2026-11-04T15:00:00+00:00', thread='1793790256.828209', display='Kim Doe')])
+        with self.store.connect() as db:
+            return db.execute('SELECT id FROM events WHERE source_id=?', (f'C0SUPPORT1:{ts}',)).fetchone()[0]
+
+    def drafted(self):
+        """A to-do whose draft follows Robin's reply, as its run said."""
+        sid = self.suggest()['id']
+        self.store.decide(sid, 'accept', '', 'n1', 'dashboard')
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='running'")
+            job = db.execute('SELECT job_id FROM preparations').fetchone()[0]
+        self.app.action('prepare', {'suggestion_id': sid, 'job_id': job, 'body': 'Drafted the bounty offer.', 'outcome': 'needs_you',
+                                    'needs': 'check the reply', 'based_on': self.reply})
+        self.assertEqual(self.shown(sid)['based_on']['who'], 'Robin')
+        return sid
+
+    def test_a_new_message_that_replaces_the_result_takes_the_line_with_it(self):
+        sid = self.drafted()
+        news = self.later()
+        self.suggest(card_id=sid, event_ids=[news], title='Answer Kim on the bounty', body='Kim asks for news on the bounty.')
+        self.assertEqual(self.card(sid)['body'], 'Kim asks for news on the bounty.')
+        self.assertIsNone(self.card(sid)['based_on'])  # "Based on Robin" was said about the draft that is gone
+        self.assertIsNone(self.shown(sid)['based_on'])
+        self.assertIn(self.reply, json.loads(self.card(sid)['event_ids']))  # still evidence, with Read message
+
+    def test_an_update_that_names_its_own_input_shows_that_one(self):
+        sid = self.drafted()
+        news = self.later()
+        self.suggest(card_id=sid, event_ids=[news], body='Kim asks for news: Robin says the lowest is fine.', based_on=self.reply)
+        self.assertEqual(self.shown(sid)['based_on']['who'], 'Robin')
+
+    def test_an_update_with_the_same_text_keeps_the_line(self):
+        sid = self.drafted()
+        news = self.later()
+        self.suggest(card_id=sid, event_ids=[news], body='Drafted the bounty offer.')
+        self.assertEqual(self.shown(sid)['based_on']['who'], 'Robin')
+
+    def test_waiting_on_someone_after_it_drops_the_line(self):
+        sid = self.drafted()
+        news = self.later()
+        self.suggest(card_id=sid, event_ids=[news], body='You asked Kim which bounty they want.', waiting_on='Kim to say which bounty')
+        self.assertEqual(json.loads(self.card(sid)['outcome'])['state'], 'waiting')
+        self.assertIsNone(self.card(sid)['based_on'])
+
+    def test_waiting_on_someone_with_the_same_text_keeps_the_line(self):
+        sid = self.drafted()
+        self.suggest(card_id=sid, event_ids=[self.later()], body='Drafted the bounty offer.', waiting_on='Kim to say which bounty')
+        self.assertEqual(json.loads(self.card(sid)['outcome'])['state'], 'waiting')
+        self.assertEqual(self.shown(sid)['based_on']['who'], 'Robin')
+
+    def test_what_settles_or_reads_the_result_keeps_the_line(self):
+        sid = self.drafted()
+        self.store.review_body(sid, 'Drafted the bounty offer.')
+        self.store.decide(sid, 'complete', '', 'n2', 'dashboard')
+        self.assertEqual(self.card(sid)['based_on'], self.reply)
+        # A message kept on the done to-do is evidence only: the result it stood on is the same
+        self.suggest(card_id=sid, event_ids=[self.later('Thanks!')], body='Kim said thanks.')
+        self.assertEqual(self.card(sid)['based_on'], self.reply)
+
+    def test_the_owners_own_to_do_keeps_the_line_of_a_draft_that_stays_ready(self):
+        sid = self.drafted()
+        for text, action, kept in (('Another text.', '{"kind":"email"}', True), ('Another text.', None, True), ('A third text.', None, False)):
+            with self.store.connect() as db:
+                db.execute('UPDATE suggestions SET next_action=? WHERE id=?', (action, sid))
+                card = db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone()
+                evidence = [dict(db.execute('SELECT * FROM events WHERE id=?', (self.ticket,)).fetchone())]
+                self.store.fill_owner_card(db, card, 'Offer the bounty', text, [self.ticket], ['ic'], evidence, None, False, None, [self.ticket])
+            self.assertEqual((self.card(sid)['body'], self.card(sid)['based_on']), (text, self.reply if kept else None))
+
     def test_only_a_live_message_from_someone_else(self):
         for wrong in (self.mine, 999999, 'x', True):
             with self.assertRaises(ValueError):
@@ -131,6 +206,11 @@ class BasedOn(unittest.TestCase):
     def test_the_review_and_the_drafting_step_are_told(self):
         self.assertIn('based_on', machine_prompts_review.review_prompt('r1', ['sl']))
         self.assertIn('based_on', machine_app_preparation.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
+
+
+class BasedOnSealed(BasedOn):
+    """The same with message protection on (the default): SQLite sees a to-do's text only sealed."""
+    sealed = True
 
 
 if __name__ == '__main__':
