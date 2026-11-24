@@ -42,6 +42,7 @@ LAZY = {
     'newtodo': ('new-todo-dialog.js', 'shell-speed.js'),  # shell-speed.js: first in line, so it runs soon after the page is quiet
     'palette': ('shell-palette.js',),
     'compose': ('todos-send.js', 'todos-compose.js'),
+    'kept': ('todos-kept.css', 'todos-kept.js'),
     'signin': ('connections-signin-dialog.js',),
     'logins': ('connections-logins.css', 'connections-logins.js'),
     'loginimport': ('connections-login-import.css', 'connections-login-import.js'),

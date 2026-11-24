@@ -96,9 +96,11 @@ try{
   assert.equal(sent.args.suggestion_id,'aaaaaaaaaaaaaaaa');assert.equal(sent.args.revision,'bbbbbbbbbbbb');assert.equal(sent.args.sender,alias);
   assert.ok(calls.indexOf(made)<calls.indexOf(sent));
   await dialog.waitFor({state:'hidden'});
-  // Escape closes it and nothing is posted; a new one starts empty
+  // Escape closes it, keeps what was typed and posts nothing (test_kept_text_dashboard.mjs); after Discard it starts empty
   calls.length=0;await link.click();await dialog.waitFor({state:'visible'});
   await page.locator('#send-subject').fill('Draft');await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
+  await link.click();await dialog.waitFor({state:'visible'});assert.equal(await page.locator('#send-subject').inputValue(),'Draft');
+  await page.locator('#send-cancel',{hasText:'Discard'}).click();await dialog.waitFor({state:'hidden'});
   await link.click();await dialog.waitFor({state:'visible'});assert.equal(await page.locator('#send-subject').inputValue(),'');
   await page.locator('#send-dialog .snooze-heading button').click();await dialog.waitFor({state:'hidden'});
   assert.equal(posted('compose_email').length+posted('confirm_action').length,0);

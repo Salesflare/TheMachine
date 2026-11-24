@@ -3,7 +3,7 @@ title: Write a new email
 area: cards
 summary: Click an email address to write to it from your own mailbox, in the same window as a to-do's draft.
 covers: email-composer
-code: machine/app/mail.py, dashboard/todos-compose.js
+code: machine/app/mail.py, dashboard/todos-compose.js, dashboard/todos-kept.js
 order: 12
 ---
 ## Open it
@@ -18,7 +18,19 @@ Write the subject and the message, with bold, lists and links if you like. Nothi
 
 The email then goes out like any draft you approve: it shows as sent on its own to-do, on the person's page and in your mailbox. If it can't go out, the to-do keeps it, ready to send from there.
 
-Escape or **Cancel** closes it. What you typed is not kept.
+## If you don't send it
+
+Close it with Escape, × or Back and what you typed is kept, with the subject, From and who gets it. It never sends by itself.
+
+- A new email waits above your to-dos as **Unsent email to**, with **Continue** and **Discard**.
+- An edited draft says **Edited, not sent** on its to-do, on every channel. Open it again and your text is there. A follow-up you edit in **Review** works the same.
+- After a reload, or when your phone closed the app, the window you were typing in opens again.
+
+**Discard** in the window throws away what you typed, and **Undo** brings it back. A message you sent or discarded doesn't come back.
+
+If the draft changed meanwhile, you see the new draft and **Use it** shows what you typed. Neither replaces the other until you send. Two tabs with different text work the same way.
+
+What you typed stays in this browser only, encrypted, for 30 days. It goes when you sign out or someone else signs in. Other devices don't see it. Without https it lasts while the page is open.
 
 ## Your own mail app
 

@@ -16,7 +16,7 @@ Not possible once it went out. Nothing goes before your yes, so read it in **Rev
 
 ## Where a draft is
 
-A draft stays on its to-do. If it's no longer under **For you**, look under **Waiting on others**, **Coming back later**, **Older** or **Done / dismissed**, or find the to-do with **Search**. Older versions are in the to-do's chat, marked **Earlier draft**. What you typed in **New email** is not kept when you close that window.
+A draft stays on its to-do. If it's no longer under **For you**, look under **Waiting on others**, **Coming back later**, **Older** or **Done / dismissed**, or find the to-do with **Search**. Older versions are in the to-do's chat, marked **Earlier draft**. A new email you didn't send waits above your to-dos (see [Write a new email](email-composer.md)).
 
 ## Light or dark
 

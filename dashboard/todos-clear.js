@@ -7,7 +7,7 @@ const crDraft=s=>taskActions(s).find(a=>DRAFT_KINDS.includes(a.kind)&&!['handoff
 function crKind(s){if(!s||!state.suggestions.includes(s)||closed(s)||s.status==='snoozed'||looksDone(s)||waitsOnOthers(s)||s.handled_hint||ownerStep(s)||withTeammate(s)||s.review_in||s.preparation_status==='blocked')return '';
  if(s.status==='pending')return s.skill_proposal?.update?'':'do';
  const a=s.status==='prepared'&&!needsAsk(s)&&crDraft(s);if(!a)return '';
- return CR_MSG.includes(a.kind)&&!a.to_options?.length&&(a.from_options||[]).length<2&&!movedLine(a)&&!(a.to||[]).some(x=>a.bounced?.[String(x).toLowerCase()])?'send':'dialog'}
+ return CR_MSG.includes(a.kind)&&!self.keptMark?.(s,a)&&!a.to_options?.length&&(a.from_options||[]).length<2&&!movedLine(a)&&!(a.to||[]).some(x=>a.bounced?.[String(x).toLowerCase()])?'send':'dialog'}
 const crList=(v,key)=>(v[key]||[]).filter(s=>plainTodo(s)&&crKind(s));
 const crPace=()=>+state?.clear_pace||30;
 let crFuv=null;

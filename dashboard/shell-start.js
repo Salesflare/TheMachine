@@ -16,6 +16,7 @@ sessionCheck();
 // The parts for what can stand over the to-dos (the mail check's line, a milestone: dashboard_parts.LAZY_EARLY, fetched with
 // the page) run now, not once the status asks for them: drawn late, they pushed the to-dos already on screen down
 for(const l of document.querySelectorAll('link[data-lazy]'))lazyPart(l.dataset.lazy).catch(()=>{});
+try{if(localStorage.kept)lazyPart(self.keptOn='kept').catch(()=>{})}catch{}  // something typed waits here (todos-kept.js)
 if(localCache.on)localCache.read('status').then(hit=>{if(!hit||state.suggestions)return;state=wakeSnoozed(hit.value);shownCached=true;shownAt=hit.at;
  try{cardsMerge();render();openChatLink();openTabLink()}catch(e){errCaught(e);console.error(e)}});
 // One to-do on its own: nothing of the whole page draws or goes anywhere; todos-compact.js draws, from when it is in

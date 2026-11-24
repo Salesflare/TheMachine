@@ -61,7 +61,7 @@ document.addEventListener('click',e=>{const a=e.target.closest?.('a[href^="mailt
  const m=composeLink(a.getAttribute('href'));if(!m)return;e.preventDefault();lazyRun('compose',()=>openCompose(m.to,m.subject,a.href))});
 // The one way a draft goes out from the dashboard: the send dialog's Send and Go through's (todos-clear.js), for exactly
 // the revision the owner saw. The server sends that revision or refuses (Store.confirm_action).
-async function sendConfirmed(id,revision,kind,extra={}){await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision,approval_id:crypto.randomUUID(),...extra}})});
+async function sendConfirmed(id,revision,kind,extra={}){await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision,approval_id:crypto.randomUUID(),...extra}})});self.keptGone?.(id,revision);
  if(SENT_WATCH.includes(kind))sentWatch.set(id,{revision,kind,at:Date.now()})}
 // Once its step is sent or done, a toast says where the to-do went, with Open; never over another to-do or a dialog.
 const SENT_WATCH=[...SENDS,'finish'],sentWatch=new Map();
