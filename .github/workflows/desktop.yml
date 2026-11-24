@@ -1,10 +1,14 @@
 name: Desktop prototype
 
-# A Windows build of the desktop prototype (desktop/README.md), to try it: unsigned, kept 14 days as this run's artifact,
-# never a release. Then a smoke run of it on this computer's own desktop (desktop/smoke/), with its screenshots. Only when
-# desktop/ changes, or by hand. No secrets, one job, no macOS.
+# A Windows and a Mac build of the desktop prototype (desktop/README.md), to try it: unsigned, kept 14 days as this run's
+# artifact, never a release. Each is then used on this computer's own desktop (desktop/smoke/), with its screenshots. Only
+# when desktop/ changes, or by hand. One job for each, standard runners, no secrets.
+# The prototype's own branch also gets a Mac build that is signed and notarized, so it opens on another Mac as it is.
 on:
   pull_request:
+    paths: ['desktop/**', '.github/workflows/desktop.yml']
+  push:
+    branches: [desktop-bubble]
     paths: ['desktop/**', '.github/workflows/desktop.yml']
   workflow_dispatch:
 
@@ -17,6 +21,7 @@ concurrency:
 
 jobs:
   windows:
+    if: github.event_name != 'push' # the pull request has it
     runs-on: windows-latest
     timeout-minutes: 45
     defaults:
@@ -51,4 +56,158 @@ jobs:
         with:
           name: the-machine-desktop-windows-screenshots
           path: desktop/shots/
+          retention-days: 14
+
+  mac:
+    if: github.head_ref != 'desktop-bubble' # its push has it
+    runs-on: macos-26
+    timeout-minutes: 60
+    outputs:
+      sha: ${{ steps.build.outputs.sha }}
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test and build
+        id: build
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '13.0'
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update --target aarch64-apple-darwin --target x86_64-apple-darwin
+          cargo +stable test --release --locked
+          cargo +stable build --release --locked --features sandbox
+          mac/bundle.sh sandbox-build target/release/the-machine-desktop
+          for chip in aarch64 x86_64; do cargo +stable build --release --locked --target $chip-apple-darwin; done
+          mac/bundle.sh out target/{aarch64,x86_64}-apple-darwin/release/the-machine-desktop
+          cp README.md ../LICENSE out/
+          (cd out && ditto -c -k --keepParent "The Machine.app" the-machine-desktop-mac.zip)
+          echo "sha=$(shasum -a 256 out/the-machine-desktop-mac.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-mac-unsigned
+          path: |
+            desktop/out/the-machine-desktop-mac.zip
+            desktop/out/README.md
+            desktop/out/LICENSE
+          if-no-files-found: error
+          retention-days: 14
+      - name: Use it, with a made-up Machine
+        timeout-minutes: 30
+        run: python3 smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-mac-screenshots
+          path: desktop/shots/
+          retention-days: 14
+
+  # Signs what the job above made and used, and nothing else: no checkout, no build and none of this repository's code runs
+  # beside the key. The environment only gives it to the prototype's branch and main, never to a pull request.
+  mac-sign:
+    needs: mac
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: macos-26
+    timeout-minutes: 45
+    environment: mac-signing
+    outputs:
+      sha: ${{ steps.pack.outputs.sha }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-mac-unsigned
+      - name: Sign
+        env:
+          SHA: ${{ needs.mac.outputs.sha }}
+          P12: ${{ secrets.MAC_DEVELOPER_ID_P12 }}
+          PASSWORD: ${{ secrets.MAC_DEVELOPER_ID_PASSWORD }}
+          IDENTITY: 'Developer ID Application: Salesflare BVBA (BYM5H66GK9)'
+        run: |
+          set -euo pipefail
+          umask 077
+          echo "$SHA  the-machine-desktop-mac.zip" | shasum -a 256 -c -
+          ditto -x -k the-machine-desktop-mac.zip app
+          keychain="$RUNNER_TEMP/sign.keychain-db" p12="$RUNNER_TEMP/sign.p12" own=$(openssl rand -hex 24)
+          trap 'rm -f "$p12"' EXIT
+          printf '%s' "$P12" | base64 -D > "$p12"
+          security create-keychain -p "$own" "$keychain"
+          security set-keychain-settings -lut 900 "$keychain"
+          security unlock-keychain -p "$own" "$keychain"
+          security import "$p12" -k "$keychain" -P "$PASSWORD" -T /usr/bin/codesign > /dev/null
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$own" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          codesign --force --sign "$IDENTITY" --keychain "$keychain" --options runtime --timestamp "app/The Machine.app"
+          codesign --verify --strict --verbose=2 "app/The Machine.app"
+          codesign --display --verbose=4 "app/The Machine.app"
+      - name: The key is gone
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/sign.p12"
+          security delete-keychain "$RUNNER_TEMP/sign.keychain-db"
+          security list-keychains -d user -s login.keychain-db
+      - name: Notarize
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          umask 077
+          key="$RUNNER_TEMP/notary.p8"
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$ASC_KEY_P8" > "$key"
+          auth=(--key "$key" --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER_ID")
+          ditto -c -k --keepParent "app/The Machine.app" notary.zip
+          xcrun notarytool submit notary.zip "${auth[@]}" --wait --timeout 30m --output-format json > notary.json || { cat notary.json; exit 1; }
+          id=$(plutil -extract id raw notary.json)
+          xcrun notarytool log "$id" "${auth[@]}"
+          [ "$(plutil -extract status raw notary.json)" = Accepted ]
+          xcrun stapler staple "app/The Machine.app"
+          xcrun stapler validate "app/The Machine.app"
+          spctl --assess --type execute --verbose=4 "app/The Machine.app"
+      - name: Pack
+        id: pack
+        run: |
+          set -euo pipefail
+          mkdir out
+          ditto -c -k --keepParent "app/The Machine.app" out/the-machine-desktop-mac.zip
+          echo "sha=$(shasum -a 256 out/the-machine-desktop-mac.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          shasum -a 256 out/the-machine-desktop-mac.zip
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-mac
+          path: out/the-machine-desktop-mac.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  # The signed one, opened as a download, away from the key
+  mac-open:
+    needs: mac-sign
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-mac
+          path: signed
+      - name: Open it
+        env:
+          SHA: ${{ needs.mac-sign.outputs.sha }}
+        run: |
+          set -euo pipefail
+          echo "$SHA  signed/the-machine-desktop-mac.zip" | shasum -a 256 -c -
+          ditto -x -k signed/the-machine-desktop-mac.zip signed
+          spctl --assess --type execute --verbose=4 "signed/The Machine.app"
+          python3 desktop/smoke/mac.py - "signed/The Machine.app" shots
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-mac-opened
+          path: shots/
           retention-days: 14

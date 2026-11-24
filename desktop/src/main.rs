@@ -7,6 +7,8 @@ mod card;
 mod front;
 mod given;
 mod machine;
+#[cfg(target_os = "macos")]
+mod mac;
 mod place;
 mod quit;
 mod saved;
@@ -127,7 +129,7 @@ impl Shared {
         }
     }
 
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     fn count(&self) -> usize {
         self.waiting.lock().unwrap().count
     }
@@ -326,6 +328,8 @@ fn robot_drop(app: AppHandle) {
 #[tauri::command]
 fn robot_given(app: AppHandle, given: Given) -> Result<(), String> {
     take_given(&app, "robot", given.within().ok_or("size")?);
+    #[cfg(target_os = "macos")]
+    mac::dropped(&app);
     Ok(())
 }
 
@@ -608,6 +612,9 @@ async fn connect(app: AppHandle, address: String) -> Result<(), String> {
 #[tauri::command]
 fn sign_in(app: AppHandle) -> Result<(), String> {
     let (pending, address) = signin::start()?;
+    #[cfg(target_os = "macos")]
+    mac::take_links();
+    #[cfg(not(target_os = "macos"))]
     app.deep_link().register(signin::SCHEME).map_err(|_| "scheme")?;
     *app.state::<Shared>().pending.lock().unwrap() = Some(pending);
     app.opener().open_url(address, None::<&str>).map_err(|_| "browser".to_string())
@@ -615,6 +622,9 @@ fn sign_in(app: AppHandle) -> Result<(), String> {
 
 /// Takes the sign-in's links back. On Linux the plugin leaves its file, emptied of them.
 pub fn no_links(app: &AppHandle) {
+    #[cfg(target_os = "macos")]
+    later(app, |_| mac::give_links());
+    #[cfg(not(target_os = "macos"))]
     let _ = app.deep_link().unregister(signin::SCHEME);
     #[cfg(target_os = "linux")]
     if let (Ok(data), Ok(program)) = (app.path().data_dir(), std::env::current_exe()) {
@@ -672,6 +682,11 @@ async fn take_screenshot(app: AppHandle) -> Result<Option<String>, String> {
         return Err("shot".into());
     }
     let here = app.clone();
+    #[cfg(target_os = "macos")]
+    if !away(|| Ok(snip::allowed())).await? {
+        app.state::<Shared>().picking.store(false, Ordering::Relaxed);
+        return Err("screen".into());
+    }
     later(&here, |app| {
         windows::close_box(app);
         windows::show_or_not(app);
@@ -782,25 +797,34 @@ fn open_path(app: &AppHandle, path: &str) -> Result<(), String> {
     app.opener().open_url(address, None::<&str>).map_err(|_| "browser".to_string())
 }
 
-/// On Windows an icon by the clock too, where people look for what runs, and it needs no page to work.
-#[cfg(windows)]
+/// On Windows an icon by the clock too, where people look for what runs, and it needs no page to work. On macOS in the menu
+/// bar, where a click opens its menu, as of the others there.
+#[cfg(any(windows, target_os = "macos"))]
 fn tray(app: &AppHandle) -> tauri::Result<()> {
     use tauri::menu::{Menu, MenuItem};
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
     let item = |id, text| MenuItem::with_id(app, id, text, true, None::<&str>);
     let (hide, dashboard) = (item("hide", "Hide")?, item("dashboard", "Open dashboard")?);
+    #[cfg(windows)]
+    let menu = Menu::with_items(app, &[&hide, &dashboard, &item("quit", "Quit")?])?;
+    #[cfg(target_os = "macos")]
+    let menu = Menu::with_items(app, &[&item("open", "Open")?, &dashboard, &hide, &item("quit", "Quit")?])?;
     let mut icon = TrayIconBuilder::with_id("tray")
         .tooltip("The Machine")
-        .menu(&Menu::with_items(app, &[&hide, &dashboard, &item("quit", "Quit")?])?)
-        .show_menu_on_left_click(false)
+        .menu(&menu)
+        .show_menu_on_left_click(cfg!(target_os = "macos"))
         .on_menu_event(|app, event| {
             let id = event.id.as_ref().to_string();
             later(app, move |app| match id.as_str() {
                 "hide" if app.state::<Shared>().hidden.load(Ordering::Relaxed) => chosen(app, "show"),
+                "open" => open(app),
                 id => chosen(app, id),
             });
         })
         .on_tray_icon_event(|icon, event| {
+            if cfg!(target_os = "macos") {
+                return;
+            }
             if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
                 later(icon.app_handle(), show_or_toggle);
             }
@@ -814,7 +838,7 @@ fn tray(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 struct TrayItems {
     hide: tauri::menu::MenuItem<tauri::Wry>,
     dashboard: tauri::menu::MenuItem<tauri::Wry>,
@@ -822,7 +846,7 @@ struct TrayItems {
 
 /// The icon by the clock has the robot's dot too, and its menu what can be done now.
 fn follow_tray(app: &AppHandle) {
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     if let (Some(items), Some(icon), Some(image)) = (app.try_state::<TrayItems>(), app.tray_by_id("tray"), app.default_window_icon()) {
         let shared = app.state::<Shared>();
         let _ = items.hide.set_text(if shared.hidden.load(Ordering::Relaxed) { "Show robot" } else { "Hide" });
@@ -831,11 +855,11 @@ fn follow_tray(app: &AppHandle) {
         let _ = icon.set_icon(Some(if shared.dot.load(Ordering::Relaxed) { dotted(image) } else { image.clone() }));
         let _ = icon.set_tooltip(Some(if count > 0 { format!("The Machine. {count} for you.") } else { "The Machine".into() }));
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     let _ = app;
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 fn dotted(image: &tauri::image::Image<'_>) -> tauri::image::Image<'static> {
     let (w, h) = (image.width(), image.height());
     let (mut px, r) = (image.rgba().to_vec(), w as f64 * 0.22);
@@ -868,7 +892,17 @@ fn watch(app: AppHandle) {
             windows::show_or_not(&here);
         });
     });
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    std::thread::spawn(move || loop {
+        std::thread::sleep(Duration::from_secs(3));
+        let here = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            if mac::full_screen() {
+                here.state::<Shared>().look_soon(); // whether it speaks
+            }
+        });
+    });
+    #[cfg(target_os = "linux")]
     let _ = app;
 }
 
@@ -885,7 +919,10 @@ fn main() {
     if std::env::args().nth(1).as_deref() == Some("--quit") && quit::event::ask() {
         return;
     }
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(target_os = "macos")]
+    let builder = builder.activate_ignoring_other_apps(false);
+    builder
         .plugin(tauri_plugin_single_instance::init(|app, args, _| {
             // Started again: --toggle (for a key the person binds), --quit, or just show the robot. Or a sign-in comes
             // back.
@@ -985,8 +1022,17 @@ fn main() {
             }
             #[cfg(windows)]
             quit::event::wait(app.handle());
+            #[cfg(target_os = "macos")]
+            {
+                app.set_activation_policy(tauri::ActivationPolicy::Accessory); // no Dock icon, as Info.plist says
+                mac::menu(app.handle())?;
+                mac::follow_screens(app.handle());
+                mac::follow_front(app.handle());
+                #[cfg(feature = "sandbox")]
+                mac::debug(app.handle());
+            }
             windows::start(app.handle())?;
-            #[cfg(windows)]
+            #[cfg(any(windows, target_os = "macos"))]
             tray(app.handle())?;
             if app.state::<Shared>().machine().is_none() {
                 open(app.handle()); // it says what it is, and signs in
@@ -1000,6 +1046,24 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("The Machine could not start")
         .run(|app, event| {
+            #[cfg(target_os = "macos")]
+            match &event {
+                // Started again from Finder, or a sign-in comes back
+                RunEvent::Reopen { .. } => later(app, |app| {
+                    show(app);
+                    mac::give_back_soon(app);
+                    if app.state::<Shared>().machine().is_none() {
+                        open(app);
+                    }
+                }),
+                RunEvent::Opened { urls } if app.try_state::<Shared>().is_some() => {
+                    for url in urls {
+                        came_back(app, url.as_str());
+                    }
+                    mac::give_back_soon(app);
+                }
+                _ => {}
+            }
             if let RunEvent::Exit = event {
                 if app.state::<Shared>().pending.lock().unwrap().is_some() {
                     no_links(app);

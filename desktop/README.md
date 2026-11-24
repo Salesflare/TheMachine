@@ -7,7 +7,7 @@ The dashboard, the phone app and the Machine don't change for it. It is not part
 
 It never sends or approves anything itself. A to-do opens as the dashboard shows it, where its draft is read first. It starts with
 nothing of its own: no start at login, no hotkey. On Windows it has an icon by the clock while it runs, with the same dot
-(Windows may put it behind the arrow there).
+(Windows may put it behind the arrow there), and on a Mac one in the menu bar.
 
 **Quick buttons.** On a row, with the mouse over it or the keys in it: those of its notification on Android that do
 something (Do it, Snooze, Mark done), in your Machine's words. Snooze offers the to-do's own choices, as the dashboard's
@@ -27,7 +27,8 @@ takes the list's place, with its answer under it.
 **Screenshots.** **+**, **Take a screenshot**: you pick an area or a window with the system's own tool while the robot and
 its box are away, and see it in the box before you add the to-do. Remove it there and it goes from your Machine too.
 Windows: its own snip (Windows itself may also keep the image, as its settings say). Linux: the desktop's portal, where it
-has one that lets you pick.
+has one that lets you pick. Mac: the picker of Command-Shift-4; the first time macOS asks whether The Machine may record
+the screen, and only then. After a no, the box says where to allow it.
 
 **Drop anything on it.** Files, an image, a link or selected text, dropped on the robot or its box: the box opens with it.
 Text and links stand in the field, for To-do or Ask; files are attached as with **+**, up to 5 of 10 MB, to a to-do. Nothing
@@ -43,6 +44,12 @@ dashboard in a browser's tab isn't seen by it. To know this it keeps fingerprint
 Windows (10 or 11, 64-bit): download `the-machine-desktop-windows-unsigned` from the newest run of
 [Desktop prototype](https://github.com/Salesflare/TheMachine/actions/workflows/desktop.yml), unpack it and start
 `the-machine-desktop.exe`. It isn't signed, so Windows warns: **More info**, **Run anyway**.
+
+Mac (macOS 13 or newer, Apple silicon or Intel): download `the-machine-desktop-mac` from the newest run of the same
+workflow, unpack it, move **The Machine** to Applications and open it there. macOS asks once whether you want to open an app
+from the internet: **Open**. It isn't in the Dock: it is the robot, and its icon in the menu bar.
+A pull request's build is `the-machine-desktop-mac-unsigned`. macOS stops that one: **Done**, then System Settings,
+Privacy & Security, scroll down, **Open Anyway**, and your password.
 
 Linux (64-bit): build it (below), then start `target/release/the-machine-desktop`. It needs WebKitGTK 4.1 and
 gtk-layer-shell (`libgtk-layer-shell.so.0`, from the system or in `lib/` next to the program). The one in `lib/` is
@@ -61,8 +68,8 @@ move it, also to another monitor. Right-click it, or **...** in the box, for whe
 **Hide**, **Sign out** and **Quit**. For a key of your own, bind it to the program with `--toggle`.
 
 A hidden robot never goes away altogether: it looks over the bottom edge of the screen, dot and all. Click it and it is
-back where it stood; so do a click on its icon by the clock (Windows) and starting the program again. The first time, the
-box says so.
+back where it stood; so do a click on its icon by the clock (Windows), **Show robot** in its menu bar menu (Mac) and
+starting the program again. The first time, the box says so.
 
 ## For you
 
@@ -88,11 +95,12 @@ seconds, not while the mouse is on it, and the dot stays. It makes no sound and 
 - **It may not speak** while it is hidden, off, or away for the app or something in full screen; nor, where the system
   tells without a permission, while the screen is locked or presented. Windows: the lock screen and screen saver, an app
   or game in full screen, presentation mode, duplicated displays, or no mouse and keys for 5 minutes. Linux: a lock the
-  sign-in manager knows of, as GNOME's and KDE's, or Hyprland. That the screen is shared in a call no system tells an app like this.
+  sign-in manager knows of, as GNOME's and KDE's, or Hyprland. Mac: the lock screen, an app in full screen, mirrored displays,
+  or no mouse and keys for 5 minutes. That the screen is shared in a call no system tells an app like this.
 - **Notifications switched off** on the computer don't keep it quiet. **Do Not Disturb** does only with **Not in Do Not
   Disturb**: on Windows 11 (23H2 and later; Focus turns it on too; also the first hour of a new account, which Windows
-  keeps quiet), KDE, dunst, mako (a mode named do-not-disturb or dnd) and GNOME. Elsewhere the system doesn't tell, and
-  it speaks. GNOME has one switch for both, so there notifications off is Do Not Disturb.
+  keeps quiet), KDE, dunst, mako (a mode named do-not-disturb or dnd) and GNOME. Elsewhere the system doesn't tell (a Mac only
+  with a permission, which isn't asked), and it speaks. GNOME has one switch for both, so there notifications off is Do Not Disturb.
 - A robot that may not speak takes nothing. Your Machine pushes to the browser as ever. One it was handed but didn't
   say it got in 90 seconds (an answer lost on the way is sent again) goes to the browser after all.
 - **Decided elsewhere**, on the phone or the dashboard: the bubble goes with the robot's next look.
@@ -116,7 +124,7 @@ opens the app.
 
 What opens outside the box goes to the Machine's installed app when there is one, in the window that is open, else to the
 browser. The robot finds the app where Chrome or Edge listed it when you installed it (Linux: the applications menu;
-Windows: the Start menu and installed apps), only for the Machine you are signed in to, and starts that browser with the
+Windows: the Start menu and installed apps; Mac: the app of its own they made, also Brave's and Vivaldi's), only for the Machine you are signed in to, and starts that browser with the
 app's id and the address. No shell, no setting and no prompt. Signing in stays in the browser.
 
 ## Hidden while the app is in front
@@ -126,15 +134,15 @@ come back when another window is in front, or the app is minimized or closed. A 
 ordinary browser tab the dashboard doesn't hide it.
 
 For this the robot asks the system one thing: which app the window in front belongs to (Windows: the app id of its
-taskbar button; X11: its window class). It compares that with the installed app's id and forgets it. It reads no titles
+taskbar button; X11: its window class; Mac: the program in front). It compares that with the installed app's id and forgets it. It reads no titles
 and nothing on the screen, needs no permission, and stores, logs and sends none of it. On Linux this works on X11,
 and on Hyprland, which tells what comes to the front on a socket of its own: the robot takes the class from it and drops
 the rest. Other Wayland desktops tell a program nothing about other windows, so there the robot stays.
 
 ## Quit
 
-To quit: the menu above; on Windows also its icon by the clock, or Alt+F4 after a click on the robot. The program with
-`--quit` stops it whatever state it is in.
+To quit: the menu above; on Windows also its icon by the clock, or Alt+F4 after a click on the robot; on a Mac its menu bar
+menu, or Command-Q in the box. The program with `--quit` stops it whatever state it is in.
 
 ## Remove it
 
@@ -144,13 +152,15 @@ Quit it, delete the program, and delete its folders:
 |---|---|---|
 | Windows | `%APPDATA%\computer.themachine.desktop` | `%LOCALAPPDATA%\computer.themachine.desktop` |
 | Linux | `~/.config/computer.themachine.desktop` | `~/.local/share/computer.themachine.desktop`, `~/.cache/computer.themachine.desktop` |
+| Mac | `~/Library/Application Support/computer.themachine.desktop` | `~/Library/Caches/computer.themachine.desktop`, `~/Library/WebKit/computer.themachine.desktop` |
 
 For a hosted Machine, sign it out on your account page too (**Security**).
 
 Signing in with an account registers `computer.themachine.app:` links while the browser is open, and takes that back
 when it returns, the app quits or it next starts. After a crash in between, what is left is
 `HKCU\Software\Classes\computer.themachine.app` on Windows, and on Linux
-`~/.local/share/applications/the-machine-desktop-handler.desktop` with its line in `~/.config/mimeapps.list`.
+`~/.local/share/applications/the-machine-desktop-handler.desktop` with its line in `~/.config/mimeapps.list`. On a Mac the
+app itself names them, as every Mac app does: they go with the app.
 
 ## How it is made
 
@@ -158,7 +168,7 @@ Tauri 2: a small Rust program and the system's own web view. Three parts, each r
 
 | Part | Files | Knows |
 |---|---|---|
-| Windows | `src/windows.rs`, `src/place.rs` | Where the robot and the box are. Nothing of the Machine. |
+| Windows | `src/windows.rs`, `src/place.rs`, `src/mac.rs` | Where the robot and the box are. Nothing of the Machine. |
 | A to-do in the box | `src/card.rs` | Which page it may be, and where its links go. |
 | Pages | `ui/` | What is in them. `robot.js` only clicks and drags; `box.js` asks `native.js` for everything. |
 | The Machine | `src/machine.rs`, `src/signin.rs`, `src/address.rs`, `src/saved.rs` | The same requests and address rules as the phone app (`mobile/`). |
@@ -181,11 +191,11 @@ the dashboard's own token and Origin. No others.
 
 | | Windows | Linux: layer-shell (Hyprland, Sway, KDE) | Linux: X11, GNOME (XWayland) | macOS |
 |---|---|---|---|---|
-| Built | yes, by CI | yes | yes | no |
-| On top, no taskbar entry | window flags | layer surface | window hints | |
-| Full screen | hidden, says nothing | under it; says nothing on Hyprland | the window manager decides; says nothing | |
-| Away while the app is in front | yes | Hyprland only, by the socket it tells it on | yes, XWayland apps on GNOME only | |
-| Clicks beside the robot | taken in the window's corners | go through | go through | |
+| Built | yes, by CI | yes | yes | yes, by CI |
+| On top, no taskbar entry | window flags | layer surface | window hints | a floating panel on every Space, no Dock icon |
+| Full screen | hidden, says nothing | under it; says nothing on Hyprland | the window manager decides; says nothing | beside it; says nothing |
+| Away while the app is in front | yes | Hyprland only, by the socket it tells it on | yes, XWayland apps on GNOME only | yes |
+| Clicks beside the robot | taken in the window's corners | go through | go through | go through |
 
 ## Develop
 
@@ -195,8 +205,12 @@ cargo run --release --features sandbox --manifest-path desktop/Cargo.toml   # ta
 cargo test --manifest-path desktop/Cargo.toml
 ```
 
-CI also uses the Windows build, with real mouse and keys against a made-up Machine (`smoke/windows.py`), and keeps the
-screenshots with the run. It moves the mouse and changes the resolution, so it is for a throwaway computer.
+CI also uses the Windows and the Mac build, with real mouse and keys against a made-up Machine (`smoke/windows.py`,
+`smoke/mac.py`), and keeps the screenshots with the run. They move the mouse and change the screen, so they are for a
+throwaway computer.
+
+On a Mac, `mac/bundle.sh <folder> target/release/the-machine-desktop` makes the app. CI signs and notarizes the one for
+people in a job of its own, which runs none of this repository's code.
 
 On Windows, never make a window from a page's call or a message: it can wait for itself (`later` in `src/main.rs`). All
 windows are made at the start.
@@ -205,7 +219,7 @@ windows are made at the start.
 
 - The box as a page of the Machine's, so its words come from the catalogs (`i18n/`); `native.js` is the seam.
 - The account names this app in its list of signed-in apps (it says iPhone now), and a check of the whole hosted sign-in.
-- Settings to turn it on, a hotkey and start at login for who wants them, updates, signing, macOS.
+- Settings to turn it on, a hotkey and start at login for who wants them, updates, signing on Windows.
 - Talk and dictation: the dashboard has no address that opens Talk yet.
 
 The robot's images come from `brand/` ([TRADEMARKS.md](../TRADEMARKS.md)). The font is Inter (`ui/fonts/Inter-OFL.txt`).

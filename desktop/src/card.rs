@@ -72,9 +72,10 @@ fn link(machine: &str, url: &Url) -> Link {
     }
 }
 
-/// On Windows it is made at the start, as the other windows; elsewhere when it is first opened.
+/// On Windows and macOS it is made at the start, as the other windows; elsewhere when it is first opened.
 pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let (here, there, told) = (app.clone(), app.clone(), app.clone());
+    #[cfg_attr(target_os = "macos", allow(unused_mut))]
     let mut window = WebviewWindowBuilder::new(app, "card", WebviewUrl::External("about:blank".parse().unwrap()))
         .title("The Machine")
         .inner_size(BOX_WIDTH, 400.0)
@@ -88,6 +89,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .skip_taskbar(true)
         .visible(false)
         .incognito(true)
+        .accept_first_mouse(true)
         .disable_drag_drop_handler()
         .additional_browser_args(&windows::browser())
         .initialization_script(ESCAPE)
@@ -127,6 +129,8 @@ pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     windows::linux::prepare(app, &window, "card")?;
     #[cfg(windows)]
     windows::no_menu(&window);
+    #[cfg(target_os = "macos")]
+    crate::mac::prepare(&window);
     Ok(window)
 }
 
@@ -165,7 +169,7 @@ pub fn open(app: &AppHandle, todo: &str) -> tauri::Result<()> {
     };
     for (name, value) in machine.cookie.iter().flat_map(|c| c.split("; ")).filter_map(|c| c.split_once('=')) {
         let host = url.host_str().unwrap_or_default().to_string();
-        window.set_cookie(Cookie::build((name.to_string(), value.to_string())).domain(host).path("/").secure(true).http_only(true).build())?;
+        window.set_cookie(Cookie::build((name.to_string(), value.to_string())).domain(host).path("/").secure(url.scheme() == "https").http_only(true).build())?;
     }
     if was.is_some() && !drawn {
         after(app, Duration::from_millis(1500), { // the same title: nothing says that it is drawn
@@ -216,9 +220,10 @@ fn show(app: &AppHandle) {
     let Some(window) = app.get_webview_window("card") else { return };
     if ready && shared.open.load(Ordering::Relaxed) && !window.is_visible().unwrap_or(true) {
         windows::place(app);
+        #[cfg(not(target_os = "macos"))]
         let _ = window.show();
         windows::place(app);
-        let _ = window.set_focus();
+        windows::focus(&window);
         let todo = shared.card.lock().unwrap().todo.clone();
         after(app, Duration::from_millis(100), move |app| measure(app, todo)); // it shows a moment later
     }
@@ -253,7 +258,7 @@ pub fn back(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("card") {
         let _ = window.hide();
         if let (true, Some(under)) = (windows::box_open(app), app.get_webview_window("box")) {
-            let _ = under.set_focus();
+            windows::focus(&under);
         }
     }
     after(app, Duration::from_secs(60), |app| {
@@ -268,11 +273,11 @@ pub fn close(app: &AppHandle) {
     let was = std::mem::take(&mut *app.state::<Shared>().card.lock().unwrap());
     let Some(window) = app.get_webview_window("card") else { return };
     let _ = window.hide();
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     if was.loaded.is_some() {
         let _ = window.navigate("about:blank".parse().unwrap());
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         let _ = (was, window.destroy());
     }

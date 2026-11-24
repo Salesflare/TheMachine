@@ -15,6 +15,11 @@ pub fn there() -> bool {
     system::there()
 }
 
+#[cfg(target_os = "macos")]
+pub fn allowed() -> bool {
+    system::allowed()
+}
+
 /// The desktop's portal: its own dialog, or the compositor's own picking.
 #[cfg(target_os = "linux")]
 mod system {
@@ -189,13 +194,26 @@ mod system {
     }
 }
 
-/// macOS' own, as by Command-Shift-4. Its file is in a folder only its owner can read. (macOS isn't built yet.)
+/// macOS' own, as by Command-Shift-4. Its file is in a folder only its owner can read. macOS lets a program see other
+/// programs' windows only with the person's yes, so it is asked here and nowhere else.
 #[cfg(target_os = "macos")]
 mod system {
     use std::{fs, os::unix::fs::DirBuilderExt, process::Command};
 
+    #[link(name = "CoreGraphics", kind = "framework")]
+    extern "C" {
+        fn CGPreflightScreenCaptureAccess() -> bool;
+        fn CGRequestScreenCaptureAccess() -> bool;
+    }
+
     pub fn there() -> bool {
         true
+    }
+
+    /// macOS asks the person the first time, and opens nothing after a no: then the box says where to allow it.
+    pub fn allowed() -> bool {
+        // SAFETY: plain calls, there since macOS 10.15.
+        unsafe { CGPreflightScreenCaptureAccess() || CGRequestScreenCaptureAccess() }
     }
 
     pub fn take() -> std::io::Result<Option<Vec<u8>>> {

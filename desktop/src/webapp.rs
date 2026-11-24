@@ -208,7 +208,54 @@ mod system {
     }
 }
 
-#[cfg(not(any(windows, target_os = "linux")))]
+/// macOS: each installed app is a small program its browser made, with the browser and the app's id in its Info.plist.
+#[cfg(target_os = "macos")]
+mod system {
+    use super::Entry;
+    use objc2_app_kit::NSWorkspace;
+    use objc2_foundation::{NSBundle, NSString};
+    use std::process::Command;
+
+    const BROWSERS: [&str; 7] = [
+        "com.google.Chrome", "com.microsoft.edgemac", "com.brave.Browser", "com.vivaldi.Vivaldi", "org.chromium.Chromium", "com.google.Chrome.beta", "com.microsoft.edgemac.Beta",
+    ];
+
+    pub fn entries(id: &str) -> Vec<Entry> {
+        BROWSERS.iter().filter_map(|browser| entry(browser, id)).collect()
+    }
+
+    fn bundle(name: &str) -> Option<objc2::rc::Retained<NSBundle>> {
+        let found = NSWorkspace::sharedWorkspace().URLForApplicationWithBundleIdentifier(&NSString::from_str(name))?;
+        NSBundle::bundleWithURL(&found).filter(|b| b.bundleIdentifier().is_some_and(|i| i.to_string() == name))
+    }
+
+    /// Nothing for one whose browser is gone.
+    fn entry(browser: &str, id: &str) -> Option<Entry> {
+        let app = bundle(&format!("{browser}.app.{id}"))?;
+        let says = |key: &str| app.objectForInfoDictionaryKey(&NSString::from_str(key)).and_then(|v| v.downcast::<NSString>().ok()).map(|v| v.to_string());
+        let program = bundle(browser)?.executableURL()?.path()?.to_string();
+        argv(program, says("CrAppModeShortcutID")?, says("CrAppModeProfileDir"), id).map(|argv| Entry { argv })
+    }
+
+    fn argv(program: String, named: String, profile: Option<String>, id: &str) -> Option<Vec<String>> {
+        let profile = profile.filter(|p| !p.is_empty()).map(|p| format!("--profile-directory={p}"));
+        (named == id).then(|| [program].into_iter().chain(profile).chain([format!("--app-id={id}")]).collect())
+    }
+
+    pub fn prepare(_: &Entry, _: &mut Command) {}
+
+    #[cfg(test)]
+    #[test]
+    fn reads_an_entry() {
+        let id = super::id("https://my.example.com/");
+        let chrome = || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome".to_string();
+        assert_eq!(argv(chrome(), id.clone(), Some("Profile 1".into()), &id).unwrap(), [chrome(), "--profile-directory=Profile 1".into(), format!("--app-id={id}")]);
+        assert_eq!(argv(chrome(), id.clone(), None, &id).unwrap().len(), 2);
+        assert_eq!(argv(chrome(), super::id("https://other.example.com/"), None, &id), None);
+    }
+}
+
+#[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
 mod system {
     use super::Entry;
 

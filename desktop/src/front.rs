@@ -330,7 +330,57 @@ mod system {
     }
 }
 
-#[cfg(not(any(windows, target_os = "linux")))]
+/// macOS says which program is in front, and its id: an installed app's is its browser's with ".app.<id>" after it. The
+/// robot's box takes the keys without coming to the front (mac.rs), so that is kept here.
+#[cfg(target_os = "macos")]
+mod system {
+    use super::{Front, Sender};
+    use crate::mac::on;
+    use objc2_app_kit::{NSRunningApplication, NSWindowDidBecomeKeyNotification, NSWindowDidResignKeyNotification, NSWorkspace, NSWorkspaceDidActivateApplicationNotification};
+    use objc2_foundation::NSNotificationCenter;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    static KEYS: AtomicBool = AtomicBool::new(false);
+
+    pub fn full() -> bool {
+        crate::mac::FULL.load(Ordering::Relaxed)
+    }
+
+    pub fn listen(to: Sender<()>) -> bool {
+        // SAFETY: constants of AppKit's.
+        let (program, got, lost) = unsafe { (NSWorkspaceDidActivateApplicationNotification, NSWindowDidBecomeKeyNotification, NSWindowDidResignKeyNotification) };
+        let tell = to.clone();
+        on(&NSWorkspace::sharedWorkspace().notificationCenter(), program, move || { let _ = tell.send(()); });
+        for (name, keys) in [(got, true), (lost, false)] {
+            let tell = to.clone();
+            on(&NSNotificationCenter::defaultCenter(), name, move || {
+                KEYS.store(keys, Ordering::Relaxed);
+                let _ = tell.send(());
+            });
+        }
+        true
+    }
+
+    pub fn front(ids: &[String]) -> Front {
+        if KEYS.load(Ordering::Relaxed) {
+            return Front::Own;
+        }
+        let Some(program) = NSWorkspace::sharedWorkspace().frontmostApplication() else { return Front::Other };
+        if program == NSRunningApplication::currentApplication() {
+            return Front::Own;
+        }
+        let name = program.bundleIdentifier().map(|b| b.to_string()).unwrap_or_default();
+        if ids.iter().any(|id| super::is_bundle(&name, id)) { Front::App } else { Front::Other }
+    }
+}
+
+/// On macOS an installed app is a program of its own, "<browser's>.app.<id>".
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn is_bundle(name: &str, id: &str) -> bool {
+    name.strip_suffix(id).is_some_and(|browser| browser.ends_with(".app."))
+}
+
+#[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
 mod system {
     use super::{Front, Sender};
 
@@ -392,6 +442,8 @@ mod tests {
         assert!(is_app(&two, "", id) && is_app(&three, "", id));
         assert!(!is_app(&two, "", other) && !is_app(&three, "", other));
         let start = format!("\"C:\\a b\\chrome_proxy.exe\" --profile-directory=Default --app-id={id}");
+        assert!(is_bundle(&format!("com.google.Chrome.app.{id}"), id) && !is_bundle(&format!("com.google.Chrome.app.{other}"), id));
+        assert!(!is_bundle("com.google.Chrome", id) && !is_bundle(id, id));
         assert!(is_app("Chrome", &start, id) && !is_app("Chrome", &start, other) && !is_app("Chrome", "", id));
     }
 }

@@ -6,7 +6,8 @@
   const robot = document.getElementById('robot'), face = document.getElementById('face'), dot = document.getElementById('dot');
   const t = window.MachineText;
   const FAR = 6; // pixels before a press is a drag
-  let press = null, dragged = false, frame = 0, hidden = false, fresh = false;
+  // asked: a Control-click (macOS) asks for the menu, and its click comes after that
+  let press = null, dragged = false, asked = false, frame = 0, hidden = false, fresh = false;
 
   function show(news, away) {
     fresh = news;
@@ -36,7 +37,7 @@
   listen('news', take).then(take);
 
   robot.addEventListener('pointerdown', e => {
-    dragged = false;
+    dragged = asked = false;
     if (e.button !== 0) return;
     press = {x: e.clientX, y: e.clientY};
     robot.setPointerCapture(e.pointerId);
@@ -62,10 +63,10 @@
   robot.addEventListener('pointerup', up);
   robot.addEventListener('pointercancel', up);
   robot.addEventListener('click', () => {
-    if (dragged) { dragged = false; return; }
+    if (dragged || asked) { dragged = asked = false; return; }
     invoke('robot_click');
   });
-  addEventListener('contextmenu', e => { e.preventDefault(); invoke('robot_menu'); });
+  addEventListener('contextmenu', e => { e.preventDefault(); asked = !!press; press = null; invoke('robot_menu'); });
   robot.addEventListener('keydown', e => { if (e.key === 'F10') { e.preventDefault(); invoke('robot_menu'); } });
 
   // Dropped on it: the box opens with it
