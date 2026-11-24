@@ -57,7 +57,7 @@ pub fn back(link: &str, pending: &Pending) -> Option<Back> {
     let mut auth = Url::parse(&part("u")?).ok()?;
     let token = auth.query_pairs().find(|(k, _)| k == "t").map(|(_, v)| v.into_owned())?;
     let fine = (20..=100).contains(&token.len()) && token.bytes().all(|b| b.is_ascii_alphanumeric() || b"_-".contains(&b));
-    let stand_in = cfg!(feature = "sandbox") && auth.scheme() == "http" && auth.host_str() == Some("127.0.0.1");
+    let stand_in = cfg!(feature = "sandbox") && matches!(auth.scheme(), "http" | "https") && auth.host_str() == Some("127.0.0.1");
     let hosted = auth.scheme() == "https" && auth.port().is_none() && address::hosted_host(auth.host_str()?);
     if !fine || !(hosted || stand_in) || auth.path() != "/_machine/auth" || !auth.username().is_empty() || auth.password().is_some() {
         return None;
@@ -102,6 +102,14 @@ mod tests {
         let (p, _) = start().unwrap();
         let got = back(&format!("{SCHEME}://signed-in?m=https%3A%2F%2Fmy.example.com%2Fassistant%2F"), &p);
         assert_eq!(got, Some(Back::Own("https://my.example.com/assistant/".into())));
+    }
+
+    #[test]
+    fn a_made_up_one_only_in_a_sandbox() {
+        let (p, _) = start().unwrap();
+        for scheme in ["http", "https"] {
+            assert_eq!(back(&link(&format!("{scheme}://127.0.0.1:8943/_machine/auth?t={T}")), &p).is_some(), cfg!(feature = "sandbox"));
+        }
     }
 
     #[test]

@@ -77,13 +77,26 @@ pub struct Waiting {
 }
 
 fn agent(seconds: u64) -> ureq::Agent {
-    ureq::Agent::config_builder()
+    let config = ureq::Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(seconds)))
         .max_redirects(0) // a Machine never sends the app elsewhere
         .http_status_as_error(false)
-        .user_agent(concat!("TheMachineDesktop/", env!("CARGO_PKG_VERSION")))
-        .build()
-        .into()
+        .user_agent(concat!("TheMachineDesktop/", env!("CARGO_PKG_VERSION")));
+    #[cfg(feature = "sandbox")]
+    let config = match made_up() {
+        Some(tls) => config.tls_config(tls),
+        None => config,
+    };
+    config.build().into()
+}
+
+/// For smoke/: the one certificate a sandbox build checks a made-up Machine's against, instead of the known ones. No other
+/// build has this.
+#[cfg(feature = "sandbox")]
+fn made_up() -> Option<ureq::tls::TlsConfig> {
+    use ureq::tls::{Certificate, RootCerts, TlsConfig};
+    let root = Certificate::from_pem(&std::fs::read(std::env::var_os("MACHINE_SANDBOX_ROOT")?).ok()?).ok()?;
+    Some(TlsConfig::builder().root_certs(RootCerts::new_with_certs(&[root])).build())
 }
 
 /// What an answer that isn't a 200 means: it doesn't take this computer as its owner's, or it isn't there (a proxy in

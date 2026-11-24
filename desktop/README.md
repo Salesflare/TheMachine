@@ -210,7 +210,8 @@ cargo test --manifest-path desktop/Cargo.toml
 
 CI also uses the Windows and the Mac build, with real mouse and keys against a made-up Machine (`smoke/windows.py`,
 `smoke/mac.py`), and keeps the screenshots with the run. They move the mouse and change the screen, so they are for a
-throwaway computer.
+throwaway computer. On Windows also over https, as a hosted Machine: with a certificate made for that run
+(`smoke/certificate.sh`), which only a sandbox build and that computer trust, until it ends.
 
 On a Mac, `mac/bundle.sh <folder> target/release/the-machine-desktop` makes the app. CI signs and notarizes the one for
 people in a job of its own, which runs none of this repository's code.
