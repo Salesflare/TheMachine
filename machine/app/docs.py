@@ -5,6 +5,7 @@ import re
 
 import abilities
 import doc_writes
+import google_files
 from machine.sources.connectors import CONNECTOR_HELPERS, doc_write_files, docs_files_offered, load_connector
 from sources import SourceError
 from machine.owner_error import OwnerError
@@ -170,9 +171,12 @@ class DocsApp:
             for account in (via.get('google'), via.get('notion')):
                 for file_id in plugin.doc_links_of(account, text) if account else ():
                     links.setdefault(file_id, account['id'])
-        for file_id in plugin.doc_links('\n'.join(said)) if plugin and not via.get('google') else ():
-            links.setdefault(file_id, '')  # linked, with nothing here that opens it
-        for file_id, file in (plugin.file_links('\n'.join(said)) if plugin else {}).items():
+        files = {}
+        for text in said:  # each on its own: one full of links hides no other's
+            for file_id in plugin.doc_links(text) if not via.get('google') else ():
+                links.setdefault(file_id, '')  # linked, with nothing here that opens it
+            google_files.merge(files, plugin.file_links(text))
+        for file_id, file in files.items():
             links.setdefault(file_id, {**file, 'accounts': self.file_accounts(area)})
         return job, run, links, area
 

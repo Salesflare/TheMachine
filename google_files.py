@@ -54,6 +54,18 @@ def links(text):
     return found
 
 
+def merge(files, more):
+    """The linked files of one more text (file_links), each with its spots, into those so far. A link that says what its
+    file is wins over one that doesn't."""
+    for file_id, file in more.items():
+        known = files.get(file_id)
+        if not known or known['kind'] not in READS:
+            files[file_id] = file
+        elif file['kind'] in READS:
+            known['spots'] = (known['spots'] + [s for s in file['spots'] if s not in known['spots']])[:MAX_SPOTS]
+    return files
+
+
 def scope_for(kind, granted):
     """The narrowest granted scope that reads this kind, or None."""
     return next((s for s in READS[kind] if s in granted), None)

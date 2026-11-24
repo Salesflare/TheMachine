@@ -296,10 +296,11 @@ def email_body(plain, html_parts, subject='', people=''):
         stub = len(said - set(_words(rendered).split())) * 2 > len(said)
     placeholder = len(plain.strip()) < 500 and PLAIN_PLACEHOLDER.search(plain)  # a booking's "sent in HTML" note runs a few lines
     # a program whose text part leaves out where a link to a Google file goes (Apple Mail): the HTML has it
-    lost = {f for v in html_parts for _, f, _ in google_links.find(v)} if rendered.strip() and any('google' in v for v in html_parts) else ()
+    lost = {f for v in html_parts[:10] for _, f, _ in google_links.find(v)} if rendered.strip() else ()
     if lost:
-        said = [f for _, f, _ in google_links.find(plain)]
-        lost = [f for f in lost if not any(f.startswith(s) for s in said) and f in rendered]
+        said = {f for _, f, _ in google_links.find(plain)}
+        shown = {f for _, f, _ in google_links.find(rendered)}
+        lost = [f for f in lost if f in shown and not any(f.startswith(s) for s in said)]
     if plain.strip() and not stub and not placeholder and not lost:
         return plain
     return rendered if rendered.strip() else plain

@@ -7,20 +7,23 @@ google.com/url), and with its id cut by a line end in a quoted mail. A published
 An HTML message's link behind other words is kept in its text (keep_links): without it, "see the plan" says nothing.
 """
 import html
+import itertools
 import re
 import urllib.parse
 
 DOC, SHEETS, SLIDES, ANY = 'doc', 'sheets', 'slides', 'any'
 KINDS = {'document': DOC, 'spreadsheets': SHEETS, 'presentation': SLIDES}
 ID = '[A-Za-z0-9_-]{20,100}'
+MAX_FILES = 200  # different files taken from one text, and how many of its Google links are looked at: anyone can send one
+MAX_LOOKED = 2000
 ID_LENGTH = 44  # a Google file's id as Google makes it now: what an id cut by a line end is completed to
 HOST = re.compile(r'(?:https?(?::|%3A|%253A|-3A)(?://|%2F%2F|%252F%252F|__)|(?<![A-Za-z0-9.-]))(docs|drive)\.google\.com(?=[/%_])', re.I)
 PATH = re.compile(r'/(?:a/[^/\s]{1,100}/)?(?:'
                   rf'(?P<kind>document|spreadsheets|presentation)/(?:u/\d+/)?(?:d/(?P<id>{ID})|open\?(?:[^\s#]{{0,80}}[&;])?id=(?P<open>{ID}))'
                   rf'|(?:file/(?:u/\d+/)?d/(?P<file>{ID})|(?:open|uc)\?(?:[^\s#]{{0,80}}[&;])?id=(?P<any>{ID})))(?P<tail>[^\s<>"\\)\]]*)')
 TAIL = re.compile(r'[^\s<>"\\)\]]{0,600}')
-CUT = re.compile(r'[ \t]*\r?\n(?:[ \t]*>)*[ \t]*([A-Za-z0-9_-]{1,24})(?![A-Za-z0-9_-])')
-TAG = re.compile(r'<a\b([^>]{1,4000})>', re.I)
+CUT = re.compile(r'[ \t]{0,20}\r?\n(?:[ \t]{0,5}>){0,20}[ \t]{0,20}([A-Za-z0-9_-]{1,24})(?![A-Za-z0-9_-])')
+TAG = re.compile(r'<a\b([^<>]{1,4000})>', re.I)
 HREF = re.compile(r'''\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))''', re.I)
 CLOSE = re.compile('</a', re.I)
 ADDED = re.compile(r' \(https://(?:docs|drive)\.google\.com/[^\s()]{20,200}\)')  # what keep_links adds
@@ -41,13 +44,14 @@ def _tail(text, at):
 
 
 def find(text):
-    """[(kind, file id, the rest of the link)] of the Google files linked in a text, in order, as often as they are linked.
+    """[(kind, file id, the rest of the link)] of the Google files linked in a text, in order, as often as they are linked,
+    of at most MAX_FILES files.
     kind: doc, sheets, slides, or any for a Drive link, which doesn't say which."""
     text = str(text or '')
     if 'google' not in text.lower():
         return []
-    out = []
-    for host in HOST.finditer(text):
+    out, seen = [], set()
+    for host in itertools.islice(HOST.finditer(text), MAX_LOOKED):
         tail = _tail(text, host.end())
         m = PATH.match(tail)
         if not m or m['kind'] and host[1].lower() != 'docs':
@@ -57,10 +61,13 @@ def find(text):
             more = CUT.match(text, host.end() + m.end('tail'))
             if more and len(found) + len(more[1]) == ID_LENGTH:
                 found += more[1]
+        seen.add(found)
+        if len(seen) > MAX_FILES:
+            break
         out.append((KINDS.get(m['kind'] or '', ANY), found, rest))
-    whole = {f for _, f, _ in out if len(f) >= ID_LENGTH}
     # an id cut short, whole elsewhere in the text, is that file
-    return [(k, f, rest) for k, f, rest in out if len(f) >= ID_LENGTH or not any(w.startswith(f) for w in whole)]
+    short = {f for f in seen if len(f) < ID_LENGTH and any(len(w) >= ID_LENGTH and w.startswith(f) for w in seen)}
+    return [(k, f, rest) for k, f, rest in out if f not in short]
 
 
 def ids(text, kind):
@@ -76,19 +83,24 @@ def keep_links(value):
     value = str(value or '')
     if 'google' not in value.lower():
         return value
-    out, at, said = [], 0, set()
+    out, at, inside, looked, said = [], 0, 0, 0, set()
     for tag in TAG.finditer(value):
-        if tag.start() < at:
+        if tag.start() < inside or 'google' not in tag[1].lower():
             continue
+        looked += 1
+        if looked > MAX_LOOKED or len(said) >= MAX_FILES:
+            break
         href = HREF.search(tag[1])
         found = find(html.unescape(next((g for g in href.groups() if g), ''))) if href else []
         if not found:
             continue
         kind, file_id, rest = found[0]
-        close = CLOSE.search(value, tag.end()) if len(said) < 50 and file_id not in said else None
-        if not close:
+        if file_id in said:
             continue
-        end = close.start()
+        close = CLOSE.search(value, tag.end())
+        if not close:  # nor after any later link
+            break
+        inside = end = close.start()
         said.add(file_id)
         if file_id in value[tag.end():end]:  # its words are the address itself
             continue

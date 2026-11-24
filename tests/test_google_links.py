@@ -76,12 +76,42 @@ class Forms(unittest.TestCase):
         self.assertEqual(google_files.links(forms(link)['safe links'])[ID]['spots'], [(7, 'B2:C3')])
 
     def test_long_and_odd_text_is_quick(self):
-        for text in ('docs.google.com/document/open?' + 'a' * 200_000, 'https' * 40_000 + ' google', 'docs.google.com/' * 10_000, '<a href=google' * 10_000,
-                     f'<a href="{LINK}">x' * 2000, 'https%3A%2F%2Fdocs.google.com%2F' + '%25' * 50_000):
+        ids = [f'{n:x}'.rjust(44, 'x') for n in range(20_000)]
+        doc = 'https://docs.google.com/document/d/'
+        tags = ''.join(f'<a href="{doc}{i}/edit">x' for i in ids[:12_000])
+        for text in ('docs.google.com/document/open?' + 'a' * 1_000_000, 'https' * 200_000 + ' google', 'docs.google.com/' * 60_000, 'google ' + '<a ' * 350_000,
+                     'google <a ' + 'x ' * 500_000, '<a href=google' * 70_000, tags, tags + '</a>', tags.replace('>x', '>x</a>'), '<a href=docs.google.com/>' * 40_000,
+                     f'<a href="{LINK}">x' * 12_000, 'https%3A%2F%2Fdocs.google.com%2F' + '%25' * 300_000, ('docs.google.com%2541' + '%2541' * 118 + ' ') * 1600,
+                     ' '.join(doc + i[:30] + str(n) for n, i in enumerate(ids)) + ' ' + ' '.join(doc + i for i in ids),
+                     ' '.join(doc + i[14:] for i in ids) + ' ' + ' '.join(doc + i for i in ids), doc + 'x' * 30 + '\n' + '> ' * 500_000,
+                     (doc + 'x' * 30 + ' ' * 1000) * 900, ('<a google href' + ' ' * 3900 + '>') * 250):
+            for run in (google_links.find, google_links.keep_links, docs.file_links, docs.doc_links):
+                at = time.monotonic()
+                run(text)
+                self.assertLess(time.monotonic() - at, 1, (run.__name__, text[:40]))
+
+    def test_email_body_is_quick_on_a_mail_full_of_links(self):
+        ids = [f'{n:x}'.rjust(44, 'x') for n in range(12_000)]
+        page = ''.join(f'<a href="https://docs.google.com/document/d/{i}/edit">x</a> ' for i in ids)
+        plain = ' '.join('https://docs.google.com/document/d/' + i[:30] + str(n) for n, i in enumerate(ids))
+        with patch.object(machine_text, 'mail_html', return_value=plain):  # what reading the links adds, not the HTML
             at = time.monotonic()
-            google_links.find(text)
-            google_links.keep_links(text)
-            self.assertLess(time.monotonic() - at, 5)
+            machine_text.email_body(plain, [page])
+            self.assertLess(time.monotonic() - at, 4)
+
+    def test_one_text_gives_a_bounded_number_of_files(self):
+        text = ' '.join('https://docs.google.com/document/d/' + f'{n:x}'.rjust(44, 'x') for n in range(1000))
+        self.assertEqual(len(google_links.ids(text, 'doc')), google_links.MAX_FILES)
+        page = ''.join(f'<a href="{u}">x</a>' for u in text.split())
+        self.assertEqual(len(google_links.ids(google_links.keep_links(page), 'doc')), google_links.MAX_FILES)
+        self.assertEqual(google_links.keep_links(page).count(' (https'), google_links.MAX_FILES)
+
+    def test_files_of_several_texts(self):
+        sheet = 'https://docs.google.com/spreadsheets/d/' + 's' * 44 + '/edit#gid='
+        files_ = {}
+        for text in ('https://drive.google.com/open?id=' + 's' * 44, sheet + '1', sheet + '2 ' + sheet + '1', 'https://drive.google.com/open?id=' + 's' * 44, sheet + '3 ' + sheet + '4'):
+            google_files.merge(files_, docs.file_links(text))
+        self.assertEqual(files_, {'s' * 44: {'kind': 'sheets', 'spots': [(1, None), (2, None), (3, None)]}})
 
 
 class Kept(unittest.TestCase):
