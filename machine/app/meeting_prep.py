@@ -186,8 +186,9 @@ class MeetingPrepApp:
                 meeting_prep.keep(db, meeting, 'personal' if found else 'nothing', None, now())
                 LOG.info('meeting prep verdict=%s', 'personal' if found else 'nothing')
                 return None
-            # A to-do's title can show with its project on the Team Graph and in a handoff: not worded by a turn that read notes
-            title = found['title'] if found['title'] and not meeting['evidence'].get('notes') else i18n.t('Prepare for {}', meeting['title'][:70])
+            # A to-do's title can show with its project on the Team Graph and in a handoff: not worded by a turn that read
+            # notes, or a message from history
+            title = found['title'] if found['title'] and not (meeting['evidence'].get('notes') or meeting['evidence'].get('older')) else i18n.t('Prepare for {}', meeting['title'][:70])
             body = meeting_prep.body_text(found['fields'], i18n.t, found.get('links'), self.meeting_prep_cites(meeting))
             try:
                 saved = self.store.suggest(meeting['key'], title[:90], body, [meeting['id'], *found['sources']], 'now', self.config.get('digest_at', '08:30'),

@@ -17,7 +17,9 @@ profile of them and their organization: enrichment.py), the conversation with th
 only, so a personal message never reaches a work briefing): where it started and its latest messages, without the
 calendar's own invitation mail, which only repeats the meeting; open promises either way on those messages, and open
 to-dos about them. And the notes of earlier meetings with the same people (earlier_notes.py: which ones, how much of
-them), with what happened since, so a point settled later is not told as open. They reach the turn quoted as untrusted
+them), with what happened since, so a point settled later is not told as open. Messages and notes may come from history
+(machine/store/history.py), within the same limits: an older message only in the room signals leave, never one of the
+to-do's sources, and a guest met only in history is no first meeting. They reach the turn quoted as untrusted
 evidence. A line from them (agreed, open, changed) names the meeting it comes from, by code: the turn gives the N id of
 the notes (or the E id of the message), and one without an id it was given is dropped. No notes: no line, and nothing
 about notes in the turn. They are never the to-do's sources, which decide what others see.
@@ -32,7 +34,7 @@ and a line from them carries its source link; the links come from the search, ne
 Quality or nothing: with no message, no open promise and no notes with anyone on it, nothing is asked and no to-do is made. Else
 one background turn (the owner's model, the cheaper background one when there is one) writes the briefing as JSON, or
 says there is nothing useful; then too no to-do. Each line must come from what it was given: the messages it names are
-the to-do's sources, after the meeting itself, and a line about the last contact without a message to show it is
+the to-do's sources (never one from history), after the meeting itself, and a line about the last contact without a message to show it is
 dropped. A promise is said only with the open promise (P id) it is, an open question only when there are messages.
 The turn also judges Work or Personal by what the meeting is about; a personal one gets no to-do. A reply that can't be
 read is no verdict: it is asked once more, then in a later pass, a few times at most (machine/model_reply.py).
@@ -58,7 +60,7 @@ import calendar_busy
 import earlier_notes
 import timeutil
 from machine import model_reply, todo_states
-from machine.store import graph_promises
+from machine.store import graph_history, graph_promises
 
 SCHEMA = ('CREATE TABLE IF NOT EXISTS meeting_preps(dedupe_key TEXT PRIMARY KEY,event_id INTEGER NOT NULL,suggestion_id TEXT,'
           'verdict TEXT NOT NULL,starts_at TEXT NOT NULL,created_at TEXT NOT NULL,format INTEGER,body_sha TEXT,rebuilt_at TEXT)')
@@ -83,6 +85,8 @@ FIELDS = ('who', 'background', 'company', 'last', 'promises', 'questions', 'brin
 POINTS = {'agreed': 3, 'open': 4, 'changed': 2}  # from the notes of earlier meetings: lists of points, so many at most
 POINT_CHARS = 140
 FIELD_CHARS = {'background': 180, 'company': 240, 'last': 300, 'bring': 220}  # the rest: 150
+HISTORY = 'graph_history_events'
+MESSAGE_TABLES = ('graph_events', HISTORY)  # a guest's messages: signals first, then history
 CALENDAR_KINDS = ('calendar.event', 'salesflare.meeting')
 # The calendar's own invitation and answer mail links to the event: it only repeats the meeting (any language)
 CALENDAR_MAIL = re.compile(r'https://(?:www\.)?(?:calendar\.)?google\.com/calendar/event\?(?:action=|eid=)')
@@ -339,7 +343,7 @@ def evidence(db, meeting, side, sides, owner_emails, owner_domains, current, ope
     owned is calendar_owned; resolve(db, node_id) is graph.resolve; prep_lines person_summary.prep_lines; excerpt graph.excerpt."""
     same_side = lambda account_id: side is None or sides.get(account_id) in (None, side)
     since = (current - dt.timedelta(days=MESSAGE_DAYS)).isoformat()
-    people, messages, promises, orgs, nodes = [], {}, {}, {}, set()
+    people, messages, promises, orgs, nodes, talk = [], {}, {}, {}, set(), []
     for guest in meeting['guests']:
         node = resolve(db, 'email:' + guest['email'])
         person = {'name': guest['name'] or guest['email'], 'email': guest['email']}
@@ -364,27 +368,18 @@ def evidence(db, meeting, side, sides, owner_emails, owner_domains, current, ope
             lines = prep_lines(db, node['id'], {side} if side else set())
             if lines:
                 person['summary'] = lines[:4]
-            met = db.execute('SELECT 1 FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id=? AND e.deleted=0 AND e.id!=? '
+            met = db.execute(f"SELECT 1 FROM {graph_history.BOTH} g JOIN events e ON e.id=g.event_id WHERE e.deleted=0 AND e.id!=? "
                              f"AND e.kind IN ({','.join('?' * len(CALENDAR_KINDS))}) AND e.occurred_at<? LIMIT 1",
-                             (node['id'], meeting['id'], *CALENDAR_KINDS, current.isoformat())).fetchone()
+                             (*[json.dumps([node['id']])] * 2, meeting['id'], *CALENDAR_KINDS, current.isoformat())).fetchone()
             if not met:
                 person['first_meeting'] = True
-            rows = db.execute('SELECT e.id,e.account_id,e.kind,e.occurred_at,e.title,e.body,e.metadata FROM graph_events g JOIN events e ON e.id=g.event_id '
-                              f"WHERE g.node_id=? AND g.direct=1 AND e.deleted=0 AND e.kind NOT IN ({','.join('?' * len(CALENDAR_KINDS))}) AND e.occurred_at>=? "
-                              'ORDER BY e.occurred_at DESC LIMIT 40', (node['id'], *CALENDAR_KINDS, since)).fetchall()
-            mine = [r for r in rows if same_side(r['account_id']) and r['id'] not in messages and not CALENDAR_MAIL.search(str(r['body'] or ''))]
-            room = max(0, min(MESSAGES_PER_PERSON, MESSAGES - len(messages)))
-            # where it started (often what it is about: the ask, the offer) and the latest ones
-            mine = (mine[:room - 1] + mine[-1:] if len(mine) > room else mine) if room > 1 else mine[:room]
-            person['messages'] = []
-            for r in sorted(mine, key=lambda r: r['occurred_at']):
-                meta = json.loads(r['metadata'] or '{}')
-                messages[r['id']] = r
-                person['messages'].append({'id': f"E{r['id']}", 'date': timeutil.local_day_text(r['occurred_at'], meta),
-                                           'from': 'the owner' if _sent(meta, owner_emails) else person['name'],
-                                           'subject': str(r['title'] or '')[:120], 'text': excerpt(r['body'], MESSAGE_HEAD, MESSAGE_TAIL)})
-            if not person['messages']:
-                del person['messages']
+            read = {}
+            for table in MESSAGE_TABLES:
+                rows = db.execute(f'SELECT e.id,e.account_id,e.kind,e.occurred_at,e.title,e.body,e.metadata FROM {table} g JOIN events e ON e.id=g.event_id '
+                                  f"WHERE g.node_id=? AND g.direct=1 AND e.deleted=0 AND e.kind NOT IN ({','.join('?' * len(CALENDAR_KINDS))}) AND e.occurred_at>=? "
+                                  'ORDER BY e.occurred_at DESC LIMIT 40', (node['id'], *CALENDAR_KINDS, since)).fetchall()
+                read[table] = [r for r in rows if same_side(r['account_id']) and not CALENDAR_MAIL.search(str(r['body'] or ''))]
+            talk.append((person, read))
             elses = graph_promises.of_others(db, node['id']) if _has(db, 'promises') else ()
             ps = db.execute("SELECT p.id,p.direction,p.what,p.due,p.account_id FROM promises p WHERE (p.status='open' OR (p.status='carded' AND NOT EXISTS "
                             f"(SELECT 1 FROM suggestions s WHERE s.id=p.suggestion_id AND s.status IN {todo_states.sql(todo_states.CLOSED)}))) "
@@ -404,7 +399,8 @@ def evidence(db, meeting, side, sides, owner_emails, owner_domains, current, ope
             if todos:
                 person['open_todos'] = [str(t[0])[:120] for t in todos]
         people.append(person)
-    found = {'people': people, 'messages': messages, 'promises': promises, 'organizations': list(orgs.values()), 'web': {}, 'notes': []}
+    older = _messages(talk, messages, owner_emails, excerpt)
+    found = {'people': people, 'messages': messages, 'older': older, 'promises': promises, 'organizations': list(orgs.values()), 'web': {}, 'notes': []}
     notes = earlier_notes.read(db, meeting, nodes, same_side, sides, owned, owner_domains, current) if nodes else []
     notes = [n for n in notes if not set(n['ids']) & set(messages)]  # a notes mail the turn reads as a message already
     if notes:
@@ -416,6 +412,29 @@ def evidence(db, meeting, side, sides, owner_emails, owner_domains, current, ope
             after['open_promises'] = [{'id': f"P{p['id']}", 'promised_by': earlier_notes.promised_by(p), 'what': str(p['what'])[:160],
                                        **({'due': p['due']} if p['due'] else {})} for p in mine]
     return found
+
+
+def _messages(talk, messages, owner_emails, excerpt):
+    """What the turn reads of each guest's messages, put on their person and in messages: everyone's signals first, then
+    history in the room they leave. Returns the ids from history."""
+    older = set()
+    for table in MESSAGE_TABLES:
+        for person, read in talk:
+            mine = [r for r in read[table] if r['id'] not in messages]
+            room = max(0, min(MESSAGES_PER_PERSON - len(person.get('messages') or ()), MESSAGES - len(messages)))
+            # where it started (often what it is about: the ask, the offer) and the latest ones
+            mine = (mine[:room - 1] + mine[-1:] if len(mine) > room else mine) if room > 1 else mine[:room]
+            texts = []
+            for r in sorted(mine, key=lambda r: r['occurred_at']):
+                meta = json.loads(r['metadata'] or '{}')
+                messages[r['id']] = r
+                texts.append({'id': f"E{r['id']}", 'date': timeutil.local_day_text(r['occurred_at'], meta),
+                              'from': 'the owner' if _sent(meta, owner_emails) else person['name'],
+                              'subject': str(r['title'] or '')[:120], 'text': excerpt(r['body'], MESSAGE_HEAD, MESSAGE_TAIL)})
+            if texts:
+                older |= {r['id'] for r in mine if table == HISTORY}
+                person['messages'] = sorted([*texts, *person.get('messages', ())], key=lambda m: messages[int(m['id'][1:])]['occurred_at'])
+    return older
 
 
 def _organization(org):
@@ -696,17 +715,17 @@ def parse(reply, found):
         links[k] = [web[r]['url'] for r in refs]
         if not refs and not known:
             fields[k] = ''  # a fact about them needs a source: a looked-up profile or a web result
-    sources = []
+    shown, older = [], found.get('older') or ()
     for ref in listed(data.get('sources')):
         m = re.fullmatch(r'E(\d+)', str(ref).strip())
-        if m and int(m[1]) in found['messages'] and int(m[1]) not in sources:
-            sources.append(int(m[1]))
-    if not sources:
+        if m and int(m[1]) in found['messages'] and int(m[1]) not in shown:
+            shown.append(int(m[1]))
+    if not shown:
         fields['last'] = ''  # the last contact is only said with the message that shows it
     if not any(fields[k] for k in ('last', 'promises', 'questions', 'bring')) and not any(points.values()):
         return None
     title = clean(data.get('title'), 80)
-    return {'title': title, 'area': 'personal' if data.get('area') == 'personal' else 'work', 'fields': {**fields, **points}, 'sources': sources[:3],
+    return {'title': title, 'area': 'personal' if data.get('area') == 'personal' else 'work', 'fields': {**fields, **points}, 'sources': [i for i in shown if i not in older][:3],
             'links': {k: v for k, v in links.items() if v and fields[k]}}
 
 

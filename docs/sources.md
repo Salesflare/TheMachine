@@ -391,7 +391,9 @@ off), with the sign-ins the connections already have: no new scopes (`machine/ap
 
 - **History is never a signal.** It is stored reviewed (`events.history` = 1) and stays so through later edits, so no
   review, first look, to-do, promise, Graph link or "new" count comes from it. Search, threads, a message and the
-  Calendar show it; search results mark it `history`. No model reads it, and local embeddings skip it.
+  Calendar show it; search results mark it `history`. A model reads it only where a search finds it, for
+  booking details (`trip_notes.py`), and in a meeting briefing (`meeting_prep.py`, `earlier_notes.py`): notes of earlier
+  meetings and a few messages with the guests, within the briefing's own area, never as the to-do's sources.
 - **When it runs:** after the first look ended (or a day after the first read on a Machine from before the first
   look), never while a review or a first import runs, with room on the disk (at least 2 GB free, and 10% of the
   disk up to 5 GB, and twice the size of the database) and 500 MB of memory available, at the lowest CPU and disk priority. A connection's own sync read holds back only that connection,

@@ -20,6 +20,7 @@ written in the notes, and no notes at all.
     OPENAI_BASE_URL=... OPENAI_API_KEY=... python3 evals/meeting-briefings/run.py --model <model> --runs 2 --set held-out
     ... --root <another checkout>    # the same cases on that code's briefings
     ... --chars 5000                 # another limit for the notes in a turn
+    ... --history                    # what came before (meetings, notes, mail) is history
 
 The environment is that of `evals/family-questions/run.py`.
 
@@ -40,6 +41,16 @@ the store's own functions: the facts recalled in them stayed the same over two r
 | --- | --- | --- | --- | --- |
 | facts recalled of 48 | 45 | 45 | 46 | 47 |
 | tokens in, largest | 2,375 | 2,375 | 2,375 | 3,307 |
+
+With `--history` (one run of each set, 2026-11-24; before: briefings read signals only):
+
+| | Held-out, before | Held-out, now | Development, before | Development, now |
+| --- | --- | --- | --- | --- |
+| facts recalled | 2 of 47 | 41 of 47 | 2 of 48 | 46 of 48 |
+| wrong or stale | 0 of 30 | 0 of 30 | 0 of 28 | 0 of 28 |
+| statements not supported | 0 | 1 | 0 | 3 |
+| briefings made | 1 of 18 | 17 of 18 | 1 of 18 | 17 of 18 |
+| turn tokens in, average (largest) | 1,488 (1,488) | 1,631 (2,414) | 1,552 (1,552) | 1,638 (2,375) |
 
 Where this is weak: the cases were written with the change, and one model wrote and checked the briefings. Only two cases
 have long notes, so the limit rests on little. "Wrong or stale" counts only the statements a case names. One held-out

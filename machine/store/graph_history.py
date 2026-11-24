@@ -10,12 +10,15 @@ What history adds to a person or organization node: its contact days in strength
 links between people. info.history counts its history rows, and info.live is the node's closeness from signals alone:
 what the reviews, summaries, lookups and the Network pick people by (live()), so history never makes one of those. A
 history row goes to graph_history_events, never to graph_events, so nothing that reads a node's signals (reviews,
-preparations, to-dos, the Team Graph) reads history; only Fleet's "who knows someone" reads both
-(fleet._work_last), under the same work-account and Team Graph rules as signals, and the owner's own page Timeline
-(graph.timeline history=True) shows them, as its last contact counts them."""
+preparations, to-dos, the Team Graph) reads history. Three read both: Fleet's "who knows someone" (fleet._work_last),
+under the same work-account and Team Graph rules as signals; the owner's own page Timeline (graph.timeline
+history=True), as its last contact counts them; and a meeting briefing (meeting_prep.py, earlier_notes.py: BOTH)."""
 import hashlib
 import threading
 
+# A node's signals and its history, for a join: their nodes are bound twice, as JSON lists
+BOTH = ('(SELECT node_id,event_id,direct FROM graph_events WHERE node_id IN (SELECT value FROM json_each(?)) UNION ALL '
+        'SELECT node_id,event_id,direct FROM graph_history_events WHERE node_id IN (SELECT value FROM json_each(?)))')
 STEP = 5000  # history rows a graph pass may add to the ones the Graph has (a history of 27k: six passes, an hour)
 
 
@@ -28,7 +31,9 @@ def live(alias=''):
 def ensure(db):
     db.execute('CREATE TABLE IF NOT EXISTS graph_history(id INTEGER PRIMARY KEY CHECK(id=1),since TEXT,at TEXT)')
     db.execute('CREATE TABLE IF NOT EXISTS graph_history_events(node_id TEXT NOT NULL,event_id INTEGER NOT NULL,at TEXT NOT NULL,'
-               'PRIMARY KEY(node_id,event_id))')
+               'direct INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(node_id,event_id))')
+    if 'direct' not in {r[1] for r in db.execute('PRAGMA table_info(graph_history_events)')}:  # as graph_events has it (2026-11-24): the next build fills it
+        db.execute('ALTER TABLE graph_history_events ADD COLUMN direct INTEGER NOT NULL DEFAULT 0')
 
 
 def since(db):
@@ -101,9 +106,9 @@ def publish(db, history_rows):
     """The node -> history row links of a build, in place of the last build's: only what changed is written, as most
     builds (an owner edit) change few of them."""
     wanted = {}
-    for node_id, event_id, at in history_rows:
-        wanted.setdefault((node_id, event_id), at)
-    had = {(r[0], r[1]): r[2] for r in db.execute('SELECT node_id,event_id,at FROM graph_history_events')}
+    for node_id, event_id, at, direct in history_rows:
+        wanted.setdefault((node_id, event_id), (at, direct))
+    had = {(r[0], r[1]): (r[2], r[3]) for r in db.execute('SELECT node_id,event_id,at,direct FROM graph_history_events')}
     db.executemany('DELETE FROM graph_history_events WHERE node_id=? AND event_id=?', [k for k in had if k not in wanted])
-    db.executemany('INSERT OR REPLACE INTO graph_history_events(node_id,event_id,at) VALUES(?,?,?)',
-                   [(*k, at) for k, at in wanted.items() if had.get(k) != at])
+    db.executemany('INSERT OR REPLACE INTO graph_history_events(node_id,event_id,at,direct) VALUES(?,?,?,?)',
+                   [(*k, *v) for k, v in wanted.items() if had.get(k) != v])

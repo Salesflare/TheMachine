@@ -4,7 +4,8 @@ The line between history and signal is one column, events.history. A history row
 (analyzed_version=version) and stays reviewed through later edits (assistant.Store.commit_page), so no review, first
 look, to-do, promise or "new" count ever sees it. What reads signals by time instead of by review (the Graph, local
 embeddings, bounces, Possibly slipped, the setup hints) reads only rows that match SIGNAL. Search, a thread, a message
-and the Calendar read both. No model reads history: bringing it in is a plain read of the source.
+and the Calendar read both. A model reads history only where a search finds it, for booking details (trip_notes.py) and
+in a meeting briefing (meeting_prep.py, earlier_notes.py); bringing it in is a plain read of the source.
 
 The backfill's own place is history_backfill: one row per connection, with where its walk back in time is (`state`,
 the source's cursor), how many rows it kept, the oldest one so far, and when it reached its depth (done_at). Each step

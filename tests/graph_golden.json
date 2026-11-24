@@ -257,21 +257,21 @@
   "graph_history": {"columns": ["id", "since", "at"], "rows": [
     [1, "2025-02-03T09:30:00+00:00", "2026-03-10T09:30:00+00:00"]
   ]},
-  "graph_history_events": {"columns": ["node_id", "event_id", "at"], "rows": [
-    ["email:cyrus@moorhendata.example", 383, "2026-01-29T08:00:00+00:00"],
-    ["email:eliot@nimbusandnook.example", 387, "2026-02-16T08:00:00+00:00"],
-    ["email:esme@quillfeather.example", 358, "2026-02-08T08:00:00+00:00"],
-    ["email:freya@juniperledger.example", 385, "2026-01-09T08:00:00+00:00"],
-    ["email:hugo@bramblebox.example", 355, "2026-01-17T08:00:00+00:00"],
-    ["email:hugo@bramblebox.example", 356, "2026-01-31T07:53:00+00:00"],
-    ["email:hugo@bramblebox.example", 357, "2026-02-17T07:46:00+00:00"],
-    ["email:ilse@fernwave.example", 362, "2026-01-25T08:00:00+00:00"],
-    ["email:ilse@fernwave.example", 363, "2026-02-09T07:53:00+00:00"],
-    ["email:jasper@willowtick.example", 378, "2026-02-13T08:00:00+00:00"],
-    ["email:lotte@saffronsync.example", 381, "2026-02-05T08:00:00+00:00"],
-    ["email:owen@brackenridge.example", 396, "2026-01-29T08:00:00+00:00"],
-    ["email:rowan@otterlymail.example", 360, "2026-01-23T08:00:00+00:00"],
-    ["email:rowan@otterlymail.example", 361, "2026-02-07T07:53:00+00:00"]
+  "graph_history_events": {"columns": ["node_id", "event_id", "at", "direct"], "rows": [
+    ["email:cyrus@moorhendata.example", 383, "2026-01-29T08:00:00+00:00", 1],
+    ["email:eliot@nimbusandnook.example", 387, "2026-02-16T08:00:00+00:00", 1],
+    ["email:esme@quillfeather.example", 358, "2026-02-08T08:00:00+00:00", 1],
+    ["email:freya@juniperledger.example", 385, "2026-01-09T08:00:00+00:00", 1],
+    ["email:hugo@bramblebox.example", 355, "2026-01-17T08:00:00+00:00", 1],
+    ["email:hugo@bramblebox.example", 356, "2026-01-31T07:53:00+00:00", 1],
+    ["email:hugo@bramblebox.example", 357, "2026-02-17T07:46:00+00:00", 1],
+    ["email:ilse@fernwave.example", 362, "2026-01-25T08:00:00+00:00", 1],
+    ["email:ilse@fernwave.example", 363, "2026-02-09T07:53:00+00:00", 1],
+    ["email:jasper@willowtick.example", 378, "2026-02-13T08:00:00+00:00", 1],
+    ["email:lotte@saffronsync.example", 381, "2026-02-05T08:00:00+00:00", 1],
+    ["email:owen@brackenridge.example", 396, "2026-01-29T08:00:00+00:00", 1],
+    ["email:rowan@otterlymail.example", 360, "2026-01-23T08:00:00+00:00", 1],
+    ["email:rowan@otterlymail.example", 361, "2026-02-07T07:53:00+00:00", 1]
   ]},
   "graph_identifiers": {"columns": ["identifier", "node_id"], "rows": [
     ["email:anouk@vantagerail.example", "email:anouk@vantagerail.example"],
