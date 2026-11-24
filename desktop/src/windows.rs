@@ -271,10 +271,11 @@ pub fn close_box(app: &AppHandle) {
     }
 }
 
-/// The box's page says how tall it is.
-pub fn fit_box(app: &AppHandle, height: f64) {
+/// The box's page says how tall it is. Gives how tall it can be above or below the robot.
+pub fn fit_box(app: &AppHandle, height: f64) -> f64 {
     *app.state::<Shared>().height.lock().unwrap() = height.clamp(80.0, 700.0);
     place(app);
+    screen(app).map_or(f64::MAX, |(_, s)| place::room(corner(app, &s).robot(s.area), s.area))
 }
 
 /// A monitor: its name, its work area and its scale.

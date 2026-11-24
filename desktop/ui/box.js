@@ -21,7 +21,11 @@
   const words = e => t.errors[e] || (typeof e === 'string' && e) || t.errors.failed;
   const el = (tag, set, ...kids) => { const e = Object.assign(document.createElement(tag), set); e.append(...kids); return e; };
 
-  const fit = () => native.fit(Math.ceil($('panel').getBoundingClientRect().height));
+  // With its menu open it may be taller than there is room: then the menu comes in the rows' place
+  const fit = async () => {
+    const height = Math.ceil($('panel').getBoundingClientRect().height), room = await native.fit(height);
+    if (!$('menu').hidden && height > room) $('panel').classList.add('crowded');
+  };
   new ResizeObserver(fit).observe($('panel'));
 
   async function show() {
@@ -268,7 +272,7 @@
   function menu(open) {
     $('menu').hidden = !open;
     $('more').setAttribute('aria-expanded', String(open));
-    if (!open) return;
+    if (!open) return $('panel').classList.remove('crowded');
     const items = [...(machine ? ['dashboard'] : []), hidden ? 'show' : 'hide', ...(settings ? ['settings'] : []), ...(machine ? ['signout'] : []), 'quit'];
     const names = {dashboard: t.dashboard, hide: t.hide, show: t.show, settings: t.settings + '…', signout: t.signOut, quit: t.quit};
     const where = machine && connected ? [el('li', {className: 'where', textContent: fill(t.signedIn, new URL(machine).host)})] : [];
@@ -473,7 +477,7 @@
   }
   $('pick').addEventListener('change', () => { add([...$('pick').files]); $('pick').value = ''; });
   addEventListener('paste', e => { const f = [...(e.clipboardData?.files || [])]; if (f.length && connected) { e.preventDefault(); toTodo(); add(f); } });
-  addEventListener('dragover', e => { if (!takes(e.dataTransfer)) return; e.preventDefault(); if (connected) $('panel').classList.add('drop'); });
+  for (const on of ['dragenter', 'dragover']) addEventListener(on, e => { if (!takes(e.dataTransfer)) return; e.preventDefault(); if (connected) $('panel').classList.add('drop'); }); // robot.js
   addEventListener('dragleave', e => { if (!e.relatedTarget) $('panel').classList.remove('drop'); });
   addEventListener('drop', e => {
     e.preventDefault();

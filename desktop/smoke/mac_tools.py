@@ -94,17 +94,24 @@ def click(x, y, right=False, flags=0):
     time.sleep(0.5)
 
 
-def drag(a, b, steps=25):
+def drag(a, b, steps=25, at_once=None):
+    """at_once: held there, and then released on b as soon as it is above it."""
     move(*a)
     time.sleep(0.2)
     mouse(1, *a, 0, 1)
+    if at_once:
+        b, end = at_once, b
     for i in range(1, steps + 1):
         mouse(6, a[0] + (b[0] - a[0]) * i / steps, a[1] + (b[1] - a[1]) * i / steps)
         time.sleep(0.03)
     for i in range(4):  # held still above it, as a hand is: a page is asked first whether it takes it
         time.sleep(0.25)
         mouse(6, b[0] + i % 2, b[1])
-    time.sleep(0.2)
+    if at_once:
+        b = end
+        mouse(6, *b)
+    else:
+        time.sleep(0.2)
     mouse(2, *b, 0, 1)
     time.sleep(0.2)
     move(b[0] + 1, b[1])  # as a hand does: macOS 15 may only tell that the button is up with what comes next

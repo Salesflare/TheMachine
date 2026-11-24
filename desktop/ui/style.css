@@ -23,6 +23,7 @@ button,input,textarea{font:inherit;color:inherit}
 #dot{position:absolute;right:14px;top:10px;width:13px;height:13px;border-radius:50%;background:var(--dot);border:2px solid #fff}
 
 .box main{margin:14px;width:340px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:10px 12px 12px}
+.crowded #added,.crowded #ready,.crowded #answer{display:none}
 .box main.drop{outline:2px dashed var(--accent);outline-offset:-5px}
 header .icon{margin-top:-4px}
 header{display:flex;align-items:flex-start;gap:2px;margin-bottom:10px}
@@ -96,6 +97,8 @@ body.settings{background:var(--page)}
 .set input:checked::after{translate:16px}
 .set input:disabled{opacity:.6}
 .set .sub.warn{color:var(--error)}
+.set .answers{display:flex;flex:none;gap:6px}
+.set .answers button{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:13px}
 .settings .error{font-size:13px;margin:10px 0 0}
 .settings .error:empty{display:none}
 .settings footer{display:flex;justify-content:space-between;gap:16px;padding-top:12px;font-size:13px;color:var(--text-2)}

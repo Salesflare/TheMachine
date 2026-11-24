@@ -37,6 +37,7 @@
   listen('news', take).then(take);
   // Without a robot the system says what it would
   listen('notify', e => { const [title, line] = window.Parts.said(e.payload); invoke('robot_notify', {id: e.payload.id, title, line: line || ''}); });
+  listen('asks', () => invoke('robot_notify', {id: 'browser', title: window.MachineText.setBrowser, line: window.MachineText.setBrowserHint}));
 
   robot.addEventListener('pointerdown', e => {
     dragged = asked = false;
@@ -79,7 +80,8 @@
     clearTimeout(left);
     if (on) left = setTimeout(() => over(false), 1500); // a drag that ended without a word of it
   };
-  addEventListener('dragover', e => { if (!takes(e.dataTransfer)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; over(true); });
+  // Entering a part of it says yes too, not only what comes next: WebKit forgets the yes there, and a drop right then is lost
+  for (const on of ['dragenter', 'dragover']) addEventListener(on, e => { if (!takes(e.dataTransfer)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; over(true); });
   addEventListener('dragleave', e => { if (!e.relatedTarget) over(false); });
   addEventListener('drop', async e => {
     e.preventDefault();

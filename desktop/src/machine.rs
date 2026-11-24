@@ -276,9 +276,11 @@ impl Machine {
     /// What the dashboard's list is made of: its status (with a token of an earlier one, what changed since) and, when
     /// that asks for it, the Fleet's items. `look`: this is no one opening the dashboard.
     /// `desk`: this robot's name, and whether it may speak, and what it got the time before (speak.rs).
-    pub fn status(&self, since: Option<&str>, desk: &str, up: bool, got: &[String]) -> Result<Value, String> {
+    /// `none`: the browsers there up to then aren't on this computer (saved.rs).
+    pub fn status(&self, since: Option<&str>, desk: &str, up: bool, got: &[String], none: u64) -> Result<Value, String> {
         let since = since.filter(|t| t.bytes().all(|b| b.is_ascii_alphanumeric() || b"-_".contains(&b)));
-        self.page(&format!("api/status?look=1&desk={desk}&up={}&got={}{}", u8::from(up), got.join(","), since.map(|t| format!("&since={t}")).unwrap_or_default()))
+        let on = if cfg!(target_os = "macos") { "mac" } else { std::env::consts::OS };
+        self.page(&format!("api/status?look=1&desk={desk}&on={on}&none={none}&up={}&got={}{}", u8::from(up), got.join(","), since.map(|t| format!("&since={t}")).unwrap_or_default()))
     }
 
     pub fn fleet(&self) -> Result<Value, String> {

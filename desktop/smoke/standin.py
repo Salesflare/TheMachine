@@ -122,6 +122,8 @@ class Machine(http.server.ThreadingHTTPServer):
         self.account = self.machine = None  # its account's address; whose account this is
         self.window, self.away = False, None  # the dashboard is the app's window's; where a signed-out one is sent
         self.desks, self.notices, self.meeting = [], [], None  # what the robot says of itself with each look; what waits for it to say
+        self.paired, self.says = [], []  # which robot opened it in the browser; what a look said besides
+        self.browser = 0  # a browser that may be on the robot's computer has notifications on (its number of them)
         self.named, self.odd = [], None  # the to-dos whose words it asked; the status that answers it instead
         self.todos, self.name = list(TODOS), 'Sam'
         self.refuse = False
@@ -192,10 +194,11 @@ class Page(http.server.BaseHTTPRequestHandler):
             waits = []
             if 'desk' in q:
                 m.desks.append((q['desk'], q.get('up')))
+                m.says.append((q.get('on'), q.get('none')))
                 if q.get('up') == '1':
                     m.notices = [n for n in m.notices if n['key'] not in q.get('got', '').split(',')]
                     waits = m.notices
-            return self.answer({**({'notices': waits, **({'meeting': m.meeting} if m.meeting and q.get('up') == '1' else {})} if 'desk' in q else {}), 'first_name': m.name, 'suggestions': [{'id': i, 'title': t, 'status': 'prepared' if i != 'aa01' else 'pending', 'due': '2000-01-01' if i == 'aa01' else None,
+            return self.answer({**({'notices': waits, **({'browser': m.browser} if m.browser > int(q.get('none', 0)) and q.get('up') == '1' else {}), **({'meeting': m.meeting} if m.meeting and q.get('up') == '1' else {})} if 'desk' in q else {}), 'first_name': m.name, 'suggestions': [{'id': i, 'title': t, 'status': 'prepared' if i != 'aa01' else 'pending', 'due': '2000-01-01' if i == 'aa01' else None,
                                                                              'created_at': '2026-01-01T00:00:00Z', 'snooze_choices': SNOOZE, **m.status.get(i, {})} for i, t in m.todos]})
         if u.path == '/api/notice':
             m.named.append(q['tag'])
@@ -212,6 +215,8 @@ class Page(http.server.BaseHTTPRequestHandler):
             return self.answer(COMPACT.replace(b'OUT', f'http://localhost:{m.port}/out'.encode()), kind='text/html')
         if m.away:
             return self.answer(b'', 302, Location=m.away)
+        if u.path == '/' and 'desk' in q:
+            m.paired.append(q['desk'])
         if u.path == '/':  # a browser asks for an icon too
             m.opened.append(self.headers.get('Cookie') in m.cookies)
         self.answer(WINDOW.replace(b'OUT', f'http://localhost:{m.port}/out'.encode()) if m.window else DASHBOARD, kind='text/html')
