@@ -30,6 +30,7 @@ import json
 import re
 from collections import Counter
 
+from machine.text import unquoted
 import recurring
 
 LOOK_DAYS = 120  # how far back asks and sent mail are looked at
@@ -199,7 +200,7 @@ def sent(db, today, tz):
         anchor, at = _when(rule, tail, [i[0] for i in items], today)
         kept = [i for i in items if i[0].date() in set(tail)]
         latest = kept[-1]
-        body = str(latest[2] or '').split('[Quoted earlier messages', 1)[0].strip()
+        body = unquoted(latest[2])
         out.append({'key': 'pattern:sent:' + _key(topic, *to), 'kind': 'sent', 'rule': rule, 'anchor': anchor, 'at': at, 'count': len(tail),
                     'name': latest[1][:80], 'titles': [topic],
                     'evidence': [f'To {len(to)} {"person" if len(to) == 1 else "people"}: {", ".join(to[:4])}']

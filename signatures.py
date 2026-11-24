@@ -17,6 +17,7 @@ import re
 import timeutil
 from html.parser import HTMLParser
 from pathlib import Path
+from machine.mail_quotes import new_html
 from machine.owner_error import OwnerError
 
 MAX_HTML = 20000
@@ -102,15 +103,12 @@ def text(value):
 
 # ------------------------------------------------------------------------------------------- detection
 
-QUOTE_MARKS = re.compile(r'<div[^>]*id="?(appendonsend|divRplyFwdMsg|mail-editor-reference-message-container)"?|<div[^>]*class="?gmail_quote'
-                         r'|<blockquote|<hr[^>]*>\s*(<div[^>]*>\s*)*<font[^>]*>\s*<b>\s*(From|Van|De|Von|Da)\s*:', re.I)
 BLOCK = re.compile(r'(?=<(?:div|p|table|tr|hr)\b)|(?<=<br>)|(?<=<br/>)|(?<=<br />)', re.I)
 
 
 def new_part(body):
     """A sent message without the conversation it quotes."""
-    found = QUOTE_MARKS.search(body or '')
-    return (body or '')[:found.start()] if found else (body or '')
+    return new_html(body)
 
 
 def _body(body):

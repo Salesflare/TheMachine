@@ -24,7 +24,7 @@ from machine.sources.slack import slack_ids_named
 from machine.store import outcomes
 from machine.store.conversation import one_to_one
 from machine.store.evidence_moments import Moments, conversation_of
-from machine.text import clamp, encoded
+from machine.text import clamp, encoded, unquoted, without_forward
 import i18n
 from mail_senders import addresses
 import memory_use
@@ -158,8 +158,8 @@ def own_predicate(kind, owner_slack_ids=()):
 
 
 def own_text(body):
-    """What the owner wrote in a message, without the quoted history below it."""
-    return (body or '').split('[Quoted earlier messages', 1)[0].strip()
+    """What the owner wrote in a message, without the quoted history below it or a mail they send on."""
+    return without_forward(unquoted(body))
 
 
 # The owner's own messages in these conversations (their keys are in the clear), in a window: per kind, oldest first.
@@ -226,7 +226,7 @@ def own_answer(db, kind, spots, sent, owner_slack_ids, teaches, after, until='99
     params = (kind, *own_predicate(kind, owner_slack_ids)[1], *[keys] * len(CONVERSATION_KEYS[kind]), after, until, made, made, since)
     return next((e for e in db.execute(ANSWER_SQL[kind], params)
                  if answers(kind, e['account_id'], json.loads(e['metadata'] or '{}'), spots, teaches)
-                 and (text := own_text(e['body'])) and not PROFILE_SKIP.match(text) and not sent.wrote(e, text)), None)
+                 and (text := unquoted(e['body'])) and not PROFILE_SKIP.match(text) and not sent.wrote(e, text)), None)
 
 
 def tune_voice(channel, text, current):
@@ -395,7 +395,7 @@ class VoicesStore:
                 for row in db.execute(f'SELECT id,source_id,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
                                       'ORDER BY occurred_at DESC,id DESC LIMIT ?', (kind, *params, limit * VOICE_STUDY_SCAN)):
                     text = own_text(row['body'])
-                    if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, text):
+                    if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, unquoted(row['body'])):
                         continue
                     gist = ' '.join(re.sub(r'^\W*(?:hey|hi|hello|dear|hoi|dag)\b[^,\n!]{0,40}[,\n!]', '', text[:400], flags=re.I).split()).lower()[:120]
                     if sum(gist == other or (len(gist) > 60 and len(other) > 60 and similar(gist, other)) for other in copies) >= 1:
@@ -580,7 +580,7 @@ class VoicesStore:
         picked = []
         for row in rows:
             text = own_text(row['body'])
-            if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, text):
+            if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, unquoted(row['body'])):
                 continue
             m = json.loads(row['metadata'] or '{}')
             to = {a.lower() for _, a in email.utils.getaddresses([str(m.get(f) or '') for f in ('to', 'cc')]) if a}
@@ -609,7 +609,7 @@ class VoicesStore:
         here, there = [], []
         for row in rows:
             text = own_text(row['body'])
-            if not text or PROFILE_SKIP.match(text) or sent.wrote(row, text):  # one-word replies count: they are how short it gets
+            if not text or PROFILE_SKIP.match(text) or sent.wrote(row, unquoted(row['body'])):  # one-word replies count: they are how short it gets
                 continue
             there.append(len(text))
             if conversation_of(kind, json.loads(row['metadata'] or '{}')) in conversations:

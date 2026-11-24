@@ -23,7 +23,7 @@ from machine.store.graph_history import live
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.connectors import load_connector
 from machine.store.voices import OWN_KINDS, PROFILE_SKIP, sentences, similar, voice_block, voice_channel, VOICE_MAX
-from machine.text import clamp, encoded
+from machine.text import clamp, encoded, unquoted, without_forward
 import shared_graph
 import team_learnings
 from timeutil import local_tz, now
@@ -187,8 +187,9 @@ class ProfileStore:
                                       "ORDER BY occurred_at DESC,id DESC LIMIT ? OFFSET ?",
                                       (kind, *params, limit * 4, offset)).fetchall()
                     for row in rows:
-                        text = (row['body'] or '').split('[Quoted earlier messages', 1)[0].strip()
-                        if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, text):
+                        said = unquoted(row['body'], row['title'])
+                        text = without_forward(said)
+                        if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, said):
                             continue
                         gist = ' '.join(re.sub(r'^\W*(?:hey|hi|hello|dear|hoi|dag)\b[^,\n!]{0,40}[,\n!]', '', text[:400], flags=re.I).split()).lower()[:120]
                         if sum(gist == other or (len(gist) > 60 and len(other) > 60 and similar(gist, other))

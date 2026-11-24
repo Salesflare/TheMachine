@@ -55,8 +55,9 @@ from machine.chat import (
 from machine.config import LOG, ROOT
 from machine.model_usage import node_bin, node_env
 from machine.store.cards import WROTE_AGAIN_PREFIX, use_line
+from machine.store.events import MAIL_KINDS
 from machine.store.machine_cards import parked_redo
-from machine.text import _address, clamp, encoded, shown_body, split_quoted_history
+from machine.text import _address, clamp, encoded, mail_people, quoted_history, shown_body
 from models import background_model, claude_plan_route
 from machine.store import message_view, outcomes, promises
 import recurring
@@ -321,8 +322,9 @@ class CardChatApp:
                 if found:
                     continue
             # The new part leads; a reply's quoted history folds under it
-            quoted = chat_text(split_quoted_history(v['body'] or '', v['title'])[1], chars=3000) if text is None else ''
-            text = chat_excerpt(v['body'], v['title']) if text is None else text
+            people = mail_people(meta) if kind in MAIL_KINDS else ''
+            quoted = chat_text(quoted_history(v['body'] or '', v['title'], people), chars=3000) if text is None else ''
+            text = chat_excerpt(v['body'], v['title'], people) if text is None else text
             if not text and kind == 'owner.card':  # the viewer drops words that repeat the title; the chat opens with them
                 text = chat_text(v['title'], chars=3000)
             if text or v['title']:

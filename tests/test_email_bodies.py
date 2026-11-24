@@ -69,8 +69,8 @@ class QuotedHistory(unittest.TestCase):
             self.assertEqual(new,'Thanks, done.',header);self.assertTrue(quoted.startswith(header[:10]),header)
 
     def test_nested_headers_and_forwards_are_not_split(self):
-        nested='New text\r\n\r\n> On Thu, Ann <ann@example.com> wrote:\r\n> old'
-        self.assertEqual(machine_text.split_quoted_history(nested),(nested,''))
+        nested='> On Thu, Ann <ann@example.com> wrote:\r\n> old'
+        self.assertEqual(machine_text.split_quoted_history('New text\r\n\r\n'+nested),('New text',nested))  # marked, so quoted
         forward='FYI\r\n\r\n---------- Forwarded message ---------\r\nFrom: Ann <ann@example.com>\r\nDate: Thu\r\n\r\nThe content'
         self.assertEqual(machine_text.split_quoted_history(forward),(forward,''))  # Gmail forward: From:/Date:, not a reply
         outlook_forward='FYI\r\n\r\nFrom: Ann <ann@example.com>\r\nSent: Thursday\r\n\r\nThe content'

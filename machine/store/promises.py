@@ -19,7 +19,8 @@ from machine.store import graph_identifiers, todo_moves
 from machine.store.cards import awaited_addresses, awaiting_key, awaiting_match, same_thread_card
 from machine.store.review import AUTOMATED_LABELS, CARD_OPEN, own_message, ROBOT_SENDER
 from machine.store.voices import OWN_KINDS
-from machine.text import _address, encoded
+from machine.mail_quotes import PREFIX
+from machine.text import _address, encoded, mail_people, unquoted, without_forward
 import memory_use
 import todo_areas
 from timeutil import local_tz, now
@@ -701,9 +702,10 @@ class PromisesStore:
         ago = lambda days: (current - dt.timedelta(days=days)).isoformat()
         own = {a['email'].lower() for a in self.accounts if a.get('email') and '@' in a['email']}
         robot = ROBOT_SENDER
-        def new_text(body):
-            text = (body or '').split('[Quoted earlier messages', 1)[0]
-            text = re.split(r'\n(?:On .{5,200} wrote:|Op .{5,200} schreef .{0,40}:|-----Original Message-----)', text, maxsplit=1)[0]
+        def new_text(row):
+            # a forward's quotes too are someone else's questions: read without its prefix
+            text = unquoted(row['body'], PREFIX.sub('', row['title'] or ''), mail_people(json.loads(row['metadata'])))
+            text = without_forward(text) if row['mine'] else text
             text = '\n'.join(line for line in text.splitlines() if not line.lstrip().startswith('>'))
             return re.sub(r'(?:https?://|www\.)\S+', '', text)  # a ? in a link (tracking, signatures) isn't a question
         found = {'sent': [], 'asked': []}
@@ -743,7 +745,7 @@ class PromisesStore:
                               f"OR (instr(e.metadata,'\"SENT\"')=0 AND e.occurred_at>? AND NOT EXISTS ({later}))) "
                               "ORDER BY e.occurred_at", (ago(21), ago(2), ago(4), ago(14))).fetchall()
             for row in rows:
-                if row['id'] in done or row['id'] in carded or (row['mine'] and row['id'] in followed) or '?' not in new_text(row['body']):
+                if row['id'] in done or row['id'] in carded or (row['mine'] and row['id'] in followed) or '?' not in new_text(row):
                     continue
                 m = json.loads(row['metadata'])
                 if 'SENT' not in m.get('labels', []) and not row['mine']:
