@@ -11,15 +11,15 @@ import io
 import json
 import re
 
-SHEETS, SLIDES = 'sheets', 'slides'
-KINDS = {'spreadsheets': SHEETS, 'presentation': SLIDES}
+import google_links
+from google_links import SHEETS, SLIDES
+
 TYPES = {SHEETS: 'Google Sheet', SLIDES: 'Google Slides'}
 SCOPE = {SHEETS: 'https://www.googleapis.com/auth/spreadsheets.readonly',
          SLIDES: 'https://www.googleapis.com/auth/presentations.readonly'}
 # The scopes that read each kind, narrowest first
 READS = {kind: (SCOPE[kind], 'https://www.googleapis.com/auth/' + wide, 'https://www.googleapis.com/auth/drive.readonly',
                 'https://www.googleapis.com/auth/drive') for kind, wide in ((SHEETS, 'spreadsheets'), (SLIDES, 'presentations'))}
-LINK = re.compile(r'https://docs\.google\.com/(?:a/[^/\s]+/)?(spreadsheets|presentation)/(?:u/\d+/)?d/([A-Za-z0-9_-]{20,100})([^\s<>"\\)\]]*)')
 GID = re.compile(r'\bgid=(\d{1,12})')
 RANGE = re.compile(r'\brange=([A-Za-z]{1,3}\d{0,7}(?:(?::|%3A)[A-Za-z]{1,3}\d{0,7})?)', re.I)
 A1 = re.compile(r'([A-Z]{1,3})(\d{0,7})(?::([A-Z]{1,3})(\d{0,7}))?')
@@ -43,8 +43,10 @@ def links(text):
     """{file id: {kind, spots}} of the Sheets and Slides files linked in a text, in order; spots: the (tab, range) pairs a
     sheet's links point at, each as Google writes it in the link, or None."""
     found = {}
-    for part, file_id, tail in LINK.findall(str(text or '')):
-        file = found.setdefault(file_id, {'kind': KINDS[part], 'spots': []})
+    for kind, file_id, tail in google_links.find(text):
+        if kind not in (SHEETS, SLIDES):
+            continue
+        file = found.setdefault(file_id, {'kind': kind, 'spots': []})
         gid, cells = GID.search(tail), RANGE.search(tail)
         spot = (int(gid[1]) if gid else None, cells[1].upper().replace('%3A', ':') if cells else None)
         if file['kind'] == SHEETS and spot != (None, None) and spot not in file['spots'] and len(file['spots']) < MAX_SPOTS:

@@ -39,6 +39,8 @@ class DocsApp:
         elif re.fullmatch(r'[A-Za-z0-9_!.-]{10,300}', file_id):
             found = self.__dict__.setdefault('_docs_found', {}).get(job, {})
             linked = links.get(file_id)
+            if file_id not in found and linked == '':
+                raise ValueError(self.no_google_docs())
             if file_id not in found and isinstance(linked, dict):
                 return self.linked_file(file_id, linked, args.get('range'))
             if file_id in found:
@@ -168,9 +170,17 @@ class DocsApp:
             for account in (via.get('google'), via.get('notion')):
                 for file_id in plugin.doc_links_of(account, text) if account else ():
                     links.setdefault(file_id, account['id'])
+        for file_id in plugin.doc_links('\n'.join(said)) if plugin and not via.get('google') else ():
+            links.setdefault(file_id, '')  # linked, with nothing here that opens it
         for file_id, file in (plugin.file_links('\n'.join(said)) if plugin else {}).items():
             links.setdefault(file_id, {**file, 'accounts': self.file_accounts(area)})
         return job, run, links, area
+
+    def no_google_docs(self):
+        """What a run hears of a linked Google Doc when no Google Docs connection is in the to-do's area."""
+        connect = 'connect Google Docs under Connections, or ' if doc_writes.google_offered({}, self.config) else ''
+        return ('No Google Docs connection in this to-do’s area opens that doc. Read it with another Google sign-in you have for it, or ask the owner '
+                f'to {connect}paste the part that matters in the chat')
 
     def file_accounts(self, area):
         """The owner's own Google sign-ins in this area that may read a linked Sheet or Slides file: their Google Docs
@@ -217,6 +227,7 @@ class DocsApp:
                            'docs_no_access': 'That file is private to someone else: it is not shared with the Google account connected here. Open it to ask for access, or paste the part that matters in the chat',
                            'docs_gone': 'That file was deleted, or its link is wrong',
                            'docs_file_kind': 'That file is not a Google Sheet or Slides file (an Excel or PowerPoint file in Drive). Download it and attach it in the chat',
+                           'docs_drive_kind': 'That Drive file is not a Google Doc, Sheet or Slides file that can be read here (it may be a PDF or a photo). Download it and attach it in the chat',
                            'docs_range_unknown': 'That part is not in the file: give a tab and cells from the list of tabs, or slide numbers',
                            'docs_signin_expired': 'Google asks to sign in again (Reconnect under Connections)',
                            'docs_text_unsupported': 'That file has no text to read here (open it in the browser instead)'}.get(

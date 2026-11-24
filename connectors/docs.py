@@ -48,6 +48,8 @@ import zipfile
 from xml.etree import ElementTree
 from xml.parsers import expat
 
+import google_links
+
 KINDS = {'docs.comment': 'Doc comment', 'docs.mention': 'Doc mention', 'docs.suggestion': 'Suggested edit',
          'docs.shared': 'Shared doc'}
 # How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
@@ -76,7 +78,6 @@ MS_SCOPE = 'Files.Read.All'
 DOCS_READ_SCOPE = 'https://www.googleapis.com/auth/documents.readonly'  # a Google Doc's text by its id (not restricted)
 DOCS_SCOPE = 'https://www.googleapis.com/auth/documents'  # a Google Doc by its id, and an owner-approved edit to it (not restricted)
 GOOGLE_DOCS = 'google_docs'  # Google Docs with its own sign-in and broker (google_docs_broker): documents and drive.file only
-DOC_LINK = re.compile(r'https://docs\.google\.com/document/(?:u/\d+/)?d/([A-Za-z0-9_-]{20,100})')
 MAX_FOUND = 10
 FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'  # Google: only files this app created (a new doc)
 WRITE_KEY = 'themachine_write'  # a new Google Doc's appProperties key: the write's token, to find it again
@@ -272,8 +273,12 @@ class Google:
         try:
             doc = self.call('docs.documents.get', {'documentId': file_id}, scope=self.docs_scope())
         except self.helpers.SourceError as error:
-            if error.status in (400, 404):
-                raise self.helpers.SourceError('docs_text_unsupported', error.status) from None
+            category = {400: 'docs_text_unsupported', 404: 'docs_gone', 410: 'docs_gone'}.get(error.status)
+            if error.status == 403 and error.category != 'docs_not_connected':
+                reason = str(getattr(error, 'reason', None) or '')
+                category = None if reason in ('SERVICE_DISABLED', 'accessNotConfigured') or 'SCOPE' in reason else 'docs_no_access'
+            if category:
+                raise self.helpers.SourceError(category, error.status) from None
             raise
         import doc_writes  # noqa: PLC0415
         text = '\n'.join(p['text'] for p in doc_writes.google_paragraphs(doc))
@@ -804,9 +809,10 @@ def read_text(config, account, file_id, helpers):
 
 
 def file_links(text):
-    """The Google Sheets and Slides files linked in a text: {file id: {kind, spots}} (google_files.links)."""
+    """The Google Sheets and Slides files linked in a text: {file id: {kind, spots}} (google_files.links), and the Drive
+    links that don't say what they are (kind any)."""
     import google_files  # noqa: PLC0415
-    return google_files.links(text)
+    return {**{f: {'kind': google_links.ANY, 'spots': []} for f in google_links.ids(text, google_links.ANY)}, **google_files.links(text)}
 
 
 def reads_files(config, account, helpers):
@@ -826,10 +832,29 @@ def read_file(config, account, file_id, kind, helpers, spots=(), asked=None):
     sign-in (Google Docs' own, or the owner's gog one) with a scope it already holds."""
     import google_files  # noqa: PLC0415
     source = (GogGoogle if gog_google(account) else Google)(config, account, helpers)
+    if kind == google_links.ANY:
+        return any_file(source, config, account, file_id, helpers, asked)
     scope = google_files.scope_for(kind, source.granted())
     if not scope:
         raise helpers.SourceError('docs_files_not_granted')
     return google_files.Reader(source, kind, scope).read(file_id, spots, asked)
+
+
+def any_file(source, config, account, file_id, helpers, asked):
+    """A linked Drive file that may be a Doc, a Sheet or Slides: read as the first of these it is, of the kinds this
+    sign-in may read."""
+    import google_files  # noqa: PLC0415
+    for kind in (google_links.DOC, google_links.SHEETS, google_links.SLIDES):
+        scope = kind != google_links.DOC and google_files.scope_for(kind, source.granted())
+        try:
+            if kind == google_links.DOC and not gog_google(account):
+                return read_text(config, account, file_id, helpers)
+            if scope:
+                return google_files.Reader(source, kind, scope).read(file_id, (), asked)
+        except helpers.SourceError as error:
+            if error.category not in ('docs_text_unsupported', 'docs_file_kind', 'docs_gone'):
+                raise
+    raise helpers.SourceError('docs_drive_kind')
 
 
 def find(config, account, words, helpers):
@@ -843,8 +868,8 @@ def find(config, account, words, helpers):
 
 
 def doc_links(text):
-    """The Google Doc ids linked in a text (docs.google.com/document/d/<id>), in order, once each."""
-    return list(dict.fromkeys(DOC_LINK.findall(str(text or ''))))
+    """The Google Doc ids linked in a text, in order, once each, in any form of the link (google_links.py)."""
+    return google_links.ids(text, google_links.DOC)
 
 
 def doc_links_of(account, text):

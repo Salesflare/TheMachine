@@ -46,6 +46,7 @@ import re
 import uuid
 import zipfile
 from machine.owner_error import OwnerError
+import google_links
 import timeutil
 
 LOG = logging.getLogger('assistant')
@@ -372,8 +373,9 @@ def file_id_of(value):
     """The doc id an edit names: the id itself, or the id in a Google Docs or Notion link to it (with /edit or any suffix)."""
     text = str(value or '').strip()
     found = re.search(r'docs\.google\.com/document/(?:u/\d+/)?d/([A-Za-z0-9_-]{1,200})', text)
-    if found:
-        return found[1]
+    linked = google_links.ids(text, google_links.DOC)  # any other form of the link
+    if found or linked:
+        return linked[0] if linked else found[1]
     page = re.search(r'notion\.(?:so|site)/[^\s?#]*?([0-9a-f]{32})(?:[?#]|$)', text)  # a Notion page by its link
     if page:
         return page[1]

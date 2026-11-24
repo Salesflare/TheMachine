@@ -39,6 +39,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import google_links
+
 KINDS = {'intercom.conversation': 'Intercom'}
 # How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
 # (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
@@ -270,12 +272,12 @@ def event(account, raw, helpers):
     if not isinstance(parts, list) or not all(isinstance(p, dict) for p in parts):
         raise SourceError('intercom_missing_parts')
     source = raw.get('source') if isinstance(raw.get('source'), dict) else {}
-    root = plain(source.get('body'))
+    root = plain(google_links.keep_links(source.get('body')))
     lines = []
     for part in sorted(parts, key=lambda p: (p.get('created_at') or 0, str(p.get('id', '')))):
         author = part.get('author') if isinstance(part.get('author'), dict) else {}
         lines.append(f"{part.get('created_at', '')} · {author.get('name') or author.get('email') or author.get('type', '')} · "
-                     f"{part.get('part_type', '')}: {plain(part.get('body'))}")
+                     f"{part.get('part_type', '')}: {plain(google_links.keep_links(part.get('body')))}")
     history = '\n'.join(lines)
     # The opening message gets up to 20,000 characters; the latest history fills the rest.
     opening = root[:OPENING]

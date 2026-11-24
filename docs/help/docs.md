@@ -3,7 +3,7 @@ title: Microsoft OneDrive
 area: connections
 summary: Comments, mentions and tracked changes on your Word files in OneDrive. New docs and edits wait for your OK.
 covers: connector:docs
-code: connectors/docs.py, google_files.py, machine/app/docs.py, doc_writes.py, next_actions.py, onboarding.py
+code: connectors/docs.py, google_files.py, google_links.py, machine/app/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## What it reads
@@ -85,7 +85,7 @@ Then your Machine also reads a Google Sheet or Slides file linked in a to-do's m
 - From a sheet, the linked tab or cells first, then the other tabs, up to 2,000 cells. A formula shows as its value. Hidden tabs are read only when linked or asked for.
 - From slides, the text and speaker notes, in order. Images and charts aren't read.
 
-For a large file, ask in the chat for the tab, cells or slides you mean. If a file is private to someone else, deleted or an Excel or PowerPoint file, the to-do says so.
+For a large file, ask in the chat for the tab, cells or slides you mean. If a file is private to someone else, deleted or an Excel or PowerPoint file, the to-do says so. A Google Drive link works the same way when it is a Google Doc, Sheet or Slides file.
 
 ## Google Docs on your own computer
 
