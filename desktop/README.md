@@ -124,14 +124,17 @@ Always and Never).
   keeps quiet), KDE, dunst, mako (a mode named do-not-disturb or dnd) and GNOME. Elsewhere the system doesn't tell, and
   it speaks. A Mac tells whether a Focus is on only with a permission, which isn't asked, so there the choice isn't
   offered. GNOME has one switch for both, so there notifications off is Do Not Disturb.
-- A robot that may not speak takes nothing. Your Machine pushes to the browser as ever. One it was handed but didn't
-  say it got in 90 seconds (an answer lost on the way is sent again) goes to the browser after all.
+- A robot that may not speak takes nothing. Your Machine pushes to the browser as ever. **Got is shown:** the robot says
+  it got one when its bubble shows, or when it was decided before that. One it doesn't say in 90 seconds (the box stayed
+  open, the robot went away, an answer was lost on the way) goes to the browser after all, and the robot doesn't say it then.
 - **Decided elsewhere**, on the phone or the dashboard: the bubble goes with the robot's next look.
 - **A meeting that starts within 10 minutes** and has a briefing from your Machine: who it is with, or its own name,
   and when, **Open brief**, and **Join** for a Zoom, Meet or Teams link. Once. Only while your Machine may push
   reminders, and none for all-day or declined ones; with hidden text it names nobody. **Join** opens the link in the
   browser.
 - While the box is open nothing is said, and what its rows showed isn't said after.
+- **Why it said nothing:** `speaks.log` next to `app.json` (see [Remove it](#remove-it) for the folder) has the reason with each
+  change, and when a bubble showed. Times are UTC. No titles, text or addresses, and it stays under 100 KB.
 
 A Machine without this part gives nothing to say, and nothing changes.
 
@@ -174,7 +177,7 @@ menu, or Command-Q in the box. The program with `--quit` stops it whatever state
 
 Quit it, delete the program, and delete its folders:
 
-| | Address, session, place | Page cache |
+| | Address, session, place, `speaks.log` | Page cache |
 |---|---|---|
 | Windows | `%APPDATA%\computer.themachine.desktop` | `%LOCALAPPDATA%\computer.themachine.desktop` |
 | Linux | `~/.config/computer.themachine.desktop` | `~/.local/share/computer.themachine.desktop`, `~/.cache/computer.themachine.desktop` |

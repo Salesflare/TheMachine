@@ -270,7 +270,7 @@ impl Machine {
         }
         let kind = if plain(kind) { format!("&kind={kind}") } else { String::new() };
         let (status, notice) = self.get(&format!("api/notice?v=2&tag={todo}{kind}"))?;
-        Ok(said(todo, &notice).filter(|_| status == 200))
+        told(status, todo, &notice)
     }
 
     /// What the dashboard's list is made of: its status (with a token of an earlier one, what changed since) and, when
@@ -309,6 +309,15 @@ fn quick(notice: &Value) -> Vec<Quick> {
         .filter_map(|(act, ..)| Some(Quick { act, name: words("labels", act)?, said: words("events", act)? }))
         .take(3)
         .collect()
+}
+
+/// Gone is what the Machine says is gone. Anything else it doesn't say is asked again.
+fn told(status: u16, todo: &str, notice: &Value) -> Result<Option<crate::speak::Say>, String> {
+    match status {
+        200 if notice["gone"] == true => Ok(None),
+        200 => said(todo, notice).map(Some).ok_or_else(|| UNREACHABLE.into()),
+        status => Err(refused(status)),
+    }
 }
 
 /// The notification, as a bubble. Its first button that only opens names the one that does.
@@ -408,6 +417,11 @@ mod tests {
         let say = said("a1", &notice).unwrap();
         assert_eq!((say.title.as_str(), say.opens.as_str(), say.quick.len()), ("Ready: Reply to Dana", "Open draft", 2));
         assert!(said("a1", &json!({"gone": true})).is_none());
+        assert_eq!(told(200, "a1", &notice), Ok(Some(say)));
+        assert_eq!(told(200, "a1", &json!({"gone": true})), Ok(None));
+        for (status, answer) in [(500, Value::Null), (502, json!({"gone": true})), (403, json!({"error": "x"})), (200, Value::Null), (200, json!({"body": "x"}))] {
+            assert!(told(status, "a1", &answer).is_err(), "{status} {answer}: not gone, asked again");
+        }
         assert_eq!(said("a1", &json!({"title": "T", "actions": ["prepare"]})).unwrap().opens, "Open");
         assert_eq!(random().len(), 32);
     }

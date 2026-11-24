@@ -8,10 +8,16 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeSet, VecDeque};
 use std::sync::atomic::Ordering;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 
 /// At most this many after another; the dot says there is more.
 const QUEUE: usize = 3;
+/// A bubble shows this long after the look the Machine offered it with, or after another look: not next to the browser's.
+const FRESH: Duration = Duration::from_secs(5);
+/// The bubble's page that hasn't shown it by then, or hasn't said it is there since, is made again.
+const SLOW: Duration = Duration::from_secs(10);
+const DEAD: Duration = Duration::from_secs(90);
 
 /// A meeting about to start, for the page to put in words.
 #[derive(Clone, Serialize, Debug, Default, PartialEq)]
@@ -46,17 +52,29 @@ pub struct Say {
     /// A button of it was tapped: it says what happened first.
     #[serde(skip)]
     pub held: bool,
+    /// The Machine's key of the notification, or what its meeting is told once by.
+    #[serde(skip)]
+    pub key: Option<String>,
+    #[serde(skip)]
+    pub told: Option<String>,
 }
 
 #[derive(Default)]
 pub struct Speaking {
     queue: VecDeque<Say>,
     now: Option<Say>,
-    /// The notifications it has (the Machine's keys of them), until the Machine no longer offers them: an answer can be
+    /// What is said now shows, and when its page last said it is there.
+    shown: bool,
+    alive: Option<Instant>,
+    /// When the Machine last said what it offers.
+    asked: Option<Instant>,
+    /// Why it may not speak, as it was last noted.
+    no: Option<Option<&'static str>>,
+    /// The notifications that were shown or are gone (the Machine's keys of them), until the Machine no longer offers them: an answer can be
     /// lost on the way, so the Machine keeps each until a look names it.
     got: Vec<String>,
     /// What the system told (notify.rs), and whether it was in For you since.
-    notices: Vec<(String, bool)>,
+    notices: Vec<(Say, bool)>,
     /// The meetings it said.
     told: BTreeSet<String>,
 }
@@ -86,24 +104,41 @@ impl Speak {
 /// It may speak: the person sees the robot, nothing is full screen or presented, the screen isn't locked, and they want it.
 pub fn up(app: &AppHandle) -> bool {
     let shared = app.state::<Shared>();
-    if no_robot(&shared) {
-        return crate::notify::may(app) && !quiet::away(); // else the phone and the browser have it
+    let no = why_not(app, &shared);
+    let changed = std::mem::replace(&mut shared.speaking.lock().unwrap().no, Some(no)) != Some(no);
+    if changed {
+        note(&shared, &no.map_or("may speak".into(), |no| format!("may not speak: {no}")));
+        #[cfg(feature = "sandbox")]
+        eprintln!("speaks: {}", no.unwrap_or("yes"));
     }
-    let may = showing(&shared) && !crate::front::full() && !quiet::away() && wants(&shared);
-    #[cfg(feature = "sandbox")]
-    if !may {
-        eprintln!("doesn't speak: showing {}, full screen {}, away {}, do not disturb {}", showing(&shared), crate::front::full(), quiet::away(), quiet::disturb());
+    no.is_none()
+}
+
+fn why_not(app: &AppHandle, shared: &Shared) -> Option<&'static str> {
+    let off = |flag: &std::sync::atomic::AtomicBool| flag.load(Ordering::Relaxed);
+    if no_robot(shared) { // else the phone and the browser have it
+        return if !crate::notify::may(app) { Some("no robot, and notifications are off") } else { quiet::away().then_some("locked, presented, mirrored or idle") };
     }
-    may
+    let when = shared.saved.lock().unwrap().speak;
+    Some(match () {
+        _ if when == Speak::Never => "Speak up is off",
+        _ if off(&shared.hidden) => "the robot is hidden",
+        _ if off(&shared.away) || crate::dash::front() => "the dashboard's app is in front",
+        _ if off(&shared.full) || crate::front::full() => "something is full screen",
+        _ if off(&shared.picking) => "a screenshot is being taken",
+        _ if quiet::away() => "locked, presented, mirrored or idle",
+        _ if !when.now(quiet::disturb) => "Do Not Disturb",
+        _ => return None,
+    })
+}
+
+/// For the person who wonders why it said nothing (why.rs). Reasons only.
+fn note(shared: &Shared, reason: &str) {
+    crate::why::note(&shared.file.with_file_name(crate::why::NAME), reason);
 }
 
 fn no_robot(shared: &Shared) -> bool {
     shared.saved.lock().unwrap().no_robot
-}
-
-fn wants(shared: &Shared) -> bool {
-    let when = shared.saved.lock().unwrap().speak;
-    when.now(quiet::disturb)
 }
 
 fn showing(shared: &Shared) -> bool {
@@ -111,57 +146,142 @@ fn showing(shared: &Shared) -> bool {
     !off && !crate::dash::front() && shared.saved.lock().unwrap().speak != Speak::Never
 }
 
-/// What came with a look. Asked of the Machine once more, as the phone app does: its words, and its buttons now.
+impl Speaking {
+    /// What the Machine offers with a look: what isn't here yet. What it no longer offers is the browser's now, or a newer
+    /// one took its place: that isn't said any more. Also how many those are.
+    fn offered(&mut self, notices: &Value, meeting: Option<&str>, at: Instant) -> (Vec<Value>, usize) {
+        let before = self.queue.len();
+        let (kept, mut fresh) = sort(&self.got, notices);
+        let open = |key: &str| fresh.iter().any(|n| n["key"] == key);
+        self.queue.retain(|s| s.key.as_deref().map_or(s.told.as_deref() == meeting, open));
+        fresh.retain(|n| !self.queue.iter().chain(&self.now).any(|s| s.key.as_deref() == n["key"].as_str()));
+        self.got = kept;
+        self.asked = Some(at);
+        (fresh, before - self.queue.len())
+    }
+
+    fn room(&self) -> usize {
+        QUEUE.saturating_sub(self.queue.len())
+    }
+
+    fn add(&mut self, say: Say) {
+        self.queue.retain(|s| s.id != say.id);
+        self.queue.push_back(say);
+    }
+
+    /// It was shown, or it is really gone: the Machine hears so with the next look.
+    fn had(&mut self, say: &Say) {
+        self.got.extend(say.key.clone().filter(|k| !self.got.contains(k)));
+        self.told.extend(say.told.clone());
+    }
+
+    /// The next one, if the Machine offered it a moment ago: else the browser may have it by now.
+    fn pop(&mut self, at: Instant) -> Option<&Say> {
+        if !self.asked.is_some_and(|asked| at.duration_since(asked) < FRESH) {
+            return None;
+        }
+        self.now = self.queue.pop_front();
+        (self.shown, self.alive) = (false, Some(at));
+        self.now.as_ref()
+    }
+
+    /// The bubble's page is gone or never came: it says it is there every few seconds (ui/bubble.js).
+    fn stuck(&self, at: Instant) -> bool {
+        self.now.is_some() && self.alive.is_some_and(|alive| at.duration_since(alive) > if self.shown { DEAD } else { SLOW })
+    }
+
+    /// The rows of the box were seen, so these are.
+    fn seen(&mut self, rows: &[String]) -> usize {
+        let before = self.queue.len();
+        let (seen, rest) = std::mem::take(&mut self.queue).into_iter().partition::<Vec<_>, _>(|s| s.meeting.is_none() && rows.contains(&s.id));
+        self.queue = rest.into();
+        seen.iter().for_each(|s| self.had(s));
+        before - self.queue.len()
+    }
+
+    /// What is decided elsewhere isn't said. Also whether that is what it says now.
+    fn decided(&mut self, there: impl Fn(&str) -> bool) -> bool {
+        let stays = |say: &mut Say| {
+            let here = there(&say.id);
+            let stays = here || !say.listed;
+            say.listed |= here;
+            stays
+        };
+        let (rest, gone) = std::mem::take(&mut self.queue).into_iter().map(|mut s| (stays(&mut s), s)).partition::<Vec<_>, _>(|(stays, _)| *stays);
+        self.queue = rest.into_iter().map(|(_, s)| s).collect();
+        gone.iter().for_each(|(_, s)| self.had(s));
+        self.now.as_mut().is_some_and(|say| !stays(say) && !say.held)
+    }
+}
+
+/// What came with a look. Asked of the Machine once more, as the phone app does: its words, and its buttons now. It isn't
+/// given up as got here: only when it shows (shown), or when there is nothing to show any more.
 pub fn came(app: &AppHandle, machine: &Machine, notices: &Value, meeting: &Value) {
-    if notices.is_null() || !up(app) {
+    if notices.is_null() {
         return;
     }
-    let shared = app.state::<Shared>();
-    let (mut got, fresh) = sort(&got(&shared), notices);
-    let before = got.len();
-    let mut said = Vec::new();
-    for (i, n) in fresh.iter().rev().enumerate() {
-        if i < QUEUE {
-            match machine.notice(n["id"].as_str().unwrap_or_default(), n["kind"].as_str().unwrap_or_default()) {
-                Ok(Some(say)) => said.push(Say { snooze: serde_json::from_value(n["snooze"].clone()).unwrap_or_default(), ..say }),
-                Ok(None) => {}
-                Err(_) => continue, // the next look gets it again
-            }
-        }
-        got.extend(n["key"].as_str().map(String::from));
+    let (shared, may) = (app.state::<Shared>(), up(app));
+    let about = about(meeting);
+    let (fresh, lost, room, stuck) = {
+        let (mut speaking, at) = (shared.speaking.lock().unwrap(), Instant::now());
+        let (fresh, lost) = speaking.offered(notices, about.as_ref().and_then(|m| m.told.as_deref()), at);
+        (fresh, lost, speaking.room(), speaking.stuck(at))
+    };
+    if lost > 0 {
+        note(&shared, "a waiting one went: the Machine no longer offers it here (the browser's after 90 seconds, or replaced)");
     }
-    let told = got.len() > before;
-    shared.speaking.lock().unwrap().got = got;
+    if stuck {
+        note(&shared, "the bubble's page doesn't answer: it is made again");
+        later(app, windows::drop_bubble);
+        return later(app, done);
+    }
+    if !may {
+        return;
+    }
+    let (mut said, mut gone) = (Vec::new(), Vec::new());
+    for n in fresh.iter().rev().filter(|n| n["key"].is_string()) {
+        if said.len() >= room {
+            note(&shared, "one waits: enough are waiting already");
+            break;
+        }
+        let key = n["key"].as_str().map(String::from);
+        match machine.notice(n["id"].as_str().unwrap_or_default(), n["kind"].as_str().unwrap_or_default()) {
+            Ok(Some(say)) => said.push(Say { snooze: serde_json::from_value(n["snooze"].clone()).unwrap_or_default(), key, ..say }),
+            Ok(None) => {
+                note(&shared, "one had nothing to show any more");
+                gone.push(Say { key, ..Say::default() });
+            }
+            Err(_) => note(&shared, "the Machine didn't say what one is: asked again with the next look"),
+        }
+    }
+    let had = !gone.is_empty();
     {
         let mut speaking = shared.speaking.lock().unwrap();
-        let soon = about(meeting).filter(|(key, _)| speaking.told.insert(key.clone())).map(|(_, say)| say);
+        gone.iter().for_each(|s| speaking.had(s));
+        let soon = about.filter(|m| !m.told.as_ref().is_some_and(|t| speaking.told.contains(t)) && !speaking.queue.iter().chain(&speaking.now).any(|s| s.told == m.told));
         for say in said.into_iter().rev().chain(soon) {
             if no_robot(&shared) {
-                speaking.notices.retain(|(id, _)| *id != say.id);
-                speaking.notices.push((say.id.clone(), false));
+                speaking.notices.retain(|n| n.0.id != say.id);
+                speaking.notices.push((say.clone(), false));
                 let _ = app.emit_to("robot", "notify", say); // its page has the words
                 continue;
             }
-            speaking.queue.retain(|s| s.id != say.id);
-            speaking.queue.push_back(say);
-            while speaking.queue.len() > QUEUE {
-                speaking.queue.pop_front();
-            }
+            speaking.add(say);
         }
     }
-    if told {
+    if had {
         shared.look_soon(); // it says so right away: then the browser doesn't get it too when the computer sleeps meanwhile
     }
     later(app, next);
 }
 
 /// The meeting that starts soon, and what it is told once by: one that is moved is told again.
-fn about(meeting: &Value) -> Option<(String, Say)> {
+fn about(meeting: &Value) -> Option<Say> {
     let words = |key: &str| meeting[key].as_str().unwrap_or_default().split_whitespace().collect::<Vec<_>>().join(" ").chars().filter(|c| !c.is_control()).take(60).collect::<String>();
     let id = meeting["id"].as_str().filter(|id| crate::todo_id(id).is_ok())?.to_string();
     let (at, link) = (words("at"), meeting["join"].as_str().filter(|l| crate::address::call(l)).map(String::from));
     let of = Meeting { who: words("who"), others: meeting["others"].as_u64().unwrap_or(0), title: meeting["title"].is_string().then(|| words("title")), join: link.is_some(), at: at.clone() };
-    (!at.is_empty()).then(|| (format!("{} {at}", meeting["event"]), Say { id, meeting: Some(of), link, ..Say::default() }))
+    (!at.is_empty()).then(|| Say { id, meeting: Some(of), link, told: Some(format!("{} {at}", meeting["event"])), ..Say::default() })
 }
 
 /// Join was tapped: that meeting's link.
@@ -190,15 +310,48 @@ fn sort(got: &[String], offered: &Value) -> (Vec<String>, Vec<Value>) {
 /// The next one, when none is there. While the box is open it waits: what is among the box's rows needs no bubble after.
 fn next(app: &AppHandle) {
     let shared = app.state::<Shared>();
-    {
+    let found = {
         let mut speaking = shared.speaking.lock().unwrap();
-        if speaking.now.is_some() || windows::box_open(app) || !showing(&shared) {
+        if speaking.now.is_some() || speaking.queue.is_empty() || !showing(&shared) {
             return;
         }
-        let Some(say) = speaking.queue.pop_front() else { return };
-        speaking.now = Some(say);
+        if windows::box_open(app) {
+            drop(speaking);
+            return note(&shared, "one waits: the box is open");
+        }
+        speaking.pop(Instant::now()).is_some()
+    };
+    if found {
+        windows::open_bubble(app);
+    } else {
+        shared.look_soon(); // whether it is still this robot's to say
     }
-    windows::open_bubble(app);
+}
+
+/// The bubble shows, or still does: now it is got.
+pub fn shown(app: &AppHandle) {
+    let shared = app.state::<Shared>();
+    let first = {
+        let mut speaking = shared.speaking.lock().unwrap();
+        speaking.alive = Some(Instant::now());
+        let Some(say) = speaking.now.clone().filter(|_| !std::mem::replace(&mut speaking.shown, true)) else { return };
+        speaking.had(&say);
+        say
+    };
+    note(&shared, if first.meeting.is_some() { "showed a bubble, of a meeting" } else { "showed a bubble" });
+    shared.look_soon(); // the Machine hears so right away: then the browser doesn't get it too
+}
+
+/// Without a robot: the system was asked to show it (notify.rs).
+pub fn notified(app: &AppHandle, id: &str) {
+    let shared = app.state::<Shared>();
+    {
+        let mut speaking = shared.speaking.lock().unwrap();
+        let Some((say, _)) = speaking.notices.iter().find(|n| n.0.id == id).cloned() else { return };
+        speaking.had(&say);
+    }
+    note(&shared, "gave one to the system's notifications");
+    shared.look_soon();
 }
 
 /// What the bubble says now.
@@ -225,16 +378,21 @@ pub fn done(app: &AppHandle) {
     }
 }
 
-/// The box opened: what is said now, it says. Or the robot goes: nothing more is said. The dot still tells.
+/// The box opened: what is said now, it says. Or the robot goes: nothing more is said. The dot still tells, and what wasn't
+/// shown is still the Machine's: it comes again when the robot may speak, or goes to the browser.
 pub fn hush(app: &AppHandle, all: bool) {
     let shared = app.state::<Shared>();
-    let there = {
+    let (there, waited) = {
         let mut speaking = shared.speaking.lock().unwrap();
+        let waited = all && !speaking.queue.is_empty();
         if all {
             speaking.queue.clear();
         }
-        speaking.now.take().is_some()
+        (speaking.now.take().is_some(), waited)
     };
+    if waited {
+        note(&shared, "a waiting one is the Machine's again: the robot went");
+    }
     if there {
         windows::close_bubble(app);
     }
@@ -244,7 +402,10 @@ pub fn hush(app: &AppHandle, all: bool) {
 pub fn closed(app: &AppHandle) {
     let shared = app.state::<Shared>();
     let rows: Vec<String> = shared.waiting.lock().unwrap().todos.iter().filter_map(|t| t.id.clone()).collect();
-    shared.speaking.lock().unwrap().queue.retain(|s| s.meeting.is_some() || !rows.contains(&s.id));
+    if shared.speaking.lock().unwrap().seen(&rows) > 0 {
+        note(&shared, "a waiting one isn't said: the box showed its row");
+        shared.look_soon();
+    }
     later(app, next);
 }
 
@@ -254,23 +415,16 @@ pub fn follow(app: &AppHandle, marks: &[crate::seen::Mark]) {
     let gone = {
         let shared = app.state::<Shared>();
         let mut speaking = shared.speaking.lock().unwrap();
-        let mut stays = |say: &mut Say| {
+        speaking.notices.retain_mut(|(say, listed)| {
             let here = there(&say.id);
-            let stays = here || !say.listed;
-            say.listed |= here;
-            stays
-        };
-        speaking.notices.retain_mut(|(id, listed)| {
-            let here = there(id);
             let stays = here || !*listed;
             *listed |= here;
             if !stays {
-                crate::notify::gone(id);
+                crate::notify::gone(&say.id);
             }
             stays
         });
-        speaking.queue.retain_mut(&mut stays);
-        speaking.now.as_mut().is_some_and(|say| !stays(say) && !say.held)
+        speaking.decided(there)
     };
     if gone {
         done(app);
@@ -453,17 +607,109 @@ mod tests {
         assert_eq!(sort(&["a1".into()], &json!([])), (vec![], vec![]));
     }
 
+    fn say(id: &str, key: &str) -> Say {
+        Say { id: id.into(), key: Some(key.into()), ..Say::default() }
+    }
+
+    fn keys(found: &[Value]) -> Vec<&str> {
+        found.iter().filter_map(|n| n["key"].as_str()).collect()
+    }
+
+    #[test]
+    fn it_is_got_when_it_shows_and_not_before() {
+        let (mut s, at) = (Speaking::default(), Instant::now());
+        let offered = json!([{"key": "a1", "id": "x"}]);
+        assert_eq!(keys(&s.offered(&offered, None, at).0), ["a1"]);
+        s.add(say("x", "a1"));
+        assert_eq!((s.offered(&offered, None, at), s.got.len()), ((vec![], 0), 0), "it waits: not asked for again, not got");
+        assert_eq!(s.pop(at).unwrap().id, "x");
+        assert_eq!((s.offered(&offered, None, at), s.got.len()), ((vec![], 0), 0), "its page has it: not got either");
+        let now = s.now.clone().unwrap();
+        s.had(&now);
+        assert_eq!((s.got.clone(), s.offered(&offered, None, at).0), (vec!["a1".to_string()], vec![]));
+        s.offered(&json!([]), None, at);
+        assert!(s.got.is_empty(), "the Machine knows");
+    }
+
+    #[test]
+    fn one_the_machine_gave_to_the_browser_is_not_said_after() {
+        let (mut s, at) = (Speaking::default(), Instant::now());
+        let offered = json!([{"key": "a1", "id": "x"}, {"key": "b2", "id": "y"}]);
+        s.offered(&offered, None, at);
+        s.add(say("x", "a1"));
+        s.add(say("y", "b2"));
+        assert_eq!(s.offered(&json!([{"key": "b2", "id": "y"}]), None, at), (vec![], 1));
+        assert!(s.pop(at + FRESH).is_none(), "the box closed a while after the look: another look first");
+        assert_eq!(s.pop(at).unwrap().id, "y");
+        assert!(s.got.is_empty());
+    }
+
+    #[test]
+    fn a_cleared_one_comes_again() {
+        let (mut s, at) = (Speaking::default(), Instant::now());
+        let offered = json!([{"key": "a1", "id": "x"}]);
+        s.offered(&offered, None, at);
+        s.add(say("x", "a1"));
+        s.queue.clear(); // hush: the robot went away
+        assert_eq!(keys(&s.offered(&offered, None, at).0), ["a1"]);
+    }
+
+    #[test]
+    fn the_box_said_what_its_rows_showed_and_nothing_else() {
+        let mut s = Speaking::default();
+        s.add(say("x", "a1"));
+        s.add(say("y", "b2"));
+        s.add(Say { id: "x2".into(), meeting: Some(Meeting::default()), told: Some("7 ten".into()), ..Say::default() });
+        assert_eq!(s.seen(&["x".into(), "x2".into()]), 1);
+        assert_eq!(s.got, ["a1"]);
+        assert_eq!(s.queue.iter().map(|q| q.id.as_str()).collect::<Vec<_>>(), ["y", "x2"]);
+    }
+
+    #[test]
+    fn one_decided_elsewhere_is_got() {
+        let mut s = Speaking::default();
+        s.add(say("x", "a1"));
+        assert!(!s.decided(|_| false), "not in the list yet");
+        assert_eq!(s.queue.len(), 1);
+        s.decided(|id| id == "x");
+        s.decided(|_| false);
+        assert_eq!((s.queue.len(), s.got.clone()), (0, vec!["a1".to_string()]));
+    }
+
+    #[test]
+    fn a_page_that_died_is_made_again() {
+        let (mut s, at) = (Speaking { asked: Some(Instant::now()), ..Speaking::default() }, Instant::now());
+        assert!(!s.stuck(at + DEAD * 2), "nothing is said");
+        s.add(say("x", "a1"));
+        s.pop(at);
+        assert!(!s.stuck(at + SLOW) && s.stuck(at + SLOW * 2), "it never showed");
+        s.shown = true;
+        assert!(!s.stuck(at + SLOW * 2) && s.stuck(at + DEAD * 2), "it shows, but its page is gone");
+    }
+
+    #[test]
+    fn a_meeting_is_told_once_it_shows_and_goes_with_the_offer() {
+        let (mut s, at) = (Speaking::default(), Instant::now());
+        let one = Say { id: "m".into(), meeting: Some(Meeting::default()), told: Some("7 ten".into()), ..Say::default() };
+        s.add(one.clone());
+        assert_eq!(s.offered(&json!([]), Some("7 ten"), at).1, 0);
+        assert!(s.told.is_empty());
+        s.had(&one);
+        assert!(s.told.contains("7 ten") && s.got.is_empty());
+        assert_eq!(s.offered(&json!([]), Some("7 eleven"), at).1, 1);
+    }
+
     #[test]
     fn a_meeting_and_its_link() {
         let meeting = json!({"id": "aa01", "event": 7, "at": "2026-11-24T10:00:00+00:00", "who": " Dana\n", "others": 2, "join": "https://zoom.us/j/1"});
-        let (key, say) = about(&meeting).unwrap();
-        assert_eq!(key, "7 2026-11-24T10:00:00+00:00");
+        let say = about(&meeting).unwrap();
+        assert_eq!(say.told.as_deref(), Some("7 2026-11-24T10:00:00+00:00"));
         assert_eq!(say.meeting, Some(Meeting { at: "2026-11-24T10:00:00+00:00".into(), who: "Dana".into(), others: 2, title: None, join: true }));
         assert_eq!(say.link.as_deref(), Some("https://zoom.us/j/1"));
         let with = |key: &str, value: Value| { let mut m = meeting.clone(); m[key] = value; about(&m) };
-        let (_, other) = with("join", json!("https://zoom.us.example.com/j/1")).unwrap();
+        let other = with("join", json!("https://zoom.us.example.com/j/1")).unwrap();
         assert!(other.link.is_none() && !other.meeting.unwrap().join);
-        let title = |value: Value| with("title", value).unwrap().1.meeting.unwrap().title;
+        let title = |value: Value| with("title", value).unwrap().meeting.unwrap().title;
         assert_eq!((title(json!(" Kickoff\n")).as_deref(), title(json!("")).as_deref(), title(json!(7))), (Some("Kickoff"), Some(""), None));
         assert!(with("id", json!("../x")).is_none() && with("at", Value::Null).is_none() && about(&Value::Null).is_none());
     }
