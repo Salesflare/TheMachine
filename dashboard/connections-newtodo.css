@@ -156,9 +156,9 @@ body.m-browser :is(#page-head,#needs-you,#notice,#limit-banner,#fixed-notice),bo
 .done-elsewhere button{min-height:28px;margin:0;padding:2px 12px;font-size:.84rem;border:1px solid var(--c-line,var(--border));border-radius:var(--r-sm);background:transparent}
 /* A run's live browser in the chat (peekHTML): one fixed size, so a new picture never moves the thread */
 .chat-panel .chat-peek{margin:4px 0 0}.chat-panel .chat-peek .peek-thumb{width:min(100%,320px);cursor:pointer}.chat-panel .chat-peek .peek-thumb img{aspect-ratio:16/10;max-height:none;object-fit:cover;object-position:top}
-/* Rename: an input over the title, wherever the title is the card's own heading. */
+/* Rename: a field over the title (todos-rows.js renamePlace), in its type and lines. */
 .rename-box{position:fixed;z-index:71;display:flex;flex-direction:column;gap:4px}
-.rename-box input{width:100%;min-height:0;height:100%;margin:0;padding:2px 8px;border:1px solid var(--c-accent,var(--mint));border-radius:8px;background:var(--surface);color:var(--text);font:inherit;box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent,var(--mint)) 22%,transparent);outline:none}
+.rename-box textarea{width:100%;min-height:0;margin:0;padding:2px 8px;resize:none;overflow:hidden;transition:none;border:1px solid var(--c-accent,var(--mint));border-radius:8px;background:var(--surface);color:var(--text);font:inherit;box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent,var(--mint)) 22%,transparent);outline:none}
 .rename-box .rename-reset{align-self:flex-start;min-height:0;margin:0;padding:4px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);box-shadow:0 6px 16px #0003;color:var(--muted);font:500 .8rem/1.3 var(--sans);cursor:pointer}
 .rename-box .rename-reset:hover{color:var(--text)}
 .row-more{position:fixed;z-index:30;display:grid;place-items:center;width:24px;height:24px;min-height:0;margin:0;padding:0;border:0;border-radius:6px;background:var(--c-hover);box-shadow:none;color:var(--side-ink,var(--muted));cursor:pointer}
@@ -169,7 +169,6 @@ body.m-browser :is(#page-head,#needs-you,#notice,#limit-banner,#fixed-notice),bo
 .row-menu button:hover,.row-menu button:focus-visible{background:var(--c-hover)}
 .row-menu hr{width:auto;height:0;margin:4px 6px;border:0;border-top:1px solid var(--border)}
 @media (pointer:coarse){.row-menu{min-width:190px}.row-menu button{padding:11px 14px;font-size:1rem}}
-@media(hover:hover) and (pointer:fine){.card h3 .title-link{cursor:text}}
 .chat-title{cursor:text}
 /* This device: the shared quiet notice card (.notice-card) at the top of Suggestions, to install the app or turn on notifications. */
 .device-nudge{gap:10px 14px;color:var(--muted)}

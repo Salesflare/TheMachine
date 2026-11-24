@@ -8,7 +8,7 @@ order: 4
 ---
 ## Open it
 
-On a phone, tap the to-do's title. On a computer, press **See in chat ›** or the to-do's chat link. Clicking the title on a computer renames the to-do.
+Press **Chat** on the to-do, or pick it in the sidebar's list. A tap or click on the title edits the title.
 
 ## Emails in the chat
 

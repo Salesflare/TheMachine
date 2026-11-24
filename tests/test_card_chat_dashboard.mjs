@@ -379,7 +379,7 @@ try{
    assert.ok(Math.abs(g.chev-g.text)<=0.5&&Math.abs(g.dots-g.bubble)<=0.5,'the glyphs on the gutters at '+width+': '+JSON.stringify(g));
    assert.ok(g.cap.every(d=>Math.abs(d)<=0.5),'on the title\'s cap center at '+width+': '+JSON.stringify(g.cap));
    assert.equal(g.ellipsis,'ellipsis');assert.ok(g.end<=g.menuLeft,'the title ends before ⋯ at '+width)}
-  await page.setViewportSize({width:390,height:800});await page.locator('.chat-title').click();await page.locator('.rename-box input').waitFor();
+  await page.setViewportSize({width:390,height:800});await page.locator('.chat-title').click();await page.locator('.rename-box textarea').waitFor();
   await page.keyboard.press('Escape');await page.locator('.rename-box').waitFor({state:'detached'})}
  await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));await shot('phone-bottom');
  // The last message clears the bottom, and nothing but the safe area is left under the message box

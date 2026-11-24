@@ -18,7 +18,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-merg
  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_merge',args:{suggestion_id:id,merge,decision_id:crypto.randomUUID()}})});
   toast(merge?'Merged':'Kept both');if(merge&&chatId===id&&r?.merged)chatGo(r.id);await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 
-// Rename: the owner's title is kept over the generated one, on every surface. An input opens over the title in the
+// Rename: the owner's title is kept over the generated one, on every surface. A field opens over the title in the
 // sidebar (the ⋯ on hover, a double click, a right click, a long press on a phone), the chat's header (a click, or
 // Rename in its menu) and the card (a click or tap on its title; E). Enter saves, Esc cancels,
 // empty puts the old title back. Saved at once on screen; the chat gets a quiet "Renamed" line.
@@ -28,21 +28,28 @@ const rowId=a=>a?.getAttribute('href')?.slice(6)||'';
 const cardOf=id=>(state.suggestions||[]).find(s=>s.id===id);
 let renaming=null;
 function renameClose(){document.querySelector('.rename-box')?.remove();renaming=null}
-// The input stays over the title while the page scrolls (a phone's keyboard opening scrolls it too).
-function renamePlace(){if(!renaming)return;let el=renaming.el;if(!el?.isConnected)el=renaming.el=titleEl(renaming.id,renaming.prefer);if(!el)return;
- const r=el.getBoundingClientRect(),h=renaming.h,b=renaming.box;b.style.left=Math.max(8,r.left-4)+'px';b.style.top=Math.max(8,r.top+(r.height-h)/2)+'px'}
-function renameAt(id,el,prefer){const s=cardOf(id);if(!s||!el)return;renameClose();rowMenuClose();
- let r=el.getBoundingClientRect();if(r.top<64||r.bottom>innerHeight-64){el.scrollIntoView({block:'center'});r=el.getBoundingClientRect()}
+// The field lies on the title and stays there while the page scrolls (a phone's keyboard opening scrolls it too): its
+// first line on the title's, in the same type and width so the text breaks where the title's does, never smaller than the
+// title it covers, and growing down over the card with what is typed, so nothing under it moves.
+function renamePlace(){if(!renaming)return;let el=renaming.el;if(!el?.isConnected)el=renaming.el=titleEl(renaming.id,renaming.prefer);
+ const t=document.createRange();if(el)t.selectNodeContents(el);const q=t.getClientRects()[0];if(!q)return;
+ const b=renaming.box,i=b.firstChild,of=el.closest('h3')||el,r=of.getBoundingClientRect(),c=getComputedStyle(of),n=parseFloat,pad=n(c.paddingLeft),lh=Math.min(n(c.lineHeight),n(c.fontSize)*1.5);
+ for(const k of ['fontSize','fontWeight','letterSpacing'])i.style[k]=c[k];
+ b.style.left=r.left+pad-9+'px';b.style.width=r.width-pad*2+18+'px';i.style.lineHeight=lh+'px';i.style.height=0;i.style.height=Math.max(t.getBoundingClientRect().height+6,i.scrollHeight+3)+'px';
+ b.style.top=Math.max(8,Math.min(q.top-Math.floor((lh-q.height)/2)-3,innerHeight-b.offsetHeight-8))+'px'}
+function renameAt(id,prefer,el=titleEl(id,prefer)){const s=cardOf(id);if(!s||!el)return;renameClose();rowMenuClose();
+ const r=el.getBoundingClientRect();if(r.top<64||r.bottom>innerHeight-64)el.scrollIntoView({block:'center'});
  const box=document.createElement('div');box.className='rename-box';
- const wide=(el.closest('h3')||el).getBoundingClientRect(),h=Math.max(30,Math.min(44,r.height)),w=Math.max(200,Math.min(wide.width,innerWidth-r.left-12));
- Object.assign(box.style,{left:Math.max(8,r.left-4)+'px',top:Math.max(8,r.top+(r.height-h)/2)+'px',width:w+8+'px'});
- setHTML(box,html`<input type="text" maxlength="200" aria-label="To-do title" style="height:${h}px;font-size:${getComputedStyle(el).fontSize};font-weight:${getComputedStyle(el).fontWeight}">${s.title_suggested?html`<button type="button" class="rename-reset">Reset to suggested title</button>`:''}`);
- document.body.append(box);const input=box.querySelector('input');input.value=s.title;input.focus();input.select();renaming={id,box,el,h,prefer};
+ setHTML(box,html`<textarea maxlength="200" enterkeyhint="done" aria-label="To-do title"></textarea>${s.title_suggested?html`<button type="button" class="rename-reset">Reset to suggested title</button>`:''}`);
+ document.body.append(box);const input=box.firstChild;input.value=s.title;renaming={id,box,el,prefer};renamePlace();input.focus();input.select();
+ // One paragraph: a pasted line break is a space, and a phone keyboard's own Enter saves
+ input.oninput=()=>{const p=input.selectionEnd;if(input.value.includes('\n')){input.value=input.value.replace(/\n/g,' ');input.setSelectionRange(p,p)}renamePlace()};
+ input.addEventListener('beforeinput',e=>{if(e.inputType==='insertLineBreak'){e.preventDefault();finish(true)}});
  let done=false;const finish=(save,reset=false)=>{if(done)return;done=true;const v=input.value;renameClose();if(save)renameSave(id,v,reset)};
  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();finish(true)}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(false)}});
  input.addEventListener('blur',()=>setTimeout(()=>{if(!done&&!box.contains(document.activeElement))finish(true)},0));
  const reset=box.querySelector('.rename-reset');if(reset){reset.addEventListener('mousedown',e=>e.preventDefault());reset.onclick=()=>finish(true,true)}}
-async function renameSave(id,value,reset=false){const s=cardOf(id);if(!s)return;const title=String(value||'').replace(/\s+/g,' ').trim().slice(0,200),before={title:s.title,title_suggested:s.title_suggested};
+async function renameSave(id,value,reset=false){const s=cardOf(id);if(!s)return;const title=value.replace(/\s+/g,' ').trim().slice(0,200),before={title:s.title,title_suggested:s.title_suggested};
  if(!reset&&(!title||title===s.title))return; // empty puts the old title back
  if(reset){if(!s.title_suggested)return;Object.assign(s,{title:s.title_suggested,title_suggested:null})}
  else Object.assign(s,{title,title_suggested:title===(s.title_suggested??null)?null:s.title_suggested??before.title});
@@ -84,7 +91,7 @@ async function rowAct(choice,id){const k=rowMenuKeys;rowMenuClose();
  try{const go=saveDecision(id,choice,'');rowMenuKeys=k;rowRefocus(id);await go}catch(err){errCaught(err);toast(err.message,true)}}
 rowMore.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const r=rowMore.getBoundingClientRect();rowMenu(rowMore.dataset.id,r.left,r.bottom+4,null,r.top-4)});
 document.addEventListener('click',e=>{const rn=e.target.closest('[data-row-rename]'),op=e.target.closest('[data-row-open]'),act=e.target.closest('.row-menu [data-row-act]');
- if(rn){e.preventDefault();const id=rn.dataset.rowRename;rowMenuKeys=null;rowMenuClose();renameAt(id,titleEl(id,'row'),'row');return}
+ if(rn){e.preventDefault();const id=rn.dataset.rowRename;rowMenuKeys=null;rowMenuClose();renameAt(id,'row');return}
  if(op){e.preventDefault();rowMenuKeys=null;rowMenuClose();chatGo(op.dataset.rowOpen);return}
  if(act){e.preventDefault();rowAct(act.dataset.rowAct,act.dataset.card);return}
  if(!e.target.closest('.row-menu'))rowMenuClose()});
@@ -97,7 +104,7 @@ document.addEventListener('keydown',e=>{const m=document.querySelector('.row-men
 document.addEventListener('contextmenu',e=>{const a=e.target.closest(ROWS);if(!a)return;e.preventDefault();
  // From the keyboard (no right button, no finger): under the row
  const r=a.getBoundingClientRect();e.button!==2&&e.pointerType!=='touch'?rowMenu(rowId(a),r.left+16,r.bottom+4,rowKeys(a),r.top-4):rowMenu(rowId(a),e.clientX,e.clientY)});
-document.addEventListener('dblclick',e=>{const a=e.target.closest(ROWS);if(!a)return;e.preventDefault();const id=rowId(a);requestAnimationFrame(()=>renameAt(id,titleEl(id,'row'),'row'))});
+document.addEventListener('dblclick',e=>{const a=e.target.closest(ROWS);if(!a)return;e.preventDefault();const id=rowId(a);requestAnimationFrame(()=>renameAt(id,'row'))});
 // A long press on a row on a phone opens the same menu; the tap that ends it doesn't open the card.
 {let timer=null,pressed=false,start=null;
  document.addEventListener('touchstart',e=>{const a=e.target.closest(ROWS);if(!a||e.touches.length!==1)return;pressed=false;const t=e.touches[0];start=[t.clientX,t.clientY];
@@ -108,7 +115,7 @@ document.addEventListener('dblclick',e=>{const a=e.target.closest(ROWS);if(!a)re
  document.addEventListener('click',e=>{if(pressed&&(e.target.closest(ROWS)||e.target.closest('.row-menu'))){e.preventDefault();e.stopImmediatePropagation();pressed=false}},true)}
 // Rename in the chat header's menu; a click on the chat's title; a click or tap on a to-do's title (Ctrl or Cmd click
 // still opens its chat in a new tab, and Chat › on its last row opens it here).
-document.addEventListener('click',e=>{const b=e.target.closest('[data-rename]');if(b){e.preventDefault();e.stopPropagation();b.closest('details')?.removeAttribute('open');const id=b.dataset.rename;requestAnimationFrame(()=>renameAt(id,titleEl(id)));return}
- const ct=e.target.closest('.chat-title');if(ct&&chatId){e.preventDefault();renameAt(chatId,ct);return}
- const tl=e.target.closest('.card h3 .title-link');if(tl&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){const id=tl.closest('article')?.id.replace(/^task-/,'');if(cardOf(id)){e.preventDefault();e.stopPropagation();renameAt(id,tl)}}},true);
-document.addEventListener('mouseover',e=>{const t=e.target.closest('.card h3 .title-link');if(t&&fine()&&!t.classList.contains('chat-title'))t.title='Click to rename'});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-rename]');if(b){e.preventDefault();e.stopPropagation();b.closest('details')?.removeAttribute('open');const id=b.dataset.rename;requestAnimationFrame(()=>renameAt(id));return}
+ const ct=e.target.closest('.chat-title');if(ct&&chatId){e.preventDefault();renameAt(chatId);return}
+ const tl=e.target.closest('.card h3 .title-link');if(tl&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){const id=tl.closest('article')?.id.replace(/^task-/,'');if(cardOf(id)){e.preventDefault();e.stopPropagation();renameAt(id,0,tl)}}},true);
+document.addEventListener('mouseover',e=>{const t=e.target.closest('.card h3 .title-link');if(t&&fine())t.title='Click to rename'});

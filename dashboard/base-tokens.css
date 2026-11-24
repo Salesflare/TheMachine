@@ -76,11 +76,8 @@ html,body{overflow-anchor:none}
   --text:#1d1f24;--muted:#454850;--faint:#6b6e76;
   --shadow:0 1px 0 #ffffff inset,0 8px 24px -14px #3d375233}
 [data-theme="light"] body{background:radial-gradient(900px 420px at 12% -120px,#c7b5e240,transparent 70%),radial-gradient(700px 360px at 100% -160px,#bccba840,transparent 70%),var(--bg)}
-[data-theme="light"] .live{background:#ffffffb3}
 [data-theme="light"] nav{background:#ffffffe6}
 @media(hover:hover) and (pointer:fine){[data-theme="light"] nav button:hover,[data-theme="light"] button.stat:hover{background:#3d375210}}
-[data-theme="light"] .badge{background:#3d375214}
-[data-theme="light"] nav button.active .badge{background:#ffffff40}
 [data-theme="light"] button.primary:hover{background:#3f582a;color:#fff}
 [data-theme="light"] #notice{border-color:#4e6b3440;background:#4e6b3412}
 [data-theme="light"] #notice.error,[data-theme="light"] .error{color:#a3401a}
@@ -88,7 +85,6 @@ html,body{overflow-anchor:none}
 [data-theme="light"] .spark i{background:#4e6b3466}
 [data-theme="light"] .spark i.zero{background:#3d37521a}
 [data-theme="light"] dialog{box-shadow:0 24px 60px -12px #3d375259}
-[data-theme="light"] dialog::backdrop{background:#3d375240}
 [data-theme="light"] #suggestion-stats .stats{background:#fffffff2}
 [data-theme="light"] :is(#later-list,#promises-list,#waiting-list,#older-list,#finished-list){background:#ffffffbf}
 [data-theme="light"] :is(#later-list,#promises-list,#waiting-list,#older-list,#finished-list)>summary .count{background:#3d37520f}

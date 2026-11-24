@@ -315,9 +315,7 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 /* The Promises list: one ⋯ at a row's top right instead of buttons (Do it or Nudge, Mark done, Not happening) */
 #promises-list .promise{position:relative;padding-right:40px}#promises-list .promise-menu{position:absolute;top:6px;right:0;margin:0}
 #promises-list .promise .fact-menu-list button{margin:0;padding:8px 10px;font-size:var(--fs-sm)}
-.card-badges{flex:1 1 0}.card .meta{margin-bottom:10px}
-.card h3{font-size:1.12rem;font-weight:700;line-height:1.3}
-.card .body{font-size:1.02rem;line-height:1.55;color:var(--text)}
+.card-badges{flex:1 1 0}
 .card .source{font-size:.86rem;color:var(--muted)}.card .note{font-size:.92rem;color:var(--muted)}
 /* A send held for a new message: that message under the line, its words clamped to two lines, Read it and the redo below */
 .card .held-by{margin:6px 0 0;padding:8px 10px;border-left:2px solid var(--border-strong);border-radius:4px;background:var(--sunken);font-size:.88rem;min-width:0}
@@ -330,8 +328,8 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 .card .note.handled{color:var(--mint);font-weight:600}
 .card .note.status-line{margin:2px 0 6px;font-weight:600}.card .note.status-line.done-line{color:var(--muted);font-weight:500}.ask-line .ask-q p{margin:4px 0}.ask-line .reason-chips{margin:6px 0 8px}.card a.card-link{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .card .saved-feedback blockquote{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-.card .meta time{font-size:.8rem;color:var(--muted)}.card .read-original{font-size:.85rem}
-.card .chip{font-size:.78rem}.chip.scope{--c:var(--muted)}
+.card .read-original{font-size:.85rem}
+.chip.scope{--c:var(--muted)}
 .actions button.ghost,.actions button.quiet{font-size:.88rem;padding:7px 12px;background:#ffffff17;border-color:transparent}.actions button.ghost:hover{border-color:var(--border-strong)}.actions button.quiet{background:transparent}
 @media(max-width:560px){
   main{padding:18px 16px 48px}
