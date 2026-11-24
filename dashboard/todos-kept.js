@@ -1,6 +1,7 @@
 // What someone typed to send and didn't send yet survives Esc, a closed sheet, another page, a reload and a killed phone
 // app (docs/help/email-composer.md; docs/architecture.md, "On the device"). One mechanism for every message: a new email,
 // any draft in the send dialog (all channels, its Ask for changes too) and a follow-up edited in its review.
+// Every other box people type in to ask or answer keeps its text with it too (todos-kept-box.js).
 // - Kept in this browser only, sealed (localCache 'kept'): never sent to the Machine, in a log or the address, gone on
 //   sign-out and when someone else signs in. Where nothing can be sealed (a plain http address), only while the page is open.
 // - Only what differs from the draft, for 30 days after the last typing. It goes when it's sent or discarded (Undo).
@@ -28,7 +29,7 @@ function keptRead(){return ktReady}
 const ktLive=n=>{if(state?.suggestions&&!shownCached&&!netDown){ktPrune();ktBack()}else if(n)setTimeout(ktLive,300,n-1)};
 if(ktChan)ktChan.onmessage=()=>ktSync().then(ktOther);
 // The to-do lists, the chat, the follow-ups' review and Go through, drawn with what is kept now
-function ktDraw(){if(!state?.suggestions||$('#send-dialog').open)return;focusKept(render);if(chatId)paintChat();
+function ktDraw(){if(!state?.suggestions||$('#send-dialog').open)return;self.ktAsks?.();focusKept(render);if(chatId)paintChat();
  if(fr&&!fr.editing&&$('#fu-review').open)frDraw();if(self.crDraw&&cr)crDraw()}
 
 // The message: its to-do, kind and place among that kind (a draft's revision changes as it's edited), or a new email's address
@@ -93,9 +94,9 @@ function keptGone(id,rev){const n=ktNow;if(id){for(const e of ktList)if(e.id===i
  setTimeout(()=>{if(ktNow!==n)return;n.d=sendDraft;n.base=n.v=ktVals();n.o=[];n.typed=false;ktShow()})}
 
 // Discard, with Undo; then(e) runs on Undo
-function ktDrop(k,left,then){const e=ktGet(k);ktWrite(k,()=>left||null);toast(t('Discarded.'));if(!e)return;
- const b=make('button',{type:'button'},t('Undo'));b.onclick=()=>{$('#toast').classList.remove('show');ktWrite(k,()=>({...e,open:false}));ktDraw();then?.(e)};
+function ktTell(text,label,fn){toast(text);const b=make('button',{type:'button'},label);b.onclick=()=>{$('#toast').classList.remove('show');fn()};
  $('#toast').append(' ',b);clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),15000)}
+function ktDrop(k,left,then){const e=ktGet(k);ktWrite(k,()=>left||null);e?ktTell(t('Discarded.'),t('Undo'),()=>{ktWrite(k,()=>({...e,open:false}));ktDraw();then?.(e)}):toast(t('Discarded.'))}
 // Back in its composer. A new email without a mailbox that can send now opens in the mail app, as it does from its address.
 function ktGo(e,quiet){if(e.id){const [s,a]=ktAct(e);if(a)openSend(s.id,a.revision);return}
  const q=[['subject',e.v.s.trim()],['body',e.v.b]].filter(x=>x[1]).map(x=>x[0]+'='+encodeURIComponent(x[1])).join('&');
@@ -124,3 +125,4 @@ document.addEventListener('click',e=>{const b=e.target.closest?.('[data-kept-go]
  else if(b.dataset.keptDrop){ktDrop(b.dataset.keptDrop);ktDraw()}
  else{const x=ktGet(b.dataset.keptGo),a=x&&ktAct(x)[1];if(!x)return;
   if(fr&&a&&x.rev===a.revision){fr.editing=fr.cur=x.id;frDraw(true);return}$('#fu-review').close();ktGo(x)}},true);
+lazyPart('keptbox').catch(()=>{});

@@ -46,7 +46,10 @@ const smart=async(p,id)=>{await p.evaluate(x=>openSend(x,taskActions(state.sugge
 const typeIn=async(p,sel,text)=>{await p.locator(sel).click();await p.keyboard.press('Control+End');await p.keyboard.type(text)};
 const from=async(p,v)=>{await p.locator('#send-from').click();const m=p.locator('#cm-menu');await m.waitFor({state:'visible'});await m.getByText(v,{exact:true}).click();await m.waitFor({state:'hidden'});await p.locator('#send-from',{hasText:v}).waitFor()};
 const text=p=>p.locator('#send-rich-body').innerText();
-const stored=(p,n)=>p.waitForFunction(async n=>((await localCache.read('kept'))?.value||[]).length===n,n,{polling:100});
+// Asked again from here: waitForFunction takes an async function's promise itself for a yes
+const kept=(p,ok,what)=>(async()=>{const end=Date.now()+10000;for(let v;;await new Promise(r=>setTimeout(r,100))){v=await p.evaluate(async()=>(await localCache.read('kept'))?.value||[]);
+ if(ok(v))return;assert.ok(Date.now()<end,what+': '+JSON.stringify(v))}})();
+const stored=(p,n)=>kept(p,v=>v.length===n,n+' kept');
 const shut=async p=>{await p.locator('#send-dialog[open]').waitFor({state:'hidden'});await p.evaluate(()=>ktRun)};  // closed, and what was typed is written
 const sends=()=>posts.filter(x=>/^(confirm_action|compose_email|revise_draft)$/.test(x.action));
 const newEmail=async p=>{await p.goto(base+'#card='+T);await p.locator('a[href="mailto:robin@venue.example"]').first().click();await p.locator('#send-dialog[open]').waitFor()};
@@ -67,7 +70,7 @@ try{
   await p.locator('#send-rich-body').focus();if(!phone)await p.keyboard.type(' Or Monday?');else await typeIn(p,'#send-rich-body',' Or Monday?');
   assert.equal((await text(p)).trim(),'Is the room free on Friday? Or Monday?');
   // 2. A reload (or a killed phone app) with the composer open: it opens again as it was
-  await p.waitForFunction(async()=>/Monday/.test(JSON.stringify((await localCache.read('kept'))?.value)),null,{polling:100});
+  await kept(p,v=>/Monday/.test(JSON.stringify(v)),'Monday kept');
   await p.reload();await p.locator('#send-dialog[open]').waitFor();await p.waitForFunction(()=>/Monday/.test(document.querySelector('#send-rich-body').innerText));
   assert.equal(await p.locator('#send-subject').inputValue(),'The room');await shot(p,'4-restored-after-reload');
   // Sealed here: not in plain storage, the address or anything the page posted

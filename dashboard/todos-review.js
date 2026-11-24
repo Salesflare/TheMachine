@@ -18,7 +18,7 @@ function reviewEditor(s){const d=reviewing.get(s.id);if(!d||closed(s))return'';c
   :html`<div class="review-what"><p class="review-label">${t('This to-do')}</p><div class="review-text" translate="no">${d.body}</div></div>`;
  return html`<form class="review-form agent-sheet" data-card="${id}"><div class="agent-sheet-head"><span class="agent-sheet-title">${t('Ask to review')}</span>${pick}</div>${what}
  ${chips?html`<div class="agent-gets" aria-label="${t('Goes along')}">${chips}</div>`:''}
- <textarea name="note" class="agent-note" spellcheck="true" autocapitalize="sentences" rows="1" maxlength="300" placeholder="${t('Add a note for {}',name||t('them'))}" aria-label="${t('Add a note for {}',name||t('them'))}">${d.note||''}</textarea>
+ <textarea name="note" data-keep="rev|${id}" class="agent-note" spellcheck="true" autocapitalize="sentences" rows="1" maxlength="300" placeholder="${t('Add a note for {}',name||t('them'))}" aria-label="${t('Add a note for {}',name||t('them'))}">${d.note||''}</textarea>
  <p class="agent-what">${t('Only this to-do goes. {} can suggest changes; nothing is sent until you send it.',name||t('They'))}</p>
  <div class="agent-sheet-foot"><button type="button" class="ghost" data-review-cancel="${id}">${t('Cancel')}</button><button class="primary">${t('Ask')}</button></div></form>`}
 const reviewWords=w=>html`${w.map(([k,x])=>k==='='?x:k==='-'?html`<del>${x}</del>`:html`<ins>${x}</ins>`)}`;
@@ -40,9 +40,9 @@ function reviewOwner(s){const r=s.review;if(!r)return'';const pending=r.stage===
 function reviewIn(s){const r=s.review_in;if(!r||!r.open||closed(s))return'';const who=firstName(r.from);  // their note is in the to-do's text
  const d=reviewDrafts.get(s.id)||{},subject=d.subject??r.subject??'',body=d.body??r.body,changed=(r.what==='draft'&&subject!==(r.subject||''))||body!==r.body;
  return html`<form class="review-in agent-sheet" data-card="${s.id}"><div class="agent-sheet-head"><span class="agent-sheet-title">${r.what==='draft'?t('{}’s draft',who):t('{}’s to-do',who)}</span>${changed?html`<span class="chip review-edited">${t('Edited')}</span>`:''}</div>
- ${r.what==='draft'?html`<input name="subject" class="review-subject-in" maxlength="300" value="${subject}" aria-label="${t('Subject')}" translate="no">`:''}
- <textarea name="body" class="review-body-in" spellcheck="true" autocapitalize="sentences" rows="6" maxlength="8000" aria-label="${t('Edit the text')}" translate="no">${body}</textarea>
- <textarea name="comment" class="agent-note" spellcheck="true" autocapitalize="sentences" rows="1" maxlength="1000" placeholder="${t('Add a comment for {}',who)}" aria-label="${t('Add a comment for {}',who)}">${d.comment||''}</textarea>
+ ${r.what==='draft'?html`<input name="subject" data-keep="rev|${s.id}|${r.id}s" class="review-subject-in" maxlength="300" value="${subject}" aria-label="${t('Subject')}" translate="no">`:''}
+ <textarea name="body" data-keep="rev|${s.id}|${r.id}b" class="review-body-in" spellcheck="true" autocapitalize="sentences" rows="6" maxlength="8000" aria-label="${t('Edit the text')}" translate="no">${body}</textarea>
+ <textarea name="comment" data-keep="rev|${s.id}|${r.id}c" class="agent-note" spellcheck="true" autocapitalize="sentences" rows="1" maxlength="1000" placeholder="${t('Add a comment for {}',who)}" aria-label="${t('Add a comment for {}',who)}">${d.comment||''}</textarea>
  <p class="agent-what">${t('Edits go back to {} as suggestions. Nothing is sent from here.',who)}</p>
  <div class="agent-sheet-foot"><button type="button" class="quiet" data-review-reply="declined">${t('Decline')}</button>${changed?html`<button class="primary" data-review-reply="changes">${t('Send changes')}</button>`:html`<button type="button" class="ghost" data-review-reply="commented">${t('Send comment')}</button><button class="primary" data-review-reply="approved">${t('Approve')}</button>`}</div></form>`}
 const reviewBlock=s=>html`${reviewOwner(s)}${reviewIn(s)}`;
@@ -70,7 +70,7 @@ $('#suggestions').addEventListener('click',async e=>{
  const rp=e.target.closest('[data-review-reply]');
  if(rp){e.preventDefault();const form=rp.closest('form'),id=form.dataset.card,stage=rp.dataset.reviewReply;
   const args={suggestion_id:id,stage,comment:form.elements.comment.value.trim(),body:form.elements.body.value,...(form.elements.subject?{subject:form.elements.subject.value}:{})};
-  rp.disabled=true;try{await fleetPost('fleet_review_reply',args);reviewDrafts.delete(id);toast(stage==='declined'?t('Declined.'):t('Sent back. Nothing else goes anywhere.'));await refresh()}catch(err){errCaught(err);rp.disabled=false;toast(err.message,true)}}});
+  rp.disabled=true;try{await fleetPost('fleet_review_reply',args);reviewDrafts.delete(id);self.keptBoxGone?.('rev|'+id);toast(stage==='declined'?t('Declined.'):t('Sent back. Nothing else goes anywhere.'));await refresh()}catch(err){errCaught(err);rp.disabled=false;toast(err.message,true)}}});
 $('#suggestions').addEventListener('change',e=>{const box=e.target.closest?.('.review-changes input[name=pick]');if(!box)return;
  const v=reviewViews.get(box.closest('form').dataset.card);if(!v)return;const off=new Set(v.off||[]);box.checked?off.delete(box.value):off.add(box.value);v.off=[...off];const id=box.closest('form').dataset.card,val=box.value;render();
  document.querySelector(`.review-changes[data-card="${CSS.escape(id)}"] input[value="${CSS.escape(val)}"]`)?.focus()});
@@ -85,4 +85,4 @@ $('#suggestions').addEventListener('submit',async e=>{const f=e.target;if(f.clas
  if(!f.classList.contains('review-form'))return;e.preventDefault();const d=reviewing.get(f.dataset.card)||{},[fleet,member_id]=f.elements.to.value.split('|');
  const btn=f.querySelector('button.primary');btn.disabled=true;
  try{await fleetPost('fleet_review_ask',{suggestion_id:f.dataset.card,fleet,member_id,note:f.elements.note.value.trim(),sources:(d.sources||[]).map((_,n)=>n).filter(n=>!d.dropped?.includes(n))});
-  reviewing.delete(f.dataset.card);toast(t('Asked for a review. The to-do shows how it goes.'));await refresh()}catch(err){errCaught(err);btn.disabled=false;toast(err.message,true)}});
+  reviewing.delete(f.dataset.card);self.keptBoxGone?.('rev|'+f.dataset.card);toast(t('Asked for a review. The to-do shows how it goes.'));await refresh()}catch(err){errCaught(err);btn.disabled=false;toast(err.message,true)}});
