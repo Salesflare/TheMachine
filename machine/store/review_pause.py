@@ -8,6 +8,7 @@ Kept in the database, since the agent is another process: in milestones, at = wh
 import datetime as dt
 import json
 
+from machine.store.first_look import note_review_pause
 from timeutil import now
 
 NAME = 'review_pause'
@@ -37,7 +38,7 @@ def note(db, found):
         new['since'] = kept['since']
     if at and new == kept and (dt.datetime.fromisoformat(stamp) - dt.datetime.fromisoformat(at)).total_seconds() < KEEP_SECONDS:
         return
-    db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)', (NAME, stamp, json.dumps(new, sort_keys=True)))
+    note_review_pause(db, NAME, stamp, new)
 
 
 def report(db):

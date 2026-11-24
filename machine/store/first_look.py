@@ -158,6 +158,11 @@ def note_model_check(db, found):
     db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)', ('model_check', found['at'], json.dumps(found, sort_keys=True)))
 
 
+def note_review_pause(db, name, at, detail):
+    """Whether reviews of new signals wait by design, as the review worker last saw it (review_pause.py)."""
+    db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)', (name, at, json.dumps(detail, sort_keys=True)))
+
+
 def first_magic_done(db):
     """The first look has done its job, so the rest of onboarding (profile, voices, roles, organizations, drafts
     beyond the first) may start: the first card was shown, or a review finished a while ago (one that found no card,
