@@ -15,6 +15,7 @@ import i18n
 from machine.app.follow_ups import activity_who, newer_activity, NEWER_KINDS
 from machine.config import LOG
 from machine.sources.calendar import company_domains
+from machine.store.evidence_moments import Moments
 from machine.store.cards import promise_closed_at, same_matter_cards, same_thread_card
 from machine.store.promises import fit_title, promise_card as promise_todo, promise_logged, promise_open_card, promise_text, promise_title, promise_who_named
 from machine.store.review import CARD_OPEN, own_message
@@ -94,18 +95,33 @@ ELSEWHERE_KINDS = NEWER_KINDS + ('calendar.event', 'meeting.notes', 'meeting.tra
                                  'granola.notes', 'granola.transcript')
 
 
+def newest_since(found, limit, own=None):
+    """The newest `limit` of what activity_since found, oldest first. Its own conversations keep half: the answer in the
+    thread it is about, however much was said elsewhere since. own: those kept ones, else its newest."""
+    if len(found) > limit:
+        own = [x for x in found if x['where'] == 'same conversation'][-(limit // 2):] if own is None else own
+        kept = {x['id'] for x in own}
+        found = own + sorted((x for x in found if x['id'] not in kept), key=lambda x: x['at'])[len(kept) - limit:]
+    return sorted(found, key=lambda x: x['at'])
+
+
 def activity_since(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=8, people=()):
-    """What happened after a to-do's or a promise's newest evidence, already synced: newer messages in its own
-    conversations (newer_activity), and elsewhere the messages with the same people (the owner answering an email on
-    WhatsApp, a teammate replying in Slack) and meetings with them that have started since, with their notes. Who,
-    when and where only, no model call and no message text: the reader judges by meaning whether it is handled. Newest
-    last, at most `limit`, each {'id', 'at', 'channel', 'who', 'where'}; where is 'same conversation' or 'elsewhere'.
-    people: more graph people it is about besides its evidence's, like the one a handoff goes to (handled_check.py)."""
+    """What happened after a to-do's or a promise's evidence, already synced: newer messages in its own conversations
+    (newer_activity: each from its own evidence on), and elsewhere, since the newest message that is evidence
+    (evidence_moments.py), the messages with the same people (the owner answering an email on WhatsApp, a teammate
+    replying in Slack) and meetings with them that have started since, with their notes. Who, when and where only, no
+    model call and no message text: the reader judges by meaning whether it is handled. Newest last, at most `limit`,
+    each {'id', 'at', 'channel', 'who', 'where'}; where is 'same conversation' or 'elsewhere'. people: more graph people
+    it is about besides its evidence's, like the one a handoff goes to (handled_check.py)."""
     ids = [i for i in event_ids or [] if isinstance(i, int)]
-    found = [{**x, 'where': 'same conversation'} for x in newer_activity(db, ids, owner_slack_ids, teammates, domains, limit=limit)]
     if not ids:
-        return found
-    latest = db.execute('SELECT max(occurred_at) FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids).fetchone()[0]
+        return []
+    moments = Moments(db, ids)
+
+    def own(n):
+        return [{**x, 'where': 'same conversation'} for x in newer_activity(db, ids, owner_slack_ids, teammates, domains, limit=n, moments=moments)]
+    found = own(limit)
+    latest = moments.everywhere
     try:
         people = list(dict.fromkeys([p['id'] for p in graph.card_people(db, ids, limit=3)[0]] + list(people or ())))
     except (sqlite3.Error, ValueError, TypeError):
@@ -132,7 +148,7 @@ def activity_since(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), 
         else:
             who = activity_who(e, m, owner_slack_ids, teammates, domains)
         found.append({'id': e['id'], 'at': e['occurred_at'], 'channel': e['kind'].split('.')[0], 'who': who, 'where': 'elsewhere'})
-    return sorted(found, key=lambda x: x['at'])[-limit:]
+    return newest_since(found, limit, own(limit // 2) if len(found) > limit else ())
 
 
 class PromiseChecksApp:

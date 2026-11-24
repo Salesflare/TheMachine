@@ -2,6 +2,7 @@
 waiting for an answer, bounces, the lines a to-do shows, a change from chat and the send. Moved out of assistant.App as
 is. A mixin of assistant.App (APP_MIXINS)."""
 import datetime as dt
+import itertools
 import json
 import logging
 from pathlib import Path
@@ -17,8 +18,8 @@ import i18n
 from machine.config import WORKSPACE
 from machine.sources.calendar import company_domains
 from machine.sources.gmail import Gmail
+from machine.store.evidence_moments import Moments, conversation_of
 from machine.store.review import own_message
-from machine.store.voices import conversation_of
 from machine.text import _address
 import memory_use
 import model_budget
@@ -40,28 +41,28 @@ PREP_PROJECTS_SQL = ('SELECT DISTINCT p.name,b.name AS board FROM event_projects
 NEWER_KINDS = ('gmail.message', 'slack.message', 'teams.message', 'whatsapp.message', 'linkedin.message', 'x.dm')
 
 
-def newer_activity(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=5):
+def newer_activity(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=5, after='', moments=None):
     """Messages already synced into a to-do's own conversations (its email thread, Slack thread or DM, chat) after its
-    newest evidence: someone may have answered or handled it since. Only who and when, from what is stored; no model
-    call and no message text. Newest last, at most `limit`, each {'id', 'at', 'channel', 'who'}."""
+    newest evidence in each (evidence_moments.py): someone may have answered or handled it since. Only who and when, from
+    what is stored; no model call and no message text. Newest last, at most `limit`, shared between
+    the conversations (a busy one doesn't hide the answer in another), each {'id', 'at', 'channel', 'who'}.
+    after: nothing up to this moment in any of them (a follow-up's: it is about the whole exchange)."""
     ids = [i for i in event_ids or [] if isinstance(i, int)]
     if not ids:
         return []
-    rows = db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))',
-                      (json.dumps(ids),)).fetchall()
+    moments = moments or Moments(db, ids)
     found, seen = [], set(ids)
     teammates = {str(e).lower(): name for e, name in dict(teammates).items()} if teammates else {}
-    for row in rows:
+    for row, m in moments.rows:
         if row['kind'] not in NEWER_KINDS:
             continue
-        m = json.loads(row['metadata'] or '{}')
         key = conversation_of(row['kind'], m)
         if not key or row['kind'] == 'slack.message' and not m.get('thread_ts') and not key.startswith('D'):
             continue  # a channel message outside a thread: the channel holds many other matters
         field = 'thread_id' if row['kind'] == 'gmail.message' else 'channel_id' if row['kind'] == 'slack.message' else 'chat_id' if m.get('chat_id') else 'conversation_id'
-        latest = max(r['occurred_at'] for r in rows if r['account_id'] == row['account_id'])
+        latest, found_here = max(moments.of(row['account_id'], row['kind'], m), after), []
         for e in db.execute(f"SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE account_id=? AND kind=? AND deleted=0 AND occurred_at>? "
-                            f"AND json_extract(metadata,'$.{field}')=? ORDER BY occurred_at LIMIT 50", (row['account_id'], row['kind'], latest, key)):
+                            f"AND json_extract(metadata,'$.{field}')=? ORDER BY occurred_at DESC LIMIT 50", (row['account_id'], row['kind'], latest, key)):
             if e['id'] in seen:
                 continue
             em = json.loads(e['metadata'] or '{}')
@@ -71,8 +72,10 @@ def newer_activity(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), 
             seen.add(e['id'])
             if row['kind'] == 'gmail.message' and bounces.system_sender(em.get('from')):
                 continue  # a delivery report answers nothing (bounces.py tells what bounced)
-            found.append({'id': e['id'], 'at': e['occurred_at'], 'channel': e['kind'].split('.')[0], 'who': activity_who(e, em, owner_slack_ids, teammates, domains)})
-    return sorted(found, key=lambda x: x['at'])[-limit:]
+            found_here.append({'id': e['id'], 'at': e['occurred_at'], 'channel': e['kind'].split('.')[0], 'who': activity_who(e, em, owner_slack_ids, teammates, domains)})
+        found.append(found_here)  # newest first
+    shared = [x for turn in itertools.zip_longest(*found) for x in turn if x]
+    return sorted(shared[:limit], key=lambda x: x['at'])
 
 
 def activity_who(event, m, owner_slack_ids=(), teammates=(), domains=()):
@@ -426,7 +429,7 @@ class FollowUpsApp:
         if on_channel and on_channel[-1] not in evidence:
             evidence.append(on_channel[-1])  # switching channel: the conversation there, so the draft can go on it
         newer = newer_activity(db, evidence, self.store.owner_user_ids, {x['email']: x['name'] for x in self.teammate_addresses()},
-                               company_domains(self.config))
+                               company_domains(self.config), after=msgs[-1]['at'])
         if any(x['id'] not in evidence for x in newer):
             return None  # something newer is still on its way into the project: next pass
         grouped = item['source'] == 'board'
