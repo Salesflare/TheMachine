@@ -41,7 +41,8 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-'+OWED).waitFor();
-  const chatOf=async(id,name)=>{await page.evaluate(id=>{location.hash='chat='+id},id);await page.locator('#chat-log .chat-draft').first().waitFor();await page.waitForTimeout(150);
+  const chatOf=async(id,name)=>{await page.evaluate(id=>{location.hash='chat='+id},id);await page.locator('.chat-title',{hasText:new RegExp('^'+cards.find(c=>c.id===id).title+'$')}).waitFor();
+   await page.locator('#chat-log .chat-event',{hasText:'Sent to Robin'}).waitFor();
    if(shots)await page.screenshot({path:`${shots}/${name}-${width}.png`})};
   const order=()=>page.locator('#chat-log').evaluate(l=>[...l.children].map(n=>n.matches('.chat-result')?'draft':n.querySelector('.chat-options')?'buttons':n.matches('.chat-event')?n.querySelector('.chat-when')?'sent':'line':'').filter(Boolean));
   const when=await page.evaluate(t=>chatHM(t),sentAt),line=page.locator('#chat-log .chat-event',{hasText:'Sent to'});
