@@ -87,7 +87,10 @@ class MobileShellTest(unittest.TestCase):
         check = upload[upload.index(' archive |'):upload.index('-exportArchive')]
         for bundle in ('App.app', 'ShareExtension.appex', 'NotificationService.appex', 'group.computer.themachine.app'):
             self.assertIn(bundle, check)
-        for uses in re.findall(r'uses: (\S+)', flow):
+        actions = re.findall(r'uses: (\S+)', flow)
+        self.assertEqual(len(actions), flow.count('uses:'))
+        self.assertGreaterEqual(len(actions), 1)
+        for uses in actions:
             self.assertRegex(uses, r'@[0-9a-f]{40}$')
 
     def test_android_opens_gmail_links_in_the_gmail_app(self):
@@ -103,7 +106,9 @@ class MobileShellTest(unittest.TestCase):
         java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/MachineShellPlugin.java').read_text()
         swift = (MOBILE / 'ios/App/App/MachineShellPlugin.swift').read_text()
         js = (MOBILE / 'www/app.js').read_text()
-        for method in sorted(set(re.findall(r'shell\.(\w+)\(', js))):
+        methods = sorted(set(re.findall(r'shell\.(\w+)\(', js)))
+        self.assertGreater(len(methods), 4, 'the calls app.js makes')
+        for method in methods:
             self.assertIn(f'public void {method}(PluginCall', java, method)
             self.assertIn(f'name: "{method}"', swift, method)
         for side in (java, swift):

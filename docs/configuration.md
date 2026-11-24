@@ -52,6 +52,7 @@
 | `browser_cdp_url` | `http://127.0.0.1:9222` | That browser's DevTools address on this machine; **Open the browser** brings the tab a task uses to the front through it (also when it opens a viewer), and a Preparing to-do's live look at its tab is taken through it |
 | `browser_vnc` | unset | Optional VNC server showing this computer's screen, as a unix socket path or a `127.0.0.1:port`; the dashboard then shows that screen live at `/browser` (see [browser setup](sources.md)) |
 | `browser_novnc` | `~/.local/share/machine-browser/web` | The noVNC files the dashboard serves for `browser_vnc` (`python3 browser_viewer.py web DIR [NOVNC]` builds them) |
+| `browser_upload_dir` | `/tmp/openclaw/uploads` | Where the files of a step the owner confirmed are copied for the browser's upload, one folder per run |
 | `browser_lease_script` | `integrations/browser-lease.py` | Lease helper Do it runs use for the shared browser |
 | `delivery_enabled` | `false` | Send to-dos to Telegram (leave off while you test) |
 | `delivery_batch_size` | `5` | To-dos per delivery pass |

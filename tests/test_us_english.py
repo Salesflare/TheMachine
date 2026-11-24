@@ -68,17 +68,22 @@ class UsEnglish(unittest.TestCase):
     def test_user_facing_text_is_in_us_english(self):
         files = subprocess.run(['git', 'ls-files'], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
         bad = []
+        checked = 0
         for name in files:
             path = ROOT / name
             if name in SKIP or name.startswith(('brand/', 'sandbox/fixtures/')) or (name.startswith('i18n/') and name != 'i18n/en.json') or re.match(r'docs/help/[a-z]{2}(?:-[A-Z]{2})?/', name) or path.suffix not in SUFFIXES or not path.is_file():
                 continue
+            checked += 1
             bad += problems(path, path.read_text(encoding='utf-8', errors='replace'))
+        self.assertGreater(checked, 500, 'git lists the files')
         self.assertEqual(bad, [], 'UK spellings in user-facing text (use US English, or add a reasoned entry to ALLOWED):\n' + '\n'.join(bad))
 
     def test_it_catches_uk_prose_and_leaves_identifiers(self):
         self.assertEqual([w for _, w in hits("label:'Organisations', t='Send cancelled'", True)], ['Organisations', 'cancelled'])
         self.assertEqual(hits("status='cancelled' and x.behaviour() and graph.neighbours(db) and {cancelled:'Canceled'}", True), [])
         self.assertEqual([w for _, w in hits('The colour of the centre', False)], ['colour', 'centre'])
+        self.assertEqual(problems(ROOT / 'a.py', "x = 1  # The colour\ny = f'{x} in the centre'\n"), ['a.py:1: colour', 'a.py:2: centre'])
+        self.assertEqual(problems(ROOT / 'a.md', 'The colour, not `the centre`.\n'), ['a.md:1: colour'])
 
 
 if __name__ == '__main__':

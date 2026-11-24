@@ -67,7 +67,9 @@ class ExportComplete(unittest.TestCase):
         self.assertEqual(set(), set(inventory.DATA_FILES.values()) - set(inventory.PARTS))
 
     def test_every_home_path_is_exported_or_has_a_reason(self):
-        missing = {path: where for path, where in home_paths().items() if not covered(path)}
+        paths = home_paths()
+        self.assertGreater(len(paths), 10, 'the paths under the home folder the code names')
+        missing = {path: where for path, where in paths.items() if not covered(path)}
         self.assertEqual({}, missing, 'add these to inventory.HOME_AREAS (exported) or HOME_OTHER / NOT_EXPORTED_HOME (with why)')
 
     def test_what_cannot_move_says_why(self):

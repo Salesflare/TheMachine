@@ -352,7 +352,9 @@ class Subs(unittest.TestCase):
 
     def test_copy_is_short_and_has_no_em_dash(self):
         source = Path(subs.__file__).read_text() + Path(subs.__file__).with_name('subscriptions_app.py').read_text()
-        for text in re.findall(r"i18n\.t\('([^']+)'", source):
+        texts = [text for _, text in re.findall(r"""i18n\.t\((['"])((?:(?!\1).)+)\1""", source)]
+        self.assertEqual(len(texts), source.count('i18n.t('), 'every call has its text in quotes')
+        for text in texts:
             self.assertNotIn('—', text)
             self.assertLess(len(text), 140)
 

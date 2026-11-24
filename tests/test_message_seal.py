@@ -991,6 +991,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
         sealed = {('events', c) for c in ('title', 'body', 'metadata')}
         sealed |= {(t, c) for t, cs in message_seal.DERIVED.items() for c in cs}
         sealed |= {(t, c) for t, c, _ in message_seal.DERIVED_JSON}
+        self.assertGreater(len(learnings.TABLES), 2)
         for table, columns in learnings.TABLES.items():
             for column in columns:
                 self.assertNotIn((table, column), sealed)
@@ -1199,6 +1200,8 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
         self.assertIn("'plain_columns' if file.stem in PLAIN_CHECKED else 'unittest'", runner)
 
     def test_connectors_store_only_through_the_sealed_path(self):
+        for folder, least in (('connectors', 5), ('integrations', 1)):
+            self.assertGreater(len(list((ROOT / folder).glob('*.py'))), least, f'{folder}/ holds its code')
         for path in sorted((ROOT / 'connectors').glob('*.py')) + sorted((ROOT / 'integrations').glob('*.py')):
             text = path.read_text()
             with self.subTest(path=path.name):
@@ -1226,6 +1229,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
         or names its suite in SEAL_COVERED_BY. A new connector with neither fails here, so none is left out by hand."""
         spec = importlib.util.spec_from_file_location('test_runner', ROOT / 'scripts' / 'test.py')
         runner = importlib.util.module_from_spec(spec); spec.loader.exec_module(runner)
+        self.assertIn(runner.SEAL_LEAK, (ROOT / 'machine' / 'store' / 'events.py').read_text(encoding='utf-8'))  # what a leak says
         audited = set(runner.SEAL_AUDIT)
         connectors = sorted(p.stem for p in (ROOT / 'connectors').glob('*.py') if not p.stem.startswith('_'))
         self.assertTrue(connectors)
@@ -1246,7 +1250,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             self.skipTest('scripts/test.py runs the connector suites with MESSAGE_SEAL_AUDIT=1 itself')
         result = subprocess.run([sys.executable, '-m', 'unittest', *suites], cwd=ROOT, capture_output=True, text=True, timeout=900,
                                 env={**os.environ, 'MESSAGE_SEAL_AUDIT': '1'})
-        self.assertNotIn('keeps message text in the clear', result.stderr)
+        self.assertNotIn(runner.SEAL_LEAK, result.stderr)
         self.assertEqual(result.returncode, 0, result.stderr[-3000:])
 
 

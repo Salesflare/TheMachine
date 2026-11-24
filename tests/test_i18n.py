@@ -5,7 +5,9 @@ import json
 import pathlib
 import re
 import sys
+import tempfile
 import unittest
+from unittest import mock
 
 import i18n
 import locale_prefs
@@ -78,6 +80,10 @@ class CatalogTest(unittest.TestCase):
     def test_the_catalogs_are_sorted(self):
         # Sorted keys, one per line: pull requests that add different strings merge without conflicts.
         bad = [p.name for p in i18n_extract.unsorted()]
+        self.assertLessEqual({f'{lang}.json' for lang in LANGS}, {p.name for p in i18n_extract.CATALOG.glob('*.json')})
+        with tempfile.TemporaryDirectory() as folder, mock.patch.object(i18n_extract, 'CATALOG', pathlib.Path(folder)):
+            pathlib.Path(folder, 'xx.json').write_text('{"b": "B", "a": "A"}', encoding='utf-8')
+            self.assertEqual([p.name for p in i18n_extract.unsorted()], ['xx.json'])
         self.assertEqual(bad, [], 'not in sorted form; fix with: python3 scripts/i18n_extract.py --sort')
 
     def test_the_catalogs_follow_the_glossary(self):
@@ -112,6 +118,10 @@ class CatalogTest(unittest.TestCase):
             'pt-BR': r'\b(?:[Oo]|[Dd]o|[Nn]o|[Aa]o|[Pp]elo|[Uu]m) (?:próprio )?(?:assistente|Machine)\b|\b[Ee]stou (?:pronto|preso)\b|\b[Ee]u continuo sozinho\b',
             'ru': r'\bMachine (?:готов|подключен|занят|сам|прочитал|подготовил|нашёл|нашел)\b|\b[Яя] (?:застрял|готов|занят|сам)\b|\b(?:[Вв]аш|[Сс]вой) (?:Machine|ассистент)\b',
         }
+        self.assertLessEqual(set(wrong), set(LANGS))
+        for lang, text in (('nl', 'De Machine heeft haar mail'), ('fr', 'Le Machine lit'), ('de', 'Der Assistent liest'),
+                           ('es', 'El asistente lee'), ('it', 'Il Machine legge'), ('pt-BR', 'O assistente lê'), ('ru', 'Machine готов')):
+            self.assertRegex(text, wrong[lang])
         problems = [f'{lang}: {key!r} -> {text!r}' for lang, pattern in wrong.items()
                     for key, value in load(f'{lang}.json').items() for text in forms(value) if re.search(pattern, text)]
         self.assertEqual(problems, [], '\n'.join(problems[:40]))
@@ -154,6 +164,11 @@ class CatalogTest(unittest.TestCase):
         # A new string in a moved area: add it with `python3 scripts/i18n_extract.py --add` (the daily translator
         # writes the other languages), or list it in i18n/not-ui.json when nobody reads it as is.
         self.assertEqual(i18n_extract.missing(), {})
+        # each place it reads from still has its strings
+        self.assertGreater(len(i18n_extract.dashboard_strings()), 1000)
+        self.assertGreater(len(i18n_extract.server_strings()), 50)
+        self.assertGreater(sum(map(len, i18n_extract.plugin_strings().values())), 10)
+        self.assertGreater(len(i18n_extract.viewer_strings()), 10)
 
 
     def test_a_count_with_one_word_is_read_from_a_plural_pair(self):
@@ -164,7 +179,6 @@ class CatalogTest(unittest.TestCase):
 
     def test_the_stale_key_report_names_keys_no_code_reads(self):
         # python3 scripts/i18n_extract.py --stale: pruned by hand once a month, since each key lives in every catalog
-        from unittest import mock
         fake = {'Language': 'Language', 'A key no code reads': 'A key no code reads',
                 '{} meetings': {'one': '{} meeting', 'other': '{} meetings'}}
         with mock.patch.object(i18n_extract, 'catalog', lambda lang: fake):
@@ -173,6 +187,8 @@ class CatalogTest(unittest.TestCase):
     def test_no_words_are_glued_to_a_value(self):
         # "'Hand to '+name" reads English in every language: the page translates a line only when a catalog entry
         # frames it, so write t('Hand to {}', name) and add "Hand to {}" to en.json.
+        planted = "<style></style><script>const a=name=>'Zz words for '+name+' and more';</script>"
+        self.assertEqual([lit for lit, _ in i18n_extract.glued(planted)], ['Zz words for ', ' and more'])
         found = i18n_extract.glued()
         self.assertEqual(found, [], '\n'.join(f'{lit!r} in {ctx}' for lit, ctx in found[:30]))
 

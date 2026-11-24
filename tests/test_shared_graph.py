@@ -1998,11 +1998,26 @@ class StaticSql(unittest.TestCase):
     def test_the_shared_graph_builds_no_sql_from_strings(self):
         """Every query is a fixed string: lists go in as one JSON parameter (json_each), tables by a fixed statement each."""
         import ast
-        for name in ('shared_graph.py',):
-            tree = ast.parse(Path(__file__).parent.parent.joinpath(name).read_text())
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Call) and getattr(node.func, 'attr', '') in ('execute', 'executemany') and node.args:
-                    self.assertNotIsInstance(node.args[0], ast.JoinedStr, f'{name}:{node.lineno} builds SQL with an f-string')
+
+        def fixed(node):
+            """A string, one of a fixed statement per table (FLEET_DELETE[table]), or a name given one, also put together."""
+            if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+                return fixed(node.left) and fixed(node.right)
+            if isinstance(node, ast.IfExp):
+                return fixed(node.body) and fixed(node.orelse)
+            if isinstance(node, ast.Subscript):
+                return isinstance(node.value, ast.Name) and node.value.id.isupper()
+            return isinstance(node, ast.Name) or isinstance(node, ast.Constant) and isinstance(node.value, str)
+
+        def built(source):
+            calls = [n for n in ast.walk(ast.parse(source)) if isinstance(n, ast.Call)
+                     and getattr(n.func, 'attr', '') in ('execute', 'executemany') and n.args]
+            return len(calls), [n.lineno for n in calls if not fixed(n.args[0])]
+        calls, found = built(Path(__file__).parent.parent.joinpath('shared_graph.py').read_text(encoding='utf-8'))
+        self.assertEqual(found, [], 'shared_graph.py builds SQL from a string on these lines')
+        self.assertGreater(calls, 50)
+        self.assertEqual(built("db.execute('SELECT 1' + ' WHERE a=?', (a,))\ndb.execute(f'DELETE FROM {t}')\ndb.execute('DELETE FROM %s' % t)\n"
+                               "db.execute('DELETE FROM {}'.format(t))\ndb.execute('SELECT ' + ','.join(c))\n"), (5, [2, 3, 4, 5]))
 
     def test_a_list_parameter_matches_like_the_placeholders_did(self):
         import sqlite3

@@ -110,13 +110,15 @@ class NoNewEnglishTest(unittest.TestCase):
 
     def test_every_key_the_paths_use_is_in_the_catalog(self):
         keys = set(json.loads((ROOT / 'i18n' / 'en.json').read_text(encoding='utf-8')))
-        missing = set()
+        missing, used = set(), 0
         for path in [*PATHS, 'shared_graph.py']:
             for n in ast.walk(ast.parse((ROOT / path).read_text(encoding='utf-8'))):
                 if is_t(n) and n.args and isinstance(n.args[0], ast.Constant) and isinstance(n.args[0].value, str):
+                    used += 1
                     if n.args[0].value not in keys:
                         missing.add((path, n.args[0].value))
         self.assertEqual(sorted(missing), [])
+        self.assertGreater(used, 20, 'is_t finds the t() calls')
 
 
 class OwnersLanguageTest(unittest.TestCase):

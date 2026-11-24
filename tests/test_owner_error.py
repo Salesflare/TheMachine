@@ -25,6 +25,13 @@ a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 
 
+def plain_errors_in_t(source):
+    """Lines that raise a plain ValueError with a t() message."""
+    return [node.lineno for node in ast.walk(ast.parse(source))
+            if (isinstance(node, ast.Raise) and isinstance(node.exc, ast.Call) and getattr(node.exc.func, 'id', None) == 'ValueError'
+                and node.exc.args and any(i18n_extract._is_t(n) for n in ast.walk(node.exc.args[0])))]
+
+
 class OwnerErrorType(unittest.TestCase):
     def test_a_value_error_and_a_leaf(self):
         self.assertTrue(issubclass(OwnerError, ValueError))  # every `except ValueError` still catches it
@@ -33,13 +40,14 @@ class OwnerErrorType(unittest.TestCase):
 
     def test_a_translated_message_is_raised_as_an_owner_error(self):
         # t() means the owner reads it: a plain ValueError with a t() message would be counted as a bug
-        found = []
-        for path in sorted([*ROOT.glob('*.py'), *ROOT.glob('machine/**/*.py'), *ROOT.glob('connectors/*.py')]):
-            for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
-                if (isinstance(node, ast.Raise) and isinstance(node.exc, ast.Call) and getattr(node.exc.func, 'id', None) == 'ValueError'
-                        and node.exc.args and any(i18n_extract._is_t(n) for n in ast.walk(node.exc.args[0]))):
-                    found.append(f'{path.relative_to(ROOT).as_posix()}:{node.lineno}')
-        self.assertEqual(found, [], 'a message through t() is for the owner: raise OwnerError (machine/owner_error.py)')
+        for folder, least in (('*.py', 150), ('machine/**/*.py', 100), ('connectors/*.py', 10)):
+            paths, found = sorted(ROOT.glob(folder)), []
+            self.assertGreater(len(paths), least, f'{folder} finds the code')
+            for path in paths:
+                found += [f'{path.relative_to(ROOT).as_posix()}:{line}' for line in plain_errors_in_t(path.read_text(encoding='utf-8'))]
+            self.assertEqual(found, [], 'a message through t() is for the owner: raise OwnerError (machine/owner_error.py)')
+        self.assertEqual(plain_errors_in_t("def f(x):\n    raise ValueError(t('Pick a mailbox first'))\n"
+                                           "def g(x):\n    raise OwnerError(t('Pick one'))\n"), [2])
 
 
 class Extract(unittest.TestCase):

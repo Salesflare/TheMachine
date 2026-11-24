@@ -62,6 +62,9 @@ class DashboardParts(unittest.TestCase):
     def test_nothing_reads_dashboard_html_itself(self):
         files = subprocess.run(['git', 'ls-files', '*.py', '*.mjs', '*.js'], cwd=ROOT, capture_output=True, text=True,
                                check=True).stdout.split()
+        self.assertGreater(len(files), 500, 'git lists the code')
+        for line in ("p = ROOT / 'dashboard.html'", "new URL('../dashboard.html', import.meta.url)", "ROOT.joinpath('dashboard.html')"):
+            self.assertRegex(line, DIRECT)
         direct = []
         for name in files:
             if name in READERS or not (ROOT / name).is_file():
@@ -254,8 +257,7 @@ class DashboardParts(unittest.TestCase):
             self.skipTest('no node')
         folder = ROOT / 'dashboard'
         files = sorted(folder.glob('*.js')) if folder.is_dir() else []
-        if not files:
-            self.skipTest('no parts')
+        self.assertGreater(len(files), 20, 'the script parts')
         script = ("import vm from 'node:vm';import {readFileSync} from 'node:fs';const bad=[];"
                   "for(const f of process.argv.slice(1)){try{new vm.Script(readFileSync(f,'utf8'),{filename:f})}"
                   "catch(e){bad.push(f+': '+e.message)}}process.stdout.write(bad.join('\\n'))")

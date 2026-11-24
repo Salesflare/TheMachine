@@ -19,7 +19,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOCS = ROOT / 'docs'
 # How the code names the Machine's config: config.get('key'), self.config['key'], app.config.setdefault('key') ...
-READ = re.compile(r"\b(?:self\.app\.config|self\.config|app\.config|config)(?:\.get\(|\.setdefault\(|\.pop\(|\[)\s*['\"]([a-z][a-z0-9_]*)['\"]")
+READ = re.compile(r"(?:\b(?:self\.app\.config|self\.config|app\.config|config)|\(config or \{\}\))(?:\.get\(|\.setdefault\(|\.pop\(|\[)\s*['\"]([a-z][a-z0-9_]*)['\"]")
 # Keys read through a variable called config that is another program's config, with where
 NOT_OURS = {
     'commands': "OpenClaw's openclaw.json (moving.py, who may talk to the bot)",
@@ -42,6 +42,7 @@ def config_reads():
     for path in code_files():
         for m in READ.finditer(path.read_text(encoding='utf-8')):
             found.setdefault(m[1], []).append(path.relative_to(ROOT).as_posix())
+    assert len(found) > 100, 'READ finds the keys the code reads'
     return {k: v for k, v in found.items() if k not in NOT_OURS}
 
 
@@ -51,6 +52,7 @@ def table_keys(text, first_column=True):
     for line in text.splitlines():
         if line.startswith('| `'):
             keys |= set(re.findall(r'`([a-z][a-z0-9_]*)`', line.split('|')[1]))
+    assert len(keys) > 20, 'the tables list their keys in backticks, first column'
     return keys
 
 
@@ -84,6 +86,7 @@ class ConfigKeys(unittest.TestCase):
         self.assertEqual(gone, [], 'docs/configuration.md lists keys no code reads any more')
 
     def test_the_scan_sees_reads_and_leaves_out_other_configs(self):
+        self.assertEqual(READ.findall("a = (config or {}).get('epsilon') or view(db, config or {})['zeta']"), ['epsilon'])
         text = "x = config.get('alpha')\ny = self.config['beta']\nz = self.app.config.setdefault('gamma', 1)\nw = cfg.get('delta')\n"
         self.assertEqual([m[1] for m in READ.finditer(text)], ['alpha', 'beta', 'gamma'])
 
@@ -106,6 +109,7 @@ class CommandLine(unittest.TestCase):
         self.assertEqual(missing, [], "commands with no row (or mention) in docs/usage.md's Command line")
 
     def test_every_choice_a_command_takes_is_in_its_row_and_back(self):
+        rows = 0
         for name, command in self.commands.items():
             row = self.row(name) or ''
             for action in command._actions:
@@ -113,8 +117,10 @@ class CommandLine(unittest.TestCase):
                     for choice in action.choices:
                         self.assertIn(choice, row, f'assistant {name} takes {choice}, which its row in docs/usage.md leaves out')
                     listed = re.match(r'\| `assistant [a-z-]+ ([a-z-]+(?:\\\|[a-z-]+)+)', row)
+                    rows += bool(listed)
                     for choice in (listed[1].split('\\|') if listed else []):
                         self.assertIn(choice, action.choices, f'docs/usage.md lists assistant {name} {choice}, which it doesn\'t take')
+        self.assertGreater(rows, 1, 'rows that list their choices as a\\|b')
 
     def test_connect_names_every_built_in_source(self):
         source = next(a for a in self.commands['connect']._actions if a.dest == 'source')
@@ -125,8 +131,9 @@ class CommandLine(unittest.TestCase):
 
     def test_docs_name_only_commands_that_exist(self):
         names = set(self.commands) | {'connect'}
-        wrong = sorted({f'{p.name}: assistant {m}' for p in DOCS.glob('*.md') for m in
-                        re.findall(r'`assistant ([a-z][a-z-]*)', p.read_text(encoding='utf-8')) if m not in names})
+        said = [(p.name, m) for p in DOCS.glob('*.md') for m in re.findall(r'`assistant ([a-z][a-z-]*)', p.read_text(encoding='utf-8'))]
+        self.assertGreater(len(said), 50, 'the commands the docs name')
+        wrong = sorted({f'{name}: assistant {m}' for name, m in said if m not in names})
         self.assertEqual(wrong, [], 'docs name assistant commands cli.py does not have')
 
 

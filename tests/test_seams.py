@@ -135,7 +135,9 @@ def plain_patches(source, name='<test>'):
 
 class EveryPatchGoesThroughSeams(unittest.TestCase):
     def test_no_plain_patch_on_assistant(self):
-        for path in sorted((ROOT / 'tests').glob('*.py')):
+        paths = sorted((ROOT / 'tests').glob('*.py'))
+        self.assertGreater(len(paths), 200, 'the test files')
+        for path in paths:
             if path.name in ('seams.py', 'test_seams.py'):
                 continue
             with self.subTest(file=path.name):
