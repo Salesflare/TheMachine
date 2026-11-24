@@ -76,16 +76,24 @@ class MeetingPrepApp:
             emails, domains = self.meeting_prep_owner(db)
             found = meeting_prep.upcoming(db, current, calendar_owned, emails, domains, local_tz())
             done = meeting_prep.judged(db, [m['key'] for m in found])
-            for meeting in sorted(found, key=lambda m: wait.tries(m['key'])):
-                if meeting['key'] in done or wait.spent(meeting['key']):
+            series = lambda m: bool(m['meta'].get('recurring_event_id'))
+            room = meeting_prep.recurring_today(db, (current - dt.timedelta(days=1)).isoformat()) < meeting_prep.RECURRING_PER_DAY
+            research = self.config.get('meeting_prep_research') is not False and enrichment.people_on(db)
+            for meeting in sorted(found, key=lambda m: (wait.tries(m['key']), series(m))):  # one-offs first
+                if meeting['key'] in done or wait.spent(meeting['key']) or series(meeting) and not room:
                     continue
                 if meeting_prep.taken(db, meeting['id'], CARD_OPEN):  # the review already made a to-do for it
                     meeting_prep.keep(db, meeting, 'taken', None, now())
                     continue
                 side = sides.get(meeting['account_id'])
+                again = meeting_prep.repeated(db, meeting, current)
+                if again and not again['over']:
+                    continue  # after the one before it
                 evidence = meeting_prep.evidence(db, meeting, side, sides, emails, domains, current, CARD_OPEN, calendar_owned, graph.resolve,
                                                  person_summary.prep_lines, graph.excerpt)
-                if not meeting_prep.worth_asking(evidence):
+                if again:
+                    evidence['recurring'] = meeting_prep.news(db, meeting, evidence, again)
+                if not meeting_prep.worth_asking(evidence) and not meeting_prep.worth_looking(meeting, side, evidence, enrichment.shared_host, research):
                     continue  # quality or nothing: no turn, no to-do
                 if all(p.get('role') and graph.personal_relation(p['role']) for p in evidence['people']):
                     meeting_prep.keep(db, meeting, 'family', None, now())  # family and friends only: their own life, no turn
@@ -121,20 +129,34 @@ class MeetingPrepApp:
             return None
         return [r for r in outputs[0].get('results') or () if isinstance(r, dict)]
 
+    def meeting_prep_site(self, domain):
+        """The home page of an organization's own website as one result, or None when it can't be read."""
+        read = getattr(self, 'meeting_prep_site_text', None) or enrichment.site_text  # tests and the sandbox: (domain)
+        page = read(domain)
+        return [page] if page else None
+
     def meeting_prep_research(self, meeting):
         """Short web research for a meeting that warrants it (meeting_prep.research_queries), when Look up work
-        contacts is on: the kept results as W ids, also put on the meeting's evidence."""
-        found = meeting['evidence']
+        contacts is on: the kept results as W ids, also put on the meeting's evidence. Nothing is fetched while the
+        database is held."""
+        found, current = meeting['evidence'], dt.datetime.fromisoformat(now())
         if self.config.get('meeting_prep_research') is False:
             return {}
         with self.store.connect() as db:
             if not enrichment.people_on(db):
                 return {}
-            asks = meeting_prep.research_queries(found, lambda domain: bool(enrichment.FREEMAIL.match(domain)))
-            if not asks:
-                return {}
-            web, ran = meeting_prep.web_results(db, asks, self.meeting_prep_search, dt.datetime.fromisoformat(now()))
-        LOG.info('meeting prep web asks=%d searched=%d kept=%d', len(asks), ran, len(web))
+            asks = meeting_prep.research_queries(found, enrichment.shared_host)
+            raw = meeting_prep.web_raw(db, asks, current)
+        ran = {}
+        for ask in asks:
+            if ask['query'] not in raw:
+                ran[ask['query']] = self.meeting_prep_site(ask['domain']) if ask['about'] == 'site' else self.meeting_prep_search(ask['query'])
+        if any(got is not None for got in ran.values()):
+            with self.store.connect() as db:
+                raw.update((query, meeting_prep.web_keep(db, query, got, current)) for query, got in ran.items() if got is not None)
+        web = meeting_prep.web_results(asks, raw)
+        if asks:
+            LOG.info('meeting prep web asks=%d searched=%d kept=%d', len(asks), len(ran), len(web))
         found['web'] = web
         return web
 
@@ -146,12 +168,25 @@ class MeetingPrepApp:
             self.meeting_prep_research(meeting)
         except (sqlite3.Error, OSError, ValueError, TypeError) as error:  # a briefing without research beats none
             LOG.warning('meeting prep research error=%s', type(error).__name__)
+        if not meeting_prep.worth_asking(meeting['evidence']) and not meeting_prep.looked_up(meeting['evidence']):
+            return None  # nothing between them and nothing found: no turn
+        meeting['evidence']['owner_organization'] = self.meeting_prep_own_organization(meeting)
         swap = background_model(self.config)  # the model meeting_prep_model_turn runs on, for its own bias correction
         note = bias.model_note('/'.join(swap) if swap else openclaw_model(self.config))
         if meeting['evidence'].get('notes'):
             meeting['evidence']['owner_name'] = self.owner_full_name()  # the notes name who does what: which of them is the owner
         text = meeting_prep.prompt(meeting, meeting['evidence'], local_tz(), i18n.prompt_rule(locale_prefs.language_of(self.config)), note)
         return model_reply.ask(self.meeting_prep_model_turn, text, lambda reply: meeting_prep.parse(reply, meeting['evidence']))
+
+    def meeting_prep_own_organization(self, meeting):
+        """What the owner's own organization does, as it was looked up (enrichment.py): the one of the meeting's calendar,
+        else the only one known. None when none is."""
+        address = next((str(a.get('email') or '') for a in self.config.get('accounts', []) if a.get('id') == meeting['account_id']), '')
+        with self.store.connect() as db:
+            owner = graph.Owner({'accounts': self.config.get('accounts', [])}, db)
+            known = {d: p for d in sorted(owner.domains) if (p := enrichment.profile_of(db, d))}
+        profile = known.get(address.rpartition('@')[2].lower()) or (next(iter(known.values())) if len(known) == 1 else None)
+        return {k: str(profile[k])[:300] for k in ('name', 'about', 'industry') if profile.get(k)} if profile else None
 
     def meeting_prep_cites(self, meeting):
         """What each source of the briefing is called after a point from it: "Kickoff call, Nov 3"."""
@@ -187,8 +222,8 @@ class MeetingPrepApp:
                 LOG.info('meeting prep verdict=%s', 'personal' if found else 'nothing')
                 return None
             # A to-do's title can show with its project on the Team Graph and in a handoff: not worded by a turn that read
-            # notes, or a message from history
-            title = found['title'] if found['title'] and not (meeting['evidence'].get('notes') or meeting['evidence'].get('older')) else i18n.t('Prepare for {}', meeting['title'][:70])
+            # notes, an earlier briefing or a message from history
+            title = found['title'] if found['title'] and not any(meeting['evidence'].get(k) for k in ('notes', 'recurring', 'older')) else i18n.t('Prepare for {}', meeting['title'][:70])
             body = meeting_prep.body_text(found['fields'], i18n.t, found.get('links'), self.meeting_prep_cites(meeting))
             try:
                 saved = self.store.suggest(meeting['key'], title[:90], body, [meeting['id'], *found['sources']], 'now', self.config.get('digest_at', '08:30'),

@@ -57,9 +57,9 @@ def ask(base, key, model, effort, prompt):
             time.sleep(2 ** attempt)
 
 
-def meeting(source, start, title, body, guests, team=0, account='wcal', **meta):
+def meeting(source, start, title, body, guests, team=0, account='wcal', me='accepted', **meta):
     end = (start + dt.timedelta(hours=1)).isoformat()
-    people = [ME, *({'email': e, 'displayName': n, 'responseStatus': 'accepted'} for e, n in guests),
+    people = [{**ME, 'responseStatus': me}, *({'email': e, 'displayName': n, 'responseStatus': 'accepted'} for e, n in guests),
               *({'email': f'team{i}@larkspur.example', 'responseStatus': 'accepted'} for i in range(team))]
     return {'account_id': account, 'source_id': source, 'kind': 'calendar.event', 'occurred_at': start.isoformat(), 'title': title, 'body': body, 'deleted': False,
             'metadata': {'start': {'dateTime': start.isoformat()}, 'end': {'dateTime': end}, 'end_at': end, 'all_day': False, 'timezone': 'UTC', 'status': 'confirmed',
@@ -76,6 +76,11 @@ def prepare(case, text, folder, history=False):
     app = object.__new__(main.App)
     app.store, app.config = store, {'accounts': ACCOUNTS, 'review_worker': {'enabled': True}, 'meeting_prep_research': False, 'owner_name': 'Robin Hale', 'openclaw_workspace': str(folder)}
     page = lambda e: store.commit_page(e['account_id'], {}, [e])
+    web = case.get('web')
+    if web:  # what the web has of them: a page of their own site, and each search's results
+        app.config['meeting_prep_research'] = True
+        app.meeting_prep_site_text = lambda domain: web['site'].get(domain)
+        app.meeting_prep_web_search = lambda query: web['search'] if query.startswith(f'"{case["guests"][0][1]}"') else []
     if history and not case['promises'] and not case['done']:
         page = lambda e: store.commit_page(e['account_id'], None, [e], record_sync=False, history=True)
     ago = lambda days, hour=13: (NOW - dt.timedelta(days=days)).replace(hour=hour)
@@ -111,7 +116,8 @@ def prepare(case, text, folder, history=False):
         page({'account_id': 'wmail', 'source_id': f'mail{n}', 'kind': 'gmail.message', 'occurred_at': ago(m['days'], 15).isoformat(), 'title': m['subject'], 'body': m['text'],
               'metadata': {'from': f'{sender[1]} <{sender[0]}>', 'to': f'{to[1]} <{to[0]}>', 'labels': ['SENT'] if own else ['INBOX'], 'thread_id': f'{case["id"]}{n}'}, 'deleted': False})
     page = lambda e: store.commit_page(e['account_id'], {}, [e])
-    page(meeting('next', NOW.replace(day=10, hour=10), case['title'], case['about'], case['guests']))
+    page(meeting('next', NOW.replace(day=10, hour=10), case['title'], case['about'], case['guests'], me=case.get('me', 'accepted'),
+                 **({'recurring_event_id': case['series'], 'original_start': {'dateTime': '2026-11-10T10:00:00+00:00'}} if case.get('series') else {})))
     with store.connect() as db:
         for a, b in case['merges']:
             graph.merge(db, 'email:' + a, 'email:' + b, True, NOW.isoformat(), source='owner')
@@ -128,9 +134,26 @@ def prepare(case, text, folder, history=False):
         from machine.store import graph_history
         with store.connect() as db:
             graph_history.advance(db, (NOW - dt.timedelta(days=graph.HORIZON_DAYS)).isoformat(), NOW.isoformat())
+    if case.get('own'):  # what the owner's own organization does, as it was looked up
+        import enrichment
+        with store.connect() as db:
+            enrichment.save(db, 'larkspur.example', 'found', case['own'], NOW.isoformat())
+    if case.get('before'):  # the briefing before an earlier occurrence
+        import meeting_prep
+        with store.connect() as db:
+            row = db.execute("SELECT * FROM events WHERE kind='calendar.event' AND source_id='m0'").fetchone()
+        card = store.suggest(meeting_prep.KEY_PREFIX + 'before', 'Prepare for ' + case['title'], case['before'], [row['id']])
+        store.decide(card['id'], 'complete', '', 'before', 'dashboard')
+        with store.connect() as db:
+            meeting_prep.keep(db, {'key': meeting_prep.KEY_PREFIX + 'before', 'id': row['id'], 'start': dt.datetime.fromisoformat(row['occurred_at'])}, 'made', card['id'],
+                              (NOW - dt.timedelta(days=7)).isoformat(), case['before'])
     with store.connect() as db:
         graph.build(db, app.config, NOW.isoformat(), **({'history': True} if history else {}))
     return app
+
+
+def case_quiet(case):
+    return bool(case.get('quiet'))
 
 
 def facts(case, text):
@@ -146,6 +169,11 @@ def facts(case, text):
         out.append('Lars and Petra are colleagues of Robin.')
     out += [f"Mail on {day(m['days'])} from {'Robin' if m['from'] == 'own' else m['from'][1]}, {m['subject']}: {m['text']}" for m in case['mails']]
     out += [f"Promise by Robin, {p['status']} since {day(6)}: {p['what']}" for p in case['promises']] + [f"Done on {day(6)}: {d['title']}" for d in case['done']]
+    web = case.get('web') or {}
+    out += [f"{domain}'s own website: {p['title']}: {p['description']}" for domain, p in (web.get('site') or {}).items()]
+    out += [f"Web page {r['title']}: {r['description']}" for r in web.get('search') or ()]
+    out += [f"What Robin's own organization does: {json.dumps(case['own'])}"] if case.get('own') else []
+    out += ['The last briefing said: ' + case['before']] if case.get('before') else []
     return '\n'.join(out)
 
 
@@ -235,9 +263,10 @@ def main():
             got = list(pool.map(lambda x: one(*x), [(c, r) for r in range(a.runs) for c in cases]))
     tally = {}
     for c, body, used, extra, said, wrong in got:
-        t = tally.setdefault(c['set'], {'want': 0, 'of': 0, 'bad': 0, 'badof': 0, 'wrong': 0, 'made': 0, 'n': 0, 'in': [], 'out': [], 'chars': []})
+        t = tally.setdefault(c['set'], {'want': 0, 'of': 0, 'bad': 0, 'badof': 0, 'wrong': 0, 'made': 0, 'n': 0, 'quiet': 0, 'quietof': 0, 'in': [], 'out': [], 'chars': []})
         missed, bad = [w for w in c['want'] if w not in said], [x for x in c['never'] if x in said]
-        for k, v in (('want', len(c['want']) - len(missed)), ('of', len(c['want'])), ('bad', len(bad)), ('badof', len(c['never'])), ('wrong', len(wrong)), ('made', bool(body)), ('n', 1)):
+        for k, v in (('want', len(c['want']) - len(missed)), ('of', len(c['want'])), ('bad', len(bad)), ('badof', len(c['never'])), ('wrong', len(wrong)), ('made', bool(body)), ('n', 1),
+                     ('quiet', bool(case_quiet(c) and body)), ('quietof', case_quiet(c))):
             t[k] += v
         if used[0]:
             t['in'].append(used[0])
@@ -247,11 +276,11 @@ def main():
         spent[1] += used[1] + extra[1]
         if a.texts:
             print('---', c['id'], used, '\n' + body)
-        if missed or bad or wrong:
-            print(c['id'], *([f'missed: {missed}'] if missed else []), *([f'BAD: {bad}'] if bad else []), *([f'unsupported: {wrong}'] if wrong else []), sep='\n   ')
+        if missed or bad or wrong or case_quiet(c) and body:
+            print(c['id'], *(['BRIEFING WITH NOTHING TO SAY'] if case_quiet(c) and body else []), *([f'missed: {missed}'] if missed else []), *([f'BAD: {bad}'] if bad else []), *([f'unsupported: {wrong}'] if wrong else []), sep='\n   ')
     for name, t in tally.items():
         avg = lambda v: sum(v) // max(1, len(v))
-        print(f"{name}: facts recalled {t['want']} of {t['of']}; wrong or stale {t['bad']} of {t['badof']}; unsupported statements {t['wrong']}; briefings {t['made']} of {t['n']}; "
+        print(f"{name}: facts recalled {t['want']} of {t['of']}; wrong or stale {t['bad']} of {t['badof']}; unsupported statements {t['wrong']}; briefings {t['made']} of {t['n']} (with nothing to say {t['quiet']} of {t['quietof']}); "
               f"turn tokens in {avg(t['in'])} (max {max(t['in'] or [0])}) out {avg(t['out'])}; briefing chars {avg(t['chars'])} (max {max(t['chars'] or [0])})")
     print('tokens used in all', spent)
 

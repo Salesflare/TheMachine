@@ -102,7 +102,7 @@ All-day, free and tentative events never count, and each clash comes up once. A 
 Before a meeting with people from outside your company, The Machine makes one to-do: **Prepare for** the meeting. It's a short briefing:
 
 - **Who:** who they are, from your Graph, with something from their background when it's known.
-- **Organization:** what their company does that matters for the meeting.
+- **Organization:** what their company does, for whom and at what price, when that matters for the meeting.
 - **So far:** what you discussed, asked and offered, and where it stands. Those messages are the to-do's sources, after the meeting.
 - **Agreed earlier:**, **Changed since:** and **Still open:** what came out of earlier meetings with the same people, each line with the meeting or message it comes from.
 - **Open promises:** what you or they still owe, from the promises on your Machine.
@@ -117,9 +117,13 @@ Notes and messages from [History](history.md) count too, so a briefing knows abo
 
 A work briefing reads no personal notes, and nothing from someone else's Machine. Its text stays with you: a handoff never takes it along, and it can't go out for review. With no notes, those lines aren't there.
 
-It uses what is already on your Machine. For a first meeting with someone at a company, it also does a short web search on their name and company, and shows a link next to what it found. Only their public name, company name and website go to the search, never your messages. A search is reused for 30 days. With **Look up work contacts** off (Settings, Security), there's no search.
+It uses what is already on your Machine. For a first meeting with someone at a company, it also reads the home page of the company's website and does a short web search on their name and company, with a link next to what it found. Only their public name, company name and website go out, never your messages. What it found is reused for 30 days.
 
-With nothing useful to say, there's no to-do. Recurring, internal, personal and declined meetings get none. A meeting that moves keeps its one to-do, at the new time. A dismissed one doesn't come back, and a canceled meeting's closes by itself.
+So a first meeting you said yes to can get a briefing before you have exchanged a word: who they are, what their company does and what that means for you. With only a first name, it keeps what it finds only when that points to one person. With **Look up work contacts** off (Settings, Security), nothing is looked up.
+
+A meeting that repeats gets one only when there is something since the last time: a message, notes, a promise. It says what is new, not what the last briefing said. It comes once the time before is over, for two repeating meetings a day at most.
+
+With nothing useful to say, there's no to-do. Internal, personal and declined meetings get none. A meeting that moves keeps its one to-do, at the new time. A dismissed one doesn't come back, and a canceled meeting's closes by itself.
 
 When an update changes what a briefing holds, open briefings for meetings still ahead are written again once, in the new form. Their title, sources and place in your list stay. One you changed, snoozed or closed stays as it is, and so does one for a meeting starting in the next few minutes.
 
