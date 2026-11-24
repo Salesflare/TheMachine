@@ -8061,6 +8061,11 @@
    "project": null,
    "urgent": false,
    "snooze_hours": null,
+   "outcome": {
+    "state": "needs_you",
+    "needs": "Do Tuesday and Thursday suit you?",
+    "needs_first": false
+   },
    "next_action": {
     "kind": "signal",
     "account_id": "home-signal",

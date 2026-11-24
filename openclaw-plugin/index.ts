@@ -49,14 +49,16 @@ let dashboardRoot='';
 // A result that only answered, explained or planned: the task itself is still to do. Same rule as answered_only() in assistant.py.
 function answeredOnly(item:any){try{return item.status==='prepared'&&JSON.parse(item.outcome||'{}').state==='answered'}catch{return false}}
 // A card waiting on the owner's answer: Answer leads (the Change path) and Mark done steps back. A run that stopped to ask
-// (its own blocker, not a sign-in or the browser), or a result that asks with nothing to send: a question, or a need
-// nothing on it settles (needs_owner) that isn't a step they do themselves. Same rule as ask_question() in machine/cards.py.
+// (its own blocker, not a sign-in or the browser), or a result that asks with nothing to send, or nothing that can go
+// before they answer (needsFirst): a question, or a need nothing on it settles (needs_owner) that isn't a step they do
+// themselves. Same rule as ask_question() in machine/cards.py.
+function needsFirst(item:any){try{return JSON.parse(item.outcome||'{}').needs_first}catch{return undefined}}
 function askQuestion(item:any){if(['completed','rejected','snoozed'].includes(item.status)||item.handled_hint)return '';
   const reason=String(item.preparation_reason||'').trim();
   const qs=Array.isArray(item.preparation_questions)?item.preparation_questions:[];
   if(item.preparation_status==='blocked'&&reason&&!item.preparation_error&&retryLabel(reason)!=='Continue'&&(qs.length||!item.preparation_no_questions&&!item.preparation_browser))return qs.length?qs.map((q:any)=>q.question).join(' '):reason;
-  if(item.status!=='prepared'||item.preparation_status==='blocked'||taskActions(item).some((a:any)=>a.kind!=='open'))return '';
-  try{const o=JSON.parse(item.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&(q.endsWith('?')||item.needs_owner&&!o.owner_step&&!item.owner_step&&!item.handoff_still)?q:''}catch{return ''}}
+  if(item.status!=='prepared'||item.preparation_status==='blocked'||!needsFirst(item)&&taskActions(item).some((a:any)=>a.kind!=='open'))return '';
+  try{const o=JSON.parse(item.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&(q.endsWith('?')&&o.needs_first!==false||item.needs_owner&&!o.owner_step&&!item.owner_step&&!item.handoff_still)?q:''}catch{return ''}}
 function cardButtons(item: any) {
   const choices = askQuestion(item) ? [['Answer', 'other'], ...(item.preparation_status==='blocked'&&item.preparation_cause!=='retry' ? [[retryLabel(item.preparation_reason),'retry']] : []), ['Mark done', 'complete'], ['Snooze', 'snooze'], ['Not needed', 'reject']] : ['completed', 'rejected'].includes(item.status) ? (item.undo_until && Date.parse(item.undo_until)>Date.now() ? [['Undo','undo']] : []) : item.status === 'snoozed'
     ? [[item.handoff_wait ? 'Check in now' : 'Unsnooze', 'accept'], ['Change time', 'snooze'], ['Not needed', 'reject']]  // with a teammate: back to check in
@@ -69,6 +71,8 @@ function cardButtons(item: any) {
   // A run waiting on the browser keeps its Open the browser link on every redraw. Same rule as controls() in assistant.py.
   const browser=String(item.preparation_browser?.link||'');
   if(browser.startsWith('https://')&&['accepted','instructions'].includes(item.status))buttons.push({text:t('Open the browser'),url:browser});
+  // Answer before a draft that can't go yet. Same rule as controls() in machine/cards.py.
+  if(item.status==='prepared'&&needsFirst(item)&&askQuestion(item)){const [text,choice]=choices.shift()!;buttons.push(button(item.id,t(text),choice))}
   if(item.status==='prepared')for(const action of taskActions(item)){
     if(action.kind==='finish'&&(action.state||item.action_status)?.status==='done')continue;
     if(action.kind==='open')buttons.push({text:action.label,url:action.url});

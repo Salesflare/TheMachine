@@ -348,7 +348,7 @@ const skillButton=(s,k=ID)=>{const p=s.proposed_skill;return 'update' in p?html`
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-skill-create]');if(!b)return;e.preventDefault();b.disabled=true;
  try{await skillAct('skill_decide',{id:b.dataset.skillCreate,choice:'approve'});toast(t('Skill created. Your Machine uses it from now on.'));await refresh()}
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
-const copyLead=(s,smart)=>!s.proposed_skill&&s.status==='prepared'&&!smart.some(a=>a.kind!=='open')&&/\bdraft/i.test(s.body||'')&&(s.result_files||[]).some(f=>!/\.pdf$/i.test(f.name));
+const copyLead=(s,smart)=>!needsAsk(s)&&!s.proposed_skill&&s.status==='prepared'&&!smart.some(a=>a.kind!=='open')&&/\bdraft/i.test(s.body||'')&&(s.result_files||[]).some(f=>!/\.pdf$/i.test(f.name));
 const COPY_WHY='This can’t be sent from here. Copy it to send it yourself.';
 // The button row: the action that fits this to-do (its prepared send, Do it, Answer, Mark done, Check in now), Ask for
 // changes when there is a draft or result to review, Snooze, and Mark done on a ready one without a draft (with one,
@@ -395,7 +395,8 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const rank=c=>c.startsWith('agent:')?99:c==='change'&&agentAsk(s)?-1:order.indexOf(c),rest=all.filter(([c])=>!isPrimary(c)).sort((a,b)=>rank(a[0])-rank(b[0]));
  const handing=([c])=>c==='handoff'||c.startsWith('agent:');
  // The lead: the prepared action, else the to-do's primary choice, else its first plain one in order (Check in now while a teammate has it, Unsnooze on a snoozed one)
- const leads=[...smartButtons,...head.map(x=>k=>btn(x,'',k))];
+ // Answer comes before a draft that can't go yet (needs_first)
+ const leads=head.map(x=>k=>btn(x,'',k));leads[ask&&outOf(s).needs_first?'push':'unshift'](...smartButtons);
  // a primary leads over a plain link (Open in Maps)
  const first=leads.findIndex(f=>/^<\w+[^>]* class="[^"]*\bprimary\b/.test(String(f(ID))));if(first>0)leads.unshift(...leads.splice(first,1));
  let others=rest;if(!leads.length){const plain=x=>!handing(x)&&x[0]!=='reject',i=[rest.findIndex(x=>plain(x)&&order.includes(x[0])),rest.findIndex(plain)].find(j=>j>=0)??-1;if(i>=0){leads.push(k=>btn(rest[i],'',k));others=rest.filter((_,j)=>j!==i)}}
@@ -513,10 +514,10 @@ const waitAhead=s=>s.early&&s.status==='accepted'&&(s.preparation_status||'queue
 const lapsed=s=>s.status==='completed'&&!!s.expired_at;
 const cardState=s=>lapsed(s)?'Not needed':toRead(s)?'To read':cleanupSettled(s)?'Prepared':s.preparation_status==='working'&&!closed(s)?'Working…':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):waitAhead(s)?'Not started yet':TODO.PREPARING.includes(s.status)&&s.preparation_status!=='handed'?'Preparing…':label(s.needs_owner?'pending':s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
- return s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open')?'':needsAsk(s)};
+ return s.status!=='prepared'||s.preparation_status==='blocked'||!outOf(s).needs_first&&smart.some(a=>a.kind!=='open')?'':needsAsk(s)};
 // A result that waits on what the owner says, not on a tap: a question, or any need with nothing on it that settles it
 // (needs_owner). Not a step they do themselves (owner_step: Mark done leads). Same rule as result_ask() in machine/cards.py.
-const needsAsk=s=>{const o=outOf(s),q=String(o.needs||'').trim();return o.state==='needs_you'&&(/\?$/.test(q)||s.needs_owner&&!o.owner_step&&!s.owner_step&&!withTeammate(s))?q:''};
+const needsAsk=s=>{const o=outOf(s),q=String(o.needs||'').trim();return o.state==='needs_you'&&(/\?$/.test(q)&&o.needs_first!==false||s.needs_owner&&!o.owner_step&&!s.owner_step&&!withTeammate(s))?q:''};
 // A draft's Send opens the preview first: the button says so.
 const sendLabel=a=>a.kind==='linear'?(a.label||LIN_LABEL[a.op]):a.kind==='calendar'?CAL_LABEL[a.op]:a.kind==='doc_write'?DOC_LABEL[a.op]:a.kind==='doc_reply'?'Review and post':[...PERSON_SENDS,'email_demo'].includes(a.kind)&&/^Send\b/.test(a.label||'')?reviewSend(a.label):a.label;
 // "Send reply" reads "Review and send reply": a known label whole, "to Sam" by its pattern, else the start translated
@@ -650,7 +651,7 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
  // With a teammate (and nothing new to send them): their line says where it is, not an older "Needs you".
  if(withTeammate(s)||['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!redirect(s)&&['needs_you','your_step'].includes(o?.state))return '';
  // What the run left for the owner: amber only on a Needs you one (its chip says so); beside a ready draft, plain
- if(o?.state==='needs_you'&&!skillDecided(s))return line(cap(sentence(o.needs)),s.needs_owner?' outcome':'');
+ if(o?.state==='needs_you'&&!skillDecided(s))return line(/\?$/.test(o.needs)&&!needsAsk(s)?t(messageDrafts(s).length||copyLead(s,smart)?'The draft is ready. One question: {}':'The result is ready. One question: {}',o.needs):cap(sentence(o.needs)),s.needs_owner?' outcome':'');
  // Waiting on a step still open elsewhere (a review, a merge, their reply): an open to-do, never "Looks done"
  if(o?.state==='waiting')return line(t('Waiting on: {}',sentence(o.waiting_on||'')),' outcome');
  // For you's header says it once (sectionNote)

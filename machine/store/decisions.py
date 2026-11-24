@@ -28,6 +28,7 @@ from machine.cards import (
     looks_done,
     LOOKS_DONE_SQL,
     looks_done_at,
+    needs_first,
     outcome_state,
     result_ask,
     snooze_time,
@@ -495,7 +496,7 @@ def waiting_questions(db, row):
         return [q['question'] for q in blocker_questions(view['preparation_questions'])]
     if row['status'] != 'prepared' or view.get('preparation_status') == 'blocked':
         return []
-    if any(a.get('kind') != 'open' for a in next_actions.visible_actions(row['next_action'])):
+    if any(a.get('kind') != 'open' for a in next_actions.visible_actions(row['next_action'])) and not needs_first(row):
         return []
     asked = result_ask({**dict(row), **view}, db)
     return [asked] if asked else []
@@ -1467,6 +1468,10 @@ class DecisionsStore:
                 current=revised
             stamp=now()
             db.execute('UPDATE suggestions SET next_action=? WHERE id=?',(encoded(current),suggestion_id))
+            if agent_job is None and needs_first(row):  # they filled in what was missing themselves: it can go now
+                outcome=json.loads(row['outcome'])
+                del outcome['needs_first']
+                db.execute('UPDATE suggestions SET outcome=? WHERE id=?',(encoded(outcome),suggestion_id))
             if agent_job is not None:
                 db.execute('UPDATE agent_jobs SET draft_revision=? WHERE id=? AND turns=?', (revised['revision'], agent_job['id'], agent_job['turns']))
             draft_saved(db,suggestion_id,revised,stamp)

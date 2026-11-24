@@ -30,6 +30,8 @@ When such a skill's steps stop working on three to-dos in a row, your Machine tu
 - Connected calendars count when it looks for a time: it reads your meetings for those days before it offers times.
 - In a to-do's chat, a draft is never sent in the same message that wrote it.
 - Until you approve, the to-do waits under **For you** as **Prepared**, and the list says once that nothing goes out until you approve it. **Prepared** means a draft or result is ready to approve. When the work ends without one because it needs you (a decision, a missing fact, a sign-in or a choice), the to-do says **Needs you** instead, with a line saying what it needs. So does one where it only answered or explained ("Answered. Nothing done yet."), with **Do it** first. The same goes for its notification and the morning digest. It says a draft went out only once it did.
+- A draft that can't be used yet, like a proposal without its price, says **Needs you** too: the question is its line and **Answer** leads. The draft stays on it, with its **Send** under **⋯** or **Copy draft** above the buttons. Put in what is missing yourself and it is **Prepared** again.
+- A draft that can go as it is stays **Prepared**. If one point could still be better, its line says so: "The draft is ready. One question: …".
 - A long draft shows its first 3 lines. **Show more**, or a tap on the text, opens the rest; **Review and send** always shows all of it.
 
 It can send an email, a Slack direct message, or a WhatsApp, Telegram, LinkedIn or X message, depending on the source. Each connection's article says what it can send.
@@ -44,7 +46,7 @@ It can send an email, a Slack direct message, or a WhatsApp, Telegram, LinkedIn 
 ## When it can't
 
 - "This can’t be sent from here." means you copy the draft with **Copy draft** and send it yourself.
-- **Needs you** with nothing on it to send, open or read leads with **Answer**: say what it needs and it carries on. A step only you can do yourself, like a payment in your bank, leads with **Mark done**.
+- **Needs you** with nothing on it that can go, open or be read yet leads with **Answer**: say what it needs and it carries on. A step only you can do yourself, like a payment in your bank, leads with **Mark done**.
 - **Needs your help** means it has a question: **Answer** it. **Stuck** means it stopped without one; the to-do says why.
 - Asked more than one thing? Each question has its own choices or a short field, sometimes filled in with last time's answer. **Answer** sends them all together.
 - Someone asked you for information or files? It drafts the answer with what it found and asks you only for the rest.

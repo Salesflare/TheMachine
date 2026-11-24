@@ -324,7 +324,10 @@ class CardActionsApp:
             # Every result says plainly whether the job is finished.
             needs=' '.join(str(args.get('needs') or '').split())
             if args.get('outcome')=='done':outcome={'state':'done'}
-            elif args.get('outcome')=='needs_you' and 3<=len(needs)<=200:outcome={'state':'needs_you','needs':needs,**({'owner_step':True} if args.get('owner_step') is True else {})}
+            elif args.get('outcome')=='needs_you' and 3<=len(needs)<=200:
+                outcome={'state':'needs_you','needs':needs,**({'owner_step':True} if args.get('owner_step') is True else {})}
+                # Whether what it made can be used before they answer (machine/cards.py needs_first)
+                if isinstance(args.get('needs_first'),bool) and not outcome.get('owner_step'):outcome['needs_first']=args['needs_first']
             elif args.get('outcome')=='already_done' and args.get('follow_up')=='stop':
                 # The Machine never ends follow-ups on its own judgment: the draft comes with its advice, the owner decides
                 raise ValueError("follow_up:'stop' never goes without a draft: write the follow-up anyway, with follow_up:'stop' and "
@@ -351,7 +354,7 @@ class CardActionsApp:
             elif args.get('outcome')=='snoozed':
                 # The owner wants this card itself back later: the card's own snooze, not a separate reminder.
                 outcome={'state':'snoozed','until':asked_snooze_time(args.get('snooze_until'))}
-            else:raise ValueError("Say whether the job is finished: outcome:'done' (the task itself is complete; nothing left for the owner but to check it), outcome:'answered' (you only answered a question, explained or planned; the task itself is still to do), outcome:'already_done' (it turned out to be done already or no longer needed, nothing left for anyone), outcome:'waiting' with waiting_on (a step still open on someone else's side), outcome:'your_step' with step:<submit, pay, book, sign, confirm, order or apply> (all ready, the owner makes that final click), or outcome:'needs_you' with needs:<what they have to do, e.g. approve the send, sign in, pick an option> (owner_step:true when nothing they tell you settles it, only doing it themselves)")
+            else:raise ValueError("Say whether the job is finished: outcome:'done' (the task itself is complete; nothing left for the owner but to check it), outcome:'answered' (you only answered a question, explained or planned; the task itself is still to do), outcome:'already_done' (it turned out to be done already or no longer needed, nothing left for anyone), outcome:'waiting' with waiting_on (a step still open on someone else's side), outcome:'your_step' with step:<submit, pay, book, sign, confirm, order or apply> (all ready, the owner makes that final click), or outcome:'needs_you' with needs:<what they have to do, e.g. approve the send, sign in, pick an option> (owner_step:true when nothing they tell you settles it, only doing it themselves; needs_first:true only when something is missing from what you made, so it can't be used until they answer, never for their OK to send, check or sign; false when it can go as it is)")
         if outcome and not args.get('finish_state'):
             why=hand_back.lost(unsaved,args.get('job_id'),outcome['state'],[a['kind'] for a in next_actions.actions(action)],next_actions.WAITING_KINDS)
             if why:raise ValueError(why)
