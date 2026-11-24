@@ -1,0 +1,15 @@
+{
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Salesflare",
+    "copyright": "AGPL-3.0-only",
+    "shortDescription": "The Machine on your desktop",
+    "createUpdaterArtifacts": false,
+    "windows": {
+      "signCommand": { "cmd": "powershell", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "windows/sign.ps1", "%1"] },
+      "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true },
+      "nsis": { "installMode": "currentUser", "installerHooks": "windows/hooks.nsh" }
+    }
+  }
+}

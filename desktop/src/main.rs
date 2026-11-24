@@ -28,6 +28,8 @@ mod settings;
 mod signin;
 mod snip;
 mod speak;
+mod touched;
+mod updates;
 mod webapp;
 mod why;
 mod windows;
@@ -607,6 +609,8 @@ struct BubbleState {
     tail: f64,
     below: bool,
     hour12: bool,
+    /// Nobody touched the mouse or the keys since it showed: it stays.
+    waits: bool,
 }
 
 #[tauri::command]
@@ -614,7 +618,7 @@ fn bubble_state(app: AppHandle) -> BubbleState {
     let (tail, below) = windows::bubble_tail(&app);
     let shared = app.state::<Shared>();
     let hour12 = shared.waiting.lock().unwrap().hour12;
-    BubbleState { say: speak::now(&shared), tail, below, hour12 }
+    BubbleState { say: speak::now(&shared), tail, below, hour12, waits: !speak::touched(&shared) }
 }
 
 #[tauri::command]
@@ -976,6 +980,7 @@ fn tray(app: &AppHandle) -> tauri::Result<()> {
     app.manage(TrayItems {
         hide,
         dashboard,
+        settings,
         #[cfg(windows)]
         menu,
     });
@@ -987,6 +992,7 @@ fn tray(app: &AppHandle) -> tauri::Result<()> {
 struct TrayItems {
     hide: tauri::menu::MenuItem<tauri::Wry>,
     dashboard: tauri::menu::MenuItem<tauri::Wry>,
+    settings: tauri::menu::MenuItem<tauri::Wry>,
     #[cfg(windows)]
     menu: tauri::menu::Menu<tauri::Wry>,
 }
@@ -997,6 +1003,7 @@ fn follow_tray(app: &AppHandle) {
     if let (Some(items), Some(icon), Some(image)) = (app.try_state::<TrayItems>(), app.tray_by_id("tray"), app.default_window_icon()) {
         let shared = app.state::<Shared>();
         let _ = items.hide.set_text(if shared.hidden.load(Ordering::Relaxed) { "Show robot" } else { "Hide" });
+        let _ = items.settings.set_text(if updates::ready().is_some() { "Update ready…" } else { "Settings…" });
         let _ = items.dashboard.set_enabled(shared.machine().is_some());
         let robot = !shared.saved.lock().unwrap().no_robot;
         #[cfg(target_os = "macos")]
@@ -1024,6 +1031,14 @@ fn dotted(image: &tauri::image::Image<'_>) -> tauri::image::Image<'static> {
         }
     }
     tauri::image::Image::new_owned(px, w, h)
+}
+
+fn context() -> tauri::Context {
+    #[allow(unused_mut)]
+    let mut made = tauri::generate_context!();
+    #[cfg(feature = "sandbox")] // a stand-in's updates come over http
+    made.config_mut().plugins.0.insert("updater".into(), serde_json::json!({"pubkey": "", "dangerousInsecureTransportProtocol": true}));
+    made
 }
 
 /// A sandbox build's pages, for smoke/: a page's label on the first line, what to ask it after. WebKit has nothing like this
@@ -1132,7 +1147,7 @@ fn main() {
             robot_state, robot_grab, robot_drag, robot_drop, robot_click, robot_menu, robot_take, robot_list, robot_given, box_given, box_state, box_look, box_fit, box_draft, box_close,
             connect, sign_in, add_todo, add_file, remove_file, take_screenshot, todo_quick, todo_decide, todo_undo, ask, open_dashboard, menu_item,
             card_open, card_place, card_close, set_speaks, bubble_state, bubble_fit, bubble_hold, bubble_open, bubble_join, bubble_done,
-            robot_notify, app_state, app_retry, settings::settings_state, settings::settings_set, settings::settings_fit
+            robot_notify, app_state, app_retry, settings::settings_state, settings::settings_set, settings::settings_fit, updates::update_apply
         ])
         .on_window_event(|window, event| {
             let app = window.app_handle();
@@ -1226,6 +1241,8 @@ fn main() {
             }
             #[cfg(all(feature = "sandbox", not(windows)))]
             debug(app.handle());
+            #[cfg(any(windows, target_os = "macos"))]
+            app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
             hangs::watch(app.handle());
             #[cfg(target_os = "macos")]
             {
@@ -1247,9 +1264,10 @@ fn main() {
             let here = app.handle().clone();
             std::thread::spawn(move || here.state::<Shared>().snip.store(snip::there(), Ordering::Relaxed));
             front::watch(app.handle());
+            updates::watch(app.handle());
             Ok(())
         })
-        .build(tauri::generate_context!())
+        .build(context())
         .expect("The Machine could not start")
         .run(|app, event| {
             #[cfg(target_os = "macos")]

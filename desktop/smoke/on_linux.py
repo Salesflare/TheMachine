@@ -59,6 +59,10 @@ def pointer():
     return [int(v.split(':')[1]) for v in x('getmouselocation').split()[:2]]
 
 
+def move(at_x, at_y):
+    x('mousemove', at_x, at_y)
+
+
 def click(at_x, at_y):
     x('mousemove', at_x - 3, at_y, 'mousemove', at_x, at_y)
     time.sleep(0.15)
@@ -166,6 +170,9 @@ class App:
 
     def box(self):
         return self.sized(350, 999)
+
+    def bubble(self):
+        return self.sized(270, 333)
 
     def card(self):
         return self.sized(333, 350)
@@ -283,6 +290,12 @@ def back_to_it(app):
     app.again()
     need(until(ours, 10), f'in front: {in_front()}')
     time.sleep(1)
+
+
+def fill_screen(on):
+    """The other program."""
+    x('windowstate', '--add' if on else '--remove', 'FULLSCREEN', x('search', '--onlyvisible', '--name', '^other$').split()[0])
+    time.sleep(0.5)
 
 
 def no_browser():

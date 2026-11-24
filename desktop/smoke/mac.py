@@ -1053,6 +1053,13 @@ def away():
     move(60, 500)
 
 
+def goes(seconds=20):
+    """Once somebody is there."""
+    move(60, 500)
+    move(62, 502)
+    need(until(lambda: not app.bubble(), seconds, 0.05), 'it goes')
+
+
 @step('it speaks up')
 def _():
     machine.todos = list(TODOS)
@@ -1063,9 +1070,12 @@ def _():
     png('it-speaks-up')
     need(in_front() == was, 'the keys stay where they were: ' + in_front())
     need(says('#title', 'bubble') == TODOS[1][1], says('#panel', 'bubble'))
-    need(until(lambda: not app.bubble(), 20, 0.05), 'it goes')
+    time.sleep(18)
+    need(app.bubble(), 'it stays: nobody touched the mouse or the keys')
+    came = time.time()
+    goes()
     stayed = time.time() - came
-    need(10 < stayed < 16, f'after about 12 s: {stayed:.1f}')
+    need(10 < stayed < 16, f'about 12 s after that: {stayed:.1f}')
     comes('aa03')
     b = app.bubble()
     move((b.left + b.right) // 2 - 5, (b.top + b.bottom) // 2)
@@ -1085,7 +1095,7 @@ def _():
     need(until(lambda: any(x[0] == 'aa04' for x in machine.todos)), 'it is back')
     need(in_front() == was, in_front())
     away()
-    need(until(lambda: not app.bubble(), 15), 'it goes')
+    goes(15)
     return f'{stayed:.1f} s'
 
 
@@ -1103,7 +1113,7 @@ def _():
         need(until(lambda: says('#title', 'bubble') in [f'{name} in {m} min' for m in (8, 9, 10)]), says('#panel', 'bubble'))
         need(said() == ['Open brief', *(['Join'] if line == 'Call' else [])], str(said()))
         png(f'a-meeting-{line.split()[0].lower()}')
-        need(until(lambda: not app.bubble(), 20), 'it goes')
+        goes()
     machine.meeting = None
 
 

@@ -215,10 +215,15 @@ def _():
     return told
 
 
-@step('it slept')
-def _():
+def slept(settled):
+    tag = '' if settled else '-at-start'
     start(machine.at + '/', window=False)
     need(until(app.robot, 20), 'the robot')
+    if settled:
+        need(until(app.answers, 20), 'its page')
+        clicked()
+        time.sleep(3)
+    png('before-it-slept' + tag)
     os.kill(app.pid, signal.SIGSTOP)
     time.sleep(20)
     os.kill(app.pid, signal.SIGCONT)
@@ -226,16 +231,37 @@ def _():
     since = time.time()
     while True:  # what it stands in for, the processes of a Mac that wakes, come back one by one
         need(until(app.answers, 20), 'its page answers')
-        png('slept')
+        png('slept' + tag)
         try:
             told = clicked()
             break
         except AssertionError:
-            png('slept-no-answer')
+            png('slept-no-answer' + tag)
+            print('not drawn:', drawn(), app.robot(), flush=True)
             if time.time() - since > 20:
+                page('robot', 'setTimeout(() => location.reload(), 10) && 1')
+                time.sleep(6)
+                png('slept-loaded-again' + tag)
+                print('loaded again:', drawn(), flush=True)
                 raise
     need(not log(), log())
     return f'{told}, {time.time() - since:.0f} s after it'
+
+
+def drawn():
+    page('robot', 'window.drew = 0; requestAnimationFrame(() => { window.drew = 1 }); 1')
+    time.sleep(1)
+    return page('robot', '[document.visibilityState, window.drew, innerWidth, innerHeight]')
+
+
+@step('it slept')
+def _():
+    return slept(True)
+
+
+@step('it slept as it started')
+def _():
+    return slept(False)
 
 
 @step('the page of the robot is stuck')

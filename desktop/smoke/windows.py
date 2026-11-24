@@ -1141,6 +1141,12 @@ def away():
     click(work_area().left + 60, work_area().top + 400)
 
 
+def goes(seconds=20):
+    """Once somebody is there."""
+    user.mouse_event(1, 1, 1, 0, 0)
+    need(until(lambda: not app.bubble(), seconds, 0.05), 'it goes')
+
+
 def said():
     return page(BUBBLE, '[...document.querySelectorAll("#buttons button")].filter(b => b.getClientRects().length).map(b => b.innerText)')
 
@@ -1158,9 +1164,12 @@ def _():
     need(said() == ['See draft', 'Snooze', 'Mark done'], str(said()))  # never Send
     (_, b), (_, r), area = app.bubble(), app.robot(), work_area()
     need(area.left <= b.left and b.right <= area.right + 20 and area.top <= b.top and b.bottom <= r.top + 20, f'above the robot, on the screen: {b.left} {b.top} {b.right} {b.bottom}')
-    need(until(lambda: not app.bubble(), 20, 0.05), 'it goes')
+    time.sleep(18)
+    need(app.bubble(), 'it stays: nobody touched the mouse or the keys')
+    came = time.time()
+    goes()
     stayed = time.time() - came
-    need(10.5 < stayed < 15, f'after about 12 s: {stayed:.1f}')
+    need(10.5 < stayed < 15, f'about 12 s after that: {stayed:.1f}')
     need(len(saved()['desk']) == 32 and machine.desks[-1][0] == saved()['desk'], str(machine.desks[-1]))
     return f'{took:.0f} s after the Machine had it, for {stayed:.1f} s'
 
@@ -1197,7 +1206,7 @@ def _():
     press(app, '#said .link', BUBBLE)
     need(until(lambda: any(x[0] == 'aa04' for x in machine.todos)), 'it is back')
     away()
-    need(until(lambda: not app.bubble(), 15), 'it goes')
+    goes(15)
     return told
 
 
@@ -1256,7 +1265,7 @@ def _():
         need(until(lambda: says('#title', BUBBLE) in [f'{name} in {m} min' for m in (9, 10)]), says('#panel', BUBBLE))
         need(said() == ['Open brief', *(['Join'] if line == 'Call' else [])], str(said()))
         png(f'a-meeting-{line.split()[0].lower()}')
-        need(until(lambda: not app.bubble(), 20), 'it goes')
+        goes()
     look()
     time.sleep(3)
     need(not app.bubble(), 'once each')
@@ -1305,7 +1314,7 @@ def _():
     need(machine.notices and not app.bubble(), 'no answer: not taken')
     machine.odd = None
     need(until(app.bubble, 45, 0.05), 'asked again, and said')
-    need(until(lambda: not app.bubble(), 20), 'it goes')
+    goes()
     app.again('--toggle')
     need(until(app.box), 'the box opens')
     n = len(machine.named)
@@ -1340,13 +1349,37 @@ def _():
     need('may not speak: locked, presented, mirrored or idle' in reasons(), 'it says why')
 
 
+@step('a bubble makes way for a presentation, and waits behind a lock')
+def _():
+    STATE.write_text('5')
+    speaks(True)
+    comes('aa03')
+    STATE.write_text('4')
+    need(until(lambda: not app.bubble(), 8), 'it makes way')
+    need('a bubble went: something is full screen or presented' in reasons(), 'and says why')
+    STATE.write_text('5')
+    speaks(True)
+    comes('aa03')
+    STATE.write_text('1')
+    time.sleep(2.5)
+    for _ in range(3):  # the one who unlocks it hasn't seen it
+        user.mouse_event(1, 1, 1, 0, 0)
+        time.sleep(1)
+    time.sleep(14)
+    need(app.bubble(), 'it is there')
+    STATE.write_text('5')
+    time.sleep(16)
+    need(app.bubble(), 'and still is when it is unlocked')
+    goes()
+
+
 @step('Do Not Disturb, by choice')
 def _():
     need(saved().get('speak', 'always') == 'always', 'Always, to start with')
     STATE.write_text('5 1')
     comes('aa03')
     away()
-    need(until(lambda: not app.bubble(), 20), 'it goes')
+    goes()
     speak_up('calm')
     quiet()
     STATE.write_text('5 0')
@@ -1375,7 +1408,7 @@ def _():
         comes('aa02')
         png('always-in-do-not-disturb')
         away()
-        need(until(lambda: not app.bubble(), 20), 'it goes')
+        goes()
         windows_says('off')
     plain = windows_says()
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, path) as key:
@@ -1387,7 +1420,7 @@ def _():
         need(off == plain, f'the same: {told}')
         comes('aa02')
         away()
-        need(until(lambda: not app.bubble(), 20), 'it goes')
+        goes()
     finally:
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, path) as key:
             winreg.SetValueEx(key, 'ToastEnabled', 0, winreg.REG_DWORD, 1)

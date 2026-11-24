@@ -12,7 +12,7 @@ from ctypes import wintypes as w
 
 import windows_tools
 from windows_tools import (  # noqa: F401 (window.py's)
-    ENTER, ESCAPE, ID, MAIL, PORT, SM, SOURCE, browsers_closed, click, drag, finish, fresh, in_front, key, need, out, png, resolution, sandbox, saved, step, title,
+    ENTER, ESCAPE, ID, MAIL, PORT, SM, SOURCE, browsers_closed, click, drag, finish, fresh, in_front, key, move, need, out, png, resolution, sandbox, saved, step, title,
     to_front, tray, until, user, work_area, write,
 )
 

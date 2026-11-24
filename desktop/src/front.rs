@@ -37,6 +37,12 @@ pub fn full() -> bool {
     system::full()
 }
 
+/// Hyprland's lock, which the sign-in manager may know nothing of.
+#[cfg(target_os = "linux")]
+pub fn locked() -> bool {
+    system::locked()
+}
+
 /// What the app's own window says of itself, also where the system tells nothing of others.
 static OWN: std::sync::Mutex<Option<Sender<()>>> = std::sync::Mutex::new(None);
 
@@ -240,6 +246,10 @@ mod system {
         hyprland::full().unwrap_or_else(|| X11.load(std::sync::atomic::Ordering::Relaxed) && read_full().unwrap_or(false))
     }
 
+    pub fn locked() -> bool {
+        hyprland::locked()
+    }
+
     fn read_full() -> Option<bool> {
         let (x, screen) = x11rb::connect(None).ok()?;
         let first = |window: Window, name: &str, kind: AtomEnum, most: u32| -> Option<Vec<u32>> {
@@ -288,11 +298,14 @@ mod system {
             locked: bool,
         }
 
-        /// The window in front is full screen (2 and up; 1 is only maximized), or the screen is locked. None: not Hyprland.
+        /// The window in front is full screen (2 and up; 1 is only maximized). None: not Hyprland.
         pub fn full() -> Option<bool> {
             connect(".socket.sock")?;
-            let window = ask::<Window>("j/activewindow").is_some_and(|w| w.fullscreen == true || w.fullscreen.as_i64().is_some_and(|f| f >= 2));
-            Some(window || ask::<Locked>("j/locked").is_some_and(|l| l.locked))
+            Some(ask::<Window>("j/activewindow").is_some_and(|w| w.fullscreen == true || w.fullscreen.as_i64().is_some_and(|f| f >= 2)))
+        }
+
+        pub fn locked() -> bool {
+            ask::<Locked>("j/locked").is_some_and(|l| l.locked)
         }
 
         pub fn listen(to: Sender<()>) -> bool {

@@ -32,8 +32,13 @@ gtk = "0.18"
 soup = { package = "soup3", version = "0.5" } # as webkit2gtk's
 gtk-layer-shell = { version = "0.8", features = ["v0_6"] }
 webkit2gtk = { version = "2.0", features = ["v2_40"] } # as Tauri's
-x11rb = "0.13"
+wayland-client = "0.31"
+wayland-protocols = { version = "0.32", features = ["client", "staging"] }
+x11rb = { version = "0.13", features = ["screensaver"] }
 zbus = "5"
+
+[target.'cfg(any(windows, target_os = "macos"))'.dependencies]
+tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "zip"] }
 
 [target.'cfg(windows)'.dependencies]
 tauri = { version = "2.12", features = ["tray-icon"] }

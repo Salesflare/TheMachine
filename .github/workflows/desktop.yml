@@ -21,9 +21,11 @@ concurrency:
 
 jobs:
   windows:
-    if: github.event_name != 'push' # the pull request has it
+    if: github.head_ref != 'desktop-bubble' # its push has it
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 80
+    outputs:
+      sha: ${{ steps.build.outputs.sha }}
     defaults:
       run:
         working-directory: desktop
@@ -33,15 +35,27 @@ jobs:
         with:
           persist-credentials: false
       - name: Test and build
-        run: |
+        id: build
+        run: | # the sandbox's installers: this one and a newer, with a key made here
           rustup toolchain install stable --profile minimal --no-self-update
+          (cd tools && npm ci --ignore-scripts --no-audit --no-fund)
+          tauri=tools/node_modules/.bin/tauri setup=target/release/bundle/nsis
           cargo +stable test --release --locked
           cargo +stable build --release --locked --features sandbox
           mkdir out sandbox-build
           cp target/release/the-machine-desktop.exe sandbox-build/
+          "$tauri" signer generate --ci -w "$RUNNER_TEMP/made-up.key" > /dev/null
+          for version in 0.0.1 9.9.9; do
+            "$tauri" bundle --ci --bundles nsis --config windows/installer.json --config "{\"version\": \"$version\"}"
+            mv "$setup"/*-setup.exe "sandbox-build/setup-$version.exe"
+          done
+          "$tauri" signer sign -f "$RUNNER_TEMP/made-up.key" -p '' sandbox-build/setup-9.9.9.exe > /dev/null
           cargo +stable build --release --locked
           cp target/release/the-machine-desktop.exe out/
+          "$tauri" bundle --ci --bundles nsis --config windows/installer.json
+          mv "$setup"/*-setup.exe out/the-machine-desktop-setup.exe
           cp README.md ../LICENSE out/
+          echo "sha=$(sha256sum out/the-machine-desktop.exe | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: the-machine-desktop-windows-unsigned
@@ -60,6 +74,7 @@ jobs:
           failed=0
           python smoke/windows.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots "$RUNNER_TEMP/certificate" || failed=1
           python smoke/window.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/window || failed=1
+          MACHINE_SANDBOX_UPDATES_KEY="$(cat "$RUNNER_TEMP/made-up.key.pub")" python smoke/updates.py sandbox-build/setup-0.0.1.exe sandbox-build/setup-9.9.9.exe shots/updates || failed=1
           exit $failed
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
@@ -91,6 +106,15 @@ jobs:
           cargo +stable test --release --locked
           cargo +stable build --release --locked --features sandbox
           mac/bundle.sh sandbox-build target/release/the-machine-desktop
+          # A newer one, with a key made here
+          (cd tools && npm ci --ignore-scripts --no-audit --no-fund)
+          tools/node_modules/.bin/tauri signer generate --ci -w "$RUNNER_TEMP/made-up.key" > /dev/null
+          mkdir newer
+          ditto "sandbox-build/The Machine.app" "newer/The Machine.app"
+          plutil -replace CFBundleShortVersionString -string 9.9.9 "newer/The Machine.app/Contents/Info.plist"
+          codesign --force --sign - --options runtime --entitlements mac/entitlements.plist "newer/The Machine.app"
+          COPYFILE_DISABLE=1 tar -czf newer/newer.app.tar.gz -C newer "The Machine.app"
+          tools/node_modules/.bin/tauri signer sign -f "$RUNNER_TEMP/made-up.key" -p '' newer/newer.app.tar.gz > /dev/null
           for chip in aarch64 x86_64; do cargo +stable build --release --locked --target $chip-apple-darwin; done
           mac/bundle.sh out target/{aarch64,x86_64}-apple-darwin/release/the-machine-desktop
           cp README.md ../LICENSE out/
@@ -119,6 +143,7 @@ jobs:
           python3 smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots "$certificate" || failed=1
           python3 smoke/window.py "sandbox-build/The Machine.app" "out/The Machine.app" shots/window "$certificate" || failed=1
           python3 smoke/hangs.py "sandbox-build/The Machine.app" - shots/hangs || failed=1
+          MACHINE_SANDBOX_UPDATES_KEY="$(cat "$RUNNER_TEMP/made-up.key.pub")" python3 smoke/updates.py "sandbox-build/The Machine.app" newer/newer.app.tar.gz shots/updates || failed=1
           exit $failed
       - name: Its certificate is trusted no more
         if: always() && steps.use.outcome != 'skipped'
@@ -173,6 +198,7 @@ jobs:
     environment: mac-signing
     outputs:
       sha: ${{ steps.pack.outputs.sha }}
+      update: ${{ steps.pack.outputs.update }}
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -235,8 +261,16 @@ jobs:
           set -euo pipefail
           mkdir out
           ditto -c -k --keepParent "app/The Machine.app" out/the-machine-desktop-mac.zip
+          COPYFILE_DISABLE=1 tar -czf out/the-machine-desktop-mac.app.tar.gz -C app "The Machine.app"
           echo "sha=$(shasum -a 256 out/the-machine-desktop-mac.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-          shasum -a 256 out/the-machine-desktop-mac.zip
+          echo "update=$(shasum -a 256 out/the-machine-desktop-mac.app.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          shasum -a 256 out/*
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-mac-update
+          path: out/the-machine-desktop-mac.app.tar.gz
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: the-machine-desktop-mac
@@ -271,4 +305,115 @@ jobs:
         with:
           name: the-machine-desktop-mac-opened
           path: shots/
+          retention-days: 14
+
+  # The installer for people, signed by Azure Artifact Signing with what GitHub says this job is: no key or password is kept.
+  # Off until the environment has the variable ARTIFACT_SIGNING_PROFILE: till then it isn't signed, so for nobody yet
+  windows-sign:
+    needs: windows
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: windows-latest
+    timeout-minutes: 20
+    environment: mac-signing
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      sha: ${{ steps.pack.outputs.sha }}
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-windows-unsigned
+          path: desktop/unsigned
+      - run: cd tools && npm ci --ignore-scripts --no-audit --no-fund
+      - name: The signer
+        if: vars.ARTIFACT_SIGNING_PROFILE != ''
+        env:
+          PROFILE: ${{ vars.ARTIFACT_SIGNING_PROFILE }}
+          PACKAGE: 35375a4bc4e1102da729fc3d8d9925f774c3baae6b8b7ff6398d948ca9ab0d8a
+        run: |
+          set -euo pipefail
+          at="$RUNNER_TEMP/signer"
+          mkdir "$at"
+          curl -sSfL -o "$at/client.zip" https://api.nuget.org/v3-flatcontainer/microsoft.artifactsigning.client/1.0.151/microsoft.artifactsigning.client.1.0.151.nupkg
+          echo "$PACKAGE *$at/client.zip" | sha256sum -c -
+          unzip -q "$at/client.zip" -d "$at/client"
+          jq -n --arg profile "$PROFILE" '{Endpoint: "https://weu.codesigning.azure.net/", CodeSigningAccountName: "themachine-signing", CertificateProfileName: $profile}' > "$at/metadata.json"
+          echo "SIGN_DLIB=$(cygpath -w "$at/client/bin/x64/Azure.CodeSigning.Dlib.dll")" >> "$GITHUB_ENV"
+          echo "SIGN_METADATA=$(cygpath -w "$at/metadata.json")" >> "$GITHUB_ENV"
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        if: vars.ARTIFACT_SIGNING_PROFILE != ''
+        with:
+          client-id: ${{ vars.ARTIFACT_SIGNING_CLIENT_ID }}
+          tenant-id: ${{ vars.ARTIFACT_SIGNING_TENANT_ID }}
+          subscription-id: ${{ vars.ARTIFACT_SIGNING_SUBSCRIPTION_ID }}
+      - name: Pack
+        id: pack
+        env:
+          SHA: ${{ needs.windows.outputs.sha }}
+        run: |
+          set -euo pipefail
+          echo "$SHA *unsigned/the-machine-desktop.exe" | sha256sum -c -
+          mkdir -p target/release out
+          cp unsigned/the-machine-desktop.exe target/release/
+          tools/node_modules/.bin/tauri bundle --ci --bundles nsis --config windows/installer.json
+          mv target/release/bundle/nsis/*-setup.exe out/the-machine-desktop-setup.exe
+          echo "sha=$(sha256sum out/the-machine-desktop-setup.exe | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          sha256sum out/*
+          if [ -n "${SIGN_DLIB:-}" ]; then powershell -NoProfile -Command "if ((Get-AuthenticodeSignature out/the-machine-desktop-setup.exe).Status -ne 'Valid') { exit 1 }"; fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-windows
+          path: desktop/out/the-machine-desktop-setup.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  # What the app itself fetches when there is a newer one, with the key it trusts (README, Updates)
+  updates-sign:
+    needs: [mac-sign, mac-open, windows-sign]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: mac-signing
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-mac-update
+          path: out
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-windows
+          path: out
+      - run: cd desktop/tools && npm ci --ignore-scripts --no-audit --no-fund
+      - name: Sign
+        env:
+          MAC: ${{ needs.mac-sign.outputs.update }}
+          WINDOWS: ${{ needs.windows-sign.outputs.sha }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.DESKTOP_UPDATER_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        run: |
+          set -euo pipefail
+          echo "$MAC  out/the-machine-desktop-mac.app.tar.gz" | sha256sum -c -
+          echo "$WINDOWS  out/the-machine-desktop-setup.exe" | sha256sum -c -
+          for file in out/the-machine-desktop-mac.app.tar.gz out/the-machine-desktop-setup.exe; do desktop/tools/node_modules/.bin/tauri signer sign "$file" > /dev/null; done
+      - name: By the key the app trusts
+        run: |
+          set -euo pipefail
+          node desktop/tools/verify.mjs out/the-machine-desktop-mac.app.tar.gz out/the-machine-desktop-setup.exe
+          node desktop/tools/latest.mjs out > out/latest.json
+          cat out/latest.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-updates
+          path: out/
+          if-no-files-found: error
           retention-days: 14

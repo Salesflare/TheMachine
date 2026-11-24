@@ -13,6 +13,7 @@ on = importlib.import_module({'darwin': 'on_mac', 'win32': 'on_windows', 'linux'
 App, SYSTEM, PORT, MAIL, DOWNLOADS, ENTER, ESCAPE = on.App, on.SYSTEM, on.PORT, on.MAIL, on.DOWNLOADS, on.ENTER, on.ESCAPE
 clipboard, click, dark, drag, fresh, here, hit, key, need, no_browser = on.clipboard, on.click, on.dark, on.drag, on.fresh, on.here, on.hit, on.key, on.need, on.no_browser
 other, ours, out, page, png, press, sandbox, saved, says, step, until, write = on.other, on.ours, on.out, on.page, on.png, on.press, on.sandbox, on.saved, on.says, on.step, on.until, on.write
+SM_WIDE = on.SM(0) if SYSTEM == 'windows' else 0
 HERE = f'http://127.0.0.1:{PORT}'
 fresh()
 (out / 'note.txt').write_text('made up')
@@ -479,7 +480,7 @@ def _():
         on.center()
         at = until(lambda: on.on_screen('Send Ravi the floor plan'), 8)
         png('notification-center')
-        at or key(ESCAPE)
+        at = at or (SM_WIDE - 250, 148)  # the newest one's title: what is in there may not say where it is
     need(at, f'on the screen; {on.kept()}')
     click(*at)
     need(until(ours, 8), f'it comes to the front: {on.in_front()}')
@@ -554,6 +555,33 @@ def _():
     other()
     need(until(app.robot, 8), 'the robot is there')
     need(SYSTEM == 'linux' or on.icon_there(), 'and its icon')
+
+
+@step('it speaks with the window open behind another program, until someone is there')
+def _():
+    back_to_it()
+    need(until(app.window, 8), 'the window is open')
+    other()
+    need(until(app.robot, 8), 'the robot is there')
+    need(page('app', 'document.hasFocus()') is False, 'its dashboard is not in use')
+    said = lambda: (on.move(60, 500), setattr(machine, 'notices', [{'key': f'{time.time_ns():x}', 'id': 'aa02', 'kind': 'todo', 'snooze': []}]), until(app.bubble, 45, 0.05))[2]
+    need(said(), f'the bubble shows {machine.desks[-2:]}')
+    need(until(lambda: says('#title', 'bubble') == 'Send Ravi the floor plan'), says('#panel', 'bubble'))
+    time.sleep(1)
+    png('speaks-behind')
+    time.sleep(18)
+    need(app.bubble(), 'it stays: nobody touched the mouse or the keys')
+    since = time.time()
+    on.move(64, 504)
+    need(until(lambda: not app.bubble(), 20, 0.05), 'then it goes')
+    stayed = time.time() - since
+    need(10 < stayed < 16, f'after about 12 s: {stayed:.1f}')
+    if SYSTEM == 'linux':
+        need(said(), 'another')
+        on.fill_screen(True)
+        need(until(lambda: not app.bubble(), 8), 'it makes way for what is full screen')
+        on.fill_screen(False)
+    return f'{stayed:.1f} s'
 
 
 @step('closing quits, when the person wants that')
