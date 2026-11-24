@@ -55,6 +55,11 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 
 - Reviews and preparations send relevant private evidence to the configured model provider. Choose that provider and
   its data settings accordingly.
+- With `meeting_prep_signin_search` on (off by default) and no search provider set up, a first meeting's briefing searches
+  the web on the owner's own ChatGPT or Claude account (OpenAI or Anthropic, which may use their own search partners):
+  only the person's name, their organization's name and its website go out, never messages or email addresses. What
+  comes back is kept on the Machine, in the briefing and for reuse for 30 days. The search runs alone, with no other
+  tool; its results are untrusted text. On ChatGPT the linked addresses are those the answer names.
 - **Do it grants broad account and machine access for the accepted task.** The plugin's guards are not a sandbox.
   Source messages are untrusted and may contain prompt injection. Read the [README's security model](README.md#security-model)
   before turning on reviews or delivery. The attack set we test against, and its latest results, are in
