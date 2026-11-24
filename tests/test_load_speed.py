@@ -9,12 +9,14 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location('load_speed_assistant', ROOT / 'assistant.py')
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import load_speed  # noqa: E402
 from machine.app import settings_actions  # noqa: E402
+from pinned import pinned  # noqa: E402
 
 DAY = '2026-11-20'
 
@@ -81,10 +83,14 @@ class Dashboard(unittest.TestCase):
         self.assertEqual(a.App.ACTION_HANDLERS['load_speed'], 'load_speed_action')
         loads = {'loads': [load(900, 1300), load(1100, 1500, phone=False)]}
         self.assertEqual(self.app.load_speed_action('load_speed', loads), {'kept': 0})
-        with mock.patch.object(settings_actions, 'running_release', return_value='release-20261120-0900'):
+        # kept and reported by the owner's day: at 23:30 UTC it is already the next day in Brussels
+        with pinned('2026-11-20T23:30:00+00:00'), \
+                mock.patch.object(settings_actions, 'local_tz', return_value=ZoneInfo('Europe/Brussels')), \
+                mock.patch.object(settings_actions, 'running_release', return_value='release-20261120-0900'):
             self.assertEqual(self.app.load_speed_action('load_speed', loads, owner_dashboard=True), {'kept': 2})
-        with self.store.connect() as db:
-            report = settings_actions.activity_report(db, 'UTC')
+            with self.store.connect() as db:
+                report = settings_actions.activity_report(db, 'Europe/Brussels')
+        self.assertEqual({r['day'] for r in report['load']}, {'2026-11-21'})
         self.assertIsInstance(report['days'], list)
         self.assertEqual(sorted((r['device'], r['count'], r['version']) for r in report['load']),
                          [('desktop', 1, 'release-20261120-0900'), ('phone', 1, 'release-20261120-0900')])
