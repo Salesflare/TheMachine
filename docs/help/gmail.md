@@ -21,7 +21,7 @@ An email from a to-do, and only after you approve it. **Do it** prepares a draft
 
 A reply goes into the thread of the email it answers. When it goes from another of your mailboxes than the one that email came in on, the to-do says so before you send. It still lands in their thread.
 
-After a reply goes out, its thread leaves your inbox under a Snoozed label for a few days (3 unless the to-do says otherwise) and comes back then, or sooner when someone answers. The review says so before you send. That is your mailbox: a reply that only promises the work keeps its to-do open.
+After a reply goes out, its thread leaves your inbox under a Snoozed label for a few days (3 unless the to-do says otherwise) and comes back then, or sooner when someone answers. It never stays away past the to-do's deadline: it is back the work day before, and due today it stays in your inbox. The review says so before you send. That is your mailbox: a reply that only promises the work keeps its to-do open.
 
 ## Connect it
 

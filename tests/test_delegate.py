@@ -139,6 +139,16 @@ class Delegate(unittest.TestCase):
         self.assertEqual(self.suggestion()['status'], 'prepared')
         self.assertIn('No reply from Sam yet.', machine_cards.card(self.row()))
 
+    def test_a_deadline_brings_the_card_back_sooner(self):
+        self.ready(self.slack_action(wait_days=5))
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET due='2026-10-16'")
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-14T09:00:00+00:00'):  # Wednesday, due Friday
+            self.assertEqual(self.row()['next_actions'][0]['wait_days'], 1)  # what the review says
+            self.confirm()
+            self.app().action_step(self.transport(lambda *_: {'message_id': 'slack:D0SAM1:1.2', 'channel_id': 'D0SAM1', 'user_id': 'U0SAM12'}))
+        self.assertEqual(self.suggestion()['snoozed_until'], '2026-10-15T07:00:00+00:00')
+
     def test_delegated_email_waits_for_that_persons_reply(self):
         action = self.ready({'kind': 'email', 'label': 'Send to the accountant', 'account_id': 'work', 'to': ['books@accountant.example'],
                              'to_name': 'the accountant', 'subject': 'Invoice check', 'body': 'Could you check this invoice?\n\nThanks,\n\nOwner',

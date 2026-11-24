@@ -135,7 +135,7 @@ class ReviewSavesApp:
                                    separate=args.get('separate') is True,reopen=args.get('reopen') is True,match=True,
                                    owner_step=(args['owner_step'] is True) if 'owner_step' in args else None,
                                    expires_at=args.get('expires_at'), expires_what=args.get('expires_what'), company=company, personal=personal,
-                                   waiting_on=args.get('waiting_on') or None,
+                                   waiting_on=undated_card(args.get('waiting_on') or None)[0][0],
                                    # the organization the matter is about, in the review's word; none said is none (never from who is on it)
                                    org=str(args.get('org') or ''))
         if isinstance(saved, dict) and stale:

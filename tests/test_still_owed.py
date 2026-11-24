@@ -88,6 +88,22 @@ class StillOwed(unittest.TestCase):
         with patch_everywhere(timeutil, 'now', return_value='2026-10-21T09:00:00+00:00'):
             self.assertEqual([p['state'] for p in self.store.promises() if p['suggestion_id'] == self.sid], ['kept'])
 
+    def test_a_deadline_time_goes_with_its_day(self):
+        with self.store.connect() as db:  # "today 15:00", as the owner gave it: the promised day has no time
+            db.execute("UPDATE suggestions SET due='2026-10-16',due_at='2026-10-16T13:00:00+00:00'")
+        self.send(self.draft(still_owed=OWED))
+        self.assertEqual((self.suggestion()['due'], self.suggestion()['due_at']), ('2026-10-20', None))
+
+    def test_what_is_still_owed_and_waited_on_names_the_day(self):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-16T09:00:00+00:00'):  # a Friday
+            kept = next_actions.validate(self.draft(still_owed={'what': 'send the PDFs by tomorrow'}), {'accounts': [GMAIL]}, ['work'])
+            self.assertEqual(kept['still_owed']['what'], 'send the PDFs by Sat, Oct 17')
+            self.decide('accept')
+            self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Looked into it.', 'outcome': 'needs_you', 'needs': 'the two PDFs before tomorrow'})
+            self.assertEqual(json.loads(self.suggestion()['outcome'])['needs'], 'the two PDFs before Sat, Oct 17')
+            self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Asked Ash.', 'outcome': 'waiting', 'waiting_on': 'Ash to confirm today'})
+            self.assertEqual(json.loads(self.suggestion()['outcome'])['waiting_on'], 'Ash to confirm Fri, Oct 16')
+
     def test_the_send_is_on_record_for_a_run_that_is_asked_whether_it_went(self):
         """status with suggestion_id had only the tap, never the send itself: asked "did it go out?", a run could only
         search the mailbox and called its own send unconfirmed (agent users, 2026-11-24)."""

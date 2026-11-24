@@ -33,6 +33,7 @@ from machine.cards import (
     result_ask,
     snooze_time,
     title_kept,
+    undated_card,
 )
 from machine.config import LOG
 from machine.store.cards import return_waiting, source_line
@@ -1754,7 +1755,8 @@ class DecisionsStore:
             if any(a.get('service','gmail')==connect for a in getattr(self,'accounts',None) or []):
                 raise ValueError(f'connect: {connect} is connected already. Read it through that connection'
                                  +(' (assistant_signals slack_read {channel})' if connect=='slack' else '')+', never the browser.')
-        questions = blocker_questions(questions, strict=True)
+        questions = [{**q, 'question': undated_card(q['question'])[0][0]} for q in blocker_questions(questions, strict=True)]
+        reason = undated_card(reason)[0][0]  # what it asks stays true on later days ("tomorrow" is saved as that day)
         with self.connect() as db:
             job=db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
             if not job or job['job_id']!=job_id or job['status'] not in ('starting','running'):

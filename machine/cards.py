@@ -131,6 +131,74 @@ def thread_return_time(days):
     return due.astimezone(dt.timezone.utc).isoformat()
 
 
+def deadline_end(due, due_at=None):
+    """When a to-do's deadline passes: at its time (due_at), else the end of its day. None without one."""
+    try:
+        if due_at:
+            at = dt.datetime.fromisoformat(str(due_at))
+            return (at if at.tzinfo else at.replace(tzinfo=local_tz())).astimezone(local_tz())
+        return dt.datetime.combine(dt.date.fromisoformat(str(due)[:10]) + dt.timedelta(days=1), dt.time(), local_tz()) if due else None
+    except ValueError:
+        return None
+
+
+def hide_until(days, due=None, due_at=None):
+    """Until when The Machine itself hides something for `days` (a thread after its reply): thread_return_time, never past
+    a deadline still ahead. Then the morning of the work day before it, else its own morning; None when neither is left
+    (it isn't hidden). What the owner snoozes goes where they say."""
+    usual, end = thread_return_time(days), deadline_end(due, due_at)
+    current = dt.datetime.fromisoformat(now())
+    if not end or end <= current:
+        return usual
+    hour, minute = hour_minute(WORK_HOURS['morning'])
+    day = dt.date.fromisoformat(str(due)[:10]) if due else end.date()
+    before = day - dt.timedelta(days=1)
+    for _ in range(7):
+        if is_work_day(before):
+            break
+        before -= dt.timedelta(days=1)
+    for d in (before, day):
+        morning = dt.datetime.combine(d, dt.time(hour, minute), local_tz())
+        if current < morning < end:
+            return min(usual, morning.astimezone(dt.timezone.utc).isoformat())
+    return None
+
+
+def deadline_of(row, action):
+    """The (due, due_at) a sent message's hiding keeps to: the day it promises the work for (still_owed), else the to-do's
+    own. One that still owes work with its day passed: today's, so it isn't hidden at all."""
+    owed = action.get('still_owed')
+    if owed and owed.get('due'):
+        return owed['due'], None
+    end = owed and deadline_end(row['due'], row['due_at'])
+    if end and end <= dt.datetime.fromisoformat(now()):
+        return dt.datetime.fromisoformat(now()).astimezone(local_tz()).date().isoformat(), None
+    return row['due'], row['due_at']
+
+
+def wait_return(days, due=None, due_at=None):
+    """When a to-do handed to someone in a message comes back without an answer: after `days`, sooner for a deadline still
+    ahead (handoff_checkin)."""
+    usual, end = thread_return_time(days), deadline_end(due, due_at)
+    return min(usual, handoff_checkin(due=due)) if end and end > dt.datetime.fromisoformat(now()) else usual
+
+
+def hiding_shown(row, action):
+    """An action as shown before it is sent: its snooze_days and wait_days as they will really be with the to-do's
+    deadline (hide_until, wait_return), left out when it won't be hidden. Its revision stays: what is sent is the same."""
+    def left(until):
+        return (dt.datetime.fromisoformat(until).astimezone(local_tz()).date() - dt.datetime.fromisoformat(now()).astimezone(local_tz()).date()).days if until else 0
+    shown = dict(action)
+    for key, until in (('snooze_days', lambda d: hide_until(d, *deadline_of(row, action))), ('wait_days', lambda d: wait_return(d, row['due'], row['due_at']))):
+        days, at = action.get(key), action.get(key) and until(action[key])
+        if not days or at == thread_return_time(days):
+            continue
+        shown[key] = left(at)
+        if not shown[key]:
+            del shown[key]
+    return shown
+
+
 def thread_snooze_note(state):
     until = state.get('snooze_until')
     if state.get('snooze_status') in ('queued', 'snoozed') and until:
@@ -329,6 +397,8 @@ def card(row):
     elif row['status'] == 'prepared' and outcome.get('state') in (None, 'done') and any(
             a.get('kind') in next_actions.WAITING_KINDS for a in row.get('next_actions') or []):
         status = t('Ready to approve. Nothing goes out until you do.')  # prepared, not done: a step still waits for them
+    if row['status'] == 'prepared' and outcome.get('state') in (None, 'done', 'answered', 'needs_you') and not outcome.get('needs_first') and holding_reply(row.get('next_actions') or []):
+        status = needs_owner(row) or status
     if row.get('handled_hint') and row['status'] not in todo_states.CLOSED and outcome.get('state') != 'already_done':
         try:
             hint = json.loads(row['handled_hint'])
@@ -608,10 +678,19 @@ def result_ask(row, db=None):
         return needs
     if outcome.get('owner_step') or row.get('owner_step') or row.get('handoff_still'):
         return ''
-    return needs if (row['needs_owner'] if 'needs_owner' in row else needs_owner(row, db)) else ''
+    return needs if ' '.join((row['needs_owner'] if 'needs_owner' in row else needs_owner(row, db) or '').split()) == needs else ''
 
 
 RESULT_FILE = re.compile(r'memory/assistant/[^\s<>"\)]+')  # a file the run made, linked in its result (Store.suggestion_result)
+
+
+def holding_reply(steps):
+    """The work still to do when all that is ready is a holding reply: every step to approve is a message that only
+    promises it (its still_owed, judged by meaning when it was drafted). '' otherwise, or once one is on its way."""
+    ready = [a for a in steps if a.get('kind') != 'open']
+    if not ready or any(not a.get('still_owed') or (a.get('state') or {}).get('status') in ('queued', 'sending', 'sent', 'uncertain') for a in ready):
+        return ''
+    return ready[0]['still_owed']['what']
 
 
 def needs_owner(row, db=None):
@@ -623,7 +702,8 @@ def needs_owner(row, db=None):
     A run that left something and a need says whether that can be used before they answer (needs_first): when it can't,
     it reads Needs you too, with what it made still on it. A question next to only a file, where the run didn't say, asks.
     A run that only answered, explained or planned (outcome answered) with nothing ready is not Prepared either: the
-    task is still to do, so it reads Needs you, with "Answered. Nothing done yet." as the reason (Do it leads)."""
+    task is still to do, so it reads Needs you, with "Answered. Nothing done yet." as the reason (Do it leads).
+    Nor is one with only a holding reply ready (holding_reply): Needs you, with the work still to do as the reason (Send leads)."""
     if row.get('status') != 'prepared' or row.get('handled_hint') or row.get('preparation_status') == 'blocked':
         return ''
     try:
@@ -633,7 +713,11 @@ def needs_owner(row, db=None):
         steps = row['next_actions'] if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     except (ValueError, TypeError, AttributeError, KeyError):
         return ''
-    if outcome.get('state') == 'answered' and not any(a.get('kind') != 'open' for a in steps):
+    owed = holding_reply(steps) if outcome.get('state') in (None, 'done', 'answered', 'needs_you') and not needs_first(row) else ''
+    if owed:
+        asks = needs if outcome.get('state') == 'needs_you' and needs.endswith('?') else ''
+        needs = ' '.join(filter(None, [i18n.t('Holding reply ready. Still to do: {}', sentence(owed)), asks]))
+    elif outcome.get('state') == 'answered' and not any(a.get('kind') != 'open' for a in steps):
         needs = i18n.t('Answered. Nothing done yet.')
     elif outcome.get('state') != 'needs_you' or not needs:
         return ''
@@ -643,7 +727,7 @@ def needs_owner(row, db=None):
         return ''
     files = row['result_files'] if 'result_files' in row else RESULT_FILE.search(str(row.get('body') or ''))
     skill = row.get('proposed_skill') if 'proposed_skill' in row or db is None else proposed_skill(db, row.get('id'))
-    unsaid = files and outcome.get('state') == 'needs_you' and needs.endswith('?') and needs_first(row) is None
+    unsaid = files and not owed and outcome.get('state') == 'needs_you' and needs.endswith('?') and needs_first(row) is None
     return needs if not skill and (not files or unsaid) else ''
 
 

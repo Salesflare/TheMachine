@@ -519,7 +519,7 @@ const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)retu
  return s.status!=='prepared'||s.preparation_status==='blocked'||!outOf(s).needs_first&&smart.some(a=>a.kind!=='open')?'':needsAsk(s)};
 // A result that waits on what the owner says, not on a tap: a question, or any need with nothing on it that settles it
 // (needs_owner). Not a step they do themselves (owner_step: Mark done leads). Same rule as result_ask() in machine/cards.py.
-const needsAsk=s=>{const o=outOf(s),q=String(o.needs||'').trim();return o.state==='needs_you'&&(/\?$/.test(q)&&o.needs_first!==false||s.needs_owner&&!o.owner_step&&!s.owner_step&&!withTeammate(s))?q:''};
+const needsAsk=s=>{const o=outOf(s),q=String(o.needs||'').trim();return o.state==='needs_you'&&(/\?$/.test(q)&&o.needs_first!==false||s.needs_owner===q&&!o.owner_step&&!s.owner_step&&!withTeammate(s))?q:''};
 // A draft's Send opens the preview first: the button says so.
 const sendLabel=a=>a.kind==='linear'?(a.label||LIN_LABEL[a.op]):a.kind==='calendar'?CAL_LABEL[a.op]:a.kind==='doc_write'?DOC_LABEL[a.op]:a.kind==='doc_reply'?'Review and post':[...PERSON_SENDS,'email_demo'].includes(a.kind)&&/^Send\b/.test(a.label||'')?reviewSend(a.label):a.label;
 // "Send reply" reads "Review and send reply": a known label whole, "to Sam" by its pattern, else the start translated
@@ -653,6 +653,8 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
  if(smart.some(a=>sendBusy(a.state||s.action_status)&&!['local_preparation','paused'].includes((a.state||s.action_status)?.status)))return '';
  // With a teammate (and nothing new to send them): their line says where it is, not an older "Needs you".
  if(withTeammate(s)||['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!redirect(s)&&['needs_you','your_step'].includes(o?.state))return '';
+ // Only a holding reply is ready, the work itself is still to do (holding_reply, machine/cards.py)
+ if(s.needs_owner&&smart.some(a=>a.still_owed))return line(cap(s.needs_owner),' outcome');
  // What the run left for the owner: amber only on a Needs you one (its chip says so); beside a ready draft, plain
  if(o?.state==='needs_you'&&!skillDecided(s))return line(/\?$/.test(o.needs)&&!needsAsk(s)?t(messageDrafts(s).length||copyLead(s,smart)?'The draft is ready. One question: {}':'The result is ready. One question: {}',o.needs):cap(sentence(o.needs)),s.needs_owner?' outcome':'');
  // Waiting on a step still open elsewhere (a review, a merge, their reply): an open to-do, never "Looks done"

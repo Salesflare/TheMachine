@@ -19,6 +19,7 @@ from test_honest_status import GMAIL, SLACK, email
 
 DRAFT = {'kind': 'email', 'label': 'Send reply', 'account_id': 'work', 'to': ['customer@client.example'], 'subject': 'Re: Invoice',
          'body': 'Hi,\n\nThe invoice is fixed.\n\nCheers,\n\nAlex', 'in_reply_to': '<m1@x>'}
+HOLDING = {**DRAFT, 'label': 'Send reply', 'body': 'Hi,\n\nThanks, I’ll get back to you with the quote.\n\nAlex', 'still_owed': {'what': 'send the quote', 'due': '2026-10-20'}}
 LINK = {'kind': 'open', 'label': 'Open the invoice', 'url': 'https://billing.example/inv/1'}
 
 
@@ -79,6 +80,27 @@ class Rule(unittest.TestCase):
         self.assertEqual(machine_cards.needs_owner({**self.row('', [DRAFT]), **answered}), '')
         self.assertEqual(machine_cards.needs_owner({**self.row('', result_files=[{'path': 'memory/assistant/r.md'}]), **answered}), '')
         self.assertEqual(machine_cards.needs_owner({**self.row('', proposed_skill={'id': 's1'}), **answered}), '')
+
+    def test_only_a_holding_reply_ready_reads_needs_you_with_the_work_still_to_do(self):
+        held = 'Holding reply ready. Still to do: send the quote.'
+        for outcome in ({'state': 'needs_you', 'needs': 'check the reply and send it'}, {'state': 'done'}, {'state': 'answered'}, None):
+            with self.subTest(outcome):
+                row = {**self.row(''), 'outcome': json.dumps(outcome) if outcome else None}
+                self.assertEqual(machine_cards.needs_owner({**row, 'next_actions': [HOLDING, LINK]}), held)
+                self.assertEqual(machine_cards.result_ask({**row, 'next_actions': [HOLDING]}), '')  # Send leads, not Answer
+                # the same words without still_owed are a reply that does the work: judged by its own mark, never the text
+                self.assertEqual(machine_cards.needs_owner({**row, 'next_actions': [{k: v for k, v in HOLDING.items() if k != 'still_owed'}]}), '')
+        # its question for the work goes after it; one the draft can't go without keeps leading
+        self.assertEqual(machine_cards.needs_owner(self.row('Which price per tray?', [HOLDING])), held + ' Which price per tray?')
+        first = {'outcome': json.dumps({'state': 'needs_you', 'needs': 'Which day can you promise?', 'needs_first': True})}
+        self.assertEqual(machine_cards.needs_owner({**self.row('', [HOLDING]), **first}), 'Which day can you promise?')
+
+    def test_a_holding_reply_beside_real_work_or_on_its_way_is_not_that(self):
+        send = 'check the reply and send it'
+        for more in ({'next_actions': [HOLDING, DRAFT]}, {'next_actions': [HOLDING], 'result_files': [{'path': 'memory/assistant/q.md'}]},
+                     {'next_actions': [HOLDING], 'proposed_skill': {'id': 's1'}}, {'next_actions': [{**HOLDING, 'state': {'status': 'queued'}}]}):
+            with self.subTest(more):
+                self.assertEqual(machine_cards.needs_owner({**self.row(send), **more}), '')
 
     def test_other_states_are_not_this(self):
         self.assertEqual(machine_cards.needs_owner(self.row('x', status='pending')), '')
@@ -236,6 +258,26 @@ class Everywhere(unittest.TestCase):
         self.assertIn('The invoice is fixed', notice['body'])  # what is ready, not the question
         self.assertFalse(notify.asks(view['outcome']))  # one to clear at a tap
         self.assertIn('1 reply is ready to send', self.digest()['text'].split('\n')[0])
+
+    def test_a_holding_reply_reads_needs_you_everywhere_and_send_still_leads(self):
+        self.save(next_actions=[HOLDING], outcome='needs_you', needs='check the reply and send it')
+        view = self.row()
+        held = 'Holding reply ready. Still to do: send the quote.'
+        self.assertEqual(view['needs_owner'], held)
+        self.assertIn(held, machine_cards.card(view))
+        self.assertNotIn('Check the reply', machine_cards.card(view))
+        self.assertEqual(machine_cards.todo_state(view), 'needs you')
+        self.assertEqual(self.lead(), ('Needs you', 'Needs you'))
+        self.assertEqual(machine_cards.controls(view)['blocks'][0]['buttons'][0]['label'], 'Send reply')
+        notice = machine_delivery_push.app_notice(self.store, {'accounts': [GMAIL]}, self.sid, 'result', 2)
+        self.assertEqual((notice['actions'][0], notice['title']), ('draft', 'Needs you: Invoice question from Client'))
+        self.assertNotIn('ready', self.digest()['text'].split('\n')[0])
+
+    def test_one_prepared_ahead_says_so_too(self):
+        self.save(next_actions=[HOLDING], outcome='needs_you', needs='check the reply and send it')
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET early=1,outcome=NULL')
+        self.assertIn('Holding reply ready. Still to do: send the quote.', machine_cards.card(self.row()))
 
     def test_their_ok_is_never_an_answer_first(self):
         # "Approve the send" is a need too: only something missing from what the run made waits on an answer
