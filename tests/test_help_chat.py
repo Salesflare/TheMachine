@@ -81,7 +81,7 @@ class Retrieval(unittest.TestCase):
             'Put a to-do away until later.', 'Zet een to-do weg tot later.').replace('## Snooze a to-do', '## Een to-do snoozen').replace(
             'Press **Snooze**, then pick a time.', 'Druk op **Snoozen** en kies een tijd.'))
         prompts = []
-        out = help_chat.ask('Hoe snooze ik een to-do?', run=lambda c, text, m: prompts.append(text) or 'Druk op Snoozen [1].',
+        out = help_chat.ask('Hoe snooze ik een to-do, welke tijd kies ik?', run=lambda c, text, m: prompts.append(text) or 'Druk op Snoozen [1].',
                             folder=self.help, root=self.code, lang='nl')
         self.assertIn('Druk op **Snoozen**', prompts[0])
         self.assertIn('Reply in Dutch', prompts[0])  # unless they write in another language

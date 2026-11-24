@@ -1,7 +1,7 @@
 ---
 title: Handoffs
 area: fleet
-summary: Hand a to-do to a teammate's Machine, with what they need. Check in later, or take it back.
+summary: Share a to-do with a teammate or pass it on to their Machine, with Hand off… on the to-do. Check in later, or take it back.
 covers: handoffs
 code: fleet_requests.py, dashboard.html
 order: 3
@@ -27,6 +27,12 @@ Back for a check-in, it says "Still with Pat". **Check in now** drafts a short n
 The to-do's chat shows when it went ("Handed off to Pat's Machine · 14:02") and what came back: accepted, declined (with their note) or done. With no answer yet, it offers **Mark done**, **Snooze** and **Not needed**. To nudge them or take it back, say so in the chat.
 
 If the handoff didn't go out, the to-do and its chat say so, with **Try again**.
+
+## What they see
+
+Only that to-do: what you ask, your note, its due date and contact, and copies of the messages that go along (up to three, without attachments). Not your mailbox and not your other to-dos. They pick **Accept** or **Decline**.
+
+Once they accept, it's their to-do. Yours is done, or waits for their result when it has a **Done when**. You don't both work on the same one: to get someone's eyes on it while it stays yours, use [Ask to review](ask-to-review.md).
 
 ## Hand it to someone else instead
 

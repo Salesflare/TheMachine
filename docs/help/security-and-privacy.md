@@ -19,6 +19,16 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - Take it with you, or delete it: export everything from **Settings** › **General**, or delete your Machine and its backups with one button. See [Cancel or delete](cancel-and-delete.md).
 - Our access is logged: every time our team reads your hosted Machine's report or its logs. Fleet owners and admins see it under **Activity**. See [Fleets](fleet.md).
 
+## Backups
+
+A hosted Machine backs up your data every night. The backup is encrypted on your Machine before it leaves, and stored in Microsoft Azure in the Netherlands (EU). The last 7 daily, 4 weekly and 3 monthly ones are kept, so about 3 months. They go when your Machine is deleted.
+
+Can we open them? Yes, to restore a failed Machine: we hold the key, apart from the backups. The messages in a backup are encrypted once more, with a second key that we also hold, sealed, and that is never in the backup.
+
+They are a safety net, so keep your own copy of what you can't lose: **Everything**, in **Settings** › **General** › **Export**. See [Move to another computer](moving.md).
+
+On your own computer nothing backs up by itself, and we have no copy. A nightly encrypted backup of your home folder is enough: see [Getting started](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md#later).
+
 ## Security levels
 
 **Standard** keeps today's defaults. **Careful** shows no text in notifications, saves no sign-ins and keeps less. A Work Fleet's admin can make the Fleet Careful. See [Security levels](security-levels.md).
