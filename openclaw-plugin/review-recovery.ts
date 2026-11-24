@@ -309,7 +309,7 @@ export const NOT_FIRST_CHAT = 'This is a background run, not the owner\'s first 
 export const OWNER_RULES_HERE = 'The owner\'s rules for this work are below: USER.md and the preparation rules. AGENTS.md, SOUL.md and IDENTITY.md in the workspace are for the owner\'s own chat: do not read them unless the to-do is about those files.';
 // A search through the whole home folder never came back when a network drive in it hung. What such a command costs is
 // bounded by commandLimit (below); this keeps a run from starting one, and says how a long command gets its time.
-export const COMMANDS_HERE = 'Look for files in the workspace and the folders the to-do names rather than through the whole home folder (network drives in it can hang). A command you wait for is stopped after a few minutes unless you give it timeoutSeconds: give a download, build or test run enough.';
+export const COMMANDS_HERE = 'Search any folder that fits (workspace, Documents, Downloads, projects), one at a time, not all of home at once (network drives can hang). A command you wait for is stopped after a few minutes unless you give it timeoutSeconds: give a download, build or test run enough.';
 export const READ_ONLY_RUN ='This run only reads and needs no skills: do not call skills_read or open a SKILL.md. Tool search\'s dispatch_action allows no more than calling the tool directly.';
 const narrowed = (ctx: any) => {
   const tools = embeddedRuntime(ctx) ? turnTools(ctx.sessionKey) : undefined;
