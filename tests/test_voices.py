@@ -15,6 +15,7 @@ from seams import patch_everywhere  # noqa: E402
 from machine.store import outcomes  # noqa: E402
 import datetime as dt
 import embeddings
+import graph
 import locale_prefs
 import machine.app.preparation as machine_app_preparation
 import machine.cards as machine_cards
@@ -402,6 +403,112 @@ class Voices(unittest.TestCase):
         self.store.commit_page('team', {}, [slack('s3', '2026-10-05T11:00:00+00:00', 'Checked it, all fine', ts='500.1', thread='100.1', user='UOWNER1')])
         self.assertEqual(self.store.answered_elsewhere(), [sid])
         self.assertEqual(self.hint(sid)['reason'], 'Answered in Slack')
+
+    def drafted(self, key, source_id, draft, at='2026-10-05T09:30:00+00:00'):
+        """A to-do about that message with this draft ready at `at`; its id."""
+        with self.store.connect() as db:
+            event = db.execute('SELECT id FROM events WHERE source_id=?', (source_id,)).fetchone()[0]
+        sid = self.store.suggest(key, 'To-do ' + key, 'Asked.', [event])['id']
+        self.ready(sid, {'label': 'Reply', 'revision': 'r-' + key, **draft})
+        with self.store.connect() as db:
+            db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,'d',?,'done',?,?)", (sid, 'j-' + key, at, at))
+        return sid
+
+    def learned(self, at='2026-10-05T18:00:00+00:00'):
+        """{to-do: what the owner wrote instead of its draft}, after a round of learning at that time."""
+        with patch_everywhere(timeutil, 'now', return_value=at):
+            self.store.learn_sent_elsewhere()
+        with self.store.connect() as db:
+            return {r['suggestion_id']: r['after_body'] for r in db.execute("SELECT * FROM draft_edits WHERE source='elsewhere'")}
+
+    def slack(self, source_id, at, body, channel='C1', ts='100.1', user='USAM001', thread=None):
+        self.store.owner_user_ids = {'UOWNER1'}
+        self.store.commit_page('team', {}, [{'account_id': 'team', 'source_id': source_id, 'kind': 'slack.message', 'occurred_at': at, 'title': '#general', 'body': body,
+                                             'deleted': False, 'metadata': {'channel_id': channel, 'message_ts': ts, 'thread_ts': thread or ts, 'user_id': user}}])
+
+    def test_another_matter_in_the_same_slack_channel_teaches_nothing_and_the_real_answer_still_does(self):
+        self.slack('s1', '2026-10-05T09:00:00+00:00', 'Can someone check the invoice?')
+        self.slack('d1', '2026-10-05T09:00:00+00:00', 'Got a minute?', channel='D7', ts='200.1')
+        sid = self.drafted('invoice', 's1', {'kind': 'slack', 'account_id': 'team', 'user_id': 'USAM001', 'body': 'The invoice checks out, thanks.',
+                                             'thread': {'channel_id': 'C1', 'ts': '100.1', 'dm': False}})
+        dm = self.drafted('minute', 'd1', {'kind': 'slack', 'account_id': 'team', 'user_id': 'USAM001', 'body': 'Certainly, I do.'})
+        self.slack('s2', '2026-10-05T10:00:00+00:00', 'Lunch anyone today? Pizza place at noon', ts='300.1', user='UOWNER1')
+        self.slack('s4', '2026-10-05T10:10:00+00:00', 'that one is done too', ts='310.1', thread='90.1', user='UOWNER1')  # another thread
+        self.slack('d2', '2026-10-05T10:00:00+00:00', 'sure, call me now', channel='D7', ts='400.1', user='UOWNER1')
+        self.assertEqual(self.learned(), {dm: 'sure, call me now'})
+        self.slack('s3', '2026-10-05T11:00:00+00:00', 'checked it, all fine', ts='500.1', thread='100.1', user='UOWNER1')
+        self.assertEqual(self.learned(), {dm: 'sure, call me now', sid: 'checked it, all fine'})
+
+    def test_in_a_group_chat_only_a_reply_that_quotes_the_to_dos_message_teaches(self):
+        def group(source_id, at, body, kind='whatsapp.message', chat_id='1203630@g.us', mine=False, **more):
+            event = chat(source_id, at, body, chat_id=chat_id, mine=mine)
+            event['metadata'].update(message_id=source_id, **more)
+            self.store.commit_page('phone', {}, [{**event, 'kind': kind}])
+        tele = dict(kind='telegram.message', chat_id='777', chat_kind='group')
+        group('g1', '2026-10-05T09:00:00+00:00', 'Who brings the tent?')
+        group('11', '2026-10-05T09:00:00+00:00', 'Who drives on Friday?', **tele)
+        group('21', '2026-10-05T09:00:00+00:00', 'Can you bring the keys?', kind='telegram.message', chat_id='444', chat_kind='dm')
+        wa = self.drafted('tent', 'g1', {'kind': 'whatsapp', 'account_id': 'phone', 'chat_id': '1203630@g.us', 'body': 'I will bring it.'})
+        tg = self.drafted('drive', '11', {'kind': 'telegram', 'account_id': 'phone', 'chat_id': '777', 'body': 'I will drive.'})
+        one = self.drafted('keys', '21', {'kind': 'telegram', 'account_id': 'phone', 'chat_id': '444', 'body': 'I will bring them.'})
+        group('g2', '2026-10-05T10:00:00+00:00', 'lol great photo', mine=True)
+        group('12', '2026-10-05T10:00:00+00:00', 'happy birthday kim!', mine=True, **tele)
+        group('13', '2026-10-05T10:01:00+00:00', 'good point, thanks', mine=True, reply_to=8, **tele)  # quotes another message
+        group('22', '2026-10-05T10:00:00+00:00', 'yep, got them', kind='telegram.message', chat_id='444', chat_kind='dm', mine=True)
+        self.assertEqual(self.learned(), {one: 'yep, got them'})
+        group('14', '2026-10-05T11:00:00+00:00', 'me, as always', mine=True, reply_to=11, **tele)
+        self.assertEqual(self.learned(), {one: 'yep, got them', tg: 'me, as always'})
+        # Closing (with Undo) is not as strict: what they write in the group after the to-do mostly answers it
+        self.assertEqual(sorted(self.store.answered_elsewhere()), sorted([wa, tg, one]))
+
+    def test_in_an_email_thread_only_mail_to_who_the_draft_is_for_teaches(self):
+        sid = self.drafted('price', 'in1', {'kind': 'email', 'account_id': 'work', 'thread_id': 't1', 'to': ['Sam@example.com'], 'subject': 'Re: Contract', 'body': 'Dear Sam, it is attached.'})
+        def own(source_id, at, body, **people):
+            self.store.commit_page('work', {}, [{**(m := mail(source_id, at, body, sender=SENT['sender'], to=people['to'], labels=('SENT',))),
+                                                 'metadata': {**m['metadata'], 'cc': people.get('cc', '')}}])
+        own('fw', '2026-10-05T10:00:00+00:00', 'lee, can you look at this one?', to='Lee <lee@example.org>')
+        own('aside', '2026-10-05T10:30:00+00:00', 'thanks lee, sam is in copy', to='Lee <lee@example.org>', cc='Sam <sam@example.com>')
+        self.assertEqual(self.learned(), {})
+        own('all', '2026-10-05T11:00:00+00:00', 'hey sam, here it is', to='Sam <sam@example.com>, Lee <lee@example.org>')
+        self.assertEqual(self.learned(), {sid: 'hey sam, here it is'})
+        self.assertEqual(self.store.answered_elsewhere(), [sid])
+
+    def test_a_reply_to_another_address_of_the_same_person_teaches(self):
+        def draft(key):
+            return {'kind': 'email', 'account_id': 'work', 'thread_id': 't-' + key, 'to': ['sam@example.com'], 'subject': 'Re: Contract', 'body': 'Dear Sam, it is attached.'}
+        asked = mail('in-a', '2026-10-05T09:00:00+00:00', 'Can you send it?', thread='t-a')
+        asked['metadata']['reply-to'] = 'Sam <sam@inbox.example.net>'
+        self.store.commit_page('work', {}, [asked, mail('in-b', '2026-10-05T09:00:00+00:00', 'Can you send it?', thread='t-b')])
+        with self.store.connect() as db:
+            graph.ensure(db)
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('p1','person','Sam',1,0,?)", (json.dumps({'identifiers': ['email:sam@example.com', 'email:sam@home.example']}),))
+        a, b = self.drafted('a', 'in-a', draft('a')), self.drafted('b', 'in-b', draft('b'))
+        self.store.commit_page('work', {}, [
+            mail('out-a', '2026-10-05T10:00:00+00:00', 'hey sam, here it is', thread='t-a', sender=SENT['sender'], to='sam@inbox.example.net', labels=('SENT',)),
+            mail('out-b', '2026-10-05T10:00:00+00:00', 'sam, see below', thread='t-b', sender=SENT['sender'], to='Sam <sam@home.example>', labels=('SENT',))])
+        self.assertEqual(self.learned(), {a: 'hey sam, here it is', b: 'sam, see below'})
+
+    def test_lessons_kept_from_a_message_that_answered_something_else_go_once(self):
+        self.slack('s1', '2026-10-05T09:00:00+00:00', 'Can someone check the invoice?')
+        self.slack('s2', '2026-10-05T10:00:00+00:00', 'Lunch anyone today?', ts='300.1', user='UOWNER1')
+        self.slack('s3', '2026-10-05T11:00:00+00:00', 'checked it, all fine', ts='500.1', thread='100.1', user='UOWNER1')
+        self.slack('d1', '2026-10-05T11:00:00+00:00', 'sure, call me', channel='D7', ts='600.1', user='UOWNER1')
+        self.store.commit_page('work', {}, [mail('fw', '2026-10-05T10:00:00+00:00', 'lee, can you look?', sender=SENT['sender'], to='Lee <lee@example.org>', labels=('SENT',))])
+        slack = {'kind': 'slack', 'account_id': 'team', 'user_id': 'USAM001', 'body': 'The invoice checks out.'}
+        sid = self.drafted('invoice', 's1', slack)
+        email = self.drafted('price', 'in1', {'kind': 'email', 'account_id': 'work', 'thread_id': 't1', 'to': ['sam@example.com'], 'body': 'Dear Sam.'})
+        with self.store.connect() as db:
+            for source_id, kind, todo, revision in (('s2', 'slack', sid, 'r-invoice'), ('s3', 'slack', sid, 'r-invoice'), ('d1', 'slack', sid, 'r-invoice'),
+                                                    ('fw', 'email', email, 'r-price'), ('out2', 'email', email, 'an older draft')):
+                event = db.execute('SELECT id FROM events WHERE source_id=?', (source_id,)).fetchone()[0]
+                db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) "
+                           "VALUES(?,?,?,?,?,'draft','theirs','elsewhere',?)", (source_id, todo, revision, f'elsewhere:{event}', kind, timeutil.now()))
+            db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) "
+                       "VALUES('own','" + sid + "','a','b','slack','draft','theirs','dashboard',?)", (timeutil.now(),))
+        self.assertEqual(sorted(self.store.drop_wrong_answers_once()), ['fw', 's2'])
+        with self.store.connect() as db:
+            self.assertEqual({r[0] for r in db.execute('SELECT id FROM draft_edits')}, {'s3', 'd1', 'out2', 'own'})
+        self.assertIsNone(self.store.drop_wrong_answers_once())  # once
 
     def test_a_draft_sent_from_the_card_or_their_word_in_dutch(self):
         self.ready(self.chat_sid, {'kind': 'whatsapp', 'label': 'Send reply', 'account_id': 'phone', 'chat_id': 'c1', 'body': 'Yes, see you.', 'revision': 'r1'})

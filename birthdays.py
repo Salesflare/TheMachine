@@ -29,6 +29,7 @@ import unicodedata
 
 import crm_fixes
 import graph
+from machine.store import conversation
 from mail_senders import addresses
 
 CLOSE = 1.0  # graph.closeness: regular or close
@@ -346,20 +347,12 @@ def today(db, day, tz, outlook=(), code=None):
 # --- where to wish them ------------------------------------------------------------------------------------------------
 
 def _one_to_one(kind, meta, owner_slack):
-    if kind == 'whatsapp.message':
-        return not str(meta.get('chat_id') or '').endswith('@g.us') and not meta.get('group')
-    if kind in ('telegram.message', 'signal.message'):
-        return meta.get('chat_kind') != 'group'
-    if kind == 'slack.message':
-        return str(meta.get('channel_id') or '').startswith('D')
-    if kind == 'linkedin.message':
-        return not meta.get('group')
     if kind == 'teams.message':
         return meta.get('chat_type') == 'oneOnOne'
     if kind == 'gmail.message':  # the owner and one other person, nobody in copy
         people = {a for _, a in addresses(meta.get('from')) + addresses(meta.get('to')) + addresses(meta.get('cc'))}
         return len(people) == 2
-    return False
+    return conversation.one_to_one(kind, meta)
 
 
 def _mine(kind, meta, owner_slack):
