@@ -32,6 +32,7 @@ import secrets
 import urllib.parse
 
 import activity_log
+import calendar_busy
 import network_crypto as nc
 import security_levels
 import timeutil
@@ -223,6 +224,18 @@ def clean_times(value, window):
     return sorted(out)
 
 
+def older_times(free, current):
+    """(the free times to use, how much is known) of an answer from a Machine that doesn't say what it knows. Its
+    calendars were read calendar_busy.OLD_DAYS ahead; and work hours without a single busy time may as well be no calendar."""
+    until = slot_text(current + dt.timedelta(days=calendar_busy.OLD_DAYS))
+    spans = _spans([a, min(b, until)] for a, b in free if a < until)
+    if spans and len({a.astimezone(dt.timezone.utc).date() for a, _ in spans}) == len(spans) and len({b.time() for _, b in spans}) == 1 \
+            and len({a.time() for a, _ in spans[1:]}) <= 1:
+        return [], 'none'
+    out = [[slot_text(a), slot_text(b)] for a, b in spans]
+    return out, 'all' if out == free else 'some' if out else 'none'
+
+
 def _spans(times):
     return [(parse_slot(a), parse_slot(b)) for a, b in times or [] if parse_slot(a) and parse_slot(b)]
 
@@ -343,6 +356,9 @@ OUTCOMES = {  # code -> (Activity outcome, status, detail)
     'no_answer': ('refused', 'No answer', 'Their Machine didn’t answer in time'),
     'declined': ('refused', 'Declined', None),
     'no_slot': ('refused', 'No time found', 'No time fits you both'),
+    'some': ('refused', 'No time found', 'No time on the days both calendars are known'),
+    'mine': ('refused', 'Not known', 'Your calendar isn’t known for these days'),
+    'theirs': ('refused', 'Not known', 'Their calendar isn’t known for these days'),
     'rounds': ('refused', 'No time found', 'Too many other times'),
     'passed': ('refused', 'Time passed', None),
     'failed': ('failed', 'Failed', None),
@@ -368,9 +384,10 @@ def activity_lines(db, limit):
         if not line:
             continue
         args = json.loads(r['args'] or '[]')
+        which = ', '.join(args[1:]) if r['outcome'] == 'mine' else ''
         out.append({'id': f"meet:{r['id']}", 'kind': 'calendar', 'at': r['at'], 'what': t(line[1], r['name'] or t('someone'), *args[:1]),
                     'where': t('The Machine Network'), 'outcome': outcome, 'status': t(status), 'by': None,
-                    'todo': {'id': r['card_id'], 'title': ' '.join(str(r['todo_title']).split())[:120]} if r['card_id'] and r['todo_title'] is not None else None, 'detail': t(detail) if detail else None})
+                    'todo': {'id': r['card_id'], 'title': ' '.join(str(r['todo_title']).split())[:120]} if r['card_id'] and r['todo_title'] is not None else None, 'detail': t('Your calendar isn’t known for these days: {}', which) if which else t(detail) if detail else None})
     return out
 
 
@@ -441,6 +458,8 @@ class Meet:
         return self.meet_setting()
 
     def _meet_log(self, db, what, name, args, outcome, peer=None, card_id=None):
+        if outcome == 'mine':  # which of their calendars it is: a line on the owner's own Machine, never sent
+            args = [*args[:1], *calendar_busy.unread(db, self.config, self._meet_now())]
         db.execute('INSERT INTO meet_log(at,direction,peer,name,what,args,outcome,card_id) VALUES(?,?,?,?,?,?,?,?)',
                    (stamp(self._meet_now()), LINES[what][0], peer, ' '.join(str(name or '').split())[:80], what, json.dumps(list(args)), outcome, card_id))
         db.execute('DELETE FROM meet_log WHERE id NOT IN (SELECT id FROM meet_log ORDER BY id DESC LIMIT 1000)')
@@ -509,7 +528,11 @@ class Meet:
             if open_:
                 return open_['state']
             started = db.execute("SELECT COUNT(*) FROM meet_sessions WHERE role='asker' AND created_at>?", (stamp(current - dt.timedelta(days=1)),)).fetchone()[0]
+            known = self._meet_mine(db, window)[2]
         session = {'id': secrets.token_hex(16), 'peer': '-', 'keys': None, 'email': email, 'name': name, 'card_id': str(card_id)}
+        if known == 'none':  # no time to propose: theirs is never asked
+            self._meet_save(session, 'fallback', window, minutes, note='mine')
+            return 'fallback'
         found = None
         if started < STARTS_PER_DAY and '@' in email:
             try:
@@ -569,26 +592,31 @@ class Meet:
             return row['fingerprint'] == fingerprint
 
     def _meet_mine(self, db, window):
-        """This owner's free times and preferred ones in the window: from their own calendars, busy blocks only."""
+        """This owner's free times and preferred ones in the window, from their own calendars (busy blocks only), and how
+        much of their work hours there is known: 'all', 'some' or 'none'. A time that isn't known is never offered."""
         import friends
         setting = self.meet_setting()
         tz = self._meet_tz()
         first = dt.date.fromisoformat(window['start'])
-        busy = friends.free_busy(db, self.config, {'start': (first - dt.timedelta(days=1)).isoformat(), 'days': min(window['days'] + 2, MAX_DAYS + 2)})['busy']
-        return free_times(busy, window, self._meet_hours(), tz, setting['buffer'], setting['prefer'], self._meet_now())
+        question = {'start': (first - dt.timedelta(days=1)).isoformat(), 'days': min(window['days'] + 2, MAX_DAYS + 2)}
+        found, current, hours = friends.free_busy(db, self.config, question, self._meet_now()), self._meet_now(), self._meet_hours()
+        free, liked = free_times([*found['busy'], *found['unknown']], window, hours, tz, setting['buffer'], setting['prefer'], current)
+        told, every = (free_times(spans, window, hours, tz, current=current)[0] for spans in (found['unknown'], []))
+        return free, liked, 'all' if told == every else 'some' if told else 'none'
 
     def _meet_propose(self, row, rejected=None):
         """Picks the next slot that fits both and, unless the owner must tap first (Careful), sends it."""
         rejected = list(rejected if rejected is not None else json.loads(row['rejected'] or '[]'))
         window = {'start': row['start'], 'days': row['days']}
         with self.connect() as db:
-            mine, liked = self._meet_mine(db, window)
+            mine, liked, known = self._meet_mine(db, window)
             careful = self._careful(db)
             video = video_habit(db)
         slot = pick(mine, json.loads(row['free'] or '[]'), row['minutes'], liked, json.loads(row['prefer'] or '[]'), rejected)
         if not slot:
             self._meet_send_quietly(row, {'t': 'cancel'})
-            return self._meet_state(row['id'], row['peer'], 'fallback', note='no_slot', rejected=json.dumps(rejected))
+            note = {'all': 'some' if row['note'] == 'some' else 'no_slot', 'some': 'some', 'none': 'mine'}[known]
+            return self._meet_state(row['id'], row['peer'], 'fallback', note=note, rejected=json.dumps(rejected))
         row = self._meet_state(row['id'], row['peer'], 'proposed', slot=json.dumps(slot), video=video, rejected=json.dumps(rejected),
                                mine_ok=0, their_ok=0, sent=0)
         if not careful:
@@ -812,21 +840,23 @@ class Meet:
                 reason = 'limit'
             elif not emails or not self._meet_thread(db, emails):
                 reason = 'thread'
+            else:
+                free, liked, known = self._meet_mine(db, window)
+                reason = 'mine' if known == 'none' else None
             who = name or (emails[0] if emails else '')
             self._meet_log(db, 'asked_in', who, [shown], reason or 'answered', peer)
             if reason:
                 free = liked = None
             else:
-                free, liked = self._meet_mine(db, window)
                 at = stamp(current)
                 db.execute('INSERT INTO meet_sessions(id,peer,role,keys,email,name,state,start,days,minutes,free,prefer,created_at,updated_at) '
                            "VALUES(?,?,'answerer',?,?,?,'answered',?,?,?,?,?,?,?)",
                            (sid, peer, json.dumps(keys), emails[0], who, window['start'], window['days'], minutes, json.dumps(free), json.dumps(liked), at, at))
         row = {'id': sid, 'peer': peer, 'keys': json.dumps(keys)}
         if reason:
-            self._meet_send_quietly(row, {'t': 'no'})
+            self._meet_send_quietly(row, {'t': 'no', **({'known': 'none'} if reason == 'mine' else {})})
             return 'refused'
-        self._meet_send_quietly(row, {'t': 'free', 'free': free, 'prefer': liked, 'book': bool(self.meet_card)})
+        self._meet_send_quietly(row, {'t': 'free', 'free': free, 'prefer': liked, 'known': known, 'book': bool(self.meet_card)})
         return 'answered'
 
     def _meet_thread(self, db, emails):
@@ -851,14 +881,19 @@ class Meet:
             window = {'start': row['start'], 'days': row['days']}
             if body.get('book') is not True:
                 return self._meet_state(row['id'], row['peer'], 'fallback', note='declined')
-            self._meet_state(row['id'], row['peer'], 'asked', free=json.dumps(clean_times(body.get('free'), window)),
-                             prefer=json.dumps(clean_times(body.get('prefer'), window)))
+            free, prefer, known = clean_times(body.get('free'), window), clean_times(body.get('prefer'), window), body.get('known')
+            if known not in ('all', 'some'):  # a Machine from before `known`
+                free, known = older_times(free, self._meet_now())
+                if not free and known == 'none':
+                    self._meet_send_quietly(row, {'t': 'cancel'})
+                    return self._meet_state(row['id'], row['peer'], 'fallback', note='theirs')
+            self._meet_state(row['id'], row['peer'], 'asked', free=json.dumps(free), prefer=json.dumps(prefer), note='some' if known == 'some' else None)
             with self.connect() as db:
                 db.execute("UPDATE meet_log SET outcome='answered' WHERE id=(SELECT MAX(id) FROM meet_log WHERE what='asked' AND peer=?)", (row['peer'],))
                 row = db.execute('SELECT * FROM meet_sessions WHERE id=? AND peer=?', (row['id'], row['peer'])).fetchone()
             return self._meet_propose(row)
         if kind == 'no' and row['state'] == 'asked':
-            return self._meet_state(row['id'], row['peer'], 'fallback', note='declined')
+            return self._meet_state(row['id'], row['peer'], 'fallback', note='theirs' if body.get('known') == 'none' else 'declined')
         slot = json.loads(row['slot'] or 'null')
         if row['state'] != 'proposed' or not slot:
             return None

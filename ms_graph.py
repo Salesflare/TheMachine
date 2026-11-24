@@ -912,6 +912,7 @@ def calendar_item(raw, owner):
             item['originalStartTime'] = {'date': _all_day_date({'dateTime': raw['originalStart']}, zones[0])} if all_day else {'dateTime': _stamp(raw['originalStart'], (raw.get('originalStartTimeZone') or 'UTC')).isoformat()}
     if raw.get('showAs') == 'free':
         item['transparency'] = 'transparent'
+    item['busy'] = raw.get('showAs') in ('busy', 'oof')  # an all-day event that takes the day: not tentative or workingElsewhere
     return item
 
 

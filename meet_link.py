@@ -35,7 +35,7 @@ from machine.owner_error import OwnerError
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = ('CREATE TABLE IF NOT EXISTS meet_links(session TEXT PRIMARY KEY,card_id TEXT,pick_card TEXT,state TEXT NOT NULL,'
           'record TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)')
-NOTES = ('no_machine', 'no_answer', 'keys', 'no_slot', 'rounds', 'failed')  # why the ask fell back: a link helps
+NOTES = ('no_machine', 'no_answer', 'keys', 'no_slot', 'some', 'theirs', 'rounds', 'failed')  # why the ask fell back: a link helps
 PER_DAY = 6        # starts offered on one day
 TOTAL = 40         # starts on one page
 STEP = 30          # minutes between offered starts
@@ -126,7 +126,7 @@ class MeetLink:
 
     def _link_times(self, record):
         with self.connect() as db:
-            free, liked = self._meet_mine(db, {'start': record['start'], 'days': record['days']})
+            free, liked, _ = self._meet_mine(db, {'start': record['start'], 'days': record['days']})
         return starts(free, record['minutes'], liked, tz=self._meet_tz())
 
     def _link_page(self, record):
@@ -265,10 +265,10 @@ class MeetLink:
         end = start + dt.timedelta(minutes=record['minutes'])
         when = m.when_text(start, tz)
         with self.connect() as db:
-            free, _ = self._meet_mine(db, {'start': start.astimezone(tz).date().isoformat(), 'days': 1})
+            free, _, known = self._meet_mine(db, {'start': start.astimezone(tz).date().isoformat(), 'days': 1})
         if not m._inside(m._spans(free), start, end):
             self._link_save(row['session'], row['state'], record)
-            self._link_log('picked_in', record, [when], 'taken', row['pick_card'] or row['card_id'])
+            self._link_log('picked_in', record, [when], 'taken' if known == 'all' else 'mine', row['pick_card'] or row['card_id'])
             return 0
         old = row['pick_card']
         record['pick'], record['picks'] = [slot, m.slot_text(end)], record.get('picks', 0) + 1

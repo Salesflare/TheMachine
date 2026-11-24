@@ -20,7 +20,11 @@ const view={on:true,kinds:{relationships:'who knows someone',meeting:'meeting co
    rules:rules(),exceptions:{availability:[{member_id:'fp_kim',name:'Kim (@kim)',rule:'always',details:false,own_scope:false}]},
    members:[{member_id:'fp_lou',name:'Lou',rules:rules()},{member_id:'fp_kim',name:'Kim',rules:{...rules(),availability:{rule:'always',details:false}}}]}],
  friends:{id:FR,username:'sam',in:[{id:'frq_1',name:'Max (@max)',at:'2026-10-20T10:00:00Z'}],out:[{id:'frq_2',username:'someone',at:'2026-10-20T10:00:00Z'}],blocked:[]},
- waiting:[],asked:[{id:'x1',fleet:FR,name:'Lou',kind:'availability',question:'When are you busy, 2026-10-21?',status:'answered',busy:[['2026-10-21T09:00Z','2026-10-21T10:30Z']]}],log:[],notices:[]};
+ waiting:[],asked:[{id:'x1',fleet:FR,name:'Lou',kind:'availability',question:'When are you busy, 2026-10-21?',status:'answered',busy:[['2026-10-21T09:00Z','2026-10-21T10:30Z']],unknown:[]},
+  {id:'x2',fleet:FR,name:'Kim',kind:'availability',question:'When are you busy, 2026-10-21?',status:'answered',busy:[],unknown:'all'},
+  {id:'x3',fleet:FR,name:'Max',kind:'availability',question:'When are you busy, 2026-10-21?',status:'answered',busy:[],unknown:[['2026-10-21T10:00Z','2026-10-22T10:00Z']]},
+  {id:'x4',fleet:FR,name:'Ann',kind:'availability',question:'When are you busy, 2026-10-21?',status:'answered',busy:[['2026-10-21T09:00Z','2026-10-22T10:30Z']],unknown:[['2026-10-23T10:00Z','2026-10-24T10:00Z']]},
+  {id:'x5',fleet:FR,name:'Bo',kind:'availability',question:'When are you busy, 2026-10-21?',status:'answered',busy:[],unknown:[]}],log:[],notices:[]};
 const calls=[];
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -41,7 +45,13 @@ try{
   assert.match(await friends.innerText(),/Your username: sam/);
   assert.match(await friends.innerText(),/Max \(@max\) wants to be friends/);
   assert.match(await friends.innerText(),/Lou \(@lou\)/);
-  assert.match(await friends.innerText(),/Busy: /);
+  // What a friend's calendar doesn't tell is never free and never busy
+  const told=await friends.locator('.list article p.muted').allInnerTexts(),flat=told.map(x=>x.replace(/\s+/g,' '));
+  assert.match(flat[0],/^Busy: .*Oct.*–[\d:]+( AM| PM)?$/);
+  assert.equal(flat[1],'Their calendar isn’t known for these days');
+  assert.match(flat[2],/^Free, except not known: .*21.*–.*22/);
+  assert.match(flat[3],/^Busy: .*21.*–.*22.* · Not known: .*23.*–.*24/);
+  assert.equal(flat[4],'Free the whole time');
   assert.doesNotMatch(await friends.innerText(),/Work Fleet|Sam Doe/);  // nothing of the Work Fleet, not the owner as a friend
   // The rules per friend live under Sharing, with the Fleets' rules.
   const sharing=page.locator('[data-pane="sharing"]');assert.equal(await friends.locator('.fleet-rule').count(),0);

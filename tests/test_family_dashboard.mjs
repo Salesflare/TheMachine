@@ -23,7 +23,7 @@ const view={on:true,kinds:{relationships:'who knows someone',availability:'free/
   {id:FAM,kind:'family',joined_at:'2026-05-01T09:00:00Z',label:'Family Fleet',name:'Home',asks:['availability','todo','event','question'],rules:{availability:r('always'),todo:r('ask'),event:r('ask'),question:r('ask')},exceptions:{},
    people:[{member_id:'fm_me',name:'Sam Doe',me:true},{member_id:'fm_robin',name:'Robin',answers_with:'Hosted: robin.example.test'},{member_id:'fm_alex',name:'Alex'}],
    members:[{member_id:'fm_robin',name:'Robin',rules:{availability:r('always'),todo:r('ask'),event:r('ask')}},{member_id:'fm_alex',name:'Alex',rules:{availability:r('always'),todo:r('ask'),event:r('ask')}}]}],
- family:{id:FAM,free:[{id:'t1',at:'2026-10-20T10:00:00Z',start:'2026-10-24',days:7,answered:1,asked:2,waiting:['Alex'],
+ family:{id:FAM,free:[{id:'t1',at:'2026-10-20T10:00:00Z',start:'2026-10-24',days:7,known:1,asked:2,waiting:['Alex'],unknown:[null],unread:['sam@work.example'],
    slots:[{from:'2026-10-24T08:00+02:00',until:'2026-10-24T11:00+02:00',text:'Sat 24 Oct 08:00–11:00'}]}],
   todos:[{id:'t2',title:'Buy milk',name:'Alex',stage:'accepted',due:'2026-10-24'}],
   plans:[{id:'t3',title:'Dinner at grandma’s with a rather long name that should wrap nicely',start:'2026-10-25T18:00+02:00',place:'Grandma’s',yes:['Robin'],no:[],waiting:['Alex'],link:'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Dinner'}],
@@ -104,6 +104,7 @@ try{
   assert.deepEqual(await fam.locator('.family-answer',{hasText:'Answered by itself'}).allInnerTexts(),['On Monday. · Answered by itself']);
   await fam.locator('.family-question-form [name=member]').selectOption('fm_alex');await fam.locator('.family-question-form [name=text]').fill('Is the bike ready?');await acted(()=>fam.locator('.family-question-form button').click(),'family_question');
   assert.deepEqual(calls.at(-1),{action:'family_question',args:{member_id:'fm_alex',text:'Is the bike ready?'}});
+  assert.match(await fam.locator('.family-free>p.muted').first().innerText(),/not all known: you \(sam@work\.example\)/);
   await fam.locator('.family-free-form [name=start]').fill('2026-10-24');await acted(()=>fam.locator('.family-free-form button').click(),'family_free');
   assert.deepEqual(calls.at(-1),{action:'family_free',args:{start:'2026-10-24',days:7}});
   await fam.locator('.family-todo-form [name=title]').fill('Groceries');await fam.locator('.family-todo-form [name=due]').fill('2026-10-23');await acted(()=>fam.locator('.family-todo-form button').click(),'family_todo');

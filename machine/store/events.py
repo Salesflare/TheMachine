@@ -320,8 +320,10 @@ class EventsStore:
                     # again for these alone is not reviewed again (its replies change its body and updated_at anyway)
                     digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items() if k not in INTERCOM_FACTS}}
                 if event['kind'] == 'calendar.event' and isinstance(event.get('metadata'), dict):
-                    # Its call's link is kept beside, never a new version: a calendar read again for it is not reviewed again
-                    digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items() if k != 'video'}}
+                    # Its call's link, and Busy on an all-day one, are kept beside, never a new version: a calendar read
+                    # again for them is not reviewed again
+                    digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items()
+                                                          if k != 'video' and (k, v) != ('transparency', 'opaque')}}
                 mail = event['kind'] == 'gmail.message'
                 if mail:  # a verified sender, "no files" and a text that can't be read are kept with a message, never a new version of one read before
                     digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items()

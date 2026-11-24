@@ -8,7 +8,7 @@ order: 6
 ---
 ## What it does
 
-- Find a time: "When are we all free on Saturday?" Only busy times are shared.
+- Find a time: "When are we all free on Saturday?" Only busy times are shared. Someone whose calendar isn't known, or only partly, is named; those times never count as free.
 - To-dos: ask someone in your family to do something. They accept or decline.
 - Plans: propose one. Everyone answers I'm in or Can't make it. I'm in adds it to your own Google calendar, with nobody invited; Undo takes it off again. Without a calendar The Machine can change, you get a link to add it yourself.
 

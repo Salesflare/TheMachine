@@ -576,7 +576,7 @@ def calendar_prompt(config):
     names = ', '.join(f"{c['id']} ({c['name']})" for c in found)
     return (f"\n- Calendars you can change: {names}. An event to add, change or delete there is a next action, never a gog write of yours: "
             "{kind:'calendar',op:'create',calendar:<id>,title,start,end,location,notes} (start and end with their offset, like "
-            "2026-10-27T16:00:00+01:00; all_day:true takes dates, end the last day) or {kind:'calendar',op:'update' or 'delete',"
+            "2026-10-27T16:00:00+01:00; all_day:true takes dates, end the last day, busy:true if the owner is away or taken) or {kind:'calendar',op:'update' or 'delete',"
             "event:<the meeting's events id>, and for update only what changes}. The owner sees it on the card and taps it. No guests.")
 
 

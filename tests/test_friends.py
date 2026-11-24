@@ -6,12 +6,16 @@ import json
 import unittest
 
 import test_fleet as tf
-from test_fleet import CONFIG, NOW, FakeRelay
+from test_fleet import NOW, FakeRelay
 
 import fleet
+import timeutil
 friends = fleet.friends
 FR = 'fr_' + 'a' * 16
 WORK_ID = 'fl_' + 'b' * 16
+# The owner's own calendar, read from a week back to 30 days ahead (calendar_busy.py)
+CONFIG = {**tf.CONFIG, 'accounts': [*tf.CONFIG['accounts'], {'id': 'homecal', 'service': 'calendar', 'email': 'owner@gmail.com', 'boundary': 'personal:Home'}]}
+READ = {'mode': 'incremental', 'read_from': (NOW - dt.timedelta(days=7)).isoformat(), 'read_until': (NOW + dt.timedelta(days=30)).isoformat()}
 
 
 class FriendsRelay(FakeRelay):
@@ -59,10 +63,10 @@ class Friends(unittest.TestCase):
                 (NOW + dt.timedelta(days=1, hours=5), NOW + dt.timedelta(days=1, hours=6), {'attendees': [{'email': 'owner@acme.example', 'self': True, 'responseStatus': 'declined'}]}),
                 (NOW + dt.timedelta(days=1), NOW + dt.timedelta(days=2), {'all_day': True}),
                 (NOW + dt.timedelta(days=1, hours=7), NOW + dt.timedelta(days=1, hours=8), {'access': 'shared_read_only'})]):
-            events.append({'account_id': 'home', 'source_id': f'cal{n}', 'kind': 'calendar.event', 'occurred_at': start.isoformat(),
+            events.append({'account_id': 'homecal', 'source_id': f'cal{n}', 'kind': 'calendar.event', 'occurred_at': start.isoformat(),
                            'title': 'Dentist appointment', 'body': 'Secret Clinic', 'deleted': False,
                            'metadata': {'end_at': end.isoformat(), 'location': 'Secret Clinic', 'attendees': [], **extra}})
-        self.store.commit_page('home', {}, events)
+        self.store.commit_page('homecal', READ, events)
 
     def friend_ask(self, kind, question, ask_id='fq1'):
         return self.fleet.take_ask({'id': ask_id, 'fleet': 'friends', 'fleet_id': FR, 'from': 'fp_lou', 'kind': kind, 'question': question})
@@ -184,13 +188,66 @@ class Friends(unittest.TestCase):
         start = (NOW + dt.timedelta(days=1)).date().isoformat()
         self.assertEqual(self.friend_ask('availability', {'start': start, 'days': 1, 'title': 'x'}), 'answered')
         answer = self.answered()['answer']
-        self.assertEqual(set(answer), {'busy'})
+        self.assertEqual(set(answer), {'busy', 'unknown'})  # start and end times only
+        self.assertEqual(answer['unknown'], [])
         self.assertEqual(len(answer['busy']), 1)  # two overlapping merged; declined, all-day and someone else's calendar left out
         self.assertRegex(answer['busy'][0][0], friends.SLOT.pattern)
         dumped = json.dumps(self.relay.calls)
         for secret in ('Dentist', 'Secret Clinic'):
             self.assertNotIn(secret, dumped)
         self.assertEqual(self.friend_ask('availability', {'start': start, 'days': 30}, 'fq2'), 'declined')  # beyond 14 days
+
+    def unread(self):
+        with self.store.connect() as db:
+            db.execute("DELETE FROM checkpoints WHERE account_id='homecal'")
+
+    def test_a_calendar_that_isnt_known_is_told_as_such_and_declined_to_an_older_machine(self):
+        timeutil.pin(NOW)
+        self.addCleanup(timeutil.pin, None)
+        self.unread()
+        self.fleet.set_rule(FR, 'fp_lou', 'availability', 'always')
+        start = (NOW + dt.timedelta(days=1)).date().isoformat()
+        self.assertEqual(self.friend_ask('availability', {'start': start, 'days': 1, 'unknown': True}), 'answered')
+        answer = self.answered()['answer']
+        self.assertEqual((answer['busy'], len(answer['unknown'])), ([], 1))
+        # a Machine from before it could be told: no answer, not a wrong "free"
+        self.assertEqual(self.friend_ask('availability', {'start': start, 'days': 1}, 'fq2'), 'declined')
+        self.assertEqual(self.answered(), {'id': 'fq2', 'status': 'declined'})
+        self.assertIn('not all of your calendar is known (owner@gmail.com)', self.fleet.view()['log'][0]['outcome'])  # which: the owner only
+        # the same once the owner answers it, or an Always rule does later
+        self.fleet.set_rule(FR, 'fp_lou', 'availability', 'ask')
+        for ask_id in ('fq3', 'fq4'):
+            self.assertEqual(self.friend_ask('availability', {'start': start, 'days': 1}, ask_id), 'waiting')
+        self.assertEqual(self.friend_ask('availability', {'start': start, 'days': 1, 'unknown': True}, 'fq5'), 'waiting')
+        self.assertEqual(self.fleet.decide('fq3', 'once'), {'status': 'declined', 'answer': None})
+        self.fleet.decide('fq5', 'always')  # settles fq4 too
+        sent = {x['id']: x for x in self.relay.sent('/answer')}
+        self.assertEqual((sent['fq4']['status'], sent['fq5']['status']), ('declined', 'answered'))
+        self.assertTrue(sent['fq5']['answer']['unknown'])
+        self.assertNotIn('owner@gmail.com', json.dumps(self.relay.sent('/answer')))
+
+    def test_what_a_friends_calendar_doesnt_tell_shows_as_not_known(self):
+        timeutil.pin(NOW)
+        self.addCleanup(timeutil.pin, None)
+        day = (NOW + dt.timedelta(days=1)).date()
+        busy = [f'{day}T09:00Z', f'{day}T10:00Z']
+
+        def shown(answer):
+            sent = self.fleet.ask_availability('fp_lou', day.isoformat(), 1)
+            self.assertEqual(self.relay.sent('/ask')[-1]['question'], {'start': day.isoformat(), 'days': 1, 'unknown': True})
+            self.fleet.take_answer({'id': next(iter(sent['ids'].values())), 'status': 'answered', 'answer': answer})
+            found = [x for x in self.fleet.view()['asked'] if x['kind'] == 'availability']
+            return found[0] if len(found) == 1 else next(x for x in found if x['id'] == next(iter(sent['ids'].values())))
+        whole = [[(NOW - dt.timedelta(days=2)).strftime('%Y-%m-%dT%H:%MZ'), (NOW + dt.timedelta(days=4)).strftime('%Y-%m-%dT%H:%MZ')]]
+        for answer, told in (({'busy': [], 'unknown': []}, ([], [])), ({'busy': [], 'unknown': whole}, ([], 'all')),
+                             ({'busy': [busy], 'unknown': []}, ([busy], [])),
+                             ({'busy': []}, ([], 'all')), ({'busy': [busy]}, ([busy], []))):  # an older Machine's answers
+            view = shown(answer)
+            self.assertEqual((view['busy'], view['unknown']), told, answer)
+            self.assertEqual('free the whole time' in view['answer'], answer == {'busy': [], 'unknown': []})
+        half = [[f'{day}T09:30Z', whole[0][1]]]
+        view = shown({'busy': [], 'unknown': half})
+        self.assertEqual((len(view['unknown']), view['unknown'][0][0]), (1, f'{day}T09:30Z'))
 
     def test_a_friends_busy_answer_is_kept_to_its_shape(self):
         sent = self.fleet.ask_availability('fp_lou', '2026-10-21', 2)

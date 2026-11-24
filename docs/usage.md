@@ -200,7 +200,7 @@ A row opens its to-do's chat, the promise's page, or the meeting in its own cale
 
 **Adding and changing events**
 
-- When a calendar's sign-in may write, **New event** adds one to your own calendar or a shared one marked `writable`. An event there without guests opens a small editor (Save, or Delete twice). Each change is your tap.
+- When a calendar's sign-in may write, **New event** adds one to your own calendar or a shared one marked `writable`. An event there without guests opens a small editor (Save, or Delete twice). Each change is your tap. An all-day event is added as Free; a to-do's can be Busy, for days you're away or taken, and says so next to its dates.
 - On a phone, New event is a round **+** on the Today row.
 - **Where** suggests your own places first, then OpenStreetMap addresses your Machine looks up with only the typed text (`place_search`).
 - On your own calendar, **Invite** adds people from the Graph or any address as chips. The list of who gets an invite sits above the button, which says how many (**Add and invite 2**). Google sends the invitations on that tap. Without guests nobody is invited or gets an update.

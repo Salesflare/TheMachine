@@ -624,8 +624,10 @@ Under **Sharing** there is one rule per kind for all your friends (Ask me first 
 3. **A warm intro**: you see the request with Accept and Decline; nothing is drafted before you accept, and nothing goes
    out without your Send.
 4. **When are you busy?** For one to fourteen days, your Machine answers from your own calendars with busy times only:
-   start and end, never what, where or with whom. All-day events, events you declined and calendars shared with you
-   don't count.
+   start and end, never what, where or with whom. Events marked Free, all-day events not marked Busy, events you
+   declined and calendars shared with you don't count. Times your Machine doesn't know are sent as that, never as free:
+   no calendar connected, one not read for a day, or days past the 30 your calendars are read ahead. A friend's Machine
+   on an older release can't be told, so it gets no answer then.
 
 Friends are kept apart from your Fleets: a friend sees nothing of your Fleets, and rules don't cross over. A friend's
 questions and answers are treated as data, kept to their fixed form, and never given to your AI, its tools or Do it.

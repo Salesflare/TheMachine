@@ -30,7 +30,7 @@ SCOPE = 'https://www.googleapis.com/auth/calendar.events'
 READ_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
 OPS = ('create', 'update', 'delete')
 TEXT = {'title': 200, 'location': 300, 'notes': 2000}
-KEYS = {'kind', 'op', 'calendar', 'event', 'title', 'start', 'end', 'all_day', 'location', 'notes', 'label'}
+KEYS = {'kind', 'op', 'calendar', 'event', 'title', 'start', 'end', 'all_day', 'busy', 'location', 'notes', 'label'}
 MAX_DAYS = 60  # one event, not a season
 MAX_GUESTS = 50
 EMAIL = re.compile(r'[^@\s<>(),;:"\[\]]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+')
@@ -189,7 +189,7 @@ def validate(value, config, events=None, invite=False):
     value = dict(value)
     guests = value.pop('guests', None) if invite else None
     if set(value) - KEYS:
-        raise ValueError('A calendar change has op, calendar, event, title, start, end, all_day, location and notes; '
+        raise ValueError('A calendar change has op, calendar, event, title, start, end, all_day, busy, location and notes; '
                          'no guests: it never invites anyone')
     op = value.get('op', 'create')
     if op not in OPS:
@@ -225,6 +225,9 @@ def validate(value, config, events=None, invite=False):
     all_day = value.get('all_day', event['all_day'] if op == 'update' else False)
     if not isinstance(all_day, bool):
         raise ValueError('all_day is true or false')
+    busy = value.get('busy')  # an all-day event that takes the owner's days (calendar_busy.py); a timed one does anyway
+    if busy not in (None, True, False) or isinstance(busy, int) and not isinstance(busy, bool) or busy is False and not all_day:
+        raise ValueError('busy is true or false with all_day')
     changes = {}
     for field in ('title', 'location', 'notes'):
         if op == 'create' or field in value:
@@ -242,10 +245,14 @@ def validate(value, config, events=None, invite=False):
             raise OwnerError('Switching between all day and a time needs a new start and end')
         changes['start'], changes['end'] = _times(start, end, all_day)
         changes['all_day'] = all_day
+    if busy is not None and all_day:
+        changes['busy'] = busy
+    elif op == 'update' and all_day != event['all_day']:  # as a new one of its kind: a time is Busy, all day is Free
+        changes['busy'] = not all_day
     if guests:
         changes['guests'] = guests
     if op == 'update' and not changes:
-        raise ValueError('Say what changes: title, start, end, all_day, location or notes')
+        raise ValueError('Say what changes: title, start, end, all_day, busy, location or notes')
     result.update(changes)
     if op == 'update':
         result['changed'] = sorted(changes)
@@ -254,6 +261,8 @@ def validate(value, config, events=None, invite=False):
         result['when'] = when(changes['start'], changes['end'], changes['all_day'])
     else:
         result['when'] = before['when']
+    if all_day and busy is not None and (op == 'update' or busy):
+        result['when'] += ', busy' if busy else ', free'
     return result
 
 
@@ -310,6 +319,9 @@ def body(action, key=None):
         out['attendees'] = [{'email': g} for g in action['guests']]
     if action['op'] == 'create':
         out['id'] = event_id(key)
+    # An all-day event is Free unless it takes the owner's days, as Google's own form adds one: the API alone would say Busy
+    if action['all_day'] if action['op'] == 'create' else 'busy' in changed:
+        out['transparency'] = 'opaque' if action.get('busy') else 'transparent'
     return out
 
 
@@ -439,6 +451,8 @@ class CalendarTransport:
                         return {}
                 except (ValueError, TypeError):
                     return {}
+        if 'transparency' in expected and (event.get('transparency') or 'opaque') != expected['transparency']:
+            return {}
         if action.get('guests') and not {g.lower() for g in action['guests']} <= {str(a.get('email') or '').lower() for a in event.get('attendees') or []}:
             return {}
         return {'message_id': 'calendar:' + google_id}

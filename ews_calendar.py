@@ -374,6 +374,7 @@ def item_of(element, owner):
     item['attendees'] = attendees
     if text('LegacyFreeBusyStatus') == 'Free':
         item['transparency'] = 'transparent'
+    item['busy'] = text('LegacyFreeBusyStatus') in ('Busy', 'OOF')  # an all-day event that takes the day
     if kind in ('Occurrence', 'Exception') and recurrence:
         moment = _utc(recurrence)
         item.update(id=f'{master}_{moment.strftime("%Y%m%dT%H%M%SZ")}', recurringEventId=master,
