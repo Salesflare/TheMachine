@@ -21,8 +21,10 @@ from machine.kinds import CHAT, KINDS
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.slack import slack_ids_named
 from machine.store import outcomes
+from machine.store.conversation import one_to_one
 from machine.text import clamp, encoded
 import i18n
+from mail_senders import addresses
 import memory_use
 import next_actions
 import team_learnings
@@ -107,12 +109,16 @@ EVENT_CHANNELS = {kind: 'Email' if name == 'email' else name for kind, name in O
 
 
 ELSEWHERE_DAYS = 3        # the owner's own message in the draft's conversation this soon after it was ready replaced the draft
+ANSWER_SCAN = 400         # the owner's own messages read for it: a busy channel's threads are told apart in Python (sealed)
 # What shows a to-do the owner answered themselves (answered_elsewhere): its Looks done line, per channel
 ANSWERED_ELSEWHERE = {'gmail.message': 'Answered in the email thread', 'slack.message': 'Answered in Slack',
                       'whatsapp.message': 'Answered on WhatsApp', 'telegram.message': 'Answered on Telegram', 'signal.message': 'Answered on Signal',
                       'linkedin.message': 'Answered on LinkedIn', 'x.dm': 'Answered on X'}
 CONVERSATION_KEYS = {'gmail.message': ('thread_id',), 'slack.message': ('channel_id',)}  # conversation_of; the chats: chat_id or conversation_id
 CONVERSATION_KEYS.update({kind: ('chat_id', 'conversation_id') for kind in ('whatsapp.message', 'telegram.message', 'signal.message', 'linkedin.message', 'x.dm')})
+
+
+ANSWERS_CHECKED = 'answers_checked'  # learning_state: the one-time pass over "answered it themselves" lessons ran (drop_wrong_answers_once)
 
 
 NOTE_KINDS = ('style', 'fact', 'continue', 'new_ask')
@@ -159,6 +165,53 @@ def own_predicate(kind, owner_slack_ids=()):
 def own_text(body):
     """What the owner wrote in a message, without the quoted history below it."""
     return (body or '').split('[Quoted earlier messages', 1)[0].strip()
+
+
+def answer_spots(kind, events, draft=None):
+    """Where the owner's own message answers a to-do's draft of this kind (answers): its conversations, the Slack threads
+    and the messages it is about, and who the draft goes to (without one, who wrote the to-do's mail, or who the owner
+    wrote it to). events: the to-do's, as card_channels gives them."""
+    draft = draft or {}
+    metas = [(e.get('account_id'), e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}'))
+             for e in events if e['kind'] == kind]
+    spots = {'conversations': {(a, c) for a, m in metas if (c := conversation_of(kind, m))},
+             'threads': {str(t) for t in (draft.get('thread_ts'), (draft.get('thread') or {}).get('ts')) if t},
+             'messages': {(conversation_of(kind, m), str(m['message_id'])) for _, m in metas if m.get('message_id')},
+             'people': {a for _, a in addresses(draft.get('to'))}}
+    if kind == 'slack.message':
+        spots['threads'] |= {str(t) for _, m in metas if (t := m.get('thread_ts') or m.get('message_ts'))}
+    if kind == 'gmail.message' and not spots['people']:
+        spots['people'] = {a for _, m in metas for _, a in addresses(m.get('to') if 'SENT' in (m.get('labels') or ()) else m.get('from'))}
+    return spots
+
+
+def answers(kind, account_id, m, spots):
+    """Whether the owner's own message (its metadata) answers the to-do's draft (answer_spots), and not another matter:
+    with one other person, anything they write there; in a channel or a group, which holds many matters, only a reply in
+    the to-do's own thread, or one that quotes a message it is about (Telegram says which); in an email thread, only
+    mail addressed To someone the draft is for, not a forward or an aside to others on it."""
+    conversation = conversation_of(kind, m)
+    if (account_id, conversation) not in spots['conversations']:
+        return False
+    if kind == 'gmail.message':
+        return bool(spots['people'] & {a for _, a in addresses(m.get('to'))})
+    return (one_to_one(kind, m) or kind == 'slack.message' and str(m.get('thread_ts') or '') in spots['threads']
+            or (conversation, str(m.get('reply_to') or '')) in spots['messages'])
+
+
+def own_answer(db, kind, spots, sent, owner_slack_ids, when, params):
+    """The owner's own first message that answers a to-do's draft (answers), among those `when` says (SQL on events), or
+    None. Reactions and media say nothing, and what The Machine sent (sent) isn't theirs."""
+    if not spots['conversations']:
+        return None
+    predicate, own = own_predicate(kind, owner_slack_ids)
+    # Only in its conversations (the keys are kept in the clear)
+    where = ' OR '.join(f"json_extract(metadata,'$.{key}') IN ({','.join('?' * len(spots['conversations']))})" for key in CONVERSATION_KEYS[kind])
+    keys = [c for _, c in spots['conversations']] * len(CONVERSATION_KEYS[kind])
+    return next((e for e in db.execute(f'SELECT id,account_id,source_id,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) AND ({where}) '
+                                       f'AND {when} ORDER BY occurred_at,id LIMIT {ANSWER_SCAN}', (kind, *own, *keys, *params))
+                 if answers(kind, e['account_id'], json.loads(e['metadata'] or '{}'), spots)
+                 and (text := own_text(e['body'])) and not PROFILE_SKIP.match(text) and not sent.wrote(e, text)), None)
 
 
 def tune_voice(channel, text, current):
@@ -598,7 +651,8 @@ class VoicesStore:
 
     def learn_sent_elsewhere(self, days=ELSEWHERE_DAYS):
         """A ready draft the owner didn't send from the card, because they wrote their own reply in that conversation
-        (in Gmail, WhatsApp, Telegram, Slack…): what they wrote instead teaches the next drafts like an edit does."""
+        (in Gmail, WhatsApp, Telegram, Slack…): what they wrote instead teaches the next drafts like an edit does. Only
+        a message that answers it, as for answered_elsewhere (answers): the wrong message teaches worse than none."""
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat()
         ids, learned = sorted(self.owner_user_ids), 0
         with self.connect() as db:
@@ -613,21 +667,13 @@ class VoicesStore:
                 if not draft or not (next_actions.draft_text(draft) or '').strip():
                     continue
                 kind = DRAFT_EVENT_KINDS[draft['kind']]
-                _, events = self.card_channels(row['id'], db)
-                conversations = {(e.get('account_id'), c) for e in events if e['kind'] == kind
-                                 if (c := conversation_of(kind, e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')))}
-                if not conversations:
-                    continue
                 until = (dt.datetime.fromisoformat(row['ready']) + dt.timedelta(days=days)).isoformat()
-                predicate, params = own_predicate(kind, ids)
-                found = next((e for e in db.execute(f'SELECT id,account_id,source_id,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
-                                                    'AND occurred_at>? AND occurred_at<=? ORDER BY occurred_at,id LIMIT 50', (kind, *params, row['ready'], until))
-                              if (e['account_id'], conversation_of(kind, json.loads(e['metadata'] or '{}'))) in conversations
-                              and not sent.wrote(e, own_text(e['body']))), None)
+                found = own_answer(db, kind, answer_spots(kind, self.card_channels(row['id'], db)[1], draft), sent, ids,
+                                   'occurred_at>? AND occurred_at<=?', (row['ready'], until))
                 if not found:
                     continue
                 text, before = own_text(found['body']), next_actions.draft_text(draft).strip()
-                if len(text.split()) < 2 or PROFILE_SKIP.match(text) or ' '.join(text.split()) == ' '.join(before.split()):
+                if len(text.split()) < 2 or ' '.join(text.split()) == ' '.join(before.split()):
                     continue
                 db.execute('INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_subject,before_body,after_subject,after_body,source,created_at) '
                            "VALUES(?,?,?,?,?,?,?,?,?,'elsewhere',?)", (uuid.uuid4().hex, row['id'], draft.get('revision') or '', f"elsewhere:{found['id']}", draft['kind'],
@@ -641,9 +687,10 @@ class VoicesStore:
         Answered in the email thread", with Undo for a day), once for that message, and Done shows that line under its
         title. One with a done when (outcomes.py) isn't done by their reply, as by a send from the card
         (settle_sent): it waits for that result under Waiting on others, and a review reading the answer closes it.
-        Their message counts when it came after what the to-do is about and after the to-do was made (or reached the
-        Machine after that, so the review that made it never saw it). The Machine's own sends, reactions and media
-        don't count, and a Not done, Undo or Reopen after that message stands. Returns the ids closed or set waiting."""
+        Their message counts when it answers the draft (answers), and came after what the to-do is about and after the
+        to-do was made (or reached the Machine after that, so the review that made it never saw it). The Machine's own
+        sends, reactions and media don't count, and a Not done, Undo or Reopen after that message stands. Returns the
+        ids closed or set waiting."""
         ids, marked = sorted(self.owner_user_ids), []
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -657,29 +704,16 @@ class VoicesStore:
                 if not draft:
                     continue
                 kind = DRAFT_EVENT_KINDS[draft['kind']]
-                _, events = self.card_channels(row['id'], db)
-                conversations = {(e.get('account_id'), c) for e in events if e['kind'] == kind
-                                 if (c := conversation_of(kind, e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')))}
-                if not conversations:
+                spots = answer_spots(kind, self.card_channels(row['id'], db)[1], draft)
+                if not spots['conversations']:
                     continue
-                # Slack: a channel holds many matters, so only the to-do's own thread counts there (a DM is one conversation)
-                threads = {str(m['thread_ts']) for e in events if e['kind'] == 'slack.message'
-                           if (m := e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')).get('thread_ts')}
-                threads |= {str(draft['thread_ts'])} if draft.get('thread_ts') else set()
                 newest = db.execute('SELECT max(e.occurred_at) FROM json_each(?) i JOIN events e ON e.id=i.value', (row['event_ids'],)).fetchone()[0]
                 sent = sent or authorship.MachineSent.load(db)  # another to-do's send in that conversation isn't theirs
-                predicate, params = own_predicate(kind, ids)
-                # Only in its conversations (the keys are kept in the clear), and after a Not done only what came in since
-                where = ' OR '.join(f"json_extract(metadata,'$.{key}') IN ({','.join('?' * len(conversations))})" for key in CONVERSATION_KEYS[kind])
-                keys = [c for _, c in conversations] * len(CONVERSATION_KEYS[kind])
+                # After a Not done only what came in since
                 said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice IN ('not_done','undo','reopen')",
                                   (row['id'],)).fetchone()[0]
-                found = next((e for e in db.execute(f'SELECT id,account_id,source_id,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) AND ({where}) '
-                                                    'AND occurred_at>? AND (occurred_at>? OR ingested_at>?) AND ingested_at>? ORDER BY occurred_at,id LIMIT 50',
-                                                    (kind, *params, *keys, newest or row['created_at'], row['created_at'], row['created_at'], said or ''))
-                              if (e['account_id'], conversation_of(kind, m := json.loads(e['metadata'] or '{}'))) in conversations
-                              and (kind != 'slack.message' or str(m.get('channel_id') or '').startswith('D') or str(m.get('thread_ts') or '') in threads)
-                              and (text := own_text(e['body'])) and not PROFILE_SKIP.match(text) and not sent.wrote(e, text)), None)
+                found = own_answer(db, kind, spots, sent, ids, 'occurred_at>? AND (occurred_at>? OR ingested_at>?) AND ingested_at>?',
+                                   (newest or row['created_at'], row['created_at'], row['created_at'], said or ''))
                 if not found:
                     continue
                 if row['done_when']:  # their part went out, the result it is for hasn't come yet
@@ -696,6 +730,37 @@ class VoicesStore:
                 outcomes.close_handled(db, row, decision_id, reason, stamp)
                 marked.append(row['id'])
         return marked
+
+    def drop_wrong_answers_once(self):
+        """One time: "answered it themselves" lessons kept before only an answer taught (answers), when the owner's first
+        message in the same channel, group or email thread did, go again, so no draft or review reads them; the message
+        that does answer can then still teach. One whose message or (mail) draft is gone stays. Their ids, or None once done."""
+        def drop(db):
+            wrong = []
+            for edit in db.execute("SELECT d.id,d.kind,d.suggestion_id,d.old_revision,d.new_revision,s.next_action FROM draft_edits d JOIN suggestions s ON s.id=d.suggestion_id "
+                                   "WHERE d.source='elsewhere'").fetchall():
+                kind, message = DRAFT_EVENT_KINDS.get(edit['kind']), edit['new_revision'].partition(':')[2]
+                event = kind and message.isdigit() and db.execute('SELECT account_id,kind,metadata FROM events WHERE id=? AND deleted=0', (int(message),)).fetchone()
+                if not event or event['kind'] != kind:
+                    continue
+                draft = next((a for a in next_actions.actions(edit['next_action'] or None) if a.get('revision') == edit['old_revision']), None)
+                if kind == 'gmail.message' and not draft:  # who it was for isn't known any more
+                    continue
+                spots = answer_spots(kind, self.card_channels(edit['suggestion_id'], db)[1], draft)
+                # It was in one of their conversations then, also when the to-do's draft is gone since
+                m = json.loads(event['metadata'] or '{}')
+                spots['conversations'].add((event['account_id'], conversation_of(kind, m)))
+                if not answers(kind, event['account_id'], m, spots):
+                    wrong.append(edit['id'])
+            db.executemany('DELETE FROM draft_edits WHERE id=?', [(i,) for i in wrong])
+            return wrong
+        try:
+            with self.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                return learning_loop.run_once(db, ANSWERS_CHECKED, drop)
+        except Exception as error:  # a busy database: the next round tries again
+            LOG.error('answers check error=%s', type(error).__name__)
+            return None
 
     def edits_to_learn(self, run_id=None, limit=3, days=14, chars=350):
         """Edits not offered to a review yet, each offered once, for it to fold lasting habits into that channel's voice."""

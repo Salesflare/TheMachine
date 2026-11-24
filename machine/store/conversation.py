@@ -41,6 +41,17 @@ def _at(row):
     return dt.datetime.fromisoformat(str(row['occurred_at']).replace('Z', '+00:00'))
 
 
+def one_to_one(kind, m):
+    """Whether a chat message is in a conversation with one other person, not a channel or a group, by its metadata."""
+    if kind == 'slack.message':
+        return str(m.get('channel_id') or '').startswith('D')
+    if kind == 'whatsapp.message':
+        return not str(m.get('chat_id') or '').endswith('@g.us') and not m.get('group')
+    if kind in ('telegram.message', 'signal.message'):
+        return m.get('chat_kind') != 'group'
+    return kind in ('linkedin.message', 'x.dm') and not m.get('group')
+
+
 def slack_member(anchor, m):
     """Whether a Slack message belongs with the anchor: a reply sees its thread (the parent and the other replies); a
     top-level message sees the channel's other top-level messages and its own replies, not other threads' replies."""
