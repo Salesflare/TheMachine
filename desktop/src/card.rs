@@ -7,7 +7,7 @@ use crate::machine::Machine;
 use crate::{dash, files, later, windows, Shared};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
-use tauri::webview::{Cookie, DownloadEvent, NewWindowResponse};
+use tauri::webview::{DownloadEvent, NewWindowResponse};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_opener::OpenerExt;
 use url::Url;
@@ -201,7 +201,16 @@ pub fn open(app: &AppHandle, todo: &str) -> tauri::Result<()> {
         Some(w) => w,
         None => build(app)?,
     };
-    session(&window, &machine, &url);
+    if !drawn {
+        let here = app.clone();
+        let of = url.clone();
+        session(&window, &machine, &url, move || {
+            let this = here.state::<Shared>().card.lock().unwrap().loaded.as_ref() == Some(&of);
+            if let (Some(window), true) = (here.get_webview_window("card"), this) {
+                let _ = window.navigate(of);
+            }
+        });
+    }
     if was.is_some() && !drawn {
         after(app, Duration::from_millis(1500), { // the same title: nothing says that it is drawn
             let todo = todo.to_string();
@@ -214,14 +223,44 @@ pub fn open(app: &AppHandle, todo: &str) -> tauri::Result<()> {
             }
         });
     }
-    if drawn { Ok(()) } else { window.navigate(url) }
+    Ok(())
 }
 
-/// A hosted Machine's session, for the page at this address.
-pub fn session(window: &WebviewWindow, machine: &Machine, url: &Url) {
-    for (name, value) in machine.cookie.iter().flat_map(|c| c.split("; ")).filter_map(|c| c.split_once('=')) {
-        let host = url.host_str().unwrap_or_default().to_string();
-        let _ = window.set_cookie(Cookie::build((name.to_string(), value.to_string())).domain(host).path("/").secure(url.scheme() == "https").http_only(true).build());
+/// A hosted Machine's session, for the page at this address; `then` it loads. It doesn't wait for it: on macOS and Linux
+/// another process keeps it. Without its answer the page loads too, and that says what is wrong.
+pub fn session(window: &WebviewWindow, machine: &Machine, url: &Url, then: impl FnOnce() + Send + 'static) {
+    let cookies: Vec<(String, String)> = machine.cookie.iter().flat_map(|c| c.split("; ")).filter_map(|c| c.split_once('=')).map(|(n, v)| (n.into(), v.into())).collect();
+    let (host, secure) = (url.host_str().unwrap_or_default().to_string(), url.scheme() == "https");
+    if cookies.is_empty() {
+        return then();
+    }
+    #[cfg(windows)]
+    {
+        for cookie in cookies {
+            let _ = window.set_cookie(tauri::webview::Cookie::build(cookie).domain(host.clone()).path("/").secure(secure).http_only(true).build());
+        }
+        then();
+    }
+    #[cfg(not(windows))]
+    {
+        let then = std::sync::Arc::new(std::sync::Mutex::new(Some(then)));
+        let go = move || {
+            let then = then.lock().unwrap().take();
+            if let Some(then) = then {
+                then();
+            }
+        };
+        let late = go.clone();
+        after(window.app_handle(), Duration::from_secs(3), move |_| late());
+        let app = window.app_handle().clone();
+        let done = move || {
+            let go = go.clone();
+            later(&app, move |_| go());
+        };
+        #[cfg(target_os = "macos")]
+        crate::mac_app::cookies(window, cookies, host, secure, done);
+        #[cfg(target_os = "linux")]
+        crate::linux_app::cookies(window, cookies, host, secure, done);
     }
 }
 
@@ -271,16 +310,19 @@ fn show(app: &AppHandle) {
 /// The box follows its page's height while it is open.
 fn measure(app: &AppHandle, todo: Option<String>) {
     let Some(window) = app.get_webview_window("card") else { return };
-    if app.state::<Shared>().card.lock().unwrap().todo != todo || !window.is_visible().unwrap_or(false) {
+    let same = app.state::<Shared>().card.lock().unwrap().todo == todo;
+    if !same || !window.is_visible().unwrap_or(false) {
         return;
     }
     let told = app.clone();
     let _ = window.eval_with_callback(TALL, move |answer| {
         let Ok(tall) = answer.trim_matches('"').parse::<f64>() else { return };
-        let shared = told.state::<Shared>();
-        let mut card = shared.card.lock().unwrap();
-        if card.todo.is_some() && card.tall != tall && tall > 0.0 {
-            card.tall = tall;
+        let new = {
+            let shared = told.state::<Shared>();
+            let mut card = shared.card.lock().unwrap();
+            card.todo.is_some() && tall > 0.0 && std::mem::replace(&mut card.tall, tall) != tall
+        };
+        if new {
             let _ = told.emit_to("box", "tall", tall);
         }
     });

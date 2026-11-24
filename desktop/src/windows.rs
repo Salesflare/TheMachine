@@ -2,9 +2,8 @@
 //! layer-shell (Hyprland, Sway, KDE) they are layer surfaces: a normal Wayland window can't stay on top or choose its
 //! place. Elsewhere they are borderless windows that stay on top, out of the taskbar. All of this runs on the main thread.
 use crate::place::{self, box_at, peek, tail, Corner, Rect, BOX_WIDTH, BUBBLE_WIDTH, ROBOT, SHADOW};
-use crate::Shared;
+use crate::{later, Shared};
 use std::sync::atomic::Ordering;
-#[cfg(target_os = "linux")]
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
@@ -65,6 +64,14 @@ fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri
     #[cfg(target_os = "macos")]
     crate::mac::prepare(&window);
     Ok(window)
+}
+
+/// One of the app's own windows is in front, with the keys.
+pub fn front(window: &WebviewWindow) {
+    #[cfg(target_os = "linux")]
+    crate::linux_app::front(window);
+    #[cfg(not(target_os = "linux"))]
+    let _ = window.set_focus();
 }
 
 /// The keys go to it. On macOS it shows with that, without the program coming to the front.
@@ -173,6 +180,37 @@ pub fn bubble_tail(app: &AppHandle) -> (f64, bool) {
     let robot = corner(app, &screen).robot(screen.area);
     let at = box_at(robot, screen.area, BUBBLE_WIDTH, *app.state::<Shared>().tall.lock().unwrap());
     (tail(robot, at), at.y > robot.y)
+}
+
+/// Its page doesn't answer any more (hangs.rs): a fresh one.
+pub fn again(app: &AppHandle, label: &'static str) {
+    if label == "box" {
+        close_box(app);
+        #[cfg(any(windows, target_os = "macos"))]
+        if let Some(card) = app.get_webview_window("card") {
+            let _ = card.destroy();
+        }
+    }
+    if let Some(window) = app.get_webview_window(label) {
+        let _ = window.destroy();
+    }
+    let app = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(500));
+        later(&app, move |app| {
+            if label == "robot" {
+                if build(app, "robot", "The Machine", ROBOT).is_ok() {
+                    show_or_not(app);
+                    place(app);
+                }
+                return;
+            }
+            #[cfg(any(windows, target_os = "macos"))]
+            if build_box(app).is_ok() {
+                let _ = crate::card::build(app);
+            }
+        });
+    });
 }
 
 pub fn show_robot(app: &AppHandle) {
@@ -362,10 +400,11 @@ fn screen(app: &AppHandle) -> Option<(usize, Screen)> {
 pub fn follow_screens(app: &AppHandle) {
     let shared = app.state::<Shared>();
     let now = format!("{:?}", screens(app));
-    let mut seen = shared.screens.lock().unwrap();
-    if *seen != now && shared.grab.lock().unwrap().is_none() {
-        *seen = now;
-        drop(seen);
+    let seen = shared.screens.lock().unwrap();
+    let new = *seen != now;
+    drop(seen);
+    if new && shared.grab.lock().unwrap().is_none() {
+        *shared.screens.lock().unwrap() = now;
         place(app);
     }
 }
@@ -444,11 +483,14 @@ fn corner(app: &AppHandle, screen: &Screen) -> Corner {
 #[cfg(target_os = "linux")]
 fn carry(app: &AppHandle, x: f64, y: f64) {
     let Some((index, screen)) = screen(app) else { return };
-    if let Some(grab) = app.state::<Shared>().grab.lock().unwrap().as_mut() {
-        let to = Corner { right: grab.from.right - (x - grab.held.0), bottom: grab.from.bottom - (y - grab.held.1) };
-        grab.to = to.inside(screen.area.w, screen.area.h);
-        linux::carry(index, grab.to);
+    let shared = app.state::<Shared>();
+    let grab = shared.grab.lock().unwrap().as_ref().map(|g| (g.from, g.held));
+    let Some((from, held)) = grab else { return };
+    let to = Corner { right: from.right - (x - held.0), bottom: from.bottom - (y - held.1) }.inside(screen.area.w, screen.area.h);
+    if let Some(grab) = &mut *shared.grab.lock().unwrap() {
+        grab.to = to;
     }
+    linux::carry(index, to);
 }
 
 /// Elsewhere the window follows the pointer, onto another monitor too.

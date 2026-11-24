@@ -280,19 +280,24 @@ pub fn came(app: &AppHandle, machine: &Machine, notices: &Value, meeting: &Value
         }
     }
     let had = !gone.is_empty();
+    let no_robot = no_robot(&shared);
+    let mut tells = Vec::new();
     {
         let mut speaking = shared.speaking.lock().unwrap();
         gone.iter().for_each(|s| speaking.had(s));
         let soon = about.filter(|m| !m.told.as_ref().is_some_and(|t| speaking.told.contains(t)) && !speaking.queue.iter().chain(&speaking.now).any(|s| s.told == m.told));
         for say in said.into_iter().rev().chain(soon) {
-            if no_robot(&shared) {
+            if no_robot {
                 speaking.notices.retain(|n| n.0.id != say.id);
                 speaking.notices.push((say.clone(), false));
-                let _ = app.emit_to("robot", "notify", say); // its page has the words
+                tells.push(say);
                 continue;
             }
             speaking.add(say);
         }
+    }
+    for say in tells {
+        let _ = app.emit_to("robot", "notify", say); // its page has the words
     }
     if had {
         shared.look_soon(); // it says so right away: then the browser doesn't get it too when the computer sleeps meanwhile
@@ -335,17 +340,15 @@ fn sort(got: &[String], offered: &Value) -> (Vec<String>, Vec<Value>) {
 /// The next one, when none is there. While the box is open it waits: what is among the box's rows needs no bubble after.
 fn next(app: &AppHandle) {
     let shared = app.state::<Shared>();
+    let (shows, open) = (showing(&shared), windows::box_open(app));
     let found = {
         let mut speaking = shared.speaking.lock().unwrap();
-        if speaking.now.is_some() || speaking.queue.is_empty() || !showing(&shared) {
+        if speaking.now.is_some() || speaking.queue.is_empty() || !shows {
             return;
         }
-        if windows::box_open(app) {
-            drop(speaking);
-            return note(&shared, "one waits: the box is open");
-        }
-        speaking.pop(Instant::now()).is_some()
+        (!open).then(|| speaking.pop(Instant::now()).is_some())
     };
+    let Some(found) = found else { return note(&shared, "one waits: the box is open") };
     if found {
         windows::open_bubble(app);
     } else {
@@ -386,7 +389,8 @@ pub fn now(shared: &Shared) -> Option<Say> {
 
 /// A button of it was tapped.
 pub fn hold(shared: &Shared) {
-    if let Some(say) = &mut shared.speaking.lock().unwrap().now {
+    let mut speaking = shared.speaking.lock().unwrap();
+    if let Some(say) = &mut speaking.now {
         say.held = true;
     }
 }
@@ -437,6 +441,7 @@ pub fn closed(app: &AppHandle) {
 /// What is in For you now: one that was there and went (decided here or on another device) isn't said any more.
 pub fn follow(app: &AppHandle, marks: &[crate::seen::Mark]) {
     let there = |id: &str| marks.iter().any(|(name, _)| name.split('@').next() == Some(id));
+    let mut went = Vec::new();
     let gone = {
         let shared = app.state::<Shared>();
         let mut speaking = shared.speaking.lock().unwrap();
@@ -445,12 +450,13 @@ pub fn follow(app: &AppHandle, marks: &[crate::seen::Mark]) {
             let stays = here || !*listed;
             *listed |= here;
             if !stays {
-                crate::notify::gone(&say.id);
+                went.push(say.id.clone());
             }
             stays
         });
         speaking.decided(there)
     };
+    went.iter().for_each(|id| crate::notify::gone(id));
     if gone {
         done(app);
     }

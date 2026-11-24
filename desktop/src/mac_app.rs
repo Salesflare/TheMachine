@@ -4,12 +4,12 @@ use crate::{dash, login, notify};
 use block2::{Block, RcBlock};
 use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject, Bool, ClassBuilder, NSObject, NSObjectProtocol, ProtocolObject, Sel};
-use objc2::{define_class, msg_send, sel, AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, Message};
+use objc2::{class, define_class, msg_send, sel, AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, Message};
 use objc2_app_kit::{
     NSAlert, NSAlertFirstButtonReturn, NSApplication, NSAutoresizingMaskOptions, NSButton, NSColor, NSEventModifierFlags, NSModalResponse, NSTextField, NSTitlebarSeparatorStyle, NSView, NSWindow,
     NSWindowTitleVisibility,
 };
-use objc2_foundation::{ns_string, NSArray, NSDictionary, NSError, NSObjectNSKeyValueObserverRegistration, NSPoint, NSRect, NSSize, NSString};
+use objc2_foundation::{ns_string, NSArray, NSData, NSDictionary, NSError, NSObjectNSKeyValueObserverRegistration, NSPoint, NSRect, NSSize, NSString};
 use objc2_user_notifications::{
     UNAuthorizationOptions, UNAuthorizationStatus, UNMutableNotificationContent, UNNotification, UNNotificationPresentationOptions, UNNotificationRequest, UNNotificationResponse,
     UNUserNotificationCenter, UNUserNotificationCenterDelegate,
@@ -17,6 +17,7 @@ use objc2_user_notifications::{
 use std::cell::RefCell;
 use std::path::Path;
 use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::OnceLock;
 use tauri::WebviewWindow;
 
 /// The dashboard's window, or one with a file.
@@ -29,6 +30,7 @@ pub fn prepare(window: &WebviewWindow) {
             let (Some(view), Some(ns)) = (page.inner().cast::<NSView>().as_ref(), page.ns_window().cast::<NSWindow>().as_ref()) else { return };
             subclass(view, sel!(navigationDelegate), sel!(setNavigationDelegate:), c"TheMachineFrames", |class| {
                 class.add_method(sel!(webView:decidePolicyForNavigationAction:decisionHandler:), decide as extern "C-unwind" fn(_, _, _, _, _));
+                keeps(class);
             });
             ns.setTabbingMode(objc2_app_kit::NSWindowTabbingMode::Disallowed);
             ns.setTitlebarAppearsTransparent(dashboard);
@@ -46,7 +48,7 @@ pub fn prepare(window: &WebviewWindow) {
 ///
 /// # Safety
 /// On the main thread, for a WKWebView; the methods fit their names.
-unsafe fn subclass(view: &NSView, which: Sel, set: Sel, name: &std::ffi::CStr, methods: impl FnOnce(&mut ClassBuilder)) {
+pub unsafe fn subclass(view: &NSView, which: Sel, set: Sel, name: &std::ffi::CStr, methods: impl FnOnce(&mut ClassBuilder)) {
     let delegate: Option<Retained<AnyObject>> = msg_send![view, performSelector: which];
     let Some(delegate) = delegate else { return };
     let class = AnyClass::get(name).unwrap_or_else(|| {
@@ -84,6 +86,90 @@ extern "C-unwind" fn decide(this: &AnyObject, _: Sel, view: &AnyObject, action: 
             let () = msg_send![super(this, wry), webView: view, decidePolicyForNavigationAction: action, decisionHandler: answer];
         }
     }
+}
+
+// The pages' keys. The dashboard encrypts what it keeps here with a key of its own, and WebKit keeps that under one in the
+// login keychain: up to macOS 15 it asks for it on the main thread, and as long as macOS asks the person about the keychain
+// (it is locked, or another build made the key) nothing here answers. So it gets one that is kept beside the session.
+
+static KEY: OnceLock<[u8; 16]> = OnceLock::new();
+
+pub fn own_key(hex: &str) {
+    if let Some(key) = key(hex) {
+        let _ = KEY.set(key);
+    }
+}
+
+pub fn key(hex: &str) -> Option<[u8; 16]> {
+    u128::from_str_radix(hex, 16).ok().filter(|_| hex.len() == 32).map(u128::to_be_bytes)
+}
+
+/// Without a key it answers none, and then the page keeps nothing.
+pub fn keeps(class: &mut ClassBuilder) {
+    if cfg!(feature = "sandbox") && std::env::var_os("MACHINE_SANDBOX_KEYCHAIN").is_some() {
+        return; // as it was, for smoke/hangs.py
+    }
+    // SAFETY: the method takes the view and gives an NSData or nothing.
+    unsafe { class.add_method(sel!(_webCryptoMasterKeyForWebView:), master_key as extern "C-unwind" fn(_, _, _) -> _) };
+}
+
+extern "C-unwind" fn master_key(_: &AnyObject, _: Sel, _: &AnyObject) -> *mut NSData {
+    KEY.get().map_or(std::ptr::null_mut(), |key| Retained::autorelease_return(NSData::with_bytes(key)))
+}
+
+/// The process of a window's page, where macOS tells.
+pub fn process(window: &WebviewWindow) -> Option<u32> {
+    let (tell, told) = std::sync::mpsc::channel();
+    let _ = window.with_webview(move |page| {
+        // SAFETY: the page's own view, asked for what it has: a pid_t.
+        let pid = unsafe {
+            page.inner().cast::<NSView>().as_ref().filter(|v| v.respondsToSelector(sel!(_webProcessIdentifier))).map(|view| {
+                let pid: i32 = msg_send![view, _webProcessIdentifier];
+                pid
+            })
+        };
+        let _ = tell.send(pid);
+    });
+    told.recv_timeout(std::time::Duration::from_secs(5)).ok().flatten().and_then(|pid| u32::try_from(pid).ok()).filter(|pid| *pid > 0)
+}
+
+/// A session's cookies, for the page at this host. wry's own waits for each, on the main thread.
+pub fn cookies(window: &WebviewWindow, cookies: Vec<(String, String)>, host: String, secure: bool, done: impl Fn() + Send + 'static) {
+    let _ = window.with_webview(move |page| {
+        // SAFETY: the page's own view, on the main thread; a cookie's properties are texts by these names.
+        unsafe {
+            let Some(view) = page.inner().cast::<NSView>().as_ref() else { return };
+            let configuration: Retained<AnyObject> = msg_send![view, configuration];
+            let data: Retained<AnyObject> = msg_send![&configuration, websiteDataStore];
+            let store: Retained<AnyObject> = msg_send![&data, httpCookieStore];
+            let left = std::rc::Rc::new((std::cell::Cell::new(cookies.len()), done));
+            for (name, value) in cookies {
+                let mut of = vec![("Name", name), ("Value", value), ("Domain", host.clone()), ("Path", "/".into()), ("HttpOnly", "TRUE".into())];
+                if secure {
+                    of.push(("Secure", "TRUE".into()));
+                }
+                let names: Vec<_> = of.iter().map(|(n, _)| NSString::from_str(n)).collect();
+                let values: Vec<_> = of.iter().map(|(_, v)| NSString::from_str(v)).collect();
+                let names: Vec<&NSString> = names.iter().map(|n| &**n).collect();
+                let of = NSDictionary::<NSString, NSString>::from_retained_objects(&names, &values);
+                let cookie: Option<Retained<AnyObject>> = msg_send![class!(NSHTTPCookie), cookieWithProperties: &*of];
+                let left = left.clone();
+                let one = move || {
+                    left.0.set(left.0.get() - 1);
+                    if left.0.get() == 0 {
+                        (left.1)();
+                    }
+                };
+                match cookie {
+                    Some(cookie) => {
+                        let one = RcBlock::new(one);
+                        let () = msg_send![&store, setCookie: &*cookie, completionHandler: &*one];
+                    }
+                    None => one(),
+                }
+            }
+        }
+    });
 }
 
 // What a page asks

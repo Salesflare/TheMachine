@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, WebviewWindow};
-use webkit2gtk::{ContextMenuExt, ContextMenuItem, DownloadExt, FindController, FindControllerExt, FindOptions, URIRequestExt, URIResponseExt, WebContextExt, WebView, WebViewExt};
+use webkit2gtk::{ContextMenuExt, CookieManagerExt, WebsiteDataManagerExt, ContextMenuItem, DownloadExt, FindController, FindControllerExt, FindOptions, URIRequestExt, URIResponseExt, WebContextExt, WebView, WebViewExt};
 use zbus::blocking::{connection::Builder, Connection, MessageIterator, Proxy};
 use zbus::zvariant::Value;
 
@@ -39,6 +39,39 @@ pub fn lives(window: &WebviewWindow) {
                 }
                 view.execute_editing_command(does);
                 gtk::glib::Propagation::Stop
+            });
+        }
+    });
+}
+
+/// In front, as someone asked for now. GTK asks with the time they last did something in the app, and on X11 a window
+/// manager may take that as older than what they do in another one.
+pub fn front(window: &WebviewWindow) {
+    let _ = window.set_focus();
+    let Ok(window) = window.gtk_window() else { return };
+    gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(80), move || {
+        let shown = window.window().filter(|w| w.is_visible()).and_then(|w| w.downcast::<gdkx11::X11Window>().ok());
+        if let Some(shown) = shown.filter(|_| !window.is_active()) {
+            window.present_with_time(gdkx11::functions::x11_get_server_time(&shown));
+        }
+    });
+}
+
+/// A session's cookies, for the page at this host. wry's own runs the main loop until each is there, which may be never.
+pub fn cookies(window: &WebviewWindow, cookies: Vec<(String, String)>, host: String, secure: bool, done: impl Fn() + Send + 'static) {
+    let _ = window.with_webview(move |page| {
+        let Some(manager) = page.inner().website_data_manager().and_then(|m| m.cookie_manager()) else { return done() };
+        let left = std::rc::Rc::new((std::cell::Cell::new(cookies.len()), done));
+        for (name, value) in cookies {
+            let mut cookie = soup::Cookie::new(&name, &value, &host, "/", -1);
+            cookie.set_http_only(true);
+            cookie.set_secure(secure);
+            let left = left.clone();
+            manager.add_cookie(&mut cookie, None::<&gtk::gio::Cancellable>, move |_| {
+                left.0.set(left.0.get() - 1);
+                if left.0.get() == 0 {
+                    (left.1)();
+                }
             });
         }
     });
@@ -402,7 +435,8 @@ pub fn notice_gone(id: &str) {
 /// Without the program nothing answers a click on them.
 pub fn notices_clear() {
     let all = std::mem::take(&mut *SHOWN.lock().unwrap());
-    if let Some(bus) = BUS.lock().unwrap().clone() {
+    let bus = BUS.lock().unwrap().clone();
+    if let Some(bus) = bus {
         for (number, _) in all {
             let _ = proxy(&bus).and_then(|p| p.call::<_, _, ()>("CloseNotification", &(number,)));
         }

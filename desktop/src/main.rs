@@ -8,6 +8,7 @@ mod dash;
 mod files;
 mod front;
 mod given;
+mod hangs;
 #[cfg(not(target_os = "macos"))]
 mod keys;
 #[cfg(target_os = "linux")]
@@ -146,7 +147,10 @@ impl Shared {
     }
 
     fn save(&self) {
-        if let Err(error) = self.saved.lock().unwrap().write(&self.file) {
+        static ONE: Mutex<()> = Mutex::new(()); // the last one written is the newest
+        let _one = ONE.lock().unwrap();
+        let saved = self.saved.lock().unwrap().clone();
+        if let Err(error) = saved.write(&self.file) {
             eprintln!("could not save: {error}");
         }
     }
@@ -157,7 +161,8 @@ impl Shared {
     }
 
     fn look_soon(&self) {
-        if let Some(looker) = &*self.looker.lock().unwrap() {
+        let looker = self.looker.lock().unwrap().clone();
+        if let Some(looker) = looker {
             looker.unpark();
         }
     }
@@ -165,11 +170,16 @@ impl Shared {
 
 /// Runs this on the main thread, once whatever asks for it there has returned. On Windows a window that is made, shown or
 /// focused inside a page's call, or inside a second start's message, can wait for itself.
+#[track_caller]
 fn later(app: &AppHandle, work: impl FnOnce(&AppHandle) + Send + 'static) {
-    let app = app.clone();
+    let (app, from) = (app.clone(), std::panic::Location::caller());
     std::thread::spawn(move || {
         let here = app.clone();
-        app.run_on_main_thread(move || work(&here))
+        app.run_on_main_thread(move || {
+            hangs::starts(from);
+            work(&here);
+            hangs::ends();
+        })
     });
 }
 
@@ -304,7 +314,8 @@ fn news(app: &AppHandle, now: seen::Seen) {
 pub fn looked(app: &AppHandle) {
     let shared = app.state::<Shared>();
     let now = shared.now.lock().unwrap().clone();
-    let was = shared.waiting.lock().unwrap().known.then(|| std::mem::replace(&mut shared.saved.lock().unwrap().seen, Some(now.clone())));
+    let known = shared.waiting.lock().unwrap().known;
+    let was = known.then(|| std::mem::replace(&mut shared.saved.lock().unwrap().seen, Some(now.clone())));
     if was.is_some_and(|was| was != Some(now)) {
         shared.save();
     }
@@ -321,7 +332,9 @@ fn set_dot(app: &AppHandle, dot: bool) {
 /// What the Machine answered since the robot's page last took it.
 #[tauri::command]
 fn robot_take(shared: State<Shared>) -> Taken {
-    Taken { news: std::mem::take(&mut shared.held.lock().unwrap().news), added: shared.added.lock().unwrap().clone() }
+    let news = std::mem::take(&mut shared.held.lock().unwrap().news);
+    let added = shared.added.lock().unwrap().clone();
+    Taken { news, added }
 }
 
 /// The dashboard's For you, as the robot's page made it. None: it needs the whole status.
@@ -554,18 +567,22 @@ struct BoxState {
 
 #[tauri::command]
 fn box_state(shared: State<Shared>) -> BoxState {
+    let problem = shared.problem.lock().unwrap().clone();
+    let waiting = shared.waiting.lock().unwrap().clone();
+    let speaks = shared.saved.lock().unwrap().speak;
+    let wanted = shared.wanted.lock().unwrap().clone();
     BoxState {
         machine: shared.machine().map(|m| m.url),
-        problem: shared.problem.lock().unwrap().clone(),
-        waiting: shared.waiting.lock().unwrap().clone(),
+        problem,
+        waiting,
         menu: shared.menu.swap(false, Ordering::Relaxed),
         settings: dash::here(),
         hidden: shared.hidden.load(Ordering::Relaxed),
         notice: shared.notice.load(Ordering::Relaxed),
         snip: shared.snip.load(Ordering::Relaxed),
         open: shared.open.load(Ordering::Relaxed),
-        speaks: shared.saved.lock().unwrap().speak,
-        wanted: shared.wanted.lock().unwrap().clone(),
+        speaks,
+        wanted,
     }
 }
 
@@ -683,20 +700,25 @@ async fn connect(app: AppHandle, address: String) -> Result<(), String> {
 
 /// The account's sign-in, in the person's browser. The scheme it comes back on is registered only while it runs.
 #[tauri::command]
-fn sign_in(app: AppHandle) -> Result<(), String> {
-    let (pending, address) = signin::start()?;
-    #[cfg(target_os = "macos")]
-    mac::take_links();
-    #[cfg(not(target_os = "macos"))]
-    app.deep_link().register(signin::SCHEME).map_err(|_| "scheme")?;
-    *app.state::<Shared>().pending.lock().unwrap() = Some(pending);
-    app.opener().open_url(address, None::<&str>).map_err(|_| "browser".to_string())
+async fn sign_in(app: AppHandle) -> Result<(), String> {
+    away(move || {
+        let (pending, address) = signin::start()?;
+        #[cfg(target_os = "macos")]
+        mac::take_links();
+        #[cfg(not(target_os = "macos"))]
+        app.deep_link().register(signin::SCHEME).map_err(|_| "scheme")?;
+        *app.state::<Shared>().pending.lock().unwrap() = Some(pending);
+        app.opener().open_url(address, None::<&str>).map_err(|_| "browser".to_string())
+    }).await
 }
 
 /// Takes the sign-in's links back. On Linux the plugin leaves its file, emptied of them.
 pub fn no_links(app: &AppHandle) {
     #[cfg(target_os = "macos")]
-    later(app, |_| mac::give_links());
+    {
+        let _ = app;
+        std::thread::spawn(mac::give_links);
+    }
     #[cfg(not(target_os = "macos"))]
     let _ = app.deep_link().unregister(signin::SCHEME);
     #[cfg(target_os = "linux")]
@@ -1053,9 +1075,9 @@ fn watch(app: AppHandle) {
     #[cfg(target_os = "macos")]
     std::thread::spawn(move || loop {
         std::thread::sleep(Duration::from_secs(3));
-        let here = app.clone();
+        let (here, there) = (app.clone(), mac::there());
         let _ = app.run_on_main_thread(move || {
-            if mac::full_screen() {
+            if mac::full_screen(&there) {
                 here.state::<Shared>().look_soon(); // whether it speaks
             }
         });
@@ -1093,7 +1115,7 @@ fn main() {
             later(app, move |app| match args.get(1).map(String::as_str) {
                 Some("--toggle") => toggle(app),
                 #[cfg(feature = "sandbox")]
-                Some("--hang") => std::thread::sleep(Duration::from_secs(60)), // for smoke/: --quit still has to work
+                Some("--hang") => std::thread::sleep(Duration::from_secs(args.get(2).and_then(|s| s.parse().ok()).unwrap_or(60))), // for smoke/: --quit still has to work
                 Some(link) if link.starts_with(signin::SCHEME) => came_back(app, link),
                 _ if dash::here() => dash::show(app, ""),
                 _ => {
@@ -1204,8 +1226,12 @@ fn main() {
             }
             #[cfg(all(feature = "sandbox", not(windows)))]
             debug(app.handle());
+            hangs::watch(app.handle());
             #[cfg(target_os = "macos")]
-            mac::fresh_shaders(app.handle());
+            {
+                mac::fresh_shaders(app.handle());
+                mac_app::own_key(&app.state::<Shared>().saved.lock().unwrap().pages.clone());
+            }
             let opens = dash::here() && !login::started();
             app.state::<Shared>().away.store(opens, Ordering::Relaxed); // the robot, while its window is in front
             windows::start(app.handle())?;

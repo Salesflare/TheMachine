@@ -32,7 +32,7 @@ tell();
 # The dashboard in the app's own window: what it does with a browser around it (window.py)
 WINDOW = b'''<!doctype html><link rel="manifest" href="manifest.webmanifest"><title>Stand-in</title><style>body{margin:0;padding:16px;background:light-dark(#f8f7f3,#1b1c1f);color:light-dark(#222,#eee);color-scheme:light dark;font:15px sans-serif}
 #drop{border:1px dashed;padding:20px;width:260px}iframe{width:300px;height:60px;border:1px solid}p{margin:8px 0}</style>
-<h1>Stand-in dashboard</h1><p id="told"></p><p id="ipc"></p><p><input id="field" value="some words"> <input id="pick" type="file" multiple> <span id="picked"></span></p>
+<h1>Stand-in dashboard</h1><p id="told"></p><p id="ipc"></p><p id="kept" hidden></p><p><input id="field" value="some words"> <input id="pick" type="file" multiple> <span id="picked"></span></p>
 <p><a id="web" target="_blank" rel="noopener" href="OUT?web">Web</a> <a id="here" href="OUT?here">Here</a> <a id="mail" href="mailto:a@b.example?subject=new">Mail</a> <a id="mailnew" target="_blank" href="mailto:a@b.example?subject=newer">Mail too</a>
 <a id="own" target="_blank" href="/#person=7">Own</a> <button id="opens">window.open</button> <button id="goes">location</button> <button id="blank">a window, then location</button> <button id="hop">Account</button></p>
 <p><a id="file" target="_blank" rel="noopener" download="a.txt" href="api/chat-file?id=1">File</a> <a id="save" download="b.txt" href="api/chat-file?id=3">Save</a> <button id="blob">blob</button> <a id="sent" href="api/attachment?id=4&sent=1">Sent as a file</a>
@@ -62,6 +62,19 @@ $('#drop').ondrop = e => { e.preventDefault(); says('dropped ' + [...e.dataTrans
 addEventListener('machinedesktop', e => says(JSON.stringify(e.detail)));
 const i = window.__TAURI_INTERNALS__;
 (i ? Promise.all(['app_state', 'settings_state', 'box_state'].map(c => i.invoke(c).then(() => 'ALLOWED', () => 'refused'))).then(x => [...new Set(x)].join()) : Promise.resolve('none')).then(x => { $('#ipc').textContent = x });
+// A key of the page's own, as the real dashboard keeps one (dashboard/shell-network.js): the next start reads what it wrote
+const ask = r => new Promise((y, n) => { r.onsuccess = () => y(r.result); r.onerror = () => n(r.error) });
+(async () => {
+  const opens = indexedDB.open('kept', 1);
+  opens.onupgradeneeded = () => opens.result.createObjectStore('k');
+  const db = await ask(opens), at = mode => db.transaction('k', mode).objectStore('k'), alg = {name: 'AES-GCM', iv: new Uint8Array(12)};
+  const was = await ask(at('readonly').get('key'));
+  if (was) return new TextDecoder().decode(await crypto.subtle.decrypt(alg, was.key, was.said)) + ' again';
+  const key = await crypto.subtle.generateKey({name: 'AES-GCM', length: 256}, false, ['encrypt', 'decrypt']);
+  const said = await crypto.subtle.encrypt(alg, key, new TextEncoder().encode('kept'));
+  await ask(at('readwrite').put({key, said}, 'key'));
+  return 'kept';
+})().then(x => x, e => 'not kept: ' + e).then(x => { document.querySelector('#kept').textContent = x });
 </script>'''
 PDF = b'''%PDF-1.4
 1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
@@ -74,7 +87,7 @@ trailer<</Root 1 0 R>>
 %%EOF'''
 # The dashboard's page of one to-do (?compact=1#card=<id>): its state in its title, a dialog of its own, links out
 COMPACT = b'''<!doctype html><title>The Machine</title><style>body{margin:0;padding:12px;background:#fff;font:14px sans-serif}</style>
-<h1></h1><p id="ipc"></p><button id="done">Done here</button> <button id="more">More</button> <a target="_blank" href="/#person=7">A person</a> <a href="/elsewhere">Away</a>
+<h1></h1><p id="ipc"></p><p id="kept" hidden></p><button id="done">Done here</button> <button id="more">More</button> <a target="_blank" href="/#person=7">A person</a> <a href="/elsewhere">Away</a>
 <button id="long">Long</button><div id="longer"></div><p id="leave" style="white-space:nowrap" hidden><a id="own" target="_blank" href="/#person=7">Own</a> <a id="web" target="_blank" rel="noopener" href="OUT?web">Web</a>
 <a id="mail" target="_blank" href="mailto:a@b.example?subject=new">Mail</a><br><a id="file" target="_blank" rel="noopener" download="a.txt" href="/api/chat-file?id=1">File</a> <a id="view" target="_blank" href="/api/attachment?id=2">View</a> <a id="save" download="b.txt" href="/api/chat-file?id=3">Save</a><br><a id="here" href="OUT?here">Here</a> <a id="mailhere" href="mailto:a@b.example?subject=here">Mail here</a><br>
 <button id="opens">window.open</button> <button id="opensown">of its own</button> <br><button id="goes">location</button> <button id="goesmail">mail</button> <button id="blob">blob</button></p><dialog>Something open <button>Close</button></dialog><script>
@@ -96,6 +109,19 @@ document.querySelector('#more').onclick = () => document.querySelector('dialog')
 const i = window.__TAURI_INTERNALS__;
 (i ? i.invoke('box_state').then(() => 'ALLOWED', () => 'refused') : Promise.resolve('none')).then(x => document.querySelector('#ipc').textContent = x);
 setTimeout(draw, 300);
+// A key of the page's own, as the real dashboard keeps one (dashboard/shell-network.js): the next start reads what it wrote
+const ask = r => new Promise((y, n) => { r.onsuccess = () => y(r.result); r.onerror = () => n(r.error) });
+(async () => {
+  const opens = indexedDB.open('kept', 1);
+  opens.onupgradeneeded = () => opens.result.createObjectStore('k');
+  const db = await ask(opens), at = mode => db.transaction('k', mode).objectStore('k'), alg = {name: 'AES-GCM', iv: new Uint8Array(12)};
+  const was = await ask(at('readonly').get('key'));
+  if (was) return new TextDecoder().decode(await crypto.subtle.decrypt(alg, was.key, was.said)) + ' again';
+  const key = await crypto.subtle.generateKey({name: 'AES-GCM', length: 256}, false, ['encrypt', 'decrypt']);
+  const said = await crypto.subtle.encrypt(alg, key, new TextEncoder().encode('kept'));
+  await ask(at('readwrite').put({key, said}, 'key'));
+  return 'kept';
+})().then(x => x, e => 'not kept: ' + e).then(x => { document.querySelector('#kept').textContent = x });
 </script>'''
 # What leaves it (on aa03), and where to: a place in the dashboard, a page in the browser, a mail, or nowhere
 LEAVES = [('#web', 'browser', '/out?web'), ('#opens', 'browser', '/out?opens'), ('#file', 'browser', '/api/chat-file?id=1'), ('#view', 'browser', '/api/attachment?id=2'),

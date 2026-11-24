@@ -178,11 +178,17 @@ the rest. Other Wayland desktops tell a program nothing about other windows, so 
 To quit: the menu above; on Windows also its icon by the clock, or Alt+F4 after a click on the robot; on a Mac its menu bar
 menu, or Command-Q in the box. The program with `--quit` stops it whatever state it is in.
 
+## When it hangs
+
+It writes a line in `hangs.log` next to `app.json` when it doesn't answer for 5 seconds, or when the robot's page doesn't, with
+its version and what it was doing. On a Mac `hang-1.txt` and so on next to it have what its threads were at, without paths or
+names. Nothing is sent anywhere. A page of the robot that stays stuck is made again.
+
 ## Remove it
 
 Quit it, delete the program, and delete its folders:
 
-| | Address, session, place, `speaks.log` | Page cache |
+| | Address, session, place, `speaks.log`, `hangs.log` | Page cache |
 |---|---|---|
 | Windows | `%APPDATA%\computer.themachine.desktop` | `%LOCALAPPDATA%\computer.themachine.desktop` |
 | Linux | `~/.config/computer.themachine.desktop` | `~/.local/share/computer.themachine.desktop`, `~/.cache/computer.themachine.desktop` |

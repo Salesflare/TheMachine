@@ -33,6 +33,9 @@ pub struct Saved {
     pub asked: u64,
     /// A random name for this robot, for its Machine to know which computer's it is (speak.rs).
     pub desk: String,
+    /// What the pages' own keys are kept under (mac_app.rs).
+    #[cfg(target_os = "macos")]
+    pub pages: String,
 }
 
 impl Saved {
@@ -40,6 +43,10 @@ impl Saved {
         let mut saved: Saved = fs::read(file).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
         if saved.desk.len() != 32 || !saved.desk.bytes().all(|b| b.is_ascii_hexdigit()) {
             saved.desk = crate::machine::random();
+        }
+        #[cfg(target_os = "macos")]
+        if crate::mac_app::key(&saved.pages).is_none() {
+            saved.pages = crate::machine::random();
         }
         saved
     }
@@ -74,7 +81,10 @@ mod tests {
         s.places.insert("DP-1".into(), Corner { right: 1.0, bottom: 2.0 });
         s.write(&file).unwrap();
         s.write(&file).unwrap();
-        assert_eq!(Saved { desk: String::new(), ..Saved::read(&file) }, s);
+        let read = Saved::read(&file);
+        #[cfg(target_os = "macos")]
+        let read = Saved { pages: String::new(), ..read };
+        assert_eq!(Saved { desk: String::new(), ..read }, s);
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
