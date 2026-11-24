@@ -89,6 +89,21 @@ LAZY = {
 # to-dos, so coming in after the first to-dos they pushed them down. A first drawing that needs one still on its way
 # waits for it (render in shell-render.js)
 LAZY_EARLY = ('mailcheck', 'milestone')
+# {group: the groups whose names its scripts use without asking for them in the code (lazyRun, lazyPart, lazyIn)}, ''
+# for the main script: they are in whenever that code runs, for the reason beside it. tests/test_lazy_names.mjs holds
+# every script to the main script's names, its own and these.
+LAZY_WITH = {
+    # the main script: only once its part set or opened what it acts on (talk, mic, fr, aiView, Help's own model box)
+    '': ('talk', 'voice', 'followups', 'settings', 'help',
+         # a to-do's box: todos-cards.js asks lazyIn(box), box one of these
+         'routinetodos', 'digest', 'subs', 'secondhand', 'reorder'),
+    # drawn or opened only by that part
+    'digest': ('routines',), 'fbpeople': ('routinetodos',), 'fleetask': ('fleet',),
+    'logins': ('signin',), 'msgview': ('emailframe',), 'msshare': ('milestone',), 'split': ('graph',),
+    'emailframe': ('msgview',),  # emailOpen waits for it
+    'fleet': ('settings', 'connections'),  # fleetView waits for Settings', connectAdd for Connections'
+    'kept': ('compose', 'followups'),  # only while their dialogs are open
+}
 LAZY_RUN = re.compile(r'/\*@lazy\*/\n.*?(?:/\*@eager\*/\n|\Z)', re.S)
 FENCE = re.compile(r'/\*@(?:lazy|eager)\*/\n')
 MARKER = re.compile(r'/\*@include dashboard/([a-z0-9-]+\.(?:js|css))\*/|<!--@include dashboard/([a-z0-9-]+\.html)-->')

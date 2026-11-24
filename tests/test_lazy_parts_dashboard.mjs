@@ -14,7 +14,8 @@ const {chromium}=await import('./browser.mjs');
 // draws once its views are in, its cards too; tapped in the nav, it asks for its part at once. Learning and Connections in while another tab shows are drawn as they
 // open, in that same task; a link straight to one, and the way back to it, show it drawn. Routines opened while its part is on its way draws once it's in, and a
 // conversation by Talk starts with its session's part. A follow-up group's Review tapped while its part is on its way
-// opens once it's in, and so do New to-do and Search. The same redraw asked many times while its part is on its way
+// opens once it's in, and so do New to-do and Search. The to-dos with a paused batch of follow-ups draw, and the
+// follow-ups' review opens with its drafts, while the Graph's part is still on its way. The same redraw asked many times while its part is on its way
 // runs once when it's in.
 const [source,lazy]=JSON.parse(execFileSync('python3',['-c','import json,dashboard_parts;print(json.dumps(dashboard_parts.assemble_split()))'],{encoding:'utf8',maxBuffer:1<<26}));
 const named=s=>createHash('sha256').update(s).digest('hex').slice(0,16)+'.js';
@@ -147,6 +148,21 @@ try{
   assert.equal(await p.locator(shown).count(),0);
   release();hold=null;holdOnly=null;await p.locator(shown).waitFor();
   await context.close()}
+ // The Graph's part held back: a paused batch of follow-ups shows over the to-dos, and a board's review opens with its drafts
+ {let release;hold=new Promise(r=>release=r);holdOnly='lazy-graph-';const was=state.suggestions;
+  state.suggestions=[{id:'4'.repeat(16),title:'Follow up',body:'Text.',status:'prepared',scope:'work',created_at:new Date().toISOString(),preparation_status:'done',event_ids:[1],
+   next_action:{kind:'email',revision:'d'.repeat(64),label:'Send',to:['lee@client.example'],to_name:'Lee',from:'me@acme.example',subject:'Pilot',body:'Hi Lee, any news?'},
+   follow_up:{project:'Pilot',project_id:'project:1',board:'Testers',group:'board:1',n:1,max:3,channel:'email',auto:false,state:'open'}}];
+  state.follow_up_progress=[{group:'board:2',board:'Partners',batch:'b1',total:3,done:1,sent:1,going:true,paused:true}];
+  for(const width of [1440,390]){const context=await browser.newContext({viewport:{width,height:900}});
+   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+   const p=await context.newPage();p.on('pageerror',e=>errors.push('follow-ups: '+e.message+' '+e.stack));
+   await p.goto(base,{waitUntil:'load'});await wholeDrawn(p);
+   const chip=p.locator('.fu-sending .fu-chip',{hasText:'Paused'});await chip.waitFor();assert.equal(await chip.evaluate(x=>getComputedStyle(x).borderTopStyle),'solid');
+   await p.locator('button[data-fu-review="board:1"]').last().click();await p.locator('#fu-review[open] .fr-meta',{hasText:'Email'}).waitFor();
+   assert.ok(!await p.evaluate(()=>lazyIn('graph')));
+   await context.close()}
+  state.suggestions=was;delete state.follow_up_progress;release();hold=null;holdOnly=null}
  // A link straight to someone in the Graph, its part held back: the Graph opens on them, and draws them once the part is in
  {let release;hold=new Promise(r=>release=r);asked.length=0;const context=await browser.newContext({viewport:{width:1440,height:900}});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
