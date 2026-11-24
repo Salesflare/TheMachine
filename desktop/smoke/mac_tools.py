@@ -183,7 +183,8 @@ class App:
         if over:
             env.update(MACHINE_SANDBOX_ACCOUNT=over.at, MACHINE_SANDBOX_ROOT=str(CERTIFICATE / 'root.pem'))
         self.env = dict(os.environ, **env)
-        made = run('open', '-n', bundle, *[x for k, v in env.items() for x in ('--env', f'{k}={v}')], *(() if window else ('--args', '--login')))  # as Finder does
+        # As Finder does, or as macOS at login: that takes nothing from the front
+        made = run('open', '-n', *(() if window else ('-g',)), bundle, *[x for k, v in env.items() for x in ('--env', f'{k}={v}')], *(() if window else ('--args', '--login')))
         need(made.returncode == 0, made.stderr)
         self.pid = until(lambda: next(iter(self.pids()), None), 20)
 

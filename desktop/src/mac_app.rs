@@ -6,7 +6,7 @@ use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject, Bool, ClassBuilder, NSObject, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{define_class, msg_send, sel, AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, Message};
 use objc2_app_kit::{
-    NSAlert, NSAlertFirstButtonReturn, NSAutoresizingMaskOptions, NSColor, NSModalResponse, NSTextField, NSTextFinder, NSTextFinderAction, NSTextFinderBarContainer, NSTitlebarSeparatorStyle, NSView, NSWindow,
+    NSAlert, NSAlertFirstButtonReturn, NSApplication, NSAutoresizingMaskOptions, NSButton, NSColor, NSEventModifierFlags, NSModalResponse, NSTextField, NSTitlebarSeparatorStyle, NSView, NSWindow,
     NSWindowTitleVisibility,
 };
 use objc2_foundation::{ns_string, NSArray, NSDictionary, NSError, NSObjectNSKeyValueObserverRegistration, NSPoint, NSRect, NSSize, NSString};
@@ -14,9 +14,9 @@ use objc2_user_notifications::{
     UNAuthorizationOptions, UNAuthorizationStatus, UNMutableNotificationContent, UNNotification, UNNotificationPresentationOptions, UNNotificationRequest, UNNotificationResponse,
     UNUserNotificationCenter, UNUserNotificationCenterDelegate,
 };
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicU8, Ordering};
 use tauri::WebviewWindow;
 
 /// The dashboard's window, or one with a file.
@@ -31,6 +31,7 @@ pub fn prepare(window: &WebviewWindow) {
                 class.add_method(sel!(webView:decidePolicyForNavigationAction:decisionHandler:), decide as extern "C-unwind" fn(_, _, _, _, _));
             });
             ns.setTabbingMode(objc2_app_kit::NSWindowTabbingMode::Disallowed);
+            ns.setTitlebarAppearsTransparent(dashboard);
             if dashboard {
                 asks(view);
                 shade(view, ns);
@@ -194,7 +195,6 @@ impl Shade {
 /// # Safety
 /// On the main thread, for a WKWebView in this window, which is there as long as the program.
 unsafe fn shade(view: &NSView, window: &NSWindow) {
-    window.setTitlebarAppearsTransparent(true);
     window.setTitleVisibility(NSWindowTitleVisibility::Hidden);
     window.setTitlebarSeparatorStyle(NSTitlebarSeparatorStyle::None);
     let Some(mtm) = MainThreadMarker::new() else { return };
@@ -210,8 +210,8 @@ unsafe fn shade(view: &NSView, window: &NSWindow) {
 
 struct Bar {
     page: Retained<NSView>,
-    bar: RefCell<Option<Retained<NSView>>>,
-    shown: Cell<bool>,
+    bar: Retained<NSView>,
+    field: Retained<NSTextField>,
 }
 
 define_class!(
@@ -224,113 +224,147 @@ define_class!(
 
     unsafe impl NSObjectProtocol for Find {}
 
-    unsafe impl NSTextFinderBarContainer for Find {
-        #[unsafe(method_id(findBarView))]
-        fn bar(&self) -> Option<Retained<NSView>> {
-            self.ivars().bar.borrow().clone()
+    // The field's
+    impl Find {
+        #[unsafe(method(controlTextDidChange:))]
+        fn typed(&self, _note: &AnyObject) {
+            self.look(0);
         }
 
-        #[unsafe(method(setFindBarView:))]
-        fn set_bar(&self, bar: Option<&NSView>) {
+        #[unsafe(method(control:textView:doCommandBySelector:))]
+        fn command(&self, _field: &AnyObject, _text: &AnyObject, what: Sel) -> Bool {
+            if what == sel!(insertNewline:) {
+                let shift = NSApplication::sharedApplication(self.mtm()).currentEvent().is_some_and(|e| e.modifierFlags().contains(NSEventModifierFlags::Shift));
+                self.look(if shift { -1 } else { 1 });
+            } else if what == sel!(cancelOperation:) {
+                self.put(false);
+            } else {
+                return Bool::NO;
+            }
+            Bool::YES
+        }
+
+        #[unsafe(method(next:))]
+        fn next(&self, _button: &AnyObject) {
+            self.look(1);
+        }
+
+        #[unsafe(method(before:))]
+        fn before(&self, _button: &AnyObject) {
+            self.look(-1);
+        }
+
+        #[unsafe(method(done:))]
+        fn done(&self, _button: &AnyObject) {
             self.put(false);
-            *self.ivars().bar.borrow_mut() = bar.map(|b| b.retain());
-        }
-
-        #[unsafe(method(isFindBarVisible))]
-        fn shown(&self) -> bool {
-            self.ivars().shown.get()
-        }
-
-        #[unsafe(method(setFindBarVisible:))]
-        fn set_shown(&self, shown: bool) {
-            self.put(shown);
-        }
-
-        #[unsafe(method(findBarViewDidChangeHeight))]
-        fn resized(&self) {
-            self.lay_out();
-        }
-
-        #[unsafe(method_id(contentView))]
-        fn content(&self) -> Option<Retained<NSView>> {
-            Some(self.ivars().page.clone())
         }
     }
 );
 
 impl Find {
-    fn put(&self, shown: bool) {
-        self.ivars().shown.set(shown);
-        let Some(bar) = self.ivars().bar.borrow().clone() else { return };
-        let page = &self.ivars().page;
-        if !shown {
-            bar.removeFromSuperview();
-            if let Some(window) = page.window() {
-                window.makeFirstResponder(Some(page));
-            }
-        } else if let Some(around) = unsafe { page.superview() } { // SAFETY: on the main thread
-            around.addSubview(&bar);
-        }
-        self.lay_out();
+    fn shown(&self) -> bool {
+        // SAFETY: on the main thread.
+        unsafe { self.ivars().bar.superview() }.is_some()
     }
 
-    /// The bar over the page, in the room of its window.
-    fn lay_out(&self) {
-        let Bar { page, bar, shown } = self.ivars();
+    /// Over the page, in the room of its window.
+    fn put(&self, shown: bool) {
+        let Bar { page, bar, field } = self.ivars();
+        // SAFETY: on the main thread.
         let Some(around) = (unsafe { page.superview() }) else { return };
-        let room = around.bounds();
-        let tall = match &*bar.borrow() {
-            Some(bar) if shown.get() => {
-                let tall = bar.frame().size.height;
-                let top = if around.isFlipped() { 0.0 } else { room.size.height - tall };
-                bar.setFrame(NSRect::new(NSPoint::new(0.0, top), NSSize::new(room.size.width, tall)));
-                let edge = if around.isFlipped() { NSAutoresizingMaskOptions::ViewMaxYMargin } else { NSAutoresizingMaskOptions::ViewMinYMargin };
-                bar.setAutoresizingMask(NSAutoresizingMaskOptions::ViewWidthSizable | edge);
-                tall
+        let (room, flipped, tall) = (around.bounds(), around.isFlipped(), if shown { bar.frame().size.height } else { 0.0 });
+        if shown {
+            let (top, edge) = if flipped { (0.0, NSAutoresizingMaskOptions::ViewMaxYMargin) } else { (room.size.height - tall, NSAutoresizingMaskOptions::ViewMinYMargin) };
+            bar.setFrame(NSRect::new(NSPoint::new(0.0, top), NSSize::new(room.size.width, tall)));
+            bar.setAutoresizingMask(NSAutoresizingMaskOptions::ViewWidthSizable | edge);
+            around.addSubview(bar);
+        } else {
+            bar.removeFromSuperview();
+        }
+        page.setFrame(NSRect::new(NSPoint::new(0.0, if flipped { tall } else { 0.0 }), NSSize::new(room.size.width, room.size.height - tall)));
+        if let Some(window) = page.window() {
+            window.makeFirstResponder(Some(if shown { field } else { page }));
+        }
+        if shown {
+            // SAFETY: from no one, as it may be.
+            unsafe { field.selectText(None) };
+        }
+    }
+
+    /// 1: the next one, -1: the one before, 0: more was typed.
+    fn look(&self, step: i8) {
+        let Bar { page, field, .. } = self.ivars();
+        let words = field.stringValue();
+        field.setTextColor(Some(&NSColor::labelColor()));
+        let Some(options) = AnyClass::get(c"WKFindConfiguration").filter(|_| words.length() > 0) else { return };
+        // SAFETY: WebKit's own methods of the page's view, since macOS 11 as its options.
+        unsafe {
+            if step == 0 { // from where it is, not after it
+                let told: Option<&Block<dyn Fn(*mut AnyObject, *mut NSError)>> = None;
+                let () = msg_send![page, evaluateJavaScript: ns_string!("(s=>{if(s.rangeCount)s.collapseToStart()})(getSelection())"), completionHandler: told];
             }
-            _ => 0.0,
-        };
-        let top = if around.isFlipped() { tall } else { 0.0 };
-        page.setFrame(NSRect::new(NSPoint::new(0.0, top), NSSize::new(room.size.width, room.size.height - tall)));
+            let options: Retained<AnyObject> = msg_send![options, new];
+            let () = msg_send![&options, setBackwards: step < 0];
+            let () = msg_send![&options, setWraps: true];
+            let field = field.clone();
+            let told = RcBlock::new(move |result: *mut AnyObject| {
+                let found: bool = !result.is_null() && msg_send![result, matchFound];
+                let color = if found { NSColor::labelColor() } else { NSColor::systemRedColor() };
+                field.setTextColor(Some(&color));
+            });
+            let () = msg_send![page, findString: &*words, withConfiguration: &*options, completionHandler: &*told];
+        }
     }
 }
 
 thread_local! {
-    static FINDER: RefCell<Option<Retained<NSTextFinder>>> = const { RefCell::new(None) };
+    static FIND: RefCell<Option<Retained<Find>>> = const { RefCell::new(None) };
 }
 
-/// macOS' own find bar, as Safari's: WKWebView answers it, where it has that.
-///
-/// # Safety
-/// On the main thread, for a WKWebView, which is there as long as the program.
-unsafe fn find(view: &NSView, mtm: MainThreadMarker) {
-    if !view.respondsToSelector(sel!(findMatchesForString:relativeToMatch:findOptions:maxResults:resultCollector:)) {
-        return;
+/// A bar over the page, as Safari's.
+fn find(view: &NSView, mtm: MainThreadMarker) {
+    const TALL: f64 = 40.0;
+    let place = |x: f64, w: f64, h: f64| NSRect::new(NSPoint::new(x, (TALL - h) / 2.0), NSSize::new(w, h));
+    let bar = NSView::initWithFrame(mtm.alloc(), place(0.0, 380.0, TALL));
+    let field = NSTextField::textFieldWithString(ns_string!(""), mtm);
+    field.setPlaceholderString(Some(ns_string!("Find")));
+    let own = mtm.alloc::<Find>().set_ivars(Bar { page: view.retain(), bar: bar.clone(), field: field.clone() });
+    // SAFETY: what they call is there, and stays as long as the program.
+    let own: Retained<Find> = unsafe {
+        let own: Retained<Find> = msg_send![super(own), init];
+        let () = msg_send![&field, setDelegate: &*own];
+        own
+    };
+    let button = |title: &NSString, label: &NSString, what: Sel, x: f64, w: f64| {
+        // SAFETY: as above.
+        let button = unsafe { NSButton::buttonWithTitle_target_action(title, Some(&own), Some(what), mtm) };
+        button.setFrame(place(x, w, 28.0));
+        // SAFETY: every view's.
+        let () = unsafe { msg_send![&button, setAccessibilityLabel: label] };
+        button
+    };
+    field.setFrame(place(12.0, 196.0, 24.0));
+    let before = button(ns_string!("‹"), ns_string!("Find Previous"), sel!(before:), 214.0, 38.0);
+    let next = button(ns_string!("›"), ns_string!("Find Next"), sel!(next:), 254.0, 38.0);
+    let done = button(ns_string!("Done"), ns_string!("Done"), sel!(done:), 300.0, 68.0);
+    for one in [&field as &NSView, &before, &next, &done] {
+        one.setAutoresizingMask(NSAutoresizingMaskOptions::ViewMinXMargin); // on the right
+        bar.addSubview(one);
     }
-    let own = mtm.alloc::<Find>().set_ivars(Bar { page: view.retain(), bar: RefCell::new(None), shown: Cell::new(false) });
-    let own: Retained<Find> = msg_send![super(own), init];
-    let finder = NSTextFinder::new();
-    let () = msg_send![&finder, setClient: view];
-    finder.setFindBarContainer(Some(ProtocolObject::from_ref(&*own)));
-    finder.setIncrementalSearchingEnabled(true);
-    finder.setIncrementalSearchingShouldDimContentView(false);
-    std::mem::forget(own);
-    FINDER.set(Some(finder));
+    FIND.set(Some(own));
 }
 
 /// 0: the bar, 1: the next one, -1: the one before.
 pub fn find_next(step: i8) {
-    FINDER.with_borrow(|finder| {
-        let Some(finder) = finder else { return };
-        let action = match step {
-            0 => NSTextFinderAction::ShowFindInterface,
-            1.. => NSTextFinderAction::NextMatch,
-            _ => NSTextFinderAction::PreviousMatch,
-        };
-        if finder.validateAction(action) {
-            finder.performAction(action);
-        }
-    });
+    let Some(find) = FIND.with_borrow(Clone::clone) else { return };
+    if !find.ivars().page.window().is_some_and(|w| w.isKeyWindow()) {
+        return;
+    }
+    if step == 0 || !find.shown() {
+        find.put(true);
+    } else {
+        find.look(step);
+    }
 }
 
 // Files
@@ -433,7 +467,7 @@ fn center() -> Option<Retained<UNUserNotificationCenter>> {
     own.map(|_| UNUserNotificationCenter::currentNotificationCenter())
 }
 
-static ALLOWED: AtomicBool = AtomicBool::new(false);
+static LETS: AtomicU8 = AtomicU8::new(0);
 
 pub fn notices_start() {
     let Some(center) = center() else { return };
@@ -444,32 +478,40 @@ pub fn notices_start() {
     };
     center.setDelegate(Some(ProtocolObject::from_ref(&*own)));
     std::mem::forget(own); // the center doesn't keep it
-    notices_look(|_| {});
+    notices_look(|| {});
 }
 
 /// Whether macOS lets it, which the person can change at any time.
-pub fn notices_look(told: impl Fn(bool) + 'static + Send) {
-    let Some(center) = center() else { return told(false) };
+pub fn notices_look(told: impl Fn() + 'static + Send) {
+    let Some(center) = center() else { return told() };
     let answer = RcBlock::new(move |settings: std::ptr::NonNull<objc2_user_notifications::UNNotificationSettings>| {
         // SAFETY: macOS gives it for as long as the block runs.
         let status = unsafe { settings.as_ref() }.authorizationStatus();
-        let allowed = status == UNAuthorizationStatus::Authorized || status == UNAuthorizationStatus::Provisional;
-        ALLOWED.store(allowed, Ordering::Relaxed);
-        told(allowed);
+        let lets = match status {
+            UNAuthorizationStatus::NotDetermined => 0,
+            UNAuthorizationStatus::Denied => 2,
+            _ => 1,
+        };
+        LETS.store(lets, Ordering::Relaxed);
+        told();
     });
     center.getNotificationSettingsWithCompletionHandler(&answer);
 }
 
-pub fn notices_allowed() -> bool {
-    ALLOWED.load(Ordering::Relaxed)
+pub fn notices_lets() -> notify::Lets {
+    match LETS.load(Ordering::Relaxed) {
+        0 => notify::Lets::Unasked,
+        1 => notify::Lets::Yes,
+        _ => notify::Lets::No,
+    }
 }
 
-/// macOS asks the person, the first time; after a no, its settings open.
-pub fn notices_ask(told: impl Fn(bool) + 'static + Send) {
-    let Some(center) = center() else { return told(false) };
+/// macOS asks the person, the first time.
+pub fn notices_ask(told: impl Fn() + 'static + Send) {
+    let Some(center) = center() else { return told() };
     let answer = RcBlock::new(move |granted: Bool, _: *mut NSError| {
-        ALLOWED.store(granted.as_bool(), Ordering::Relaxed);
-        told(granted.as_bool());
+        LETS.store(if granted.as_bool() { 1 } else { 2 }, Ordering::Relaxed);
+        told();
     });
     center.requestAuthorizationWithOptions_completionHandler(UNAuthorizationOptions::Alert | UNAuthorizationOptions::Badge, &answer);
 }

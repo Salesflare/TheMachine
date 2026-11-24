@@ -5,6 +5,7 @@ import os
 import pathlib
 import subprocess
 import sys
+import threading
 import time
 
 from mac_tools import *  # noqa: F403 (the steps are written in it)
@@ -92,6 +93,7 @@ def landed(name):
 def start(window=True, **kw):
     global app
     app = App(sandbox, window=window, **kw)
+    need(until(lambda: app.answers('app'), 60), 'its page answers')
     return app
 
 
@@ -116,6 +118,16 @@ def switch(name, on=None):
     return page('settings', f'document.querySelector("#{name}").checked')
 
 
+def no_network():
+    """Python, not the app, may be asked about: it is said no to, as it needs nothing there."""
+    while True:
+        of = 'tell application "System Events" to tell process "UserNotificationCenter"'
+        if 'Python' in run('osascript', '-e', f'{of} to get value of static texts of window 1').stdout:
+            run('osascript', '-e', f'{of} to click button "Don’t Allow" of window 1')
+        time.sleep(3)
+
+
+threading.Thread(target=no_network, daemon=True).start()
 dark = lambda on: run('osascript', '-e', f'tell application "System Events" to tell appearance preferences to set dark mode to {str(on).lower()}')  # noqa: E731
 ours = other()
 start(account=elsewhere.at)
@@ -127,9 +139,12 @@ def _():
     time.sleep(2)
     need(ID in in_front(), in_front())
     need('Foreground' in kind(), kind())
+    print([(x.get('kCGWindowOwnerName'), x.get('kCGWindowName'), x['kCGWindowLayer']) for x in all_windows()], flush=True)
     need(not app.box() and not app.robot(), f'one thing at a time {app.raw()}')
     need('Sign in' in text(), text())
-    return f'{app.window()} on {work_area()}; {text()}; {titles()}'
+    r = app.window()
+    need(page('app', 'innerHeight') < r.height, f'its page is below the title bar {r} {page("app", "innerHeight")}')
+    return f'{r} on {work_area()}; {text()}; {titles()}'
 
 
 @step('sign in by address')
@@ -150,6 +165,7 @@ def _():
     seen = machine.seen[-1]
     need(seen.get('desktop') == '1', f'it knows where it is: {seen}')
     need(until(lambda: told('#ipc') == 'refused', 8), 'it gets none of the app: ' + told('#ipc'))
+    need(not told(), told())
     return seen
 
 
@@ -337,9 +353,24 @@ def _():
     write('last needle')
     time.sleep(1)
     png('find')
-    key(ENTER)
     need(until(lambda: page('app', 'scrollY') > 100, 5), f'it shows it {page("app", "scrollY")}')
+    key(A, CMD)
+    write('needle')
+    found = lambda: page('app', '(r => r.startContainer.parentNode.textContent.slice(0, 3) + r.startOffset)(getSelection().getRangeAt(0))')
+    time.sleep(1)
+    places = [found()]
+    for n in range(3):
+        key(ENTER)
+        time.sleep(0.6)
+        places.append(found())
+    need(len(set(places[:3])) == 3 and places[3] == places[0], f'one after the other {places}')
+    key(G, CMD | SHIFT)
+    time.sleep(0.6)
+    need(found() == places[2], f'and back {found()} {places}')
     png('found')
+    write('zzz')
+    time.sleep(1)
+    png('not-found')
     key(ESCAPE)
     need(until(lambda: page('app', 'innerHeight') == tall, 5), 'Escape ends it')
     page('app', 'scrollTo(0, 0)')
@@ -464,12 +495,16 @@ def _():
     back_to_it()
     settings()
     need(page('settings', 'document.querySelector("#notify-row").hidden') is False, 'offered without the robot')
-    tap('#notify', 'settings')
-    time.sleep(3)
-    png('notifications-asked')
-    if told('#error', 'settings'):
-        return 'NOT TESTED: macOS refuses them here: ' + told('#error', 'settings')
-    return 'NOT TESTED: macOS asks, which stays unanswered here'
+    need(saved()['notify'] is True, f'on with the robot off {saved()["notify"]}')
+    hint = told('#notify-hint', 'settings')
+    png('notifications')
+    if 'Not allowed' in hint:
+        need(page('settings', 'document.querySelector("#notify").checked') is False, 'off while macOS refuses them')
+    else:
+        need(switch('notify') is False and saved()['notify'] is False, 'off')
+        need(switch('robot') is True and switch('robot') is False and saved()['notify'] is False, 'and the robot leaves that so')
+        need(switch('notify') is True, 'and on')
+    return f'{hint}; the banner itself is NOT TESTED'
 
 
 @step('the robot again')
@@ -626,6 +661,27 @@ def _():
     return app.window()
 
 
+def second(look):
+    """At two pixels a point, on a screen that isn't there."""
+    maker = out.parent / 'screen'
+    made = run('clang', '-fobjc-arc', '-framework', 'AppKit', '-framework', 'CoreGraphics', '-Wl,-U,_OBJC_CLASS_$_CGVirtualDisplay', '-o', str(maker), str(pathlib.Path(__file__).with_name('screen.m')))
+    need(made.returncode == 0, made.stderr)
+    runs = subprocess.Popen([str(maker)], stdout=subprocess.PIPE, text=True)
+    try:
+        if not until(lambda: len(screens()) == 2, 10):
+            return print('no second screen here', flush=True)
+        time.sleep(2)
+        area = work_area(1)
+        ask(f'set position of (first window whose name is "The Machine") to {{{area[0] + 20}, {area[1] + 20}}}')
+        ask('set size of (first window whose name is "The Machine") to {1200, 700}')
+        time.sleep(3)
+        look()
+    finally:
+        runs.terminate()
+        runs.wait()
+        time.sleep(2)
+
+
 @step('the real dashboard')
 def _():
     """The sandbox's: the real pages, on made-up data (sandbox/run.py), when it runs here."""
@@ -671,30 +727,9 @@ def _():
         key(ESCAPE)
         back_to_it()
         second(lambda: png('dashboard-on-two-screens'))
-        return page('app', 'document.title')
+        return f"{page('app', 'document.title')} {page('app', 'innerWidth')}"
     finally:
         runs.terminate()
-
-
-def second(look):
-    """At two pixels a point, on a screen that isn't there."""
-    maker = out.parent / 'screen'
-    made = run('clang', '-fobjc-arc', '-framework', 'AppKit', '-framework', 'CoreGraphics', '-Wl,-U,_OBJC_CLASS_$_CGVirtualDisplay', '-o', str(maker), str(pathlib.Path(__file__).with_name('screen.m')))
-    need(made.returncode == 0, made.stderr)
-    runs = subprocess.Popen([str(maker)], stdout=subprocess.PIPE, text=True)
-    try:
-        if not until(lambda: len(screens()) == 2, 10):
-            return print('no second screen here', flush=True)
-        time.sleep(2)
-        area = work_area(1)
-        ask(f'set position of (first window whose name is "The Machine") to {{{area[0] + 20}, {area[1] + 20}}}')
-        ask('set size of (first window whose name is "The Machine") to {1200, 700}')
-        time.sleep(3)
-        look()
-    finally:
-        runs.terminate()
-        runs.wait()
-        time.sleep(2)
 
 
 @step('the microphone')
@@ -720,7 +755,7 @@ def _():
 
 @step('quit')
 def _():
-    stop(lambda: key(Q, CMD)) if app.pids() else None
+    stop() if app.pids() else None
     need(not app.pids(), 'no process')
     sent = {a for a, _, _ in machine.actions}
     need(not sent, f'nothing done by itself: {sent}')

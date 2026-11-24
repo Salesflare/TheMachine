@@ -7,6 +7,7 @@ import http.server
 import json
 import pathlib
 import secrets
+import socketserver
 import ssl
 import threading
 import time
@@ -53,6 +54,7 @@ on('#blob', () => Object.assign(document.createElement('a'), {href: URL.createOb
 on('#alert', () => { alert('Something\\nto know'); says('alerted') });
 on('#confirm', () => says('confirm ' + confirm('Delete this?')));
 on('#prompt', () => says('prompt ' + prompt('What name?', 'Sam')));
+if (window.webkitSpeechRecognition) says('speech');
 on('#mic', () => { says('asking'); navigator.mediaDevices.getUserMedia({audio: true}).then(s => says('microphone ' + s.getAudioTracks().length), e => says('microphone ' + e.name)) });
 $('#pick').onchange = e => { $('#picked').textContent = [...e.target.files].map(f => f.name).join(', ') };
 $('#drop').ondragover = e => e.preventDefault();
@@ -106,6 +108,7 @@ HOURS = {'2h': 2, 'tomorrow': 24, '3d': 72, '1w': 168}
 
 class Machine(http.server.ThreadingHTTPServer):
     daemon_threads = True
+    server_bind = socketserver.TCPServer.server_bind  # HTTPServer's looks for the computer's name, on the local network too
 
     def __init__(self, port, certificate=None):
         super().__init__(('127.0.0.1', port), Page)
@@ -205,7 +208,8 @@ class Page(http.server.BaseHTTPRequestHandler):
             return self.answer(COMPACT.replace(b'OUT', f'http://localhost:{m.port}/out'.encode()), kind='text/html')
         if m.away:
             return self.answer(b'', 302, Location=m.away)
-        m.opened.append(self.headers.get('Cookie') in m.cookies)
+        if u.path == '/':  # a browser asks for an icon too
+            m.opened.append(self.headers.get('Cookie') in m.cookies)
         self.answer(WINDOW.replace(b'OUT', f'http://localhost:{m.port}/out'.encode()) if m.window else DASHBOARD, kind='text/html')
 
     def do_POST(self):

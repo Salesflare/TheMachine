@@ -46,7 +46,7 @@ pub fn watch(app: &AppHandle) {
 }
 
 fn follow(app: &AppHandle, changes: &Receiver<()>) {
-    let mut was = Front::Other;
+    let mut was = if app.state::<Shared>().away.load(Ordering::Relaxed) { Front::App } else { Front::Other };
     loop {
         // Now and then without being told, for what isn't: the app was installed, or the sign-in changed
         let _ = changes.recv_timeout(Duration::from_secs(5));
@@ -367,7 +367,7 @@ mod system {
         }
         let Some(program) = NSWorkspace::sharedWorkspace().frontmostApplication() else { return Front::Other };
         if program == NSRunningApplication::currentApplication() {
-            return Front::Own;
+            return Front::Nothing; // its window was closed
         }
         let name = program.bundleIdentifier().map(|b| b.to_string()).unwrap_or_default();
         if ids.iter().any(|id| super::is_bundle(&name, id)) { Front::App } else { Front::Other }

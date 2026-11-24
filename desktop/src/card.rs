@@ -99,6 +99,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .disable_drag_drop_handler()
         .additional_browser_args(&windows::browser())
         .initialization_script(ESCAPE)
+        .initialization_script(crate::dash::NO_SPEECH)
         .on_navigation(move |url| {
             if url.as_str() == BACK {
                 say(&here, "back");

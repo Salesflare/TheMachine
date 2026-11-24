@@ -95,6 +95,7 @@ body.settings{background:var(--page)}
 .set input:checked{background:var(--accent)}
 .set input:checked::after{translate:16px}
 .set input:disabled{opacity:.6}
+.set .sub.warn{color:var(--error)}
 .settings .error{font-size:13px;margin:10px 0 0}
 .settings .error:empty{display:none}
 .settings footer{display:flex;justify-content:space-between;gap:16px;padding-top:12px;font-size:13px;color:var(--text-2)}

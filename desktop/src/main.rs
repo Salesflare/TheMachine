@@ -1125,11 +1125,13 @@ fn main() {
             }
             #[cfg(target_os = "macos")]
             mac::fresh_shaders(app.handle());
+            let opens = dash::here() && !login::started();
+            app.state::<Shared>().away.store(opens, Ordering::Relaxed); // the robot, while its window is in front
             windows::start(app.handle())?;
             #[cfg(any(windows, target_os = "macos"))]
             tray(app.handle())?;
             notify::start(app.handle());
-            if dash::here() && !login::started() {
+            if opens {
                 dash::show(app.handle(), ""); // also to sign in
             } else if app.state::<Shared>().machine().is_none() {
                 open(app.handle()); // it says what it is, and signs in

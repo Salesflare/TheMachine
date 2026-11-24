@@ -35,6 +35,7 @@ window.MachineText = {
   setLogin: 'Start at login',
   setNotify: 'Notifications',
   setNotifyHint: 'In the robot’s place',
+  setNotifyBlocked: 'Not allowed. Turn on The Machine in System Settings, Notifications.',
   setClose: 'When the window closes',
   setKeep: 'Keep running',
   setQuit: 'Quit',
@@ -102,7 +103,7 @@ window.MachineText = {
     long: 'Cut to 2,000 characters.',
     shot: 'Couldn’t take a screenshot.',
     login: 'Couldn’t change that. Try System Settings, General, Login Items.',
-    notify: 'Allow The Machine in System Settings, Notifications.',
+
     screen: 'Allow The Machine in System Settings, Privacy & Security, Screen & System Audio Recording. Then quit it and open it again.',
   },
 };
