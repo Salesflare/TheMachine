@@ -46,7 +46,7 @@ class Hours(unittest.TestCase):
             self.assertEqual(machine_cards.snooze_time('tomorrow', work=True), at(2026, 10, 12, 8))
             self.assertEqual(machine_cards.snooze_time('tomorrow'), at(2026, 10, 10, 8))
             self.assertEqual(machine_cards.thread_return_time(1), at(2026, 10, 12, 8))
-            self.assertEqual(machine_cards.snooze_choices(True)[1], ['tomorrow', 'Monday · 8:00'])
+            self.assertEqual(machine_cards.snooze_choices(True)[1], ['tomorrow', 'Monday · 08:00'])
         saturday = dt.datetime(2026, 10, 10, 16, tzinfo=BXL)
         self.assertEqual(machine_delivery_deliver.delivery_time('now', current=saturday, work=True), at(2026, 10, 12, 8, 30))
 
@@ -67,7 +67,7 @@ class Hours(unittest.TestCase):
             self.assertEqual(machine_cards.snooze_time('tomorrow', work=True), at(2026, 10, 18, 8, 15, NYC))  # Friday and Saturday off
             self.assertEqual(machine_cards.snooze_time('tomorrow'), at(2026, 10, 16, 8, 15, NYC))
             self.assertEqual(machine_cards.thread_return_time(1), at(2026, 10, 18, 8, 15, NYC))
-            self.assertEqual(machine_cards.snooze_choices(True)[1], ['tomorrow', 'Sunday · 8:15'])
+            self.assertEqual(machine_cards.snooze_choices(True)[1], ['tomorrow', 'Sunday · 08:15'])
         friday = dt.datetime(2026, 10, 16, 10, tzinfo=NYC)
         self.assertEqual(machine_delivery_deliver.delivery_time('now', current=friday, work=True), at(2026, 10, 18, 8, 30, NYC))
         self.assertIsNone(machine_delivery_deliver.delivery_time('now', current=dt.datetime(2026, 10, 18, 10, tzinfo=NYC), work=True))  # Sunday works

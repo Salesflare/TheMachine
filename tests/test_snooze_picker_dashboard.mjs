@@ -13,9 +13,9 @@ const nl=await readFile(new URL('../i18n/nl.json',import.meta.url),'utf8'),en=aw
 const A='a1'.repeat(8),B='b2'.repeat(8),NOW='2026-11-17T11:00:00Z',BACK='2026-11-18T07:00:00Z',BEFORE='2026-11-19T07:00:00+00:00';  // a Tuesday noon in Brussels
 const LONG='Send the bakery on the corner the quote for the spring menu, with the prices per tray and the delivery days they asked about twice';
 let actions=[],lang='en';
-const choices=[['2h','2 hours'],['tomorrow','Tomorrow · 8:00'],['3d','3 days · 8:00'],['1w','1 week · 8:00']];
+const choices=[['2h','2 hours'],['tomorrow','Tomorrow · 08:00'],['3d','3 days · 08:00'],['1w','1 week · 08:00']];
 const status=()=>({suggestions:[
-  {id:A,title:LONG,body:'They asked for prices.',status:'pending',scope:'work',created_at:NOW,event_ids:[1],due:'2026-11-20',snooze_choices:choices,snooze_due:[BEFORE,'Before it’s due · Thu 8:00']},
+  {id:A,title:LONG,body:'They asked for prices.',status:'pending',scope:'work',created_at:NOW,event_ids:[1],due:'2026-11-20',snooze_choices:choices,snooze_due:[BEFORE,'Before it’s due · Thu 08:00']},
   {id:B,title:'Ask the landlord about the boiler',body:'It made a noise again.',status:'pending',scope:'personal',created_at:NOW,event_ids:[2],snooze_choices:choices}],
  promises:[],connectors:[],suggestion_counts:{pending:2},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],reminders:{telegram:false,push:1},
  locale:{locale:'en-BE',region:'BE',language:lang,language_set:true,clock:'auto',hour12:false,auto_hour12:false,date_locale:lang==='en'?'en-GB':'nl-BE',languages:{en:'English',nl:'Nederlands'},saveable:true}});
@@ -44,8 +44,9 @@ try{
   await page.evaluate(id=>openSnooze(id),A);await page.locator('#snooze-dialog[open]').waitFor();
   const look=await page.evaluate(()=>{const d=document.querySelector('#snooze-dialog'),t=document.querySelector('#snooze-for>span'),c=document.querySelector('#snooze-for .chip'),dr=d.getBoundingClientRect(),tr=t.getBoundingClientRect(),first=d.querySelector('[data-snooze]').getBoundingClientRect();
    return {title:t.textContent,lines:Math.round(t.clientHeight/parseFloat(getComputedStyle(t).lineHeight)),cut:t.scrollHeight>t.clientHeight,inside:tr.left>=dr.left+8&&tr.right<=dr.right-8,due:c?.textContent,chipIn:c&&c.getBoundingClientRect().right<=dr.right,above:c.getBoundingClientRect().bottom<=first.top,wide:d.scrollWidth<=d.clientWidth,
+    aligned:(x=>Math.max(...x)-Math.min(...x)<.5)([d.querySelector('#snooze-title'),t,d.querySelector('[data-snooze]'),d.querySelector('#snooze-custom')].map(n=>{const r=document.createRange();r.selectNodeContents(n);return r.getBoundingClientRect().left})),
     described:d.getAttribute('aria-describedby'),rows:[...d.querySelectorAll('[data-snooze]')].map(b=>b.textContent)}});
-  assert.deepEqual(look,{title:LONG,lines:2,cut:true,inside:true,due:'Due Friday',chipIn:true,above:true,wide:true,described:'snooze-for',rows:[...choices.map(x=>x[1]),'Before it’s due · Thu 8:00']});
+  assert.deepEqual(look,{title:LONG,lines:2,cut:true,inside:true,due:'Due Friday',chipIn:true,above:true,wide:true,aligned:true,described:'snooze-for',rows:[...choices.map(x=>x[1]),'Before it’s due · Thu 08:00']});
   if(shots)await page.screenshot({path:`${shots}/picker-${width}x${height}-${scheme}.png`});
   // The month keeps naming it
   await page.locator('#snooze-custom').click();assert.ok(await page.locator('#snooze-for').isVisible());

@@ -11,7 +11,7 @@ from machine.kinds import SEND
 from machine.sources.android import android_app_shown
 from machine.sources.slack import SLACK_ID
 import next_actions
-from timeutil import WORK_HOURS, hour_minute, in_hours, is_work_day, local_tz, morning_label, next_work_day, now
+from timeutil import WORK_HOURS, hour_minute, in_hours, is_work_day, local_tz, next_work_day, now
 from machine import todo_states
 from machine.owner_error import OwnerError
 from machine import todo_kinds
@@ -245,7 +245,7 @@ def plain(text, limit=240):
 
 
 def snooze_choices(work=False):
-    """The quick snooze options with labels for when each lands; work skips days off."""
+    """The quick snooze options with labels for when each lands, on the owner's clock; work skips days off."""
     local_now = dt.datetime.fromisoformat(now()).astimezone(local_tz())
     tomorrow = (local_now - dt.timedelta(hours=3)).date() + dt.timedelta(days=1)
     choices, seen = [['2h', i18n.t('2 hours')]], set()
@@ -256,7 +256,7 @@ def snooze_choices(work=False):
         seen.add(due)
         moved = work and due.date() != (local_now - dt.timedelta(hours=3)).date() + dt.timedelta(days={'tomorrow': 1, '3d': 3, '1w': 7}[option])
         name = i18n.t('Tomorrow') if due.date() == tomorrow else locale_prefs.weekday_name(due) if moved and (due.date() - tomorrow).days < 6 and locale_prefs.language() != 'en' else due.strftime('%A') if moved and (due.date() - tomorrow).days < 6 else locale_prefs.day_text(due) if moved else i18n.t(plain)
-        choices.append([option, name + ' · ' + morning_label()])
+        choices.append([option, name + ' · ' + locale_prefs.clock_text(due)])
     return choices
 
 
@@ -286,8 +286,7 @@ def snooze_due(due, due_at=None, work=False):
     if moment is None or moment in taken:
         return None
     away = (moment.date() - local_now.date()).days
-    clock = locale_prefs.clock_text(moment) if moment == moments[-1] and at else morning_label()
-    when = ' '.join(([locale_prefs.weekday_name(moment) if away < 7 else locale_prefs.day_text(moment)] if away else []) + [clock])
+    when = ' '.join(([locale_prefs.weekday_name(moment) if away < 7 else locale_prefs.day_text(moment)] if away else []) + [locale_prefs.clock_text(moment)])
     return [moment.astimezone(dt.timezone.utc).isoformat(), i18n.t('Before it’s due · {}', when)]
 
 

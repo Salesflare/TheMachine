@@ -10,7 +10,7 @@ order: 3
 
 Press **Snooze** on a to-do. The menu offers a few times, like in 2 hours, tomorrow or in a week. For another moment, pick **Choose date** and **Time**, then **Save time**. The menu names the to-do and when it's due. With a deadline a few days off, it also offers a moment before it, like "Before it's due · Wed 9:00". You can still pick any time, also past the deadline.
 
-The message after it says until when, like "Snoozed until tomorrow 9:00". Snoozed by mistake? **Undo** in it brings the to-do right back.
+The message after it says until when, like "Snoozed until tomorrow 08:00". Snoozed by mistake? **Undo** in it brings the to-do right back.
 
 Snoozes of a day or more land at your "Snoozes land at" time, and work to-dos wait for a work day. Set both in [Work hours](work-hours.md).
 
