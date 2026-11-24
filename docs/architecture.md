@@ -174,6 +174,10 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   subscription or service worker, a background tab and a headless or automated browser never count. The owner's
   own hours (`work_hours`) are never night. Time-sensitive titles wait too: nothing reaches the owner outside their
   hours anyway. `review_worker.night_pause: false` turns it off (`machine/night_pause.py`).
+- **Waiting by design, in its own words.** Each look, the review worker keeps whether reviews of new signals wait now,
+  for what (the `5h` or `week` usage window, a usage `limit`, the `memory` rebuild, the `night` pause), since when and
+  until when: the kind and times only, in `milestones` (`machine/store/review_pause.py`). A hosted Machine's agent
+  reports it, so its stall alert doesn't take a planned wait for a stall.
 - **A new mailbox first.** A newly connected mailbox (Gmail or Outlook, on a new install or added later) doesn't wait:
   its first review starts as soon as its first import of the last 7 days is in, as one review. None starts halfway
   through the import, and never later than `max_wait_minutes`. Meanwhile the dashboard says "First review starts when

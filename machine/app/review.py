@@ -45,7 +45,7 @@ from machine.faults import loop_failed
 from machine.prompts.profile import VOICE_TEXT
 from machine.prompts.review import FACT_KIND_HINT, FACT_QUOTE_HINT, review_prompt, source_notes
 from machine.sources.connectors import companies_prompt
-from machine.store import review_backoff, review_wait
+from machine.store import review_backoff, review_pause, review_wait
 from machine.store.cards import active_preview
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
@@ -514,9 +514,12 @@ class ReviewApp:
                 # at the week's WEEK_CAP and the 5-hour window; the owner's Review now goes like their own chat.
                 # The night pause (machine/night_pause.py): new signals wait for the catch-up before morning. Never a run
                 # to recover, the first look or its digging, or the owner's Check now.
-                if not (recovery or quick or dig or asked) and self.night_hold(db, stamp):
+                night = None if recovery or quick or dig or asked else self.night_hold(db, stamp)
+                if night:
+                    review_pause.note(db, {'window': 'night', 'until': night.timestamp()})
                     return None
                 self.review_paused = self.background_pause(first=bool(quick or dig), owner=asked, job='review', db=db, signals=True)
+                review_pause.note(db, self.review_paused)  # for a hosted Machine's stall alert
                 if self.review_paused:
                     return None
                 if quick:
