@@ -291,7 +291,8 @@ def keep_owed(db, row, action, job_id, stamp, digest_at='08:30'):
     if len(who) >= 2:  # the title says what and the due chip says when, so a moved date never leaves this line stale
         said = locale_prefs.day_text(dt.datetime.fromisoformat(stamp).astimezone(local_tz()))
         body = i18n.t('Replied to {} on {}. The work is still to do.', who, said)[:700]
-    db.execute("UPDATE suggestions SET due=?,body=?,next_action=NULL,outcome=NULL,handled_hint=NULL,early=0,snoozed_until=NULL,"
+    # The draft went out: what it followed (based_on) goes with it, the work left is the to-do's own
+    db.execute("UPDATE suggestions SET due=?,body=?,based_on=NULL,next_action=NULL,outcome=NULL,handled_hint=NULL,early=0,snoozed_until=NULL,"
                'resume_status=NULL,undo_until=NULL,deliver_after=NULL,feedback_until=NULL WHERE id=?', (due, body, row['id']))
     todo_moves.transition(db, row['id'], todo_states.PENDING, 'still_owed', at=stamp)
     db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
