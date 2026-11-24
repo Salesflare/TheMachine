@@ -399,7 +399,7 @@ class CardChange(unittest.TestCase):
         self.enterContext(granted(FakeGoogle()))
         self.accept()
         job = dict(self.job(), next_step='x' * 2000)
-        limit = int(__import__('re').search(r'message\.length>(\d+)', (machine_config.ROOT / 'preparation-run.mjs').read_text())[1])
+        limit = int(__import__('re').search(r'message\)\.length>(\d+)', (machine_config.ROOT / 'preparation-run.mjs').read_text())[1])
         prompt = machine_app_preparation.preparation_prompt(job, '- ' + 'f' * 3000 + '\n…', config=CONFIG)
         self.assertIn('Calendars you can change: cal (owner@example.com), kid-cal (Kid’s calendar)', prompt)
         self.assertNotIn('partner-cal', prompt)

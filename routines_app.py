@@ -33,6 +33,7 @@ from zoneinfo import ZoneInfo
 
 import follow_ups
 import i18n
+from machine.app import start_message
 from machine.app.recall import recall
 from machine.app.review import fit_events
 from machine.config import WORKSPACE
@@ -800,6 +801,9 @@ class RoutinesApp:
                 with self.store.connect() as db:
                     routines.admitted(db, run['id'], self.routines_stamp())
                 memory_use.record(self.store, 'routine', run.get('_memory'), run_id=run['id'])
+            elif receipt.get('error') in start_message.REFUSED:  # it can never start: not tried again every half minute
+                with self.store.connect() as db:
+                    routines.finish(db, run['id'], 'failed', self.routines_stamp(), error=receipt['error'])
 
     def routine_settle(self, run):
         """An admitted turn: once it ended its report has finished the run; still running means it ended without one."""

@@ -96,6 +96,11 @@ async function release(status){
 // fails this start (error session_archived: the refusal comes before admission, so nothing runs under its key) instead.
 // The Gateway takes a restore (a lifecycle patch) only with the session's current sessionId as expectedSessionId, so a
 // chat reset or replaced in the meantime is never restored by mistake: the runner reads it from the session's row first.
+// A start that can never succeed, named (start_message.REFUSED): the service ends it instead of retrying it.
+const refused=code=>Object.assign(new Error('Start refused: '+code),{refused:code});
+// Why a call is unavailable, from a fixed list (start_message.UNAVAILABLE), for the service log: never the text.
+const why=error=>OFFLINE.test(String(error?.message || ''))?'offline':error?.name==='GatewayClientRequestError'?'refused':
+  error?.unconfirmed?'unconfirmed':/timeout|timed out/i.test(String(error?.message || ''))?'timeout':'other';
 const OFFLINE=/ECONNREFUSED|closed|socket/i, ARCHIVED=/is archived\. Restore it/i;
 const refusedArchived=error=>error?.name==='GatewayClientRequestError' && ARCHIVED.test(error?.message || '');
 async function restore(){
@@ -117,14 +122,17 @@ async function unarchived(call){
 try {
   let result;
   if (request.action==='start') {
-    if (typeof request.message!=='string' || request.message.length>60000) throw new Error('Invalid prompt');  // PROMPT_LIMIT in assistant.py
+    // Refused before any Gateway call, the same on every retry: nothing ran, so this start is over as what it is.
+    // In characters, as PROMPT_LIMIT (machine/app/preparation.py) counts them: an emoji is one, not two.
+    if (typeof request.message!=='string' || !request.message.trim()) throw refused('invalid_request');
+    if (Array.from(request.message).length>60000) throw refused('prompt_too_long');
     // Images the owner added to their chat message (chat_files.py): sent to the model as images. Other files are in
     // the run's attachments folder, named in the message.
     const IMAGE=/^image\/(?:png|jpeg|gif|webp)$/;
     const attachments=Array.isArray(request.attachments)?request.attachments:[];
     if (attachments.length>5 || attachments.some(a=>a?.type!=='image' || !IMAGE.test(a.mimeType||'') || typeof a.fileName!=='string' ||
         a.fileName.length>200 || typeof a.content!=='string' || a.content.length>7*1024*1024 || !/^[A-Za-z0-9+/]*={0,2}$/.test(a.content)) ||
-        attachments.reduce((n,a)=>n+a.content.length,0)>20*1024*1024) throw new Error('Invalid attachments');
+        attachments.reduce((n,a)=>n+a.content.length,0)>20*1024*1024) throw refused('invalid_attachments');
     // Fast (assistant.py chat_turn_fast, chat_model.py): the session's speed, set just before the turn. true for a turn
     // the person waits on in a to-do chat with Fast on; false sets a session that ran fast back to standard, and when
     // that can't be done the turn doesn't start (unavailable: tried again in a minute), so background work never runs
@@ -157,7 +165,7 @@ try {
           /^[a-z0-9-]{1,40}$/.test(request.provider) && /^[a-z0-9._:/-]{1,120}$/i.test(request.model) ? {provider:request.provider, model:request.model}:{}),
       ...(typeof request.thinking==='string' && /^(off|minimal|low|medium|high|xhigh|adaptive|max|ultra)$/.test(request.thinking) ? {thinking:request.thinking}:{}),
     },scope));
-    if (result?.runId!==request.job_id) throw new Error('Unconfirmed admission');
+    if (result?.runId!==request.job_id) throw Object.assign(new Error('Unconfirmed admission'),{unconfirmed:true});
     process.stdout.write(JSON.stringify({run_id:request.job_id,status:'admitted',...(speed?{fast:speed}:{})}));
   } else if (request.action==='stop') {
     // After the normal runtime plus an outage grace period, stop only our exact
@@ -229,8 +237,8 @@ try {
   }
   // offline: the Gateway itself can't be reached (down after a reboot, mid-restart), the same test as chat-history-run.mjs.
   // A start that gets this waits for it to come back without a deadline (assistant.py preparation_run_step).
-  const offline=OFFLINE.test(String(error?.message || ''));
   process.stdout.write(JSON.stringify(ended?{run_id:request.job_id,status:'lost',error:'runtime_lost',error_phase:'runtime'}:
     error?.archived?{run_id:request.job_id,status:'error',error:'session_archived',error_phase:'session'}:
-    {run_id:request.job_id,status:'unavailable',...(offline?{reason:'offline'}:{})}));
+    error?.refused?{run_id:request.job_id,status:'error',error:error.refused,error_phase:'runtime'}:
+    {run_id:request.job_id,status:'unavailable',reason:why(error)}));
 }

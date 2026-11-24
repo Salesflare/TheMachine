@@ -83,11 +83,11 @@ class Changes(unittest.TestCase):
 
     def test_the_run_on_a_note_reads_the_routine_and_offers_only_a_lasting_change(self):
         job = self.note('No emoji, ever.')
-        lines = self.app.routine_change_lines({**job, 'ahead': False}, '')
+        lines = self.app.routine_change_lines({**job, 'ahead': False})
         for said in ('draft from the owner\'s routine "Check what shipped"', WORDS, 'Judge by what the note means',
                      'routine_change=<the routine\'s whole instructions', 'leaves routine_change out', 'never says the routine changed'):
             self.assertIn(said, lines)
-        self.assertEqual(self.app.routine_change_lines({**job, 'ahead': True}, ''), '')  # prepared ahead: no note
+        self.assertEqual(self.app.routine_change_lines({**job, 'ahead': True}), '')  # prepared ahead: no note
         with self.store.connect() as db:
             self.assertIsNone(routine_changes.check(db, self.sid, job['job_id'], WORDS))  # its words already: no offer
             with self.assertRaisesRegex(ValueError, 'only for a to-do from a routine'):

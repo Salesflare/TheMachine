@@ -224,6 +224,13 @@ class Profile(unittest.TestCase):
         self.assertEqual((run['status'], run['error']), ('error', 'no_draft'))
 
 
+    def test_a_turn_that_can_never_start_ends_at_once_with_its_own_error(self):
+        run_id = self.app.action('profile_start', {})['run_id']
+        self.app.profile_step(lambda request: {'status': 'error', 'error': 'prompt_too_long', 'error_phase': 'runtime'})
+        run = self.app.action('profile_status', {'run_id': run_id})
+        self.assertEqual((run['status'], run['error']), ('error', 'prompt_too_long'))
+        self.assertIsNone(self.app.profile_step(Runner()))  # not tried again
+
     def first_profile_app(self, user_md=None):
         workspace = Path(self.temp.name) / 'workspace'; workspace.mkdir(exist_ok=True)
         if user_md is not None:
