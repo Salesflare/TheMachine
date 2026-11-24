@@ -1,7 +1,9 @@
 """Runs the app on a Windows desktop as a person would: real mouse and keys (SendInput), against a made-up Machine, with a
 screenshot of each step. For CI's own throwaway computer (desktop.yml): it moves the mouse and changes the resolution.
 
-  python smoke/windows.py <sandbox build> <build for people> <folder for the pictures>
+  python smoke/windows.py <sandbox build> <build for people> <folder for the pictures> [<folder of certificate.sh>]
+
+The last for the steps over https, where its root is trusted.
 """
 import base64
 import ctypes
@@ -42,6 +44,7 @@ SM = user.GetSystemMetrics
 
 out = pathlib.Path(sys.argv[3])
 out.mkdir(parents=True, exist_ok=True)
+CERTIFICATE = pathlib.Path(sys.argv[4]).resolve() if len(sys.argv) > 4 else None
 results = []
 STATE = (out / 'state.txt').resolve()  # what the app takes for Windows' word on notifications
 STATE.write_text('5')
@@ -167,11 +170,13 @@ def need(ok, text):
 class App:
     last = None
 
-    def __init__(self, program, *args, debug=True):
+    def __init__(self, program, *args, debug=True, over=None):
         if App.last and App.last.poll() is None:  # a step before this one failed
             App.last.kill()
             App.last.wait()
         env = dict(os.environ, MACHINE_SANDBOX_ACCOUNT=f'http://127.0.0.1:{PORT}', MACHINE_SANDBOX_SNIP=str(SNIP), MACHINE_SANDBOX_STATE=str(STATE))
+        if over:
+            env.update(MACHINE_SANDBOX_ACCOUNT=over.at, MACHINE_SANDBOX_ROOT=str(CERTIFICATE / 'root.pem'))
         if debug:
             env['MACHINE_SANDBOX_DEBUG'] = str(DEBUG)
         self.env, self.program = env, program
@@ -1470,21 +1475,6 @@ def _():
     need(app.again() == 0 and app.process.poll() is None, 'the second one ends')
 
 
-@step('a to-do in the box, with an account')
-def _():
-    machine.compact = True
-    open_it()
-    press(app, '#todos li:nth-child(2) .name')
-    carded('aa02')
-    del machine.seen[:]
-    press(app, 'a[target]', CARD)
-    need(until(lambda: any(s.get('at') == '#person=7' for s in machine.seen), 40), f'the link opens {machine.seen}')
-    need(until(lambda: not app.wide()), 'the box goes')
-    browsers_closed()
-    machine.compact = False
-    return 'signed in' if machine.cards[-1] else 'NOT TESTED: a browser sends the session only to https, here it is http'
-
-
 def comes(todo, soon=False):
     """The Machine has something for it to say. Soon: asked as the box closes (what its rows show isn't said after it)."""
     if app.box():
@@ -1837,6 +1827,87 @@ def _():
 
 if app.process.poll() is None:
     app.process.kill()
+    app.process.wait()
+
+
+# As a hosted Machine is: over https, with an account's session, which a browser sends only there
+
+fresh()
+hosted = Machine(PORT + 2, CERTIFICATE) if CERTIFICATE else None
+app = App(sandbox, over=hosted) if hosted else app
+
+
+@step('account sign-in over https')
+def _():
+    if not hosted:
+        return 'NOT TESTED: no certificate'
+    need(until(app.box, 30) and until(lambda: says('#signin-go')), 'it offers the sign-in')
+    need(not says('#signin-error'), says('#panel'))
+    press(app, '#signin-go')
+    need(until(lambda: hosted.links, 60), 'the browser opens the account')
+    os.startfile(hosted.links[-1])
+    need(until(lambda: says('#compose'), 25), f'signed in {says("#panel")}')
+    need(saved()['machine'] == hosted.at + '/' and saved()['cookie'] in hosted.cookies, 'with its session')
+    browsers_closed()
+    return hosted.at
+
+
+@step('a to-do in the box, with an account')
+def _():
+    if not hosted:
+        return 'NOT TESTED: a browser sends the session only to https, here it is http'
+    hosted.compact = True
+    open_it()
+    press(app, '#todos li:nth-child(2) .name')
+    carded('aa02')
+    need(hosted.cards[-1] and all(hosted.cards), f'its page has the session {hosted.cards}')
+    need(page(CARD, 'location.origin') == hosted.at and page(CARD, 'document.cookie') == '', 'which no script can read')
+    png('signed-in-to-do')
+    need(until(lambda: says('#done', CARD)), 'it is drawn')
+    press(app, 'a[target]', CARD)
+    need(until(lambda: any(s.get('at') == '#person=7' for s in hosted.seen), 40), f'the link opens {hosted.seen}')
+    need(until(lambda: not app.wide()), 'the box goes')
+    browsers_closed()
+    return 'signed in'
+
+
+@step('a to-do in the box, after the next start')
+def _():
+    global app
+    if not hosted:
+        return 'NOT TESTED: no certificate'
+    app.again('--quit')
+    need(app.ended(), 'the process is gone')
+    app = App(sandbox, over=hosted)
+    need(until(app.robot, 30), 'the robot shows')
+    time.sleep(4)
+    del hosted.cards[:]
+    open_it()
+    press(app, '#todos li:nth-child(1) .name')
+    carded('aa01')
+    need(hosted.cards and all(hosted.cards), f'its page has the session {hosted.cards}')
+
+
+@step('signed out over https')
+def _():
+    if not hosted:
+        return 'NOT TESTED: no certificate'
+    if app.card():
+        key(ESCAPE)
+    need(until(app.box), 'the box is there')
+    press(app, '#more')
+    press(app, '#menu-signout')
+    time.sleep(1)
+    if not app.box():
+        click(*app.center())
+    need(until(lambda: says('#state') == 'Not signed in'), says('#state'))
+    need(not saved()['cookie'], 'its session is gone')
+    app.again('--quit')
+    need(app.ended(), 'the process is gone')
+
+
+if app.process.poll() is None:
+    app.process.kill()
 
 
 @step('nothing is left')
@@ -1844,6 +1915,7 @@ def _():
     name = os.path.basename(sandbox)
     need(until(lambda: name not in subprocess.run(['tasklist'], capture_output=True, text=True).stdout, 5), 'no process')
     need(not scheme(), 'no links')
+    need(not hosted or not hosted.actions, 'nothing done there')
     sent = {a for a, _, _ in machine.actions}
     need(sent <= {'card_new', 'search_ask', 'decide', 'chat_upload', 'chat_file_remove'}, str(sent))
     need({a['choice'] for n, a, _ in machine.actions if n == 'decide'} <= {'accept', 'snooze', 'complete', 'undo'}, 'only what the buttons do')

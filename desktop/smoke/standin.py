@@ -1,5 +1,5 @@
 """A made-up Machine and account sign-in on 127.0.0.1 for windows.py: just the routes the app calls, as a sandbox build
-takes them. It keeps what it was asked."""
+takes them. It keeps what it was asked. Over https with the certificate of certificate.sh (its folder)."""
 import base64
 import datetime
 import hashlib
@@ -7,6 +7,7 @@ import http.server
 import json
 import pathlib
 import secrets
+import ssl
 import threading
 import time
 import urllib.parse
@@ -50,8 +51,13 @@ HOURS = {'2h': 2, 'tomorrow': 24, '3d': 72, '1w': 168}
 class Machine(http.server.ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, port):
+    def __init__(self, port, certificate=None):
         super().__init__(('127.0.0.1', port), Page)
+        self.at = f'http{"s" if certificate else ""}://127.0.0.1:{port}'
+        if certificate:
+            tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            tls.load_cert_chain(certificate / 'cert.pem', certificate / 'key.pem')
+            self.socket = tls.wrap_socket(self.socket, server_side=True, do_handshake_on_connect=False)  # on each one's own thread
         self.port, self.actions, self.cookies, self.links, self.challenges = port, [], set(), [], {}
         self.seen, self.cards = [], []
         self.desks, self.notices, self.meeting = [], [], None  # what the robot says of itself with each look; what waits for it to say
@@ -85,7 +91,7 @@ class Page(http.server.BaseHTTPRequestHandler):
         if u.path == '/open':  # the account: the browser shows this, and windows.py opens the link it would go to
             t = secrets.token_urlsafe(32)
             m.challenges[t] = q['c']
-            back = urllib.parse.quote(f'http://127.0.0.1:{m.port}/_machine/auth?t={t}&to=app', safe='')
+            back = urllib.parse.quote(f'{m.at}/_machine/auth?t={t}&to=app', safe='')
             m.links.append('computer.themachine.app://signed-in?u=' + back)
             return self.answer(b'<title>Stand-in account</title>Signed in', kind='text/html')
         if u.path == '/_machine/auth':
@@ -130,7 +136,7 @@ class Page(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         m = self.server
         asked = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
-        own = self.headers.get('Origin') == f'http://127.0.0.1:{m.port}' and self.headers.get('X-CSRF-Token') == 'made-up'
+        own = self.headers.get('Origin') == m.at and self.headers.get('X-CSRF-Token') == 'made-up'
         if self.path != '/api/action' or not own:
             return self.answer({'error': 'Not from the dashboard'}, 403)
         if asked['action'] in ('decide', 'card_new') and m.no:
