@@ -22,7 +22,7 @@ from machine.sources.calendar import all_day_span, calendar_owned, calendar_owne
 from machine.sources.slack import slack_named, slack_named_out
 from machine.store import evidence_moments, first_pass, message_view, review_last_look, review_saves, review_wait, review_whys, todo_likely
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
-from machine.text import _address, clamp, encoded
+from machine.text import UNREADABLE, _address, clamp, encoded
 import own_addresses
 from machine.store import outcomes
 import project_success
@@ -332,6 +332,7 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief
         return title_view(row, metadata)
     compact, metadata_clipped = compact_metadata({k: v for k, v in metadata.items() if not (k == 'files' and row['kind'] == 'owner.card')})
     text = re.sub(r'\s+', ' ', message_view.intercom_body(row['kind'], metadata, row['body'])).strip()  # who opened it, when not the customer
+    text = text or UNREADABLE.get(metadata.get('unreadable'), '')
     matched = bool(passage) and not offset and len(text) > preview
     offset = passage if matched else offset
     view = {'id': row['id'], 'account_id': row['account_id'], 'source_id': clamp(row['source_id'], 500), 'kind': row['kind'], 'occurred_at': row['occurred_at'],

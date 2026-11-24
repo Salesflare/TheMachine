@@ -144,6 +144,14 @@ def trim_quoted_history(text, subject='', people=''):
 QUOTED_MARK = re.compile(r'(?<!\n)\n*\[Quoted earlier messages(?::[^\]\n]*)?\]\n?')
 
 
+# What a review and the checks that close read of a mail whose text can't be read (its body is stored empty, with why in
+# `unreadable`): it says something, and nobody here knows what. Never stored and never shown: people see one line
+# (message_view.shape_email), and it is no one's own words.
+UNREADABLE = {reason: f"[The text of this mail couldn't be read: {why}. It may say anything: conclude nothing from it.]" for reason, why in (
+    ('encrypted', 'it is encrypted'), ('signed', 'it is signed in a form that has to be opened first'),
+    ('winmail', 'Outlook put it in a file, winmail.dat'))}
+
+
 def shown_body(text):
     """A stored body as people read it: (text, clipped). The quoted-history marker is left out, the history under it
     kept; clipped when the marker says part of that history was cut."""

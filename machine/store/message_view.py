@@ -36,7 +36,7 @@ from machine.cards import group_sender
 from machine.sources.android import android_app_shown, android_text_shown
 from machine.sources.slack import slack_plain
 from machine.store import graph_identifiers
-from machine.text import _address, intercom_note
+from machine.text import UNREADABLE, _address, intercom_note
 from mail_senders import relay
 
 VIEWS =('email', 'chat', 'notification', 'card')
@@ -249,6 +249,8 @@ def shape_email(o, m, title):
     shown = group_sender(name.strip().strip('"'))
     if shown != name.strip().strip('"'):
         o['from'] = shown + (' <' + rest if cut else '')
+    if m.get('unreadable') in UNREADABLE:  # said in one line instead (events-message.js)
+        o['unreadable'] = 'Read it in your mail app.'
     o['body'] = drop_repeats(o['body'], title)
     details_only(o)
 

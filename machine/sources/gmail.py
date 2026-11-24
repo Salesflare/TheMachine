@@ -118,6 +118,28 @@ def attachment_names(payload):
     return found
 
 
+def unreadable(payload):
+    """Why a message with no text of its own has none to read: 'encrypted' or 'signed' (S/MIME, PGP: what it says is inside
+    one sealed part) or 'winmail' (Outlook's winmail.dat); '' when it just is empty. Not looked for in messages attached to it."""
+    def kinds(part):
+        kind = str(part.get('mimeType') or '').lower()
+        if kind.startswith('message/'):
+            return
+        yield kind, next((str(h.get('value', '')).lower() for h in part.get('headers') or () if isinstance(h, dict)
+                          and str(h.get('name', '')).lower() == 'content-type'), '')
+        for child in part.get('parts') or ():
+            yield from kinds(child)
+
+    for kind, header in kinds(payload or {}):
+        if kind in ('application/pkcs7-mime', 'application/x-pkcs7-mime'):
+            return 'signed' if re.search(r'smime-type\s*=\s*"?(?:signed|compressed)-', header) else 'encrypted'
+        if kind in ('multipart/encrypted', 'application/pgp-encrypted'):
+            return 'encrypted'
+        if kind in ('application/ms-tnef', 'application/vnd.ms-tnef'):
+            return 'winmail'
+    return ''
+
+
 def message_event(account, raw, config=None):
     headers = {h['name'].lower(): h.get('value', '')
                for h in raw.get('payload', {}).get('headers', [])}
@@ -170,10 +192,13 @@ def message_event(account, raw, config=None):
                     gmail_link(account['email'], raw['id']),
                     truncated=len(body) > 40000, quoted_history_chars=quoted,
                     quoted_history_shortened=quoted > QUOTED_HISTORY_KEPT)
+    sealed = '' if body.strip() else unreadable(raw.get('payload'))
+    if sealed:
+        metadata['unreadable'] = sealed
     return {'account_id': account['id'], 'source_id': raw['id'], 'kind': 'gmail.message',
             'occurred_at': dt.datetime.fromtimestamp(int(raw['internalDate']) / 1000, dt.timezone.utc).isoformat(),
             'title': headers.get('subject', '(no subject)')[:1000],
-            'body': (body or raw.get('snippet', ''))[:40000], 'metadata': metadata,
+            'body': '' if sealed else (body or raw.get('snippet', ''))[:40000], 'metadata': metadata,
             'deleted': False}
 
 
