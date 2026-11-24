@@ -65,7 +65,7 @@ try{
   assert.equal(await page.evaluate(()=>document.querySelector('#snooze-dialog').open),false,'the dialog closed at once');
   assert.ok(!await shown(page,C),'snooze: the to-do left at once');assert.equal(answered,n0,'before the save landed');
   await page.locator('#toast [data-unsnooze]').waitFor({timeout:10000});
-  assert.match(await toast(page),/^Snoozed\. I’ll remind you on Telegram\. Undo/);
+  assert.match(await toast(page),/^Snoozed until tomorrow \d\d:\d\d\. I’ll remind you on Telegram\. Undo/);
   assert.deepEqual(decides,[[C,'snooze']]);assert.ok(!await shown(page,C),'still snoozed after the refresh');
   // A refused snooze: back on the list, with the error
   delay=300;refuse=true;decides.length=0;

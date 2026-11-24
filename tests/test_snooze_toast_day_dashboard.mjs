@@ -28,10 +28,10 @@ const errors=[];let browser;
 const line=page=>page.evaluate(()=>{const t=document.querySelector('#toast');return t.classList.contains('show')?t.firstChild.textContent.trim():null});
 // Brussels is UTC+1 in November
 const CASES=[
- ['2026-11-17T00:41:00Z','2026-11-17T07:00:00Z','Snoozed. It’ll be back here tomorrow at 08:00.'],  // 01:41: Tomorrow is this calendar morning
- ['2026-11-17T11:00:00Z','2026-11-18T07:00:00Z','Snoozed. It’ll be back here tomorrow at 08:00.'],  // noon: the next day
- ['2026-11-17T11:00:00Z','2026-11-17T13:00:00Z','Snoozed. It’ll be back here today at 14:00.'],     // in 2 hours
- ['2026-11-17T01:30:00Z','2026-11-17T04:30:00Z','Snoozed. It’ll be back here tomorrow at 05:30.']]; // 02:30, 3 hours on: past 03:00, the owner's next day
+ ['2026-11-17T00:41:00Z','2026-11-17T07:00:00Z','Snoozed until tomorrow 08:00. It’ll be back here then.'],  // 01:41: Tomorrow is this calendar morning
+ ['2026-11-17T11:00:00Z','2026-11-18T07:00:00Z','Snoozed until tomorrow 08:00. It’ll be back here then.'],  // noon: the next day
+ ['2026-11-17T11:00:00Z','2026-11-17T13:00:00Z','Snoozed until 14:00. It’ll be back here then.'],     // in 2 hours
+ ['2026-11-17T01:30:00Z','2026-11-17T04:30:00Z','Snoozed until tomorrow 05:30. It’ll be back here then.']]; // 02:30, 3 hours on: past 03:00, the owner's next day
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [clock,back,said] of CASES){now=clock;until=back;actions=[];

@@ -182,11 +182,6 @@ def quiet_hours():
     return start, end
 
 
-def morning_label(hours=None):
-    hour, minute = hour_minute((hours or WORK_HOURS)['morning'])
-    return f'{hour}:{minute:02d}'
-
-
 def local_day(value, metadata=None, tz=None):
     """The owner's calendar day (a date) of a stored time: ISO text (UTC in the database) or a datetime, in their time
     zone (`tz`, default theirs), so 00:30 in Brussels is that day, not the one before in UTC. An all-day calendar event

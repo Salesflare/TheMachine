@@ -65,7 +65,7 @@ try{
   // Snooze opens the to-do's own Snooze, its preset snoozes it
   await row(3).click({button:'right'});await page.locator('.row-menu [data-row-act="snooze"]').click();await page.locator('#snooze-dialog').waitFor();
   await page.locator('#snooze-dialog [data-snooze]').first().click();await until(()=>decided().length===4,'snooze');assert.deepEqual(decided()[3],[id(3),'snooze']);
-  await until(async()=>/^Snoozed\. .* Undo\b/.test(await page.locator('#toast').textContent()),'the Snooze message with Undo, once it landed');
+  await until(async()=>/^Snoozed until .* Undo\b/.test(await page.locator('#toast').textContent()),'the Snooze message with Undo, once it landed');
   // A done to-do: Rename and Open only
   await page.locator('[data-side-fold="done"]').click();await row(5).click({button:'right'});assert.deepEqual(await items(page),['Rename','Open']);await page.keyboard.press('Escape');
   // Keyboard: the menu key on a focused row opens it under the row, arrows move, Esc closes and the row keeps focus

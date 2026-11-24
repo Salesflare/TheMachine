@@ -59,6 +59,7 @@ dialog:not(#palette):not(#new-card)[data-line] .snooze-heading h2{flex:1;min-wid
   #snooze-dialog:not(#_):not(#_)::backdrop{background:#0009;backdrop-filter:none}
   #snooze-dialog:not(#_):not(#_)::before{content:'';position:absolute;top:9px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--border-strong,var(--border))}
   #snooze-dialog:not(#_):not(#_) .snooze-heading{position:static;margin:0 0 4px;padding:0 0 0 14px;background:none;box-shadow:none}
+  #snooze-dialog:not(#_):not(#_) #snooze-for{margin:0 14px 10px}
   #snooze-dialog:not(#_):not(#_):not(#_) #snooze-calendar>.snooze-footer{position:static;margin:14px 0 0;padding:0;background:none;box-shadow:none}
   #snooze-dialog:not(#_):not(#_) #snooze-quick button{min-height:48px;padding:12px 14px;font-size:1rem}
 }`}));

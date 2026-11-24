@@ -189,6 +189,8 @@ dialog::backdrop{background:#15171bb3}
    the month in place). On a phone it is a bottom sheet like the … (shell-sheets.js). */
 #snooze-dialog{width:300px;padding:14px 6px 6px}
 #snooze-dialog .snooze-heading{margin:0 4px 6px;padding-left:8px}
+#snooze-for{display:grid;gap:6px;justify-items:start;margin:0 12px 10px;color:var(--muted);font-size:.85rem;line-height:1.35}#snooze-for:empty{display:none}
+#snooze-for>:first-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 #snooze-quick,.snooze-presets{display:flex;flex-direction:column;gap:1px}
 #snooze-quick button{width:100%;min-height:0;margin:0;padding:8px 12px;border:0;border-radius:8px;background:none;box-shadow:none;color:var(--text);font:500 .92rem/1.35 var(--sans);text-align:left}
 #snooze-quick button:hover,#snooze-quick button:focus-visible{background:var(--tile)}

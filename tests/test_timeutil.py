@@ -80,7 +80,7 @@ class TimeUtil(unittest.TestCase):
         shared = timeutil.WORK_HOURS  # what another module imported
         timeutil.set_work_hours({'days': [6, 7], 'morning': '10:15'})
         self.assertIs(timeutil.WORK_HOURS, shared)
-        self.assertEqual((shared['days'], timeutil.morning_label()), ([6, 7], '10:15'))
+        self.assertEqual((shared['days'], shared['morning']), ([6, 7], '10:15'))
         with self.assertRaises(ValueError):
             timeutil.set_work_hours({'days': []})
         self.assertEqual(shared['days'], [6, 7])  # a wrong value changes nothing
@@ -115,10 +115,6 @@ class TimeUtil(unittest.TestCase):
         self.assertEqual(floor('08:30', {'morning': '17:58', 'start': '08:00', 'end': '18:00'}), '08:30')  # outside the hours
         self.assertEqual(floor('08:30', {'morning': '23:58', 'start': '00:00', 'end': '00:00'}), '08:30')  # past midnight
         self.assertEqual(floor('08:30', {'morning': '06:00', 'start': '05:00', 'end': '23:00'}), '08:30')
-
-    def test_morning_label(self):
-        self.assertEqual(timeutil.morning_label(), '8:00')
-        self.assertEqual(timeutil.morning_label({'morning': '07:30'}), '7:30')
 
 
     def test_local_day_keeps_an_all_day_event_on_its_date_east_and_west(self):

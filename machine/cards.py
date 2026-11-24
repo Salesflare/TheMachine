@@ -11,7 +11,7 @@ from machine.kinds import SEND
 from machine.sources.android import android_app_shown
 from machine.sources.slack import SLACK_ID
 import next_actions
-from timeutil import WORK_HOURS, hour_minute, in_hours, is_work_day, local_tz, morning_label, next_work_day, now
+from timeutil import WORK_HOURS, hour_minute, in_hours, is_work_day, local_tz, next_work_day, now
 from machine import todo_states
 from machine.owner_error import OwnerError
 from machine import todo_kinds
@@ -245,7 +245,7 @@ def plain(text, limit=240):
 
 
 def snooze_choices(work=False):
-    """The quick snooze options with labels for when each lands; work skips days off."""
+    """The quick snooze options with labels for when each lands, on the owner's clock; work skips days off."""
     local_now = dt.datetime.fromisoformat(now()).astimezone(local_tz())
     tomorrow = (local_now - dt.timedelta(hours=3)).date() + dt.timedelta(days=1)
     choices, seen = [['2h', i18n.t('2 hours')]], set()
@@ -256,8 +256,38 @@ def snooze_choices(work=False):
         seen.add(due)
         moved = work and due.date() != (local_now - dt.timedelta(hours=3)).date() + dt.timedelta(days={'tomorrow': 1, '3d': 3, '1w': 7}[option])
         name = i18n.t('Tomorrow') if due.date() == tomorrow else locale_prefs.weekday_name(due) if moved and (due.date() - tomorrow).days < 6 and locale_prefs.language() != 'en' else due.strftime('%A') if moved and (due.date() - tomorrow).days < 6 else locale_prefs.day_text(due) if moved else i18n.t(plain)
-        choices.append([option, name + ' · ' + morning_label()])
+        choices.append([option, name + ' · ' + locale_prefs.clock_text(due)])
     return choices
+
+
+def snooze_due(due, due_at=None, work=False):
+    """One more time in the snooze picker for a to-do with a deadline: [the moment, its label], a moment before it.
+    The morning of the day before (work: of the last work day before), else the deadline's own morning, else two hours
+    before its time (due_at). None with none left, or when a quick choice lands right there already. Only offered: a
+    snooze the owner picks is never blocked or moved."""
+    try:
+        day = dt.date.fromisoformat(str(due)[:10])
+        at = dt.datetime.fromisoformat(str(due_at)) if due_at else None
+    except ValueError:
+        return None
+    at = at and (at if at.tzinfo else at.replace(tzinfo=local_tz())).astimezone(local_tz())
+    local_now = dt.datetime.fromisoformat(now()).astimezone(local_tz())
+    hour, minute = hour_minute(WORK_HOURS['morning'])
+    morning = lambda d: dt.datetime.combine(d, dt.time(hour, minute), local_tz())
+    before = day - dt.timedelta(days=1)
+    for _ in range(7):
+        if not work or is_work_day(before):
+            break
+        before -= dt.timedelta(days=1)
+    ends = at or morning(day + dt.timedelta(days=1)).replace(hour=0, minute=0)
+    moments = [morning(before), morning(day)] + ([at - dt.timedelta(hours=2)] if at else [])
+    moment = next((m for m in moments if local_now + dt.timedelta(minutes=30) < m < ends), None)
+    taken = {dt.datetime.fromisoformat(snooze_time(option, work=work)) for option in ('tomorrow', '3d', '1w')}
+    if moment is None or moment in taken:
+        return None
+    away = (moment.date() - local_now.date()).days
+    when = ' '.join(([locale_prefs.weekday_name(moment) if away < 7 else locale_prefs.day_text(moment)] if away else []) + [locale_prefs.clock_text(moment)])
+    return [moment.astimezone(dt.timezone.utc).isoformat(), i18n.t('Before it’s due · {}', when)]
 
 
 # The chat's Stop (Store.stop_chat): what the card says after, and a message that is only files (chat_files.py)

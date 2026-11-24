@@ -18,7 +18,7 @@ import graph
 from machine.app.first_look import FIRST_LOOK_FEW
 from machine.app.setup_card import phone_app_nudge, setup_card
 from machine.browser import browser_link
-from machine.cards import snooze_choices
+from machine.cards import snooze_choices, snooze_due
 from machine.chat import chat_draft
 from machine.config import LOG, WORKSPACE
 from machine.delivery.push import reminder_channels, reviews_start_by_themselves
@@ -499,7 +499,11 @@ class StatusApp:
         result['team_learnings'] = self.learnings_view()
         result['security'] = self.security_view()
         for suggestion in result.get('suggestions', []):
-            suggestion['snooze_choices'] = snooze_choices(self.is_work(suggestion.get('account_ids')))
+            work = self.is_work(suggestion.get('account_ids'))
+            suggestion['snooze_choices'] = snooze_choices(work)
+            before = suggestion.get('due') and suggestion.get('status') not in todo_states.CLOSED and snooze_due(suggestion['due'], suggestion.get('due_at'), work)
+            if before:
+                suggestion['snooze_due'] = before
         if getattr(self, 'agents', None):
             try:
                 with self.store.connect() as db:
