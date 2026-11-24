@@ -1020,8 +1020,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
         What this cannot see: a key or path only known at run time (listed in RUN_TIME_KEYS, each with where its keys
         come from, and those are checked below); a sealed column given another name in a subquery or view and read by
         that name; SQL put together from pieces in different statements; sandbox/, scripts/ and the other databases'
-        modules, which source_modules leaves out. SQL that compares a wholly sealed text column (events.title) is
-        another matter and not looked at here."""
+        modules, which source_modules leaves out. A text column sealed whole (events.title) has its own test below."""
         import ai_app
         import missed_work
         import sealed_sql_scan
@@ -1058,6 +1057,58 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
                             ('machine/store/review.py', ('channel_id', 'chat_id', 'conversation_id'))):
             self.assertLessEqual(set(words), plain)
             self.assertTrue(all(f"'{word}'" in (ROOT / file).read_text(encoding='utf-8') for word in words), file)
+
+    def test_no_sql_compares_a_text_that_is_sealed_whole(self):
+        """A text of message_seal.DERIVED (and events.title and body) is a blob with a nonce of its own on a sealed
+        Machine: `title=?` never matches there, and json_extract of it reads nothing. Read the rows and compare in Python.
+
+        What this cannot see: the same as above, a comparison that follows no WHERE, AND, OR, ON, WHEN or HAVING, and a
+        UNIQUE constraint on such a column (promises.what: Store.promise looks in the opened rows instead)."""
+        import sealed_sql_scan
+        with tempfile.TemporaryDirectory() as temp:
+            with machine_main.Store(Path(temp) / 'events.sqlite').connect() as db:
+                make_source_tables(db)
+                columns = {}
+                for table, column, plain in message_seal.sealed_columns(db):
+                    if plain is None:
+                        columns.setdefault(column, set()).add(table)
+                others = {column: {'sqlite_master', 'json_each', 'json_tree'} for column in columns}
+                for (table,) in db.execute("SELECT name FROM sqlite_master WHERE type IN ('table','view')").fetchall():
+                    for row in db.execute(f'PRAGMA table_info({table})').fetchall():
+                        if row[1] in columns and table not in columns[row[1]]:
+                            others[row[1]].add(table)
+        self.assertTrue({'title', 'body', 'handled_hint', 'what'} <= set(columns))
+        found = sealed_sql_scan.scan(source_modules(), ROOT, columns, others, sealed_sql_scan.text_reads)
+        # A piece of SQL without its table: what it reads is another table's column of that name, or a plain key
+        OTHERS = {('embeddings.py', 'fleet_reviews.history'): 'events.history', ('machine/cards.py', 'fleet_log.outcome'): "suggestions.outcome's plain state",
+                  ('machine/store/first_pass.py', 'fleet_log.what'): 'first_pass.what'}
+        self.assertEqual({where[:2]: lines for where, lines in found.items() if where[:2] not in OTHERS}, {},
+                         'SQL cannot compare this on a sealed Machine: read the rows and compare in Python (file, column: lines)')
+        self.assertEqual(OTHERS.keys() - {where[:2] for where in found}, set(), 'gone from the source: take it off this list')
+
+    def test_the_sql_check_catches_each_way_of_comparing_a_sealed_text(self):
+        import sealed_sql_scan
+        columns = {'title': {'suggestions', 'events'}, 'body': {'suggestions', 'events'}, 'handled_hint': {'suggestions'}, 'name': {'routines'}}
+        others = {'title': {'feedback'}, 'body': set(), 'handled_hint': set(), 'name': {'sqlite_master', 'facts'}}
+
+        def reads(text, context=None):
+            return sealed_sql_scan.text_reads(text, context or text, columns, others)
+        for text, column in (("SELECT id FROM suggestions WHERE origin='owner' AND title=?", 'suggestions.title'),
+                             ('based_on=CASE WHEN body=? THEN based_on END', 'events.body'),  # a piece with no table named: looked at, not passed
+                             ("SELECT 1 FROM suggestions WHERE json_extract(handled_hint,'$.at')>?", 'suggestions.handled_hint'),
+                             ('SELECT 1 FROM suggestions WHERE json_valid(handled_hint)', 'suggestions.handled_hint'),
+                             ('SELECT 1 FROM suggestions s JOIN events e ON e.title=s.title', 'events.title'),
+                             ("SELECT 1 FROM events e WHERE lower(coalesce(e.title,''))=?", 'events.title'),
+                             ('SELECT 1 FROM events WHERE (body LIKE ? OR kind=?)', 'events.body'),
+                             ('SELECT 1 FROM routines WHERE name=? COLLATE NOCASE', 'routines.name'),
+                             ('SELECT 1 FROM suggestions WHERE title COLLATE NOCASE=?', 'suggestions.title'),
+                             ('SELECT 1 FROM suggestions WHERE title NOT IN (?)', 'suggestions.title')):
+            self.assertIn((column, 'text'), reads(text), text)
+        for text in ('SELECT 1 FROM suggestions WHERE handled_hint IS NULL AND id=?', "SELECT 1 FROM events WHERE body<>'' AND id=?",
+                     'SELECT 1 FROM suggestions WHERE handled_hint IS NOT NULL', "SELECT 1 FROM events WHERE coalesce(title,'')!=''",
+                     'UPDATE suggestions SET title=?,body=? WHERE id=?', "SELECT 1 FROM sqlite_master WHERE type='table' AND name='routines'",
+                     'SELECT 1 FROM facts WHERE name=?', 'SELECT 1 FROM feedback f WHERE f.title=?'):
+            self.assertEqual(reads(text), [], text)
 
     def test_the_sql_check_catches_each_way_of_reading_a_hidden_key(self):
         import sealed_sql_scan

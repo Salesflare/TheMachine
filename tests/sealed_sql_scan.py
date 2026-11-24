@@ -137,7 +137,36 @@ def reads(text, context, columns, tables):
     return [(f'{columns[c][0]}.{c}' if c else '?', what) for c, what in out if what]
 
 
-def scan(paths, root, columns, tables):
+SQL_WORD = re.compile(r'\b(?:SELECT|UPDATE|DELETE|WHERE|WHEN|AND|OR|JOIN)\b')
+COMPARED = (r'\b(?:WHERE|AND|OR|ON|WHEN|HAVING|NOT)\s+\(*\s*(?:(?:coalesce|ifnull|nullif|lower|upper|trim|substr|length|replace|instr)\s*\(\s*)*'
+            + WORD + r"(?!\.)(?:\s*,\s*[^\s,()]+)*\s*\)*(?:\s*,\s*[^\s,()]+\s*\))*(?:\s+COLLATE\s+\w+)?\s*" r'(?:=|!=|<>|<(?!>)=?|>=?|\b(?:NOT\s+)?(?:LIKE|GLOB|MATCH|IN)\b|\bIS\b(?:\s+NOT\b)?)'
+            + r"(?!\s*(?:NULL\b|NOT\s+NULL\b|''))")  # NULL and '' are never sealed: asking for those is fine
+JSON_READ = r'\bjson_(?:extract|each|tree|type|array_length|valid)\s*\(\s*' + WORD + r'(?!\.)'
+
+
+def text_reads(text, context, columns, tables):
+    """Reads in `text` of a column that is sealed whole (message_seal.DERIVED, events.title) that SQL cannot answer on a
+    sealed database: the stored value is a blob made with a nonce of its own, so `title=?` never matches, also the same
+    text, and a JSON text in it is no JSON there.
+
+    `columns`: {column name: the tables that seal it}; `tables`: {column name: the other tables that have it}.
+    Returns [(table.column, 'text')] as `reads` does; the table is the first of `columns` it can be.
+    """
+    if not SQL_WORD.search(text) or not any(c in text for c in columns):
+        return []
+    named = re.sub(r"'[^']*'", "''", context)  # a table's name as a value (sqlite_master) is no table read here
+    out = []
+    for pattern in (COMPARED, JSON_READ):
+        for found in re.finditer(pattern % '|'.join(columns), text, re.I):
+            prefix, column = found[1], found[2].lower()
+            for table in sorted(columns[column]):
+                if owner(prefix, column, named, table, tables.get(column, set()) | (columns[column] - {table})):
+                    out.append((f'{table}.{column}', 'text'))
+                    break
+    return out
+
+
+def scan(paths, root, columns, tables, reads=reads):
     """{(file, table.column, what): [lines]} over the source files in `paths`."""
     found = {}
     for path in paths:
