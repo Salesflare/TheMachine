@@ -8,13 +8,15 @@ import re
 import sqlite3
 import uuid
 
+import bounces
 import follow_ups
 import graph
 import i18n
 import locale_prefs
+import mail_senders
 from machine.sources.slack import slack_ids_named, slack_name_table
 from machine.store import graph_identifiers, todo_moves
-from machine.store.cards import awaiting_key, awaiting_match, same_thread_card
+from machine.store.cards import awaited_addresses, awaiting_key, awaiting_match, same_thread_card
 from machine.store.review import AUTOMATED_LABELS, CARD_OPEN, own_message, ROBOT_SENDER
 from machine.store.voices import OWN_KINDS
 from machine.mail_quotes import PREFIX
@@ -189,12 +191,29 @@ def identifier_named(db, who):
     return '+' + phone[1] if phone else who
 
 
+def someone_answered(db, row, to, own):
+    """Whether someone the owner's email asked (to) wrote in its thread after it: from any address of theirs, or someone
+    at their company for them. Not their out-of-office, a notice that names them, or anyone else in the thread. A
+    delivery report is no silence either (bounces.py tells what bounced)."""
+    theirs = {a for x in to for a in graph_identifiers.known_addresses(db, x)}
+    company = lambda address: address.rpartition('@')[2]
+    companies = {company(a) for a in to} - graph.FREEMAIL - {company(a) for a in own}
+    for (data,) in db.execute("SELECT metadata FROM events WHERE +account_id=? AND kind='gmail.message' AND deleted=0 AND occurred_at>? "
+                              "AND json_extract(metadata,'$.thread_id')=?", (row['account_id'], row['occurred_at'], json.loads(row['metadata']).get('thread_id'))):
+        m = json.loads(data)
+        sender = _address(m.get('from'))
+        if sender in own or bounces.system_sender(m.get('from')):
+            return True
+        if mail_senders.wrote(m, theirs) or company(sender) in companies and not mail_senders.bulk(sender) and not mail_senders.automatic_answer(m):
+            return True
+    return False
+
+
 def unknown_sender(db, event, own):
     """True when an email's sender is someone the owner doesn't know: they never wrote to them (mail_cleanup.Known: getting
     mail is not knowing someone), they are no colleague (the owner's own domain) and the owner gave them no role. Their
     promise is kept, marked unverified: their word only, like a role a review read in their own message."""
     import mail_cleanup  # here, not at the top: it reads the store's review_wait
-    import mail_senders
     m = event['metadata'] if isinstance(event['metadata'], dict) else json.loads(event['metadata'] or '{}')
     address = _address(m.get('from')) if event['kind'] == 'gmail.message' else ''
     if not address or '@' not in address:
@@ -596,8 +615,9 @@ class PromisesStore:
         for row in db.execute("SELECT id,watch FROM promises WHERE status='open' AND watch IS NOT NULL "
                               "AND id NOT IN (SELECT promise_id FROM promise_log WHERE kind='replied')").fetchall():
             watch = {**json.loads(row['watch']), 'promise': True}
+            theirs = awaited_addresses(db, watch)
             answer = next((e for e in db.execute('SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE account_id=? AND kind=? AND occurred_at>? AND deleted=0 ORDER BY occurred_at',
-                                                 (watch['account_id'], watch['kind'], watch['since'])) if awaiting_match(watch, dict(e), self.owner_user_ids)), None)
+                                                 (watch['account_id'], watch['kind'], watch['since'])) if awaiting_match(watch, dict(e), self.owner_user_ids, theirs)), None)
             if answer:
                 promise_logged(db, row['id'], 'replied', answer['id'])
         # A to-do with a deadline that came to hold someone else's promise after it was made: checked before that deadline
@@ -695,7 +715,7 @@ class PromisesStore:
             followed = follow_ups.covered(db)  # the owner's own emails there: automated follow-ups look after them (follow_ups.py)
             # +account_id: found by its thread (events_thread_id), a few rows, not every email of the account
             later = ("SELECT 1 FROM events r WHERE +r.account_id=e.account_id AND r.kind='gmail.message' AND r.deleted=0 AND r.occurred_at>e.occurred_at "
-                     "AND json_extract(r.metadata,'$.thread_id')=json_extract(e.metadata,'$.thread_id')")
+                     "AND json_extract(r.metadata,'$.thread_id')=json_extract(e.metadata,'$.thread_id') AND instr(r.metadata,'\"SENT\"')>0")
             # Who the owner wrote to and who wrote to them, in one pass over the email (as lower() and instr() in
             # SQLite had them), for the checks below: a scan of every email per address took a minute on a big mailbox.
             mail = {}
@@ -722,7 +742,7 @@ class PromisesStore:
             rows = db.execute("SELECT e.id,e.account_id,e.occurred_at,e.title,e.body,e.metadata, instr(e.metadata,'\"SENT\"')>0 mine FROM events e "
                               "WHERE e.kind='gmail.message' AND e.deleted=0 AND e.history=0 AND e.occurred_at>? AND e.occurred_at<? "
                               f"AND ((instr(e.metadata,'\"SENT\"')>0 AND e.occurred_at<? AND NOT EXISTS ({later})) "
-                              f"OR (instr(e.metadata,'\"SENT\"')=0 AND e.occurred_at>? AND NOT EXISTS ({later} AND instr(r.metadata,'\"SENT\"')>0))) "
+                              f"OR (instr(e.metadata,'\"SENT\"')=0 AND e.occurred_at>? AND NOT EXISTS ({later}))) "
                               "ORDER BY e.occurred_at", (ago(21), ago(2), ago(4), ago(14))).fetchall()
             for row in rows:
                 if row['id'] in done or row['id'] in carded or (row['mine'] and row['id'] in followed) or '?' not in new_text(row):
@@ -747,7 +767,7 @@ class PromisesStore:
                                        "AND json_extract(metadata,'$.thread_id')=? ORDER BY occurred_at,rowid LIMIT 1", (row['account_id'], m.get('thread_id'))).fetchone()
                     if first and first['mine']:
                         people = [x for x in people if wrote_before(x, first['occurred_at'])]
-                    if people:
+                    if people and not someone_answered(db, row, people, own):
                         found['sent'].append((row, ', '.join(people[:3])))
             day = lambda row: dt.datetime.fromisoformat(row['occurred_at']).astimezone(local_tz()).strftime('%a, %b %-d')
             waited = lambda row: (current - dt.datetime.fromisoformat(row['occurred_at'])).days

@@ -26,7 +26,7 @@ import json
 import re
 
 from machine.store import review_wait
-from machine import todo_states
+from machine import model_reply, todo_states
 
 BATCH = 40           # signals per small model call
 SCAN = 400           # waiting signals looked at per step, oldest first
@@ -129,15 +129,10 @@ def prompt(rows, own=()):
 def aside(reply, ids):
     """{event_id: what} the reply sets aside, only ids from this batch; None when the reply is no answer at all (then
     nothing is sorted and the batch is tried again later or reviewed as before)."""
-    text = str(reply or '').strip()
-    start, end = text.find('{'), text.rfind('}')
-    if start < 0 or end < start:
-        return None
     try:
-        data = json.loads(text[start:end + 1])
-    except ValueError:
+        found = model_reply.read(reply).get('aside')
+    except model_reply.Unreadable:
         return None
-    found = data.get('aside') if isinstance(data, dict) else None
     if not isinstance(found, list):
         return None
     ids, out = set(ids), {}

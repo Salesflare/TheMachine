@@ -1,6 +1,6 @@
 """Message text: a mail's own words without the quoted history under them, its body from the plain and HTML parts
 (plain_html), its attachments and inline images, invisible characters, the compact JSON the app stores (encoded), a
-value cut to size (clamp), the first address in a header (_address), and an encrypted copy of a database (seal_copy,
+value cut to size (clamp), the address in a header (_address), and an encrypted copy of a database (seal_copy,
 open_copy). Moved out of assistant.py as is. Also whether a quote is in a message (quoted_in)."""
 import base64
 import contextlib
@@ -14,6 +14,7 @@ import re
 import sqlite3
 import unicodedata
 
+from mail_senders import header_address as _address  # noqa: F401 (imported from here)
 import message_seal
 import portable
 from machine.mail_quotes import FORWARD_SUBJECT, PREFIX, REPLY_HEADER, mail_html, quoted, sent_on  # noqa: F401 - REPLY_HEADER: importable from here
@@ -33,11 +34,6 @@ def clamp(value, chars=300, items=10):
     if isinstance(value, dict):
         return {k: clamp(v, chars, items) for k, v in value.items()}
     return value
-
-
-def _address(value):
-    found = re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', str(value or ''))
-    return found[0].lower() if found else ''
 
 
 class PlainHTML(HTMLParser):

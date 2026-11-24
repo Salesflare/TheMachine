@@ -28,6 +28,23 @@ def _addresses(text):
     return tuple((name.strip().strip('"'), addr.strip().lower()) for name, addr in email.utils.getaddresses([text]) if '@' in addr)
 
 
+QUOTED_NAME = re.compile(r'"(?:[^"\\]|\\.)*"')
+ANGLE_ADDRESS = re.compile(r'<\s*([^\s<>"\',;]+@[^\s<>"\',;]+?)\s*>')
+
+
+def header_address(value):
+    """The address a header names, the first of several, read as the Graph reads it (addresses): never one
+    written in the name or a comment beside it ('"ann@x.com via Docs" <share@y.com>' is share@y.com), which its sender
+    chooses. A header no parser takes: the last address in <> outside a quoted name, else the first thing like one."""
+    text = ', '.join(map(str, value)) if isinstance(value, list) else str(value or '')
+    first = next((a for _, a in addresses(text)), '')
+    if first and first in text.lower() and not re.search(r'[\s<>",;()\[\]]', first):  # "A @ B" is a name, not a@b
+        return first
+    angled = ANGLE_ADDRESS.findall(QUOTED_NAME.sub(' ', text))
+    found = angled[-1:] or re.findall(r'[^\s<>"\',;()\[\]]+@[^\s<>"\',;()\[\]]+', text)
+    return found[0].lower().removeprefix('mailto:') if found else ''
+
+
 def bulk(address):
     return bool(BULK.search(address))
 
@@ -37,6 +54,27 @@ def automated(m):
     Auto-Submitted. The owner's own auto-reply goes to the address the mail came back from, often a bounce address
     (pm_bounces@pm-bounces.example.com): sent from the owner's mailbox, yet nobody they wrote to."""
     return str(m.get('precedence') or '').lower() in AUTOMATED_PRECEDENCE or bool(m.get('auto_submitted'))
+
+
+def automatic_answer(m):
+    """Mail that answers for nobody, whoever's address it has: what a program sent (automated), an out-of-office for one.
+    A person's own reply that a list they copied passed on (a Google Group: Precedence list) is still theirs."""
+    if str(m.get('precedence') or '').lower() == 'list' and m.get('in-reply-to') and not m.get('auto_submitted'):
+        return False
+    return automated(m)
+
+
+def untagged(address):
+    """An address without its tag: ann+news@x.com is ann@x.com's, support+id42@x.com the desk's that answers from support@."""
+    local, at, domain = str(address or '').lower().rpartition('@')
+    return (local.partition('+')[0] or local) + at + domain
+
+
+def wrote(m, theirs):
+    """Whether one of these people (theirs: untagged addresses) wrote this mail themselves, also when a list they sent it
+    to passed it on under its own address (X-Original-From). Never an automatic answer or a notice naming them."""
+    senders = {untagged(header_address(m.get('from'))), untagged(header_address(m.get('original_from'))) if m.get('list_id') else ''}
+    return bool((senders - {''}) & set(theirs)) and not automatic_answer(m)
 
 
 # System and relay addresses: never a person, also not when the owner wrote to one (a reply through Intercom goes to a

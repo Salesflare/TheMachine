@@ -64,7 +64,7 @@ def list_headers(headers):
     original = (headers.get('x-original-from') or headers.get('x-original-sender') or '').strip()
     if original:
         found['original_from'] = ' '.join(original.split())[:300]  # who wrote it, when a list relayed it (a Google Group)
-    if headers.get('auto-submitted', '').strip().lower() not in ('', 'no'):
+    if headers.get('auto-submitted', '').partition(';')[0].strip().lower() not in ('', 'no'):  # "no" may carry parameters
         found['auto_submitted'] = True  # an auto-reply or other mail a program sent (RFC 3834)
     if headers.get(NOTICE_HEADER, '').strip():
         found['machine_notice'] = True  # The Machine's own mailer sent it (machine_notice)

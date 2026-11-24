@@ -1122,6 +1122,40 @@ class StatedOrganisations(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
             self.app.action('graph_person_org', {'node_id': 'li:c-robin', 'org': 'Globex'})
 
+    def test_of_several_companies_it_is_where_they_last_wrote_from_or_said_they_work_since(self):
+        def pat(days_ago, company, **extra):
+            event = mail(days_ago, f'Pat Lee <pat@{company}.com>', 'sam@acme.com', **extra)
+            event['body'] = 'Thanks!\n\nPat Lee, Initech'
+            self.add(event)
+            return event
+
+        def company():
+            self.build()
+            info = next(v for v in (self.node('email:pat@alpha.com'), self.node('email:pat@zeta.com'), self.node('email:pat@gmail.com')) if v)
+            return info['org'], info['org_by']
+        pat(40, 'alpha')
+        self.add(mail(39, 'Sam <sam@acme.com>', 'Pat Lee <pat@alpha.com>, Pat Lee <pat@zeta.com>, Pat Lee <pat@gmail.com>', ('SENT',)))
+        self.build()
+        for a, b in (('alpha', 'zeta'), ('alpha', 'gmail')):
+            self.app.graph_action({'merge': [f'email:pat@{a}.com', f'email:pat@{b}.com']}, source='owner')
+        self.assertEqual(company(), ('org:alpha.com', 'email'))  # only got mail at the other
+        pat(30, 'zeta')
+        self.assertEqual(company(), ('org:zeta.com', 'email'))
+        pat(20, 'alpha', verified_sender=True)
+        self.assertEqual(company(), ('org:alpha.com', 'email'))
+        pat(10, 'zeta')  # nothing shows it is really theirs, while the one before was checked
+        self.assertEqual(company(), ('org:alpha.com', 'email'))
+        node = next(n for n in ('email:pat@alpha.com', 'email:pat@zeta.com', 'email:pat@gmail.com') if self.node(n))
+
+        def says(event):
+            self.build()
+            self.app.graph_action({'node_id': node, 'org': 'Initech', 'event_id': self.ids([event['source_id']])[0], 'quote': 'Pat Lee, Initech'})
+            return company()
+        self.assertEqual(says(pat(15, 'gmail')), ('org:alpha.com', 'email'))  # they wrote from a work address since
+        self.assertEqual(says(pat(5, 'gmail')), ('org:named:initech', 'review'))  # newer than any mail from one
+        pat(2, 'zeta', verified_sender=True)
+        self.assertEqual(company(), ('org:zeta.com', 'email'))
+
     def test_one_organisations_turn_backfills_from_what_is_stored(self):
         self.robin()
         self.build()

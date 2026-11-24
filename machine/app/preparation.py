@@ -15,6 +15,7 @@ import browser_login
 import chat_files
 import chat_model
 import corrections
+import error_feed
 import follow_ups
 import github_route
 import i18n
@@ -188,9 +189,29 @@ def newer_activity_lines(found):
 PREPARATION_DEADLINE_SECONDS = 2100
 
 
-def preparation_overdue(db, job):
+def note_failed(db, job, receipt, error, version=None):
+    """One failed preparation, for the service log and the error reports (error_feed.py), as a failed review is: the
+    runner's failure class, from fixed lists (its error code, phase and reason), and whether it is tried again by itself
+    or stopped. Never the text, the to-do or its ids. `error`: the code when the runner named none. A run somebody ended is
+    not one: the owner's own Stop, Dismiss or change never gets here (its preparation is already over or another run's),
+    and an abort from outside, in OpenClaw itself or by a restart, is left out."""
+    if receipt.get('status') == 'aborted' or 'runtime_aborted' in (receipt.get('error'), error):
+        return
+    code = receipt.get('error') if receipt.get('error') in preparation_state.REVIEW_FAILURES | {'session_archived'} else error
+    phase = receipt.get('error_phase') if receipt.get('error_phase') in preparation_state.REVIEW_FAILURE_PHASES else 'runtime'
+    reason = receipt.get('reason') if receipt.get('reason') in preparation_state.REVIEW_REASONS else None
+    after = 'retry' if preparation_state.retry_left(job) else 'stopped'
+    LOG.warning('preparation failed error=%s phase=%s after=%s' + (' reason=%s' if reason else ''), code, phase, after, *([reason] if reason else []))
+    try:
+        error_feed.record(db, 'job', code + ('.' + reason if reason else ''), f'{phase} {after}', 'machine/app/preparation.py', 'preparation_run_step', None, version)
+    except Exception as failed:  # counting a failure never stands in its way
+        LOG.error('preparation failure record error=%s', type(failed).__name__)
+
+
+def preparation_overdue(db, job, version=None):
     """A preparation past PREPARATION_DEADLINE_SECONDS without a confirmed completion: blocked, its old run stopped and
     confirmed ended (stop_stale_runs) before its automatic retry, when it has one left (preparation_state.retry_left)."""
+    note_failed(db, job, {}, 'completion_unconfirmed', version)
     db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,error='completion_unconfirmed',updated_at=? WHERE job_id=?",
                ('This is taking too long. I’ll stop that run and try once more.' if preparation_state.retry_left(job) else
                 'This didn’t finish, also on the second try. Tap Try again, or change the request.' if job['auto_retries'] else
@@ -420,7 +441,7 @@ class PreparationApp:
             # tried again every minute and its to-do says so (preparation_run_step).
             cutoff=(dt.datetime.fromisoformat(now())-dt.timedelta(seconds=PREPARATION_DEADLINE_SECONDS)).isoformat()
             for row in db.execute("SELECT * FROM preparations WHERE status='starting' AND coalesce(error,'')<>'openclaw_unavailable' AND coalesce(started_at,created_at)<?",(cutoff,)).fetchall():
-                preparation_overdue(db,dict(row))
+                preparation_overdue(db,dict(row),self.store.code_version)
             # A confirmed step no preparation works on any more is paused, also one left from before paused existed.
             pause_idle_steps(db)
             for row in db.execute(f"SELECT id FROM suggestions WHERE status IN {todo_states.sql(todo_states.PREPARING)} AND NOT EXISTS(SELECT 1 FROM preparations WHERE suggestion_id=suggestions.id)").fetchall():
@@ -727,6 +748,7 @@ class PreparationApp:
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
             elif status in ('ok','error','aborted','timed_out','lost'):  # lost: the Gateway refused this run id for good
                 error={'ok':'run_ended_without_preparation','timed_out':'ai_run_timed_out'}.get(status,'ai_run_failed')
+                note_failed(db,current,result,error if status=='ok' else {'timed_out':'runtime_timeout','lost':'runtime_lost'}.get(status,'runtime_error'),self.store.code_version)
                 if preparation_state.retry_left(current):
                     # Continue the retained session once, after a pause (preparation_state.AUTO_RETRY_BACKOFF). Its durable
                     # tool history must be read before further writes, including calls whose result was lost. A run cut
@@ -754,7 +776,7 @@ class PreparationApp:
                 db.execute("UPDATE preparations SET error='openclaw_unavailable',retry_at=?,updated_at=? WHERE job_id=?",
                            ((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=1)).isoformat(),now(),job['job_id']))
             elif (dt.datetime.fromisoformat(now())-dt.datetime.fromisoformat(current['started_at'] or current['created_at'])).total_seconds()>PREPARATION_DEADLINE_SECONDS:
-                preparation_overdue(db,dict(current))
+                preparation_overdue(db,dict(current),self.store.code_version)
             elif status=='unavailable':
                 # Keep the same admission ID and original deadline through short outages.
                 db.execute('UPDATE preparations SET error=?,retry_at=? WHERE job_id=?',('openclaw_unavailable',(dt.datetime.fromisoformat(now())+dt.timedelta(minutes=1)).isoformat(),job['job_id']))

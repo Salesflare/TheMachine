@@ -552,7 +552,7 @@ A Do it result can carry a Slack direct message from your own Slack account (the
 - An unclear outcome stays uncertain and is checked by finding exactly one message from you with that text in the DM. It's never resent.
 - Sending needs a Maton Slack connection that is allowed to post as you.
 
-**Hand-offs:** `delegate:true` (on Slack, or an email to one address) hands the task over. After the send, the to-do is snoozed for `wait_days` (default 3; a weekday at the snooze time, 08:00 by default) with a watch on that person. When they reply (in that DM, or in that email thread or to that email), the to-do closes itself and their reply is reviewed as an answer to the to-do. Without a reply it comes back saying so.
+**Hand-offs:** `delegate:true` (on Slack, or an email to one address) hands the task over. After the send, the to-do is snoozed for `wait_days` (default 3; a weekday at the snooze time, 08:00 by default) with a watch on that person. When they reply (in that DM, or in that email thread or to that email, from any address of theirs; never an out-of-office or someone else in the thread), the to-do closes itself and their reply is reviewed as an answer to the to-do. Without a reply it comes back saying so.
 
 For a teammate in your Work Fleet, the result is a Fleet handoff instead (`kind:handoff`, the message written to them). Its **Hand off** button opens the [Fleet handoff](fleet.md) form with that message, and nothing goes before you send it there.
 

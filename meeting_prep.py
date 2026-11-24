@@ -28,12 +28,14 @@ Quality or nothing: with no message and no open promise with anyone on it, nothi
 one background turn (the owner's model, the cheaper background one when there is one) writes the briefing as JSON, or
 says there is nothing useful; then too no to-do. Each line must come from what it was given: the messages it names are
 the to-do's sources, after the meeting itself, and a line about the last contact without a message to show it is
-dropped. The turn also judges Work or Personal by what the meeting is about; a personal one gets no to-do.
+dropped. A promise is said only with the open promise (P id) it is, an open question only when there are messages.
+The turn also judges Work or Personal by what the meeting is about; a personal one gets no to-do. A reply that can't be
+read is no verdict: it is asked once more, then in a later pass, a few times at most (machine/model_reply.py).
 
 Once per meeting: meeting_preps keeps each meeting judged, by its iCalUID (the same on every calendar and after a move)
 or its own id, never its time. So a rescheduled meeting is the same one: its to-do follows the new time (expires_at)
 instead of a second one, and a dismissed to-do never comes back. A canceled meeting's to-do closes by itself.
-At most PER_DAY turns a day.
+At most PER_DAY turns a day (a pass that stayed unreadable counts as one).
 
 A newer format (FORMAT, stamped on each briefing with a hash of the body it was made with): once after an upgrade
 that raises it, the open briefings still in an older one are written again (stale), one turn each within the same
@@ -48,7 +50,7 @@ import json
 import re
 
 import timeutil
-from machine import todo_states
+from machine import model_reply, todo_states
 from machine.store import graph_promises
 
 SCHEMA = ('CREATE TABLE IF NOT EXISTS meeting_preps(dedupe_key TEXT PRIMARY KEY,event_id INTEGER NOT NULL,suggestion_id TEXT,'
@@ -545,7 +547,7 @@ def prompt(meeting, found, tz, lang_rule, note=''):
             'when it clearly is this person or organization.\n'
             'Answer with one JSON object and nothing else:\n'
             '{"useful": true or false, "area": "work" or "personal", "title": "...", "who": "...", "background": "...", '
-            '"background_sources": ["W1"], "company": "...", "company_sources": ["W2"], "last": "...", "promises": "...", '
+            '"background_sources": ["W1"], "company": "...", "company_sources": ["W2"], "last": "...", "promises": [{"id": "P3", "text": "..."}], '
             '"questions": "...", "bring": "...", "sources": ["E12", ...]}\n'
             '- useful: false when the data holds nothing specific to prepare (only names and a time, small talk, '
             'newsletters or automated mail): then leave the rest empty. Never pad.\n'
@@ -560,50 +562,74 @@ def prompt(meeting, found, tz, lang_rule, note=''):
             'recent move, from its looked_up profile or web results. company_sources: the W ids. Empty when nothing specific.\n'
             '- last: the substance of the conversation so far: what was discussed, asked and offered, with dates, and where '
             'it stands now, in one or two sentences. Not that a meeting was scheduled or moved. Empty when none.\n'
-            '- promises: what is still open either way ("Promised Sam the price list by Friday"; "Sam promised the user '
-            'list"). Empty when none.\n'
+            '- promises: what is still open either way, one for each open_promises entry that matters here, with its P id '
+            '("Promised Sam the price list by Friday"; "Sam promised the user list"). Only those: what a message says someone '
+            'would do is no promise without a P id, and belongs in last. An empty list when none.\n'
             '- questions: what is still unanswered between them, from the messages. Empty when none.\n'
             '- bring: what to decide in the meeting or bring to it, and what this guest will likely care about given their '
             'organization and the conversation, specific to them. Empty when the data shows nothing.\n'
             '- sources: the E ids of the messages the lines come from (most relevant first, at most 3).\n'
-            f'Each line under {size("who")} characters (background {size("background")}, company {size("company")}, last '
+            f'Each line under {size("who")} characters, the promises together too (background {size("background")}, company {size("company")}, last '
             f'{size("last")}, bring {size("bring")}), plain words, no Markdown or links. Never start a line with "You", and never '
             'write "the owner": leave them out as the subject ("Offered a demo on Nov 9"). Only '
             'state what the data shows; leave a field empty rather than guess.\n' + (note + '\n' if note else '') + lang_rule + '\n\nData:\n' + json.dumps(about, ensure_ascii=False))
 
 
+def cut(text, n):
+    """The text within n characters, cut at a word's end and marked so."""
+    if len(text) <= n:
+        return text
+    head = text[:n - 1]
+    space = head.rfind(' ') if text[n - 1] != ' ' else n - 1
+    return (head[:space] if space > n // 2 else head).rstrip(' ,;:(-') + '…'
+
+
+def _promised(items, known, clean):
+    """The promises line: each one given as an open promise by its id, each once, whole, as many as fit."""
+    out, seen = '', set()
+    for item in items:
+        ref = re.fullmatch(r'P(\d+)', str(item.get('id') or '').strip()) if isinstance(item, dict) else None
+        text = clean(item.get('text')) if ref and int(ref[1]) in known and int(ref[1]) not in seen else ''
+        more = out.rstrip('.') + '; ' + text if out else text
+        if text and len(more) <= FIELD_CHARS.get('promises', 150):
+            seen.add(int(ref[1]))
+            out = more
+    return out
+
+
 def parse(reply, found):
     """The turn's answer, checked: {'title', 'area', 'fields': {...}, 'sources': [event ids]} or None for nothing
-    useful. A line about the last contact needs a message it names; with nothing beyond who they are, None."""
-    text = str(reply or '')
-    start, end = text.find('{'), text.rfind('}')
-    try:
-        data = json.loads(text[start:end + 1]) if start >= 0 and end > start else None
-    except ValueError:
+    useful. A line about the last contact needs a message it names, a promise the open promise it is, an open question a
+    message among the data; with nothing beyond who they are, None. Raises model_reply.Unreadable when it is no answer."""
+    data = model_reply.read(reply)
+    useful = str(data.get('useful')).lower()
+    if useful not in ('true', 'false'):
+        raise model_reply.Unreadable('no verdict')
+    if useful == 'false':
         return None
-    if not isinstance(data, dict) or data.get('useful') is not True:
-        return None
+    listed = lambda v: v if isinstance(v, list) else [v] if isinstance(v, str) else []
     def clean(v, n=150):  # plain words: no Markdown, no link the turn wrote (a web page could have asked for one)
         v = re.sub(r'\[([^\]\n]*)\]\([^)\s]*\)', r'\1', ' '.join(str(v or '').replace('**', '').split()))
         v = re.sub(r'\s*\(?\bhttps?://\S+', '', v)
-        return re.sub(r'^\s*[-*•]\s*', '', v)[:n].strip()
-    fields = {k: clean(data.get(k), FIELD_CHARS.get(k, 150)) for k in FIELDS}
+        return cut(re.sub(r'^\s*[-*•]\s*', '', v).strip(), n)
+    fields = {k: clean(data.get(k), FIELD_CHARS.get(k, 150)) for k in FIELDS if k != 'promises'}
+    fields['promises'] = _promised(listed(data.get('promises')), found['promises'], clean)
+    if not found['messages']:
+        fields['questions'] = ''  # they are read from messages, and there were none
     web, links = found.get('web') or {}, {}
     for k, known in (('background', any(p.get('looked_up') for p in found.get('people') or ())),
                      ('company', any(o.get('looked_up') for o in found.get('organizations') or ()))):
-        refs = [r for r in dict.fromkeys(str(x).strip() for x in data.get(k + '_sources') or ()) if r in web][:2]
+        refs = [r for r in dict.fromkeys(str(x).strip() for x in listed(data.get(k + '_sources'))) if r in web][:2]
         links[k] = [web[r]['url'] for r in refs]
         if not refs and not known:
             fields[k] = ''  # a fact about them needs a source: a looked-up profile or a web result
     sources = []
-    for ref in data.get('sources') or ():
+    for ref in listed(data.get('sources')):
         m = re.fullmatch(r'E(\d+)', str(ref).strip())
         if m and int(m[1]) in found['messages'] and int(m[1]) not in sources:
             sources.append(int(m[1]))
     if not sources:
         fields['last'] = ''  # the last contact is only said with the message that shows it
-    if fields['promises'] and not found['promises'] and not sources:
-        fields['promises'] = ''
     if not any(fields[k] for k in ('last', 'promises', 'questions', 'bring')):
         return None
     title = clean(data.get('title'), 80)

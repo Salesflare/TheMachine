@@ -11,6 +11,8 @@ each row's own identifiers, so a row the index finds is still the row the scan f
 import json
 import sqlite3
 
+import mail_senders
+
 TRIGGERS = ('graph_identifiers_insert', 'graph_identifiers_update', 'graph_identifiers_delete')
 # A node's identifiers: the strings json_each reads from them, as the scan it replaces did; an info that is not JSON is
 # read as none (it never fails the graph's own write).
@@ -58,6 +60,22 @@ def drop(db):
     """Take it away with its triggers (a graph write would fail on triggers left without their table)."""
     for sql in DROP:
         db.execute(sql)
+
+
+def known_addresses(db, address):
+    """The addresses of the person an address is in the Graph, with it; only it when the Graph has no such person. As
+    mail_senders.wrote compares them: untagged."""
+    address = str(address or '').strip().lower()
+    if not address:
+        return set()
+    try:
+        found = db.execute("SELECT o.identifier FROM graph_identifiers i JOIN graph_identifiers o ON o.node_id=i.node_id "
+                           "WHERE i.identifier=? AND o.identifier LIKE 'email:%'", ('email:' + address,)).fetchall()
+    except sqlite3.OperationalError as error:  # an old database, or dropped
+        if 'graph_identifiers' not in str(error):
+            raise
+        found = []
+    return {mail_senders.untagged(a) for a in (address, *(r[0][6:] for r in found))}
 
 
 def rows(db, columns, identifiers, scan, scan_args=()):

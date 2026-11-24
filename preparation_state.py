@@ -7,6 +7,19 @@ from machine import action_basis, todo_states
 
 TERMINAL = ('ok', 'error', 'aborted', 'timed_out', 'lost')
 
+# How a run failed, as preparation-run.mjs names it: fixed codes only, for a review's and a preparation's log line and
+# error report.
+REVIEW_FAILURES = {'runtime_error','runtime_timeout','runtime_aborted','runtime_lost',
+                   'model_idle_timeout','bridge_error','rate_limited','usage_limited','connection_error','prompt_too_long'}
+
+
+REVIEW_FAILURE_PHASES = {'runtime','model','bridge','connection','queue','provider','tool','gateway_draining'}
+
+
+# Why a generic runtime_error happened, from a fixed list (REASONS in preparation-run.mjs): logged, never the raw text.
+REVIEW_REASONS = {'mcp_runtime_limit','context_overflow','model_unavailable','auth_failed','auth_missing',
+                  'provider_overloaded','provider_error','repeated_tool_error','unclassified'}
+
 # Automatic retries of one to-do's runs (a run that failed, timed out, ended without a result, or was lost or cut off
 # by a restart; the one after a new release): at most AUTO_RETRIES in all, the first after AUTO_RETRY_BACKOFF[0]
 # seconds, the next after AUTO_RETRY_BACKOFF[1]. Counted in preparations.retries_spent, which only something new for

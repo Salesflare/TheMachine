@@ -35,7 +35,7 @@ JS_KEY = re.compile(r"(?:^|[,{\s])'?([a-z_]+(?:\.[a-z_]+)?)'?\s*:")
 # The hand-written lists of kinds each file has today: these only come down.
 KIND_LISTS = {
     'ai_access.py': 1,
-    'birthdays.py': 2,
+    'birthdays.py': 1,
     'check_now.py': 4,
     'connectors/docs.py': 2,
     'connectors/github.py': 2,

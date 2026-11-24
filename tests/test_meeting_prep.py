@@ -11,6 +11,7 @@ from unittest.mock import patch
 import locale_prefs
 import meeting_prep
 import timeutil
+from machine import model_reply
 from seams import patch_everywhere  # noqa: E402
 import machine.main as machine_main
 
@@ -23,7 +24,7 @@ ACCOUNTS = [{'id': 'wcal', 'service': 'calendar', 'boundary': 'work:Acme', 'emai
 SAM = 'sam@globex.example'
 ME = {'email': 'robin@acme.example', 'self': True, 'responseStatus': 'accepted'}
 ANSWER = {'useful': True, 'area': 'work', 'title': 'Prepare for the Globex pilot review', 'who': 'Sam Rivera, head of operations at Globex.',
-          'last': 'Sam asked on Nov 5 whether the pilot can start in December.', 'promises': 'Promised Sam the pilot plan by Tuesday.',
+          'last': 'Sam asked on Nov 5 whether the pilot can start in December.', 'promises': [],
           'questions': 'Who signs the order form on their side.', 'bring': 'The pilot plan; decide on the start date.', 'sources': []}
 
 
@@ -64,6 +65,20 @@ class MeetingPrep(unittest.TestCase):
             db.execute('INSERT OR IGNORE INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,?,?,?,?,?,?)',
                        ('email:' + node, 'person', 'Sam Rivera', 1.0, at, 1, json.dumps({'identifiers': ['email:' + node], 'role': 'head of operations'})))
         return event_id
+
+    def promise(self, event_id, what):
+        with self.store.connect() as db:
+            return db.execute("INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,status,created_at,updated_at) "
+                              "VALUES('mine','Sam',?,'2026-11-10','2026-11-10',?,'wmail','open',?,?)", (what, event_id, MONDAY, MONDAY)).lastrowid
+
+    def replies(self, *texts):
+        """The turn's replies in order, as text."""
+        left = iter(texts)
+        self.app.meeting_prep_model = lambda config, prompt: (self.prompts.append(prompt), next(left))[1]
+
+    def verdicts(self):
+        with self.store.connect() as db:
+            return [r[0] for r in db.execute('SELECT verdict FROM meeting_preps')]
 
     def add(self, *events):
         for e in events:
@@ -116,7 +131,9 @@ class MeetingPrep(unittest.TestCase):
     def test_a_meeting_with_correspondence_gets_one_briefing_to_do_with_its_sources(self):
         asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December? Who should sign the order form?', 4)
         self.mail('pmail', 'Sam Rivera <sam@globex.example>', 'Birthday drinks on Saturday?', 2)  # personal: never in a work briefing
-        self.answer['sources'] = [f'E{asked}', 'E999999']
+        kept = self.promise(asked, 'the pilot plan')
+        self.answer.update(sources=[f'E{asked}', 'E999999'], promises=[{'id': f'P{kept}', 'text': 'Promised Sam the pilot plan by Tuesday.'},
+                                                                       {'id': 'P999', 'text': 'Sam promised the user list.'}])
         self.add(meeting('g1', '10:00'))
         made = self.run_pass()
         self.assertIsNotNone(made)
@@ -188,6 +205,55 @@ class MeetingPrep(unittest.TestCase):
         kept = meeting_prep.parse(json.dumps({'useful': True, 'who': 'Sam.', 'last': 'Asked about pricing.', 'bring': 'Pricing.', 'sources': ['E5']}), found)
         self.assertEqual(kept['sources'], [5])
         self.assertEqual(kept['fields']['last'], 'Asked about pricing.')
+
+    def test_a_reply_that_cannot_be_read_is_asked_once_more_and_is_never_a_verdict(self):
+        asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
+        self.add(meeting('u1', '10:00'))
+        good = json.dumps({**ANSWER, 'sources': [f'E{asked}']})
+        self.replies(good[:-30], good[:-1] + ',}', good[:-30], good)
+        self.assertIsNone(self.run_pass())
+        self.assertEqual(self.verdicts(), [])  # not read: nothing is known about it
+        self.assertEqual(len(self.prompts), 2)
+        self.assertTrue(self.prompts[1].startswith(self.prompts[0]))
+        self.assertIn('could not be read', self.prompts[1])
+        self.assertIsNone(self.run_pass())  # it rests first
+        self.assertEqual(len(self.prompts), 2)
+        with patch.object(model_reply, 'REST_SECONDS', 0):
+            self.assertIsNotNone(self.run_pass())  # read on the second ask
+        self.assertEqual((self.verdicts(), len(self.prompts)), (['made'], 4))
+
+    def test_a_model_that_never_answers_is_asked_a_few_times_only(self):
+        self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
+        self.add(meeting('u2', '10:00'), meeting('u3', '11:00'))
+        self.app.meeting_prep_model = lambda config, prompt: (self.prompts.append(prompt), '{"useful": tr')[1]
+        with patch.object(model_reply, 'REST_SECONDS', 0):
+            for _ in range(20):
+                self.assertIsNone(self.run_pass())
+        self.assertEqual(len(self.prompts), 2 * model_reply.PASSES_A_DAY)  # both meetings, TRIES passes each
+        self.assertEqual(self.verdicts(), [])
+
+    def test_what_the_turn_says_stands_on_what_it_was_given(self):
+        found = {'messages': {5: {}}, 'promises': {7: {}, 8: {}}}
+        say = lambda found, **more: meeting_prep.parse(json.dumps({'useful': True, 'bring': 'Pricing.', 'sources': ['E5'], **more}), found)['fields']
+        self.assertEqual(say(found, promises=[{'id': 'P7', 'text': 'Promised the plan.'}, {'id': 'P7', 'text': 'Twice.'}, {'id': 'P9', 'text': 'Made up.'},
+                                              {'id': 'P8', 'text': 'Sam owes the list.'}])['promises'], 'Promised the plan; Sam owes the list.')
+        self.assertEqual(say({**found, 'promises': {}}, promises=[{'id': 'P7', 'text': 'Sam promised the list.'}])['promises'], '')
+        self.assertEqual(say(found, promises='Sam promised the list.')['promises'], '')  # no promise it is
+        self.assertEqual(say(found, promises=[{'id': 'P7', 'text': 'word ' * 20}, {'id': 'P8', 'text': 'more ' * 20}])['promises'], ('word ' * 20).strip())
+        self.assertEqual(say(found, questions='Who signs?')['questions'], 'Who signs?')
+        self.assertEqual(say({**found, 'messages': {}}, questions='Who signs?')['questions'], '')
+        cut = say(found, questions='alphabet ' * 40)['questions']
+        self.assertTrue(cut.endswith(' alphabet…') and len(cut) <= 150, cut)
+        self.assertEqual(meeting_prep.cut('x' * 200, 150), 'x' * 149 + '…')  # no word to end at
+
+    def test_an_answer_is_told_apart_from_no_answer(self):
+        found = {'messages': {5: {}}, 'promises': {}}
+        good = json.dumps({'useful': 'true', 'bring': 'Pricing.', 'sources': 'E5', 'background_sources': 3})
+        self.assertEqual(meeting_prep.parse(good + '\n' + good, found)['sources'], [5])
+        self.assertIsNone(meeting_prep.parse('```json\n{"useful": false}\n```', found))
+        for reply in ('', None, 'Nothing to prepare.', good[:-5], '{}', '{"useful": "maybe"}'):
+            with self.assertRaises(model_reply.Unreadable):
+                meeting_prep.parse(reply, found)
 
     def test_a_personal_meeting_gets_no_to_do(self):
         self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'See you at the reunion dinner.', 3)
@@ -398,6 +464,23 @@ class MeetingPrep(unittest.TestCase):
         for sid in (snoozed, closed, imminent):
             self.assertEqual(bodies[sid], self.OLD)
         self.assertEqual(len(self.prompts), 6)  # five briefings, then the one turn for c5
+
+    def test_an_unreadable_rewrite_is_tried_again_then_the_old_briefing_stays(self):
+        asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
+        self.answer['sources'] = [f'E{asked}']
+        self.add(meeting('r9', '10:00'))
+        sid = self.run_pass()
+        self.made_before_the_stamp(sid)
+        self.app.meeting_prep_model = lambda config, prompt: (self.prompts.append(prompt), 'cut off {')[1]
+        with patch.object(model_reply, 'REST_SECONDS', 0):
+            for n in range(1, model_reply.TRIES + 1):
+                self.assertIsNone(self.stale_pass())
+                self.assertEqual(len(self.prompts), 1 + 2 * n)
+                with self.store.connect() as db:
+                    self.assertNotEqual(db.execute('SELECT format FROM meeting_preps').fetchone()[0], meeting_prep.FORMAT)
+            self.assertIsNone(self.stale_pass())
+        self.assertEqual(len(self.prompts), 1 + 2 * model_reply.TRIES)
+        self.assertEqual(self.cards()[0]['body'], self.OLD)
 
     def test_the_format_stamp_is_added_to_an_older_table(self):
         import sqlite3

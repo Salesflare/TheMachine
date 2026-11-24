@@ -35,6 +35,7 @@ from machine.app.first_look import (
 )
 from machine.app.graph_actions import account_services
 from machine.app.preparation import PROMPT_LIMIT
+from preparation_state import REVIEW_FAILURE_PHASES, REVIEW_FAILURES, REVIEW_REASONS
 from machine.app.prep_reads import ALREADY_READ, RunReads, read_once
 from machine.app.recall import recall
 from machine.app.senders import REPLY_CUT, REPLY_RESERVE
@@ -169,10 +170,6 @@ KIND_WORDS = {'gmail.message': ('email', 'emails'), 'calendar.event': ('meeting'
               'android.notification': ('phone notification', 'phone notifications'), 'x.message': ('X message', 'X messages')}
 
 
-REVIEW_FAILURES = {'runtime_error','runtime_timeout','runtime_aborted','runtime_lost',
-                   'model_idle_timeout','bridge_error','rate_limited','usage_limited','connection_error','prompt_too_long'}
-
-
 # Room the review prompt keeps for the blocks added after it (drafts to learn from, condensing, teammates).
 PROMPT_RESERVE = 4000
 
@@ -217,13 +214,6 @@ def block_room(build, parts, key, limit, cap):
     """The characters block key can take so build(parts) stays within limit, after its own heading (at most cap)."""
     heading = len(build({**parts, key: 'x'})) - len(build({**parts, key: ''})) - 1
     return min(cap, limit - len(build(parts)) - heading)
-
-
-REVIEW_FAILURE_PHASES = {'runtime','model','bridge','connection','queue','provider','tool','gateway_draining'}
-
-
-# Why a generic runtime_error happened, from a fixed list (REASONS in preparation-run.mjs): logged, never the raw text.
-REVIEW_REASONS = {'mcp_runtime_limit','context_overflow','model_unavailable','auth_failed','auth_missing','unclassified'}
 
 
 # A hosting layer's note while the owner signs in to an AI (a hosted Machine's ChatGPT or Claude sign-in): the dashboard

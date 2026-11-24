@@ -490,7 +490,7 @@ class ViewsStore(ConversationStore):
         for r in rows:
             m = json.loads(r['metadata'])
             url = m.get('source_url')
-            mine = m.get('from_me') or (r['kind'] == 'gmail.message' and _address(m.get('from')) in own)  # also from another address of theirs
+            mine = m.get('from_me') or r['kind'] == 'gmail.message' and own_message({'kind': r['kind'], 'metadata': m}, own=own)
             if r['kind'] == 'android.notification':
                 m['app_name'] = android_app_shown(m.get('package_name'), m.get('app_name'))  # its app by name, never the package
             # A chat message is said by a person, never by its channel or chat (an unnamed Slack sender stays blank)

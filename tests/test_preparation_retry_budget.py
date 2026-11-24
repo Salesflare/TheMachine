@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
+import error_feed
 import machine.main as machine_main
 import preparation_state
 import timeutil
@@ -113,6 +114,75 @@ class RetryBudget(unittest.TestCase):
         card = self.card()
         self.assertEqual((card['status'], card['preparation_status']), ('accepted', 'blocked'))  # Stuck with Try again, not Preparing…
         self.assertEqual(len(self.runs()), 3)
+
+    def test_each_failure_is_counted_by_its_class_without_its_text(self):
+        # The provider overloaded at both tries: one signature per class and outcome in the error reports, nothing else
+        receipt = {'status': 'error', 'error': 'runtime_error', 'error_phase': 'runtime', 'reason': 'provider_overloaded', 'message': 'private text'}
+        fail = lambda r: {'status': 'admitted'} if r['action'] == 'start' else receipt
+        self.store.decide(self.sid, 'accept', '', 'click', 'dashboard')
+        with self.assertLogs('personal-assistant', 'WARNING') as logs:
+            for _ in range(2):
+                self.app.preparation_step(fail)
+                self.app.preparation_step(fail)
+                self.due()
+        self.assertEqual([line.split(':', 2)[2] for line in logs.output], [
+            'preparation failed error=runtime_error phase=runtime after=retry reason=provider_overloaded',
+            'preparation failed error=runtime_error phase=runtime after=stopped reason=provider_overloaded'])
+        with self.store.connect() as db:
+            rows = [tuple(r) for r in db.execute('SELECT source,kind,message,location,count FROM error_feed ORDER BY message')]
+            self.assertTrue(all(error_feed.allowed(r[2]) for r in rows))
+        self.assertEqual(rows, [('job', 'runtime_error.provider_overloaded', f'runtime {after}', 'machine/app/preparation.py:preparation_run_step', 1)
+                                for after in ('retry', 'stopped')])
+        # a reason or code outside the fixed lists never goes
+        receipt.update(error='private_code', reason='private reason', error_phase='private')
+        self.store.decide(self.sid, 'retry', '', 'try', 'dashboard')
+        self.app.preparation_step(fail)
+        self.app.preparation_step(fail)
+        with self.store.connect() as db:
+            kinds = {r[0] for r in db.execute('SELECT kind FROM error_feed')}
+        self.assertEqual(kinds, {'runtime_error.provider_overloaded', 'runtime_error'})
+
+    def counted(self):
+        with self.store.connect() as db:
+            error_feed.ensure(db)
+            return [r[0] for r in db.execute("SELECT kind FROM error_feed WHERE source='job'")]
+
+    def running(self):
+        self.setUp()
+        self.store.decide(self.sid, 'accept', '', 'click', 'dashboard')
+        self.step()
+        self.assertEqual(self.prep()['status'], 'running')
+        return self.prep()
+
+    def test_a_run_somebody_ended_is_no_failure(self):
+        owner = {'stop': lambda: self.app.action('chat_stop', {'suggestion_id': self.sid}, owner_dashboard=True),
+                 'change': lambda: self.store.decide(self.sid, 'other', 'Make it shorter', 'own', 'dashboard'),
+                 'dismiss': lambda: self.store.decide(self.sid, 'reject', '', 'own', 'dashboard'),
+                 'done': lambda: self.store.decide(self.sid, 'complete', '', 'own', 'dashboard')}
+        # pressed while the status check was on its way, whatever it then says
+        for name, status in (('stop', 'aborted'), ('stop', 'error'), ('change', 'aborted'), ('dismiss', 'lost'), ('done', 'error')):
+            with self.subTest(name=name, status=status):
+                job = self.running()
+                self.app.card_chat_gateway = lambda *args, **kwargs: {'messages': []}
+                asked = []
+
+                def runner(request):
+                    asked.append(request['action'])
+                    owner[name]()
+                    return {'status': status}
+                self.app.preparation_run_step(job, runner)
+                now = self.prep()
+                self.assertEqual(asked, ['status'])
+                self.assertTrue(now['job_id'] != job['job_id'] or now['status'] not in ('starting', 'running'))
+                self.app.preparation_step(lambda r: {'status': 'aborted'} if r['action'] == 'stop' else {'status': 'admitted'})
+                self.assertEqual(self.counted(), [])
+        self.running()  # ended in OpenClaw itself, or by a restart: tried again as before, not counted
+        self.step('aborted')
+        self.assertEqual((self.prep()['status'], self.prep()['error']), ('queued', 'ai_run_interrupted'))
+        self.assertEqual(self.counted(), [])
+        self.running()
+        self.step('error')
+        self.assertEqual(self.counted(), ['runtime_error'])  # and a real failure is
 
     def test_the_owners_try_again_runs_once_and_something_new_brings_new_retries(self):
         # 2026-11-18: each Try again ran, ended within a minute without a result, and was retried by itself the same way

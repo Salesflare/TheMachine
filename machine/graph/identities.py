@@ -6,6 +6,7 @@ import collections
 
 import graph_joins
 import mail_senders
+import verified_sender
 from graph import (
     FLOOR, FREEMAIL, GENERIC_NAMES, HALF_LIFE, account_side, forgotten, hidden, not_resources, org_from_name,
     person_name, plain_name, relayed, resources, room_like, thread_key, touches,
@@ -41,6 +42,7 @@ def read_identities(db, signals, old, owner, current, config, past):
     headlines = set()  # LinkedIn conversations whose person has a headline (read at view time: it stays sealed in the signal)
     keys = graph_joins.Keys(config, owner, plain_name, account_side, FREEMAIL)  # which identities a name may join: never a shared address
     senders = collections.defaultdict(list)  # email identifier -> [(at, event id)] of mail it wrote: its own text may carry its number
+    wrote = {}  # email identifier -> [last mail it wrote, last one whose sender its mail service checked or None]: which company they are at now
     for event_id, account_id, kind, at, m in signals + old:  # signals first: the same email as a signal and history counts as the signal
         if kind == 'gmail.message' and m.get('message-id'):
             if m['message-id'] in seen_message_ids:
@@ -79,6 +81,11 @@ def read_identities(db, signals, old, owner, current, config, past):
         keys.see(event_id, account_id, kind, m, found, *thread_key(kind, m))
         if kind == 'gmail.message' and found[0][3] in ('them', 'seen') and found[0][0].startswith('email:') and event_id not in past:
             senders[found[0][0]].append((at, event_id))
+        if kind == 'gmail.message' and found[0][3] in ('them', 'seen') and at <= current and addresses(m.get('from'))[0][1] == found[0][0][6:]:
+            last = wrote.setdefault(found[0][0], [at, None])
+            last[0] = max(last[0], at)
+            if m.get(verified_sender.KEY) is True:
+                last[1] = max(last[1] or at, at)
         if any(role in ('owner', 'met') for _, _, _, role in found):
             owner_events.add(event_id)
         for identifier, name, _, _ in found:
@@ -89,4 +96,4 @@ def read_identities(db, signals, old, owner, current, config, past):
             if identifier.startswith('x:') and m.get('screen_name') and not m.get('from_me'):
                 x_names[identifier] = m['screen_name']
     return (kept, mailings, listed, warmup, gone, per_event, names, x_names, crm_names, paying_names, said_orgs,
-            appears, owner_events, headlines, keys, senders)
+            appears, owner_events, headlines, keys, senders, wrote)

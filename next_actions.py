@@ -35,7 +35,7 @@ import timeutil
 import unicodedata
 from urllib.parse import urlsplit
 from machine.owner_error import OwnerError
-from machine import new_post
+from machine import draft_marks, new_post
 from machine.kinds import SEND, TEXT_ONLY, TO_PERSON
 
 SEND_SCOPES = {'https://www.googleapis.com/auth/gmail.send',
@@ -717,7 +717,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
                 raise OwnerError('Provide a concrete subject and draft body within the size limit')
             if field == 'subject' and ('\r' in text or '\n' in text):
                 raise OwnerError('Subject cannot contain another header')
-            result[field] = closing_spaced(text) if field == 'body' else text
+            result[field] = draft_marks.closing_spaced(text) if field == 'body' else text
         # The real signature (Gmail's own, or the one set or found for this account) is added at send time; the body ends at the name.
         result['signature'] = value.get('signature', True)
         if value.get('attachments'):
@@ -1001,7 +1001,6 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     return result
 
 
-PLACEHOLDER = re.compile(r'(?i)\[(?:name|first name|your name|recipient|company|date|time|link|url|amount|insert[^\]]*|x{2,}|\.\.\.|…)\]|\{\{[^}]*\}\}|<(?:name|link|date)>|\bTODO\b|\bTBD\b|\bXXX\b|lorem ipsum')
 # Only the sender's own "here's the file" phrasing; "thanks for the attached invoice" is fine.
 ATTACHED = re.compile(r"(?i)\b(?:I(?:'ve| have)? attached|attached (?:is|are|you'll find|please find)|(?:please )?find attached|see (?:the )?attached|I(?:'m| am) attaching|in bijlage (?:vind|stuur|zit)|(?:vind|stuur) (?:je|u) (?:hierbij|in bijlage)|bijgevoegd vind|ci-joint|anbei)\b")
 
@@ -1009,20 +1008,19 @@ ATTACHED = re.compile(r"(?i)\b(?:I(?:'ve| have)? attached|attached (?:is|are|you
 SAVED_FILE = re.compile(r'(?:data/assistant-attachments|memory/assistant)/\S*[^\s/.,;:)]')
 
 
-# A message that ends as a sentence does: its last mark (maybe inside a closing quote, bracket or bold), or a link it ends on.
-ENDS_SENTENCE = re.compile(r'(?:[.!?…]["”’)\]*_]*|https?://\S+)\s*$')
-
-
 def check(value, result='', own_addresses=()):
     """Mistakes a Do it result can't go out with: checked before it's saved, so the
     run fixes them itself instead of the owner tapping Change. Returns plain problems; empty is fine."""
     problems = []
     for action in actions(value):
-        text = (action.get('subject') or '') + '\n' + (action.get('body') or action.get('preview') or '') + ('\n' + action['message'] if action.get('message') else '')
+        subject = action.get('subject') or ''
+        text = (action.get('body') or action.get('preview') or '') + ('\n' + action['message'] if action.get('message') else '')
         if action['kind'] == 'doc_write' and action['op'] == 'edit':
             text += ''.join('\n' + str(c.get('replace', c.get('insert', c.get('append')))) for c in action['changes'])
-        if PLACEHOLDER.search(text):
-            problems.append(f"“{action.get('label') or action['kind']}” still has a placeholder ({PLACEHOLDER.search(text)[0]}): fill it in from the evidence")
+        left = draft_marks.placeholder(text, '' if action.get('in_reply_to') else subject)  # a reply's subject is the thread's
+        if left:
+            problems.append(f"“{action.get('label') or action['kind']}” still has a placeholder ({left}): fill it in from the evidence")
+        text = subject + '\n' + text
         if re.search(r'\[[^\]]+\]\((?!https?://)[^)]*\)', text):
             problems.append('A link has no real https:// address')
         if action['kind'] == 'open' and new_post.COMPOSERS.match(action['url']):
@@ -1032,7 +1030,7 @@ def check(value, result='', own_addresses=()):
             problems.append(f"“{action['label']}” uploads or mentions a file but lists none: add attachments:[<paths>] so the owner sees it, or reword it")
         if action['kind'] == 'whatsapp' and ATTACHED.search(action['body']) and not action.get('attachments'):
             problems.append('The WhatsApp message mentions a file but has none: add attachments:[<path>] or reword it')
-        if action['kind'] == 'handoff' and not ENDS_SENTENCE.search(action['body']):
+        if action['kind'] == 'handoff' and not draft_marks.ends_sentence(action['body']):
             problems.append('The handoff message runs on without its punctuation: write it as whole sentences, what they need to '
                             'know ending with a period and the ask as its own sentence ending with a question mark')
         if action['kind'] == 'email':
@@ -1080,7 +1078,7 @@ def revise(action, subject=None, body=None):
                 or text_length(action, body.strip()) > action.get('max_length', 8000 if action['kind'] in TEXT_KINDS else 12000)):
             raise OwnerError('The draft needs some text, within the size limit')
         body = paragraphs(body)
-        result['body'] = body.strip() if action['kind'] in TEXT_KINDS else closing_spaced(body)
+        result['body'] = body.strip() if action['kind'] in TEXT_KINDS else draft_marks.closing_spaced(body)
     if subject is not None and action['kind'] not in TEXT_KINDS:
         if not isinstance(subject, str) or not subject.strip() or len(subject) > 250 or '\r' in subject or '\n' in subject or '\x00' in subject:
             raise OwnerError('The subject needs one line of text')
@@ -1093,15 +1091,6 @@ def paragraphs(text):
     """Line breaks as the card shows them: a Windows or old Mac line end is one line break, and a line of only spaces is
     an empty line. Otherwise an HTML mail draws that line with no height and the blank line between paragraphs is lost."""
     return '\n'.join(line if line.strip() else '' for line in re.split(r'\r\n?|\n', str(text)))
-
-
-def closing_spaced(body):
-    """Owner standard: a blank line between the closing ("Regards,") and the name."""
-    lines = body.rstrip().split('\n')
-    if (len(lines) >= 2 and lines[-2].strip().endswith(',') and len(lines[-2].strip()) <= 40
-            and re.fullmatch(r"[A-Z][\w.'-]*(?: [A-Z][\w.'-]*)?", lines[-1].strip())):
-        lines.insert(-1, '')
-    return '\n'.join(lines)
 
 
 # Drafts that reach the recipient as plain text (WhatsApp, Telegram, LinkedIn, X, a Fleet handoff): links go as words (URL).
