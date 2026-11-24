@@ -16,7 +16,6 @@ import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-KINDS = {'gmail': 'gmail.message', 'slack': 'slack.message', 'whatsapp': 'whatsapp.message', 'linkedin': 'linkedin.message'}
 PER_TURN = 3  # to-dos or promises on one page
 
 
@@ -54,7 +53,7 @@ def event(case, n, message, text):
         meta = {'chat_id': case['id'], 'from': who, 'from_me': bool(message.get('own'))}
         if channel == 'whatsapp':
             meta['media_type'] = message.get('media', '')
-    return {'account_id': 'a', 'source_id': f"{case['id']}-{n}", 'kind': KINDS[channel], 'occurred_at': f'2026-03-0{3 + n}T09:00:00+00:00',
+    return {'account_id': 'a', 'source_id': f"{case['id']}-{n}", 'kind': channel + '.message', 'occurred_at': f'2026-03-0{3 + n}T09:00:00+00:00',
             'title': title, 'body': body, 'metadata': meta, 'deleted': False}
 
 
