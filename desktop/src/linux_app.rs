@@ -247,10 +247,22 @@ fn bar_in(room: &gtk::Box, page: &WebView) -> Option<Bar> {
     next.connect_clicked(move |_| n.search_next());
     let n = looks.clone();
     words.connect_activate(move |_| n.search_next());
+    let over = bar.clone();
+    words.connect_key_press_event(move |_, event| {
+        let ends = event.keyval() == gtk::gdk::keys::constants::Escape;
+        if ends {
+            over.set_search_mode(false);
+        }
+        ends.into()
+    });
     let here = words.clone();
     looks.connect_failed_to_find_text(move |_| here.style_context().add_class("error"));
     let here = words.clone();
-    looks.connect_found_text(move |_, _| here.style_context().remove_class("error"));
+    // Its marks are yellow under white words in the dark: the one it is at is enough
+    looks.connect_found_text(move |looks, _| {
+        here.style_context().remove_class("error");
+        looks.search_finish();
+    });
     let (over, back, text) = (looks.clone(), page.clone(), words.clone());
     bar.connect_search_mode_enabled_notify(move |bar| {
         if !bar.is_search_mode() {

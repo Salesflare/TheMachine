@@ -17,7 +17,7 @@ import uuid
 import zlib
 from ctypes import wintypes as w
 
-PORT, DEBUG, ID = 8941, 9227, 'computer.themachine.desktop'
+PORT, DEBUG, ID, BUBBLE = 8941, 9227, 'computer.themachine.desktop', 'bubble.html'
 user, gdi = ctypes.WinDLL('user32', use_last_error=True), ctypes.WinDLL('gdi32')
 user.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))  # physical pixels everywhere
 for f, r in ((user.GetDC, w.HDC), (gdi.CreateCompatibleDC, w.HDC), (gdi.CreateCompatibleBitmap, w.HBITMAP), (user.GetForegroundWindow, w.HWND), (user.FindWindowW, w.HWND)):

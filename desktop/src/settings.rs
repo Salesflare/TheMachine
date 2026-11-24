@@ -2,11 +2,14 @@
 //! notifications when there is no robot. What the Machine itself does is set in the dashboard.
 use crate::{away, later, login, notify, speak, windows, Shared};
 use serde::Serialize;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 const LABEL: &str = "settings";
 const WIDTH: f64 = 420.0;
+
+/// Shown once its page says how tall it is; a page that is only read again says so too.
+static OPENING: AtomicBool = AtomicBool::new(false);
 
 #[derive(Serialize)]
 pub struct Settings {
@@ -37,11 +40,12 @@ pub fn open(app: &AppHandle) {
                 .maximizable(false)
                 .minimizable(false)
                 .center()
-                .visible(false) // until its page says how tall it is
+                .visible(false)
                 .additional_browser_args(&windows::browser())
                 .on_navigation(|url| url.scheme() == "tauri" || url.host_str() == Some("tauri.localhost"));
             #[cfg(target_os = "macos")]
             let built = built.title_bar_style(tauri::TitleBarStyle::Transparent);
+            OPENING.store(true, Ordering::Relaxed);
             match built.build() {
                 #[cfg(windows)]
                 Ok(window) => return crate::windows_app::prepare(&window),
@@ -66,7 +70,7 @@ pub fn settings_fit(app: AppHandle, height: f64) {
         let _ = window.set_size(tauri::LogicalSize::new(WIDTH, height));
         #[cfg(target_os = "linux")]
         windows::linux::size(&window, crate::place::Rect { x: 0.0, y: 0.0, w: WIDTH, h: height });
-        if !window.is_visible().unwrap_or(true) {
+        if OPENING.swap(false, Ordering::Relaxed) {
             let _ = window.center();
             let _ = window.show();
             let _ = window.set_focus();

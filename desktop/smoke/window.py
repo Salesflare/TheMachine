@@ -151,7 +151,8 @@ def _():
     del machine.left[:]
     x, y = here(app, '#frame')
     at = page('app', '(() => { const f = document.querySelector("#frame"), r = f.getBoundingClientRect(), a = f.contentDocument.querySelector("#framed").getBoundingClientRect(); return [a.x + a.width / 2 - r.width / 2, a.y + a.height / 2 - r.height / 2] })()')
-    click(round(x + at[0]), round(y + at[1]))
+    by = app.window().width / page('app', 'innerWidth')
+    click(round(x + at[0] * by), round(y + at[1] * by))
     need(gone_to('/out?framed'), machine.left)
 
 
@@ -618,6 +619,7 @@ def _():
     on.pages_killed()
     need(until(lambda: app.answers('app') and page('app', 'typeof me === "string" ? me : ""') not in ('', me), 20), 'a fresh page')
     need(dashboard(), 'the dashboard')
+    need(not app.settings(), 'one that was closed stays closed')
 
 
 @step('signed out')
@@ -641,6 +643,15 @@ def _():
     return found
 
 
+def reachable():
+    global machine
+    machine = Machine(PORT)
+    machine.window = machine.compact = True
+    machine.account, elsewhere.machine = elsewhere.at, machine
+    tap('#go')
+    need(dashboard(), text())
+
+
 @step('unreachable')
 def _():
     stop()
@@ -655,17 +666,17 @@ def _():
     tap('#go')
     time.sleep(6)
     need('reach' in text(), text())
-    return text()
+    found = text()
+    reachable()
+    machine.stop()
+    hit('reload')
+    need(until(lambda: 'reach' in text(), 20), 'also when it is read again: ' + text())
+    return found
 
 
 @step('reachable again')
 def _():
-    global machine
-    machine = Machine(PORT)
-    machine.window = machine.compact = True
-    machine.account, elsewhere.machine = elsewhere.at, machine
-    tap('#go')
-    need(dashboard(), text())
+    reachable()
 
 
 @step('light and dark, small and large')

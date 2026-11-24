@@ -37,11 +37,20 @@ pub fn full() -> bool {
     system::full()
 }
 
+/// What the app's own window says of itself, also where the system tells nothing of others.
+static OWN: std::sync::Mutex<Option<Sender<()>>> = std::sync::Mutex::new(None);
+
 pub fn watch(app: &AppHandle) {
     let (changed, changes) = std::sync::mpsc::channel();
-    if system::listen(changed) {
-        let app = app.clone();
-        std::thread::spawn(move || follow(&app, &changes));
+    *OWN.lock().unwrap() = Some(changed.clone());
+    system::listen(changed);
+    let app = app.clone();
+    std::thread::spawn(move || follow(&app, &changes));
+}
+
+pub fn changed() {
+    if let Some(to) = OWN.lock().unwrap().as_ref() {
+        let _ = to.send(());
     }
 }
 
@@ -217,7 +226,11 @@ mod system {
     }
 
     pub fn front(ids: &[String]) -> Front {
-        hyprland::front(ids).or_else(|| read(ids)).unwrap_or(Front::Other)
+        match hyprland::front(ids) {
+            Some(front) => front,
+            None if X11.load(std::sync::atomic::Ordering::Relaxed) => read(ids).unwrap_or(Front::Other),
+            None => Front::Nothing, // not told
+        }
     }
 
     /// Known once listen() asked on the main thread, the only one GDK answers on.
