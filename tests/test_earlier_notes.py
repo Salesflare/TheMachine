@@ -8,6 +8,7 @@ import unittest
 import earlier_notes
 import graph
 import meeting_prep
+from machine.store import graph_history
 from seams import patch_everywhere
 from test_meeting_prep import ANSWER, ME, MONDAY, SAM, MeetingPrep as Base, meeting
 
@@ -124,17 +125,103 @@ class EarlierNotes(Base):
         self.assertTrue(all(len(x) <= earlier_notes.REST for _, x in got[1:]))
         self.assertLessEqual(sum(len(x) for _, x in got), earlier_notes.CHARS)
 
-    def test_history_is_never_read(self):
-        event, record = self.past('k1', 20, notes='Agreed: start in January.')
-        self.graph()
+    def old(self, source, days, body, account='wmail', sender='Sam Rivera <sam@globex.example>', **meta):
+        """A mail kept as history. Returns its events id."""
+        at = (NOW - dt.timedelta(days=days)).isoformat()
+        self.store.commit_page(account, None, [{'account_id': account, 'source_id': source, 'kind': 'gmail.message', 'occurred_at': at, 'title': 'Pilot', 'body': body,
+                                                'deleted': False, 'metadata': {'from': sender, 'to': 'robin@acme.example', **meta}}], record_sync=False, history=True)
+        return self.meeting_id(source)
+
+    def as_history(self):
+        """What is added in this block comes in as history; the Graph takes it in after."""
+        test, add = self, self.add
+
+        class Block:
+            def __enter__(self):
+                test.add = lambda *events: [test.store.commit_page(e['account_id'], None, [e], record_sync=False, history=True) for e in events]
+
+            def __exit__(self, *failure):
+                test.add = add
+        return Block()
+
+    def graph_with_history(self):
+        with self.store.connect() as db:
+            graph_history.advance(db, (NOW - dt.timedelta(days=graph.HORIZON_DAYS)).isoformat(), MONDAY)
+        with self.store.connect() as db:
+            graph.build(db, self.app.config, MONDAY, history=True)
+
+    def test_notes_and_what_came_after_are_read_from_history_and_make_no_source_or_promise(self):
+        end = (NOW - dt.timedelta(days=70)).replace(hour=14, minute=5)
+        with self.as_history():
+            event, _ = self.past('k1', 90, notes='Agreed: start in January.')
+            self.past('k2', 70, title='Scope talk')
+            self.add({'account_id': 'wmail', 'source_id': 'a2', 'kind': 'gmail.message', 'occurred_at': end.isoformat(), 'title': 'Meeting assets for Scope talk', 'body': 'The scope is ten users. ' * 40,
+                      'deleted': False, 'metadata': {'from': 'Zoom <no-reply@zoom.us>', 'labels': ['INBOX']}})
+            self.past('k3', 60, title='Dinner', notes='Padel and dinner.', kind='meeting.notes', account='pcal')
+        for n in range(6):  # more than the briefing reads in full
+            self.old(f'm{n}', 30 + n, f'Update {n}: we start in February.')
+        self.old('cc', 20, 'Only copied in.', sender='Ana Silva <ana@initech.example>', cc=SAM)
+        self.old('home', 20, 'Padel on Sunday?', account='pmail', to='robin@home.example')
+        self.graph_with_history()
         self.add(meeting('g1', '10:00'))
-        self.assertEqual(len(self.notes()), 1)
-        for row in (event, record):
-            with self.store.connect() as db:
-                db.execute('UPDATE events SET history=1 WHERE id=?', (row,))
-            self.assertEqual(self.notes(), [])
-            with self.store.connect() as db:
-                db.execute('UPDATE events SET history=0 WHERE id=?', (row,))
+        evidence = self.found()['evidence']
+        self.assertEqual([n['meeting'] for n in evidence['notes']], ['Scope talk', 'Kickoff call'])
+        after = [m['text'] for m in evidence['since']['messages']]
+        self.assertTrue(after and all('February' in x for x in after), after)
+        self.assertNotIn('Padel', json.dumps([evidence['people'], evidence['since'], [n['text'] for n in evidence['notes']]]))
+        self.assertNotIn('Only copied in', json.dumps(evidence['people']))
+        asked = next(iter(evidence['older']))
+        self.answer.update(agreed=[{'text': 'Starts in January', 'source': 'N2'}], changed=[{'text': 'January became February', 'source': f'E{asked}'}], sources=[f'E{asked}'])
+        self.run_pass()
+        [card] = self.cards()
+        self.assertEqual(json.loads(card['event_ids']), [self.meeting_id('g1')])
+        for text in ('Starts in January (Kickoff call', 'January became February (', '**So far:**'):
+            self.assertIn(text, card['body'])
+        self.assertEqual(card['title'], 'Prepare for ' + meeting('g1', '10:00')['title'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM promises').fetchone()[0], 0)
+            self.assertEqual({r[0] for r in db.execute('SELECT DISTINCT history FROM events WHERE analyzed_version<version')}, {0})
+            self.assertFalse(db.execute('SELECT 1 FROM graph_events WHERE event_id=?', (event,)).fetchone())
+
+    def test_an_older_message_from_history_is_read_only_in_the_room_signals_leave(self):
+        self.old('h1', 120, 'We met at the fair and want a pilot.')
+        self.old('h2', 100, 'Our budget is set in spring.')
+        self.old('h0', meeting_prep.MESSAGE_DAYS + 9, 'Long ago.')
+        self.graph_with_history()
+        self.add(meeting('g1', '10:00'))
+        texts = lambda: [m['text'] for m in self.found()['evidence']['people'][0]['messages']]
+        self.assertEqual(texts(), ['We met at the fair and want a pilot.', 'Our budget is set in spring.'])  # from history alone
+        new = [self.mail('wmail', 'Sam Rivera <sam@globex.example>', f'New {n}.', 2 + n) for n in range(3)]
+        self.assertEqual(texts(), ['Our budget is set in spring.', 'New 2.', 'New 1.', 'New 0.'])
+        self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'New 3.', 6)
+        self.assertEqual(texts(), ['New 3.', 'New 2.', 'New 1.', 'New 0.'])
+        self.answer.update(sources=[f'E{new[0]}'], title='Prepare for the pilot')
+        self.run_pass()
+        self.assertEqual(json.loads(self.cards()[0]['event_ids']), [self.meeting_id('g1'), new[0]])
+        self.assertEqual(self.cards()[0]['title'], 'Prepare for the pilot')  # nothing from history was read
+
+    def test_someone_met_only_in_history_is_no_first_meeting(self):
+        self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
+        self.add(meeting('g1', '10:00'))
+        self.assertTrue(self.found()['evidence']['people'][0]['first_meeting'])
+        with self.as_history():
+            self.past('k1', 90)
+        self.graph_with_history()
+        self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can it start in January?', 3)
+        self.assertNotIn('first_meeting', self.found()['evidence']['people'][0])
+
+    def test_records_of_earlier_meetings_are_found_without_a_walk_over_every_message(self):
+        found = [{'id': 1, 'ids': {1}, 'start': NOW - dt.timedelta(days=d)} for d in (300, 100, 99)]
+        self.assertEqual(len(earlier_notes._days(found)), 2)  # two a day apart: one span
+        with self.store.connect() as db:
+            asked = []
+            db.set_trace_callback(asked.append)
+            earlier_notes.records(db, found, ['wcal', 'zoom'])
+            db.set_trace_callback(None)
+            for sql in asked:
+                plan = ' '.join(str(r[3]) for r in db.execute('EXPLAIN QUERY PLAN ' + sql))
+                self.assertIn('account_id=? AND occurred_at>? AND occurred_at<?', plan)
+        self.assertEqual(len(asked), 2)
 
     def test_which_record_of_a_meeting_is_read(self):
         self.past('k1', 10, title='Both', notes='The owner typed this.', kind='meeting.notes')

@@ -18,7 +18,13 @@ Your [Graph](graph.md) counts it: how close you are to people, when you last tal
 
 ## What it never does
 
-It never makes a to-do or a promise, never counts as new, never starts a check and never adds to a project. Personal history stays personal, like personal mail. Apart from Search by meaning, no AI model reads it.
+It never makes a to-do or a promise, never counts as new, never starts a check and never adds to a project. Personal history stays personal, like personal mail.
+
+Apart from Search by meaning, your AI model reads it in three places only:
+
+- what a search finds, like for a question you ask or a to-do being worked on
+- mail with booking details, for [trips and events](calendar.md#trips-and-events)
+- a [meeting briefing](calendar.md#ready-for-your-meetings): notes of earlier meetings and a few older messages with the people you meet
 
 ## When it runs
 

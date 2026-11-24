@@ -2,9 +2,8 @@
 
 Which earlier meetings (meetings): on this Machine's own calendars, in the upcoming meeting's area (work or personal, by
 the calendar's account and the notes' account), the owner's, over, at most DAYS old, and with one of the upcoming
-meeting's outside guests on it. The guests are matched as people, through the Graph (graph_events: every address of one
-person counts), never by the meeting's title. The Graph has no one on a meeting of more than 25 and nobody who declined,
-so neither brings anything in. Someone from the owner's own team never brings a meeting in; a shared colleague only adds
+meeting's outside guests on it. The guests are matched as people, through the Graph (every address of one person counts),
+never by the meeting's title. The Graph has no one on a meeting of more than 25 and nobody who declined, so neither brings anything in. Someone from the owner's own team never brings a meeting in; a shared colleague only adds
 a little to its rank. The more of its people are in the upcoming meeting and the newer it is, the higher it ranks; a
 weekly call with them gives its newest ones.
 
@@ -15,10 +14,10 @@ agenda: the turn is told so). At most MEETINGS of them, newest first, within CHA
 What came after (since): an old open point may be settled by now, so next to the notes the turn reads what happened since
 the oldest of them: later messages with these people (bounded), promises closed since and to-dos done since.
 
-Only this Machine's own signals are read: never history (docs/help/history.md: no model reads it), the Team Graph or what
-a Fleet shares. And the notes are never the
-to-do's sources: what others can see follows those. Notes are other people's words: they reach the turn quoted, as
-evidence, never instructions."""
+Read are this Machine's own signals and its history (docs/help/history.md), never the Team Graph or what a Fleet shares.
+Promises closed and to-dos done come from signals alone, as history makes neither. And the notes are never the to-do's
+sources: what others can see follows those. Notes are other people's words: they reach the turn quoted, as evidence,
+never instructions."""
 from __future__ import annotations
 
 import datetime as dt
@@ -30,7 +29,7 @@ import meeting_mail
 import meeting_notes
 import timeutil
 from machine import todo_states
-from machine.store import graph_promises
+from machine.store import graph_history, graph_promises
 
 DAYS = 365           # how far back an earlier meeting counts
 HALF_LIFE = 90       # days after which an earlier meeting counts half
@@ -91,9 +90,9 @@ def meetings(db, meeting, nodes, same_side, owned, domains, current):
         return []
     end = min(current, meeting['start'])
     rows = db.execute('SELECT e.id,e.account_id,e.source_id,e.kind,e.title,e.body,e.occurred_at,e.metadata,e.deleted,group_concat(DISTINCT g.node_id) AS who '
-                      "FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id IN (SELECT value FROM json_each(?)) AND e.kind='calendar.event' "
-                      'AND e.deleted=0 AND e.history=0 AND e.id!=? AND e.occurred_at>=? AND e.occurred_at<? GROUP BY e.id',
-                      (json.dumps(sorted(nodes)), meeting['id'], (end - dt.timedelta(days=DAYS)).isoformat(), end.isoformat())).fetchall()
+                      f"FROM {graph_history.BOTH} g JOIN events e ON e.id=g.event_id WHERE e.kind='calendar.event' "
+                      'AND e.deleted=0 AND e.id!=? AND e.occurred_at>=? AND e.occurred_at<? GROUP BY e.id',
+                      (*[json.dumps(sorted(nodes))] * 2, meeting['id'], (end - dt.timedelta(days=DAYS)).isoformat(), end.isoformat())).fetchall()
     team = {e for e in _emails(meeting['meta']) if e.rpartition('@')[2] in domains}
     found = {}
     for r in rows:
@@ -129,19 +128,27 @@ def clip(text, n, head=.55):
     return start[:start.rfind(' ')].rstrip() + ' … ' + rest[rest.find(' ') + 1:].lstrip()
 
 
-def records(db, found, same_side):
+def _days(found):
+    """[(from, to)] a day around each meeting, as few spans as that takes."""
+    out = []
+    for at in sorted(m['start'] for m in found):
+        since, until = (at - dt.timedelta(days=1)).isoformat(), (at + dt.timedelta(days=1)).isoformat()
+        if out and since <= out[-1][1]:
+            out[-1][1] = until
+        else:
+            out.append([since, until])
+    return out
+
+
+def records(db, found, accounts):
     """{meeting id: [its notes and transcripts as signals]} of these meetings, by plain code (meeting_notes.match)."""
-    if not found:
-        return {}
-    first, last = min(m['start'] for m in found), max(m['start'] for m in found)
     by_id = {i: m['id'] for m in found for i in m['ids']}
     out = {}
-    rows = db.execute(f'SELECT id,account_id,occurred_at FROM events WHERE kind IN ({_marks(meeting_mail.RECORDS)}) AND deleted=0 AND history=0 AND occurred_at>=? AND occurred_at<=?',
-                      (*meeting_mail.RECORDS, (first - dt.timedelta(days=1)).isoformat(), (last + dt.timedelta(days=1)).isoformat())).fetchall()
+    # A span at a time, by account: signals and history together are too many to walk (events_account_time)
+    rows = [r for span in _days(found) if accounts for r in db.execute(
+        f'SELECT id FROM events WHERE account_id IN ({_marks(accounts)}) AND occurred_at>=? AND occurred_at<=? AND deleted=0 '
+        f'AND kind IN ({_marks(meeting_mail.RECORDS)})', (*accounts, *span, *meeting_mail.RECORDS)).fetchall()]
     for r in rows:
-        at = meeting_notes.stamp(r['occurred_at'])
-        if not same_side(r['account_id']) or not at or not any(abs(at - m['start']) <= dt.timedelta(days=1) for m in found):
-            continue
         row = dict(db.execute('SELECT id,account_id,source_id,kind,title,body,occurred_at,metadata FROM events WHERE id=?', (r['id'],)).fetchone())
         match = meeting_notes.match(db, row)
         if match and match['id'] in by_id and str(row['body'] or '').strip():
@@ -154,7 +161,7 @@ def mails(db, meeting, accounts):
     after, before = meeting['end'] - dt.timedelta(minutes=meeting_mail.MAIL_EARLY_MINUTES), meeting['end'] + dt.timedelta(hours=meeting_mail.MAIL_AFTER_HOURS)
     out = []
     for r in db.execute(f'SELECT id,kind,metadata FROM events WHERE account_id IN ({_marks(accounts)}) AND occurred_at>=? AND occurred_at<=? AND deleted=0 '
-                        f'AND history=0 AND kind IN ({_marks(meeting_mail.MAIL_KINDS)})', (*accounts, after.isoformat(), before.isoformat(), *meeting_mail.MAIL_KINDS)).fetchall():
+                        f'AND kind IN ({_marks(meeting_mail.MAIL_KINDS)})', (*accounts, after.isoformat(), before.isoformat(), *meeting_mail.MAIL_KINDS)).fetchall():
         if not meeting_mail.notes_mail(r):
             continue
         row = dict(db.execute('SELECT id,account_id,kind,title,body,occurred_at,metadata FROM events WHERE id=?', (r['id'],)).fetchone())
@@ -204,7 +211,8 @@ def read(db, meeting, nodes, same_side, sides, owned, domains, current):
     found = meetings(db, meeting, nodes, same_side, owned, domains, current)
     if not found:
         return []
-    held, accounts = records(db, found, same_side), sorted(a for a in sides if same_side(a))
+    accounts = sorted(a for a in sides if same_side(a))
+    held = records(db, found, accounts)
     agenda = meeting_mail._description({'body': meeting['body'], 'metadata': meeting['meta']})
     chosen, series = [], {}
     for m in found:
@@ -233,9 +241,9 @@ def since(db, notes, nodes, same_side, shown, sent, calendar):
     the owner wrote it; calendar: the kinds that are meetings."""
     oldest = min(n['start'] for n in notes).isoformat()
     ids = json.dumps(sorted(nodes))
-    rows = [r for r in db.execute('SELECT DISTINCT e.id,e.account_id,e.kind,e.occurred_at,e.title,e.body,e.metadata FROM graph_events g JOIN events e ON e.id=g.event_id '
-                                  'WHERE g.node_id IN (SELECT value FROM json_each(?)) AND g.direct=1 AND e.deleted=0 AND e.occurred_at>? '
-                                  f"AND e.history=0 AND e.kind NOT IN ({_marks(calendar)}) ORDER BY e.occurred_at DESC LIMIT 60", (ids, oldest, *calendar)).fetchall()
+    rows = [r for r in db.execute('SELECT DISTINCT e.id,e.account_id,e.kind,e.occurred_at,e.title,e.body,e.metadata FROM '
+                                  f'{graph_history.BOTH} g JOIN events e ON e.id=g.event_id WHERE g.direct=1 AND e.deleted=0 AND e.occurred_at>? '
+                                  f"AND e.kind NOT IN ({_marks(calendar)}) ORDER BY e.occurred_at DESC LIMIT 60", (ids, ids, oldest, *calendar)).fetchall()
             if same_side(r['account_id']) and r['id'] not in shown]
     later, texts, left = {}, {}, SINCE_CHARS
     for r in rows[:SINCE]:

@@ -15,7 +15,7 @@ def event_and_unnamed_rows(db, nodes, links, kept, node_events, project_events, 
             # Complete membership for old task evidence; only readers cap display lists.
             # direct: the person was in contact with the owner on it, not merely on it.
             event_rows += [(node, e, at.isoformat(), guess, int(node in direct_people.get(e, ()))) for at, e, guess in sorted(items)]
-    history_rows = [(node, e, at.isoformat()) for node, items in history_events.items() if node in kept for at, e in items]
+    history_rows = [(node, e, at.isoformat(), int(node in direct_people.get(e, ()))) for node, items in history_events.items() if node in kept for at, e in items]
     names_of = {n[0]: n[2] for n in nodes}
     unnamed_rows = []
     for group, people, last in unnamed:

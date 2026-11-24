@@ -66,8 +66,9 @@ def meeting(source, start, title, body, guests, team=0, account='wcal', **meta):
                          'ical_uid': source + '@larkspur.example', 'attendees': people, **meta}}
 
 
-def prepare(case, text, folder):
-    """The app with this case's signals, and the upcoming meeting's events id. {name} in a text is its filler."""
+def prepare(case, text, folder, history=False):
+    """The app with this case's signals, and the upcoming meeting's events id. {name} in a text is its filler. history: what
+    came before is history, but for a case with a promise or to-do (history makes neither)."""
     import graph
     import machine.main as main
     store = main.Store(Path(folder) / (case['id'] + '.sqlite'))
@@ -75,6 +76,8 @@ def prepare(case, text, folder):
     app = object.__new__(main.App)
     app.store, app.config = store, {'accounts': ACCOUNTS, 'review_worker': {'enabled': True}, 'meeting_prep_research': False, 'owner_name': 'Robin Hale', 'openclaw_workspace': str(folder)}
     page = lambda e: store.commit_page(e['account_id'], {}, [e])
+    if history and not case['promises'] and not case['done']:
+        page = lambda e: store.commit_page(e['account_id'], None, [e], record_sync=False, history=True)
     ago = lambda days, hour=13: (NOW - dt.timedelta(days=days)).replace(hour=hour)
     def full(body):
         for name, filler in text.items():
@@ -107,6 +110,7 @@ def prepare(case, text, folder):
         sender, to = (['robin@larkspur.example', 'Robin Hale'], who) if own else (who, ['robin@larkspur.example', 'Robin Hale'])
         page({'account_id': 'wmail', 'source_id': f'mail{n}', 'kind': 'gmail.message', 'occurred_at': ago(m['days'], 15).isoformat(), 'title': m['subject'], 'body': m['text'],
               'metadata': {'from': f'{sender[1]} <{sender[0]}>', 'to': f'{to[1]} <{to[0]}>', 'labels': ['SENT'] if own else ['INBOX'], 'thread_id': f'{case["id"]}{n}'}, 'deleted': False})
+    page = lambda e: store.commit_page(e['account_id'], {}, [e])
     page(meeting('next', NOW.replace(day=10, hour=10), case['title'], case['about'], case['guests']))
     with store.connect() as db:
         for a, b in case['merges']:
@@ -120,8 +124,12 @@ def prepare(case, text, folder):
     for n, d in enumerate(case['done']):
         card = store.suggest(f'done{n}', d['title'], d['title'], [record[d['of']]])
         store.decide(card['id'], 'complete', '', f'd{n}', 'dashboard')
+    if history:
+        from machine.store import graph_history
+        with store.connect() as db:
+            graph_history.advance(db, (NOW - dt.timedelta(days=graph.HORIZON_DAYS)).isoformat(), NOW.isoformat())
     with store.connect() as db:
-        graph.build(db, app.config, NOW.isoformat())
+        graph.build(db, app.config, NOW.isoformat(), **({'history': True} if history else {}))
     return app
 
 
@@ -141,12 +149,12 @@ def facts(case, text):
     return '\n'.join(out)
 
 
-def briefing(case, text, folder, turn):
+def briefing(case, text, folder, turn, history=False):
     """The briefing's text ('' for none), and its turn's (input, output) tokens."""
     import meeting_prep
     import i18n
     import inspect
-    app, used = prepare(case, text, folder), [0, 0]
+    app, used = prepare(case, text, folder, history), [0, 0]
 
     def model(config, prompt):
         reply, i, o = turn(prompt)
@@ -179,6 +187,7 @@ def main():
     p.add_argument('--only', default='')
     p.add_argument('--root', default=str(HERE.parent.parent))
     p.add_argument('--chars', type=int, default=0, help='another limit for the notes in a turn')
+    p.add_argument('--history', action='store_true', help='earlier meetings, notes and mail are history')
     p.add_argument('--show', action='store_true', help='print the turns, ask nothing')
     p.add_argument('--texts', action='store_true', help='print the briefings too')
     a = p.parse_args()
@@ -202,7 +211,7 @@ def main():
     with tempfile.TemporaryDirectory() as folder:
         if a.show:
             for c in cases:
-                briefing(c, spec['text'], folder, lambda t: (print(t, '\n\n=====\n\n'), ('{"useful": false}', 0, 0))[1])
+                briefing(c, spec['text'], folder, lambda t: (print(t, '\n\n=====\n\n'), ('{"useful": false}', 0, 0))[1], a.history)
             return
         base, key = os.environ['OPENAI_BASE_URL'].rstrip('/'), os.environ['OPENAI_API_KEY']
         turn = lambda t: ask(base, key, a.model, a.effort, t)
@@ -214,7 +223,7 @@ def main():
         def one(c, run):
             sub = Path(folder) / f'r{run}'
             sub.mkdir(exist_ok=True)
-            body, used = briefing(c, spec['text'], sub, turn)
+            body, used = briefing(c, spec['text'], sub, turn, a.history)
             says = [*c['want'], *c['never']]
             said, wrong, extra = {}, [], [0, 0]
             if body:
