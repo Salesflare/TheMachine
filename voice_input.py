@@ -14,10 +14,10 @@ WAV in the browser, and posts it (voice_transcribe). Engines (Settings, Voice in
 - **local**: faster-whisper with a Whisper model, on this Machine. Nothing leaves it. It is not part of the install or
   the prebuilt images, so setup stays as fast as it was. It gets ready in the background once the Machine is live and
   quiet (the service's voice_warm_worker; `prepare`): its own virtualenv next to the database (voice/env), the exact
-  packages in voice-requirements.txt (every one pinned by hash, wheels only, installed at a lower priority), and the
-  model from Hugging Face at a pinned revision, each file checked against its SHA-256. The model runs in
-  voice_worker.py, started when the owner taps the mic and stopped after IDLE_SECONDS without a clip. Clips go to it
-  one at a time over a pipe.
+  packages in voice-requirements.txt (every one pinned by hash, wheels only, without a media decoder, installed at a
+  lower priority), and the model from Hugging Face at a pinned revision, each file checked against its SHA-256. The
+  model runs in voice_worker.py, started when the owner taps the mic and stopped after IDLE_SECONDS without a clip.
+  Clips go to it one at a time over a pipe.
 
 While the owner talks, the dashboard sends what they said so far at each pause (a part), so most of it is written
 down before they tap Done and only the last few seconds are left to wait for.
@@ -56,7 +56,7 @@ MAX_SECONDS = 120          # the dashboard stops recording here; a little more i
 RATE = 16000
 REQUEST_BYTES = (MAX_SECONDS + 5) * RATE * 2 * 4 // 3 + 64 * 1024   # the WAV, base64 in JSON
 IDLE_SECONDS = 300
-FREE_BYTES = 2 * 1024 ** 3   # room the preparation needs: packages about 0.5 GB, the small model 0.5 GB, and slack
+FREE_BYTES = 2 * 1024 ** 3   # room the preparation needs: packages about 0.4 GB, the small model 0.5 GB, and slack
 # Voice input's languages as Whisper names them (ISO 639-1), A to Z: locale_prefs.LANGUAGE_TABLE's, as the menu offers them
 LANGUAGES = tuple(sorted(code for code, _, _ in locale_prefs.mic_languages()))
 # Talk live's voices (OpenAI Realtime, gpt-realtime). ChatGPT's Cove isn't one of them (only GPT-Live through a
@@ -79,6 +79,8 @@ MODELS = {
         'vocabulary.txt': (459861, '34ce3fe1c5041027b3f8d42912270993f986dbc4bb34cf27f951e34a1e453913'),
         'model.bin': (145217532, 'd01c3014881c9c6f3133c182f3d2887eb6ca1c789a7538c5c007196857a0a6a9')}},
 }
+# The list up to release-20261124-1126 (its requirements_key): today's packages plus av, a media decoder nothing here uses
+WITH_AV = '8da89ba34e29c4fc'
 SMALL_SERVER = 6 * 1024 ** 3   # below this much memory, "base" is the default: a Standard server has 4 GB and 2 cores
 NICE = 10                      # transcription and its preparation yield to reviews and the rest of the Machine
 
@@ -265,6 +267,8 @@ class Voice:
                 done = json.loads(self.ready_file().read_text())
             except (OSError, ValueError):
                 done = {}
+            if done.get('packages') == WITH_AV and self._drop_av(done):
+                done['packages'] = key
             if done.get('packages') != key or not python_in(self.env).exists():
                 self._packages()
                 done = {'packages': key, 'models': []}
@@ -286,7 +290,38 @@ class Voice:
         part.write_text(json.dumps(done))
         part.replace(self.ready_file())
 
+    def drop_av(self):
+        """At the start of the service, whichever engine is in use: packages from before av left lose it, with nothing
+        to download, and voice stays ready. When that fails they are prepared again as after any change of the list."""
+        with self.lock:
+            try:
+                done = json.loads(self.ready_file().read_text())
+            except (OSError, ValueError):
+                return
+            if self.preparing or done.get('packages') != WITH_AV:   # a preparation that is running does it itself
+                return
+            self.preparing = {'model': '', 'step': 'packages', 'done': 0, 'total': 0}
+        try:
+            self._drop_av(done)
+        finally:
+            with self.lock:
+                self.preparing = None
+
+    def _drop_av(self, done):
+        if not python_in(self.env).exists():
+            return False
+        command, low = lowered([str(python_in(self.env)), '-m', 'pip', 'uninstall', '--disable-pip-version-check',
+                                '--no-input', '--yes', 'av'])
+        try:
+            gone = self.run(command, capture_output=True, text=True, timeout=300, **low).returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+        if gone:
+            self._write_ready({**done, 'packages': requirements_key()})
+        return gone
+
     def _packages(self):
+        self.ready_file().unlink(missing_ok=True)   # half an install, if this is cut short, never counts as one
         if self.env.exists():
             shutil.rmtree(self.env)
         made = self.run([self.config.get('voice_python') or sys.executable, '-m', 'venv', str(self.env)],
@@ -294,7 +329,7 @@ class Voice:
         if made.returncode:
             raise RuntimeError('Python can’t make a virtual environment here. Install python3-venv, then try again.')
         command, low = lowered([str(python_in(self.env)), '-m', 'pip', 'install', '--disable-pip-version-check', '--no-input',
-                                '--no-cache-dir', '--only-binary=:all:', '--require-hashes', '-r', str(REQUIREMENTS)])
+                                '--no-cache-dir', '--no-deps', '--only-binary=:all:', '--require-hashes', '-r', str(REQUIREMENTS)])
         got = self.run(command, capture_output=True, text=True, timeout=1800, **low)
         if got.returncode:
             shutil.rmtree(self.env, ignore_errors=True)

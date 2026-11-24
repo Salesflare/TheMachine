@@ -58,7 +58,7 @@ Installed from their own package sources only when you use the feature that need
 | [rsa](https://github.com/sybrenstuvel/python-rsa) 4.9.1 | Telethon's RSA | Apache-2.0 |
 | [pyasn1](https://github.com/pyasn1/pyasn1) 0.6.4 | used by rsa | BSD-2-Clause |
 | [qrcode](https://github.com/lincolnloop/python-qrcode) 8.2 | the Telegram login QR code | BSD-3-Clause |
-| [faster-whisper](https://github.com/SYSTRAN/faster-whisper) 1.2.1 and the packages pinned in `voice-requirements.txt`, installed into their own virtualenv on first use | voice input on your own Machine, with a Whisper model from Hugging Face (`Systran/faster-whisper-small` or `-base`) | MIT; each package keeps its own license |
+| [faster-whisper](https://github.com/SYSTRAN/faster-whisper) 1.2.1 and the packages pinned in `voice-requirements.txt` (without its media decoder, PyAV and FFmpeg), installed into their own virtualenv on first use | voice input on your own Machine, with a Whisper model from Hugging Face (`Systran/faster-whisper-small` or `-base`) | MIT; each package keeps its own license |
 
 ## Source Serif 4
 

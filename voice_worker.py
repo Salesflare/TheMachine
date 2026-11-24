@@ -7,14 +7,24 @@ It reads requests on stdin and answers on stdout, one at a time:
               16 kHz mono 16-bit PCM
     answer:   one JSON line {"text": "…", "language": "nl"} or {"error": "…"}
 
-The audio is only ever in memory here. It exits when stdin closes."""
+The audio is only ever in memory here. It exits when stdin closes.
+
+Nothing here decodes media. faster-whisper imports av (PyAV, with FFmpeg in it) for audio files, but a clip is already
+PCM, so av isn't installed (voice-requirements.txt) and an empty module takes its place."""
 from __future__ import annotations
 
 import json
 import sys
+import types
+
+
+def no_decoder():
+    """An empty `av`, also where an earlier release's packages still have the real one: decoding a file fails."""
+    sys.modules['av'] = types.ModuleType('av')
 
 
 def main(model_dir, threads):
+    no_decoder()   # before faster_whisper imports it
     import numpy as np
     from faster_whisper import WhisperModel
 

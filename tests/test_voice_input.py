@@ -10,6 +10,7 @@ import os
 import shutil
 import sqlite3
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -150,7 +151,7 @@ class Preparation(unittest.TestCase):
         self.assertEqual(voice.prepare('tiny')['state'], 'preparing')
         self.assertEqual(self.wait(voice), {'state': 'ready'})
         pip = next(c for c in self.commands if 'pip' in c)
-        for flag in ('--require-hashes', '--only-binary=:all:', '--no-cache-dir'):
+        for flag in ('--require-hashes', '--only-binary=:all:', '--no-cache-dir', '--no-deps'):
             self.assertIn(flag, pip)
         self.assertEqual(pip[-1], str(v.REQUIREMENTS))
         self.assertEqual(self.urls, ['https://huggingface.co/example/tiny/resolve/abc/config.json',
@@ -166,6 +167,62 @@ class Preparation(unittest.TestCase):
         voice.prepare('tiny'), self.wait(voice)
         with patch.object(v, 'requirements_key', return_value='newer'):
             self.assertEqual(voice.status('tiny'), {'state': 'missing'})
+
+    def before_av_left(self, voice):
+        """This Machine's voice as an earlier release left it: ready, with av among its packages."""
+        voice.prepare('tiny'), self.wait(voice)
+        voice.ready_file().write_text(json.dumps({'packages': v.WITH_AV, 'models': ['tiny']}))
+        self.assertEqual(voice.status('tiny'), {'state': 'missing'})
+        self.commands.clear(), self.urls.clear()
+
+    def test_an_earlier_release_s_packages_lose_av_and_voice_stays_ready(self):
+        voice = self.voice()
+        self.before_av_left(voice)
+        voice.drop_av()
+        self.assertEqual(self.commands[0][-5:], ['uninstall', '--disable-pip-version-check', '--no-input', '--yes', 'av'])
+        self.assertEqual((len(self.commands), self.urls), (1, []))   # nothing made again, nothing downloaded
+        self.assertEqual(voice.status('tiny'), {'state': 'ready'})
+        voice.drop_av()   # once
+        self.assertEqual(len(self.commands), 1)
+
+    def test_a_tap_before_that_does_it_too(self):
+        voice = self.voice()
+        self.before_av_left(voice)
+        voice.prepare('tiny')
+        self.assertEqual(self.wait(voice), {'state': 'ready'})
+        self.assertEqual((len(self.commands), self.urls), (1, []))
+
+    def test_av_that_wont_go_means_preparing_the_packages_again(self):
+        def stuck(command, **kwargs):
+            done = self.run_stub(command) if 'uninstall' not in command else self.commands.append(command)
+            return done or subprocess.CompletedProcess(command, 1, '', 'locked')
+        voice = self.voice(runner=stuck)
+        self.before_av_left(voice)
+        voice.drop_av()
+        self.assertEqual(voice.status('tiny'), {'state': 'missing'})   # so the background preparation and a tap both do it
+        shutil.rmtree(voice.env)
+        voice.prepare('tiny')
+        self.assertEqual(self.wait(voice), {'state': 'ready'})
+        self.assertTrue(any('install' in c for c in self.commands))
+        self.assertEqual(json.loads(voice.ready_file().read_text()), {'packages': v.requirements_key(), 'models': ['tiny']})
+
+    def test_a_failed_second_preparation_says_so_and_never_counts_as_ready(self):
+        self.before_av_left(self.voice())
+
+        def offline(command, **kwargs):
+            return self.run_stub(command) if 'venv' in command else subprocess.CompletedProcess(command, 1, '', 'offline')
+        voice = self.voice(runner=offline)
+        voice.prepare('tiny')
+        self.assertIn('internet connection', self.wait(voice)['error'])
+        self.assertFalse(voice.ready_file().exists())   # or half an install would pass for the old one without av
+
+    def test_packages_prepared_some_other_time_are_left_alone(self):
+        voice = self.voice()
+        voice.drop_av()   # nothing prepared yet
+        voice.prepare('tiny'), self.wait(voice)
+        self.commands.clear()
+        voice.drop_av()
+        self.assertEqual(self.commands, [])
 
     def test_a_changed_download_is_refused_and_not_kept(self):
         self.served['model.bin'] = b'EVIL!!'
@@ -207,6 +264,36 @@ class Preparation(unittest.TestCase):
         pip = next(c for c in self.commands if 'pip' in c)
         if os.name != 'nt' and shutil.which('nice'):
             self.assertEqual(pip[1:3], ['-n', str(v.NICE)])
+
+
+class Packages(unittest.TestCase):
+    def test_the_list_is_exactly_what_the_worker_needs(self):
+        """No media decoder: a clip is PCM, and what decodes files (av brings FFmpeg) only adds holes to patch. The list is
+        installed with --no-deps, so a package missing here is missing there: run voice_worker.py for real on a change."""
+        names = {line.split('==')[0].lower() for line in v.REQUIREMENTS.read_text().splitlines() if '==' in line}
+        self.assertEqual(names, {'anyio', 'click', 'ctranslate2', 'faster-whisper', 'filelock', 'flatbuffers', 'fsspec', 'h11',
+                                 'hf-xet', 'httpcore2', 'httpx2', 'huggingface_hub', 'idna', 'numpy', 'onnxruntime',
+                                 'packaging', 'protobuf', 'pyyaml', 'tokenizers', 'tqdm', 'truststore', 'typing_extensions'})
+
+    def test_the_worker_never_loads_av(self):
+        """Its own pipe, with faster-whisper's `import av` and a real av (an earlier release's packages) that would fail."""
+        with tempfile.TemporaryDirectory() as temp:
+            fakes = {'av': "raise SystemExit('the real av was imported')\n",
+                     'numpy': 'int16 = float32 = None\nclass Audio:\n    def astype(self, kind): return self\n'
+                              '    def __truediv__(self, by): return self\ndef frombuffer(raw, dtype): return Audio()\n',
+                     'faster_whisper': 'import av\nfrom types import SimpleNamespace as N\nclass WhisperModel:\n'
+                                       '    def __init__(self, *args, **kwargs): pass\n'
+                                       "    def detect_language(self, audio): return 'nl', 1, [('af', 0.6), ('nl', 0.4)]\n"
+                                       '    def transcribe(self, audio, language, **kwargs):\n'
+                                       "        said = 'decodes' if hasattr(av, 'open') else 'no decoder'\n"
+                                       '        return [N(text=said)], N(language=language)\n'}
+            for name, code in fakes.items():
+                (Path(temp) / f'{name}.py').write_text(code)
+            request = json.dumps({'bytes': 4, 'language': None, 'languages': ['en', 'nl']}).encode() + b'\n' + b'\1\0\2\0'
+            done = subprocess.run([sys.executable, str(ROOT / 'voice_worker.py'), 'model'], input=request, capture_output=True,
+                                  timeout=60, env={**os.environ, 'PYTHONPATH': temp})
+        self.assertEqual([json.loads(line) for line in done.stdout.splitlines()],
+                         [{'ready': True}, {'text': 'no decoder', 'language': 'nl'}], done.stderr)
 
 
 class DefaultModel(unittest.TestCase):
@@ -610,6 +697,11 @@ class Api(unittest.TestCase):
 
     def test_the_local_model_gets_ready_only_on_a_live_quiet_machine_without_openai(self):
         self.assertEqual(len(self.warm(a.VOICE_WARM_QUIET)), 1)
+
+    def test_av_goes_at_the_start_also_where_openai_does_dictation(self):
+        with patch.object(v.Voice, 'drop_av') as drop:
+            self.warm(1, openai=True, live=False)
+        drop.assert_called_once_with()
 
     def test_never_while_setting_up_busy_or_with_openai(self):
         self.assertEqual(self.warm(a.VOICE_WARM_QUIET - 1), [])      # not quiet long enough yet
