@@ -25,10 +25,20 @@ class UnreadAddresses(unittest.TestCase):
         sid = self.t.ahead()['id']
         self.t.app.preparation_step(lambda _: {'status': 'admitted'})
         job_id = self.t.q('SELECT job_id FROM preparations WHERE suggestion_id=?', sid)['job_id']
-        self.assertEqual(self.intent(job_id, 'leak', True), {'active': True, 'refused': preparation_state.UNREAD_ADDRESS})
-        self.assertIn('web_search', preparation_state.UNREAD_ADDRESS)  # where to go instead, so the run isn't stuck
+        self.assertEqual(self.intent(job_id, 'leak', True), {'active': True, 'refused': preparation_state.unread_address(False)})
         self.assertEqual(self.calls(job_id), [])  # never journaled as a step it took
         self.assertEqual(self.intent(job_id, 'read', False), {'active': True})  # an address it read, a plain one
+
+    def test_the_way_on_is_a_tool_this_machine_has(self):
+        sid = self.t.ahead()['id']
+        self.t.app.preparation_step(lambda _: {'status': 'admitted'})
+        job_id = self.t.q('SELECT job_id FROM preparations WHERE suggestion_id=?', sid)['job_id']
+        ask = lambda **more: self.t.app.action('preparation_tool_intent', {
+            'job_id': job_id, 'call_id': 'leak', 'tool': 'web_fetch', 'read_only': True, 'unread_address': True, **more})['refused']
+        self.assertIn('with web_search and open a result', ask(web_search=True))  # a search provider is set up
+        for none in (ask(web_search=False), ask()):  # none (a hosted Machine), or an older plugin that doesn't say
+            self.assertNotIn('web_search', none)
+            self.assertIn('on a search page in the browser and open a result', none)
 
     def test_do_it_opens_any_address(self):
         self.t.accept()

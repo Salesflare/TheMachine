@@ -4,7 +4,7 @@ import {dirname, resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {homedir} from 'node:os';
 import {fileURLToPath} from 'node:url';
-import {notePrompt, noteToolResult, outboundCheck, commandText, commandStages} from './outbound-urls.ts';
+import {notePrompt, noteToolResult, outboundCheck, blockedAddress, webSearchSetUp, commandText, commandStages} from './outbound-urls.ts';
 
 const HOME = homedir();
 const CONFIG_PATH = process.env.ASSISTANT_CONFIG || `${HOME}/.local/share/personal-assistant/config.json`;
@@ -510,11 +510,11 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     }
     if (routineSession(ctx.sessionKey) && !toolRunner(event, ctx) && ((!reviewTools().has(plainToolName(event.toolName)) && !routineRead(event)) || readsSecret(event) ||
         (plainToolName(event.toolName) === 'assistant_signals' && !ROUTINE_ACTIONS.has(event.params?.action)))) {
-      return {block: true, blockReason: 'A routine reads but never posts, sends or changes anything: web search and pages, the browser to open, read and scroll (no clicking or typing), read-only gh or git, assistant_signals status, events, related or graph, memory lookups and read-only file tools, then routine_result. Put what it would post or send in the result as a draft.'};
+      return {block: true, blockReason: 'A routine reads but never posts, sends or changes anything: web pages and searches, the browser to open, read and scroll (no clicking or typing), read-only gh or git, assistant_signals status, events, related or graph, memory lookups and read-only file tools, then routine_result. Put what it would post or send in the result as a draft.'};
     }
     if (routineSession(ctx.sessionKey) && !toolRunner(event, ctx)) {
       const refused = outboundCheck(ctx.sessionKey, plainToolName(event.toolName), event.params, ownerDomains());
-      if (refused) return {block: true, blockReason: refused};
+      if (refused) return {block: true, blockReason: blockedAddress(await webSearchSetUp(api))};
     }
     const awaited = awaitedCommand(event, ctx);
     let ahead = routineSession(ctx.sessionKey);
@@ -530,7 +530,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
         const unread=outboundCheck(ctx.sessionKey,plainToolName(event.toolName),event.params,ownerDomains());
         const admitted=await call('preparation_tool_intent',{job_id,call_id:ctx.toolCallId || event.toolCallId || `${event.toolName}:${JSON.stringify(event.params)}`,
           tool:plainToolName(event.toolName),tool_action:typeof event.params?.action==='string' ? event.params.action : null,
-          params:journalValue(event.params),read_only:preparationReadOnly(event),...(unread ? {unread_address:true} : {}),...(awaited ? {awaited:true} : {})});
+          params:journalValue(event.params),read_only:preparationReadOnly(event),...(unread ? {unread_address:true,web_search:await webSearchSetUp(api)} : {}),...(awaited ? {awaited:true} : {})});
         if (!admitted.active) return {block:true,blockReason:admitted.reason || 'This task is no longer running. End this turn.'};
         if (admitted.refused) return {block:true,blockReason:String(admitted.refused)};
         ahead=admitted.ahead===true;
