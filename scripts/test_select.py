@@ -62,6 +62,10 @@ ALWAYS = {
     'test_todo_moves.py',
     # every token the dashboard and the app's screens use
     'test_css_tokens.py',
+    # every raise of a translated message
+    'test_owner_error.py',
+    # every test and helper that drives a browser gets it from tests/browser.mjs
+    'test_browser_guard.mjs',
 }
 # Python that only puts the dashboard page together from its parts and serves it: a part's change reaches the Python
 # tests that look at the page, and those name dashboard_parts or the page (they're picked by name), not every test that

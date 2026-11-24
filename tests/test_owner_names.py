@@ -39,10 +39,14 @@ class OwnerNamesTest(unittest.TestCase):
     def test_owner_facing_text_names_no_tool_underneath(self):
         catalog = json.loads((ROOT / 'i18n' / 'en.json').read_text(encoding='utf-8'))
         lines = [f'i18n: {key}' for key in catalog if TOOLS.search(COMMANDS.sub('', key))]
-        for doc in sorted((ROOT / 'docs' / 'help').rglob('*.md')):
+        docs = sorted((ROOT / 'docs' / 'help').rglob('*.md'))
+        self.assertGreater(len(docs), 100, 'the help articles, in every language')
+        for doc in docs:
             for n, line in enumerate(doc.read_text(encoding='utf-8').splitlines(), 1):
                 if TOOLS.search(COMMANDS.sub('', line)):
                     lines.append(f'{doc.relative_to(ROOT)}:{n}: {line[:120]}')
+        self.assertTrue(TOOLS.search(COMMANDS.sub('', 'Runs through gogcli, see `gog auth list`.')))
+        self.assertFalse(TOOLS.search(COMMANDS.sub('', 'Type `gog auth list`.')))
         self.assertEqual(lines, [], 'name the service the owner knows (Gmail, WhatsApp), or drop it:\n' + '\n'.join(lines[:30]))
 
 

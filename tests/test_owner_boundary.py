@@ -1,3 +1,4 @@
+import ast
 import base64
 import http.client
 import importlib.util
@@ -20,6 +21,18 @@ a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 
 TOKEN = 'test-token'
+
+
+def action_sets(source):
+    """[(line, name)] of the *_ACTIONS a module sets to a set, tuple or list (or to one put together), or adds to."""
+    found = []
+    for node in ast.parse(source).body:
+        target = node.targets[0] if isinstance(node, ast.Assign) else getattr(node, 'target', None)
+        if isinstance(target, ast.Name) and target.id.endswith('_ACTIONS') and getattr(node, 'value', None):
+            value = node.value.args[0] if isinstance(node.value, ast.Call) and node.value.args else node.value
+            if isinstance(node, ast.AugAssign) or isinstance(value, (ast.Set, ast.Tuple, ast.List, ast.SetComp, ast.BinOp)):
+                found.append((node.lineno, target.id))
+    return found
 
 
 class OwnerBoundary(unittest.TestCase):
@@ -237,42 +250,44 @@ class OwnerBoundary(unittest.TestCase):
 
     def test_the_action_lists_are_sorted_one_per_line(self):
         # One action per line, sorted: pull requests that add different actions merge without conflicts.
-        import ast
-        problems = []
+        problems, checked = [], 0
         for node in ast.parse((Path(a.__file__).parent / 'machine' / 'actions.py').read_text()).body:
             if not (isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) and node.targets[0].id.endswith('_ACTIONS')):
                 continue
             value = node.value.args[0] if isinstance(node.value, ast.Call) and node.value.args else node.value
             if not isinstance(value, (ast.Set, ast.Tuple)):
                 continue
+            checked += 1
             items = [ast.unparse(e) for e in value.elts]
             lines = [e.lineno for e in value.elts]
             stars = [i for i in items if i.startswith('*')]
             if items != sorted(stars) + sorted(i for i in items if not i.startswith('*')) or len(set(lines)) != len(lines):
                 problems.append(node.targets[0].id)
+        self.assertGreater(checked, 3, 'the *_ACTIONS sets')
         self.assertEqual(problems, [], 'one per line: spreads (*X) first, then the names, each sorted')
 
     def test_the_action_sets_live_only_in_machine_actions(self):
         # The security boundary stays in one reviewed file: a *_ACTIONS set, tuple or `|=` anywhere else (assistant.py
         # included) would escape the sorted-lists check above and the review that file gets.
-        import ast
         root = Path(a.__file__).parent
         # Lists named *_ACTIONS that are not about who may call an action
         other = {('preparation_state.py', 'FINISH_ACTIONS'),  # what a continuation may always save
                  ('talk_live.py', 'TODO_ACTIONS')}  # the to-do buttons Talk live can press, each still an owner action
-        found = []
+        found, seen, checked = [], set(), 0
         for path in sorted(root.rglob('*.py')):
             name = path.relative_to(root).as_posix()
             if name == 'machine/actions.py' or name.startswith(('tests/', 'node_modules/', '.')) or '/node_modules/' in name:
                 continue
-            for node in ast.parse(path.read_text(encoding='utf-8')).body:
-                target = node.targets[0] if isinstance(node, ast.Assign) else getattr(node, 'target', None)
-                if not (isinstance(target, ast.Name) and target.id.endswith('_ACTIONS')) or (name, target.id) in other:
-                    continue
-                value = node.value.args[0] if isinstance(node.value, ast.Call) and node.value.args else node.value
-                if isinstance(node, ast.AugAssign) or isinstance(value, (ast.Set, ast.Tuple, ast.List, ast.SetComp)):
-                    found.append(f'{name}:{node.lineno} {target.id}')
+            checked += 1
+            sets = action_sets(path.read_text(encoding='utf-8'))
+            seen |= {(name, target) for _, target in sets} & other
+            found += [f'{name}:{line} {target}' for line, target in sets if (name, target) not in other]
         self.assertEqual(found, [], 'action sets belong in machine/actions.py, one name per line, sorted')
+        self.assertGreater(checked, 250, 'the modules')
+        self.assertEqual(seen, other)
+        self.assertEqual(action_sets("A_ACTIONS = {'x'}\nB_ACTIONS = frozenset({'x'})\nB_ACTIONS |= EXTRA\nC_ACTIONS: set = {'x'}\n"
+                                     "D_ACTIONS = A_ACTIONS | {'y'}\nNAMES = {'x'}\nE_ACTIONS = {'x': 'Reads'}\n"),
+                         [(1, 'A_ACTIONS'), (2, 'B_ACTIONS'), (3, 'B_ACTIONS'), (4, 'C_ACTIONS'), (5, 'D_ACTIONS')])
 
     def test_every_action_the_dashboard_posts_gets_through(self):
         # A save the dashboard makes that the allowlist lacks fails with "Operation is not available here" (Region did).

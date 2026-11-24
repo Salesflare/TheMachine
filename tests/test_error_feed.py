@@ -155,7 +155,10 @@ class Scrub(Base):
 
     def test_every_connector_is_a_service_the_feed_keeps(self):
         root = Path(ef.__file__).resolve().parent / 'connectors'
-        for stem in (p.stem for p in root.glob('*.py') if not p.stem.startswith('_')):
+        stems = [p.stem for p in root.glob('*.py') if not p.stem.startswith('_')]
+        self.assertGreater(len(stems), 5, 'the connectors')
+        self.assertFalse(ef.safe_word('zanzibarquill'))
+        for stem in stems:
             self.assertTrue(ef.safe_word(stem), f'{stem}: add it to error_words.SERVICES')
 
     def test_the_word_lists_import_only_re(self):

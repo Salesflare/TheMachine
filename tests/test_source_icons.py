@@ -38,8 +38,9 @@ def connectors():
     import onboarding
     from machine import names
     found = {onboarding.SERVICES.get(n, n) for n in onboarding.sources()} | set(onboarding.SERVICES.values()) | set(names.SERVICES)
-    found |= {p.stem for p in (ROOT / 'connectors').glob('*.py') if not p.stem.startswith('_')}
-    return found
+    modules = {p.stem for p in (ROOT / 'connectors').glob('*.py') if not p.stem.startswith('_')}
+    assert len(modules) > 5, 'connectors/ holds the connectors'
+    return found | modules
 
 
 class SourceIcons(unittest.TestCase):

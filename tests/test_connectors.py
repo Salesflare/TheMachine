@@ -219,10 +219,16 @@ if __name__ == '__main__':
     unittest.main()
 
 
+def connector_files():
+    paths = sorted(Path(__file__).parent.parent.joinpath('connectors').glob('*.py'))
+    assert len(paths) > 5, 'connectors/ holds the connectors'
+    return paths
+
+
 class ConnectorSetup(unittest.TestCase):
     def test_every_connector_says_in_one_line_what_it_reads(self):
         # The setup page shows this under the connector's name; a newly built connector needs one too.
-        for path in sorted(Path(__file__).parent.parent.joinpath('connectors').glob('*.py')):
+        for path in connector_files():
             if path.name.startswith('_'):
                 continue
             spec = importlib.util.spec_from_file_location('connector_' + path.stem, path)
@@ -267,7 +273,7 @@ OAUTH_PENDING = {'google_meet'}
 
 class ConnectorSignIn(unittest.TestCase):
     def test_connectors_for_oauth_services_sign_in_with_oauth(self):
-        for path in sorted(Path(__file__).parent.parent.joinpath('connectors').glob('*.py')):
+        for path in connector_files():
             if path.name.startswith('_') or path.stem in OAUTH_PENDING:
                 continue
             spec = importlib.util.spec_from_file_location('connector_signin_' + path.stem, path)

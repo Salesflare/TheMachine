@@ -10,13 +10,17 @@ import {chromium, opened} from './browser.mjs';
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
 // 1. Nothing loads playwright-core around the fence
-const direct = [];
+const direct = [], LOADS = /playwright-core|from ['"]playwright['"]|import\(['"]playwright['"]\)/;
+assert.ok(["import {chromium} from 'playwright'", "await import('playwright-core')"].every((line) => LOADS.test(line)));
+let checked = 0;
 for (const folder of ['tests', 'sandbox']) {
-  for (const name of readdirSync(join(ROOT, folder))) {
+  for (const name of readdirSync(join(ROOT, folder), {recursive: true})) {
     if (!name.endsWith('.mjs') || (folder === 'tests' && ['browser.mjs', 'test_browser_guard.mjs'].includes(name))) continue;
-    if (/playwright-core|from ['"]playwright['"]|import\(['"]playwright['"]\)/.test(readFileSync(join(ROOT, folder, name), 'utf8'))) direct.push(`${folder}/${name}`);
+    checked += 1;
+    if (LOADS.test(readFileSync(join(ROOT, folder, name), 'utf8'))) direct.push(`${folder}/${name}`);
   }
 }
+assert.ok(checked > 200, `the .mjs files in tests/ and sandbox/: ${checked}`);
 assert.deepEqual(direct, [], 'these load playwright-core themselves: get chromium from tests/browser.mjs');
 
 // 2. Clicked external links stay inside the fence. The fence is the desktop's xdg tools, which Chrome asks on Linux;

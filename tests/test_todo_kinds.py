@@ -40,11 +40,20 @@ class TodoKindsTest(unittest.TestCase):
 
     def test_core_paths_ask_the_registry_not_a_kinds_module(self):
         modules = {k.module for k in todo_kinds.KINDS}
+        self.assertTrue(modules and CORE)
+
+        def imported(source):
+            found = set()
+            for n in ast.walk(ast.parse(source)):
+                if isinstance(n, ast.ImportFrom):
+                    found |= {n.module or ''} | {f'{n.module}.{a.name}' if n.module else a.name for a in n.names}
+                elif isinstance(n, ast.Import):
+                    found |= {a.name for a in n.names}
+            return found
         for rel in CORE:
-            tree = ast.parse((ROOT / rel).read_text(encoding='utf-8'))
-            imported = {a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
             with self.subTest(path=rel):
-                self.assertEqual(imported & modules, set())
+                self.assertEqual(imported((ROOT / rel).read_text(encoding='utf-8')) & modules, set())
+        self.assertLessEqual({'a', 'b', 'c.d'}, imported('import a\ndef f():\n    from b import x\n    from c import d\n'))
 
     def test_the_kept_todo_list_waits_on_every_kinds_table(self):
         """A kind's view reads its table: the to-dos' views kept between polls (views.CARD_TABLES) must change with it."""

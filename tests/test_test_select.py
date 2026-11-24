@@ -111,7 +111,10 @@ class Selection(unittest.TestCase):
 
     def test_every_test_that_looks_over_the_repository_runs_always(self):
         # a test that walks every file, or a whole folder of the repository, can fail on a new file nothing names
-        walks = re.compile(r'''ROOT\.rglob\(|git', 'ls-files'|\(ROOT / '[\w-]+'\)\.r?glob\(|joinpath\('(?:connectors|integrations)'\)\.glob\(''')
+        walks = re.compile(r'''\bROOT\.(?:r?glob|iterdir)\(|git', 'ls-files'|\(ROOT / '[\w-]+'\)\.(?:r?glob|iterdir)\('''
+                           r'''|joinpath\('(?:connectors|integrations)'\)\.glob\(|readdirSync\(join\(ROOT\b''')
+        for text in ("ROOT.glob('*.py')", "ROOT.rglob('*.py')", "(ROOT / 'machine').iterdir()", "readdirSync(join(ROOT, 'tests'))"):
+            self.assertRegex(text, walks)
         walkers = sorted(Path(test).name for test, text in SOURCE.items() if walks.search(text))
         self.assertTrue(walkers)
         self.assertEqual(sorted(set(walkers) - select.ALWAYS), [], 'add these to ALWAYS in scripts/test_select.py')

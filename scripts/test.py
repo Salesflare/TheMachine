@@ -233,6 +233,9 @@ def main():
             if chosen == []:
                 return 0
         files =[TESTS / Path(name).name for name in chosen] if chosen else sorted(TESTS.glob('test_*.py')) + sorted(TESTS.glob('test_*.mjs'))
+        if not files:
+            print('No test files found in tests/.', file=sys.stderr)
+            return 1
         jobs = max(1, int(os.environ.get('THE_MACHINE_TEST_JOBS') or min(os.cpu_count() or 2, 8)))
         configured_limit = os.environ.get('THE_MACHINE_TEST_TIMEOUT')
         skips = {file.name: reason for file in files if (reason := skipped(file))}

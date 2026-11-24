@@ -283,7 +283,9 @@ def app_files():
 def check_links(found, files=None):
     """Links people follow point at a help article (and a heading it has), never at docs/ on GitHub."""
     problems = []
-    for path in app_files() if files is None else files:
+    if files is None and len(files := app_files()) < 200:
+        problems.append(f'only {len(files)} app files found to check for links: app_files() looks in the wrong folders')
+    for path in files:
         text, name = path.read_text(encoding='utf-8'), path.name if files else path.relative_to(ROOT)
         problems += [f'{name}: links to {m[0]} on GitHub: point it at its help article (themachine.computer/help/<article>)'
                      for m in DOCS_LINK.finditer(text)]
@@ -331,7 +333,10 @@ def check(folder=HELP):
         problems += [f'{where}: lists "{s}" under site: but does not use it' for s in fields['site'] if s not in body]
     html = dashboard_parts.assemble(ROOT)
     for links in ('HELP_FOR', 'GRAPH_HELP'):  # the footer's Help link per tab, and per list of the Graph
-        for tab, slug in re.findall(r"(\w+):'([a-z0-9-]+)'", (re.search(links + r'=\{(.*?)\}', html) or [None, ''])[1]):
+        listed = re.findall(r"(\w+):'([a-z0-9-]+)'", (re.search(links + r'=\{(.*?)\}', html) or [None, ''])[1])
+        if not listed:
+            problems.append(f'dashboard.html: {links} lists no help article: this check reads {links}={{tab:\'article\'}}')
+        for tab, slug in listed:
             if slug not in found:
                 problems.append(f'dashboard.html: {links} sends {tab} to the help article {slug}, which docs/help/ does not have')
     problems += check_links(found)

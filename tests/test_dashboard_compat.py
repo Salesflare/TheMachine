@@ -54,6 +54,14 @@ class OlderBrowser(unittest.TestCase):
         for name in ("'at'", "'findLast'", "'findLastIndex'", "'replaceChildren'", "'checkVisibility'", "'randomUUID'"):
             self.assertIn(name, POLYFILL)
 
+    def test_what_the_checks_see(self):
+        self.assertGreater(len(STRING.findall(CODE)), 5000, 'the strings of the page\'s scripts')
+        for name, line in {'structuredClone': 'structuredClone(a)', 'replaceAll': "a.replaceAll('b','c')", 'Set methods': 'a.union(b)',
+                           'toSorted/toReversed/toSpliced': 'a.toSorted()', 'URL.canParse/URL.parse': 'URL.parse(a)'}.items():
+            self.assertRegex(line, NEWER[name])
+        for text in ("'a:has(b)'", "'dialog:modal'", "'p:is(a,b)'", "':popover-open'"):
+            self.assertTrue(STRING.fullmatch(text) and SELECTOR.search(text), text)
+
     def test_no_newer_builtins(self):
         found = [f'{name}: …{CODE[max(0, m.start() - 60):m.end() + 20]}…'
                  for name, pattern in NEWER.items() for m in re.finditer(pattern, CODE)]

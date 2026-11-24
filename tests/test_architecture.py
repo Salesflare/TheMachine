@@ -282,8 +282,9 @@ LINK_BUILDERS = {'machine/dashboard_link.py', 'machine/browser.py'}
 
 # locale_prefs.LANGUAGE_TABLE names every language the app speaks; a table of language names elsewhere is a second one.
 LANGUAGE_FILE = 'locale_prefs.py'
-SPELLED_LANGUAGE = re.compile(r"""['"](?:nl|de|fr|es|it|ja|ko|ru)['"]\s*:\s*['"](?:Dutch|German|French|Spanish|Italian"""
-                              r"""|Japanese|Korean|Russian|Nederlands|Deutsch|Français|Español|Italiano)['"]""")
+SPELLED_LANGUAGE = re.compile(r"""['"](?:nl|de|fr|es|it|ja|ko|ru|pt(?:-BR)?|zh(?:-CN)?)['"]\s*:\s*['"](?:Dutch|German|French|Spanish"""
+                              r"""|Italian|Japanese|Korean|Russian|Portuguese|Chinese|Nederlands|Deutsch|Français|Español|Italiano"""
+                              r"""|Português)\b[^'"]*['"]""")
 
 
 # --- the clock -------------------------------------------------------------------------------------------------------
@@ -296,8 +297,8 @@ CLOCK_FILE = 'timeutil.py'
 CLOCK_FREE_DIRS = ('tests/', 'scripts/', 'sandbox/')
 # Modules `import installer` loads: they import timeutil inside a function, since timeutil reads the time zone when it
 # loads and the installer imports them before it checks the time zone. The list may only shrink.
-LOCAL_TIMEUTIL = frozenset({'imap_mail.py', 'machine/bridge_wait.py', 'mail_grants.py', 'message_seal.py', 'ms_graph.py',
-                            'onboarding.py', 'signal_setup.py'})
+LOCAL_TIMEUTIL = frozenset({'caldav_calendar.py', 'imap_mail.py', 'machine/bridge_wait.py', 'mail_grants.py', 'message_seal.py',
+                            'ms_graph.py', 'onboarding.py', 'signal_setup.py'})
 
 
 def clock_reads(tree_nodes):
@@ -858,6 +859,8 @@ class Architecture(unittest.TestCase):
         self.assertTrue(used and used <= set(groups), used - set(groups))
 
     def test_no_module_builds_a_dashboard_link_by_hand(self):
+        for line in ("f'https://{config[\"dashboard_host\"]}'", "host = config['dashboard_host']; link = 'https://' + host"):
+            self.assertRegex(line, HAND_BUILT_LINK)
         found = [f'{name}:{number}' for name in python_files(tests=False) if name not in LINK_BUILDERS
                  and not name.startswith(('scripts/', 'sandbox/'))
                  for number, line in enumerate((ROOT / name).read_text(encoding='utf-8').splitlines(), 1)
@@ -868,6 +871,8 @@ class Architecture(unittest.TestCase):
         found = [name for name in python_files(tests=False) if name != LANGUAGE_FILE and not name.startswith(('scripts/', 'sandbox/'))
                  and SPELLED_LANGUAGE.search((ROOT / name).read_text(encoding='utf-8'))]
         self.assertEqual(found, [], 'name a language from locale_prefs.LANGUAGE_TABLE')
+        self.assertRegex("{'nl': 'Dutch'}", SPELLED_LANGUAGE)
+        self.assertRegex('{"pt-BR": "Portuguese", "zh-CN": "Chinese"}', SPELLED_LANGUAGE)
 
     def test_only_timeutil_reads_the_clock(self):
         for name in python_files(tests=False):
@@ -891,8 +896,9 @@ class Architecture(unittest.TestCase):
             if name.startswith(CLOCK_FREE_DIRS + ('integrations/',)):
                 continue
             tree = ast.parse((ROOT / name).read_text(encoding='utf-8'))
-            local = [node.lineno for node in ast.walk(tree) if isinstance(node, ast.Import) and node not in tree.body
-                     and any(alias.name == 'timeutil' for alias in node.names)]
+            local = [node.lineno for node in ast.walk(tree) if node not in tree.body
+                     and (isinstance(node, ast.Import) and any(alias.name == 'timeutil' for alias in node.names)
+                          or isinstance(node, ast.ImportFrom) and node.module == 'timeutil')]
             with self.subTest(module=name):
                 if name in LOCAL_TIMEUTIL:
                     self.assertTrue(local, 'imports timeutil at the top now: take it out of LOCAL_TIMEUTIL')
