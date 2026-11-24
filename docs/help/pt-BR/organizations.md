@@ -6,7 +6,7 @@ code: graph.py, crm.py, enrichment.py, dashboard.html
 order: 3
 translated: a69ae21b14edaf94
 ---
-Empresas identificadas pelos endereços e nomes nas suas mensagens. O setor, o porte, a localização e o logotipo são consultados. Veja [Detalhes da organização](organization-data.md).
+Empresas identificadas pelos endereços e nomes nas suas mensagens. O setor, o porte, a localização e o logotipo são consultados. Veja [Dados da organização](organization-data.md).
 
 ## Página de uma organização
 

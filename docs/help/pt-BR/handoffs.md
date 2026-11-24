@@ -1,54 +1,60 @@
 ---
 title: Repasses
 area: fleet
-summary: Passe uma tarefa para a Machine de um colega, com o que essa pessoa precisa. Faça follow-up mais tarde ou retome a tarefa.
+summary: Compartilhe uma tarefa com um colega ou passe para a Machine dele usando **Passar…** na tarefa. Faça follow-up depois ou retome a tarefa.
 covers: handoffs
 code: fleet_requests.py, dashboard.html
 order: 3
-translated: acb60a24ef374625
+translated: d9b21c04fb0d34a6
 ---
-## Passar uma tarefa
+## Passe uma tarefa
 
 1. Na tarefa, abra **…**, depois **Passar…** e escolha **Um colega**.
-2. Escolha para quem passar, confira o que vai junto (× deixa uma parte de fora) e adicione uma observação. Nada de uma conta pessoal ou de outra empresa vai junto.
-3. Envie. A Machine dessa pessoa mostra a tarefa para ela.
+2. Escolha a pessoa, confira o que será enviado (× exclui uma parte) e adicione uma observação. Nada de uma conta Pessoal ou de outra empresa será enviado.
+3. Envie. A Machine da pessoa mostra a tarefa para ela.
 
-A Machine avisa a pessoa no celular ou no Telegram. Se ela não tiver nenhum dos dois configurado, a Machine envia um único e-mail com quem passou a tarefa, o título e um link. Consulte [Notificações](notifications.md).
+A Machine da pessoa envia uma notificação para o celular ou pelo Telegram. Se nenhum dos dois estiver configurado, ela recebe um e-mail uma vez, com o nome de quem passou a tarefa, o título e um link. Consulte [Notificações](notifications.md).
 
-Uma conversa do Intercom também vai junto. Se a Machine da pessoa tiver acesso ao mesmo espaço de trabalho do Intercom, **Ler mensagem** abre a conversa e a resposta dela volta para o Intercom. Caso contrário, a tarefa inclui um link para a conversa.
+Uma conversa do Intercom também é enviada. Se a Machine da pessoa tiver acesso ao mesmo espaço de trabalho do Intercom, **Ler mensagem** abre a conversa e a resposta dela volta para o Intercom. Caso contrário, a tarefa inclui um link para a conversa.
 
-Enquanto você espera, a tarefa mostra o que você pediu e quando ("Pedido enviado a Pat na ter. 3 de nov.: …"), mas só quando isso acrescenta algo ao título. Ela fica em **Volta mais tarde**, com o status "Com Pat · aguardando" e uma data para fazer follow-up. **Fazer follow-up agora** prepara um lembrete curto para você enviar a Pat; **Mudar horário** altera a data do follow-up.
+Enquanto você espera, a tarefa mostra o que você pediu e quando ("Pedido feito a Pat na ter., 3 de nov.: …"), mas só quando isso acrescenta algo ao título. Ela fica em **Volta mais tarde**, com o status "Com Pat · aguardando" e uma data para fazer follow-up. **Fazer follow-up agora** prepara um lembrete curto para Pat enviar; **Mudar horário** altera a data do follow-up.
 
-Se a Machine de Pat não puder enviar notificações, a tarefa diz "Pat não vai receber uma notificação. Avise Pat." Avise Pat você mesmo. Essa mensagem desaparece quando Pat ativa as notificações.
+Se a Machine de Pat não puder enviar notificações, a tarefa mostra "Pat não vai receber uma notificação. Avise a pessoa." Avise Pat por conta própria. Essa mensagem desaparece quando Pat ativa as notificações.
 
-A tarefa só volta para o topo quando há algo para decidir: Pat respondeu, recusou ou concluiu a tarefa, o repasse falhou ou chegou um prazo. A data do follow-up depende do prazo: algumas horas para tarefas que vencem hoje, o dia útil anterior para as que vencem em breve, a manhã seguinte para as urgentes e, nos demais casos, em 3 dias úteis.
+A tarefa só volta para o topo quando há algo para decidir: Pat respondeu, recusou ou concluiu a tarefa, o repasse falhou ou chegou um prazo. A data do follow-up depende do prazo: algumas horas antes, se for hoje; no último dia útil, se estiver próximo; na manhã seguinte, se for urgente; ou em 3 dias úteis, nos outros casos.
 
-Quando a tarefa voltar para um follow-up, ela diz "Ainda com Pat". **Fazer follow-up agora** prepara um lembrete curto para Pat no canal em que você fez o pedido (Slack, WhatsApp, Telegram ou e-mail), na tarefa. Nada é enviado até você escolher **Enviar**; depois disso, a tarefa fica aguardando Pat novamente. Se nenhum dos serviços conectados puder enviar uma mensagem para Pat, o chat abre e informa isso. **Retomar** e **Passar para outra pessoa** ficam em **…**, depois em **Passar…**.
+Quando voltar para fazer follow-up, a tarefa mostra "Ainda com Pat". **Fazer follow-up agora** prepara um lembrete curto para Pat no canal em que você fez o pedido (Slack, WhatsApp, Telegram ou e-mail), direto na tarefa. Nada é enviado até você escolher **Enviar**. Depois, a tarefa volta a aguardar Pat. Se nenhum dos serviços conectados puder enviar uma mensagem para Pat, o chat será aberto com essa informação. **Retomar** e **Passar para outra pessoa** ficam em **…**, depois em **Passar…**.
 
-O chat da tarefa mostra quando ela foi enviada ("Repassada para a Machine de Pat · 14:02") e o que aconteceu depois: aceita, recusada (com a observação da pessoa) ou concluída. Se ainda não houver resposta, aparecem as opções **Marcar como feita**, **Adiar** e **Não precisa**. Para enviar um lembrete ou retomar a tarefa, peça isso no chat.
+O chat da tarefa mostra quando ela foi enviada ("Passada para a Machine de Pat · 14:02") e o que aconteceu depois: foi aceita, recusada (com uma observação) ou concluída. Se ainda não houver resposta, aparecem as opções **Marcar como feito**, **Adiar** e **Não precisa**. Para lembrar Pat ou retomar a tarefa, diga isso no chat.
 
-Se o repasse não for enviado, a tarefa e o chat informam isso e mostram **Tentar de novo**.
+Se o repasse não for enviado, a tarefa e o chat mostram essa informação, com a opção **Tentar de novo**.
 
-## Passar para outra pessoa
+## O que a outra pessoa vê
 
-Enquanto a tarefa estiver com um colega, uma linha informa isso ("Com Pat · aguardando"). **Retomar** e **Passar para outra pessoa** ficam em **…**, depois em **Passar…**. **Retomar** torna a tarefa sua novamente: a Machine de Pat é avisada e a resposta de Pat deixa de atualizar a tarefa.
+Somente essa tarefa: o que você pediu, sua observação, o prazo e o contato, além de cópias das mensagens enviadas (até três, sem anexos). Ela não vê sua caixa de entrada nem suas outras tarefas. A pessoa escolhe **Aceitar** ou **Recusar**.
 
-**Passar para outra pessoa** abre o formulário de repasse. Você também pode pedir isso no chat da tarefa ("esta tarefa deve ir para Kim"): a tarefa passa a dizer "Ainda está com Pat até você enviar para Kim" e mostra **Revisar repasse para** Kim.
+Quando a pessoa aceita, a tarefa passa a ser dela. A sua é concluída ou fica aguardando o resultado, se tiver **Concluído quando**. Vocês não trabalham na mesma tarefa ao mesmo tempo. Para pedir a opinião de alguém sem deixar de ser responsável pela tarefa, use [Pedir revisão](ask-to-review.md).
 
-Uma tarefa só é enviada para cada colega uma vez: enquanto Pat estiver com ela, escolher Pat novamente no formulário de repasse serve para fazer um follow-up. **Fazer follow-up** prepara o mesmo lembrete, com uma linha sua se você adicionar uma.
+## Passe para outra pessoa
 
-A opção **Retomar de** Pat fica ativada por padrão. Desative-a para que as duas pessoas fiquem com a tarefa. Nada é enviado até você escolher **Passar**. A Machine de Pat é avisada e a cópia da tarefa na Machine de Pat é removida.
+Enquanto um colega estiver com a tarefa, uma linha informa isso ("Com Pat · aguardando"). As opções **Retomar** e **Passar para outra pessoa** ficam em **…**, depois em **Passar…**. **Retomar** faz a tarefa voltar para você: a Machine de Pat recebe uma notificação, e a resposta dela deixa de alterar a tarefa.
+
+**Passar para outra pessoa** abre o formulário de repasse. Você também pode pedir isso no chat da tarefa ("essa tarefa deve ir para Kim"): a tarefa mostra "Ainda com Pat até você enviar para Kim", com a opção **Revisar repasse para** Kim.
+
+Cada tarefa só é enviada uma vez para cada colega. Enquanto Pat estiver com ela, escolher Pat novamente no formulário de repasse inicia um follow-up. **Fazer follow-up** prepara o mesmo lembrete, com uma mensagem sua se você adicionar uma.
+
+**Retomar de** Pat vem ativado por padrão. Desative essa opção para deixar a tarefa com as duas pessoas. Nada será enviado até você escolher **Passar**. A Machine de Pat recebe uma notificação, e a cópia da tarefa é removida.
 
 ## Quando a pessoa recusar
 
-Ela pode explicar o motivo: a tarefa não é dela, já foi concluída ou não tem tempo nesta semana. Depois, escolha **Eu faço**, **Passar para outra pessoa** ou **Marcar como feita**. O mesmo acontece se ela não responder a tempo. **Eu faço** torna a tarefa sua novamente, em Para você.
+Ela pode explicar o motivo: a tarefa não é dela, já foi concluída ou não tem tempo nesta semana. Depois, escolha **Eu faço**, **Passar para outra pessoa** ou **Marcar como feito**. O mesmo vale se a pessoa não responder a tempo. **Eu faço** faz a tarefa voltar para você, em Para você.
 
-## Alguém fora da Network
+## Alguém de fora da Network
 
-Escolha **Por e-mail**: sua Machine prepara um e-mail para você enviar. Enquanto você digita, ela sugere primeiro pessoas do seu Fleet e depois pessoas da sua empresa. Adicione uma página de tarefa para que a pessoa possa responder com um toque: consulte [Páginas de tarefa](task-pages.md).
+Escolha **Por e-mail**. Sua Machine prepara um e-mail para você enviar. Enquanto você digita, ela sugere primeiro pessoas do seu Fleet e depois pessoas da sua empresa. Inclua uma página de tarefa para a pessoa responder com um toque. Consulte [Páginas de tarefa](task-pages.md).
 
-Disponível apenas para tarefas de Trabalho. Marque o que vai ser incluído: algumas linhas sobre a tarefa, o rascunho, links e arquivos. Conteúdo pessoal e conteúdo de Só você ficam de fora. **Preparar e-mail** adiciona o e-mail à tarefa: leia e depois envie pela sua própria caixa de e-mail. Não há rastreamento.
+Disponível apenas para tarefas de Trabalho. Marque o que incluir: algumas linhas sobre a tarefa, o rascunho, links e arquivos. Conteúdos Pessoal e Só você ficam de fora. **Preparar e-mail** adiciona o e-mail à tarefa. Leia e envie pela sua própria caixa de entrada. Não há rastreamento.
 
-Uma tarefa do Intercom ou do Slack não tem uma caixa de e-mail própria, então o e-mail é enviado pela sua caixa de e-mail de Trabalho.
+Uma tarefa do Intercom ou do Slack não tem uma caixa de entrada própria, então o e-mail é enviado pela sua caixa de entrada de Trabalho.
 
-A tarefa acompanha isso como uma promessa até a pessoa responder que concluiu a tarefa ou você marcá-la como feita. O e-mail termina com "Assuma esta tarefa na sua própria Machine": se a pessoa se cadastrar por esse link, ela poderá entrar no seu Fleet e a tarefa será movida para a Machine dela. Desative essa frase em **Configurações**, na seção Fleet.
+A tarefa acompanha o compromisso até a pessoa responder que concluiu, ou você marcar a tarefa como concluída. O e-mail termina com "Assuma esta tarefa na sua própria Machine". Se a pessoa se cadastrar por esse link, poderá entrar no seu Fleet e a tarefa passará para a Machine dela. Desative essa mensagem em **Configurações**, na seção Fleet.

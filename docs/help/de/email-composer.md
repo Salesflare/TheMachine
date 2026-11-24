@@ -1,40 +1,42 @@
 ---
 title: Neue E-Mail schreiben
 area: cards
-summary: Klicke auf eine E-Mail-Adresse, um aus deinem eigenen Postfach zu schreiben, im selben Fenster wie der Entwurf einer Aufgabe.
+summary: Klicke auf eine E-Mail-Adresse, um ihr aus deiner eigenen Mailbox im selben Fenster wie den Entwurf einer Aufgabe zu schreiben.
 covers: email-composer
-code: machine/app/mail.py, dashboard/todos-compose.js, dashboard/todos-kept.js
+code: machine/app/mail.py, dashboard/todos-compose.js, dashboard/todos-kept.js, dashboard/todos-kept-box.js
 order: 12
-translated: 539fd36f92d31aad
+translated: 0f7887a89951a551
 ---
 ## Öffnen
 
-Klicke auf eine E-Mail-Adresse, auf der Seite einer Person in Graph oder als Link in einer Aufgabe oder einem Chat. **Neue E-Mail** öffnet sich mit dieser Adresse, einem leeren Betreff und einer leeren Nachricht. Auf dem Handy füllt das Fenster den ganzen Bildschirm aus.
+Klicke auf eine E-Mail-Adresse auf der Seite einer Person in Graph oder auf einen Link in einer Aufgabe oder einem Chat. **Neue E-Mail** öffnet sich mit dieser Adresse, einem leeren Betreff und einer leeren Nachricht. Auf dem Handy füllt sie den Bildschirm.
 
-**Von** ist zunächst das Postfach für diese Person: dein Arbeits-Postfach für einen beruflichen Kontakt, dein persönliches Postfach für Familie und Freunde. Klicke darauf, um ein anderes deiner Postfächer oder einen bestätigten Alias auszuwählen.
+**Von** ist zunächst die Mailbox für diese Person: deine Arbeits-Mailbox für einen beruflichen Kontakt, deine persönliche Mailbox für Familie und Freunde. Klicke darauf, um eine andere deiner Mailboxen oder einen bestätigten Alias auszuwählen.
 
 ## Senden
 
-Schreibe den Betreff und die Nachricht. Du kannst auch Fettdruck, Listen und Links verwenden. Nichts wird gesendet, bis du **Jetzt senden** drückst. Oder drücke **Später senden** und wähle aus, wann die E-Mail gesendet wird: siehe [Später senden](send-later.md).
+Schreib den Betreff und die Nachricht. Du kannst auch Fettdruck, Listen und Links verwenden. Erst wenn du **Jetzt senden** drückst, wird die E-Mail verschickt. Oder drück **Später senden** und leg fest, wann sie verschickt wird. Mehr dazu unter [Später senden](send-later.md).
 
-Die E-Mail wird dann wie jeder Entwurf gesendet, den du freigibst: Sie erscheint als gesendet in der zugehörigen Aufgabe, auf der Seite der Person und in deinem Postfach. Wenn sie nicht gesendet werden kann, bleibt sie in der Aufgabe und kann von dort gesendet werden.
+Die E-Mail wird dann wie jeder Entwurf verschickt, den du freigibst: Sie erscheint als gesendet in ihrer eigenen Aufgabe, auf der Seite der Person und in deiner Mailbox. Kann sie nicht verschickt werden, bleibt sie in der Aufgabe und kann von dort aus gesendet werden.
 
 ## Wenn du sie nicht sendest
 
-Schließe das Fenster mit Escape, × oder „Zurück“. Deine Eingaben, der Betreff, der Absender und der Empfänger bleiben erhalten. Die E-Mail wird nie von selbst gesendet.
+Schließ das Fenster mit Escape, × oder Zurück. Dein Text bleibt zusammen mit dem Betreff, dem Absender und den Empfängern erhalten. Die E-Mail wird nie automatisch gesendet.
 
-- Eine neue E-Mail wartet über deinen Aufgaben unter **Nicht gesendete E-Mail an**. Dort kannst du **Weiter** oder **Verwerfen** wählen.
-- Bei einem bearbeiteten Entwurf steht auf der zugehörigen Aufgabe und in jedem Kanal **Bearbeitet, nicht gesendet**. Öffne ihn wieder, und dein Text ist noch da. Eine Nachfassnachricht, die du in **Prüfen** bearbeitest, funktioniert genauso.
-- Nach dem Neuladen oder wenn dein Handy die App geschlossen hat, öffnet sich das Fenster mit deinem noch nicht gesendeten Text wieder.
+- Eine neue E-Mail wartet über deinen Aufgaben unter **Nicht gesendete E-Mail an**. Dort findest du **Weiter** und **Verwerfen**.
+- Ein bearbeiteter Entwurf wird in seiner Aufgabe auf jedem Kanal als **Bearbeitet, nicht gesendet** angezeigt. Öffne ihn erneut, um deinen Text zu sehen. Eine Nachfassnachricht, die du unter **Prüfen** bearbeitest, funktioniert genauso.
+- Nach einem Neuladen oder wenn dein Handy die App geschlossen hat, öffnet sich das Fenster mit deinem bisherigen Text wieder.
 
-Mit **Verwerfen** im Fenster verwirfst du deine Eingaben. Mit **Rückgängig** holst du sie zurück. Eine gesendete, geplante oder verworfene Nachricht lässt sich nicht zurückholen.
+Mit **Verwerfen** im Fenster löschst du deinen Text. Mit **Rückgängig** kannst du ihn wiederherstellen. Eine gesendete, geplante oder verworfene Nachricht lässt sich nicht wiederherstellen.
 
-Wenn der Entwurf inzwischen geändert wurde, siehst du den neuen Entwurf. **Übernehmen** zeigt dir, was du geschrieben hast. Keiner der beiden Entwürfe ersetzt den anderen, bis du etwas sendest. Dasselbe gilt für zwei Tabs mit unterschiedlichem Text.
+Wenn der Entwurf inzwischen geändert wurde, siehst du den neuen Entwurf. Mit **Übernehmen** wird dein Text angezeigt. Bis du etwas sendest, ersetzt keiner der Entwürfe den anderen. Zwei Tabs mit unterschiedlichem Text verhalten sich genauso.
 
-Deine Eingaben bleiben 30 Tage lang nur in diesem Browser und sind verschlüsselt. Sie werden gelöscht, wenn du dich abmeldest oder sich jemand anderes anmeldet. Auf anderen Geräten sind sie nicht zu sehen. Ohne https bleiben sie erhalten, solange die Seite geöffnet ist.
+**Neue Aufgabe**, **Änderungen anfragen**, eine Antwort an deine Machine und eine Prüfung für jemand anderen behalten deinen Text ebenfalls bei. Mit **Abbrechen** verwirfst du ihn.
 
-## Dein eigenes Mailprogramm
+Dein Text bleibt 30 Tage lang nur in diesem Browser und ist verschlüsselt. Er wird gelöscht, wenn du dich abmeldest oder sich jemand anderes anmeldet. Auf anderen Geräten ist er nicht sichtbar. Ohne https bleibt er erhalten, solange die Seite geöffnet ist.
 
-**Im Mailprogramm öffnen** öffnet stattdessen dein eigenes Mailprogramm mit deinen bisherigen Eingaben. Das passiert auch, wenn du auf die Adresse klickst und dabei Strg oder Cmd gedrückt hältst.
+## Deine eigene Mail-App
 
-Nur Postfächer, bei denen **Kann Dinge tun** eingeschaltet ist, können E-Mails senden. Wenn du keins hast, öffnet sich beim Klicken auf eine Adresse wie bisher dein Mailprogramm.
+**Im Mailprogramm öffnen** öffnet stattdessen deine eigene Mail-App und übernimmt deinen bisherigen Text. Das passiert auch, wenn du mit gedrückter Ctrl- oder Cmd-Taste auf die Adresse klickst.
+
+Nur Mailboxen, bei denen **Kann Dinge tun** aktiviert ist, können E-Mails senden. Wenn du keine hast, öffnet sich beim Klick auf eine Adresse wie bisher deine Mail-App.
