@@ -21,6 +21,7 @@ import contact_facts
 import corrections
 import fleet_reviews
 import i18n
+import meeting_prep
 from machine import names as display_names
 from machine.browser import run_tab
 from machine.cards import CHAT_HANDLE, blocker_questions
@@ -49,6 +50,7 @@ from machine.chat import (
     chat_final_step,
     CHAT_STEP_FAILED,
     CHAT_STEP_HOW,
+    CHAT_STEP_LINES,
     chat_text,
     CHAT_UNDONE,
 )
@@ -573,6 +575,9 @@ class CardChatApp:
             if r['status'] in ('failed', 'cancelled'):
                 owner.append({'kind': 'event', 'text': f"{name} {'stopped' if r['status'] == 'failed' else 'cancelled'}", 'at': chat_ms(r['finished_at'] or r['updated_at'])})
         owner.extend(talk_live.lines(db, suggestion_id))  # what was said in a live conversation (Talk live)
+        looked = meeting_prep.searched(db, suggestion_id)  # a briefing's web searches: it has no session with steps
+        if looked:
+            owner.append({'kind': 'steps', 'count': looked[0], 'steps': [{'line': [CHAT_STEP_LINES['web_search']], 'n': looked[0]}], 'at': chat_ms(looked[1])})
         for i in loose if asks else []:
             i['text'], asked = chat_unglued(i['text'], [q for at, q in asks if at <= i['at']])
             if asked:

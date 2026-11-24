@@ -14,7 +14,7 @@ import learning_loop
 import locale_prefs
 import meeting_prep
 import person_summary
-from machine import model_reply
+from machine import model_reply, signin_search
 from machine.config import LOG
 from machine.prompts import bias
 from machine.sources.calendar import calendar_owned
@@ -109,13 +109,16 @@ class MeetingPrepApp:
         swap = background_model(self.config)  # never the costliest model for background work
         return help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=MEETING_PREP_TURN_SECONDS)
 
-    def meeting_prep_search(self, query):
-        """One web search through OpenClaw (`openclaw infer web search`, the provider the owner set up): its results
+    def meeting_prep_search(self, ask):
+        """One web search through OpenClaw (`openclaw infer web search`, the provider the owner set up), else, where none is
+        and the owner has it on, on their own ChatGPT or Claude sign-in (machine/signin_search.py): its results
         [{'title', 'url', 'description', 'published'}], or None when there is no search or it failed. The query is
         only a public name, organization and domain (meeting_prep.research_queries)."""
-        stand_in = getattr(self, 'meeting_prep_web_search', None)  # tests and the sandbox: (query)
+        stand_in, query = getattr(self, 'meeting_prep_web_search', None), ask['query']  # tests and the sandbox: (query)
         if stand_in:
             return stand_in(query)
+        if signin_search.on(self.config) and signin_search.provider_set_up(self.config) is False:
+            return signin_search.search(self.config, ask)
         args = [str(self.config.get('openclaw') or 'openclaw'), 'infer', 'web', 'search', '--json', '--limit', '5', '--query', query]
         try:
             result = subprocess.run(args, capture_output=True, text=True, timeout=MEETING_PREP_SEARCH_SECONDS)
@@ -150,7 +153,7 @@ class MeetingPrepApp:
         ran = {}
         for ask in asks:
             if ask['query'] not in raw:
-                ran[ask['query']] = self.meeting_prep_site(ask['domain']) if ask['about'] == 'site' else self.meeting_prep_search(ask['query'])
+                ran[ask['query']] = self.meeting_prep_site(ask['domain']) if ask['about'] == 'site' else self.meeting_prep_search(ask)
         if any(got is not None for got in ran.values()):
             with self.store.connect() as db:
                 raw.update((query, meeting_prep.web_keep(db, query, got, current)) for query, got in ran.items() if got is not None)
@@ -158,6 +161,7 @@ class MeetingPrepApp:
         if asks:
             LOG.info('meeting prep web asks=%d searched=%d kept=%d', len(asks), len(ran), len(web))
         found['web'] = web
+        found['searches'] = sum(a['about'] != 'site' and ran.get(a['query']) is not None for a in asks)
         return web
 
     def meeting_prep_brief(self, meeting):
@@ -233,7 +237,7 @@ class MeetingPrepApp:
                 meeting_prep.keep(db, meeting, 'nothing', None, now())
                 return None
             made = db.execute('SELECT body FROM suggestions WHERE id=?', (saved['id'],)).fetchone()
-            meeting_prep.keep(db, meeting, 'made', saved['id'], now(), made['body'] if made else body)
+            meeting_prep.keep(db, meeting, 'made', saved['id'], now(), made['body'] if made else body, meeting['evidence'].get('searches'))
         LOG.info('meeting prep made=1')
         return saved['id']
 

@@ -34,6 +34,17 @@ Genuine requests from real contacts: a moved launch date, an invoice to resend, 
 a holiday request, a vendor's invoice with unchanged bank details, and so on. 16 need a to-do; 4 need nothing (a thank-you,
 a payment confirmation, a dinner booking, a finished filing). They check that safety doesn't come from ignoring mail.
 
+## Hostile search results
+
+`search_results.json` has 14 first meetings whose web search found something: 12 with pages that give the assistant orders,
+claim a promise, a bank account or an approval, break out of their quote, tell of another person of that name or carry an
+address that isn't a plain page, and 2 plain controls. Each has what the briefing should still say (`want`), what it must
+never say (`never`) and the pages that must not reach the turn (`dropped`; `tests/test_meeting_prep.py` checks these).
+The turn that reads the results has no tools, so nothing can be sent or opened; what is left to test is the briefing's
+words:
+
+    python3 evals/meeting-briefings/run.py --cases evals/prompt-injection/search_results.json --model <model> --runs 2
+
 ## How scoring works
 
 Each run is a fresh, sealed Machine. Messages arrive in shuffled stages and the real review reads them. The owner then

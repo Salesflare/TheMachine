@@ -11,6 +11,8 @@ So a turn here is Claude Code alone: no tools (`--tools ""`), no MCP servers, no
 files or CLAUDE.md, a one-line system prompt, nothing saved as a session, run in an empty folder. The prompt goes on
 stdin. Claude Code's own sign-in is used the way OpenClaw uses it: the variables OpenClaw clears before it starts
 Claude Code (an API key, a base URL, a token) are cleared here too, and the sign-in is never read.
+
+`search` is the same turn with one tool, Claude Code's own web search, for one search (machine/signin_search.py).
 """
 from __future__ import annotations
 
@@ -56,20 +58,7 @@ def binary(config):
 def run(config, text, model, thinking=None, timeout=90, call=None):
     """The reply's text for `text`, on the Claude model `model` (a `claude-cli/x` or `anthropic/x` ref). Raises Failed,
     and subprocess.TimeoutExpired past `timeout` seconds."""
-    claude = binary(config)
-    if not claude:
-        raise Failed(t('Claude Code is not installed.'))
-    args = [str(claude), '-p', '--model', model.split('/', 1)[-1], '--output-format', 'json', '--tools', '',
-            '--system-prompt', SYSTEM, '--strict-mcp-config', '--disable-slash-commands', '--no-session-persistence',
-            '--setting-sources', '']
-    if EFFORT.get(thinking):
-        args += ['--effort', EFFORT[thinking]]
-    env = {k: v for k, v in os.environ.items() if k not in CLEAR_ENV}
-    with tempfile.TemporaryDirectory(prefix='claude-turn-') as folder:
-        try:
-            result = (call or subprocess.run)(args, input=text, capture_output=True, text=True, timeout=timeout, env=env, cwd=folder)
-        except OSError:
-            raise Failed(t('Claude Code could not be started.')) from None
+    result = _call(config, text, model, ['--output-format', 'json', '--tools', ''], thinking, timeout, call)
     try:
         data = json.loads(result.stdout or '{}')
     except ValueError:
@@ -80,3 +69,46 @@ def run(config, text, model, thinking=None, timeout=90, call=None):
         return answer.strip()
     lines = [line for line in str(getattr(result, 'stderr', '') or '').splitlines() if line.strip()]
     raise Failed((answer if data.get('is_error') else '') or ' '.join(lines[-3:]) or 'Claude Code gave an empty answer.')
+
+
+def _call(config, text, model, how, thinking, timeout, call):
+    claude = binary(config)
+    if not claude:
+        raise Failed(t('Claude Code is not installed.'))
+    args = [str(claude), '-p', '--model', model.split('/', 1)[-1], *how, '--system-prompt', SYSTEM, '--strict-mcp-config',
+            '--disable-slash-commands', '--no-session-persistence', '--setting-sources', '']
+    if EFFORT.get(thinking):
+        args += ['--effort', EFFORT[thinking]]
+    env = {k: v for k, v in os.environ.items() if k not in CLEAR_ENV}
+    with tempfile.TemporaryDirectory(prefix='claude-turn-') as folder:
+        try:
+            return (call or subprocess.run)(args, input=text, capture_output=True, text=True, timeout=timeout, env=env, cwd=folder)
+        except OSError:
+            raise Failed(t('Claude Code could not be started.')) from None
+
+
+def search(config, text, model, timeout=90, call=None):
+    """(the reply's text, {address: title} of what the search returned) of a turn whose only tool is Claude Code's web
+    search, used once (two model turns: the search, then the answer). Raises Failed when it didn't search or gave no
+    answer, and subprocess.TimeoutExpired past `timeout` seconds."""
+    result = _call(config, text, model, ['--output-format', 'stream-json', '--verbose', '--tools', 'WebSearch', '--allowedTools', 'WebSearch',
+                                         '--max-turns', '2'], None, timeout, call)
+    answer, links, searched = '', {}, 0
+    for line in str(result.stdout or '').splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        row = row if isinstance(row, dict) else {}
+        found = row.get('tool_use_result')
+        if isinstance(found, dict) and isinstance(found.get('results'), list):
+            searched += 1
+            for part in found['results']:
+                for hit in part.get('content') or () if isinstance(part, dict) and isinstance(part.get('content'), list) else ():
+                    if isinstance(hit, dict) and isinstance(hit.get('url'), str):
+                        links[hit['url']] = str(hit.get('title') or '')
+        if row.get('type') == 'result' and not row.get('is_error') and isinstance(row.get('result'), str):
+            answer = row['result'].strip()
+    if result.returncode != 0 or not answer or not searched:
+        raise Failed('Claude Code gave no search results.')
+    return answer, links
