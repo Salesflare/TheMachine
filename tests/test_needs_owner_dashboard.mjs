@@ -9,7 +9,8 @@ const {chromium}=await import('./browser.mjs');
 // its status line (no "Needs you:" again), and the list's "Nothing goes out until you approve it." note leaves it out.
 // A Prepared one's line beside its draft is plain: amber and "Needs you" belong to Needs you ones. Work that can't be used
 // before they answer (needs_first true) is a Needs you one too: the question as its line, Answer in front, what it made
-// still on it; work that can go as it is (false) says what is ready before its question, Send in front. Made-up data.
+// still on it; work that can go as it is (false) says what is ready before its question, Send in front. With only a holding
+// reply ready (its still_owed) it is Needs you with the work still to do, and Send in front. Made-up data.
 // SHOTS=<folder> saves the list at 1440x900 and 390x844, light and dark.
 const dashboard=await dashboardPage(process.env.PAGE);
 const NOW=Date.UTC(2026,10,5,10,0,0),h=n=>new Date(NOW-n*3600e3).toISOString();
@@ -17,6 +18,7 @@ const card=(id,title,status,created_at,more={})=>({id:id.repeat(16).slice(0,16),
 const DRAFT={kind:'email',label:'Send reply',account_id:'work',to:['pat@example.com'],subject:'Re: Pilot',body:'Hi Pat,\n\nThursday works.\n\nAlex',revision:'r1'};
 const NEED='Which of the two quotes should it accept?',PRICE='What price, scope and VAT should it quote?',TONE='Should it mention the spring dates too?';
 const FILES=[{index:0,name:'proposal.md',size:900}],PROPOSAL='The proposal draft is written, without a price. [Proposal](memory/assistant/261105-proposal.md)';
+const HELD='Holding reply ready. Still to do: send the quote.';
 let ready=true;
 const cards=()=>[
  card('q','Pick a quote for the new printer','prepared',h(1),{outcome:JSON.stringify({state:'needs_you',needs:NEED}),needs_owner:NEED}),
@@ -28,6 +30,7 @@ const cards=()=>[
  card('e','Write the proposal for Fjord','prepared',h(5),{body:PROPOSAL,outcome:JSON.stringify({state:'needs_you',needs:PRICE}),needs_owner:PRICE,result_files:FILES}),
  card('b','Send Kim the quote','prepared',h(6),{outcome:JSON.stringify({state:'needs_you',needs:PRICE,needs_first:true}),needs_owner:PRICE,next_actions:[{...DRAFT,revision:'r2',to:['kim@example.com'],to_name:'Kim',label:'Send to Kim',body:'Hi Kim,\n\nOur price is [price].\n\nAlex'}]}),
  card('c','Reply to Noor about the open day','prepared',h(7),{outcome:JSON.stringify({state:'needs_you',needs:TONE,needs_first:false}),next_actions:[{...DRAFT,revision:'r3',to:['noor@example.com'],to_name:'Noor',label:'Send to Noor',body:'Hi Noor,\n\nWe will be there on Saturday.\n\nAlex'}]}),
+ card('h','Send Remy the quote for the spring menu','prepared',h(9),{outcome:JSON.stringify({state:'needs_you',needs:'check the reply and send it'}),needs_owner:HELD,next_actions:[{...DRAFT,revision:'r4',to:['remy@example.com'],to_name:'Remy',label:'Send to Remy',body:'Hi Remy,\n\nThanks, I’ll get back to you with the quote.\n\nAlex',still_owed:{what:'send the quote'}}]}),
  card('d','Write the speech for Saturday','prepared',h(8),{body:'The draft is written. [Speech](memory/assistant/261105-speech.md)',outcome:JSON.stringify({state:'needs_you',needs:TONE,needs_first:false}),result_files:[{index:0,name:'speech.md',size:900}]})]:[])];
 const state=()=>({suggestions:cards(),promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -75,6 +78,17 @@ try{
   }
   assert.match(await page.locator(sel('b')).textContent(),/Our price is \[price\]/,'the partial draft shows');
   assert.equal(await page.locator(sel('b')+' .more-actions [data-smart]').count(),1,'its Send is in the …');
+  // Only a holding reply: never Prepared. The work still to do is the line, Send leads, and Go through says it above the draft
+  assert.equal(await chip(page,'h').textContent(),'Needs you');
+  assert.equal(await page.locator(sel('h')+' .status-line.outcome').textContent(),HELD);
+  assert.deepEqual(await lead('h'),['Review and send to Remy']);
+  assert.equal(await page.locator(sel('h')+' [data-choice="answer"]').count(),0);
+  assert.doesNotMatch(await page.locator(sel('h')).textContent(),/Prepared|Check the reply/);
+  await page.locator('#section-foryou [data-clear-run]').click();await page.locator('#clear-run').waitFor();
+  for(let i=0;i<8&&!/Remy/.test(await page.locator('#clear-run .cr-title').textContent());i++)await page.locator('#clear-run [data-cr="skip"]').click();
+  assert.equal(await page.locator('#clear-run .draft-why').textContent(),HELD);
+  if(shots)for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});await page.screenshot({path:`${shots}/go-through-${width}-${scheme}.png`,animations:'disabled'})}
+  await page.emulateMedia({colorScheme:'light'});await page.locator('#clear-run .cr-x').click();
   // It can go as it is: Prepared, what is ready before the question, Send (or Copy draft) in front
   for(const [c,line,first] of [['c','The draft is ready. One question: '+TONE,'Review and send to Noor'],['d','The draft is ready. One question: '+TONE,'Copy draft']]){
    assert.equal(await chip(page,c).textContent(),'Prepared',c);
@@ -84,7 +98,7 @@ try{
    assert.equal(await page.locator(sel(c)+' [data-choice="answer"]').count(),0,c);
   }
   assert.equal(await page.evaluate(id=>crKind(state.suggestions.find(s=>s.id===id)),'c'.repeat(16)),'send');
-  if(shots)for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});await page.evaluate(async()=>{for(let i=0;i<2;i++)await new Promise(r=>requestAnimationFrame(r));await Promise.all(document.getAnimations().map(x=>x.finished))});await page.screenshot({path:`${shots}/needs-you-${width}-${scheme}.png`});for(const c of ['f','b','c','d'])await page.locator(sel(c)).screenshot({path:`${shots}/todo-${c}-${width}-${scheme}.png`})}
+  if(shots)for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});await page.evaluate(async()=>{for(let i=0;i<2;i++)await new Promise(r=>requestAnimationFrame(r));await Promise.all(document.getAnimations().map(x=>x.finished))});await page.screenshot({path:`${shots}/needs-you-${width}-${scheme}.png`});for(const c of ['f','b','c','d','h'])await page.locator(sel(c)).screenshot({path:`${shots}/todo-${c}-${width}-${scheme}.png`})}
   await page.emulateMedia({colorScheme:'light'});
   // Only a Needs you one left: nothing to approve, so no approve note
   ready=false;await page.evaluate(()=>refresh());await page.locator(sel('r')).waitFor({state:'detached'});

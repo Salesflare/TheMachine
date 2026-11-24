@@ -377,6 +377,15 @@ class Preparation(unittest.TestCase):
         view=self.view(self.sid)
         self.assertEqual((view['preparation_status'],view['preparation_questions']),('queued',[]))
 
+    def test_a_question_that_says_tomorrow_names_the_day(self):
+        self.accept();self.app.preparation_step(lambda r:{'status':'admitted'})
+        with patch_everywhere(timeutil,'now',return_value='2026-10-16T09:00:00+00:00'):
+            self.app.action('preparation_blocked',{'suggestion_id':self.sid,'job_id':self.job()['job_id'],'reason':'They want an answer before tomorrow.',
+                                                   'questions':[{'question':'Can you make it tomorrow?','options':['Yes','No']}]})
+        view=self.view(self.sid)
+        self.assertEqual(view['preparation_reason'],'They want an answer before Sat, Oct 17.')
+        self.assertEqual(view['preparation_questions'],[{'question':'Can you make it Sat, Oct 17?','options':['Yes','No']}])
+
     def test_a_run_whose_blocker_was_saved_then_canceled_is_asked_how_it_ended_not_stopped(self):
         sid,job=self.ahead_blocked()
         with self.store.connect() as db:  # as settle_ahead left it before

@@ -358,6 +358,8 @@ class CardActionsApp:
         if outcome and not args.get('finish_state'):
             why=hand_back.lost(unsaved,args.get('job_id'),outcome['state'],[a['kind'] for a in next_actions.actions(action)],next_actions.WAITING_KINDS)
             if why:raise ValueError(why)
+        # What it says it needs or waits on stays true on later days too: "tomorrow" is saved as that day
+        if outcome:outcome.update({k:undated_card(outcome[k])[0][0] for k in ('needs','waiting_on') if outcome.get(k)})
         if outcome and outcome['state']=='needs_you':
             with self.store.connect() as db:outcome=nudge_wait(db,args['suggestion_id'],args.get('job_id'),outcome,next_actions.actions(action))
         if 'do_now' in args and not isinstance(args['do_now'],bool):raise ValueError('do_now is true or false')

@@ -38,6 +38,7 @@ from machine.cards import (
     card_draft,
     card_recipients,
     group_sender,
+    hiding_shown,
     looks_done,
     looks_done_at,
     needs_owner,
@@ -603,7 +604,7 @@ class ViewsStore(ConversationStore):
                                    **({'undo_until':(dt.datetime.fromisoformat(r['updated_at'])+UNDO_MERGE).isoformat()} if r['status']=='sent' and str(r['message_id']).startswith('merge:') else {})}
                     for r in (db.execute('SELECT j.id,j.revision,j.status,j.error,j.message_id,j.approval_id,j.updated_at,j.payload,t.status snooze_status,t.until snooze_until,t.error snooze_error FROM action_jobs j LEFT JOIN thread_snoozes t ON t.job_id=j.id WHERE j.suggestion_id=?',(suggestion['id'],))
                               if not pre or suggestion['id'] in pre['jobs'] else ())}
-            extra['next_actions']=[{**bounces.mark_draft(db,item),**({'state':states[item['revision']]} if item['revision'] in states else {})} for item in next_actions.visible_actions(action)]
+            extra['next_actions']=[{**hiding_shown({'due':None,'due_at':None,**suggestion},bounces.mark_draft(db,item)),**({'state':states[item['revision']]} if item['revision'] in states else {})} for item in next_actions.visible_actions(action)]
             if action['kind']!='menu' and action['revision'] in states:extra['action_status']=states[action['revision']]
             if suggestion.get('status') in (todo_states.SNOOZED,todo_states.PREPARED) and (not pre or suggestion['id'] in pre['later']):
                 later=send_later.view(db,suggestion['id'])  # Send later: when it goes, with Send now, Change time and Cancel

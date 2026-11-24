@@ -21,6 +21,7 @@ from whatsapp_send import WhatsAppTransport  # noqa: F401  (next_actions.WhatsAp
 import signatures
 import html
 import i18n
+import locale_prefs
 from html.parser import HTMLParser
 import json
 import mimetypes
@@ -427,7 +428,9 @@ def still_owed(value):
     what = ' '.join(str(owed.get('what') or '').split())
     if not 3 <= len(what) <= 80:
         raise ValueError('still_owed.what is the promised work alone, starting with a verb, as it follows "I’ll" (3-80 characters)')
-    result = {'what': what}
+    # Shown on the to-do until it is done: "by tomorrow" is kept as that day
+    moment = datetime.datetime.fromisoformat(timeutil.now()).astimezone(timeutil.local_tz())
+    result = {'what': locale_prefs.undated(what, moment, locale_prefs.language())[0]}
     if owed.get('due') is not None:
         try:
             result['due'] = datetime.date.fromisoformat(str(owed['due'])).isoformat()

@@ -289,7 +289,8 @@ same open promise stored twice from before is kept once. Nothing shows up on Tel
   the owner's real work for later with `still_owed` (`{what, due}`), judged by meaning when it writes the draft. After
   the send, `settle_sent` keeps that to-do open (`promises.keep_owed`) instead of Done: due the promised day, nothing
   drafted left on it, and a promise of yours recorded as already carded on it, so the review that reads the sent reply
-  finds it. A reply that does the work closes the to-do as before.
+  finds it. A reply that does the work closes the to-do as before. Until it is sent, a to-do with only such a reply
+  ready reads Needs you with the work still to do (`cards.holding_reply`, in `needs_owner`), never Prepared.
 - **Where you see them:** the To-dos page has a **Promises** list (You promised, Promised to you) with Done and Drop
   for open ones. Every promise link (that list, the Calendar, Open between you on a person, organization or project
   page) opens the promise's own page (`#promise/<id>`, read from `GET /api/promise?id=`): its state, the message it

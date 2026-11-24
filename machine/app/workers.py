@@ -18,6 +18,7 @@ import help_chat
 import help_topics
 import linkedin_connections
 from machine.app import reconnect_asks
+from machine.cards import deadline_end, deadline_of
 from machine.config import LOG
 from machine.faults import fault_origin, restart_self
 from machine.sources.calendar import calendar_owned
@@ -466,10 +467,13 @@ class WorkersApp:
     def thread_snooze_step(self,gmail=None):
         """Archive a replied thread under a label, then return it to the inbox when due."""
         with self.store.connect() as db:
-            row=db.execute("SELECT t.*,j.message_id sent_message_id FROM thread_snoozes t LEFT JOIN action_jobs j ON j.id=t.job_id WHERE (t.status='queued' OR (t.status='snoozed' AND t.until<=?)) AND (t.retry_at IS NULL OR t.retry_at<=?) ORDER BY t.created_at LIMIT 1",(now(),now())).fetchone()
+            row=db.execute("SELECT t.*,j.message_id sent_message_id,j.payload,s.due,s.due_at FROM thread_snoozes t LEFT JOIN action_jobs j ON j.id=t.job_id LEFT JOIN suggestions s ON s.id=j.suggestion_id WHERE (t.status='queued' OR (t.status='snoozed' AND t.until<=?)) AND (t.retry_at IS NULL OR t.retry_at<=?) ORDER BY t.created_at LIMIT 1",(now(),now())).fetchone()
             if row and row['status']=='snoozed':
                 later=db.execute("SELECT max(until) FROM thread_snoozes WHERE account_id=? AND thread_id=? AND status IN ('queued','snoozed') AND until>?",(row['account_id'],row['thread_id'],now())).fetchone()[0]
-                if later:
+                # A later reply's own snooze keeps the thread away longer, never past this one's deadline (hide_until)
+                due=deadline_of(row,json.loads(row['payload'] or '{}')) if later else (None,None)
+                end=deadline_end(*due)
+                if later and not (end and dt.datetime.fromisoformat(row['created_at'])<end<=dt.datetime.fromisoformat(later)):
                     db.execute('UPDATE thread_snoozes SET until=? WHERE job_id=?',(later,row['job_id']))
                     return
         if not row:return

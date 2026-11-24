@@ -14,7 +14,7 @@ import calendar_writes
 import doc_writes
 import follow_ups
 import linear_writes
-from machine.cards import ACTION_WORKING, PREPARATION_WORKING, thread_return_time
+from machine.cards import ACTION_WORKING, deadline_of, hide_until, PREPARATION_WORKING, wait_return
 from machine.config import LOG
 from machine.delivery.deliver import deliver
 from machine.delivery.push import app_clear_step
@@ -40,17 +40,22 @@ PREPARATION_SETTLE_SECONDS = 120
 
 
 def queue_thread_snooze(db, action, job):
-    if action.get('snooze_days') and action.get('thread_id'):
+    """After a reply went out its thread leaves the inbox for a while, never past the to-do's deadline (hide_until)."""
+    if not (action.get('snooze_days') and action.get('thread_id')):
+        return
+    row = db.execute('SELECT due,due_at FROM suggestions WHERE id=?', (job['suggestion_id'],)).fetchone()
+    until = hide_until(action['snooze_days'], *(deadline_of(row, action) if row else ()))
+    if until:
         db.execute("INSERT OR IGNORE INTO thread_snoozes(job_id,account_id,thread_id,until,status,created_at,updated_at) VALUES(?,?,?,?,'queued',?,?)",
-                   (job['id'],action['account_id'],action['thread_id'],thread_return_time(action['snooze_days']),now(),now()))
+                   (job['id'],action['account_id'],action['thread_id'],until,now(),now()))
 
 
 def queue_delegate_wait(db, action, job, result):
     """A task handed to someone: once the message is sent, the card waits for their answer. It
-    closes when they reply (settle_awaiting) and comes back after wait_days if not."""
+    closes when they reply (settle_awaiting) and comes back after wait_days if not, sooner for its deadline (wait_return)."""
     if not action.get('delegate'):
         return
-    row = db.execute('SELECT status FROM suggestions WHERE id=?', (job['suggestion_id'],)).fetchone()
+    row = db.execute('SELECT status,due,due_at FROM suggestions WHERE id=?', (job['suggestion_id'],)).fetchone()
     if not row or row['status'] != 'prepared':
         return
     if action['kind'] == 'slack':
@@ -61,7 +66,7 @@ def queue_delegate_wait(db, action, job, result):
         watch = {'kind': 'gmail.message', 'from': action['to'][0].lower(), 'thread_id': action.get('thread_id'), 'reply_to': job.get('rfc_message_id') or ''}
     watch.update(account_id=action['account_id'], since=now(), delegated=True, name=action.get('to_name') or action['to'][0])
     db.execute("UPDATE suggestions SET awaiting=?,snoozed_until=?,resume_status='prepared',undo_until=NULL WHERE id=?",
-               (encoded(watch), thread_return_time(action['wait_days']), job['suggestion_id']))
+               (encoded(watch), wait_return(action['wait_days'], row['due'], row['due_at']), job['suggestion_id']))
     todo_moves.transition(db, job['suggestion_id'], todo_states.SNOOZED, 'sent_wait_reply')
 
 

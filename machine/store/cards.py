@@ -1186,8 +1186,8 @@ class CardsStore:
             accounts = sorted(set(json.loads(other['account_ids'] or '[]')) | set(json.loads(own['account_ids'] or '[]')))
             words = '\n\n'.join(w for w in (other['owner_words'], own['owner_words']) if w)
             renamed = own['title_suggested'] is not None and other['title_suggested'] is None
-            db.execute('UPDATE suggestions SET event_ids=?,account_ids=?,origin=?,owner_words=?,due=coalesce(?,due),project=coalesce(project,?) WHERE id=?',
-                       (encoded(ids), encoded(accounts), 'owner', words or None, own['due'], own['project'], other['id']))
+            db.execute('UPDATE suggestions SET event_ids=?,account_ids=?,origin=?,owner_words=?,due_at=CASE WHEN ? IS NULL THEN due_at ELSE ? END,due=coalesce(?,due),project=coalesce(project,?) WHERE id=?',
+                       (encoded(ids), encoded(accounts), 'owner', words or None, own['due'], own['due_at'], own['due'], own['project'], other['id']))
             if renamed:
                 db.execute("UPDATE suggestions SET title_suggested=title,title=?,title_source='user' WHERE id=?", (own['title'], other['id']))
             db.execute('INSERT OR IGNORE INTO suggestion_keys(dedupe_key,suggestion_id,created_at) VALUES(?,?,?)', (own['dedupe_key'], other['id'], stamp))
