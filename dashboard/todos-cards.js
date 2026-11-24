@@ -147,7 +147,7 @@ const briefOwn=s=>!!s.fleet_brief?.own&&!closed(s)&&s.status!=='snoozed',briefIn
 // by to-do: each question's answer so far; those Answer found without one
 const changing=new Set(),dismissing=new Set(),askPicks=new Map(),askMissing=new Map();
 // Messages to send: several go out together (openSendAll)
-const sendReady=s=>s?.status!=='prepared'?[]:taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)&&!sendBusy(a.state));
+const sendReady=s=>s?.status!=='prepared'?[]:taskActions(s).filter(a=>SENDS.includes(a.kind)&&!sendBusy(a.state));
 // Who its messages go (or went) to, names and addresses: a search finds a to-do by recipient too (assistant.card_recipients)
 const cardWho=s=>{const a=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);
  return (Array.isArray(a)?a:[]).flatMap(x=>[x?.to_name,x?.to_email,...[x?.to,x?.cc].flatMap(v=>Array.isArray(v)?v:[v])]).filter(v=>typeof v==='string'&&v).join(' ')};

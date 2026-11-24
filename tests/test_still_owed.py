@@ -85,6 +85,42 @@ class StillOwed(unittest.TestCase):
         with patch_everywhere(timeutil, 'now', return_value='2026-10-21T09:00:00+00:00'):
             self.assertEqual([p['state'] for p in self.store.promises() if p['suggestion_id'] == self.sid], ['kept'])
 
+    def test_the_send_is_on_record_for_a_run_that_is_asked_whether_it_went(self):
+        """status with suggestion_id had only the tap, never the send itself: asked "did it go out?", a run could only
+        search the mailbox and called its own send unconfirmed (agent users, 2026-11-24)."""
+        self.assertNotIn('sends', self.app().action('status', {'suggestion_id': self.sid}))
+        self.send(self.draft(still_owed=OWED))
+        found = self.app().action('status', {'suggestion_id': self.sid})
+        [send] = found['sends']
+        approved_at = send.pop('approved_at')
+        with self.store.connect() as db:
+            self.assertEqual(approved_at, db.execute('SELECT created_at FROM action_jobs').fetchone()[0])
+        self.assertEqual(send, {'kind': 'email', 'to': ['ash@ledger.example'], 'subject': 'Re: Q4 statements', 'status': 'sent',
+                                'approved': 'the owner tapped Send in the dashboard', 'sent_at': '2026-10-16T09:00:00+00:00',
+                                'text': 'Hi Ash,\n\nI’ll gather them and send them by Tuesday.\n\nOwner'})
+        self.assertIn('settles whether one went out', found['sends_note'])
+        # The chat's line is at the moment it went (not when it was approved), right above why the to-do stays open
+        with self.store.connect() as db:
+            events = [(i['text'], i['at']) for i in sorted(self.app().card_chat_service(db, self.sid)[0], key=lambda i: i['at']) if i['kind'] == 'event']
+        sent = [text for text, _ in events].index('Sent to Ash')
+        self.assertEqual(events[sent][1], int(timeutil.dt.datetime.fromisoformat('2026-10-16T09:00:00+00:00').timestamp() * 1000))
+        self.assertEqual(events[sent + 1][0], 'Kept open for the work the reply promised')
+
+    def test_a_send_that_failed_is_on_record_as_not_sent(self):
+        self.send(self.draft(still_owed=OWED))
+        with self.store.connect() as db:
+            db.execute("UPDATE action_jobs SET status='failed',error='The mail server refused it.'")
+        [send] = self.app().action('status', {'suggestion_id': self.sid})['sends']
+        self.assertEqual((send['status'], send['error'], 'sent_at' in send), ('failed', 'The mail server refused it.', False))
+
+    def test_the_chat_is_told_the_outbox_settles_it_and_not_to_say_what_a_tap_turns_false(self):
+        self.decide('accept')
+        with self.store.connect() as db:
+            job = dict(db.execute('SELECT * FROM preparations').fetchone())
+        prompt = machine_app_preparation.chat_prompt(job)
+        self.assertIn("answered from status's sends", prompt)
+        self.assertIn('stops being true when they tap Send', prompt)
+
     def test_a_reply_that_does_the_work_still_closes_the_to_do(self):
         self.send(self.draft(body='Hi Ash,\n\nHere are the statements and both invoices.\n\nOwner'))
         self.assertEqual(self.suggestion()['status'], 'completed')

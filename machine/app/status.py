@@ -19,9 +19,10 @@ from machine.app.first_look import FIRST_LOOK_FEW
 from machine.app.setup_card import phone_app_nudge, setup_card
 from machine.browser import browser_link
 from machine.cards import snooze_choices
+from machine.chat import chat_draft
 from machine.config import LOG, WORKSPACE
 from machine.delivery.push import reminder_channels, reviews_start_by_themselves
-from machine import names as display_names
+from machine import action_basis, names as display_names
 from machine import stamps
 from machine.store.views import STATUS_NARROW, STATUS_QUIET, SYNC_TABLES, status_tables
 from machine.timing import aside
@@ -93,9 +94,37 @@ def compact_status(result):
                 'status with suggestion_id gives one suggestion in full.'}
 
 
-def card_status(result, suggestion_id):
-    """status with suggestion_id: that one to-do (its body in full) and the owner's decisions on it, for a to-do's own
-    run (a preparation, Do it, its chat), which read the whole status (about 20k tokens) to find one card."""
+# What let a send through, in plain words (action_jobs.basis, action_basis.py)
+SEND_OK = {'todo': 'the owner tapped Send in the dashboard', 'telegram': 'the owner tapped Send in Telegram', 'voice': 'the owner said yes by voice',
+           'chat': 'the owner asked for it in words', 'doit': 'the owner tapped Do it', 'follow_up': "the owner's follow-up settings"}
+SENDS_NOTE = ("sends is The Machine's own outbox for this to-do's messages, newest first, and settles whether one went out: "
+              "a mailbox search that doesn't show the copy never makes a sent one unconfirmed.")
+
+
+def card_sends(db, suggestion_id):
+    """A to-do's messages from the outbox (action_jobs), newest first: to whom, whether and when each went, what allowed
+    it and its text. Without it a run asked "did it go out?" could only search the mailbox, and called a send it had
+    made itself unconfirmed. Reads only."""
+    sends = []
+    for r in db.execute('SELECT payload,status,created_at,updated_at,error,basis FROM action_jobs WHERE suggestion_id=? ORDER BY created_at DESC LIMIT 20', (suggestion_id,)):
+        try:
+            draft = chat_draft(json.loads(r['payload']))
+        except ValueError:
+            continue
+        if not draft:
+            continue
+        sends.append({k: v for k, v in {
+            'kind': draft['kind'], 'to': draft['to'], 'subject': draft['subject'], 'status': r['status'], 'approved_at': r['created_at'],
+            'approved': SEND_OK.get((action_basis.read(r['basis']) or {}).get('kind')),
+            'sent_at': r['updated_at'] if r['status'] == 'sent' else None, 'error': clamp(r['error'] or '', 200),
+            'text': clamp(draft['body'], 400)}.items() if v})
+    return sends[:8]
+
+
+def card_status(result, suggestion_id, sends=()):
+    """status with suggestion_id: that one to-do (its body in full), the owner's decisions on it and its messages in the
+    outbox, for a to-do's own run (a preparation, Do it, its chat), which read the whole status (about 20k tokens) to
+    find one card."""
     card = next((s for s in result['suggestions'] if s.get('id') == suggestion_id), None)
     if card is None:
         return {'suggestion': None, 'note': 'No such suggestion.'}
@@ -103,7 +132,8 @@ def card_status(result, suggestion_id):
             'preparation_status', 'handled_hint')
     return {'suggestion': {**{k: card[k] for k in keep if card.get(k)}, 'body': card.get('body') or '', **agent_work_status(card.get('agent_job'))},
             'decisions': [{k: clamp(d[k], 300) for k in ('id', 'suggestion_id', 'choice', 'source', 'feedback', 'created_at') if d.get(k)}
-                          for d in result['decisions'] if d.get('suggestion_id') == suggestion_id][:30]}
+                          for d in result['decisions'] if d.get('suggestion_id') == suggestion_id][:30],
+            **({'sends': list(sends), 'sends_note': SENDS_NOTE} if sends else {})}
 
 
 def sign_in_help(service, error, manage):
@@ -523,4 +553,12 @@ class StatusApp:
                     self.agents.annotate(db, result.get('suggestions', []))
             except (sqlite3.Error, ValueError) as error:
                 LOG.error('agent jobs status error=%s', type(error).__name__)
-        return card_status(result, suggestion_id) if suggestion_id else compact_status(result)
+        if not suggestion_id:
+            return compact_status(result)
+        sends = []
+        try:
+            with self.store.connect() as db:
+                sends = card_sends(db, suggestion_id)
+        except (sqlite3.Error, ValueError) as error:
+            LOG.error('card sends error=%s', type(error).__name__)
+        return card_status(result, suggestion_id, sends)

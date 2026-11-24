@@ -91,8 +91,7 @@ function chatDiff(a,b){const x=String(a).split(/(\s+)/),y=String(b).split(/(\s+)
  return html`${out.map(([k,t])=>k==='='?t:k==='-'?(t.trim()?html`<del>${t}</del>`:''):html`<ins>${t}</ins>`)}`}
 // The card's own pieces for the chat, taken from the card as the dashboard draws it, so they stay the same.
 // The card's own sends (their state refreshes every 2 s while one goes out): what the chat's draft says under it
-const CHAT_SENDS=SENDS;
-const chatSends=s=>taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)).map(a=>({a,st:a.state||s.action_status})).filter(x=>x.st?.status);
+const chatSends=s=>taskActions(s).filter(a=>SENDS.includes(a.kind)).map(a=>({a,st:a.state||s.action_status})).filter(x=>x.st?.status);
 const chatGoing=st=>['queued','sending'].includes(st?.status)||st?.status==='uncertain'&&!st.retry_ok;
 const chatFailed=st=>['failed','blocked'].includes(st?.status)||!!st?.retry_ok;
 const CHAT_BY={email:'Sent to {} by email',email_demo:'Sent to {} by email',slack:'Sent to {} on Slack',linkedin:'Sent to {} on LinkedIn',whatsapp:'Sent to {} on WhatsApp',telegram:'Sent to {} on Telegram',signal:'Sent to {} on Signal',x:'Sent to {} on X',intercom:'Sent to {} in Intercom',teams:'Sent to {} in Teams',doc_reply:'Sent to {} in the doc'};
@@ -134,7 +133,7 @@ function chatParts(s){const t=document.createElement('template');setHTML(t,sugge
  const body=card?.querySelector('.body');body?.classList.remove('clamp');
  const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"],[data-rt-change]')).map(n=>nodeHTML(n))}${s.preparation_status==='blocked'?(s.preparation_browser?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):['running','starting'].includes(s.preparation_status)?chatPeek(s):''}`;
  const outer=n=>n?nodeHTML(n):'';
- return {sends,single:taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)).length<2,going,sheet:outer(card?.querySelector('.agent-form')),lead:outer(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:outer(back),rest:orEmpty(html`${rest.map(outer)}`),options:orEmpty(html`${[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return nodeHTML(n)})}`),
+ return {sends,single:taskActions(s).filter(a=>SENDS.includes(a.kind)).length<2,going,sheet:outer(card?.querySelector('.agent-form')),lead:outer(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:outer(back),rest:orEmpty(html`${rest.map(outer)}`),options:orEmpty(html`${[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return nodeHTML(n)})}`),
   status,intro:orEmpty(nodeHTML(...body?.childNodes||[])),ask:outer(card?.querySelector('.ask-line')),agent:outer(card?.querySelector('.agent-job')),
   links:orEmpty(nodeHTML(...card?.querySelector('.foot-links')?.childNodes||[])),panel:orEmpty(panel)}}
 // What the card asks of the owner, in one plain line, when its text doesn't already ask: the question its run wrote,
@@ -206,14 +205,13 @@ function chatLog(s=chatOpen()){if(!chat)return html`<p class="chat-note">Loading
  const stamp=at=>{if(!at)return;const d=chatDayOf(at);if(d!==day){day=d;side='';out.push(html`<div class="chat-day">${d}</div>`)}};
  const tm=at=>at?html`<time class="chat-time" datetime="${new Date(at).toISOString()}" title="${localeDate(new Date(at),DL,{weekday:'short',month:'short',day:'numeric',year:'numeric'})+' '+chatHM(at)}">${chatHM(at)}</time>`:'';
  const push=(i,body)=>{const sd=chatSide(i);out.push(sd!==side?body:htmlEdit(body,c=>{const e=[...c.querySelectorAll('[class]')].find(n=>n.getAttribute('class').startsWith('chat-'));e?.setAttribute('class','cont '+e.getAttribute('class'))}));side=sd};
- const sent=new Set(items.filter(i=>i.kind==='event'&&i.sent).map(i=>i.sent.trim()));
  // Each send or cancel belongs to the latest draft before it (by its text for a send): only that one says Sent or Not sent
  const outcome=new Map();{const open=[];for(const i of items){if(i.kind==='reply')open.push(...(i.drafts||[]));if(i.kind!=='event')continue;
   const sent=i.sent?.trim(),d=sent?open.findLast(x=>!outcome.has(x)&&x.body.trim()===sent):/^(Send canceled|Didn’t go out)/.test(i.text||'')?open.findLast(x=>!outcome.has(x)):null;if(d)outcome.set(d,sent?'sent':'not')}}
  const drafts=items.flatMap(i=>i.kind==='reply'?(i.drafts||[]):[]),newest=drafts.at(-1);let prev=null;
  // The card's live send of a draft: the one with its text, else the newest when it is the only one
  const liveOf=d=>d.kind==='finish'?null:p.sends?.find(x=>typeof x.a.body==='string'&&x.a.body.trim()===d.body.trim())||(d===newest&&p.single&&p.sends?.length===1?p.sends[0]:null);
- for(const d of drafts)if(liveOf(d)?.st.status==='sent')sent.add(d.body.trim());
+ const wentOut=d=>outcome.get(d)==='sent'||liveOf(d)?.st.status==='sent';
  // The decision buttons go on the Machine's latest message when the card is waiting on one (a Send goes on its draft)
  const open=s&&!closed(s)&&s.status!=='snoozed'&&!chat.active&&!['queued','starting','running'].includes(s.preparation_status);
  const lastMachine=rows.findLastIndex(i=>i.kind==='reply'||i.kind==='card'||i.kind==='event'&&i.handoff);
@@ -229,10 +227,14 @@ function chatLog(s=chatOpen()){if(!chat)return html`<p class="chat-note">Loading
  const isResult=(i,n)=>i.kind==='reply'?!!((i.drafts||[]).length||headline(i.text)||n===copyAt):i.kind==='card'?!!(s&&!closed(s)&&!['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&(p.ask||q.ask||s.status==='prepared'&&p.send)):false;
  // Raised only while it is open: a draft not sent yet, an outcome on a card still going, or the call the card waits on
  // A draft is open only while the card offers it to send: once a change is asked for, it is an earlier draft.
-const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==='prepared'&&i.drafts.some(d=>!sent.has(d.body.trim())));
+const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==='prepared'&&!i.drafts.every(wentOut));
  const last=rows.findLastIndex(isResult),current=last>=0&&isOpen(rows[last])?last:-1;
  const result=(n,i,inner,only)=>html`<div class="chat-result ${n===current?'current':'earlier'}${only?html` only-draft`:''}">${inner}${tm(i.at)}</div>`;
- let lastTo='';
+ // Where the buttons stand on their own: under a handoff's line, and once all its messages went out, under the lines
+ // about the send (they are about what's left, never inside the sent message, where Do it read as sending it again)
+ const ask=rows[lastMachine];let under=ask?.handoff||ask?.drafts?.[0]&&ask.drafts.every(wentOut)?lastMachine+1:0,lastTo='';
+ while(under&&!ask.handoff&&/event|learned|fixed/.test(rows[under]?.kind))under++;
+ const own=under&&options(lastMachine,!ask.handoff);if(own)rows.splice(under,0,{kind:'rc',html:html`<div class="chat-msg machine chat-handoff-options">${own}</div>`});
  rows.forEach((i,n)=>{stamp(i.at);const k=n+':'+i.kind,res=isResult(i,n),quiet=res&&n!==current;
   if(i.kind==='source'){const via=chatVia(i.via)+(i.note&&i.via?' note':''),who=[i.mine?'You':i.from,via].filter(Boolean).join(' · ')||'Message';
    // Several messages in a row from the same person: their name and time on the first, each later one its own small time line; the link to the thread once, under the last
@@ -259,9 +261,8 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
   else if(i.kind==='event'){const c=i.times.length,t=chatEventText(i),line=html`${c>1?html`${t} ${c} times<span class="chev" aria-hidden="true">›</span>`:t}${i.voice&&c===1?html` · <a class="learn-link" href="#settings/writing" data-voice-edit="${i.voice}">Edit</a>`:''}${i.undo_voice&&s&&i.undo_until>Date.now()?chatUndoVoice(s,i):''}`;
    // A handoff that didn't go out: Try again opens the handoff form again, as it was sent
    const retry=i.retry_handoff&&s&&!closed(s)&&!s.fleet_handoff?html` · <button type="button" class="link" data-fleet-handoff="${s.id}">Try again</button>`:'';
-   push(i,html`<div class="chat-event${i.mine?html` mine`:''}${i.retry_handoff?html` failed`:''}">${c>1?chatFold(k+':'+i.times[0],'',html`${line}${tm(i.at)}`,html`<ol>${i.times.map(t=>html`<li>${chatDayOf(t)} ${chatHM(t)}</li>`)}</ol>`):html`${line}${i.handoff?html`<span class="chat-when"> · ${chatHM(i.at)}</span>`:tm(i.at)}${retry}`}</div>`);
-   if(i.handoff&&n===lastMachine&&s&&withTeammate(s))push({kind:'event',mine:i.mine},html`<div class="chat-event chat-handoff-wait">${window.t('No answer from {} yet',String(s.fleet_handoff.name||window.t('your teammate')).split(' ')[0])}</div>`);
-   if(i.handoff&&n===lastMachine&&options(n,false))push({kind:'event',mine:false},html`<div class="chat-msg machine chat-handoff-options">${options(n,false)}</div>`)}
+   push(i,html`<div class="chat-event${i.mine?html` mine`:''}${i.retry_handoff?html` failed`:''}">${c>1?chatFold(k+':'+i.times[0],'',html`${line}${tm(i.at)}`,html`<ol>${i.times.map(t=>html`<li>${chatDayOf(t)} ${chatHM(t)}</li>`)}</ol>`):html`${line}${i.handoff||i.sent?html`<span class="chat-when"> · ${chatHM(i.at)}</span>`:tm(i.at)}${retry}`}</div>`);
+   if(i.handoff&&n===lastMachine&&s&&withTeammate(s))push(i,html`<div class="chat-event chat-handoff-wait">${window.t('No answer from {} yet',String(s.fleet_handoff.name||window.t('your teammate')).split(' ')[0])}</div>`)}
   else if(i.kind==='learned')push(i,chatLearned(i));
   else if(i.kind==='fixed')push(i,chatFixed(i));  // no time of its own: it sits under its reply, and beside a wide centered line it would stick out sideways
   else if(i.kind==='recipe')push(i,lazyIn('recipe')?chatRecipe(i):(lazyRun('recipe',paintChat),''));
@@ -285,8 +286,8 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
     const title=[df.name||f.label,where].filter(Boolean).join(' · ');
     const body=text==null?html`<div data-preview="${key}"><p class="chat-note">Loading the draft…</p></div>`:df.body?html`<div class="chat-draft-text chat-clamp${chatOpenSet.has(fk)?html` open`:''}"${chatLong(df.body,4)?html` data-unclamp-by="${fk}"`:''}>${chatMarkdown(df.body)}</div>${chatLong(df.body,4)?html`<button type="button" class="link chat-more" data-unclamp="${fk}">${chatOpenSet.has(fk)?'Less':'Show all'}</button>`:''}`:'';
     push(i,result(n,i,html`<div class="chat-result-head"><span class="chat-result-title">${title}</span><button type="button" class="link" data-id="${s.id}" data-result="read" data-file="${f.path}" data-file-name="${f.label}">Open</button></div>${body}<p class="chat-why">${COPY_WHY}</p>${options(n,false)}`));return}
-   const parts=html`${ds.map((d,m)=>{const dk=k+':d'+m,ls=liveOf(d),liveSent=ls?.st.status==='sent',went=outcome.get(d)==='sent'||liveSent,last=d===newest&&!went&&s?.status==='prepared',not=!last&&outcome.get(d)==='not';
-    const before=prev&&!ds.includes(prev)&&prev.kind===d.kind&&!sent.has(prev.body.trim())&&prev.body!==d.body?chatDiff(prev.body,d.body):null;prev=d;
+   const parts=html`${ds.map((d,m)=>{const dk=k+':d'+m,ls=liveOf(d),went=wentOut(d),liveSent=ls?.st.status==='sent'&&(ds[1]||!rows[n+1]?.sent),last=d===newest&&!went&&s?.status==='prepared',not=!last&&outcome.get(d)==='not';
+    const before=prev&&!ds.includes(prev)&&prev.kind===d.kind&&!wentOut(prev)&&prev.body!==d.body?chatDiff(prev.body,d.body):null;prev=d;
     // A final step (Book, Submit): what goes out, whole while it is the one to check, as the owner sees it before the tap
     const to=d.to.length?' to '+d.to.join(', '):'',what=d.kind==='finish'?t('What goes out'):d.reply?'Reply':d.kind==='email'||d.kind==='email_demo'?'Email':d.kind==='whatsapp'?'WhatsApp':d.kind==='telegram'?'Telegram':d.kind==='signal'?'Signal':'Message';
     const long=!(d.kind==='finish'&&!quiet)&&chatLong(d.body,quiet?2:4);
@@ -294,7 +295,7 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
     return html`<div class="chat-draft${went||not?html` went`:''}${last?html` current`:''}"><div class="chat-draft-head"><span>${what}${to}</span>${went?(liveSent?'':html`<span class="went-tag">Sent</span>`):not?html`<span class="went-tag not">Not sent</span>`:last||!quiet?'':html`<span>Earlier draft</span>`}</div>${d.subject&&!d.reply?html`<div class="chat-draft-subject">${d.subject}</div>`:''}<div class="chat-clamp${chatOpenSet.has(dk)||d.kind==='finish'&&!quiet?html` open`:''}${d.kind==='email'||d.kind==='email_demo'?html` mail-text`:''}"${long?html` data-unclamp-by="${dk}"`:''}>${d.kind==='email'||d.kind==='email_demo'?mailHtml(d.body):chatMarkdown(d.body)}</div>
      ${before&&chatOpenSet.has(dk+':diff')?html`<div class="chat-diff">${before}</div>`:''}${ls&&(last||liveSent)?chatSendLine(d,ls):''}${links||last&&p.send?html`<div class="chat-draft-foot"><span>${links}</span>${last&&p.send?p.lead:''}</div>`:''}</div>`})}`;
    const head=h?html`<div class="chat-result-head"><span class="chat-result-title" translate="no">${format(h.title)}</span></div>${h.rest?html`<div class="bubble" translate="no">${clamp(k,chatMarkdown(h.rest),quiet&&chatLong(h.rest,2))}</div>`:''}${noted}${chips}`:'';
-   push(i,result(n,i,html`${head}${parts}${ds.length?options(n,true):h?options(n,false):''}`,!h&&ds.length===1))}});
+   push(i,result(n,i,html`${head}${parts}${own?'':ds.length?options(n,true):h?options(n,false):''}`,!h&&ds.length===1))}});
  // A result with files: its links under the last reply
  if(p.links&&!drafts.length&&s?.status==='prepared'&&!p.copy)out.push(html`<div class="chat-links">${p.links}</div>`);
  if(s)out.push(outboxChat(s));
