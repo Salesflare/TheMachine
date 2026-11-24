@@ -136,6 +136,22 @@ class Desk(unittest.TestCase):
         desk.look(ONE, True, [first[0]['key']], at)
         self.assertEqual(len(desk.late(at)), 1)  # handed out, never named
 
+    def test_without_a_browser_on_its_computer_it_waits_longer_for_the_robot(self):
+        clock = [1000.0]; at = lambda: clock[0]
+        self.link(ONE, '')
+        def waits():
+            with self.store.connect() as db:
+                desk.stand_in(db, [], {'tag': CARD['id']}, 'todo', at)
+        desk.look(ONE, True, (), at); waits()
+        (first,) = desk.look(ONE, True, (), at)  # its box is open: not shown, so not named
+        clock[0] += desk.LATE + 30
+        self.assertEqual((desk.late(at), desk.look(ONE, True, (), at)), ([], [first]))
+        self.assertEqual((desk.look(ONE, False, (), at), desk.late(at)), ([], []))  # a full-screen while
+        self.assertEqual(desk.look(ONE, True, (), at), [first])
+        self.assertEqual(desk.look(ONE, True, [first['key']], at), [])
+        waits(); clock[0] += desk.KEEP  # not for ever
+        self.assertEqual((desk.look(ONE, True, (), at), desk.late(at)), ([], []))
+
     def test_the_late_one_is_pushed_by_the_step(self):
         self.browser(HERE); self.link(ONE, HERE); desk.look(ONE, True)
         self.push(); desk.look(ONE, False)
