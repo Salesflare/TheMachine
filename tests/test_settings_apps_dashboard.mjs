@@ -60,6 +60,10 @@ try{
   await open(page,base+'/#settings/apps');
   assert.deepEqual(await stores(page),['ios','android']);assert.deepEqual(await computer(page),[],'nothing to install');
   assert.deepEqual(await page.evaluate(()=>[document.querySelector('#device-app').hidden,document.querySelector('#device-push').hidden]),[true,true]);
+  await page.evaluate(()=>{location.hash='#settings/notify'});
+  const more=page.locator('#notify-more');await more.waitFor();
+  assert.equal(await more.innerText(),'This device\nChoose in the app’s Settings: the robot or notifications.');assert.equal(await more.locator('button').count(),0);
+  for(const scheme of shots?['light','dark']:[]){await page.emulateMedia({colorScheme:scheme});await more.scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/desktop-notifications-${scheme}.png`})}
   for(const [detail,text] of [[{saved:'a.pdf'},'Saved to Downloads'],[{failed:'a.pdf'},'Couldn’t save it.']]){
    await page.evaluate(d=>dispatchEvent(new CustomEvent('machinedesktop',{detail:d})),detail);
    await page.locator('#toast.show',{hasText:text}).waitFor()}
