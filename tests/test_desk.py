@@ -36,8 +36,8 @@ class Desk(unittest.TestCase):
         self.sent.append(request)
         return {'results': [{'endpoint': s['endpoint'], 'status': 201} for s in request['subscriptions']]}
 
-    def browser(self, endpoint):
-        self.app.action('push_subscribe', {'endpoint': endpoint, 'keys': KEYS}, owner_dashboard=True)
+    def browser(self, endpoint, computer=None):
+        self.app.action('push_subscribe', {'endpoint': endpoint, 'keys': KEYS, 'computer': computer}, owner_dashboard=True)
 
     def link(self, ident, endpoint):
         self.app.action('push_desk', {'desk': ident, 'endpoint': endpoint}, owner_dashboard=True)
@@ -80,6 +80,42 @@ class Desk(unittest.TestCase):
         self.link(ONE, '')  # its browser has no notifications on: nothing to stand in for
         self.push()
         self.assertEqual((self.to(), len(desk.look(ONE, True))), ([THERE], 1))
+
+    def test_a_browser_that_cannot_be_on_its_computer_is_none(self):
+        for agent, runs in (('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', 'mac'), ('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'windows'),
+                            ('Mozilla/5.0 (X11; Linux x86_64)', 'linux'), ('Mozilla/5.0 (Linux; Android 15) Mobile', 'other'),
+                            ('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)', 'other'), ('', None), (None, None)):
+            self.assertEqual(desk.computer(agent), runs)
+        self.browser(THERE, 'other')
+        self.browser(HERE, 'windows')
+        desk.look(ONE, True, on='mac')
+        self.push()
+        self.assertEqual((self.to(), len(desk.look(ONE, True, on='mac'))), ([THERE, HERE], 1))
+        desk.look(ONE, True, on='windows')
+        with self.store.connect() as db:
+            self.assertTrue(desk.maybe(db, ONE))
+            self.assertEqual(desk.here(db), {})
+            db.execute('UPDATE push_subscriptions SET computer=NULL')  # on before this was kept
+            desk.look(ONE, True, on='mac')
+            self.assertEqual(desk.here(db), {})
+
+    def test_the_person_says_no_browser_here_until_another_one_is_on(self):
+        self.browser(HERE, 'mac')
+        self.assertNotIn('browser', self.app.desk_look(ONE, True, on='mac'))  # a robot that doesn't ask
+        asked = self.app.desk_look(ONE, True, on='mac', none='0')['browser']
+        self.assertEqual(self.app.desk_look(ONE, True, on='mac', none=str(asked)), {'notices': []})
+        self.push()
+        self.assertEqual(self.to(), [HERE])
+        self.assertEqual(len(self.app.desk_look(ONE, True, on='mac', none=str(asked))['notices']), 1)
+        with self.store.connect() as db:
+            db.execute("UPDATE push_subscriptions SET created_at=? WHERE endpoint=?", (dt.datetime.fromtimestamp(asked + 9, dt.timezone.utc).isoformat(), HERE))
+        self.assertEqual(self.app.desk_look(ONE, True, on='mac', none=str(asked))['browser'], asked + 9)
+        self.link(ONE, HERE)  # the person opened it there
+        self.assertNotIn('browser', self.app.desk_look(ONE, True, on='mac', none=str(asked)))
+        desk.look(TWO, True, on='mac')  # another Mac: that browser is the first one's
+        with self.store.connect() as db:
+            self.assertEqual(desk.here(db), {ONE: {HERE}, TWO: set()})
+        self.assertNotIn('browser', self.app.desk_look(ONE, True, on='x', none='1e9; DROP'))
 
     def test_what_would_not_buzz_is_not_said(self):
         self.browser(HERE); self.link(ONE, HERE); desk.look(ONE, True)

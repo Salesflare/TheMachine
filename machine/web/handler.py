@@ -33,6 +33,7 @@ import login_import
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS, UPLOAD_ACTIONS
 from machine.browser import browser_link, PANE_QUERY
 from machine.config import BRAND_ASSETS, LOG, ROOT
+from machine.delivery import desk
 from machine.delivery.push import app_notice, push_key
 from machine.faults import fault_frames, fault_message, fault_where, source_url
 from machine import omarchy
@@ -513,7 +514,8 @@ def make_handler(app):
             # a page's first read (dashboard.html statusEarly), which may take the status kept a moment ago (StatusApp.status_recent)
             recent = self.headers.get('X-Status-Kept') == '1'
             # the desktop robot (desk=): what waits for it to say, next to the status, never part of its changes
-            said = app.desk_look((args.get('desk') or [''])[0], args.get('up') == ['1'], (args.get('got') or [''])[0].split(',')) if args.get('look') == ['1'] and 'desk' in args else {}
+            first = lambda name: (args.get(name) or [''])[0]
+            said = app.desk_look(first('desk'), args.get('up') == ['1'], first('got').split(','), first('on'), first('none')) if args.get('look') == ['1'] and 'desk' in args else {}
             self.output(200, said | status_delta.changes({**dashboard_status(app.action('status', {'full': True, 'done': DONE_FIRST, 'recent': recent})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                               'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))}, since))
             # after the answer and off the request: on its thread the next request of this connection would wait
@@ -1164,6 +1166,8 @@ def make_handler(app):
                     request.setdefault('args', {})['source'] = 'dashboard'
                     if request['action'] == 'notify_active':  # a headless browser is never the owner in use
                         request['args']['automated'] = bool(AUTOMATED_AGENT.search(self.headers.get('User-Agent') or ''))
+                    if request['action'] == 'push_subscribe':  # whether it can be the desktop app's computer
+                        request['args']['computer'] = desk.computer(self.headers.get('User-Agent'))
                 result = app.action(request['action'], request.get('args', {}), owner_dashboard=bool(dashboard))
                 # what a review, preparation or other agent reads names Slack members, never their ids
                 self.output(200, result if dashboard else app.store.slack_named_out(result))
