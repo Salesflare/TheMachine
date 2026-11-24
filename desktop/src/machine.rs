@@ -76,12 +76,17 @@ pub struct Waiting {
     pub known: bool,
 }
 
+/// The account names the computer by its system (Account, Security).
+fn user_agent() -> String {
+    format!("TheMachineDesktop/{} ({})", env!("CARGO_PKG_VERSION"), std::env::consts::OS)
+}
+
 fn agent(seconds: u64) -> ureq::Agent {
     let config = ureq::Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(seconds)))
         .max_redirects(0) // a Machine never sends the app elsewhere
         .http_status_as_error(false)
-        .user_agent(concat!("TheMachineDesktop/", env!("CARGO_PKG_VERSION")));
+        .user_agent(user_agent());
     #[cfg(feature = "sandbox")]
     let config = match made_up() {
         Some(tls) => config.tls_config(tls),
@@ -320,6 +325,13 @@ impl Waiting {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn it_says_its_version_and_its_system() {
+        let version = concat!("TheMachineDesktop/", env!("CARGO_PKG_VERSION"));
+        assert!(["windows", "macos", "linux"].map(|os| format!("{version} ({os})")).contains(&user_agent()));
+        assert!(user_agent().ends_with(if cfg!(windows) { "(windows)" } else if cfg!(target_os = "macos") { "(macos)" } else { "(linux)" }));
+    }
 
     #[test]
     fn the_first_three_and_how_many() {

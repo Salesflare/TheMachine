@@ -121,7 +121,8 @@ A row opens the to-do in the box, which grows with it, up to a comfortable heigh
 a button for the app, and close. Escape closes what is open in it, then goes back. A to-do that is done or snoozed there
 goes back by itself after a few seconds. It is the dashboard, in a web view of its own over the box: signed in as the robot
 is, with nothing kept on the disk (its page goes a minute after Back, or with the box), none of the app's commands, and no
-way to any other page: a link in it opens the app, or the browser when it isn't your Machine's. What is sent or approved
+way to any other page: a link in it opens the app, or the browser when it isn't your Machine's. A file opens in the browser,
+where you may have to sign in, and a mail address in your mail app. What is sent or approved
 there is so by you, as in the dashboard. On a Machine whose dashboard hasn't that page (`compact` in `api/session`) the row
 opens the app.
 
@@ -210,7 +211,7 @@ cargo test --manifest-path desktop/Cargo.toml
 
 CI also uses the Windows and the Mac build, with real mouse and keys against a made-up Machine (`smoke/windows.py`,
 `smoke/mac.py`), and keeps the screenshots with the run. They move the mouse and change the screen, so they are for a
-throwaway computer. On Windows also over https, as a hosted Machine: with a certificate made for that run
+throwaway computer. Also over https, as a hosted Machine: with a certificate made for that run
 (`smoke/certificate.sh`), which only a sandbox build and that computer trust, until it ends.
 
 On a Mac, `mac/bundle.sh <folder> target/release/the-machine-desktop` makes the app. CI signs and notarizes the one for
@@ -222,7 +223,7 @@ windows are made at the start.
 ## Before a release
 
 - The box as a page of the Machine's, so its words come from the catalogs (`i18n/`); `native.js` is the seam.
-- The account names this app in its list of signed-in apps (it says iPhone now), and a check of the whole hosted sign-in.
+- A check of the whole hosted sign-in.
 - Settings to turn it on, a hotkey and start at login for who wants them, updates, signing on Windows.
 - Talk and dictation: the dashboard has no address that opens Talk yet.
 

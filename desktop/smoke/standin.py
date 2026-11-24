@@ -31,12 +31,21 @@ tell();
 # The dashboard's page of one to-do (?compact=1#card=<id>): its state in its title, a dialog of its own, links out
 COMPACT = b'''<!doctype html><title>The Machine</title><style>body{margin:0;padding:12px;background:#fff;font:14px sans-serif}</style>
 <h1></h1><p id="ipc"></p><button id="done">Done here</button> <button id="more">More</button> <a target="_blank" href="/#person=7">A person</a> <a href="/elsewhere">Away</a>
-<button id="long">Long</button><div id="longer"></div><dialog>Something open <button>Close</button></dialog><script>
+<button id="long">Long</button><div id="longer"></div><p id="leave" style="white-space:nowrap" hidden><a id="own" target="_blank" href="/#person=7">Own</a> <a id="web" target="_blank" rel="noopener" href="OUT?web">Web</a>
+<a id="mail" target="_blank" href="mailto:a@b.example?subject=new">Mail</a><br><a id="file" target="_blank" rel="noopener" download="a.txt" href="/api/chat-file?id=1">File</a> <a id="view" target="_blank" href="/api/attachment?id=2">View</a> <a id="save" download="b.txt" href="/api/chat-file?id=3">Save</a><br><a id="here" href="OUT?here">Here</a> <a id="mailhere" href="mailto:a@b.example?subject=here">Mail here</a><br>
+<button id="opens">window.open</button> <button id="opensown">of its own</button> <br><button id="goes">location</button> <button id="goesmail">mail</button> <button id="blob">blob</button></p><dialog>Something open <button>Close</button></dialog><script>
 let id, done = false;
 const draw = () => { id = (location.hash.match(/card=(\\w+)/) || [])[1]; document.querySelector('h1').textContent = 'To-do ' + id;
+  document.querySelector('#leave').hidden = id !== 'aa03';
   document.title = (done ? 'done' : /^gone/.test(id) ? 'gone' : 'open') + ': To-do ' + id;
   };
 onhashchange = draw;
+const on = (name, run) => document.querySelector(name).onclick = run;
+on('#opens', () => window.open('OUT?opens', '_blank', 'noopener'));
+on('#opensown', () => window.open('/#person=8'));
+on('#goes', () => { location.href = 'OUT?goes' });
+on('#goesmail', () => { location.href = 'mailto:a@b.example?subject=goes' });
+on('#blob', () => Object.assign(document.createElement('a'), {href: URL.createObjectURL(new Blob(['x'])), download: 'c.txt'}).click());
 document.querySelector('#done').onclick = () => { done = true; draw() };
 document.querySelector('#long').onclick = () => { const s = document.querySelector('#longer').style; s.height = s.height ? '' : '300px' };
 document.querySelector('#more').onclick = () => document.querySelector('dialog').showModal();
@@ -44,6 +53,11 @@ const i = window.__TAURI_INTERNALS__;
 (i ? i.invoke('box_state').then(() => 'ALLOWED', () => 'refused') : Promise.resolve('none')).then(x => document.querySelector('#ipc').textContent = x);
 setTimeout(draw, 300);
 </script>'''
+# What leaves it (on aa03), and where to: a place in the dashboard, a page in the browser, a mail, or nowhere
+LEAVES = [('#web', 'browser', '/out?web'), ('#opens', 'browser', '/out?opens'), ('#file', 'browser', '/api/chat-file?id=1'), ('#view', 'browser', '/api/attachment?id=2'),
+          ('#save', 'browser', '/api/chat-file?id=3'), ('#mail', 'mail', 'mailto:a@b.example?subject=new'), ('#mailhere', 'mail', 'mailto:a@b.example?subject=here'),
+          ('#goesmail', 'mail', 'mailto:a@b.example?subject=goes'), ('#here', 'nowhere', ''), ('#goes', 'nowhere', ''), ('#blob', 'nowhere', ''),
+          ('#own', 'dashboard', '#person=7'), ('#opensown', 'dashboard', '#person=8')]
 SNOOZE = [['2h', '2 hours'], ['tomorrow', 'Tomorrow \u00b7 9:00'], ['3d', '3 days \u00b7 9:00'], ['1w', '1 week \u00b7 9:00']]
 HOURS = {'2h': 2, 'tomorrow': 24, '3d': 72, '1w': 168}
 
@@ -59,7 +73,7 @@ class Machine(http.server.ThreadingHTTPServer):
             tls.load_cert_chain(certificate / 'cert.pem', certificate / 'key.pem')
             self.socket = tls.wrap_socket(self.socket, server_side=True, do_handshake_on_connect=False)  # on each one's own thread
         self.port, self.actions, self.cookies, self.links, self.challenges = port, [], set(), [], {}
-        self.seen, self.cards = [], []
+        self.seen, self.cards, self.left = [], [], []
         self.desks, self.notices, self.meeting = [], [], None  # what the robot says of itself with each look; what waits for it to say
         self.todos, self.name = list(TODOS), 'Sam'
         self.refuse = False
@@ -105,6 +119,10 @@ class Page(http.server.BaseHTTPRequestHandler):
             return self.answer(MANIFEST, kind='application/manifest+json')
         if u.path == '/icon.png':
             return self.answer(ICON, kind='image/png')
+        if u.path in ('/out', '/api/chat-file', '/api/attachment'):
+            if not self.headers.get('Referer'):  # the browser's, not the page's own
+                m.left.append(self.path)
+            return self.answer(b'<title>Stand-in</title>What left the to-do', kind='text/html')
         if u.path == '/seen':
             m.seen.append(q)
             return self.answer({})
@@ -130,7 +148,7 @@ class Page(http.server.BaseHTTPRequestHandler):
                                 'events': {'prepare': 'Preparing it', 'snooze2h': 'Snoozed it', 'done': 'Marked it done', 'send': 'Sent'}})
         if q.get('compact') == '1':
             m.cards.append(self.headers.get('Cookie') in m.cookies)
-            return self.answer(COMPACT, kind='text/html')
+            return self.answer(COMPACT.replace(b'OUT', f'http://localhost:{m.port}/out'.encode()), kind='text/html')
         self.answer(DASHBOARD, kind='text/html')
 
     def do_POST(self):

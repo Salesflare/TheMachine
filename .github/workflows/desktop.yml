@@ -102,8 +102,19 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Use it, with a made-up Machine
+        id: use
         timeout-minutes: 30
-        run: python3 smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots
+        run: | # its own certificate is trusted on this runner while this runs, for 127.0.0.1 only, and never by the build for people
+          grep -q MACHINE_SANDBOX_ROOT "sandbox-build/The Machine.app/Contents/MacOS/the-machine-desktop"
+          if grep -q MACHINE_SANDBOX_ROOT "out/The Machine.app/Contents/MacOS/the-machine-desktop"; then exit 1; fi
+          certificate="$RUNNER_TEMP/certificate" system=/Library/Keychains/System.keychain
+          smoke/certificate.sh "$certificate"
+          trap 'sudo security delete-certificate -c "Made-up Machine root" "$system"' EXIT
+          sudo security add-trusted-cert -d -r trustRoot -p ssl -k "$system" "$certificate/root.pem"
+          python3 smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots "$certificate"
+      - name: Its certificate is trusted no more
+        if: always() && steps.use.outcome != 'skipped'
+        run: if security verify-cert -c "$RUNNER_TEMP/certificate/cert.pem" -p ssl -s 127.0.0.1 -L; then exit 1; fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:

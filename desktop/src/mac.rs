@@ -2,9 +2,9 @@
 //! beside a full-screen app; places in the Mac's own points; the menu that gives the box its Command keys.
 use crate::place::Rect;
 use crate::{later, windows, Shared};
-use block2::RcBlock;
+use block2::{Block, RcBlock};
 use objc2::rc::Retained;
-use objc2::runtime::{AnyObject, NSObjectProtocol, ProtocolObject};
+use objc2::runtime::{AnyClass, AnyObject, ClassBuilder, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{class, define_class, msg_send, sel, AnyThread, ClassType, MainThreadMarker};
 use objc2_app_kit::{
     NSApplication, NSApplicationActivationOptions, NSApplicationDidChangeScreenParametersNotification, 
@@ -111,7 +111,7 @@ pub fn prepare(window: &WebviewWindow) {
             | NSWindowCollectionBehavior::Stationary | NSWindowCollectionBehavior::IgnoresCycle,
     );
     ns.setAnimationBehavior(NSWindowAnimationBehavior::None);
-    let speaks = window.label() == "bubble";
+    let (speaks, leaves) = (window.label() == "bubble", window.label() == "card");
     if speaks {
         BUBBLE.set(Some(window.clone()));
     }
@@ -123,6 +123,9 @@ pub fn prepare(window: &WebviewWindow) {
             let configuration: Retained<AnyObject> = msg_send![view, configuration];
             let preferences: Retained<AnyObject> = msg_send![&configuration, preferences];
             let () = msg_send![&preferences, setTabFocusesLinks: true];
+            if leaves {
+                links_leave(view);
+            }
             if let (true, Some(bubble)) = (speaks, page.ns_window().cast::<AnyObject>().as_ref()) {
                 let told = NSTrackingAreaOptions::MouseEnteredAndExited | NSTrackingAreaOptions::ActiveAlways | NSTrackingAreaOptions::InVisibleRect;
                 let area = NSTrackingArea::initWithRect_options_owner_userInfo(NSTrackingArea::alloc(), NSRect::ZERO, told, Some(bubble), None);
@@ -130,6 +133,43 @@ pub fn prepare(window: &WebviewWindow) {
             }
         }
     });
+}
+
+/// A link to a new window, before WebKit asks for one: wry asks card.rs' `on_navigation` about it as if it took the place of
+/// the page, which that refuses. It goes nowhere by itself: `on_new_window` follows it, as on the other systems.
+extern "C-unwind" fn decide(this: &AnyObject, _: Sel, view: &AnyObject, action: &AnyObject, answer: &Block<dyn Fn(isize)>) {
+    // SAFETY: WebKit's own arguments to this method, and the class it was added to has wry's as its super class.
+    unsafe {
+        let frame: Option<Retained<AnyObject>> = msg_send![action, targetFrame];
+        let request: Retained<AnyObject> = msg_send![action, request];
+        let address: Option<Retained<AnyObject>> = msg_send![&request, URL]; // without one wry refuses it
+        if frame.is_none() && address.is_some() {
+            return answer.call((1,)); // WKNavigationActionPolicyAllow
+        }
+        if let Some(wry) = AnyClass::get(LEAVES).and_then(AnyClass::superclass) {
+            let () = msg_send![super(this, wry), webView: view, decidePolicyForNavigationAction: action, decisionHandler: answer];
+        }
+    }
+}
+
+const LEAVES: &std::ffi::CStr = c"TheMachineLinks";
+
+/// # Safety
+/// On the main thread, for a WKWebView.
+unsafe fn links_leave(view: &NSView) {
+    let delegate: Option<Retained<AnyObject>> = msg_send![view, navigationDelegate];
+    let Some(delegate) = delegate else { return };
+    let class = AnyClass::get(LEAVES).unwrap_or_else(|| {
+        let mut class = ClassBuilder::new(LEAVES, delegate.class()).expect("a name of its own");
+        class.add_method(
+            sel!(webView:decidePolicyForNavigationAction:decisionHandler:),
+            decide as extern "C-unwind" fn(_, _, _, _, _),
+        );
+        class.register()
+    });
+    if class.superclass() == Some(delegate.class()) {
+        AnyObject::set_class(&delegate, class); // it holds nothing more than wry's
+    }
 }
 
 /// Shows it, the keys stay where they are.

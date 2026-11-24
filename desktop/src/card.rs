@@ -6,7 +6,7 @@ use crate::place::{Rect, BOX_WIDTH, SHADOW};
 use crate::{later, windows, Shared};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
-use tauri::webview::{Cookie, NewWindowResponse};
+use tauri::webview::{Cookie, DownloadEvent, NewWindowResponse};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_opener::OpenerExt;
 use url::Url;
@@ -49,13 +49,18 @@ fn own(machine: &str, url: &Url) -> bool {
     compact || matches!(url.as_str(), "about:blank" | "about:srcdoc")
 }
 
+fn file(machine: &str, url: &Url) -> bool {
+    !machine.is_empty() && url.as_str().strip_prefix(machine).is_some_and(|path| path.starts_with("api/"))
+}
+
 /// What "<state>: <to-do>" says.
 fn state(title: &str) -> Option<&'static str> {
     let word = title.split(':').next()?.trim();
     STATES.into_iter().find(|s| *s == word)
 }
 
-/// Where a link that leaves the page goes: the app for this Machine's own, the browser for the web's, else nowhere.
+/// Where a link that leaves the page goes: the app for a place in this Machine's dashboard, the browser for its files and for
+/// the web, the mail app for an address, else nowhere.
 #[derive(Debug, PartialEq)]
 enum Link {
     Dashboard(String),
@@ -66,7 +71,7 @@ enum Link {
 fn link(machine: &str, url: &Url) -> Link {
     let own = Url::parse(machine).is_ok_and(|m| m.origin() == url.origin());
     match (own, url.as_str().strip_prefix(machine), url.scheme()) {
-        (true, Some(path), _) => Link::Dashboard(path.into()),
+        (true, Some(path), _) if path.is_empty() || path.starts_with('#') => Link::Dashboard(path.into()),
         (_, _, "https" | "http" | "mailto") => Link::Web,
         _ => Link::No,
     }
@@ -74,7 +79,7 @@ fn link(machine: &str, url: &Url) -> Link {
 
 /// On Windows and macOS it is made at the start, as the other windows; elsewhere when it is first opened.
 pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
-    let (here, there, told) = (app.clone(), app.clone(), app.clone());
+    let (here, there, told, saves) = (app.clone(), app.clone(), app.clone(), app.clone());
     #[cfg_attr(target_os = "macos", allow(unused_mut))]
     let mut window = WebviewWindowBuilder::new(app, "card", WebviewUrl::External("about:blank".parse().unwrap()))
         .title("The Machine")
@@ -98,13 +103,25 @@ pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
                 say(&here, "back");
                 return false;
             }
-            here.state::<Shared>().signed_in().is_some_and(|(machine, _)| own(&machine, url))
+            let Some((machine, _)) = here.state::<Shared>().signed_in() else { return false };
+            // WebKitGTK also asks about a file to save here, not on_download: its page has no frames of those
+            if url.scheme() == "mailto" || cfg!(target_os = "linux") && file(&machine, url) {
+                let url = url.clone();
+                later(&here, move |app| follow(app, &url));
+                return false;
+            }
+            own(&machine, url)
         })
         .on_new_window(move |url, _| {
             later(&there, move |app| follow(app, &url));
             NewWindowResponse::Deny
         })
-        .on_download(|_, _| false)
+        .on_download(move |_, download| {
+            if let DownloadEvent::Requested { url, .. } = download {
+                later(&saves, move |app| follow(app, &url)); // the browser keeps files
+            }
+            false
+        })
         .on_document_title_changed(move |_, title| {
             let Some(state) = state(&title) else { return };
             say(&told, state);
@@ -149,6 +166,11 @@ fn follow(app: &AppHandle, url: &Url) {
             }
         }
         Link::Web => {
+            #[cfg(feature = "sandbox")] // a test opens no mail app
+            if let (Some(file), "mailto") = (std::env::var_os("MACHINE_SANDBOX_MAIL"), url.scheme()) {
+                let _ = std::fs::write(file, url.as_str());
+                return;
+            }
             let _ = app.opener().open_url(url.as_str(), None::<&str>);
         }
         Link::No => {}
@@ -313,12 +335,18 @@ mod tests {
             assert!(!at(no), "{no}");
         }
         assert!(!own("", &"about:srcdoc".parse().unwrap()));
+        let is = |u: &str| file(OWN, &u.parse().unwrap());
+        assert!(is("https://host.example/machine/api/chat-file?id=1"));
+        assert!(!is(OWN) && !is("https://host.example/machine/?x=api/") && !is("https://host.example/api/x") && !is("https://other.example/machine/api/x"));
     }
 
     #[test]
     fn a_link_out_goes_to_the_app_or_the_browser() {
         let to = |u: &str| link(OWN, &u.parse().unwrap());
         assert_eq!(to("https://host.example/machine/#person=7"), Link::Dashboard("#person=7".into()));
+        assert_eq!(to(OWN), Link::Dashboard("".into()));
+        assert_eq!([to("https://host.example/machine/api/chat-file?id=1"), to("https://host.example/machine/api/attachment?id=1#x")], [Link::Web, Link::Web]);
+        assert_eq!(to("blob:https://host.example/1"), Link::No);
         assert_eq!([to("https://host.example/other/"), to("https://host.example.evil/machine/"), to("mailto:a@b.example")], [Link::Web, Link::Web, Link::Web]);
         assert_eq!([to("javascript:1"), to("file:///etc/passwd"), to("tauri://localhost/"), to("data:text/html,x"), to("ms-settings:x")].iter().filter(|l| **l == Link::No).count(), 5);
     }
