@@ -13,7 +13,7 @@ Your Machine reads everything new and makes a to-do only when something needs yo
 The **To-dos** page groups them:
 
 - **Just done**: at the top, a last step you confirmed, like a form or an issue, went through while you were away. It stays until you tap **Got it**, for a day at most, and your phone hears of it too.
-- **For you**: everything waiting on you, most urgent first. Each says **Prepared** (a draft or result is ready, and **Do it** or **Send** carries it out), **Needs you** (it needs your decision or an answer first; when the work can't go on or be used without something only you have, like a price, a fact or a choice, a line under the title says what), **Preparing…** (your Machine is working on it) or **To read** (a digest or brief, nothing to decide).
+- **For you**: everything waiting on you, what's due by tomorrow first. Each says **Prepared** (a draft or result is ready, and **Do it** or **Send** carries it out), **Needs you** (it needs your decision or an answer first; when the work can't go on or be used without something only you have, like a price, a fact or a choice, a line under the title says what), **Preparing…** (your Machine is working on it) or **To read** (a digest or brief, nothing to decide).
 - **Older**: folded, to-dos with nothing new on them for a week (below).
 - **Waiting on others**: folded, to-dos where the next step is someone else's (below).
 - **Coming back later**: snoozed to-dos, and ones with no answer to **Still needed?** (below).
@@ -24,7 +24,9 @@ After you send, a short note says where the to-do went, like "Sent. Moved to Don
 
 **For you** puts first what's overdue or due by tomorrow, then questions from your Fleet, then a board's follow-ups, then the rest. Within each, newest first. A to-do keeps its place while your Machine prepares it and when it's done: only its mark changes. The other open groups put overdue or due by tomorrow first, the rest newest first. The sidebar keeps the same order.
 
-**Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. When a message shows it, it closes by itself after a day, with **Undo**. Otherwise it waits for your **Mark done**. A to-do you already handled yourself, like with a reply in Gmail or Slack, closes by itself too.
+**Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. When a message shows it, it closes by itself after a day, with **Undo**. Otherwise it waits for your **Mark done**.
+
+A to-do you already handled yourself, like with a reply in Gmail or Slack, closes by itself too. A reply that says a file is attached when none is doesn't close it.
 
 When a message comes from an address that only looks like someone you know, like sam@acme-corp.example for sam@acmecorp.example, its to-do says so plainly: "This isn’t Sam Lee." It shows them by their own address, never by the name they used. Your Machine checks such a message with the person at the address you already have, never with the one that wrote.
 

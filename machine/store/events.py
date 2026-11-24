@@ -302,9 +302,10 @@ class EventsStore:
                 if event['kind'] == 'calendar.event' and isinstance(event.get('metadata'), dict):
                     # Its call's link is kept beside, never a new version: a calendar read again for it is not reviewed again
                     digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items() if k != 'video'}}
-                mail = event['kind'] == 'gmail.message' and verified_sender.KEY in event['metadata']
-                if mail:  # kept with a message, never a new version of one read before it was
-                    digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items() if k != verified_sender.KEY}}
+                mail = event['kind'] == 'gmail.message'
+                if mail:  # a verified sender and "no files" are kept with a message, never a new version of one read before
+                    digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items()
+                                                          if k != verified_sender.KEY and not (k == 'attachments' and not v)}}
                 slack = event['kind'] == 'slack.message' and isinstance(event.get('metadata'), dict)
                 if slack:  # its title names people as they become known: the same message, not an edit (slack_raw_title)
                     digest_event = {**event, 'title': slack_raw_title(event)}

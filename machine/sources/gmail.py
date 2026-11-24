@@ -158,9 +158,9 @@ def message_event(account, raw, config=None):
     report = bounces.read_report(raw.get('payload'))  # a delivery report (bounce): its recipients, read from its structure
     if report:
         metadata['bounce'] = report
-    files = attachment_names(raw.get('payload'))
-    if files:  # sealed at rest with the rest of what a message says (not in message_seal.PLAIN_METADATA)
-        metadata['attachments'] = files
+    # Sealed at rest with the rest of what a message says (not in message_seal.PLAIN_METADATA). Empty: it had none, so
+    # the checks that close a to-do can say so; a message collected before has no list, and then nobody can tell.
+    metadata['attachments'] = attachment_names(raw.get('payload'))
     booked = bookings.read(bodies['text/html'])
     if booked:  # a booking's structured data (flights, hotels, trains, cars): the trip notes are built from it (trip_notes.py)
         metadata['bookings'] = booked

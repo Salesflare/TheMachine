@@ -8,7 +8,7 @@ import urllib.parse
 
 import i18n
 from machine.cards import CHAT_HANDLE, chat_plain_name
-from machine.text import _address, clamp, intercom_note, split_quoted_history
+from machine.text import _address, clamp, intercom_note, own_part
 import next_actions
 from timeutil import local_tz, now
 
@@ -205,10 +205,7 @@ def chat_final_step(action):
 
 def chat_excerpt(body, subject=''):
     """The new part of a message: its quoted history and signature left out, the first lines kept."""
-    text = split_quoted_history(str(body or ''), subject)[0]
-    lines = [line.rstrip() for line in text.replace('\r', '').split('\n') if not line.lstrip().startswith('>')]
-    text = re.split(r'\n-- ?\n', '\n'.join(lines))[0]
-    return chat_text(re.sub(r'\n{3,}', '\n\n', text).strip(), chars=1500)
+    return chat_text(own_part(body, subject), chars=1500)
 
 
 def chat_person(name):
