@@ -112,7 +112,7 @@ def _wake(db, suggestion_id, reason, at):
 def notice(db, suggestion_id):
     """The notice a to-do that comes back from Later gets (wake_snoozed), one per return."""
     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?', (suggestion_id,))
-    db.execute("UPDATE deliveries SET status='queued',reminder=1 WHERE suggestion_id=? AND status IN ('sent','uncertain')", (suggestion_id,))
+    db.execute("UPDATE deliveries SET status='queued',reminder=1,error=NULL WHERE suggestion_id=? AND status IN ('sent','uncertain')", (suggestion_id,))
 
 
 # ------------------------------------------------------------------ what the owner does

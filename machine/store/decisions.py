@@ -1247,7 +1247,7 @@ class DecisionsStore:
                     self.queue_preparation(db,row['id'],action_basis.SNOOZE_RESUMED+now(),resume_action=True)
                 # Exactly one new outbox intent per elapsed snooze. An unknown
                 # previous send must be reconciled, not blindly retried.
-                db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1 WHERE suggestion_id=? AND status IN ('sent','uncertain')",(row['id'],))
+                db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('sent','uncertain')",(row['id'],))
             return_waiting(db)  # those the review left waiting on someone else, when it is time to chase
             self.rewait_handoffs(db)
             return len(rows)
