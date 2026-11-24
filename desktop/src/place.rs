@@ -50,6 +50,12 @@ impl Corner {
     }
 }
 
+/// How much larger all of it is for a person who has larger text: as their text, while a screen of this size still has room.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn larger(text: f64, w: f64, h: f64) -> f64 {
+    text.min(w / 400.0).min(h / 480.0).max(1.0)
+}
+
 /// A hidden robot: down at the bottom edge, where it stood.
 pub fn peek(robot: Rect, area: Rect) -> Rect {
     Rect { y: area.y + area.h - PEEK, h: PEEK, ..robot }
@@ -95,6 +101,21 @@ pub fn box_at(robot: Rect, area: Rect, width: f64, height: f64) -> Rect {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn it_grows_with_the_text_where_there_is_room() {
+        assert_eq!(larger(1.0, 1920.0, 1032.0), 1.0);
+        assert_eq!(larger(1.5, 1920.0, 1152.0), 1.5);
+        assert_eq!(larger(2.25, 1920.0, 1152.0), 2.25);
+        assert_eq!(larger(2.25, 1280.0, 672.0), 1.4);
+        assert_eq!(larger(1.5, 640.0, 400.0), 1.0); // never smaller
+        for (text, w, h) in [(1.5, 1280.0, 672.0), (2.25, 1280.0, 672.0), (2.25, 1920.0, 1032.0)] {
+            let by = larger(text, w, h);
+            let area = Rect { x: 0.0, y: 0.0, w: w / by, h: h / by };
+            let at = box_at(Corner::default().robot(area), area, BOX_WIDTH, 700.0_f64.min(area.h - 16.0));
+            assert!(at.x >= -SHADOW && at.x + at.w <= area.w + SHADOW && at.y >= -SHADOW && at.y + at.h <= area.h + SHADOW, "{at:?} in {area:?}");
+        }
+    }
 
     const AREA: Rect = Rect { x: 1920.0, y: 30.0, w: 1280.0, h: 690.0 };
 
