@@ -38,7 +38,7 @@ Até lá, **Automático** usa o reconhecimento de fala do próprio navegador, se
 - **Precisão** (somente na sua Machine): **Mais preciso** funciona melhor para a maioria dos idiomas. **Mais rápido** é mais ágil, mas comete mais erros, e é a opção padrão em uma Machine Padrão.
 - **Idioma**: **Detectar** funciona com todos os idiomas do app. Escolher o seu idioma é um pouco mais rápido.
 
-Para conversar com a The Machine em voz alta, veja [Falar ao vivo](talk-live.md).
+Para conversar com a The Machine em voz alta, veja [Conversa ao vivo](talk-live.md).
 
 ## Quando não funciona
 
