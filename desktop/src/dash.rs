@@ -360,6 +360,11 @@ fn load(app: &AppHandle, window: &WebviewWindow, machine: &Machine) {
     let Ok(url) = Url::parse(&format!("{}{path}", machine.url)) else { return };
     card::session(window, machine, &url);
     let _ = window.navigate(url);
+    look(app, machine, load);
+}
+
+/// Whether it answers what is loading.
+fn look(app: &AppHandle, machine: &Machine, load: u64) {
     let (app, machine) = (app.clone(), machine.clone());
     std::thread::spawn(move || {
         let reached = machine.check();
@@ -532,6 +537,7 @@ pub fn focused(app: &AppHandle, of: &str, on: bool) {
         keep(app);
     }
     app.state::<Shared>().look_soon(); // whether it speaks
+    crate::front::changed();
 }
 
 // Its place and size
@@ -651,6 +657,15 @@ pub fn reload(app: &AppHandle) {
         return retry(app);
     }
     let _ = window.reload();
+    if let (true, Some(machine)) = (window.label() == LABEL, app.state::<Shared>().machine()) {
+        let load = {
+            let shared = app.state::<Shared>();
+            let mut dash = shared.dash.lock().unwrap();
+            dash.loads += 1;
+            dash.loads
+        };
+        look(app, &machine, load);
+    }
 }
 
 #[cfg_attr(windows, allow(dead_code))]

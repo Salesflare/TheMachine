@@ -6,6 +6,7 @@ screenshot of each step. For CI's own throwaway computer (desktop.yml): it moves
 The last for the steps over https, where its root is trusted. The dashboard opens in its installed app or the browser here;
 the app's own window is window.py's.
 """
+import base64
 import ctypes
 import json
 import os
@@ -19,7 +20,10 @@ import winreg
 from ctypes import wintypes as w
 
 from standin import LEAVES, SNOOZE, Machine, TODOS
-from windows_tools import *
+from windows_tools import (
+    BUBBLE, CERTIFICATE, DEBUG, ENTER, ESCAPE, MAIL, PORT, SM, SNIP, SOURCE, STATE, App, alt_f4, browsers_closed, click, drag, finish, fresh, in_corner,
+    in_front, key, move, need, need_window, out, page, people, png, press, reasons, resolution, sandbox, saved, says, scale, scheme, step, to_front, tray,
+    until, user, work_area, write)
 
 fresh()
 resolution(1920, 1080)
@@ -491,7 +495,7 @@ def _():
     press(app, '#close')
 
 
-CARD, BUBBLE = 'compact=1', 'bubble.html'
+CARD = 'compact=1'
 
 
 def carded(todo):
