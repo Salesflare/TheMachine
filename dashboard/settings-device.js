@@ -1,7 +1,9 @@
 // This device: notifications on and the app installed, with the controls in Settings, General, This device. The steps
 // to get there are rows of the setup to-do at the top of To-dos (setup-card.js). Every browser prompt comes from the
 // owner's own tap. Inside the phone app, one quiet line at the top when its notifications are off (#device-nudge).
-const pushOK='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+// The desktop app's window (window.machineDesktop, from its desktop/): an app already, with notifications and downloads of its own.
+const desktopApp=!!window.machineDesktop;
+const pushOK=!desktopApp&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 // iPhone/iPad: Web Push exists only in the Home Screen app (iOS 16.4+), never in a Safari tab.
 const iosTab=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const iosHint='On iPhone and iPad: tap Share, then Add to Home Screen. Open The Machine from there to turn on notifications.';
@@ -11,10 +13,10 @@ const devStore={get:k=>{try{return localStorage.getItem(k)}catch{return null}},s
 const DEV=(()=>{const ua=navigator.userAgent;let framed=true;try{framed=window.top!==window}catch{}
  return {phoneApp:/ TheMachineApp\//.test(ua),ios:iosTab,android:/Android/.test(ua),mobile:iosTab||/Android|Mobi/.test(ua),framed,chromium:'onbeforeinstallprompt' in window,
   macSafari:!iosTab&&/Macintosh/.test(ua)&&/Version\/(1[7-9]|[2-9]\d)\b.*Safari/.test(ua)&&!/Chrome|Chromium|CriOS|Edg|Firefox|FxiOS|OPR/.test(ua)}})();
-const nudgeable=!DEV.framed&&'serviceWorker' in navigator;
+const nudgeable=!DEV.framed&&!desktopApp&&'serviceWorker' in navigator;
 // A phone: by its user agent, or a small touch screen asking for desktop sites. There the phone app is a store link.
 const onPhone=()=>{if(DEV.mobile)return true;try{return matchMedia('(pointer: coarse)').matches&&Math.min(screen.width,screen.height)<600}catch{return false}};
-const inApp=()=>['standalone','fullscreen','window-controls-overlay'].some(m=>matchMedia(`(display-mode: ${m})`).matches)||navigator.standalone===true;
+const inApp=()=>desktopApp||['standalone','fullscreen','window-controls-overlay'].some(m=>matchMedia(`(display-mode: ${m})`).matches)||navigator.standalone===true;
 let installEvt=null,relatedInstalled=false;
 // Seen as the app: kept, as a tab can't tell. An install offer: not installed.
 if(inApp())devStore.set('app-installed','1');
@@ -98,7 +100,7 @@ const DEVICE_HELP=html` <a class="learn" href="https://themachine.computer/help/
 // setHTML, only when the markup changed (a redraw would close an open details or move the focus)
 const putHTML=(el,h)=>{const s=String(h);if(el.dataset.html!==s){setHTML(el,h);el.dataset.html=s}};
 function deviceSettings(){const {app}=deviceRows,small=app.querySelector('small'),act=app.querySelector('.device-act'),set=putHTML;
- app.hidden=!nudgeable;
+ app.hidden=!nudgeable;deviceRows.push.hidden=desktopApp;
  if(installEvt){set(small,html`${DEV.mobile?'Opens like an app, from your home screen.':'Pin it to your taskbar or dock.'}${DEVICE_HELP}`);set(act,html`<button type="button" data-device="install-app">Install app</button>`)}
  else if(appInstalled()){set(small,html`${'Installed on this device.'}${DEVICE_HELP}`);set(act,html`<span class="device-done">Installed</span>`)}
  else{set(small,html`${installSteps()}${DEVICE_HELP}`);set(act,html``)}
@@ -125,6 +127,7 @@ $('#push-toggle').onclick=async()=>{const b=$('#push-toggle');if(!pushOK){toast(
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){pushCheck();phonePushCheck()}});
 addEventListener('machinephone',()=>{phonePush='';if(lazyIn('settings'))renderNotify()});  // the app's part came in after this page drew
 pushCheck(true);
+if(desktopApp)addEventListener('machinedesktop',({detail:d})=>d?.saved?toast(t('Saved to Downloads')):d?.failed&&toast(t('Couldn’t save it.'),true));
 // A notification opens its link in this page: only the part after # changes, so nothing reloads
 if(pushOK)navigator.serviceWorker.addEventListener('message',e=>{if(!e.data?.open)return;const u=new URL(e.data.open,location.href);
  if(u.origin!==location.origin||u.pathname!==location.pathname||u.search!==location.search){location.href=u.href;return}if(u.hash!==location.hash)location.hash=u.hash;else dispatchEvent(new HashChangeEvent('hashchange'))});

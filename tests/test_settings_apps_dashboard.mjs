@@ -52,6 +52,18 @@ async function open(page,url){await page.goto('about:blank');await page.goto(url
  await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#ai-official a[data-ai-claude]').waitFor()}
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+ // The desktop app's window (window.machineDesktop): an app already, with notifications and downloads of its own
+ {store=STORE;const context=await browser.newContext({viewport:{width:1024,height:640}}),page=await context.newPage();
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(()=>Object.defineProperty(window,'machineDesktop',{value:Object.freeze({version:1})}));
+  await open(page,base+'/#settings/apps');
+  assert.deepEqual(await stores(page),['ios','android']);assert.deepEqual(await computer(page),[],'nothing to install');
+  assert.deepEqual(await page.evaluate(()=>[document.querySelector('#device-app').hidden,document.querySelector('#device-push').hidden]),[true,true]);
+  for(const [detail,text] of [[{saved:'a.pdf'},'Saved to Downloads'],[{failed:'a.pdf'},'Couldn’t save it.']]){
+   await page.evaluate(d=>dispatchEvent(new CustomEvent('machinedesktop',{detail:d})),detail);
+   await page.locator('#toast.show',{hasText:text}).waitFor()}
+  await context.close()}
  for(const [name,ua,width,want] of [['computer',null,1440,['ios','android']],['narrow',null,390,['ios','android']],['iphone',IPHONE,390,['ios']],['android',ANDROID,390,['android']],['in-app',IPHONE+' TheMachineApp/1.0',390,[]]]){
   store=STORE;
   const context=await browser.newContext({viewport:{width,height:844},...(ua?{userAgent:ua}:{})}),page=await context.newPage();
