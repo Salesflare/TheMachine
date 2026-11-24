@@ -34,7 +34,7 @@ function helpDoc(a){const ids=[...(a.anchors||[])];
   return fill(String(s??'').replace(/\u0000/g,'').replace(/`([^`]+)`/g,(m,c)=>c1+c+c2).replace(/\*\*(.+?)\*\*/g,(m,b)=>b1+b+b2)
    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(m,label,href)=>{const md=/^([a-z0-9-]+)\.md(?:#([a-z0-9-]+))?$/.exec(href);
     return md?put(html`<a href="${HELP}${md[1]}${md[2]?'#'+md[2]:''}" data-help-slug="${md[1]}" data-help-anchor="${md[2]||''}">`)+label+a2
-     :/^(https:|mailto:)/.test(href)?put(html`<a href="${fill(href)}" target="_blank" rel="noopener">`)+label+a2:label}))};
+     :/^(https:|mailto:)/.test(href)?put(html`<a href="${href.replace(/\u0000\d+\u0000/g,'')}" target="_blank" rel="noopener">`)+label+a2:label}))};
  const out=[html`<h3>${a.title}</h3>`,a.summary?html`<p class="help-sum">${inline(a.summary)}</p>`:''];let list=null,para=[],code=null;
  const flush=()=>{if(para.length)out.push(html`<p>${para.map((p,i)=>html`${i?' ':''}${inline(p)}`)}</p>`);para=[];if(list){const items=list.items.map(i=>html`<li>${inline(i)}</li>`);out.push(list.tag==='ul'?html`<ul>${items}</ul>`:html`<ol>${items}</ol>`)}list=null};
  for(const line of String(a.body||'').split('\n')){

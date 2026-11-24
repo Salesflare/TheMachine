@@ -105,6 +105,7 @@ try{
   await fam.locator('.family-question-form [name=member]').selectOption('fm_alex');await fam.locator('.family-question-form [name=text]').fill('Is the bike ready?');await acted(()=>fam.locator('.family-question-form button').click(),'family_question');
   assert.deepEqual(calls.at(-1),{action:'family_question',args:{member_id:'fm_alex',text:'Is the bike ready?'}});
   assert.match(await fam.locator('.family-free>p.muted').first().innerText(),/not all known: you \(sam@work\.example\)/);
+  assert.match((await fam.locator('.family-plans li').first().innerText()).replace(/\s+/g,' '),/In: Robin · Waiting: Alex Add to my calendar/);
   await fam.locator('.family-free-form [name=start]').fill('2026-10-24');await acted(()=>fam.locator('.family-free-form button').click(),'family_free');
   assert.deepEqual(calls.at(-1),{action:'family_free',args:{start:'2026-10-24',days:7}});
   await fam.locator('.family-todo-form [name=title]').fill('Groceries');await fam.locator('.family-todo-form [name=due]').fill('2026-10-23');await acted(()=>fam.locator('.family-todo-form button').click(),'family_todo');
