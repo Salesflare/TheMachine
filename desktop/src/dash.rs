@@ -80,7 +80,16 @@ pub fn front() -> bool {
     #[cfg(windows)]
     return foreground().is_some();
     #[cfg(not(windows))]
-    FRONT.load(Ordering::Relaxed)
+    (FRONT.load(Ordering::Relaxed) && !behind())
+}
+
+/// Its window has the keys of a program that isn't in front: it was made while the person went to another one.
+#[cfg(not(windows))]
+pub fn behind() -> bool {
+    #[cfg(target_os = "macos")]
+    return FRONT.load(Ordering::Relaxed) && !crate::mac_app::active();
+    #[cfg(not(target_os = "macos"))]
+    false
 }
 
 /// A file is in front: the robot stays as it was, with the to-do it may be from.
@@ -389,14 +398,24 @@ fn unreached(app: &AppHandle, load: u64) {
     if this && !there {
         return view(app, View::Offline); // no page that could be asked
     }
-    let here = app.clone();
+    let ends = move |app: &AppHandle, kept: bool| {
+        let this = app.state::<Shared>().dash.lock().unwrap().loads == load;
+        if this && !kept {
+            view(app, View::Offline);
+        }
+    };
+    let (here, told) = (app.clone(), std::sync::Arc::new(AtomicBool::new(false)));
+    let tells = told.clone();
     let _ = window.eval_with_callback("!!document.querySelector('link[rel=manifest]')", move |kept| {
-        later(&here, move |app| {
-            let this = app.state::<Shared>().dash.lock().unwrap().loads == load;
-            if this && kept.trim() != "true" {
-                view(app, View::Offline);
-            }
-        });
+        tells.store(true, Ordering::Relaxed);
+        later(&here, move |app| ends(app, kept.trim() == "true"));
+    });
+    let app = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_secs(5));
+        if !told.load(Ordering::Relaxed) {
+            later(&app, move |app| ends(app, false)); // a page between two says nothing
+        }
     });
 }
 
@@ -512,11 +531,21 @@ pub fn close(app: &AppHandle) {
         let _ = window.hide();
         return focused(app, LABEL, false);
     }
-    // A full screen that is hidden stays as an empty one
+    // A full screen that is hidden stays as an empty one, and one that isn't out of it yet shows again
+    #[cfg(target_os = "macos")]
+    crate::mac_app::out_of_full();
     let _ = window.set_fullscreen(false);
     let app = app.clone();
     std::thread::spawn(move || {
-        std::thread::sleep(Duration::from_millis(1200));
+        for _ in 0..16 {
+            std::thread::sleep(Duration::from_millis(300));
+            #[cfg(target_os = "macos")]
+            if crate::mac_app::is_full() {
+                continue;
+            }
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(300));
         later(&app, move |app| {
             let _ = window.hide();
             focused(app, LABEL, false);

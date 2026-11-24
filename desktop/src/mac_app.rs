@@ -6,17 +6,17 @@ use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject, Bool, ClassBuilder, NSObject, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{class, define_class, msg_send, sel, AnyThread, DefinedClass, MainThreadMarker, MainThreadOnly, Message};
 use objc2_app_kit::{
-    NSAlert, NSAlertFirstButtonReturn, NSApplication, NSAutoresizingMaskOptions, NSButton, NSColor, NSEventModifierFlags, NSModalResponse, NSTextField, NSTitlebarSeparatorStyle, NSView, NSWindow,
-    NSWindowTitleVisibility,
+    NSAlert, NSAlertFirstButtonReturn, NSApplication, NSAutoresizingMaskOptions, NSButton, NSColor, NSEventModifierFlags, NSModalResponse, NSRunningApplication, NSTextField, NSTitlebarSeparatorStyle, NSView, NSWindow,
+    NSWindowDidExitFullScreenNotification, NSWindowTitleVisibility,
 };
-use objc2_foundation::{ns_string, NSArray, NSData, NSDictionary, NSError, NSObjectNSKeyValueObserverRegistration, NSPoint, NSRect, NSSize, NSString};
+use objc2_foundation::{ns_string, NSArray, NSData, NSDictionary, NSError, NSNotificationCenter, NSObjectNSKeyValueObserverRegistration, NSPoint, NSRect, NSSize, NSString};
 use objc2_user_notifications::{
     UNAuthorizationOptions, UNAuthorizationStatus, UNMutableNotificationContent, UNNotification, UNNotificationPresentationOptions, UNNotificationRequest, UNNotificationResponse,
     UNUserNotificationCenter, UNUserNotificationCenterDelegate,
 };
 use std::cell::RefCell;
 use std::path::Path;
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::OnceLock;
 use tauri::WebviewWindow;
 
@@ -646,4 +646,26 @@ pub fn awake(on: bool) {
             }
         }
     });
+}
+
+/// Whether the program is in front, as macOS says it to any thread.
+pub fn active() -> bool {
+    NSRunningApplication::currentApplication().isActive()
+}
+
+static FULL: AtomicBool = AtomicBool::new(false);
+
+/// A window starts to leave its full screen. On the main thread.
+pub fn out_of_full() {
+    static LISTENS: std::sync::Once = std::sync::Once::new();
+    FULL.store(true, Ordering::Relaxed);
+    LISTENS.call_once(|| {
+        // SAFETY: a constant of AppKit's.
+        let name = unsafe { NSWindowDidExitFullScreenNotification };
+        crate::mac::on(&NSNotificationCenter::defaultCenter(), name, || FULL.store(false, Ordering::Relaxed));
+    });
+}
+
+pub fn is_full() -> bool {
+    FULL.load(Ordering::Relaxed)
 }

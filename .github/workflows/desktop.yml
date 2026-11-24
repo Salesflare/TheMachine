@@ -56,6 +56,7 @@ jobs:
           smoke/certificate.sh "$RUNNER_TEMP/certificate"
           trap 'certutil -delstore Root "Made-up Machine root"' EXIT
           certutil -addstore -f Root "$(cygpath -w "$RUNNER_TEMP/certificate/root.pem")"
+          python -m pip install --quiet tzdata # Linux and macOS have the time zones built in
           failed=0
           python smoke/windows.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots "$RUNNER_TEMP/certificate" || failed=1
           python smoke/window.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/window || failed=1

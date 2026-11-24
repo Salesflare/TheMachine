@@ -375,7 +375,7 @@ mod system {
     }
 
     pub fn front(ids: &[String]) -> Front {
-        if KEYS.load(Ordering::Relaxed) {
+        if KEYS.load(Ordering::Relaxed) && !crate::dash::behind() {
             return Front::Own;
         }
         let Some(program) = NSWorkspace::sharedWorkspace().frontmostApplication() else { return Front::Other };

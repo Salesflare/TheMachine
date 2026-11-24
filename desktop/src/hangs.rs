@@ -97,19 +97,21 @@ fn pages(app: &AppHandle) {
         }
         for (i, label) in ["robot", "box"].into_iter().enumerate() {
             let Some(window) = app.get_webview_window(label) else { continue };
-            let tell = tell.clone();
-            let asked = window.clone();
-            let _ = app.run_on_main_thread(move || {
-                if !asked.is_visible().unwrap_or(false) {
-                    let _ = tell.send(None);
-                } else {
-                    let _ = asked.eval_with_callback("1", move |_| { let _ = tell.send(Some(i)); });
-                }
-            });
-            // An answer that comes too late is of another page than is waited for
-            let answers = (0..32).any(|_| match told.recv_timeout(STEP) {
-                Ok(of) => of.is_none_or(|of| of == i),
-                Err(_) => false,
+            // Twice: after the computer slept the first may get lost
+            let answers = (0..2).any(|_| {
+                let (tell, asked) = (tell.clone(), window.clone());
+                let _ = app.run_on_main_thread(move || {
+                    if !asked.is_visible().unwrap_or(false) {
+                        let _ = tell.send(None);
+                    } else {
+                        let _ = asked.eval_with_callback("1", move |_| { let _ = tell.send(Some(i)); });
+                    }
+                });
+                // An answer that comes too late is of another page than is waited for
+                (0..16).any(|_| match told.recv_timeout(STEP) {
+                    Ok(of) => of.is_none_or(|of| of == i),
+                    Err(_) => false,
+                })
             });
             missed[i] = if answers { 0 } else { missed[i] + 1 };
             if answers {
@@ -135,7 +137,7 @@ fn note(file: &Path, line: &str) {
 }
 
 fn about() -> String {
-    format!("{} {}, {} {}", env!("CARGO_PKG_VERSION"), std::env::consts::ARCH, std::env::consts::OS, system())
+    format!("{} {}, {} {}", env!("CARGO_PKG_VERSION"), std::env::consts::ARCH, std::env::consts::OS, system()).trim_end().to_string()
 }
 
 #[cfg(target_os = "macos")]
