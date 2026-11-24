@@ -1,24 +1,19 @@
-"""The dashboard's own window on a Mac, used as a person would: mac.py's other half, with the same arguments, for the same
-throwaway computer only."""
+"""The dashboard's own window, used as a person would: the other half of mac.py and windows.py, with the same arguments, for the
+same throwaway computers only. What differs is in on_mac.py, on_windows.py and on_linux.py."""
+import importlib
 import json
-import os
 import pathlib
 import subprocess
 import sys
-import threading
 import time
 
-from mac_tools import (
-    A, C, CMD, CTRL, ENTER, ESCAPE, F, ID, LIBRARY, MAIL, NAME, PORT, Q, V, VERSION, W, all_windows, App, click, drag,
-    finish, fresh, in_front, key, need, need_window, no_browser, other, out, page, png, press, run, sandbox, saved, says, screens,
-    step, until, work_area, write,
-)
 from standin import Machine
 
+on = importlib.import_module({'darwin': 'on_mac', 'win32': 'on_windows', 'linux': 'on_linux'}[sys.platform])
+App, SYSTEM, PORT, MAIL, DOWNLOADS, ENTER, ESCAPE = on.App, on.SYSTEM, on.PORT, on.MAIL, on.DOWNLOADS, on.ENTER, on.ESCAPE
+clipboard, click, dark, drag, fresh, here, hit, key, need, no_browser = on.clipboard, on.click, on.dark, on.drag, on.fresh, on.here, on.hit, on.key, on.need, on.no_browser
+other, ours, out, page, png, press, sandbox, saved, says, step, until, write = on.other, on.ours, on.out, on.page, on.png, on.press, on.sandbox, on.saved, on.says, on.step, on.until, on.write
 HERE = f'http://127.0.0.1:{PORT}'
-DOWNLOADS = pathlib.Path.home() / 'Downloads'
-R, G, ZERO, PLUS, MINUS, COMMA, S, LEFT, M, FOUR, ONE = 15, 5, 29, 24, 27, 43, 1, 33, 46, 21, 18
-SHIFT = 1 << 17
 fresh()
 (out / 'note.txt').write_text('made up')
 (out / 'second.txt').write_text('made up too')
@@ -27,38 +22,11 @@ machine.window = machine.compact = True
 elsewhere = Machine(PORT + 1)  # the account, at an address of its own
 elsewhere.machine = machine
 machine.account = elsewhere.at
-print('macOS', VERSION, json.dumps(screens()), flush=True)
-
-
-def ask(what):
-    return run('osascript', '-e', f'tell application "System Events" to tell process "{NAME}" to {what}')
-
-
-def titles():
-    return ask('get name of every window').stdout.strip()
-
-
-def menu(of, name):
-    made = ask(f'click menu item "{name}" of menu 1 of menu bar item "{of}" of menu bar 1')
-    need(made.returncode == 0, made.stderr)
-    time.sleep(0.5)
-
-
-def sheet():
-    told = ask('get value of static texts of sheet 1 of window 1')
-    return told.stdout.strip() if told.returncode == 0 else ''
-
-
-def here(selector, name='app'):
-    """Where something in the window is on the screen: its page may be zoomed, under the title bar."""
-    at = page(name, f'(() => {{ const e = document.querySelector({json.dumps(selector)}).getBoundingClientRect(); return [e.x + e.width / 2, e.y + e.height / 2, innerWidth, innerHeight] }})()')
-    r = need_window(app.window() if name == 'app' else app.settings())
-    by = r.width / at[2]
-    return round(r.left + at[0] * by), round(r.bottom - (at[3] - at[1]) * by)
+print(on.VERSION, json.dumps(on.area()), flush=True)
 
 
 def tap(selector, name='app'):
-    click(*here(selector, name))
+    click(*here(app, selector, name))
 
 
 def told(selector='#told', name='app'):
@@ -76,16 +44,12 @@ def dashboard():
 def gone_to(at, seconds=30):
     found = until(lambda: at in machine.left or at in elsewhere.left, seconds)
     no_browser()
-    until(lambda: 'Safari' not in in_front(), 8)
     back_to_it()
     return found
 
 
 def back_to_it():
-    if ID not in in_front():
-        run('open', sandbox)
-    need(until(lambda: ID in in_front(), 10), 'in front: ' + in_front())
-    time.sleep(1)
+    on.back_to_it(app)
 
 
 def landed(name):
@@ -106,12 +70,8 @@ def stop(how=None):
     need(app.ended(), 'the process is gone')
 
 
-def kind():
-    return run('lsappinfo', 'info', '-only', 'ApplicationType', ID).stdout.strip()
-
-
 def settings():
-    menu('The Machine', 'Settings…') if not app.settings() else None
+    app.settings() or on.settings_open(app)
     need(until(app.settings), 'its window')
     time.sleep(0.6)
 
@@ -122,18 +82,7 @@ def switch(name, on=None):
     return page('settings', f'document.querySelector("#{name}").checked')
 
 
-def no_network():
-    """Python, not the app, may be asked about: it is said no to, as it needs nothing there."""
-    while True:
-        of = 'tell application "System Events" to tell process "UserNotificationCenter"'
-        if 'Python' in run('osascript', '-e', f'{of} to get value of static texts of window 1').stdout:
-            run('osascript', '-e', f'{of} to click button "Don’t Allow" of window 1')
-        time.sleep(3)
-
-
-threading.Thread(target=no_network, daemon=True).start()
-dark = lambda on: run('osascript', '-e', f'tell application "System Events" to tell appearance preferences to set dark mode to {str(on).lower()}')  # noqa: E731
-ours = other()
+other()
 start(account=elsewhere.at)
 
 
@@ -141,14 +90,13 @@ start(account=elsewhere.at)
 def _():
     need(until(app.window, 60), f'the window shows {app.plain()}')
     time.sleep(2)
-    need(ID in in_front(), in_front())
-    need('Foreground' in kind(), kind())
-    print([(x.get('kCGWindowOwnerName'), x.get('kCGWindowName'), x['kCGWindowLayer']) for x in all_windows()], flush=True)
+    need(ours(), on.in_front())
+    on.like_any_app(app)
     need(not app.box() and not app.robot(), f'one thing at a time {app.raw()}')
     need('Sign in' in text(), text())
     r = app.window()
-    need(page('app', 'innerHeight') < r.height, f'its page is below the title bar {r} {page("app", "innerHeight")}')
-    return f'{r} on {work_area()}; {text()}; {titles()}'
+    need(SYSTEM == 'linux' or page('app', 'innerHeight') < r.height, f'its page is below the title bar {r} {page("app", "innerHeight")}')
+    return f'{r} on {on.area()}; {text()}; {on.names(app)}'
 
 
 @step('sign in by address')
@@ -161,9 +109,9 @@ def _():
     need(until(lambda: told('#error'), 30), 'a wrong one is told')
     png('wrong-address')
     tap('#address')
-    key(A, CMD)
-    run('pbcopy', input=HERE)
-    key(V, CMD)
+    hit('all')
+    clipboard(HERE)
+    hit('paste')
     key(ENTER)
     need(dashboard(), 'the dashboard')
     seen = machine.seen[-1]
@@ -181,7 +129,7 @@ def _():
     need(until(app.robot, 8), 'another program in front: there')
     back_to_it()
     need(until(lambda: not app.robot(), 8), 'and away again')
-    return titles()
+    return on.names(app)
 
 
 @step('links')
@@ -201,7 +149,7 @@ def _():
 @step('a link in a frame')
 def _():
     del machine.left[:]
-    x, y = here('#frame')
+    x, y = here(app, '#frame')
     at = page('app', '(() => { const f = document.querySelector("#frame"), r = f.getBoundingClientRect(), a = f.contentDocument.querySelector("#framed").getBoundingClientRect(); return [a.x + a.width / 2 - r.width / 2, a.y + a.height / 2 - r.height / 2] })()')
     click(round(x + at[0]), round(y + at[1]))
     need(gone_to('/out?framed'), machine.left)
@@ -223,8 +171,8 @@ def _():
     tap('#own')
     need(until(lambda: any(s.get('at') == '#person=7' for s in machine.seen), 8), machine.seen)
     need(len(app.plain()) == 1 and page('app', 'me') == me, 'the same page, in the same window')
-    key(LEFT, CMD)
-    need(until(lambda: page('app', 'location.hash') == '', 5), 'Command-[ is back: ' + str(page('app', 'location.hash')))
+    hit('back')
+    need(until(lambda: page('app', 'location.hash') == '', 5), 'back: ' + str(page('app', 'location.hash')))
 
 
 @step('the account in the browser')
@@ -251,10 +199,10 @@ def _():
             wrong.append(f'{selector}: {e}')
             png('download-' + selector[1:])
         if len(app.plain()) != 1:
-            wrong.append(f'{selector}: {app.plain()} {titles()}')
+            wrong.append(f'{selector}: {app.plain()} {on.names(app)}')
     need(not wrong, wrong)
     need(machine.left == [] or 'chat-file' not in str(machine.left), f'none in the browser {machine.left}')
-    need('com.apple.quarantine' in run('xattr', str(DOWNLOADS / 'a.txt')).stdout, 'marked as from the internet')
+    need(on.marked(DOWNLOADS / 'a.txt'), 'marked as from the internet')
     need(dashboard(), 'the dashboard stays')
 
 
@@ -264,40 +212,40 @@ def _():
     need(until(lambda: len(app.plain()) == 2, 10), f'a window of its own {app.plain()}')
     time.sleep(2)
     png('a-pdf')
-    was = titles()
-    key(S, CMD)
+    was = on.names(app)
+    hit('save')
     need(until(lambda: (DOWNLOADS / 'Plan B.pdf').exists(), 10), [p.name for p in DOWNLOADS.iterdir()])
     need((DOWNLOADS / 'Plan B.pdf').read_bytes().startswith(b'%PDF'), 'the file itself')
-    key(W, CMD)
-    need(until(lambda: len(app.plain()) == 1, 8), 'Command-W closes it')
-    need(ID in in_front() and dashboard(), 'the dashboard is there')
+    hit('close')
+    need(until(lambda: len(app.plain()) == 1, 8), 'it closes')
+    need(ours() and dashboard(), 'the dashboard is there')
     return was
 
 
 @step('alert, confirm and prompt')
 def _():
     tap('#alert')
-    need(until(sheet, 5), 'it asks')
+    need(until(lambda: on.dialog(app), 8), 'it asks')
     time.sleep(0.5)
     png('alert')
     key(ENTER)
     need(until(lambda: told() == 'alerted', 5), told())
     for how, said in ((ESCAPE, 'confirm false'), (ENTER, 'confirm true')):
         tap('#confirm')
-        need(until(sheet, 5), 'it asks')
+        need(until(lambda: on.dialog(app), 8), 'it asks')
         time.sleep(0.5)
         png('confirm')
         key(how)
         need(until(lambda: told() == said, 5), told())
     tap('#prompt')
-    need(until(sheet, 5), 'it asks')
+    need(until(lambda: on.dialog(app), 8), 'it asks')
     time.sleep(0.5)
     write('Alex')
     png('prompt')
     key(ENTER)
     need(until(lambda: told() == 'prompt Alex', 5), told())
     tap('#prompt')
-    need(until(sheet, 5), 'it asks')
+    need(until(lambda: on.dialog(app), 8), 'it asks')
     time.sleep(0.5)
     key(ESCAPE)
     need(until(lambda: told() == 'prompt null', 5), told())
@@ -308,57 +256,53 @@ def _():
     tap('#pick')
     time.sleep(2)
     png('choose-a-file')
-    key(G, CMD | SHIFT)
-    time.sleep(1)
-    write(str(out / 'note.txt'))
-    time.sleep(0.5)
-    key(ENTER)
-    time.sleep(1)
-    key(ENTER)
+    on.choose(out / 'note.txt')
     need(until(lambda: told('#picked') == 'note.txt', 8), told('#picked'))
 
 
 @step('drop files')
 def _():
-    source = out.parent / 'source'
-    made = run('clang', '-fobjc-arc', '-framework', 'AppKit', '-o', str(source), str(pathlib.Path(__file__).with_name('source.m')))
-    need(made.returncode == 0, made.stderr)
-    r = need_window(app.window())
-    grab = subprocess.Popen([str(source), str(out / 'note.txt'), str(out / 'second.txt')])
-    try:
-        time.sleep(1.5)
-        x, y = here('#drop')
-        need(not (40 <= x <= 440 and 100 <= y <= 200), f'the drop is beside it: {x},{y} in {r}')
-        drag((100, 150), (x, y))
+    with on.drop_from(app, out / 'note.txt', out / 'second.txt') as at:
+        drag(at, here(app, '#drop'))
         need(until(lambda: told() == 'dropped note.txt, second.txt', 6), told())
-    finally:
-        grab.terminate()
     need(dashboard(), 'and the page stays')
 
 
 @step('copy and paste')
 def _():
     tap('#field')
-    key(A, CMD)
-    key(C, CMD)
-    need(until(lambda: run('pbpaste').stdout == 'some words', 3), run('pbpaste').stdout)
-    run('pbcopy', input='pasted')
-    key(V, CMD)
+    hit('all')
+    hit('copy')
+    need(until(lambda: clipboard() == 'some words', 3), clipboard())
+    clipboard('pasted')
+    hit('paste')
     need(until(lambda: page('app', '$("#field").value') == 'pasted', 3), page('app', '$("#field").value'))
-    key(6, CMD)  # Z
+    hit('undo')
     need(until(lambda: page('app', '$("#field").value') == 'some words', 3), page('app', '$("#field").value'))
 
 
 @step('find')
 def _():
+    if SYSTEM == 'windows':  # the browser's own
+        hit('find')
+        time.sleep(1)
+        write('last needle')
+        time.sleep(1)
+        key(ENTER)
+        need(until(lambda: page('app', 'scrollY') > 100, 5), f'it shows it {page("app", "scrollY")}')
+        png('find')
+        key(ESCAPE)
+        time.sleep(0.5)
+        page('app', 'scrollTo(0, 0)')
+        return
     tall = page('app', 'innerHeight')
-    key(F, CMD)
+    hit('find')
     need(until(lambda: page('app', 'innerHeight') < tall, 5), f'the bar takes its room {tall} {page("app", "innerHeight")}')
     write('last needle')
     time.sleep(1)
     png('find')
     need(until(lambda: page('app', 'scrollY') > 100, 5), f'it shows it {page("app", "scrollY")}')
-    key(A, CMD)
+    hit('all')
     write('needle')
     found = lambda: page('app', '(r => r.startContainer.parentNode.textContent.slice(0, 3) + r.startOffset)(getSelection().getRangeAt(0))')
     time.sleep(1)
@@ -368,7 +312,7 @@ def _():
         time.sleep(0.6)
         places.append(found())
     need(len(set(places[:3])) == 3 and places[3] == places[0], f'one after the other {places}')
-    key(G, CMD | SHIFT)
+    hit('find back')
     time.sleep(0.6)
     need(found() == places[2], f'and back {found()} {places}')
     png('found')
@@ -378,76 +322,76 @@ def _():
     key(ESCAPE)
     need(until(lambda: page('app', 'innerHeight') == tall, 5), 'Escape ends it')
     page('app', 'scrollTo(0, 0)')
-    key(C, CMD)
+    hit('copy')
 
 
 @step('zoom')
 def _():
     wide = page('app', 'innerWidth')
-    key(PLUS, CMD)
-    key(PLUS, CMD)
+    hit('zoom in')
+    hit('zoom in')
     need(until(lambda: abs(page('app', 'innerWidth') - wide / 1.25) < 4, 5), f'{wide} {page("app", "innerWidth")}')
     png('zoomed')
     need(saved()['zoom'] == 1.25, saved())
-    key(R, CMD)
+    hit('reload')
     time.sleep(2)
     need(dashboard() and abs(page('app', 'innerWidth') - wide / 1.25) < 4, 'also after Reload')
-    key(ZERO, CMD)
-    need(until(lambda: page('app', 'innerWidth') == wide, 5), 'Command-0')
-    key(MINUS, CMD)
+    hit('zoom none')
+    need(until(lambda: page('app', 'innerWidth') == wide, 5), 'and back')
+    hit('zoom out')
     need(until(lambda: page('app', 'innerWidth') > wide, 5), 'and smaller')
-    key(ZERO, CMD)
+    hit('zoom none')
 
 
 @step('close and open again')
 def _():
     me, at = page('app', 'me'), repr(app.window())
-    key(W, CMD)
+    hit('close')
     need(until(lambda: not app.window(), 5), 'closed')
     need(app.pids(), 'it keeps running')
     need(until(app.robot, 8), 'the robot is there')
-    run('open', sandbox)
-    need(until(app.window, 8), 'the Dock icon opens it')
+    on.reopen(app)
+    need(until(app.window, 8), 'opened again')
     need(page('app', 'me') == me and repr(app.window()) == at, 'where it was')
     need(len(app.pids()) == 1, app.pids())
-    menu('The Machine', 'Hide The Machine')
-    need(until(lambda: not app.window(), 8), 'hidden')
-    run('open', sandbox)
-    need(until(app.window, 8), 'and back')
+    if SYSTEM == 'mac':
+        on.menu('The Machine', 'Hide The Machine')
+        need(until(lambda: not app.window(), 8), 'hidden')
+        on.reopen(app)
+        need(until(app.window, 8), 'and back')
     back_to_it()
-    key(M, CMD)
-    need(until(lambda: not app.window(), 8), 'in the Dock')
-    run('open', sandbox)
+    on.minimize(app)
+    need(until(lambda: not app.window(), 8), 'minimized')
+    on.reopen(app)
     need(until(app.window, 8), 'and back')
 
 
 @step('full screen')
 def _():
     was = app.window()
-    key(F, CMD | CTRL)
-    whole = screens()[0]['whole']
+    hit('full')
+    whole = on.whole()
     need(until(lambda: app.window() and app.window().width == whole[2] - whole[0] and app.window().height >= whole[3] - whole[1] - 60, 10), f'{app.window()} on {whole}')
     time.sleep(2)
     png('full-screen')
     need(not app.robot(), 'no robot over it')
-    key(W, CMD)
+    hit('close')
     need(until(lambda: not app.window(), 10), 'closed')
     time.sleep(2)
     png('closed-from-full-screen')
-    run('open', sandbox)
+    on.reopen(app)
     need(until(app.window, 8), 'and back')
     need(until(lambda: repr(app.window()) == repr(was), 5), f'as it was: {app.window()}, {was}')
 
 
 @step('its place is kept')
 def _():
-    ask('set position of (first window whose subrole is "AXStandardWindow") to {60, 70}')
-    ask('set size of (first window whose subrole is "AXStandardWindow") to {700, 560}')
+    on.place(app, 60, 70, 700, 560)
     time.sleep(1)
     at = repr(app.window())
     need('700x560' in at, at)
     png('small')
-    stop(lambda: key(Q, CMD))
+    stop(lambda: on.quit_it(app))
     start(account=elsewhere.at)
     need(until(app.window, 30), 'it opens')
     need(dashboard(), 'the dashboard, still signed in')
@@ -457,8 +401,8 @@ def _():
 
 @step('settings')
 def _():
-    key(COMMA, CMD)
-    need(until(app.settings, 8), 'Command-,')
+    hit('settings')
+    need(until(app.settings, 8), 'its key')
     time.sleep(1)
     png('settings-light')
     dark(True)
@@ -467,8 +411,8 @@ def _():
     dark(False)
     s = {x: page('settings', f'document.querySelector("#{x}").checked') for x in ('robot', 'login')}
     need(s == {'robot': True, 'login': False}, s)
-    key(W, CMD)
-    need(until(lambda: not app.settings(), 5) and app.window(), 'Command-W closes only that')
+    hit('close')
+    need(until(lambda: not app.settings(), 5) and app.window(), 'only that closes')
     return f'{s}'
 
 
@@ -478,15 +422,15 @@ def _():
     need(switch('robot') is False, 'off')
     time.sleep(1)
     png('settings-without-robot')
-    key(W, CMD)
-    key(W, CMD)
+    hit('close')
+    hit('close')
     need(until(lambda: not app.window(), 5), 'the window closed')
     other()
     time.sleep(3)
     need(not app.robot() and not app.box(), f'no robot {app.raw()}')
-    need(ask('get name of menu bar item 1 of menu bar 2').returncode != 0, 'no icon in the menu bar')
-    run('open', sandbox)
-    need(until(app.window, 8), 'the Dock opens it')
+    need(on.icon_there() == (SYSTEM == 'windows'), 'its icon')
+    on.reopen(app)
+    need(until(app.window, 8), 'it opens')
     stop()
     start(account=elsewhere.at)
     need(until(app.window, 30) and dashboard(), 'so after a start')
@@ -499,7 +443,7 @@ def _():
 def _():
     back_to_it()
     settings()
-    need(page('settings', 'document.querySelector("#notify-row").hidden') is False, 'offered without the robot')
+    need(until(lambda: page('settings', 'document.querySelector("#notify-row").hidden') is False, 5), 'offered without the robot')
     need(saved()['notify'] is True, f'on with the robot off {saved()["notify"]}')
     hint = told('#notify-hint', 'settings')
     png('notifications')
@@ -509,12 +453,53 @@ def _():
         need(switch('notify') is False and saved()['notify'] is False, 'off')
         need(switch('robot') is True and switch('robot') is False and saved()['notify'] is False, 'and the robot leaves that so')
         need(switch('notify') is True, 'and on')
-    return f'{hint}; the banner itself is NOT TESTED'
+    if SYSTEM == 'mac':
+        return f'{hint}; the banner itself is NOT TESTED'
+    need('Not allowed' not in hint, hint)
+
+
+@step('a notification')
+def _():
+    """The system shows it, and its click opens the to-do."""
+    if SYSTEM == 'mac':
+        return 'NOT TESTED: macOS asks the person first'
+    hit('close') if app.settings() else None
+    key_, todo = f'{time.time_ns():x}', 'aa02'
+    machine.notices = [{'key': key_, 'id': todo, 'kind': 'todo', 'snooze': [['2h', '2 hours']]}]
+    time.sleep(6)
+    need(machine.notices and not on.kept(), f'not with the dashboard in front {on.kept()}')
+    other()
+    need(until(on.kept, 45), f'the system has it {machine.desks[-2:]}')
+    need(until(lambda: not machine.notices, 5), 'and it is got')
+    need(on.known_there() == 'The Machine', f'by its name: {on.known_there()}')
+    at = until(lambda: on.on_screen('Send Ravi the floor plan'), 8)
+    png('notification')
+    need(at, f'on the screen; {on.kept()}')
+    click(*at)
+    need(until(ours, 8), f'it comes to the front: {on.in_front()}')
+    need(until(lambda: todo in (page('app', 'location.hash') or ''), 8), page('app', 'location.hash'))
+    need(until(lambda: not on.kept(), 8), f'and it is gone: {on.kept()}')
+    page('app', 'location.hash = ""')
+    return on.in_front()
+
+
+@step('several notifications')
+def _():
+    if SYSTEM == 'mac':
+        return 'NOT TESTED: macOS asks the person first'
+    other()
+    machine.notices = [{'key': f'{time.time_ns():x}', 'id': t, 'kind': 'todo', 'snooze': []} for t in ('aa01', 'aa03')]
+    need(until(lambda: len(on.kept()) == 2, 60), f'each of them: {on.kept()}')
+    png('notifications-kept')
+    machine.todos = [x for x in machine.todos if x[0] != 'aa03']
+    gone = until(lambda: len(on.kept()) == 1, 45)
+    back_to_it()
+    need(gone, f'a done one goes: {on.kept()}')  # the other: as the app quits, see the end
 
 
 @step('a browser here may notify too')
 def _():
-    key(W, CMD) if app.settings() else None
+    hit('close') if app.settings() else None
     settings()
     if page('settings', 'document.querySelector("#robot").checked') is False:
         need(switch('robot') is True, 'on')
@@ -522,7 +507,9 @@ def _():
     need(not asks(), 'nothing is asked')
     machine.browser = 7
     other()  # nothing is said with the dashboard in front
-    need(until(lambda: machine.desks[-1][1] == '1', 45), str(machine.desks[-3:]))
+    before = len(machine.desks)
+    need(until(lambda: '1' in [d[1] for d in machine.desks[before:]], 45), str(machine.desks[-3:]))
+    time.sleep(1)
     back_to_it()
     settings()
     need(until(asks, 45), 'it asks')
@@ -535,7 +522,7 @@ def _():
     tap('#browser-no', 'settings')
     need(until(lambda: not asks(), 5) and saved()['none'] == 7, f'answered {saved()["none"]}')
     other()
-    need(until(lambda: machine.says[-1] == ('mac', '7'), 45), str(machine.says[-3:]))
+    need(until(lambda: machine.says[-1] == (SYSTEM, '7'), 45), str(machine.says[-3:]))
     back_to_it()
     settings()
     need(not asks(), 'not asked again')
@@ -544,14 +531,14 @@ def _():
 
 @step('the robot again')
 def _():
-    key(W, CMD) if app.settings() else None
+    hit('close') if app.settings() else None
     settings()
     if page('settings', 'document.querySelector("#robot").checked') is False:
         need(switch('robot') is True, 'on')
-    key(W, CMD)
+    hit('close')
     other()
     need(until(app.robot, 8), 'the robot is there')
-    need(ask('get name of menu bar item 1 of menu bar 2').returncode == 0, 'and its icon')
+    need(SYSTEM == 'linux' or on.icon_there(), 'and its icon')
 
 
 @step('closing quits, when the person wants that')
@@ -560,32 +547,32 @@ def _():
     settings()
     page('settings', '(() => { const s = document.querySelector("#quits"); s.value = "1"; s.dispatchEvent(new Event("change")) })()')
     need(until(lambda: saved().get('quits'), 5), saved())
-    key(W, CMD)
-    key(W, CMD)
+    hit('close')
+    hit('close')
     need(app.ended(), 'the process is gone')
     start(account=elsewhere.at)
     need(until(app.window, 30) and dashboard(), 'the window')
     settings()
     page('settings', '(() => { const s = document.querySelector("#quits"); s.value = ""; s.dispatchEvent(new Event("change")) })()')
     need(until(lambda: not saved().get('quits'), 5), saved())
-    key(W, CMD)
+    hit('close')
 
 
 @step('start at login')
 def _():
     settings()
-    on = switch('login')
+    works = switch('login')
     png('at-login')
     said = told('#error', 'settings')
-    if on:
+    if works:
         need(switch('login') is False, 'and off again')
-    key(W, CMD) if app.settings() else None
-    return f'{"works" if on else "NOT TESTED: macOS refuses it for this build"} {said}'
+    hit('close') if app.settings() else None
+    return f'{"works" if works else "NOT TESTED: macOS refuses it for this build"} {said}'
 
 
 @step('from the robot')
 def _():
-    key(W, CMD)
+    hit('close')
     need(until(lambda: not app.window(), 5), 'the window closed')
     other()
     need(until(app.robot, 8), 'the robot')
@@ -597,13 +584,14 @@ def _():
     png('robot-menu')
     press(app, '#menu-dashboard')
     need(until(app.window, 8), 'Open dashboard is this window')
-    need(until(lambda: ID in in_front(), 5), 'in front: ' + in_front())
+    need(until(lambda: ours(), 5), f'in front: {on.in_front()}')
     need(until(lambda: not app.box(), 5), 'the box closes')
 
 
 @step('the box and the window together')
 def _():
-    ask('set size of (first window whose subrole is "AXStandardWindow") to {640, 560}')
+    r = app.window()
+    on.place(app, r.left, r.top, 640, 560)
     app.again('--toggle')
     need(until(app.box, 8), 'the box over it')
     need(until(lambda: says('#todos'), 10), 'its list')
@@ -620,17 +608,14 @@ def _():
     key(ESCAPE)
     need(until(lambda: not app.box(), 5), 'the box closes')
     need(page('app', 'me') == me, 'the window is as it was')
-    return in_front()
+    return on.in_front()
 
 
 @step('a page that ends')
 def _():
     back_to_it()
     me = page('app', 'me')
-    pids = [int(x) for x in run('pgrep', '-f', 'com.apple.WebKit.WebContent').stdout.split()]
-    need(pids, 'its process')
-    for pid in pids:
-        os.kill(pid, 9)
+    on.pages_killed()
     need(until(lambda: app.answers('app') and page('app', 'typeof me === "string" ? me : ""') not in ('', me), 20), 'a fresh page')
     need(dashboard(), 'the dashboard')
 
@@ -638,7 +623,7 @@ def _():
 @step('signed out')
 def _():
     machine.away = elsewhere.at + '/open?to=' + 'app'
-    key(R, CMD)
+    hit('reload')
     need(until(lambda: 'Signed out' in text(), 10), text())
     png('signed-out')
     del elsewhere.links[:]
@@ -646,7 +631,7 @@ def _():
     need(until(lambda: elsewhere.links, 40), 'the account opens in the browser')
     png('waiting-for-the-browser')
     machine.away = None
-    need(run('open', '-a', sandbox, elsewhere.links[-1]).returncode == 0, 'the link it goes to')
+    on.link(app, elsewhere.links[-1])
     time.sleep(2)
     no_browser()
     found = text() if not dashboard() else 'back in the dashboard'
@@ -685,37 +670,15 @@ def _():
 
 @step('light and dark, small and large')
 def _():
-    area = work_area()
+    area = on.area()
     for name, w, h in (('1024', 1024, 640), ('large', area[2] - area[0], area[3] - area[1])):
-        ask(f'set position of (first window whose subrole is "AXStandardWindow") to {{{area[0]}, {area[1]}}}')
-        ask(f'set size of (first window whose subrole is "AXStandardWindow") to {{{w}, {h}}}')
-        for on in (False, True):
-            dark(on)
+        on.place(app, area[0], area[1], w, h)
+        for night in (False, True):
+            dark(night)
             time.sleep(2)
-            png(f'{name}-{"dark" if on else "light"}')
+            png(f'{name}-{"dark" if night else "light"}')
     dark(False)
     return app.window()
-
-
-def second(look):
-    """At two pixels a point, on a screen that isn't there."""
-    maker = out.parent / 'screen'
-    made = run('clang', '-fobjc-arc', '-framework', 'AppKit', '-framework', 'CoreGraphics', '-Wl,-U,_OBJC_CLASS_$_CGVirtualDisplay', '-o', str(maker), str(pathlib.Path(__file__).with_name('screen.m')))
-    need(made.returncode == 0, made.stderr)
-    runs = subprocess.Popen([str(maker)], stdout=subprocess.PIPE, text=True)
-    try:
-        if not until(lambda: len(screens()) == 2, 10):
-            return print('no second screen here', flush=True)
-        time.sleep(2)
-        area = work_area(1)
-        ask(f'set position of (first window whose subrole is "AXStandardWindow") to {{{area[0] + 20}, {area[1] + 20}}}')
-        ask('set size of (first window whose subrole is "AXStandardWindow") to {1200, 700}')
-        time.sleep(3)
-        look()
-    finally:
-        runs.terminate()
-        runs.wait()
-        time.sleep(2)
 
 
 @step('the real dashboard')
@@ -741,19 +704,18 @@ def _():
         key(ENTER)
         need(until(lambda: page('app', 'location.port') == '8970', 20), page('app', 'location.href'))
         time.sleep(6)
-        area = work_area()
+        area = on.area()
         for name, w, h in (('1024', 1024, 640), ('large', area[2] - area[0], area[3] - area[1])):
-            ask(f'set position of (first window whose subrole is "AXStandardWindow") to {{{area[0]}, {area[1]}}}')
-            ask(f'set size of (first window whose subrole is "AXStandardWindow") to {{{w}, {h}}}')
-            for on in (False, True):
-                dark(on)
+            on.place(app, area[0], area[1], w, h)
+            for night in (False, True):
+                dark(night)
                 time.sleep(3)
-                png(f'dashboard-{name}-{"dark" if on else "light"}')
+                png(f'dashboard-{name}-{"dark" if night else "light"}')
         dark(False)
         settings()
         png('dashboard-settings')
-        key(W, CMD)
-        key(W, CMD)
+        hit('close')
+        hit('close')
         other()
         need(until(app.robot, 8), 'the robot')
         click(*app.center())
@@ -762,7 +724,7 @@ def _():
         png('dashboard-box')
         key(ESCAPE)
         back_to_it()
-        second(lambda: png('dashboard-on-two-screens'))
+        on.second(app, lambda: png('dashboard-on-two-screens'))
         return f"{page('app', 'document.title')} {page('app', 'innerWidth')}"
     finally:
         runs.terminate()
@@ -785,7 +747,7 @@ def _():
     png('microphone-asked')
     found = told()
     if found == 'asking':
-        return 'macOS asks the person, which stays unanswered here'
+        return 'it asks the person, which stays unanswered here'
     return found
 
 
@@ -795,11 +757,11 @@ def _():
     need(not app.pids(), 'no process')
     sent = {a for a, _, _ in machine.actions}
     need(not sent, f'nothing done by itself: {sent}')
-    crashes = [p.name for p in (LIBRARY / 'Logs/DiagnosticReports').glob(NAME + '*')]
-    need(not crashes, f'no crash reports: {crashes}')
+    need(not on.crashes(), f'no crash reports: {on.crashes()}')
+    on.nothing_left()
 
 
 app.kill()
 dark(False)
-finish()
 (out / 'second.txt').unlink()
+on.finish()

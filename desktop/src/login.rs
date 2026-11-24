@@ -8,7 +8,7 @@ pub enum State {
     Off,
     On,
     /// The person turned it off in the system's own list, where only they turn it on again.
-    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+    #[cfg_attr(not(any(windows, target_os = "macos")), allow(dead_code))]
     Asks,
 }
 
@@ -39,10 +39,16 @@ mod system {
     use super::{State, ARGUMENT};
     const LIST: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
     const NAME: &str = "The Machine";
+    /// Where Settings and Task Manager keep what the person turned off there: an odd first byte.
+    const KEPT: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run";
 
     pub fn state() -> State {
-        let there = windows_registry::CURRENT_USER.open(LIST).and_then(|list| list.get_string(NAME)).is_ok();
-        if there { State::On } else { State::Off }
+        if windows_registry::CURRENT_USER.open(LIST).and_then(|list| list.get_string(NAME)).is_err() {
+            return State::Off;
+        }
+        let kept = windows_registry::CURRENT_USER.open(KEPT).and_then(|kept| kept.get_value(NAME));
+        let off = kept.is_ok_and(|said| said.first().is_some_and(|b| b % 2 == 1));
+        if off { State::Asks } else { State::On }
     }
 
     pub fn set(on: bool) -> bool {
@@ -51,7 +57,7 @@ mod system {
             return list.remove_value(NAME).is_ok() || state() == State::Off;
         }
         let Ok(program) = std::env::current_exe() else { return false };
-        list.set_string(NAME, format!("\"{}\" {ARGUMENT}", program.display())).is_ok()
+        list.set_string(NAME, format!("\"{}\" {ARGUMENT}", program.display())).is_ok() && state() == State::On
     }
 
     pub fn started() -> bool {

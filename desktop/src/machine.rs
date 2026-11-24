@@ -297,7 +297,7 @@ impl Machine {
 }
 
 /// The name in a Content-Disposition, as a Machine writes it: filename*=UTF-8''<percent-encoded>, or filename="...".
-fn file_name(header: &str) -> Option<String> {
+pub fn file_name(header: &str) -> Option<String> {
     let part = |name: &str| header.split(';').find_map(|p| p.trim().strip_prefix(name)).map(str::trim);
     let encoded = part("filename*=UTF-8''").map(|n| format!("n={}", n.replace('+', "%2B").replace('&', "%26")));
     let decoded = encoded.and_then(|n| url::form_urlencoded::parse(n.as_bytes()).next().map(|(_, v)| v.into_owned()));

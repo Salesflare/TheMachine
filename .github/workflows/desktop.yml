@@ -23,7 +23,7 @@ jobs:
   windows:
     if: github.event_name != 'push' # the pull request has it
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: desktop
@@ -49,14 +49,17 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Use it, with a made-up Machine
-        timeout-minutes: 25
+        timeout-minutes: 45
         run: | # its own certificate is trusted on this runner while this runs, for 127.0.0.1 only, and never by the build for people
           grep -q MACHINE_SANDBOX_ROOT sandbox-build/the-machine-desktop.exe
           if grep -q MACHINE_SANDBOX_ROOT out/the-machine-desktop.exe; then exit 1; fi
           smoke/certificate.sh "$RUNNER_TEMP/certificate"
           trap 'certutil -delstore Root "Made-up Machine root"' EXIT
           certutil -addstore -f Root "$(cygpath -w "$RUNNER_TEMP/certificate/root.pem")"
-          python smoke/windows.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots "$RUNNER_TEMP/certificate"
+          failed=0
+          python smoke/windows.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots "$RUNNER_TEMP/certificate" || failed=1
+          python smoke/window.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/window || failed=1
+          exit $failed
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
@@ -113,7 +116,7 @@ jobs:
           sudo security add-trusted-cert -d -r trustRoot -p ssl -k "$system" "$certificate/root.pem"
           failed=0
           python3 smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots "$certificate" || failed=1
-          python3 smoke/mac_window.py "sandbox-build/The Machine.app" "out/The Machine.app" shots/window "$certificate" || failed=1
+          python3 smoke/window.py "sandbox-build/The Machine.app" "out/The Machine.app" shots/window "$certificate" || failed=1
           exit $failed
       - name: Its certificate is trusted no more
         if: always() && steps.use.outcome != 'skipped'

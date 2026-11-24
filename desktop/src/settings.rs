@@ -3,7 +3,7 @@
 use crate::{away, later, login, notify, speak, windows, Shared};
 use serde::Serialize;
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, Emitter, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 const LABEL: &str = "settings";
 const WIDTH: f64 = 420.0;
@@ -14,8 +14,6 @@ pub struct Settings {
     login: login::State,
     quits: bool,
     notify: bool,
-    /// The system has them here.
-    can_notify: bool,
     /// They are on, and the system doesn't let the app.
     blocked: bool,
     /// Nothing is said here: a browser here may tell (speak.rs).
@@ -46,11 +44,10 @@ pub fn open(app: &AppHandle) {
             let built = built.title_bar_style(tauri::TitleBarStyle::Transparent);
             match built.build() {
                 #[cfg(windows)]
-                Ok(window) => {
-                    windows::no_menu(&window);
-                    return;
-                }
-                #[cfg(not(windows))]
+                Ok(window) => return crate::windows_app::prepare(&window),
+                #[cfg(target_os = "linux")]
+                Ok(window) => return crate::linux_app::prepare(&window),
+                #[cfg(target_os = "macos")]
                 Ok(_) => return,
                 Err(error) => return eprintln!("could not open settings: {error}"),
             }
@@ -64,7 +61,11 @@ pub fn open(app: &AppHandle) {
 pub fn settings_fit(app: AppHandle, height: f64) {
     later(&app, move |app| {
         let Some(window) = app.get_webview_window(LABEL) else { return };
-        let _ = window.set_size(LogicalSize::new(WIDTH, height.clamp(120.0, 700.0)));
+        let height = height.clamp(120.0, 700.0);
+        #[cfg(not(target_os = "linux"))]
+        let _ = window.set_size(tauri::LogicalSize::new(WIDTH, height));
+        #[cfg(target_os = "linux")]
+        windows::linux::size(&window, crate::place::Rect { x: 0.0, y: 0.0, w: WIDTH, h: height });
         if !window.is_visible().unwrap_or(true) {
             let _ = window.center();
             let _ = window.show();
@@ -84,7 +85,6 @@ pub async fn settings_state(app: AppHandle) -> Result<Settings, String> {
             login,
             quits: saved.quits,
             notify: saved.notify == Some(true) && notices != notify::Lets::No,
-            can_notify: notify::there(),
             blocked: saved.notify == Some(true) && notices == notify::Lets::No,
             browser: shared.browser.load(Ordering::Relaxed) > 0 && (!saved.no_robot || saved.notify == Some(true) && notices == notify::Lets::Yes),
             machine: saved.machine.clone(),
@@ -100,7 +100,7 @@ pub async fn settings_set(app: AppHandle, id: String, on: bool) -> Result<(), St
             let mut saved = shared.saved.lock().unwrap();
             saved.no_robot = !on;
             // What it said is told another way, unless the person turned that off
-            let tells = !on && notify::there() && saved.notify != Some(false);
+            let tells = !on && saved.notify != Some(false);
             if tells {
                 saved.notify = Some(true);
             }

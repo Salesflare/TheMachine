@@ -32,21 +32,31 @@ impl Given {
 
     #[cfg(target_os = "linux")]
     pub fn read(paths: &[std::path::PathBuf]) -> Given {
-        use base64::{engine::general_purpose::STANDARD, Engine};
-        use std::io::Read;
         let mut given = Given { error: (paths.len() > FILES).then(|| "files".into()), ..Given::default() };
         for path in paths.iter().take(FILES) {
-            let mut data = Vec::new();
-            let name = path.file_name().map(|n| n.to_string_lossy().into_owned());
-            // Asked before it is opened: a folder, a pipe or a device is never read
-            let read = std::fs::metadata(path).is_ok_and(|m| m.is_file())
-                && std::fs::File::open(path).and_then(|f| f.take(FILE + 1).read_to_end(&mut data)).is_ok();
-            match name {
-                Some(name) if read && data.len() as u64 <= FILE => given.files.push(GivenFile { kind: kind(&name).into(), name, data: STANDARD.encode(data) }),
-                _ => given.error = Some(if read { "size" } else { "file" }.into()),
+            match GivenFile::read(path) {
+                Some((file, true)) => given.files.push(file),
+                file => given.error = Some(if file.is_some() { "size" } else { "file" }.into()),
             }
         }
         given
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl GivenFile {
+    /// And whether it is within the limit; one that isn't is cut short, just over it.
+    pub fn read(path: &std::path::Path) -> Option<(GivenFile, bool)> {
+        use base64::{engine::general_purpose::STANDARD, Engine};
+        use std::io::Read;
+        let name = path.file_name()?.to_string_lossy().into_owned();
+        // Asked before it is opened: a folder, a pipe or a device is never read
+        if !std::fs::metadata(path).ok()?.is_file() {
+            return None;
+        }
+        let mut data = Vec::new();
+        std::fs::File::open(path).ok()?.take(FILE + 1).read_to_end(&mut data).ok()?;
+        Some((GivenFile { kind: kind(&name).into(), name, data: STANDARD.encode(&data) }, data.len() as u64 <= FILE))
     }
 }
 

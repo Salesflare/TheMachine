@@ -24,8 +24,10 @@ const SCRIPT: &str = "Object.defineProperty(window,'machineDesktop',{value:Objec
 pub const NO_SPEECH: &str = if cfg!(target_os = "macos") { "delete window.webkitSpeechRecognition;" } else { "" };
 
 /// The window, or one with a file, is in front.
+#[cfg(not(windows))]
 static FRONT: AtomicBool = AtomicBool::new(false);
 /// It is the one with a file.
+#[cfg(not(windows))]
 static FILE: AtomicBool = AtomicBool::new(false);
 
 /// What the app's own page says.
@@ -54,7 +56,6 @@ pub struct Dash {
     /// The place in the dashboard that is asked for, until it is there.
     path: String,
     loads: u64,
-    #[cfg(target_os = "macos")]
     died: Option<std::time::Instant>,
 }
 
@@ -64,24 +65,52 @@ impl Default for Dash {
             at: At::Own(View::Blank),
             path: String::new(),
             loads: 0,
-            #[cfg(target_os = "macos")]
             died: None,
         }
     }
 }
 
-/// Whether the app has this window. So far on a Mac; elsewhere the dashboard opens in its installed app or the browser.
+/// Whether the app has this window. A sandbox build can be without: the dashboard then opens in its installed app or the
+/// browser, as it did.
 pub fn here() -> bool {
-    cfg!(target_os = "macos") || cfg!(feature = "sandbox") && std::env::var_os("MACHINE_SANDBOX_WINDOW").is_some()
+    !(cfg!(feature = "sandbox") && std::env::var("MACHINE_SANDBOX_WINDOW").is_ok_and(|on| on == "0"))
 }
 
 pub fn front() -> bool {
+    #[cfg(windows)]
+    return foreground().is_some();
+    #[cfg(not(windows))]
     FRONT.load(Ordering::Relaxed)
 }
 
 /// A file is in front: the robot stays as it was, with the to-do it may be from.
 pub fn file_front() -> bool {
-    front() && FILE.load(Ordering::Relaxed)
+    #[cfg(windows)]
+    return foreground().is_some_and(|l| l != LABEL);
+    #[cfg(not(windows))]
+    (front() && FILE.load(Ordering::Relaxed))
+}
+
+/// Windows says which one is in front, or has a dialog there: what a window is told of its focus is about its page's too.
+#[cfg(windows)]
+static WINDOWS: std::sync::Mutex<Vec<(isize, String)>> = std::sync::Mutex::new(Vec::new());
+
+#[cfg(windows)]
+fn known(window: &WebviewWindow) {
+    if let Ok(hwnd) = window.hwnd() {
+        WINDOWS.lock().unwrap().push((hwnd.0 as isize, window.label().into()));
+    }
+}
+
+#[cfg(windows)]
+fn foreground() -> Option<String> {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{GetAncestor, GetForegroundWindow, IsWindowVisible, GA_ROOTOWNER};
+    // SAFETY: plain questions about windows; one that is gone meanwhile is none.
+    let front = unsafe {
+        let front = GetAncestor(GetForegroundWindow(), GA_ROOTOWNER);
+        if IsWindowVisible(front) == 0 { 0 } else { front as isize }
+    };
+    WINDOWS.lock().unwrap().iter().find(|(w, _)| *w == front).map(|(_, label)| label.clone())
 }
 
 pub fn label(label: &str) -> bool {
@@ -207,7 +236,12 @@ fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     #[cfg(target_os = "macos")]
     crate::mac_app::prepare(&window);
     #[cfg(windows)]
-    windows::no_menu(&window);
+    {
+        known(&window);
+        crate::windows_app::prepare(&window);
+    }
+    #[cfg(target_os = "linux")]
+    crate::linux_app::prepare(&window);
     put(&window, at);
     if app.state::<Shared>().saved.lock().unwrap().wide && !cfg!(target_os = "macos") {
         let _ = window.maximize();
@@ -294,6 +328,14 @@ pub fn show(app: &AppHandle, path: &str) {
     let _ = window.set_focus();
     shared.over_dash.store(true, Ordering::Relaxed);
     windows::close_box(app);
+    #[cfg(windows)]
+    {
+        let app = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(600)); // its icon in the taskbar comes after it
+            later(&app, crate::badge);
+        });
+    }
 }
 
 /// A place within the page that is there, as the dashboard takes an address that was opened again.
@@ -405,10 +447,8 @@ pub fn signed_in(app: &AppHandle) {
 
 /// Signed out: nothing of it is left on this computer.
 pub fn forget(app: &AppHandle) {
-    for (label, file) in app.webview_windows() {
-        if label.starts_with("file-") {
-            let _ = file.destroy();
-        }
+    for label in app.webview_windows().into_keys().filter(|l| l.starts_with("file-")) {
+        close_file(app, &label);
     }
     app.state::<Shared>().dash.lock().unwrap().path.clear();
     view(app, View::SignIn);
@@ -427,9 +467,18 @@ pub fn tell(app: &AppHandle, what: &serde_json::Value) {
     }
 }
 
-/// Its page's process ended, as macOS ends one that takes too much memory: a fresh one, unless that ends too.
-#[cfg(target_os = "macos")]
-pub fn died(app: &AppHandle) {
+/// A page's process ended, as macOS ends one that takes too much memory: a fresh one, unless that ends too. Without a
+/// robot its page is still what tells.
+pub fn died(app: &AppHandle, label: &str) {
+    if label == "card" {
+        return windows::close_box(app);
+    }
+    if label != LABEL {
+        if let Some(window) = app.get_webview_window(label) {
+            let _ = window.reload();
+        }
+        return;
+    }
     let shared = app.state::<Shared>();
     let again = {
         let mut dash = shared.dash.lock().unwrap();
@@ -468,9 +517,14 @@ pub fn close(app: &AppHandle) {
 }
 
 pub fn focused(app: &AppHandle, of: &str, on: bool) {
-    let now = if on { Some(of.to_string()) } else { in_front(app).map(|w| w.label().to_string()).filter(|l| l != of) };
-    FILE.store(now.as_ref().is_some_and(|l| l != LABEL), Ordering::Relaxed);
-    FRONT.store(now.is_some(), Ordering::Relaxed);
+    #[cfg(not(windows))]
+    {
+        let now = if on { Some(of.to_string()) } else { in_front(app).map(|w| w.label().to_string()).filter(|l| l != of) };
+        FILE.store(now.as_ref().is_some_and(|l| l != LABEL), Ordering::Relaxed);
+        FRONT.store(now.is_some(), Ordering::Relaxed);
+    }
+    #[cfg(windows)]
+    let _ = of;
     if on {
         crate::looked(app);
         crate::speak::hush(app, true);
@@ -546,11 +600,13 @@ fn put(window: &WebviewWindow, at: Rect) {
 
 /// The window it is about: the dashboard's, or one with a file, when that is in front.
 pub fn in_front(app: &AppHandle) -> Option<WebviewWindow> {
+    #[cfg(windows)]
+    return foreground().and_then(|label| app.get_webview_window(&label));
+    #[cfg(not(windows))]
     app.webview_windows().into_values().find(|w| label(w.label()) && w.is_focused().unwrap_or(false))
 }
 
 /// 0: as made.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))] // as the three after it: so far a menu's
 pub fn zoom(app: &AppHandle, step: i8) {
     let Some(window) = window(app) else { return };
     let shared = app.state::<Shared>();
@@ -563,6 +619,23 @@ pub fn zoom(app: &AppHandle, step: i8) {
     shared.save();
 }
 
+/// With the wheel, or a menu of the page's own: it stays so, as with the keys.
+#[cfg(windows)]
+pub fn zoomed_by_hand(app: &AppHandle, zoom: f64) {
+    let Some(window) = window(app) else { return };
+    let shared = app.state::<Shared>();
+    {
+        let mut saved = shared.saved.lock().unwrap();
+        let was = if saved.zoom > 0.0 { saved.zoom } else { 1.0 };
+        if !(0.25..=5.0).contains(&zoom) || (was - zoom).abs() < 0.005 {
+            return;
+        }
+        saved.zoom = zoom;
+    }
+    let _ = window.set_zoom(zoom); // else only until the next page
+    shared.save();
+}
+
 fn zoomed(now: f64, step: i8) -> f64 {
     let now = if now > 0.0 { now } else { 1.0 };
     match step {
@@ -572,7 +645,6 @@ fn zoomed(now: f64, step: i8) -> f64 {
     }
 }
 
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn reload(app: &AppHandle) {
     let Some(window) = in_front(app) else { return };
     if window.label() == LABEL && now(app) != View::Blank {
@@ -581,7 +653,7 @@ pub fn reload(app: &AppHandle) {
     let _ = window.reload();
 }
 
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+#[cfg_attr(windows, allow(dead_code))]
 pub fn back(app: &AppHandle, forward: bool) {
     if let Some(window) = in_front(app) {
         let _ = window.eval(if forward { "history.forward()" } else { "history.back()" });
@@ -589,7 +661,6 @@ pub fn back(app: &AppHandle, forward: bool) {
 }
 
 /// Save a copy of the file in front.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn save_copy(app: &AppHandle) {
     if let Some(url) = in_front(app).filter(|w| w.label() != LABEL).and_then(|w| w.url().ok()) {
         files::save(app, url);
@@ -607,6 +678,10 @@ pub fn open_file(app: &AppHandle, url: &Url) {
     let (goes_to, opens, saves, titled) = (app.clone(), app.clone(), app.clone(), name.clone());
     let shown = std::sync::Arc::new(AtomicBool::new(false));
     let came = shown.clone();
+    #[cfg(target_os = "linux")]
+    let opened = name.clone();
+    #[cfg(target_os = "linux")]
+    OPENING.lock().unwrap().push((name.clone(), url.clone()));
     let area = windows::areas(app).first().map_or((900.0, 900.0), |(a, s)| (a.w / s, a.h / s));
     let window = WebviewWindowBuilder::new(app, &name, WebviewUrl::External("about:blank".parse().unwrap()))
         .title(title(url))
@@ -630,7 +705,7 @@ pub fn open_file(app: &AppHandle, url: &Url) {
         .on_download(move |_, event| {
             let (name, over) = (titled.clone(), matches!(event, DownloadEvent::Finished { .. }));
             let saved = files::download(&saves, event);
-            if !shown.load(Ordering::Relaxed) {
+            if !shown.load(Ordering::Relaxed) && cfg!(not(target_os = "linux")) { // there it is told of all of them: kept
                 later(&saves, move |app| gone(app, &name, over));
             }
             saved
@@ -638,6 +713,8 @@ pub fn open_file(app: &AppHandle, url: &Url) {
         .on_page_load(move |_, page| {
             if page.url().as_str() != "about:blank" && (page.event() == PageLoadEvent::Finished || cfg!(target_os = "macos")) {
                 came.store(true, Ordering::Relaxed);
+                #[cfg(target_os = "linux")]
+                OPENING.lock().unwrap().retain(|(of, _)| *of != opened);
             }
         })
         .on_permission_request(|_, _| PermissionResponse::Deny)
@@ -652,6 +729,13 @@ pub fn open_file(app: &AppHandle, url: &Url) {
         Ok(window) => {
             #[cfg(target_os = "macos")]
             crate::mac_app::prepare(&window);
+            #[cfg(windows)]
+            {
+                known(&window);
+                crate::windows_app::prepare(&window);
+            }
+            #[cfg(target_os = "linux")]
+            crate::linux_app::prepare(&window);
             if let Some(machine) = app.state::<Shared>().machine() {
                 card::session(&window, &machine, url);
             }
@@ -672,9 +756,25 @@ fn gone(app: &AppHandle, name: &str, over: bool) {
     }
 }
 
+/// Files' windows whose page isn't there yet, and what they asked for.
+#[cfg(target_os = "linux")]
+static OPENING: std::sync::Mutex<Vec<(String, Url)>> = std::sync::Mutex::new(Vec::new());
+
+/// A file's window that asked for what is kept instead.
+#[cfg(target_os = "linux")]
+pub fn kept(app: &AppHandle, url: &Url, over: bool) {
+    let mut opening = OPENING.lock().unwrap();
+    if let Some(i) = opening.iter().position(|(_, of)| of == url) {
+        let name = if over { opening.swap_remove(i).0 } else { opening[i].0.clone() };
+        later(app, move |app| gone(app, &name, over));
+    }
+}
+
 /// A window with a file that was closed.
 pub fn close_file(app: &AppHandle, label: &str) {
     if let Some(window) = app.get_webview_window(label) {
+        #[cfg(windows)]
+        WINDOWS.lock().unwrap().retain(|(_, of)| of != label);
         let _ = window.destroy();
         focused(app, label, false);
     }

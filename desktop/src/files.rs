@@ -11,6 +11,10 @@ pub fn download(app: &AppHandle, event: DownloadEvent<'_>) -> bool {
         DownloadEvent::Requested { url, destination } => {
             let Ok(folder) = app.path().download_dir() else { return false };
             let name = destination.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            #[cfg(target_os = "linux")]
+            let name = crate::linux_app::sent_as(&url).unwrap_or(name);
+            #[cfg(target_os = "linux")]
+            dash::kept(app, &url, false);
             *destination = free(&folder, &name);
             app.state::<Shared>().downloads.lock().unwrap().push((url.into(), destination.clone()));
         }
@@ -19,7 +23,10 @@ pub fn download(app: &AppHandle, event: DownloadEvent<'_>) -> bool {
             let mut under_way = shared.downloads.lock().unwrap();
             let kept = under_way.iter().position(|(of, _)| *of == url.as_str()).map(|i| under_way.remove(i).1);
             drop(under_way);
+            let path = if cfg!(target_os = "linux") { None } else { path }; // there each window is told of all of them
             if let Some(file) = path.or(kept) {
+                #[cfg(target_os = "linux")]
+                dash::kept(app, &url, true);
                 done(app, file, success);
             }
         }
@@ -35,7 +42,11 @@ pub fn save(app: &AppHandle, url: Url) {
     std::thread::spawn(move || {
         let Ok(folder) = app.path().download_dir() else { return };
         match machine.save(&url, &folder) {
-            Ok(file) => done(&app, file, true),
+            Ok(file) => {
+                #[cfg(windows)]
+                crate::windows_app::from_the_internet(&file);
+                done(&app, file, true)
+            }
             Err(name) => done(&app, folder.join(name), false),
         }
     });

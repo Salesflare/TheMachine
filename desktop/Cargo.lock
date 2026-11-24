@@ -4169,6 +4169,8 @@ dependencies = [
  "tauri-plugin-single-instance",
  "ureq",
  "url",
+ "webkit2gtk",
+ "webview2-com",
  "windows",
  "windows-registry",
  "windows-sys 0.61.2",

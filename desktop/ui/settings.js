@@ -7,13 +7,15 @@
   for (const [id, text] of Object.entries(names)) $(id).textContent = text;
   document.title = t.settings;
   const SETS = ['robot', 'notify', 'login'];
+  const SYSTEM = ['Mac', 'Windows'].find(s => navigator.userAgent.includes(s)) || 'Linux';
+  const words = e => (e === 'login' && t.errors.login[SYSTEM]) || t.errors[e] || t.errors.failed;
 
   async function show() {
     const s = await invoke('settings_state');
     $('robot').checked = s.robot;
     $('notify').checked = s.notify;
-    $('notify-row').hidden = s.robot || !s.can_notify;
-    $('notify-hint').textContent = s.blocked ? t.setNotifyBlocked : t.setNotifyHint;
+    $('notify-row').hidden = s.robot;
+    $('notify-hint').textContent = s.blocked ? t.setNotifyBlocked[SYSTEM] : t.setNotifyHint;
     $('notify-hint').classList.toggle('warn', s.blocked);
     $('browser-row').hidden = !s.browser;
     $('login').checked = s.login === 'on';
@@ -24,7 +26,7 @@
   async function set(id, on) {
     $('error').textContent = '';
     for (const x of SETS) $(x).disabled = true;
-    try { await invoke('settings_set', {id, on}); } catch (e) { $('error').textContent = t.errors[e] || t.errors.failed; }
+    try { await invoke('settings_set', {id, on}); } catch (e) { $('error').textContent = words(e); }
     for (const x of SETS) $(x).disabled = false;
     await show();
     $(id).focus();
@@ -32,7 +34,7 @@
   for (const id of SETS) $(id).addEventListener('change', () => set(id, $(id).checked));
   const answer = async on => {
     $('error').textContent = '';
-    try { await invoke('settings_set', {id: 'browser', on}); } catch (e) { $('error').textContent = t.errors[e] || t.errors.failed; }
+    try { await invoke('settings_set', {id: 'browser', on}); } catch (e) { $('error').textContent = words(e); }
     await show();
     if ($('browser-row').hidden) $('robot').focus();
   };
@@ -41,7 +43,7 @@
   $('quits').addEventListener('change', () => set('quits', !!$('quits').value));
   $('signout').addEventListener('click', async () => { await invoke('menu_item', {id: 'signout'}); });
   const fit = () => invoke('settings_fit', {height: Math.ceil($('panel').getBoundingClientRect().height)});
-  listen('settings', show).then(show).then(() => new ResizeObserver(fit).observe($('panel')));
+  listen('settings', show).then(show).then(() => { fit(); new ResizeObserver(fit).observe($('panel')); }); // that one may wait until it is shown
   addEventListener('focus', show); // the system's own switches may have changed
   addEventListener('contextmenu', e => e.preventDefault());
 })();
