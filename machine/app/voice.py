@@ -128,6 +128,10 @@ class VoiceApp:
         the browser's own speech recognition (voice_view's `use`)."""
         tried, quiet = 0.0, 0
         try:
+            self.dictation.drop_av()
+        except Exception as error:
+            LOG.error('voice packages error=%s', type(error).__name__)
+        try:
             self.voice_openai(True, wait=True)   # known before the first tap: whether Automatic means OpenAI here
         except Exception as error:
             LOG.error('voice openai check error=%s', type(error).__name__)

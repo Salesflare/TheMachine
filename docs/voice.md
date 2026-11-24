@@ -42,7 +42,9 @@ else makes it read again.
   int8 on the CPU, in `voice_worker.py`. The service starts the worker on the first clip and stops it after 5 minutes
   without one, so its memory is free again. The package install runs at a lower priority (`nice -n 10`,
   below-normal priority on Windows); the worker runs at the normal priority, since the owner is waiting on it. Clips go through it one at a
-  time. The language is the one picked in Settings, or detected among the app's languages.
+  time. The language is the one picked in Settings, or detected among the app's languages. The worker
+  decodes no media: it gets PCM, and an empty module stands in for faster-whisper's decoder (`av`, PyAV with
+  FFmpeg in it), which isn't installed.
 - **With OpenAI**: `gpt-4o-transcribe` through OpenClaw's own transcription, in `voice-openai-run.mjs`: a Node worker
   that loads OpenClaw once and stays up for 5 minutes, so a clip takes 1 to 3 s instead of the 8 s the
   `openclaw infer audio transcribe` CLI needs to start (still the fallback). A tap on the mic warms it up. Offered when
@@ -64,6 +66,10 @@ engine is prepared ahead of time by `voice_warm_worker`, never during setup:
 - at a lower priority (`nice -n 10`). A release that changes `voice-requirements.txt` prepares the packages again the
   same way.
 
+Packages from before `av` left the list (up to release-20261124-1126) are the exception: at the service's start
+`drop_av` uninstalls it there, whichever engine is in use. That takes a second, downloads nothing and keeps voice
+ready. If it fails, they are prepared again as above.
+
 Settings shows "Getting ready (in the background)" while it runs. A tap on the mic never waits on it when there's
 another way: OpenAI when available, else on **Automatic** the browser's own speech recognition where it has one. Only
 with **On this Machine** picked (or a browser without speech recognition) does the clip wait, with "Getting voice
@@ -75,7 +81,7 @@ What the local engine downloads, once:
 
 | Step | Download | On disk |
 |---|---|---|
-| A virtualenv in `<data>/voice/env` with the packages in `voice-requirements.txt` (wheels only, every one pinned by hash) | about 100 MB (Linux arm64), 130 MB (Linux x86-64), 60 MB (macOS arm64) | about 470 MB |
+| A virtualenv in `<data>/voice/env` with the packages in `voice-requirements.txt` (wheels only, every one pinned by hash, the list complete and installed with `--no-deps`) | about 65 MB (Linux arm64), 90 MB (Linux x86-64), 37 MB (macOS arm64), 57 MB (Windows) | about 350 MB (Linux x86-64) |
 | The model, from Hugging Face at a pinned revision, every file checked against its SHA-256 | small: 484 MB; base: 145 MB | the same |
 
 That took 25 s on a desktop with a fast connection (packages 15 s, model 10 s); a small hosted server takes a few
