@@ -13,7 +13,7 @@ known yet stays quiet while any browser has notifications on: better one notific
 
 What it got it names in its next look (got=); until then it gets it again, as an answer can be lost on the way. A
 notification it doesn't name in LATE seconds (the computer slept, the robot went quiet or away) goes to that computer's
-browser after all (late). What waits for a desk is in memory only, ids and no text: the robot asks api/notice for the
+browser after all (late). On a computer whose browser has no notifications on it waits KEEP seconds for the robot. What waits for a desk is in memory only, ids and no text: the robot asks api/notice for the
 words, as the phone app does, so hidden text stays hidden and what no longer waits shows nothing."""
 import datetime as dt
 import re
@@ -30,6 +30,7 @@ ID = re.compile(r'[a-f0-9]{32}')
 TODO = re.compile(r'[a-f0-9]{16}')
 LEASE = 75  # seconds after its last look a robot counts as there (it looks every 30)
 LATE = 90   # seconds a notification waits for its robot to have it before that computer's browser gets it
+KEEP = 15 * 60  # seconds it waits when there is no browser to get it instead
 DESKS = 8   # robots at once; a longer-gone one gives way
 LINKS = 40  # known pairs of a robot and a browser
 SOON = 10 * 60  # seconds before a meeting the robot says so
@@ -57,7 +58,7 @@ def look(desk, up, got=(), clock=notify.wall):
         _desks[desk] = row
         row['at'], row['up'] = at, bool(up)
         row['waiting'] = [w for w in row['waiting'] if w['key'] not in got]
-        there = [w for w in row['waiting'] if up and at - w['at'] < LATE]  # later ones are the browser's now (late)
+        there = [w for w in row['waiting'] if up and not _over(w, at)]  # later ones are the browser's now (late)
     return [{k: w[k] for k in ('key', 'id', 'kind')} for w in there]
 
 
@@ -119,12 +120,16 @@ def stand_in(db, subscriptions, payload, kind, clock=notify.wall):
     return [s for s in subscriptions if s['endpoint'] not in taken], count
 
 
+def _over(waits, at):
+    return at - waits['at'] >= (LATE if waits['instead'] else KEEP)
+
+
 def late(clock=notify.wall):
     """What no robot had in time, or whose robot went quiet: [(subscriptions, payload)] to push after all."""
     at, out = clock(), []
     with _lock:
         for row in _desks.values():
-            old = [w for w in row['waiting'] if at - w['at'] >= LATE or not row['up']]
+            old = [w for w in row['waiting'] if _over(w, at) or w['instead'] and not row['up']]
             row['waiting'] = [w for w in row['waiting'] if w not in old]
             out += [(w['instead'], w['payload']) for w in old if w['instead']]
     return out

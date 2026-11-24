@@ -127,7 +127,8 @@ dashboard in use, the kinds turned off, hidden text.
 - **Which browser is its computer's.** It opens the dashboard with `?desk=<id>`; the page says its push subscription
   with `push_desk`. Unknown: the robot stays quiet while any browser has notifications on.
 - **Nothing lost.** Its next look names what it got (`got=`); until then it gets it again, and says it once. Not named
-  in 90 seconds, or the robot went quiet before: that computer's browser gets the push after all. Phones and other computers get theirs either way.
+  in 90 seconds, or the robot went quiet before: that computer's browser gets the push after all. Without notifications on in that browser it waits 15 minutes for the
+  robot (its box was open, something was full screen). Phones and other computers get theirs either way.
 
 
 ## Reviews
