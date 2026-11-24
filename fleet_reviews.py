@@ -221,12 +221,19 @@ def _step_line(direction, who, step):
 
 class Reviews:
     """Mixed into fleet.Fleet. Set by the app: review_subject(card_id) -> what a review of this to-do would show
-    ({scope, title, what, body, subject, to, revision}); review_write(card_id, what, subject, body, revision) puts accepted
+    ({scope, title, owner_only, what, body, subject, to, revision}); review_write(card_id, what, subject, body, revision) puts accepted
     changes in the owner's own draft (a new revision) or result; done_card(card_id, choice, why, key) closes a review
     to-do the reviewer answered."""
     review_subject = review_write = done_card = None
 
     # -- the owner asks
+    def reviewable(self, card_id):
+        """What a review of this to-do would show, when it may go to someone else at all."""
+        subject = self.review_subject(str(card_id))
+        if subject.get('owner_only'):
+            raise OwnerError(t('This to-do can’t be reviewed'))
+        return subject
+
     def review_fleets(self, scope):
         """The Fleets this to-do may go to for a review: Work for a Work to-do, the Family for a Personal one, and only
         where the Network says it carries reviews (the directory's asks)."""
@@ -244,7 +251,7 @@ class Reviews:
         """What Ask to review shows: who can review it (by Fleet), what goes (the draft or result) and its sources."""
         if not self.review_subject:
             raise OwnerError('This Machine makes no to-dos')
-        subject = self.review_subject(str(card_id))
+        subject = self.reviewable(card_id)
         refs = self.review_fleets(subject['scope'])
         fleets = [{'id': ref, 'name': fleet.clean(self.fleets()[ref].get('name'), 80) or fleet.FLEET_NAMES.get(self.kind_of(ref), ''),
                    'members': [{'member_id': m['member_id'], 'name': fleet.label(m)} for m in self.teammates(ref)]} for ref in refs]
@@ -268,7 +275,7 @@ class Reviews:
         by their place in review_options' list."""
         if not self.review_subject:
             raise OwnerError('This Machine makes no to-dos')
-        subject = self.review_subject(str(card_id))
+        subject = self.reviewable(card_id)
         kind = self.kind_of(fleet_ref) if fleet_ref in self.fleets() else None
         if SCOPES.get(kind) != subject['scope']:
             raise OwnerError(t('A work to-do goes only to your Work Fleet') if subject['scope'] == 'work'

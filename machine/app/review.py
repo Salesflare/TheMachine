@@ -20,6 +20,7 @@ import graph
 import graph_board_reviews
 import project_org_checks
 import i18n
+import meeting_prep
 import memory_use
 from machine.app import claim_reply
 from machine.app.first_look import (
@@ -406,7 +407,7 @@ class ReviewApp:
         if row['status'] not in fleet.OPEN_CARD or str(row['dedupe_key']).startswith('fleet-review:'):
             raise OwnerError(i18n.t('This to-do can’t be reviewed'))
         scope = suggestion_scope(row['account_ids'], self.config.get('accounts', []), row['area'])
-        found = {'scope': scope, 'title': row['title'], 'what': 'result', 'body': fleet_reviews._text(row['body'], fleet_reviews.BODY, True)}
+        found = {'scope': scope, 'title': row['title'], 'owner_only': meeting_prep.is_briefing(row['dedupe_key']), 'what': 'result', 'body': fleet_reviews._text(row['body'], fleet_reviews.BODY, True)}
         try:
             value = json.loads(row['next_action'] or 'null')
         except ValueError:

@@ -5,7 +5,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // A briefing before a meeting (meeting_prep.py) is a normal to-do, only for reading (Done, Snooze): its title, two lines of its briefing with Show more,
-// then every part with its label (Who, Organization, So far, Open promises, Open questions, Decide or bring), a web source as a link. The meeting's own
+// then every part with its label (Who, Organization, So far, what came out of earlier meetings (a line each, with its meeting), Open promises, Open questions, Decide or bring), a web source as a link. The meeting's own
 // details link to it under To-do, and a tap opens its chat. Nothing is wider than the screen, at 1440 and 390, light
 // and dark. MEETING_PREP_SHOT=<dir> writes the to-do and the meeting's details.
 const dashboard=await dashboardPage();
@@ -14,9 +14,14 @@ const NOW=Date.parse('2026-11-09T09:00:00+01:00'),now=new Date(NOW).toISOString(
 const ID='c'.repeat(16),TITLE='Prepare for the Globex pilot review';
 // A line from the web carries its source link, shown by its site (Who, Organization)
 const SOURCE='https://globex.example/about';
+const NOTES='https://zoom.example/doc/1';
 const PARTS=[['Who:','Sam Rivera, head of operations at Globex. Earlier ran pilots at Initech.'],
  ['Organization:',`Globex builds logistics software for mid-size retailers. ([globex.example](${SOURCE}))`,'Globex builds logistics software for mid-size retailers. (globex.example)'],
  ['So far:','On Nov 2 Sam asked whether the pilot can start in December; the plan was offered on Nov 5.'],
+ ['Agreed earlier:',`\n• The pilot runs in two stores first ([Scope call, Oct 14](${NOTES}))\n• Weekly check-in on Mondays ([Oct 14](${NOTES}))`,
+  '• The pilot runs in two stores first (Scope call, Oct 14)\n• Weekly check-in on Mondays (Oct 14)'],
+ ['Changed since:','The start moved from January to December (Sam Rivera, Nov 2)'],
+ ['Still open:','Sam Rivera to send the list of store managers (Oct 14)'],
  ['Open promises:','Promised Sam the pilot plan by Tuesday.'],['Open questions:','Who signs the order form on their side.'],
  ['Decide or bring:','The pilot plan; decide on the start date.']];
 const card={id:ID,title:TITLE,body:PARTS.map(([k,v])=>`**${k}** ${v}`).join('\n\n'),status:'pending',scope:'work',created_at:now,event_ids:[41,43],
@@ -40,7 +45,7 @@ const fits=page=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWi
 let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- for(const [width,height] of [[1440,900],[390,844]])for(const scheme of ['light','dark']){const mobile=width<600;
+ for(const [width,height] of [[1440,900],[1440,700],[390,844]])for(const scheme of ['light','dark']){const mobile=width<600;
   const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-US',timezoneId:'Europe/Brussels',colorScheme:scheme});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   await context.clock.install({time:NOW});
@@ -57,21 +62,22 @@ try{
   const more=todo.locator('button.more[data-more]');assert.equal(await more.innerText(),'Show more');
   assert.ok(await todo.locator('.body.clamp').count(),'the briefing starts folded');
   await more.click();await todo.locator('.body:not(.clamp)').waitFor();
-  const parts=await todo.locator('.body p').evaluateAll(ps=>ps.map(p=>[p.querySelector('strong')?.textContent||'',p.textContent.replace(/^[^:]*:\s*/,'')]));
+  const parts=await todo.locator('.body p').evaluateAll(ps=>ps.map(p=>[p.querySelector('strong')?.textContent||'',p.innerText.replace(/^[^:]*:\s*/,'')]));
   assert.deepEqual(parts,PARTS.map(([k,v,shown])=>[k,shown||v]));
   const source=todo.locator(`.body a[href="${SOURCE}"]`);
   assert.equal(await source.innerText(),'globex.example');
   assert.equal(await source.getAttribute('target'),'_blank');
+  assert.equal(await todo.locator(`.body a[href="${NOTES}"]`).count(),2,'each line from notes links to them');
   const box=await todo.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width+1,'the to-do fits the screen');
   assert.ok(await fits(page),'no sideways scroll');
-  if(shots){await todo.scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/todo-${width}-${scheme}.png`})}
+  if(shots){await todo.scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/todo-${width}x${height}-${scheme}.png`})}
   // The meeting's details link to its to-do; a tap opens that to-do's chat
   await page.evaluate(()=>openMeeting(41,''));await page.locator('#cal-view[open]').waitFor();
   const link=page.locator('#cal-v-rows [data-cal-todo]');
   assert.equal(await link.innerText(),TITLE);
   assert.equal(await link.evaluate(a=>a.closest('div').querySelector('dt').textContent),'To-do');
   assert.ok(await page.evaluate(()=>{const d=document.querySelector('#cal-view');return d.scrollWidth<=d.clientWidth+1}),'the details fit');
-  if(shots){await page.waitForTimeout(150);await page.screenshot({path:`${shots}/meeting-${width}-${scheme}.png`})}
+  if(shots){await page.waitForTimeout(150);await page.screenshot({path:`${shots}/meeting-${width}x${height}-${scheme}.png`})}
   await link.click();
   await page.waitForFunction(id=>location.hash==='#chat='+id,ID);
   assert.equal(await page.locator('#cal-view').evaluate(d=>d.open),false);

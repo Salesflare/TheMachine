@@ -30,6 +30,7 @@ import sqlite3
 import family
 import graph
 import locale_prefs
+import meeting_prep
 from i18n import t
 import next_actions
 from machine import todo_states
@@ -124,9 +125,12 @@ def carried_text(text, chars):
 MACHINE_SAYS = re.compile(r"^(?:I|I'm|I’m|I've|I’ve|I'll|I’ll|The Machine)\b")
 
 
-def card_reason(body):
-    """A suggestion's own text as a teammate reads it: plain words, without what the Machine says of itself."""
-    text = ' '.join(re.sub(r'\*\*([^*]+)\*\*', r'\1', str(body or '')).split())
+def card_reason(card):
+    """A suggestion's own text as a teammate reads it: plain words, without what the Machine says of itself. A meeting
+    briefing's never: it is written from more than its sources (meeting_prep.is_briefing)."""
+    if meeting_prep.is_briefing(card['dedupe_key']):
+        return ''
+    text = ' '.join(re.sub(r'\*\*([^*]+)\*\*', r'\1', str(card['body'] or '')).split())
     kept = [x for x in re.split(r'(?<=[.!?])\s+', text) if x and not MACHINE_SAYS.match(x)]
     return ' '.join(kept)[:600]
 
@@ -544,7 +548,7 @@ class Requests:
         # already the Machine's own outcome (prepared). A handoff text the preparation wrote stands as it is.
         why, links = '', ''
         if not ready and allowed and set(json.loads(card['account_ids'] or '[]')) <= set(allowed):
-            why = card_reason(card['body']) if card['status'] in todo_states.OPEN_UNPREPARED else ''
+            why = card_reason(card) if card['status'] in todo_states.OPEN_UNPREPARED else ''
             links = '; '.join(f"{t} ({u})" if t else u for t, u in self.handoff_links(card['id'], allowed))
         summary = sentences(task, why, ('Source: ' + links) if links else '', mine_note)
         # The teammate that text is for comes first, so it's the default; else the one the to-do itself offers it to

@@ -255,6 +255,14 @@ class AskToReview(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'can’t be reviewed'):  # and it can't be sent on for review either
             self.pat.fleet.review_options(mine['id'])
 
+    def test_a_briefing_goes_to_no_reviewer(self):
+        # Written from notes and messages that are not among its sources: the owner's alone
+        card = self.plain('meetprep:1', 'work')
+        for name, args in (('fleet_review_options', {}), ('fleet_review_ask', {'fleet': WORK_ID, 'member_id': 'pat1'})):
+            with self.assertRaisesRegex(ValueError, 'can’t be reviewed'):
+                self.owner.app.action(name, {'suggestion_id': card, **args}, owner_dashboard=True)
+        self.assertEqual(self.pat.cards(), [])
+
     def test_work_and_personal_never_cross(self):
         work, home = self.drafted(), self.plain(account='home')
         with self.assertRaisesRegex(ValueError, 'only to your Work Fleet'):

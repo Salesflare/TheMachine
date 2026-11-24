@@ -165,7 +165,7 @@ class HandoffMail:
         shared = bool(rows) and len(team) == len(rows) and set(json.loads(card['account_ids'] or '[]')) <= set(fleet.work_accounts(self.app.config))
         lines = []
         if shared and card['status'] in OPEN:
-            why = card_reason(card['body'])
+            why = card_reason(card)
             if why:
                 lines.append({'key': 'why', 'text': why})
         found = self.app.fleet.handoff_draft(card['id']) if getattr(self.app, 'fleet', None) else {}

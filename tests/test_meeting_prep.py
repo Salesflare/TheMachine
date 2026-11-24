@@ -426,14 +426,14 @@ class MeetingPrep(unittest.TestCase):
         with self.store.connect() as db:
             after = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (old,)).fetchone())
             self.assertEqual(meeting_prep.judged_today(db, '2026-11-08T00:00:00+00:00'), turns + 1)  # within the day's turns
-            stamps = {r['suggestion_id']: r['format'] for r in db.execute('SELECT suggestion_id,format FROM meeting_preps')}
         self.assertIn('**So far:** Sam asked on Nov 5', after['body'])
         self.assertNotIn('Last contact', after['body'])
         for kept in ('title', 'status', 'event_ids', 'expires_at', 'snoozed_until'):
             self.assertEqual(after[kept], before[kept], kept)
-        self.assertEqual(stamps, {old: meeting_prep.FORMAT, new: meeting_prep.FORMAT})
-        self.assertIsNone(self.stale_pass())  # none left: done for this format
+        self.assertIsNone(self.stale_pass())  # the other has nothing this format adds: stamped, no turn; none left: done for this format
         with self.store.connect() as db:
+            stamps = {r['suggestion_id']: r['format'] for r in db.execute('SELECT suggestion_id,format FROM meeting_preps')}
+            self.assertEqual(stamps, {old: meeting_prep.FORMAT, new: meeting_prep.FORMAT})
             self.assertTrue(db.execute('SELECT 1 FROM learning_state WHERE key=?', ('meeting_prep_format_%d' % meeting_prep.FORMAT,)).fetchone())
         self.made_before_the_stamp(old)
         self.assertIsNone(self.stale_pass())  # once
@@ -491,7 +491,7 @@ class MeetingPrep(unittest.TestCase):
         self.assertLessEqual({'format', 'body_sha', 'rebuilt_at'}, {r[1] for r in db.execute('PRAGMA table_info(meeting_preps)')})
         t = lambda k, *a: k
         self.assertEqual(meeting_prep.format_of(self.OLD, t), 1)
-        self.assertEqual(meeting_prep.format_of('**Who:** Sam.\n\n**So far:** Asked about the pilot.', t), meeting_prep.FORMAT)
+        self.assertEqual(meeting_prep.format_of('**Who:** Sam.\n\n**So far:** Asked about the pilot.', t), 2)
         self.assertIsNone(meeting_prep.format_of(self.OLD + '\n\nMy own note.', t))
 
 
