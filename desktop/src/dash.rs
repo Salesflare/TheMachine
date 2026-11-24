@@ -19,9 +19,9 @@ const ZOOMS: [f64; 13] = [0.5, 0.67, 0.75, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 
 /// How the dashboard knows where it is: it is the same page, but nothing to install, and downloads say where they landed.
 const SCRIPT: &str = "Object.defineProperty(window,'machineDesktop',{value:Object.freeze({version:1})});";
 
-/// WebKit's own speech recognition on a Mac ends a program that has no permission of its own for it. The Machine hears what
-/// is dictated itself.
-pub const NO_SPEECH: &str = if cfg!(target_os = "macos") { "delete window.webkitSpeechRecognition;" } else { "" };
+/// WebKit's own speech recognition on a Mac ends a program that has no permission of its own for it, and WebView2's hears
+/// nothing. The Machine hears what is dictated itself.
+pub const NO_SPEECH: &str = "delete window.webkitSpeechRecognition;";
 
 /// The window, or one with a file, is in front.
 #[cfg(not(windows))]

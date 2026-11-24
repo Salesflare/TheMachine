@@ -223,9 +223,19 @@ def _():
     time.sleep(20)
     os.kill(app.pid, signal.SIGCONT)
     time.sleep(3)
-    told = clicked()
+    since = time.time()
+    while True:  # what it stands in for, the processes of a Mac that wakes, come back one by one
+        need(until(app.answers, 20), 'its page answers')
+        png('slept')
+        try:
+            told = clicked()
+            break
+        except AssertionError:
+            png('slept-no-answer')
+            if time.time() - since > 20:
+                raise
     need(not log(), log())
-    return told
+    return f'{told}, {time.time() - since:.0f} s after it'
 
 
 @step('the page of the robot is stuck')
