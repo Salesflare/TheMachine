@@ -34,7 +34,7 @@ When someone with a Machine writes "let's meet next week", your Machine asks the
 
 Only free or busy goes over, sealed end to end, for at most 14 days and rounded to 15 minutes. Private events count as busy. A Machine can ask only when you emailed each other both ways. Set it under **What other Machines may ask mine**: **Free/busy for scheduling** or **Off**, with your meeting length, buffer and preferred times. Each ask shows in Activity, under Calendar.
 
-A time counts as free only when your calendar says so. Your Machine offers none with no calendar connected, when it couldn't be read for a day, or more than 30 days ahead. All-day events count when you marked them Busy, and events marked Free never do.
+A time counts as free only when your calendar says so. Your Machine offers none with no calendar connected, when it couldn't be read for a day, or more than 30 days ahead. All-day events count when marked Busy, and events marked Free never do. An all-day event a to-do adds is Free, unless you're away or taken those days: then it says "busy" before you add it.
 
 No Machine there, or no answer: the email draft gets a link where they pick one of your free times. Their pick is a to-do with **Book it**; nothing is booked before you tap it.
 

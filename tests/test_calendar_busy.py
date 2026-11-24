@@ -16,6 +16,7 @@ import friends
 import ical
 import machine.main as machine_main
 import machine.sources.calendar as machine_sources_calendar
+import machine.sources.connectors as machine_sources_connectors
 import ms_graph
 import sources
 import timeutil
@@ -218,11 +219,48 @@ class Sources(Pinned):
             items, _ = ical.window_items([text], NOW, NOW + dt.timedelta(days=30))
             self.assertEqual([self.kept(i) for i in items], [kept], line)
 
-    def test_an_all_day_event_the_machine_adds_is_free_as_in_googles_own_form(self):
-        add = {'op': 'create', 'title': 'Trip', 'start': '2026-12-01', 'end': '2026-12-02', 'all_day': True}
-        self.assertEqual(calendar_writes.body(add, 'k').get('transparency'), 'transparent')
-        self.assertNotIn('transparency', calendar_writes.body({**add, 'all_day': False, 'start': '2026-12-01T10:00', 'end': '2026-12-01T11:00'}, 'k'))
-        self.assertNotIn('transparency', calendar_writes.body({**add, 'op': 'update', 'changed': ['title']}))
+    def test_an_all_day_event_the_machine_adds_is_free_unless_the_owner_is_away(self):
+        config = {'accounts': [{**CAL, 'transport': 'gog'}]}
+        add = {'kind': 'calendar', 'op': 'create', 'calendar': 'cal', 'title': 'Trip', 'start': '2026-12-01', 'end': '2026-12-02', 'all_day': True}
+        timed = {**add, 'all_day': False, 'start': '2026-12-01T10:00:00+00:00', 'end': '2026-12-01T11:00:00+00:00'}
+
+        def written(value, events=None):
+            action = calendar_writes.validate(value, config, events)
+            return calendar_writes.body(action, 'k').get('transparency'), action['when'].rpartition(', ')[2]
+        for value, sent in ((add, 'transparent'), ({**add, 'busy': False}, 'transparent'), ({**add, 'busy': True}, 'opaque')):
+            self.assertEqual(written(value)[0], sent)
+        self.assertEqual(written({**add, 'busy': True})[1], 'busy')  # the owner sees it before they add it
+        self.assertNotIn(written(add)[1], ('busy', 'free'))
+        for value in (timed, {**timed, 'busy': True}):  # takes its time anyway
+            self.assertIsNone(written(value)[0])
+        for bad in ({**add, 'busy': 'yes'}, {**add, 'busy': 1}, {**timed, 'busy': False}):
+            with self.assertRaises(ValueError):
+                calendar_writes.validate(bad, config)
+        # a change says it only when it is what changes
+        events = {7: {'account_id': 'cal', 'source_id': 'e7', 'title': 'Trip', 'start': '2026-12-01', 'end': '2026-12-02', 'all_day': True, 'guests': 0}}
+        change = {'kind': 'calendar', 'op': 'update', 'event': 7}
+        self.assertEqual(written({**change, 'busy': True}, events), ('opaque', 'busy'))
+        self.assertEqual(written({**change, 'busy': False}, events), ('transparent', 'free'))
+        self.assertIsNone(written({**change, 'title': 'Trip to the sea'}, events)[0])
+        # a day off given a time is no longer Free, and the other way round
+        at = {'start': '2026-12-01T10:00:00+00:00', 'end': '2026-12-01T11:00:00+00:00'}
+        self.assertEqual(written({**change, 'all_day': False, **at}, events), ('opaque', '10:00 to 11:00'))
+        events[7].update(at, all_day=False)
+        self.assertEqual(written({**change, 'all_day': True, 'start': '2026-12-01'}, events), ('transparent', 'all day'))
+        self.assertEqual(written({**change, 'all_day': True, 'start': '2026-12-01', 'busy': True}, events), ('opaque', 'busy'))
+        # Google says Busy by leaving it out: a lost answer still reads back as sent
+        for busy, google, sent in ((True, None, True), (True, 'transparent', False), (False, 'transparent', True), (False, None, False)):
+            action = calendar_writes.validate({**add, 'busy': busy}, config)
+            event = {k: v for k, v in {**calendar_writes.body(action, 'k'), 'transparency': google}.items() if v}
+            transport = calendar_writes.CalendarTransport(config, None, None)
+            transport.event = lambda *_, event=event: event
+            self.assertEqual(bool(transport.reconcile(action, {'id': 'k'})), sent, (busy, google))
+
+    def test_the_line_about_it_in_the_preparations_instructions_stays_short(self):
+        config = {'accounts': [{**CAL, 'transport': 'gog'}]}
+        with patch_everywhere(machine_sources_connectors, 'writable_calendars', lambda *_: [{'id': 'cal', 'name': 'Home'}]):
+            told = machine_sources_connectors.calendar_prompt(config)
+        self.assertEqual(told.count(', busy:true if the owner is away or taken'), 1)
 
 
 class Sync(Pinned):
@@ -250,6 +288,15 @@ class Sync(Pinned):
         with patch_everywhere(machine_sources_calendar, 'Calendar', Fake):
             while pages:
                 machine_sources_calendar.sync_calendar(self.store, {}, CAL)
+
+    def test_days_off_the_machine_added_count_as_busy_once_read_back(self):
+        config = {'accounts': [{**CAL, 'transport': 'gog'}]}
+        items = []
+        for n, (day, busy) in enumerate((('2026-12-01', True), ('2026-12-02', False))):  # away, and a birthday
+            action = calendar_writes.validate({'kind': 'calendar', 'op': 'create', 'calendar': 'cal', 'title': 'Day', 'start': day, 'all_day': True, 'busy': busy}, config)
+            items.append({**calendar_writes.body(action, str(n)), 'status': 'confirmed'})
+        self.sync({'items': items, 'nextSyncToken': 's1'})
+        self.assertEqual(self.unknown(), {'busy': [['2026-12-01T00:00Z', '2026-12-02T00:00Z']], 'unknown': []})
 
     def unknown(self, ask=ASK):
         with self.store.connect() as db:
