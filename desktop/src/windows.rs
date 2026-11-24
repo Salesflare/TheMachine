@@ -88,7 +88,9 @@ pub fn start(app: &AppHandle) -> tauri::Result<()> {
     #[cfg(any(windows, target_os = "macos"))]
     crate::card::build(app)?;
     build_bubble(app)?;
-    show_robot(app);
+    if !app.state::<Shared>().saved.lock().unwrap().no_robot {
+        show_robot(app);
+    }
     Ok(())
 }
 
@@ -159,7 +161,8 @@ pub fn show_robot(app: &AppHandle) {
 pub fn show_or_not(app: &AppHandle) {
     let Some(robot) = app.get_webview_window("robot") else { return };
     let shared = app.state::<Shared>();
-    let wanted = !shared.picking.load(Ordering::Relaxed) && (box_open(app) || !shared.away.load(Ordering::Relaxed) && !shared.full.load(Ordering::Relaxed));
+    let off = shared.picking.load(Ordering::Relaxed) || shared.saved.lock().unwrap().no_robot;
+    let wanted = !off && (box_open(app) || !shared.away.load(Ordering::Relaxed) && !shared.full.load(Ordering::Relaxed));
     if robot.is_visible().unwrap_or(true) != wanted {
         seen(&robot, wanted);
         if wanted {
@@ -193,6 +196,7 @@ pub fn box_open(app: &AppHandle) -> bool {
 pub fn open_box(app: &AppHandle) -> tauri::Result<()> {
     let shared = app.state::<Shared>();
     shared.open.store(true, Ordering::Relaxed);
+    shared.over_dash.store(crate::dash::front(), Ordering::Relaxed);
     crate::looked(app);
     crate::speak::hush(app, false);
     show_or_not(app);
@@ -232,7 +236,9 @@ pub fn close_box(app: &AppHandle) {
     crate::speak::closed(app);
     let _ = app.emit_to("robot", "box", false);
     #[cfg(target_os = "macos")]
-    crate::mac::give_back();
+    if !crate::dash::front() && !shared.over_dash.load(Ordering::Relaxed) {
+        crate::mac::give_back();
+    }
     #[cfg(target_os = "linux")]
     {
         let (app, opened) = (app.clone(), shared.opened.load(Ordering::Relaxed));
@@ -300,6 +306,15 @@ fn screens(app: &AppHandle) -> Vec<Screen> {
             scale,
         }
     }).collect()
+}
+
+/// The screens' free room, the main one first, in what the window system counts in (dash.rs), and how many of those make one
+/// of a page's.
+pub fn areas(app: &AppHandle) -> Vec<(Rect, f64)> {
+    let main = app.primary_monitor().ok().flatten().and_then(|m| m.name().cloned());
+    let mut all = screens(app);
+    all.sort_by_key(|s| Some(&s.name) != main.as_ref()); // on macOS it is the first already
+    all.into_iter().map(|s| (Rect { x: s.area.x * s.scale, y: s.area.y * s.scale, w: s.area.w * s.scale, h: s.area.h * s.scale }, s.scale)).collect()
 }
 
 /// The saved monitor when it is there, else the main one. Its place in the list, for layer-shell.

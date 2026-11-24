@@ -1,7 +1,7 @@
 #!/bin/bash
 # Makes the app from the built program, one for each chip put together: mac/bundle.sh <folder> <program>...
-# Signed ad hoc, as Apple silicon asks at least, or by the identity in SIGN. With the hardened runtime either way, and no
-# entitlement: it needs none.
+# Signed ad hoc, as Apple silicon asks at least, or by the identity in SIGN. With the hardened runtime either way, and one
+# entitlement: the microphone, which macOS still asks the person about.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 app="$1/The Machine.app"
@@ -22,5 +22,5 @@ iconutil -c icns -o "$app/Contents/Resources/icon.icns" "$set"
 plutil -lint -s "$app/Contents/Info.plist"
 time=--timestamp
 [ "${SIGN:--}" = - ] && time=--timestamp=none
-codesign --force --sign "${SIGN:--}" --options runtime $time "$app"
+codesign --force --sign "${SIGN:--}" --options runtime --entitlements "$here/entitlements.plist" $time "$app"
 codesign --verify --strict --verbose=2 "$app"

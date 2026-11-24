@@ -5,7 +5,9 @@
 use crate::address;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::path::{Path, PathBuf};
 use std::time::Duration;
+use url::Url;
 
 /// Error codes the box has its own words for (ui/strings.js); anything else is the Machine's own sentence.
 const UNREACHABLE: &str = "unreachable";
@@ -133,6 +135,28 @@ impl Machine {
             request = request.header("Cookie", cookie);
         }
         request.call().map(read).map_err(|_| UNREACHABLE.to_string())
+    }
+
+    /// One of its files, kept in this folder. Its name there; the name it would have had, when that didn't work.
+    pub fn save(&self, url: &Url, folder: &Path) -> Result<PathBuf, String> {
+        let last = url.path_segments().and_then(|mut s| s.next_back()).unwrap_or_default().to_string();
+        let own = url.as_str().strip_prefix(&self.url).is_some_and(|path| path.starts_with("api/"));
+        let mut request = agent(300).get(url.as_str());
+        if let Some(cookie) = &self.cookie {
+            request = request.header("Cookie", cookie);
+        }
+        let mut answer = own.then(|| request.call().ok()).flatten().filter(|a| a.status() == 200).ok_or_else(|| last.clone())?;
+        let named = answer.headers().get("content-disposition").and_then(|h| h.to_str().ok()).and_then(file_name);
+        let file = crate::files::free(folder, &named.unwrap_or_else(|| last.clone()));
+        let name = file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let kept = std::fs::File::create_new(&file).and_then(|mut to| std::io::copy(&mut answer.body_mut().as_reader(), &mut to));
+        match kept {
+            Ok(_) => Ok(file),
+            Err(_) => {
+                let _ = std::fs::remove_file(&file);
+                Err(name)
+            }
+        }
     }
 
     fn csrf(&self) -> Result<String, String> {
@@ -270,6 +294,14 @@ impl Machine {
     }
 }
 
+/// The name in a Content-Disposition, as a Machine writes it: filename*=UTF-8''<percent-encoded>, or filename="...".
+fn file_name(header: &str) -> Option<String> {
+    let part = |name: &str| header.split(';').find_map(|p| p.trim().strip_prefix(name)).map(str::trim);
+    let encoded = part("filename*=UTF-8''").map(|n| format!("n={}", n.replace('+', "%2B").replace('&', "%26")));
+    let decoded = encoded.and_then(|n| url::form_urlencoded::parse(n.as_bytes()).next().map(|(_, v)| v.into_owned()));
+    decoded.or_else(|| part("filename=").map(|n| n.trim_matches('"').to_string())).filter(|n| !n.is_empty())
+}
+
 fn quick(notice: &Value) -> Vec<Quick> {
     let words = |part: &str, act: &str| notice[part][act].as_str().map(|w| w.chars().take(60).collect::<String>());
     notice["actions"].as_array().into_iter().flatten()
@@ -331,6 +363,13 @@ mod tests {
         let version = concat!("TheMachineDesktop/", env!("CARGO_PKG_VERSION"));
         assert!(["windows", "macos", "linux"].map(|os| format!("{version} ({os})")).contains(&user_agent()));
         assert!(user_agent().ends_with(if cfg!(windows) { "(windows)" } else if cfg!(target_os = "macos") { "(macos)" } else { "(linux)" }));
+    }
+
+    #[test]
+    fn a_files_own_name() {
+        assert_eq!(file_name("inline; filename*=UTF-8''Plan%20B%20%26%20c%2B%2B.pdf").as_deref(), Some("Plan B & c++.pdf"));
+        assert_eq!(file_name("attachment; filename=\"plan.pdf\"; filename*=UTF-8''pl%C3%A1n.pdf").as_deref(), Some("plán.pdf"));
+        assert_eq!([file_name("attachment; filename=\"plan.pdf\"").as_deref(), file_name("inline").as_deref(), file_name("attachment; filename=").as_deref()], [Some("plan.pdf"), None, None]);
     }
 
     #[test]

@@ -37,5 +37,15 @@
     r.onerror = no;
     r.readAsDataURL(f);
   });
-  window.Parts = {icon, when, fill, takes, dropped, base64, MAX_FILES: 5, MAX_BYTES: 10 * 1024 * 1024};
+  // What starts soon. The first guest's first name, or the meeting's own name where none has one. A Machine without title
+  // says both in who: there several words are the meeting's own
+  const minutes = at => Math.round((new Date(at) - Date.now()) / 60000);
+  function soon({at, who, others, join, title}) {
+    const name = !who ? title : title == null && /\s/.test(who) ? who : fill(join ? t.callWith : t.meetingWith, others ? fill(others === 1 ? t.andOne : t.andMore.replace('{n}', others), who) : who);
+    const left = minutes(at);
+    return (name || (join ? t.call : t.meeting)) + ' ' + (left > 0 ? fill(t.inMinutes, left) : t.now);
+  }
+  // A title and a line, of what the robot says
+  const said = say => (say.meeting ? [soon(say.meeting), ''] : [say.title, say.line]);
+  window.Parts = {icon, minutes, said, when, fill, takes, dropped, base64, MAX_FILES: 5, MAX_BYTES: 10 * 1024 * 1024};
 })();

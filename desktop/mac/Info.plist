@@ -14,9 +14,10 @@
   <key>CFBundleVersion</key><string>1</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
-  <!-- On the screen and in the menu bar: no Dock icon, no menus of its own in front -->
-  <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
+  <key>NSMicrophoneUsageDescription</key><string>To talk to your Machine and to dictate.</string>
+  <!-- What it saves is marked as from the internet, as a browser's downloads are -->
+  <key>LSFileQuarantineEnabled</key><true/>
   <key>NSHumanReadableCopyright</key><string>AGPL-3.0-only</string>
   <!-- The account's sign-in comes back on it (src/signin.rs) -->
   <key>CFBundleURLTypes</key>

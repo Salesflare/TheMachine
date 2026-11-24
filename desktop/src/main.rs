@@ -1,18 +1,25 @@
-//! The Machine's robot on the desktop: a prototype (README.md). Three parts that only meet here: the windows
-//! (windows.rs, place.rs), the pages (ui/) and the person's Machine (machine.rs, signin.rs).
+//! The Machine on the desktop: a prototype (README.md). Parts that only meet here: the robot's windows (windows.rs,
+//! place.rs), the dashboard's (dash.rs), the pages (ui/) and the person's Machine (machine.rs, signin.rs).
 #![cfg_attr(all(not(debug_assertions), windows), windows_subsystem = "windows")]
 
 mod address;
 mod card;
+mod dash;
+mod files;
 mod front;
 mod given;
+mod login;
 mod machine;
 #[cfg(target_os = "macos")]
 mod mac;
+#[cfg(target_os = "macos")]
+mod mac_app;
+mod notify;
 mod place;
 mod quit;
 mod saved;
 mod seen;
+mod settings;
 mod signin;
 mod snip;
 mod speak;
@@ -74,6 +81,11 @@ pub struct Shared {
     /// The Machine whose dashboard has a page for one to-do, once that is known, and the one that is open (card.rs).
     compact: Mutex<Option<String>>,
     card: Mutex<card::Card>,
+    /// The dashboard's window, and what is under way to Downloads (files.rs).
+    dash: Mutex<dash::Dash>,
+    downloads: Mutex<Vec<(String, PathBuf)>>,
+    /// The box opened over a window of the app's own, or closes to one: the program that was in front before isn't next.
+    over_dash: AtomicBool,
     /// What the robot says, and will (speak.rs); how tall its bubble is.
     speaking: Mutex<speak::Speaking>,
     tall: Mutex<f64>,
@@ -179,6 +191,9 @@ fn look(app: &AppHandle) -> Result<(), String> {
             listed(app, Waiting::default());
         }
     }
+    if found.is_ok() {
+        dash::answered(app);
+    }
     if found.is_ok() && !shared.alone.lock().unwrap().as_ref().is_some_and(|(url, _)| *url == machine.url) {
         if let Some(alone) = machine.alone() {
             *shared.alone.lock().unwrap() = Some((machine.url, alone));
@@ -228,6 +243,11 @@ fn listed(app: &AppHandle, waiting: Waiting) {
     }
     let _ = app.emit_to("box", "listed", ());
     follow_tray(app);
+    #[cfg(target_os = "macos")]
+    if let Some(robot) = app.get_webview_window("robot") {
+        let count = app.state::<Shared>().count() as i64;
+        let _ = robot.set_badge_count((count > 0).then_some(count)); // the Dock icon's
+    }
 }
 
 /// The dot: something is new. While the box or the Machine's app is open the person sees it, so it isn't.
@@ -293,6 +313,14 @@ fn robot_list(app: AppHandle, machine: String, todos: Option<Vec<machine::Todo>>
         speak::follow(app, &marks);
         news(app, seen::now(&machine, &marks));
     });
+}
+
+/// Without a robot: the system tells it (notify.rs), in its page's words.
+#[tauri::command]
+fn robot_notify(id: String, title: String, line: String) {
+    if todo_id(&id).is_ok() {
+        notify::show(&id, &title, &line);
+    }
 }
 
 // The robot
@@ -415,7 +443,9 @@ fn robot_menu(app: AppHandle) {
 #[tauri::command]
 fn menu_item(app: AppHandle, id: String) {
     later(&app, move |app| {
-        windows::close_box(app);
+        if id != "settings" { // which closes it itself, to its own window
+            windows::close_box(app);
+        }
         chosen(app, &id);
     });
 }
@@ -430,6 +460,7 @@ fn chosen(app: &AppHandle, id: &str) {
         }
         "hide" => hide(app),
         "show" => show(app),
+        "settings" => settings::open(app),
         "signout" => {
             let shared = app.state::<Shared>();
             {
@@ -446,7 +477,10 @@ fn chosen(app: &AppHandle, id: &str) {
             speak::hush(app, true);
             set_dot(app, false);
             listed(app, Waiting::default());
-            open(app); // it says so
+            dash::forget(app);
+            let _ = app.emit_to("settings", "settings", ());
+            notify::follow(app);
+            says_so(app);
         }
         "quit" => quit::quit(app),
         _ => {}
@@ -475,6 +509,7 @@ struct BoxState {
     problem: Option<String>,
     waiting: Waiting,
     menu: bool,
+    settings: bool,
     hidden: bool,
     notice: bool,
     snip: bool,
@@ -490,6 +525,7 @@ fn box_state(shared: State<Shared>) -> BoxState {
         problem: shared.problem.lock().unwrap().clone(),
         waiting: shared.waiting.lock().unwrap().clone(),
         menu: shared.menu.swap(false, Ordering::Relaxed),
+        settings: dash::here(),
         hidden: shared.hidden.load(Ordering::Relaxed),
         notice: shared.notice.load(Ordering::Relaxed),
         snip: shared.snip.load(Ordering::Relaxed),
@@ -598,6 +634,9 @@ fn signed_in(app: &AppHandle, machine: Machine) -> Result<(), String> {
     *shared.held.lock().unwrap() = Held::default();
     *shared.problem.lock().unwrap() = None;
     let _ = look(app);
+    if dash::here() {
+        later(app, dash::signed_in);
+    }
     Ok(())
 }
 
@@ -646,9 +685,39 @@ fn came_back(app: &AppHandle, link: &str) {
             signin::Back::Hosted { auth, machine } => machine::redeem(&auth)
                 .and_then(|cookie| signed_in(&app, Machine { url: machine, cookie: Some(cookie) })),
         };
-        let _ = app.emit_to("box", "signin", done.err());
-        later(&app, open);
+        let error = done.err();
+        let _ = app.emit_to("box", "signin", error.clone());
+        let _ = app.emit_to(dash::LABEL, "signin", error);
+        later(&app, says_so);
     });
+}
+
+/// Signed in or out: the dashboard's window says so when it is there, else the box.
+fn says_so(app: &AppHandle) {
+    let window = dash::visible(app) || dash::here() && app.state::<Shared>().saved.lock().unwrap().no_robot;
+    if window {
+        dash::show(app, "");
+    } else {
+        open(app);
+    }
+}
+
+// The dashboard's window, when it has the app's own page
+
+#[derive(Serialize)]
+struct AppState {
+    view: dash::View,
+    machine: Option<String>,
+}
+
+#[tauri::command]
+fn app_state(app: AppHandle) -> AppState {
+    AppState { view: dash::now(&app), machine: app.state::<Shared>().machine().map(|m| m.url) }
+}
+
+#[tauri::command]
+fn app_retry(app: AppHandle) {
+    later(&app, dash::retry);
 }
 
 #[tauri::command]
@@ -785,10 +854,16 @@ fn open_dashboard(app: AppHandle, todo: Option<String>) -> Result<(), String> {
     Ok(())
 }
 
-/// In the Machine's installed app, or else in the browser.
+/// In the app's own window; where it has none, in the Machine's installed app, or else in the browser.
 fn open_path(app: &AppHandle, path: &str) -> Result<(), String> {
     let (machine, alone) = app.state::<Shared>().signed_in().ok_or("notowner")?;
     looked(app);
+    if dash::here() {
+        let path = path.to_string();
+        app.state::<Shared>().over_dash.store(true, Ordering::Relaxed); // the box closes to it
+        later(app, move |app| dash::show(app, &path));
+        return Ok(());
+    }
     // Which robot opens it: the page tells the Machine what browser is on this computer (speak.rs)
     let address = format!("{machine}?desk={}{path}", app.state::<Shared>().saved.lock().unwrap().desk);
     if webapp::open(&machine, &address, alone) {
@@ -808,7 +883,7 @@ fn tray(app: &AppHandle) -> tauri::Result<()> {
     #[cfg(windows)]
     let menu = Menu::with_items(app, &[&hide, &dashboard, &item("quit", "Quit")?])?;
     #[cfg(target_os = "macos")]
-    let menu = Menu::with_items(app, &[&item("open", "Open")?, &dashboard, &hide, &item("quit", "Quit")?])?;
+    let menu = Menu::with_items(app, &[&item("open", "Open")?, &dashboard, &hide, &item("settings", "Settings…")?, &item("quit", "Quit")?])?;
     let mut icon = TrayIconBuilder::with_id("tray")
         .tooltip("The Machine")
         .menu(&menu)
@@ -851,6 +926,8 @@ fn follow_tray(app: &AppHandle) {
         let shared = app.state::<Shared>();
         let _ = items.hide.set_text(if shared.hidden.load(Ordering::Relaxed) { "Show robot" } else { "Hide" });
         let _ = items.dashboard.set_enabled(shared.machine().is_some());
+        #[cfg(target_os = "macos")]
+        let _ = icon.set_visible(!shared.saved.lock().unwrap().no_robot); // then the Dock icon is the way in
         let count = shared.count();
         let _ = icon.set_icon(Some(if shared.dot.load(Ordering::Relaxed) { dotted(image) } else { image.clone() }));
         let _ = icon.set_tooltip(Some(if count > 0 { format!("The Machine. {count} for you.") } else { "The Machine".into() }));
@@ -921,7 +998,11 @@ fn main() {
     }
     let builder = tauri::Builder::default();
     #[cfg(target_os = "macos")]
-    let builder = builder.activate_ignoring_other_apps(false);
+    let builder = builder.activate_ignoring_other_apps(false).on_web_content_process_terminate(|page| {
+        if page.label() == dash::LABEL {
+            later(page.app_handle(), dash::died);
+        }
+    });
     builder
         .plugin(tauri_plugin_single_instance::init(|app, args, _| {
             // Started again: --toggle (for a key the person binds), --quit, or just show the robot. Or a sign-in comes
@@ -934,6 +1015,7 @@ fn main() {
                 #[cfg(feature = "sandbox")]
                 Some("--hang") => std::thread::sleep(Duration::from_secs(60)), // for smoke/: --quit still has to work
                 Some(link) if link.starts_with(signin::SCHEME) => came_back(app, link),
+                _ if dash::here() => dash::show(app, ""),
                 _ => {
                     show(app);
                     if app.state::<Shared>().machine().is_none() {
@@ -947,24 +1029,32 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             robot_state, robot_grab, robot_drag, robot_drop, robot_click, robot_menu, robot_take, robot_list, robot_given, box_given, box_state, box_look, box_fit, box_draft, box_close,
             connect, sign_in, add_todo, add_file, remove_file, take_screenshot, todo_quick, todo_decide, todo_undo, ask, open_dashboard, menu_item,
-            card_open, card_place, card_close, set_speaks, bubble_state, bubble_fit, bubble_hold, bubble_open, bubble_join, bubble_done
+            card_open, card_place, card_close, set_speaks, bubble_state, bubble_fit, bubble_hold, bubble_open, bubble_join, bubble_done,
+            robot_notify, app_state, app_retry, settings::settings_state, settings::settings_set, settings::settings_fit
         ])
         .on_window_event(|window, event| {
-            // Alt+F4 closes the box. On the robot it quits, on Windows: on Linux a monitor that goes away closes it too.
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                if window.label() == "bubble" {
-                    speak::done(window.app_handle());
-                } else if window.label() != "robot" {
-                    windows::close_box(window.app_handle());
-                } else if cfg!(windows) {
-                    quit::quit(window.app_handle());
+            let app = window.app_handle();
+            match event {
+                // Alt+F4 closes the box. On the robot it quits, on Windows: on Linux a monitor that goes away closes it too.
+                WindowEvent::CloseRequested { api, .. } => {
+                    api.prevent_close();
+                    match window.label() {
+                        "bubble" => speak::done(app),
+                        "robot" if cfg!(windows) => quit::quit(app),
+                        "robot" => {}
+                        "settings" => { let _ = window.hide(); }
+                        dash::LABEL => dash::close(app),
+                        file if dash::label(file) => dash::close_file(app, file),
+                        _ => windows::close_box(app),
+                    }
                 }
-            }
-            if let WindowEvent::ScaleFactorChanged { .. } = event {
-                later(window.app_handle(), windows::place); // once the window system is done with its own move
+                WindowEvent::ScaleFactorChanged { .. } => later(app, windows::place), // once the window system is done with its own move
+                WindowEvent::Focused(on) if dash::label(window.label()) => dash::focused(app, window.label(), *on),
+                WindowEvent::Moved(_) | WindowEvent::Resized(_) if window.label() == dash::LABEL => dash::moved(app),
+                _ => {}
             }
         })
+
         .setup(|app| {
             if std::env::args().nth(1).as_deref() == Some("--quit") {
                 std::process::exit(0); // nothing was running
@@ -989,6 +1079,9 @@ fn main() {
                 now: Mutex::default(),
                 compact: Mutex::default(),
                 card: Mutex::default(),
+                dash: Mutex::default(),
+                downloads: Mutex::default(),
+                over_dash: AtomicBool::new(false),
                 added: Mutex::default(),
                 speaking: Mutex::default(),
                 wanted: Mutex::default(),
@@ -1024,7 +1117,6 @@ fn main() {
             quit::event::wait(app.handle());
             #[cfg(target_os = "macos")]
             {
-                app.set_activation_policy(tauri::ActivationPolicy::Accessory); // no Dock icon, as Info.plist says
                 mac::menu(app.handle())?;
                 mac::follow_screens(app.handle());
                 mac::follow_front(app.handle());
@@ -1036,7 +1128,10 @@ fn main() {
             windows::start(app.handle())?;
             #[cfg(any(windows, target_os = "macos"))]
             tray(app.handle())?;
-            if app.state::<Shared>().machine().is_none() {
+            notify::start(app.handle());
+            if dash::here() && !login::started() {
+                dash::show(app.handle(), ""); // also to sign in
+            } else if app.state::<Shared>().machine().is_none() {
                 open(app.handle()); // it says what it is, and signs in
             }
             watch(app.handle().clone());
@@ -1050,14 +1145,9 @@ fn main() {
         .run(|app, event| {
             #[cfg(target_os = "macos")]
             match &event {
-                // Started again from Finder, or a sign-in comes back
-                RunEvent::Reopen { .. } => later(app, |app| {
-                    show(app);
-                    mac::give_back_soon(app);
-                    if app.state::<Shared>().machine().is_none() {
-                        open(app);
-                    }
-                }),
+                // The Dock icon, or started again from Finder
+                RunEvent::Reopen { .. } => later(app, |app| dash::show(app, "")),
+                // A sign-in comes back
                 RunEvent::Opened { urls } if app.try_state::<Shared>().is_some() => {
                     for url in urls {
                         came_back(app, url.as_str());
@@ -1067,6 +1157,9 @@ fn main() {
                 _ => {}
             }
             if let RunEvent::Exit = event {
+                if app.state::<Shared>().saved.lock().unwrap().window.is_some() {
+                    app.state::<Shared>().save(); // its place
+                }
                 if app.state::<Shared>().pending.lock().unwrap().is_some() {
                     no_links(app);
                 }

@@ -6,7 +6,7 @@
   const t = window.MachineText, native = window.Native, {icon, when, fill, takes, dropped, base64, MAX_FILES, MAX_BYTES} = window.Parts;
   const $ = id => document.getElementById(id);
   const MAX_IMAGE = 5 * 1024 * 1024, LONGEST = 2000;
-  let kind = 'todo', busy = false, byAddress = false, files = [], draft = '', connected = false, machine = null, hidden = false, notice = false, fresh = false, written = null, snip = false, shooting = false, speaks = 'always';
+  let kind = 'todo', busy = false, byAddress = false, files = [], draft = '', connected = false, machine = null, hidden = false, notice = false, fresh = false, written = null, snip = false, settings = false, shooting = false, speaks = 'always';
 
   for (const [id, text] of Object.entries({
     'signin-intro': t.signInIntro, 'signin-go': t.signIn, 'notice-text': t.hidden, 'notice-ok': t.ok, connect: t.connect, 'kind-todo': t.todo, 'kind-ask': t.ask,
@@ -30,6 +30,7 @@
     machine = s.machine;
     hidden = s.hidden;
     snip = s.snip;
+    settings = s.settings;
     speaks = s.speaks;
     notice = s.notice; // until the box is closed
     $('notice').hidden = !notice;
@@ -268,8 +269,8 @@
     $('menu').hidden = !open;
     $('more').setAttribute('aria-expanded', String(open));
     if (!open) return;
-    const items = [...(machine ? ['dashboard'] : []), hidden ? 'show' : 'hide', ...(machine ? ['signout'] : []), 'quit'];
-    const names = {dashboard: t.dashboard, hide: t.hide, show: t.show, signout: t.signOut, quit: t.quit};
+    const items = [...(machine ? ['dashboard'] : []), hidden ? 'show' : 'hide', ...(settings ? ['settings'] : []), ...(machine ? ['signout'] : []), 'quit'];
+    const names = {dashboard: t.dashboard, hide: t.hide, show: t.show, settings: t.settings + '…', signout: t.signOut, quit: t.quit};
     const where = machine && connected ? [el('li', {className: 'where', textContent: fill(t.signedIn, new URL(machine).host)})] : [];
     $('menu').replaceChildren(...where, ...items.map(id => el('li', {}, el('button', {type: 'button', className: 'name', id: 'menu-' + id, textContent: names[id], onclick: () => (id === 'dashboard' ? native.openDashboard().catch(fail) : native.menuItem(id))}))));
     if (machine) $('menu-dashboard').parentElement.after(el('li', {id: 'menu-speak', role: 'radiogroup', ariaLabel: t.speak, title: t.speakHint}, el('span', {className: 'where', textContent: t.speak}),

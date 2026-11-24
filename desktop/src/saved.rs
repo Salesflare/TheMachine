@@ -19,6 +19,14 @@ pub struct Saved {
     pub seen: Option<crate::seen::Seen>,
     /// When it speaks up ("...").
     pub speak: crate::speak::Speak,
+    /// The dashboard's window: its place and size (dash.rs), whether it is as large as its screen, and its zoom (0: as made).
+    pub window: Option<[f64; 4]>,
+    pub wide: bool,
+    pub zoom: f64,
+    /// Settings: no robot, closing the window quits, and without a robot the system's own notifications.
+    pub no_robot: bool,
+    pub quits: bool,
+    pub notify: bool,
     /// A random name for this robot, for its Machine to know which computer's it is (speak.rs).
     pub desk: String,
 }

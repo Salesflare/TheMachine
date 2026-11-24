@@ -1,7 +1,7 @@
 //! What is macOS' own in the windows: panels that take the keys without the program coming to the front, on every Space and
 //! beside a full-screen app; places in the Mac's own points; the menu that gives the box its Command keys.
 use crate::place::Rect;
-use crate::{later, windows, Shared};
+use crate::{dash, later, mac_app, windows, Shared};
 use block2::{Block, RcBlock};
 use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject, ClassBuilder, NSObjectProtocol, ProtocolObject, Sel};
@@ -105,6 +105,7 @@ pub fn prepare(window: &WebviewWindow) {
         }
     }
     ns.setHidesOnDeactivate(false);
+    ns.setCanHide(false); // Hide is about the dashboard's window
     ns.setLevel(if window.label() == "card" { 4 } else { 3 }); // floating, and a to-do over its box
     ns.setCollectionBehavior(
         NSWindowCollectionBehavior::CanJoinAllSpaces | NSWindowCollectionBehavior::FullScreenAuxiliary
@@ -125,6 +126,7 @@ pub fn prepare(window: &WebviewWindow) {
             let () = msg_send![&preferences, setTabFocusesLinks: true];
             if leaves {
                 links_leave(view);
+                mac_app::asks(view);
             }
             if let (true, Some(bubble)) = (speaks, page.ns_window().cast::<AnyObject>().as_ref()) {
                 let told = NSTrackingAreaOptions::MouseEnteredAndExited | NSTrackingAreaOptions::ActiveAlways | NSTrackingAreaOptions::InVisibleRect;
@@ -143,7 +145,8 @@ extern "C-unwind" fn decide(this: &AnyObject, _: Sel, view: &AnyObject, action: 
         let frame: Option<Retained<AnyObject>> = msg_send![action, targetFrame];
         let request: Retained<AnyObject> = msg_send![action, request];
         let address: Option<Retained<AnyObject>> = msg_send![&request, URL]; // without one wry refuses it
-        if frame.is_none() && address.is_some() {
+        let file: bool = msg_send![action, shouldPerformDownload];
+        if frame.is_none() && address.is_some() && !file {
             return answer.call((1,)); // WKNavigationActionPolicyAllow
         }
         if let Some(wry) = AnyClass::get(LEAVES).and_then(AnyClass::superclass) {
@@ -385,7 +388,7 @@ pub fn give_back_soon(app: &AppHandle) {
     std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(300));
         later(&app, |app| {
-            if !windows::box_open(app) {
+            if !windows::box_open(app) && !dash::visible(app) {
                 give_back();
             }
         });
@@ -427,26 +430,89 @@ pub fn follow_screens(app: &AppHandle) {
     });
 }
 
-/// Not in the menu bar while another program is in front, but its Command keys are the box's: Copy and Paste, Close, Quit.
+/// In the menu bar while the dashboard's window is in front; its Command keys are the box's too.
 pub fn menu(app: &AppHandle) -> tauri::Result<()> {
-    let item = |id, name, key| MenuItem::with_id(app, id, name, true, Some(key)); // Quit is the tray's too, which hears it
-    let own = Submenu::with_items(app, "The Machine", true, &[&item("close", "Close", "Cmd+W")?, &item("quit", "Quit The Machine", "Cmd+Q")?])?;
+    let item = |id, name, key| MenuItem::with_id(app, id, name, true, Some(key));
+    let line = || PredefinedMenuItem::separator(app);
+    // Settings and Quit are the tray's too, which hears them (main.rs)
+    let own = Submenu::with_items(app, "The Machine", true, &[
+        &PredefinedMenuItem::about(app, Some("About The Machine"), None)?,
+        &line()?,
+        &item("settings", "Settings…", "Cmd+,")?,
+        &line()?,
+        &PredefinedMenuItem::hide(app, Some("Hide The Machine"))?,
+        &PredefinedMenuItem::hide_others(app, None)?,
+        &PredefinedMenuItem::show_all(app, None)?,
+        &line()?,
+        &item("quit", "Quit The Machine", "Cmd+Q")?,
+    ])?;
+    let file = Submenu::with_items(app, "File", true, &[&item("close", "Close", "Cmd+W")?, &line()?, &item("save", "Save a Copy", "Cmd+S")?, &item("print", "Print…", "Cmd+P")?])?;
+    let find = Submenu::with_items(app, "Find", true, &[&item("find", "Find…", "Cmd+F")?, &item("find-next", "Find Next", "Cmd+G")?, &item("find-before", "Find Previous", "Cmd+Shift+G")?])?;
     let edit = Submenu::with_items(app, "Edit", true, &[
         &PredefinedMenuItem::undo(app, None)?,
         &PredefinedMenuItem::redo(app, None)?,
-        &PredefinedMenuItem::separator(app)?,
+        &line()?,
         &PredefinedMenuItem::cut(app, None)?,
         &PredefinedMenuItem::copy(app, None)?,
         &PredefinedMenuItem::paste(app, None)?,
         &PredefinedMenuItem::select_all(app, None)?,
+        &line()?,
+        &find,
     ])?;
-    app.set_menu(Menu::with_items(app, &[&own, &edit])?)?;
+    let view = Submenu::with_items(app, "View", true, &[
+        &item("reload", "Reload", "Cmd+R")?,
+        &item("back", "Back", "Cmd+[")?,
+        &item("forward", "Forward", "Cmd+]")?,
+        &line()?,
+        &item("zoom", "Actual Size", "Cmd+0")?,
+        &item("zoom-in", "Zoom In", "Cmd+=")?,
+        &item("zoom-out", "Zoom Out", "Cmd+-")?,
+        &line()?,
+        &PredefinedMenuItem::fullscreen(app, None)?,
+    ])?;
+    let window = Submenu::with_items(app, "Window", true, &[
+        &PredefinedMenuItem::minimize(app, None)?,
+        &PredefinedMenuItem::maximize(app, Some("Zoom"))?,
+        &line()?,
+        &item("window", "The Machine", "Cmd+1")?,
+    ])?;
+    app.set_menu(Menu::with_items(app, &[&own, &file, &edit, &view, &window])?)?;
     app.on_menu_event(|app, event| {
-        if event.id.as_ref() == "close" {
-            later(app, windows::close_box);
-        }
+        let id = event.id.as_ref().to_string();
+        later(app, move |app| match id.as_str() {
+            "close" => close(app),
+            "save" => dash::save_copy(app),
+            "print" => {
+                if let Some(window) = dash::in_front(app) {
+                    let _ = window.print();
+                }
+            }
+            "find" => mac_app::find_next(0),
+            "find-next" => mac_app::find_next(1),
+            "find-before" => mac_app::find_next(-1),
+            "reload" => dash::reload(app),
+            "back" => dash::back(app, false),
+            "forward" => dash::back(app, true),
+            "zoom" => dash::zoom(app, 0),
+            "zoom-in" => dash::zoom(app, 1),
+            "zoom-out" => dash::zoom(app, -1),
+            "window" => dash::show(app, ""),
+            _ => {}
+        });
     });
     Ok(())
+}
+
+/// Cmd+W: what has the keys. The box, else the window in front.
+fn close(app: &AppHandle) {
+    if windows::box_open(app) {
+        return windows::close_box(app);
+    }
+    if let Some(window) = app.get_webview_window("settings").filter(|w| w.is_focused().unwrap_or(false)) {
+        let _ = window.hide();
+    } else if let Some(window) = dash::in_front(app) {
+        if window.label() == dash::LABEL { dash::close(app) } else { dash::close_file(app, window.label()) }
+    }
 }
 
 /// A sandbox build's pages, for smoke/mac.py: a page's label on the first line, what to ask it after. WebKit has nothing
