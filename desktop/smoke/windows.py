@@ -1613,13 +1613,16 @@ def look():
 def _():
     at = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(time.time() + 600))
     meets = {'id': 'aa02', 'event': 7, 'at': at, 'who': 'Dana', 'others': 2, 'join': None}
-    for join, line in (('https://zoom.us.example.com/j/1', 'Meeting'), ('https://zoom.us/j/1', 'Call')):
-        machine.meeting = {**meets, 'event': len(line), 'join': join}
+    # a Machine that says no title yet, then one that does: with a guest, and without
+    for join, line, more, name in (('https://zoom.us.example.com/j/1', 'Meeting', {}, 'Meeting with Dana and 2 others'),
+                                   ('https://zoom.us/j/1', 'Call', {'title': 'Kickoff'}, 'Call with Dana and 2 others'),
+                                   (None, 'Kickoff alone', {'who': '', 'others': 0, 'title': 'Kickoff'}, 'Kickoff')):
+        machine.meeting = {**meets, 'event': len(line), 'join': join, **more}
         look()
         need(until(app.bubble, 45, 0.05), 'the bubble shows')
-        need(until(lambda: says('#title', BUBBLE) in [f'{line} with Dana and 2 others in {m} min' for m in (9, 10)]), says('#panel', BUBBLE))
+        need(until(lambda: says('#title', BUBBLE) in [f'{name} in {m} min' for m in (9, 10)]), says('#panel', BUBBLE))
         need(said() == ['Open brief', *(['Join'] if line == 'Call' else [])], str(said()))
-        png(f'a-meeting-{line.lower()}')
+        png(f'a-meeting-{line.split()[0].lower()}')
         need(until(lambda: not app.bubble(), 20), 'it goes')
     look()
     time.sleep(3)

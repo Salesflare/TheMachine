@@ -54,9 +54,10 @@
     stay(STAYS);
   }
   const minutes = at => Math.round((new Date(at) - Date.now()) / 60000);
-  // The first guest's first name, or the meeting's own name where none has one
-  function soon({at, who, others, join}) {
-    const name = !who ? '' : /\s/.test(who) ? who : fill(join ? t.callWith : t.meetingWith, others ? fill(others === 1 ? t.andOne : t.andMore.replace('{n}', others), who) : who);
+  // The first guest's first name, or the meeting's own name where none has one. A Machine without title says both in who:
+  // there several words are the meeting's own
+  function soon({at, who, others, join, title}) {
+    const name = !who ? title : title == null && /\s/.test(who) ? who : fill(join ? t.callWith : t.meetingWith, others ? fill(others === 1 ? t.andOne : t.andMore.replace('{n}', others), who) : who);
     const left = minutes(at);
     return (name || (join ? t.call : t.meeting)) + ' ' + (left > 0 ? fill(t.inMinutes, left) : t.now);
   }
