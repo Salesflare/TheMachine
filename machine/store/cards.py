@@ -173,13 +173,17 @@ def thread_keys(rows):
 
 
 # A rename on a card: the review's title goes to title_suggested and theirs stays (two parameters, the same title).
-# The message the draft or decision follows (mark_based_on) was said about the text it stood on: it stays with that text
-# and goes when an update puts another in its place (the update's own based_on is marked after).
-KEEP_BASED_ON = 'based_on=CASE WHEN body=? THEN based_on END'
 KEEP_OWNER_TITLE = ("title=CASE WHEN title_source='user' THEN title ELSE ? END,"
                     "title_suggested=CASE WHEN title_source='user' THEN ? ELSE NULL END")
 OWNER_WORDS_MAX, TITLE_OWNER_MAX = 2000, 200
 WAIT_DAYS = 7  # a to-do that waits on someone else with no deadline comes back after this long (as their promises: PROMISE_CHECK_DAYS)
+
+
+def kept_based_on(card, body):
+    """based_on after an update with this body: the message the draft or decision follows (mark_based_on) was said about
+    the text it stood on, so it stays with that text and goes when another takes its place (the update's own based_on is
+    marked after). Compared on the opened row: the stored body is sealed under message protection, never equal in SQL."""
+    return card['based_on'] if card['body'] == body[:5000] else None
 
 
 def wait_until(due, digest_at='08:30', current=None, due_at=None):
@@ -691,10 +695,10 @@ class CardsStore:
         deadline = (card['due'] or due) if own else (due or card['due'])
         # the card's time of day (an owner's "tomorrow 9:00") belongs to the card's own deadline only
         until = wait_until(deadline, digest_at, due_at=card['due_at'] if deadline and deadline == card['due'] else None)
-        db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',' + KEEP_BASED_ON + ',body=?,event_ids=?,account_ids=?,source_line=?,'
+        db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',based_on=?,body=?,event_ids=?,account_ids=?,source_line=?,'
                    + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ",outcome=?,next_action=NULL,early=0,deliver_after=NULL,"
                    'snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,feedback_until=NULL WHERE id=?',
-                   (title[:300], title[:300], body[:5000], body[:5000], encoded(ids), encoded(accounts), source_line(evidence, db), due,
+                   (title[:300], title[:300], kept_based_on(card, body), body[:5000], encoded(ids), encoded(accounts), source_line(evidence, db), due,
                     encoded({'state': 'waiting', 'waiting_on': waiting_on, 'until': until}), sid))
         todo_moves.transition(db, sid, todo_states.PREPARED, 'waits_on_others', at=stamp)
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
@@ -771,12 +775,12 @@ class CardsStore:
         # New work on the matter: back to Outstanding as a fresh suggestion, or prepared ahead again.
         status = 'accepted' if ahead else 'pending' if waiting or closed or card['status'] in todo_states.WAITING_ON_OWNER else card['status']
         # A title the owner gave (a rename) stays: the review's goes to title_suggested. On their own card, their due date stays.
-        db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',' + KEEP_BASED_ON + ',body=?,event_ids=?,account_ids=?,source_line=?,deliver_after=?,urgent=?,'
+        db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',based_on=?,body=?,event_ids=?,account_ids=?,source_line=?,deliver_after=?,urgent=?,'
                    + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ','
                    "early=?,outcome=CASE WHEN status=? AND coalesce(json_extract(outcome,'$.state'),'')!='still_waiting' THEN outcome ELSE NULL END,"
                    'snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,'
                    'feedback_until=NULL,expires_at=CASE WHEN expired_at IS NULL THEN expires_at END,expired_at=NULL WHERE id=?',
-                   (suggested[:300], suggested[:300], body[:5000], body[:5000], encoded(ids), encoded(accounts), source_line([evidence[i] for i in ids if i in evidence], db),
+                   (suggested[:300], suggested[:300], kept_based_on(card, body), body[:5000], encoded(ids), encoded(accounts), source_line([evidence[i] for i in ids if i in evidence], db),
                     deliver_after, int(urgent or bool(card['urgent'])), due, int(bool(ahead)), status, sid))
         todo_moves.transition(db, sid, status, 'new_signal', at=stamp)
         was = (f"Updated with a new signal{' and brought back' if waiting else ' and reopened' if closed else ''}."
@@ -882,9 +886,9 @@ class CardsStore:
         # Done or dismissed, it keeps the title it had: Done shows what the to-do was, its status line how it ended.
         retitle = KEEP_OWNER_TITLE + ',' if card['status'] not in todo_states.CLOSED else ''
         # Its draft stays ready under the new text: what the draft follows stays with it
-        based = '' if card['status'] == 'prepared' and card['next_action'] else KEEP_BASED_ON + ','
-        db.execute('UPDATE suggestions SET ' + retitle + based + 'body=?,event_ids=?,account_ids=?,source_line=?,due=coalesce(due,?) WHERE id=?',
-                   ((title[:300], title[:300]) if retitle else ()) + ((body[:5000],) if based else ()) + (body[:5000], encoded(ids), encoded(accounts), source_line(evidence, db), due, sid))
+        based = card['based_on'] if card['status'] == 'prepared' and card['next_action'] else kept_based_on(card, body)
+        db.execute('UPDATE suggestions SET ' + retitle + 'based_on=?,body=?,event_ids=?,account_ids=?,source_line=?,due=coalesce(due,?) WHERE id=?',
+                   ((title[:300], title[:300]) if retitle else ()) + (based, body[:5000], encoded(ids), encoded(accounts), source_line(evidence, db), due, sid))
         if pinned:
             db.execute('UPDATE suggestions SET area=? WHERE id=?', (pinned, sid))
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',

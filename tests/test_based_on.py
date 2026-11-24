@@ -11,6 +11,7 @@ import machine.main as machine_main
 import machine.prompts.review as machine_prompts_review
 import machine.store.cards as machine_store_cards
 import machine.store.views as machine_store_views
+import message_seal
 
 
 def intercom():
@@ -31,10 +32,14 @@ def slack(ts, text, user, when, thread=None, channel='support', display=None):
 
 
 class BasedOn(unittest.TestCase):
+    sealed = False
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite', protect=self.sealed)
+        with self.store.connect() as db:
+            self.assertEqual(message_seal.is_protected(db), self.sealed)
         self.store.owner_user_ids = {'U0OWNER001'}
         self.app = object.__new__(machine_main.App)
         self.app.store = self.store
@@ -137,6 +142,12 @@ class BasedOn(unittest.TestCase):
         self.assertEqual(json.loads(self.card(sid)['outcome'])['state'], 'waiting')
         self.assertIsNone(self.card(sid)['based_on'])
 
+    def test_waiting_on_someone_with_the_same_text_keeps_the_line(self):
+        sid = self.drafted()
+        self.suggest(card_id=sid, event_ids=[self.later()], body='Drafted the bounty offer.', waiting_on='Kim to say which bounty')
+        self.assertEqual(json.loads(self.card(sid)['outcome'])['state'], 'waiting')
+        self.assertEqual(self.shown(sid)['based_on']['who'], 'Robin')
+
     def test_what_settles_or_reads_the_result_keeps_the_line(self):
         sid = self.drafted()
         self.store.review_body(sid, 'Drafted the bounty offer.')
@@ -148,7 +159,7 @@ class BasedOn(unittest.TestCase):
 
     def test_the_owners_own_to_do_keeps_the_line_of_a_draft_that_stays_ready(self):
         sid = self.drafted()
-        for text, action, kept in (('Another text.', '{"kind":"email"}', True), ('A third text.', None, False)):
+        for text, action, kept in (('Another text.', '{"kind":"email"}', True), ('Another text.', None, True), ('A third text.', None, False)):
             with self.store.connect() as db:
                 db.execute('UPDATE suggestions SET next_action=? WHERE id=?', (action, sid))
                 card = db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone()
@@ -195,6 +206,11 @@ class BasedOn(unittest.TestCase):
     def test_the_review_and_the_drafting_step_are_told(self):
         self.assertIn('based_on', machine_prompts_review.review_prompt('r1', ['sl']))
         self.assertIn('based_on', machine_app_preparation.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
+
+
+class BasedOnSealed(BasedOn):
+    """The same with message protection on (the default): SQLite sees a to-do's text only sealed."""
+    sealed = True
 
 
 if __name__ == '__main__':
