@@ -260,6 +260,37 @@ def snooze_choices(work=False):
     return choices
 
 
+def snooze_due(due, due_at=None, work=False):
+    """One more time in the snooze picker for a to-do with a deadline: [the moment, its label], a moment before it.
+    The morning of the day before (work: of the last work day before), else the deadline's own morning, else two hours
+    before its time (due_at). None with none left, or when a quick choice lands right there already. Only offered: a
+    snooze the owner picks is never blocked or moved."""
+    try:
+        day = dt.date.fromisoformat(str(due)[:10])
+        at = dt.datetime.fromisoformat(str(due_at)) if due_at else None
+    except ValueError:
+        return None
+    at = at and (at if at.tzinfo else at.replace(tzinfo=local_tz())).astimezone(local_tz())
+    local_now = dt.datetime.fromisoformat(now()).astimezone(local_tz())
+    hour, minute = hour_minute(WORK_HOURS['morning'])
+    morning = lambda d: dt.datetime.combine(d, dt.time(hour, minute), local_tz())
+    before = day - dt.timedelta(days=1)
+    for _ in range(7):
+        if not work or is_work_day(before):
+            break
+        before -= dt.timedelta(days=1)
+    ends = at or morning(day + dt.timedelta(days=1)).replace(hour=0, minute=0)
+    moments = [morning(before), morning(day)] + ([at - dt.timedelta(hours=2)] if at else [])
+    moment = next((m for m in moments if local_now + dt.timedelta(minutes=30) < m < ends), None)
+    taken = {dt.datetime.fromisoformat(snooze_time(option, work=work)) for option in ('tomorrow', '3d', '1w')}
+    if moment is None or moment in taken:
+        return None
+    away = (moment.date() - local_now.date()).days
+    clock = locale_prefs.clock_text(moment) if moment == moments[-1] and at else morning_label()
+    when = ' '.join(([locale_prefs.weekday_name(moment) if away < 7 else locale_prefs.day_text(moment)] if away else []) + [clock])
+    return [moment.astimezone(dt.timezone.utc).isoformat(), i18n.t('Before it’s due · {}', when)]
+
+
 # The chat's Stop (Store.stop_chat): what the card says after, and a message that is only files (chat_files.py)
 CHAT_STOPPED = 'Stopped. Write what to do next, or tap Try again.'
 

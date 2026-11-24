@@ -55,7 +55,7 @@ try{
 
  // Snooze (2 hours): snoozed from the page, said, with Undo that puts it back
  let id=await keep(A,'snooze2h');await tap(id);
- await page.waitForFunction(()=>/Snoozed\./.test(document.querySelector('#toast.show')?.textContent||''));
+ await page.waitForFunction(()=>/Snoozed until (tomorrow )?\d\d:\d\d\./.test(document.querySelector('#toast.show')?.textContent||''));
  assert.deepEqual(decides,[[A,'snooze','2h']]);
  assert.equal(await toast().locator('[data-quick-undo]').textContent(),'Undo');
  assert.equal(new URL(page.url()).hash,'',`the #quick= link is gone from the address`);
@@ -75,7 +75,7 @@ try{
  // Snooze (tomorrow) from a reminder
  cards[1].status='prepared';await page.reload();await page.locator('#task-'+B).waitFor();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
  id=await keep(B,'snooze');await tap(id);
- await page.waitForFunction(()=>/Snoozed\./.test(document.querySelector('#toast.show')?.textContent||''));
+ await page.waitForFunction(()=>/Snoozed until (tomorrow )?\d\d:\d\d\./.test(document.querySelector('#toast.show')?.textContent||''));
  assert.deepEqual(decides.at(-1),[B,'snooze','tomorrow']);
 
  // a link the worker didn't make, an old button, a button for a send: nothing runs
