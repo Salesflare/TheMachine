@@ -307,7 +307,9 @@ def center():
 def on_screen(text):
     """Where a notification with these words is."""
     script = ('Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes; $A = [Windows.Automation.AutomationElement];'
-              f"$is = New-Object Windows.Automation.PropertyCondition($A::NameProperty, '{text}');"
-              "$e = $A::RootElement.FindFirst('Descendants', $is); if ($e) { $r = $e.Current.BoundingRectangle; \"$([int]($r.X + $r.Width / 2)) $([int]($r.Y + $r.Height / 2))\" }")
+              "$is = New-Object Windows.Automation.PropertyCondition($A::ClassNameProperty, 'Windows.UI.Core.CoreWindow');"
+              "foreach ($w in $A::RootElement.FindAll('Children', $is)) { foreach ($e in $w.FindAll('Descendants', [Windows.Automation.Condition]::TrueCondition)) {"
+              f"if ($e.Current.Name -like '*{text}*' -and $e.Current.BoundingRectangle.Width -gt 0) {{"
+              "$r = $e.Current.BoundingRectangle; \"$([int]($r.X + $r.Width / 2)) $([int]($r.Y + $r.Height / 2))\"; exit } } }")
     found = subprocess.run(['powershell', '-noprofile', '-command', script], capture_output=True, text=True).stdout.split()
     return tuple(map(int, found)) if len(found) == 2 else None

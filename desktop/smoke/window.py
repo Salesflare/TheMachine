@@ -479,6 +479,7 @@ def _():
         on.center()
         at = until(lambda: on.on_screen('Send Ravi the floor plan'), 8)
         png('notification-center')
+        at or key(ESCAPE)
     need(at, f'on the screen; {on.kept()}')
     click(*at)
     need(until(ours, 8), f'it comes to the front: {on.in_front()}')
