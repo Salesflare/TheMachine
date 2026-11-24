@@ -12,7 +12,8 @@ from machine.config import LOG
 from machine.sources.exclusions import excluded_by_rules, routine_rules
 from machine.sources.gmail import Gmail, message_event
 from machine.store.conversation import BEFORE_MAX
-from machine.text import _address, shown_body
+from machine.store.review import own_message
+from machine.text import shown_body
 
 LIVE_TTL = 600  # a thread read live is kept this long (seconds), so paging back and forth reads Gmail once
 
@@ -117,7 +118,7 @@ class ConversationApp:
                 continue
             m = event['metadata']
             sender = str(m.get('from') or '')
-            mine = _address(sender) in own
+            mine = own_message(event, own=own)
             body, cut = shown_body(event['body'])
             out.append({'kind': 'email', 'from': ('You' if mine else sender)[:300], 'to': str(m.get('to') or '')[:500],
                         'cc': str(m.get('cc') or '')[:500], 'title': event['title'][:500], 'occurred_at': event['occurred_at'],

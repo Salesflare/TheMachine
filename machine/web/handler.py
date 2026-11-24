@@ -39,8 +39,9 @@ from machine import omarchy
 from machine.sources.calendar import calendar_account_owner, company_domains, invite_people, team_people
 from machine.sources.connectors import writable_calendars
 from machine.store import message_view
+from machine.store.review import own_message
 from machine.store.views import DONE_FIRST
-from machine.text import _address, ATTACHMENT_INLINE, encoded, shown_body
+from machine.text import ATTACHMENT_INLINE, encoded, shown_body
 from machine.timing import _REQUEST_TIMING, SLOW_REQUEST_SECONDS, aside, close_kept
 from machine.web import status_delta
 from machine.web.serving import (
@@ -137,9 +138,8 @@ def event_glance(event, accounts, own=(), chars=240):
     own) and the start of its text, in one line."""
     m = event.get('metadata') or {}
     account = next((a for a in accounts if a.get('id') == event.get('account_id')), {})
-    mine = bool(m.get('from_me')) or 'SENT' in (m.get('labels') or ()) or (
-        event.get('kind') == 'slack.message' and bool(m.get('user_id')) and m.get('user_id') == account.get('user_id')) or (
-        event.get('kind') == 'gmail.message' and _address(m.get('from')) in own)
+    mine = bool(m.get('from_me')) or 'SENT' in (m.get('labels') or ()) or own_message(
+        {'kind': event.get('kind'), 'metadata': m}, [account['user_id']] if account.get('user_id') else (), own)
     sender = str(m.get('sender_display') or m.get('from') or '')
     who = 'You' if mine else (email.utils.parseaddr(sender)[0] or sender if '@' in sender else sender)
     text = shown_body(event.get('body'))[0]
