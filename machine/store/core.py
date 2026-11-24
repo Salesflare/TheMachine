@@ -290,6 +290,8 @@ class StoreCore:
                     db.execute('ALTER TABLE analyses ADD COLUMN ' + column + ' TEXT')
             if 'attempts' not in review_columns:
                 db.execute('ALTER TABLE analyses ADD COLUMN attempts INTEGER NOT NULL DEFAULT 1')
+            if 'computer' not in {r['name'] for r in db.execute('PRAGMA table_info(push_subscriptions)')}:
+                db.execute('ALTER TABLE push_subscriptions ADD COLUMN computer TEXT')
             if 'room' not in {r['name'] for r in db.execute('PRAGMA table_info(profile_runs)')}:
                 db.execute('ALTER TABLE profile_runs ADD COLUMN room INTEGER')
             if 'evidence' not in {r['name'] for r in db.execute('PRAGMA table_info(profile_runs)')}:

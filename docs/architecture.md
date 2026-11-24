@@ -130,7 +130,9 @@ dashboard in use, the kinds turned off, hidden text.
   `notices` (ids and the snooze choices; the words come from `api/notice`, as for the phone app) and `meeting` (one that
   starts within 10 minutes and has a briefing: `meeting_prep.py`; its first guest as `who`, its own name as `title`).
 - **Which browser is its computer's.** It opens the dashboard with `?desk=<id>`; the page says its push subscription
-  with `push_desk`. Unknown: the robot stays quiet while any browser has notifications on.
+  with `push_desk`. Unknown: the robot stays quiet while a browser that may be on it has notifications on: one on the
+  same system (`on=`; what each browser runs on is kept with its subscription), and not on another robot's computer.
+  Without the robot the app asks the person (`browser` in the answer), and says when none is here (`none=`).
 - **Nothing lost.** Its next look names what it got (`got=`); until then it gets it again, and says it once. Not named
   in 90 seconds, or the robot went quiet before: that computer's browser gets the push after all. Without notifications on in that browser it waits 15 minutes for the
   robot (its box was open, something was full screen). Phones and other computers get theirs either way.

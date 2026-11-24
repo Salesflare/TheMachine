@@ -155,9 +155,9 @@ class NotificationsApp:
             keys = args.get('keys') or {}
             if not all(re.fullmatch(r'[A-Za-z0-9_-]{16,200}=*', str(keys.get(k) or '')) for k in ('p256dh', 'auth')):
                 raise ValueError('Invalid push subscription')
-            db.execute('''INSERT INTO push_subscriptions(endpoint,p256dh,auth,created_at) VALUES(?,?,?,?)
-                    ON CONFLICT(endpoint) DO UPDATE SET p256dh=excluded.p256dh,auth=excluded.auth''',
-                       (endpoint, keys['p256dh'].rstrip('='), keys['auth'].rstrip('='), now()))
+            db.execute('''INSERT INTO push_subscriptions(endpoint,p256dh,auth,created_at,computer) VALUES(?,?,?,?,?)
+                    ON CONFLICT(endpoint) DO UPDATE SET p256dh=excluded.p256dh,auth=excluded.auth,computer=excluded.computer''',
+                       (endpoint, keys['p256dh'].rstrip('='), keys['auth'].rstrip('='), now(), args.get('computer') if args.get('computer') in desk.COMPUTERS else None))
         return {'subscribed': True}
 
     def push_desk_action(self, name, args, owner_dashboard=False):
@@ -172,17 +172,19 @@ class NotificationsApp:
             desk.link(db, args.get('desk'), endpoint, now())
         return {'linked': True}
 
-    def desk_look(self, ident, up, got=()):
+    def desk_look(self, ident, up, got=(), on='', none=''):
         """What the desktop robot gets with its look at the status: the to-dos whose notifications wait for it, each with
         its snooze choices as the dashboard's, and a meeting about to start that has a briefing. {} for anything else,
-        and while it may not speak."""
-        found = desk.look(ident, up, got)
+        and while it may not speak. `browser`: it is quiet because a browser that may be on its computer has
+        notifications on (desk.maybe), for an app that asks the person (none=)."""
+        found = desk.look(ident, up, got, on=on, none=none)
         if not up or not desk.ID.fullmatch(ident or ''):
             return {}
         with self.store.connect() as db:
             meeting = desk.meeting(db, dt.datetime.fromisoformat(now()), lambda: self.meeting_prep_owner(db), (todo_states.REJECTED,))
+            browser = desk.maybe(db, ident) if none else 0
         found = [{**n, 'snooze': snooze_choices(self.is_work_suggestion(n['id']))} for n in found]
-        return {'notices': found, **({'meeting': meeting} if meeting else {})}
+        return {'notices': found, **({'meeting': meeting} if meeting else {}), **({'browser': browser} if browser else {})}
 
     def digest(self, current=None):
         """The morning digest as of `current` (notify.compose), or None when there is nothing to say."""

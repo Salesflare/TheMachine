@@ -117,7 +117,7 @@ class SigninHandoff(unittest.TestCase):
     def test_the_phone_notification_opens_the_sign_in_too(self):
         self.block()
         with self.store.connect() as db:
-            db.execute("INSERT INTO push_subscriptions VALUES('https://push.example.invalid/1','key','auth',?,NULL,NULL)", (a.now(),))
+            db.execute("INSERT INTO push_subscriptions(endpoint,p256dh,auth,created_at) VALUES('https://push.example.invalid/1','key','auth',?)", (a.now(),))
         sent = []
         row = {**self.row(), '_result_notice': True}
         a.push_notify(self.store, self.app.config, row, sender=lambda request: (sent.append(request), {'results': []})[1])

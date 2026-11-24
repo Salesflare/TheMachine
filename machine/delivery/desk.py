@@ -9,7 +9,9 @@ and not to the browsers of those computers. Phones and other computers get their
 
 Which browser is on the robot's computer: the robot opens the dashboard with ?desk=<its random id>, and the page says
 it with its own push subscription (push_desk; none is fine: nothing to stand in for). A robot whose computer isn't
-known yet stays quiet while any browser has notifications on: better one notification than two.
+known yet stays quiet while a browser that may be on it has notifications on: better one notification than two. A phone
+or a browser on another system isn't. The app without its robot asks the person about the rest (none=): those on until
+then are not on its computer.
 
 What it got it names in its next look (got=); until then it gets it again, as an answer can be lost on the way. A
 notification it doesn't name in LATE seconds (the computer slept, the robot went quiet or away) goes to that computer's
@@ -34,10 +36,11 @@ KEEP = 15 * 60  # seconds it waits when there is no browser to get it instead
 DESKS = 8   # robots at once; a longer-gone one gives way
 LINKS = 40  # known pairs of a robot and a browser
 SOON = 10 * 60  # seconds before a meeting the robot says so
+COMPUTERS = ('mac', 'windows', 'linux', 'other')  # what a browser with notifications on runs on (other: a phone)
 SCHEMA = ('CREATE TABLE IF NOT EXISTS notify_desks(desk TEXT NOT NULL,endpoint TEXT NOT NULL,at TEXT NOT NULL,'
           'PRIMARY KEY(desk,endpoint))')
 _lock = threading.Lock()
-_desks = {}  # id -> {'at', 'up', 'waiting': [{'key', 'id', 'kind', 'at', 'payload', 'instead'}]}
+_desks = {}  # id -> {'at', 'up', 'on', 'none', 'waiting': [{'key', 'id', 'kind', 'at', 'payload', 'instead'}]}
 
 
 def reset():
@@ -45,9 +48,18 @@ def reset():
         _desks.clear()
 
 
-def look(desk, up, got=(), clock=notify.wall):
+def computer(agent):
+    """The system a browser runs on, of COMPUTERS, by its User-Agent. An iPad can say it is a Mac."""
+    agent = str(agent or '')
+    if re.search(r'Android|iPhone|iPad|iPod|Mobi|CrOS', agent):
+        return 'other'
+    return next((name for name, word in (('mac', 'Macintosh'), ('windows', 'Windows'), ('linux', 'Linux')) if word in agent), None)
+
+
+def look(desk, up, got=(), clock=notify.wall, on='', none=''):
     """The robot asked for the status: it is there, whether it may speak now (up), and the keys of what it got before.
-    What else waits for it: [{'key', 'id', 'kind'}]."""
+    What else waits for it: [{'key', 'id', 'kind'}]. on: its computer's system, of COMPUTERS; none: the person said the
+    browsers `maybe` asked about then are not on it."""
     if not ID.fullmatch(str(desk or '')):
         return []
     at = clock()
@@ -57,6 +69,8 @@ def look(desk, up, got=(), clock=notify.wall):
             del _desks[gone]
         _desks[desk] = row
         row['at'], row['up'] = at, bool(up)
+        row['on'] = on if on in COMPUTERS else ''
+        row['none'] = int(none) if re.fullmatch(r'[0-9]{1,12}', str(none)) else 0
         row['waiting'] = [w for w in row['waiting'] if w['key'] not in got]
         there = [w for w in row['waiting'] if up and not _over(w, at)]  # later ones are the browser's now (late)
     return [{k: w[k] for k in ('key', 'id', 'kind')} for w in there]
@@ -82,19 +96,39 @@ def up(clock=notify.wall):
 
 def here(db, clock=notify.wall):
     """The robots that may stand in now: {id: {its computer's push endpoints}}. One whose computer isn't known counts
-    only while no browser has notifications on."""
+    only while no browser that may be on it has notifications on."""
     there = up(clock)
     if not there:
         return {}
+    found = _known(db, there)
+    return found | {d: set() for d in there if d not in found and not maybe(db, d)}
+
+
+def _known(db, desks):
     try:
-        known = db.execute(f"SELECT desk,endpoint FROM notify_desks WHERE desk IN ({','.join('?' * len(there))})", there).fetchall()
+        rows = db.execute(f"SELECT desk,endpoint FROM notify_desks WHERE desk IN ({','.join('?' * len(desks))})", desks).fetchall()
     except sqlite3.OperationalError:  # no robot ever opened the dashboard
-        known = []
+        rows = []
     found = {}
-    for desk, endpoint in known:
+    for desk, endpoint in rows:
         found.setdefault(desk, set()).update({endpoint} if endpoint else ())
-    alone = len(found) < len(there) and not db.execute('SELECT 1 FROM push_subscriptions LIMIT 1').fetchone()
-    return found | {d: set() for d in there if d not in found} if alone else found
+    return found
+
+
+def maybe(db, desk):
+    """Whether a browser with notifications on may be on this robot's computer, which isn't known: 0, or the second the
+    newest was turned on (for none=). Not one on another system, nor one of another robot's computer that is there."""
+    with _lock:
+        row, others = _desks.get(desk) or {}, [d for d in _desks if d != desk]
+    if _known(db, [desk]):
+        return 0
+    theirs = set().union(*_known(db, others).values())
+    newest = 0
+    for endpoint, created, runs in db.execute('SELECT endpoint,created_at,computer FROM push_subscriptions').fetchall():
+        at = int(dt.datetime.fromisoformat(created).timestamp())
+        if endpoint not in theirs and at > row.get('none', 0) and (not runs or not row.get('on') or runs == row['on']):
+            newest = max(newest, at)
+    return newest
 
 
 def speaks(payload, kind):
