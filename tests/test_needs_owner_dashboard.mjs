@@ -87,7 +87,7 @@ try{
   await page.locator('#section-foryou [data-clear-run]').click();await page.locator('#clear-run').waitFor();
   for(let i=0;i<8&&!/Remy/.test(await page.locator('#clear-run .cr-title').textContent());i++)await page.locator('#clear-run [data-cr="skip"]').click();
   assert.equal(await page.locator('#clear-run .draft-why').textContent(),HELD);
-  if(shots)for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(400);await page.screenshot({path:`${shots}/go-through-${width}-${scheme}.png`})}
+  if(shots)for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});await page.screenshot({path:`${shots}/go-through-${width}-${scheme}.png`,animations:'disabled'})}
   await page.emulateMedia({colorScheme:'light'});await page.locator('#clear-run .cr-x').click();
   // It can go as it is: Prepared, what is ready before the question, Send (or Copy draft) in front
   for(const [c,line,first] of [['c','The draft is ready. One question: '+TONE,'Review and send to Noor'],['d','The draft is ready. One question: '+TONE,'Copy draft']]){
