@@ -331,6 +331,10 @@ def saved():
     return json.loads(pathlib.Path(os.environ['APPDATA'], ID, 'app.json').read_text())
 
 
+def reasons():
+    return pathlib.Path(os.environ['APPDATA'], ID, 'speaks.log').read_text()
+
+
 class Id(ctypes.Structure):
     _fields_ = [('size', w.DWORD), ('hwnd', w.HWND), ('id', w.UINT), ('guid', ctypes.c_byte * 16)]
 
@@ -1517,16 +1521,19 @@ def comes(todo, soon=False):
     if app.box():
         press(app, '#close')
     need(until(lambda: not app.wide(), 20), 'nothing is there')
+    asked = len(machine.named)
     machine.notices = [{'key': f'{time.time_ns():x}', 'id': todo, 'kind': 'todo', 'snooze': SNOOZE}]
     since = time.time()
     if soon:
         app.again('--toggle')
         need(until(app.box), 'the box opens')
-        need(until(lambda: not machine.notices), 'it is asked')
+        need(until(lambda: todo in machine.named[asked:]), 'it is asked')
         time.sleep(1)
         need(not app.bubble(), 'not while the box is open')
+        need(machine.notices, 'and not taken: if the box stays open the browser gets it')
         app.again('--toggle')
     need(until(app.bubble, 45, 0.05), f'the bubble shows {machine.desks[-2:]}')
+    need(until(lambda: not machine.notices, 5), 'and is got')
     need(until(lambda: says('#title', BUBBLE)), 'with its words')
     return time.time() - since
 
@@ -1688,6 +1695,37 @@ def speak_up(when):
     need(until(lambda: saved()['speak'] == when), str(saved().get('speak')))
 
 
+@step('what is not shown is not taken')
+def _():
+    away()
+    asked = lambda n: until(lambda: len(machine.named) > n, 45)
+    n, machine.odd = len(machine.named), 500
+    machine.notices = [{'key': f'{time.time_ns():x}', 'id': 'aa04', 'kind': 'todo'}]
+    need(asked(n), 'it is asked')
+    time.sleep(1)
+    need(machine.notices and not app.bubble(), 'no answer: not taken')
+    machine.odd = None
+    need(until(app.bubble, 45, 0.05), 'asked again, and said')
+    need(until(lambda: not app.bubble(), 20), 'it goes')
+    app.again('--toggle')
+    need(until(app.box), 'the box opens')
+    n = len(machine.named)
+    machine.notices = [{'key': f'{time.time_ns():x}', 'id': 'aa04', 'kind': 'todo'}]
+    need(asked(n), 'it is asked')
+    time.sleep(1)
+    need(machine.notices, 'the box is open: not taken')
+    machine.notices = []  # 90 seconds later: the browser's
+    time.sleep(1)
+    app.again('--toggle')
+    need(until(lambda: not app.box()), 'the box goes')
+    need(not until(app.bubble, 6, 0.05), 'the browser had it: not said too')
+    log = reasons()
+    for reason in ('showed a bubble', "the Machine didn't say what one is", 'one waits: the box is open', 'no longer offers it here'):
+        need(reason in log, f'{reason}: {log[-800:]}')
+    need(not any(title in log for _, title in TODOS), 'no titles')
+    return log.strip().splitlines()[-1]
+
+
 @step('never while presenting, locked or on a doubled screen')
 def _():
     away()
@@ -1700,6 +1738,7 @@ def _():
     quiet()
     STATE.write_text('5')
     speaks(True)
+    need('may not speak: locked, presented, mirrored or idle' in reasons(), 'it says why')
 
 
 @step('Do Not Disturb, by choice')

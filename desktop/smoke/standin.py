@@ -122,6 +122,7 @@ class Machine(http.server.ThreadingHTTPServer):
         self.account = self.machine = None  # its account's address; whose account this is
         self.window, self.away = False, None  # the dashboard is the app's window's; where a signed-out one is sent
         self.desks, self.notices, self.meeting = [], [], None  # what the robot says of itself with each look; what waits for it to say
+        self.named, self.odd = [], None  # the to-dos whose words it asked; the status that answers it instead
         self.todos, self.name = list(TODOS), 'Sam'
         self.refuse = False
         self.compact = False  # its dashboard has the page of one to-do
@@ -197,6 +198,9 @@ class Page(http.server.BaseHTTPRequestHandler):
             return self.answer({**({'notices': waits, **({'meeting': m.meeting} if m.meeting and q.get('up') == '1' else {})} if 'desk' in q else {}), 'first_name': m.name, 'suggestions': [{'id': i, 'title': t, 'status': 'prepared' if i != 'aa01' else 'pending', 'due': '2000-01-01' if i == 'aa01' else None,
                                                                              'created_at': '2026-01-01T00:00:00Z', 'snooze_choices': SNOOZE, **m.status.get(i, {})} for i, t in m.todos]})
         if u.path == '/api/notice':
+            m.named.append(q['tag'])
+            if m.odd:
+                return self.answer({'error': 'made up'}, m.odd)
             own = m.status.get(q['tag'], {}).get('status', 'pending' if q['tag'] == 'aa01' else 'prepared')
             first = {'pending': ['prepare'], 'accepted': []}.get(own, ['draft'])
             named = dict(TODOS).get(q['tag'])

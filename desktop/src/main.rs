@@ -24,6 +24,7 @@ mod signin;
 mod snip;
 mod speak;
 mod webapp;
+mod why;
 mod windows;
 
 use machine::{Machine, Waiting};
@@ -317,9 +318,10 @@ fn robot_list(app: AppHandle, machine: String, todos: Option<Vec<machine::Todo>>
 
 /// Without a robot: the system tells it (notify.rs), in its page's words.
 #[tauri::command]
-fn robot_notify(id: String, title: String, line: String) {
+fn robot_notify(app: AppHandle, id: String, title: String, line: String) {
     if todo_id(&id).is_ok() {
         notify::show(&id, &title, &line);
+        speak::notified(&app, &id);
     }
 }
 

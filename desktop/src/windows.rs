@@ -122,14 +122,26 @@ pub fn open_bubble(app: &AppHandle) {
 
 /// The bubble's page has its words: it shows, never taking the focus.
 pub fn fit_bubble(app: &AppHandle, height: f64) {
-    *app.state::<Shared>().tall.lock().unwrap() = height.clamp(40.0, 400.0);
+    let height = height.clamp(40.0, 400.0);
+    let same = std::mem::replace(&mut *app.state::<Shared>().tall.lock().unwrap(), height) == height;
     let Some(window) = app.get_webview_window("bubble") else { return };
     if crate::speak::now(&app.state::<Shared>()).is_some() {
-        place(app);
-        if !window.is_visible().unwrap_or(false) {
+        let there = window.is_visible().unwrap_or(false);
+        if !there || !same {
+            place(app);
+        }
+        if !there {
             seen(&window, true);
             place(app);
         }
+        crate::speak::shown(app);
+    }
+}
+
+/// Its page doesn't answer: the next one gets a new window.
+pub fn drop_bubble(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("bubble") {
+        let _ = window.destroy();
     }
 }
 

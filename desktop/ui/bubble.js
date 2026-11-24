@@ -17,6 +17,7 @@
 
   const fit = () => { if (say) invoke('bubble_fit', {height: Math.ceil($('panel').getBoundingClientRect().height)}); };
   new ResizeObserver(fit).observe($('panel'));
+  setInterval(fit, 10000); // its window knows this page still is there
   // As long as it isn't hovered
   function stay(ms) { left = ms; since = Date.now(); clearTimeout(timer); if (!over && !busy) timer = setTimeout(done, ms); }
   function done() { clearTimeout(timer); say = null; $('panel').hidden = true; invoke('bubble_done'); }
