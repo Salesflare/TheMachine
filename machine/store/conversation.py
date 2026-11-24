@@ -42,14 +42,10 @@ def _at(row):
 
 
 def one_to_one(kind, m):
-    """Whether a chat message is in a conversation with one other person, not a channel or a group, by its metadata."""
+    """Whether a chat message (Slack, or a chat app's) is with one other person, not in a channel or a group."""
     if kind == 'slack.message':
         return str(m.get('channel_id') or '').startswith('D')
-    if kind == 'whatsapp.message':
-        return not str(m.get('chat_id') or '').endswith('@g.us') and not m.get('group')
-    if kind in ('telegram.message', 'signal.message'):
-        return m.get('chat_kind') != 'group'
-    return kind in ('linkedin.message', 'x.dm') and not m.get('group')
+    return not str(m.get('chat_id') or '').endswith('@g.us') and m.get('chat_kind') != 'group' and not m.get('group')
 
 
 def slack_member(anchor, m):

@@ -11,6 +11,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import sqlite3
 import statistics
 import uuid
 
@@ -109,7 +110,6 @@ EVENT_CHANNELS = {kind: 'Email' if name == 'email' else name for kind, name in O
 
 
 ELSEWHERE_DAYS = 3        # the owner's own message in the draft's conversation this soon after it was ready replaced the draft
-ANSWER_SCAN = 400         # the owner's own messages read for it: a busy channel's threads are told apart in Python (sealed)
 # What shows a to-do the owner answered themselves (answered_elsewhere): its Looks done line, per channel
 ANSWERED_ELSEWHERE = {'gmail.message': 'Answered in the email thread', 'slack.message': 'Answered in Slack',
                       'whatsapp.message': 'Answered on WhatsApp', 'telegram.message': 'Answered on Telegram', 'signal.message': 'Answered on Signal',
@@ -158,7 +158,7 @@ def own_predicate(kind, owner_slack_ids=()):
     if kind == 'gmail.message':
         return "EXISTS(SELECT 1 FROM json_each(json_extract(events.metadata,'$.labels')) WHERE value='SENT')", []
     if kind == 'slack.message':
-        return f"json_extract(metadata,'$.user_id') IN ({','.join('?' for _ in owner_slack_ids)})", list(owner_slack_ids)
+        return "json_extract(metadata,'$.user_id') IN (SELECT value FROM json_each(?))", [json.dumps(sorted(owner_slack_ids))]
     return "json_extract(metadata,'$.from_me')=1", []
 
 
@@ -167,10 +167,18 @@ def own_text(body):
     return (body or '').split('[Quoted earlier messages', 1)[0].strip()
 
 
-def answer_spots(kind, events, draft=None):
+# The owner's own messages in these conversations (their keys are in the clear), in a window: per kind, oldest first.
+ANSWER_SQL = {kind: 'SELECT id,account_id,source_id,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ('
+              + own_predicate(kind)[0] + ') AND ('
+              + ' OR '.join(f"json_extract(metadata,'$.{key}') IN (SELECT value FROM json_each(?))" for key in keys)
+              + ') AND occurred_at>? AND occurred_at<=? AND (occurred_at>? OR ingested_at>?) AND ingested_at>? ORDER BY occurred_at,id LIMIT 400'
+              for kind, keys in CONVERSATION_KEYS.items()}
+
+
+def answer_spots(db, kind, events, draft=None):
     """Where the owner's own message answers a to-do's draft of this kind (answers): its conversations, the Slack threads
-    and the messages it is about, and who the draft goes to (without one, who wrote the to-do's mail, or who the owner
-    wrote it to). events: the to-do's, as card_channels gives them."""
+    and the messages it is about, and who a mail goes to, under every address of theirs that is known: the From and
+    Reply-To of their own mail on the to-do, and the same person's in the Graph. events: as card_channels gives them."""
     draft = draft or {}
     metas = [(e.get('account_id'), e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}'))
              for e in events if e['kind'] == kind]
@@ -180,37 +188,49 @@ def answer_spots(kind, events, draft=None):
              'people': {a for _, a in addresses(draft.get('to'))}}
     if kind == 'slack.message':
         spots['threads'] |= {str(t) for _, m in metas if (t := m.get('thread_ts') or m.get('message_ts'))}
-    if kind == 'gmail.message' and not spots['people']:
-        spots['people'] = {a for _, m in metas for _, a in addresses(m.get('to') if 'SENT' in (m.get('labels') or ()) else m.get('from'))}
+    for _, m in metas if kind == 'gmail.message' else ():
+        same = {a for field in ('from', 'reply-to') for _, a in addresses(m.get(field))}
+        if same & spots['people']:
+            spots['people'] |= same
+    if spots['people']:
+        try:
+            spots['people'] |= {r[0].removeprefix('email:') for r in db.execute(
+                "SELECT identifier FROM graph_identifiers WHERE identifier LIKE 'email:%' AND node_id IN "
+                '(SELECT node_id FROM graph_identifiers WHERE identifier IN (SELECT value FROM json_each(?)))',
+                (json.dumps(sorted('email:' + a for a in spots['people'])),))}
+        except sqlite3.Error:
+            pass  # no graph yet
     return spots
 
 
-def answers(kind, account_id, m, spots):
-    """Whether the owner's own message (its metadata) answers the to-do's draft (answer_spots), and not another matter:
-    with one other person, anything they write there; in a channel or a group, which holds many matters, only a reply in
-    the to-do's own thread, or one that quotes a message it is about (Telegram says which); in an email thread, only
-    mail addressed To someone the draft is for, not a forward or an aside to others on it."""
+def answers(kind, account_id, m, spots, teaches):
+    """Whether the owner's own message (its metadata) answers a to-do's draft (answer_spots). In a Slack channel, which
+    holds many matters, only a reply in the to-do's own thread does, anywhere else what they write in its conversation.
+    To teach how they write, where nothing is better than something wrong, it must also be the answer: in a group chat
+    one that quotes a message the to-do is about (Telegram says which), in an email thread mail addressed To someone the
+    draft is for, not a forward or an aside to others on it."""
     conversation = conversation_of(kind, m)
     if (account_id, conversation) not in spots['conversations']:
         return False
+    if kind == 'slack.message':
+        return one_to_one(kind, m) or str(m.get('thread_ts') or '') in spots['threads']
+    if not teaches:
+        return True
     if kind == 'gmail.message':
         return bool(spots['people'] & {a for _, a in addresses(m.get('to'))})
-    return (one_to_one(kind, m) or kind == 'slack.message' and str(m.get('thread_ts') or '') in spots['threads']
-            or (conversation, str(m.get('reply_to') or '')) in spots['messages'])
+    return one_to_one(kind, m) or (conversation, str(m.get('reply_to') or '')) in spots['messages']
 
 
-def own_answer(db, kind, spots, sent, owner_slack_ids, when, params):
-    """The owner's own first message that answers a to-do's draft (answers), among those `when` says (SQL on events), or
-    None. Reactions and media say nothing, and what The Machine sent (sent) isn't theirs."""
+def own_answer(db, kind, spots, sent, owner_slack_ids, teaches, after, until='9999', made='', since=''):
+    """The owner's own first message that answers a to-do's draft (answers), or None: written after `after` and by
+    `until`, written or come in after `made`, and come in after `since`. Reactions and media say nothing, and what The
+    Machine sent (sent) isn't theirs."""
     if not spots['conversations']:
         return None
-    predicate, own = own_predicate(kind, owner_slack_ids)
-    # Only in its conversations (the keys are kept in the clear)
-    where = ' OR '.join(f"json_extract(metadata,'$.{key}') IN ({','.join('?' * len(spots['conversations']))})" for key in CONVERSATION_KEYS[kind])
-    keys = [c for _, c in spots['conversations']] * len(CONVERSATION_KEYS[kind])
-    return next((e for e in db.execute(f'SELECT id,account_id,source_id,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) AND ({where}) '
-                                       f'AND {when} ORDER BY occurred_at,id LIMIT {ANSWER_SCAN}', (kind, *own, *keys, *params))
-                 if answers(kind, e['account_id'], json.loads(e['metadata'] or '{}'), spots)
+    keys = json.dumps(sorted({c for _, c in spots['conversations']}))
+    params = (kind, *own_predicate(kind, owner_slack_ids)[1], *[keys] * len(CONVERSATION_KEYS[kind]), after, until, made, made, since)
+    return next((e for e in db.execute(ANSWER_SQL[kind], params)
+                 if answers(kind, e['account_id'], json.loads(e['metadata'] or '{}'), spots, teaches)
                  and (text := own_text(e['body'])) and not PROFILE_SKIP.match(text) and not sent.wrote(e, text)), None)
 
 
@@ -652,7 +672,7 @@ class VoicesStore:
     def learn_sent_elsewhere(self, days=ELSEWHERE_DAYS):
         """A ready draft the owner didn't send from the card, because they wrote their own reply in that conversation
         (in Gmail, WhatsApp, Telegram, Slack…): what they wrote instead teaches the next drafts like an edit does. Only
-        a message that answers it, as for answered_elsewhere (answers): the wrong message teaches worse than none."""
+        a message that answers it (answers, stricter than for closing): the wrong message teaches worse than none."""
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat()
         ids, learned = sorted(self.owner_user_ids), 0
         with self.connect() as db:
@@ -668,8 +688,8 @@ class VoicesStore:
                     continue
                 kind = DRAFT_EVENT_KINDS[draft['kind']]
                 until = (dt.datetime.fromisoformat(row['ready']) + dt.timedelta(days=days)).isoformat()
-                found = own_answer(db, kind, answer_spots(kind, self.card_channels(row['id'], db)[1], draft), sent, ids,
-                                   'occurred_at>? AND occurred_at<=?', (row['ready'], until))
+                spots = answer_spots(db, kind, self.card_channels(row['id'], db)[1], draft)
+                found = own_answer(db, kind, spots, sent, ids, True, after=row['ready'], until=until)
                 if not found:
                     continue
                 text, before = own_text(found['body']), next_actions.draft_text(draft).strip()
@@ -704,7 +724,7 @@ class VoicesStore:
                 if not draft:
                     continue
                 kind = DRAFT_EVENT_KINDS[draft['kind']]
-                spots = answer_spots(kind, self.card_channels(row['id'], db)[1], draft)
+                spots = answer_spots(db, kind, self.card_channels(row['id'], db)[1], draft)
                 if not spots['conversations']:
                     continue
                 newest = db.execute('SELECT max(e.occurred_at) FROM json_each(?) i JOIN events e ON e.id=i.value', (row['event_ids'],)).fetchone()[0]
@@ -712,8 +732,7 @@ class VoicesStore:
                 # After a Not done only what came in since
                 said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice IN ('not_done','undo','reopen')",
                                   (row['id'],)).fetchone()[0]
-                found = own_answer(db, kind, spots, sent, ids, 'occurred_at>? AND (occurred_at>? OR ingested_at>?) AND ingested_at>?',
-                                   (newest or row['created_at'], row['created_at'], row['created_at'], said or ''))
+                found = own_answer(db, kind, spots, sent, ids, False, after=newest or row['created_at'], made=row['created_at'], since=said or '')
                 if not found:
                     continue
                 if row['done_when']:  # their part went out, the result it is for hasn't come yet
@@ -746,11 +765,11 @@ class VoicesStore:
                 draft = next((a for a in next_actions.actions(edit['next_action'] or None) if a.get('revision') == edit['old_revision']), None)
                 if kind == 'gmail.message' and not draft:  # who it was for isn't known any more
                     continue
-                spots = answer_spots(kind, self.card_channels(edit['suggestion_id'], db)[1], draft)
+                spots = answer_spots(db, kind, self.card_channels(edit['suggestion_id'], db)[1], draft)
                 # It was in one of their conversations then, also when the to-do's draft is gone since
                 m = json.loads(event['metadata'] or '{}')
                 spots['conversations'].add((event['account_id'], conversation_of(kind, m)))
-                if not answers(kind, event['account_id'], m, spots):
+                if not answers(kind, event['account_id'], m, spots, True):
                     wrong.append(edit['id'])
             db.executemany('DELETE FROM draft_edits WHERE id=?', [(i,) for i in wrong])
             return wrong

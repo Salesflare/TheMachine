@@ -15,6 +15,7 @@ from seams import patch_everywhere  # noqa: E402
 from machine.store import outcomes  # noqa: E402
 import datetime as dt
 import embeddings
+import graph
 import locale_prefs
 import machine.app.preparation as machine_app_preparation
 import machine.cards as machine_cards
@@ -438,7 +439,7 @@ class Voices(unittest.TestCase):
         self.slack('s3', '2026-10-05T11:00:00+00:00', 'checked it, all fine', ts='500.1', thread='100.1', user='UOWNER1')
         self.assertEqual(self.learned(), {dm: 'sure, call me now', sid: 'checked it, all fine'})
 
-    def test_in_a_group_chat_only_a_reply_that_quotes_the_to_dos_message_counts(self):
+    def test_in_a_group_chat_only_a_reply_that_quotes_the_to_dos_message_teaches(self):
         def group(source_id, at, body, kind='whatsapp.message', chat_id='1203630@g.us', mine=False, **more):
             event = chat(source_id, at, body, chat_id=chat_id, mine=mine)
             event['metadata'].update(message_id=source_id, **more)
@@ -455,13 +456,12 @@ class Voices(unittest.TestCase):
         group('13', '2026-10-05T10:01:00+00:00', 'good point, thanks', mine=True, reply_to=8, **tele)  # quotes another message
         group('22', '2026-10-05T10:00:00+00:00', 'yep, got them', kind='telegram.message', chat_id='444', chat_kind='dm', mine=True)
         self.assertEqual(self.learned(), {one: 'yep, got them'})
-        self.assertEqual(self.store.answered_elsewhere(), [one])  # and it closes nothing: a review reads what they wrote
         group('14', '2026-10-05T11:00:00+00:00', 'me, as always', mine=True, reply_to=11, **tele)
         self.assertEqual(self.learned(), {one: 'yep, got them', tg: 'me, as always'})
-        self.assertEqual(self.store.answered_elsewhere(), [tg])
-        self.assertIsNone(self.hint(wa))
+        # Closing (with Undo) is not as strict: what they write in the group after the to-do mostly answers it
+        self.assertEqual(sorted(self.store.answered_elsewhere()), sorted([wa, tg, one]))
 
-    def test_in_an_email_thread_only_mail_to_who_the_draft_is_for_counts(self):
+    def test_in_an_email_thread_only_mail_to_who_the_draft_is_for_teaches(self):
         sid = self.drafted('price', 'in1', {'kind': 'email', 'account_id': 'work', 'thread_id': 't1', 'to': ['Sam@example.com'], 'subject': 'Re: Contract', 'body': 'Dear Sam, it is attached.'})
         def own(source_id, at, body, **people):
             self.store.commit_page('work', {}, [{**(m := mail(source_id, at, body, sender=SENT['sender'], to=people['to'], labels=('SENT',))),
@@ -469,10 +469,24 @@ class Voices(unittest.TestCase):
         own('fw', '2026-10-05T10:00:00+00:00', 'lee, can you look at this one?', to='Lee <lee@example.org>')
         own('aside', '2026-10-05T10:30:00+00:00', 'thanks lee, sam is in copy', to='Lee <lee@example.org>', cc='Sam <sam@example.com>')
         self.assertEqual(self.learned(), {})
-        self.assertEqual(self.store.answered_elsewhere(), [])
         own('all', '2026-10-05T11:00:00+00:00', 'hey sam, here it is', to='Sam <sam@example.com>, Lee <lee@example.org>')
         self.assertEqual(self.learned(), {sid: 'hey sam, here it is'})
         self.assertEqual(self.store.answered_elsewhere(), [sid])
+
+    def test_a_reply_to_another_address_of_the_same_person_teaches(self):
+        def draft(key):
+            return {'kind': 'email', 'account_id': 'work', 'thread_id': 't-' + key, 'to': ['sam@example.com'], 'subject': 'Re: Contract', 'body': 'Dear Sam, it is attached.'}
+        asked = mail('in-a', '2026-10-05T09:00:00+00:00', 'Can you send it?', thread='t-a')
+        asked['metadata']['reply-to'] = 'Sam <sam@inbox.example.net>'
+        self.store.commit_page('work', {}, [asked, mail('in-b', '2026-10-05T09:00:00+00:00', 'Can you send it?', thread='t-b')])
+        with self.store.connect() as db:
+            graph.ensure(db)
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('p1','person','Sam',1,0,?)", (json.dumps({'identifiers': ['email:sam@example.com', 'email:sam@home.example']}),))
+        a, b = self.drafted('a', 'in-a', draft('a')), self.drafted('b', 'in-b', draft('b'))
+        self.store.commit_page('work', {}, [
+            mail('out-a', '2026-10-05T10:00:00+00:00', 'hey sam, here it is', thread='t-a', sender=SENT['sender'], to='sam@inbox.example.net', labels=('SENT',)),
+            mail('out-b', '2026-10-05T10:00:00+00:00', 'sam, see below', thread='t-b', sender=SENT['sender'], to='Sam <sam@home.example>', labels=('SENT',))])
+        self.assertEqual(self.learned(), {a: 'hey sam, here it is', b: 'sam, see below'})
 
     def test_lessons_kept_from_a_message_that_answered_something_else_go_once(self):
         self.slack('s1', '2026-10-05T09:00:00+00:00', 'Can someone check the invoice?')

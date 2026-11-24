@@ -874,10 +874,10 @@ Voice and style learn only from what the owner wrote themselves (`authorship.py`
   starts with (20 characters or more, so a short reply the owner typed still counts as theirs).
 - A draft the owner changed before sending teaches only through that change (`draft_edits`, what they cut and added).
 - An agent's rewrite (source `agent`) teaches nothing.
-- A draft they answered themselves teaches (and its to-do closes) only through a message that answers it: anything they
-  write in a direct message or a chat with one person; in a channel or a group only a reply in the to-do's own thread, or
-  (Telegram) one that quotes its message; in an email thread only mail addressed To someone the draft is for. Anything
-  else in there may be another matter, so it teaches nothing.
+- A draft they answered themselves teaches only through a message that answers it: anything they write in a direct
+  message or a chat with one person; in a Slack channel only a reply in the to-do's own thread; in a group chat only one
+  that quotes its message (Telegram says which); in an email thread only mail addressed To someone the draft is for
+  (under any address of theirs). Anything else in there may be another matter, so it teaches nothing.
 
 ## Keeps learning
 
