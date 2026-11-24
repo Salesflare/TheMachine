@@ -12,14 +12,20 @@ The same first name right after a link is not enough to join by itself: on a bus
 name does book in the same days now and then. Their company named in the chat (or their LinkedIn headline), or the
 surname in the address or on the booking, makes that next to impossible. So with one of those, and nobody else it could
 be, they are one person (with why and Undo on their page). Without, it is a question; a meeting with no link before it is
-a question only with one of those, and nothing without."""
+a question only with one of those, and nothing without.
+
+Anybody can call themselves Sam in a chat and write, or book with, the address of a Sam the owner already deals with. So
+an address the owner was in touch with before (mail both ways, or a meeting) joins only on more than the chat's own word:
+the surname on both (never between a work contact and a personal chat, where a full name is no proof either:
+graph_joins.py), or their company named in the chat by the owner. Else it is a question. A guest's "accepted" is no proof:
+booking tools set it for whoever is typed in."""
 import collections
 import datetime as dt
 import json
 import re
 
 from graph import DOMAIN_PREFIXES, DOMAIN_SUFFIXES, folded_words, name_match, name_words, parse_time
-from mail_senders import address_name, bulk
+from mail_senders import address_name, addresses, bulk
 from whatsapp_images import MARK
 import enrichment
 
@@ -83,7 +89,7 @@ class _Proof:
 
     def _firsts_of(self, identifier):
         words, local = self.names.get(identifier), local_words(identifier[6:])
-        return {words[0]} if words else {f for f in self.firsts if local and local[0].startswith(f)} if local else set()
+        return {words[0]} if words else {local[0][:n] for n in range(2, len(local[0]) + 1)} & self.firsts if local else set()
 
     def _fits(self, chat, identifier):
         """'full' (the surname agrees too), 'first' or None (another name, or the address has another surname)."""
@@ -111,8 +117,9 @@ class _Proof:
         return any(i.startswith(space) and i != chat for i in self.union.members[self.union.find(identifier)])
 
     def found(self):
-        sure, ask = self._written_in_chats()
-        for chat, identifier, join in self._meetings():
+        written, pairs = self._addresses_written(), self._booked()
+        sure, ask = self._written_in_chats(*written)
+        for chat, identifier, join in self._meetings(pairs):
             if join and (chat, identifier) not in sure:
                 sure[(chat, identifier)] = 'booking'
             elif not join:
@@ -121,14 +128,21 @@ class _Proof:
 
     # An address written in a chat
 
-    def _written_in_chats(self):
+    def _addresses_written(self):
+        """(address -> (chats they wrote it in, chats the owner did), (chat, address) -> when it was first in that chat)."""
         chats = {c for fits in self.fitting.values() for c, _ in fits}
         wrote = {e: (c, mine) for c in chats for _, e, mine in self.chats[c]}
-        by_address = collections.defaultdict(lambda: ([], []))  # address -> (chats they wrote it in, chats the owner did)
+        by_address = collections.defaultdict(lambda: ([], []))
+        first = {}
         for event_id, found in self._addresses_in(wrote).items():
             c, mine = wrote[event_id]
+            at = self.per_event[event_id][1]
             for address in found:
                 by_address['email:' + address][int(mine)].append(c)
+                first[(c, 'email:' + address)] = min(at, first.get((c, 'email:' + address), at))
+        return by_address, first
+
+    def _written_in_chats(self, by_address, first):
         sure, ask = {}, {}
         for identifier, fits in self.fitting.items():
             theirs, owners = by_address.get(identifier, ((), ()))
@@ -136,7 +150,7 @@ class _Proof:
                 continue  # in nobody's chat, or passed around in several: whose it is stays open
             one = len({self.union.find(c) for c, _ in fits}) == 1
             for c, full in fits:
-                if c in theirs and (full or one):
+                if c in theirs and (full or one) and self._more_than_their_word(c, identifier, full, first[(c, identifier)]):
                     sure[(c, identifier)] = 'written'
                 elif c in theirs or c in owners:
                     ask[(c, identifier)] = ASKS['written']
@@ -181,16 +195,14 @@ class _Proof:
                 out.append((identifier, event_id, made))
         return out
 
-    def _meetings(self):
-        """(chat, address, whether it is enough to join them)."""
+    def _booked(self):
+        """(chat, address) -> [(when the link was sent or None, when the meeting was made, the surname agrees too)]."""
         hits = []
         for identifier, meeting, made in self._made():
             for c, full in self.fitting[identifier]:
                 near = [(at, e, mine) for at, e, mine in self.chats[c] if dt.timedelta(0) <= made - at <= SURE]
                 if near:
                     hits.append((c, identifier, meeting, made, full, near))
-        if not hits:
-            return
         bodies = self._bodies(sorted({e for *_, near in hits for _, e, mine in near if mine} | {h[2] for h in hits}))
         pairs = collections.defaultdict(list)
         for c, identifier, meeting, made, full, near in hits:
@@ -199,6 +211,10 @@ class _Proof:
             close = [mine for at, _, mine in near if made - at <= ASK]
             if linked or len(set(close)) == 2:
                 pairs[(c, identifier)].append((linked, made, full))
+        return pairs
+
+    def _meetings(self, pairs):
+        """(chat, address, whether it is enough to join them)."""
         booked_for = collections.defaultdict(set)  # whose link, as a person -> the addresses that came out of it
         for (c, identifier), found in pairs.items():
             booked_for[self.union.find(c)].add(self.union.find(identifier))
@@ -210,7 +226,33 @@ class _Proof:
                 continue  # a first name and a busy week: nothing to ask
             if not linked and not alone:
                 continue
-            yield c, identifier, bool(agrees and linked and alone and not self._works_elsewhere(c, identifier))
+            yield c, identifier, bool(agrees and linked and alone and not self._works_elsewhere(c, identifier)
+                                      and self._more_than_their_word(c, identifier, full, linked))
+
+    def _more_than_their_word(self, chat, identifier, full, before):
+        """Whether that chat and an address may be joined: on what the one in the chat could not just say (the module's
+        note), else only for an address the owner did not know before."""
+        sides = {self.keys.side(self.union.members[self.union.find(i)]) for i in (chat, identifier)}
+        return (full and sides != {'work', 'personal'} or self._company(chat, identifier, before, owners=True)
+                or not self._known_before(identifier, before))
+
+    def _known_before(self, identifier, before):
+        """Whether the owner was in touch with an address by itself before then: a meeting they had, or mail both ways. Of
+        all mail kept, not only what this build counts: an old contact is one before its history is counted too."""
+        ways = set()  # whether the owner wrote it
+        for _, at, _, _, found in self.per_event.values():
+            if at < before:
+                for i, _, _, role in found:
+                    if i == identifier and role == 'met':
+                        return True
+        for r in self.db.execute("SELECT json_extract(metadata,'$.from'),json_extract(metadata,'$.to'),json_extract(metadata,'$.labels'),occurred_at "
+                                 "FROM events WHERE kind='gmail.message' AND (instr(lower(json_extract(metadata,'$.from')),?) OR "
+                                 "instr(lower(json_extract(metadata,'$.to')),?))", (identifier[6:], identifier[6:])):
+            sender = {a for _, a in addresses(r[0])[:1]}
+            mine = 'SENT' in str(r[2] or '') or bool(sender & self.keys.owner.emails)
+            if parse_time(r[3]) < before and identifier[6:] in ({a for _, a in addresses(r[1])} if mine else sender):
+                ways.add(mine)
+        return len(ways) == 2
 
     def _booking_link(self, text, booked):
         for link in LINK.findall(text):
@@ -221,8 +263,9 @@ class _Proof:
                 return True
         return False
 
-    def _company(self, chat, identifier, made):
-        """Whether the address' company is named in that chat up to then, in their headline, or as where they work."""
+    def _company(self, chat, identifier, made, owners=False):
+        """Whether the address' company is named in that chat up to then, in their headline, or as where they work
+        (owners: by the owner only)."""
         domain = identifier.rsplit('@', 1)[-1]
         label = re.sub(r'[^a-z0-9]', '', enrichment.registrable(domain).split('.')[0])
         if domain in self.keys.freemail or len(label) < 3 or label == self.chat_words[chat][0] or bulk(identifier[6:]):
@@ -233,8 +276,9 @@ class _Proof:
             self._known_orgs = collections.defaultdict(set)
             for r in self.db.execute('SELECT identifier,org,org_id FROM person_orgs'):
                 self._known_orgs[r[0]] |= {str(r[1] or ''), str(r[2] or '').removeprefix('org:').split('.')[0]}
-        texts = [self.headlines.get(chat, ''), *self._known_orgs.get(chat, ()),
-                 *self._bodies([e for at, e, _ in self.chats[chat] if at <= made]).values()]
+        texts = self._bodies([e for at, e, mine in self.chats[chat] if at <= made and (mine or not owners)]).values()
+        if not owners:
+            texts = [self.headlines.get(chat, ''), *self._known_orgs.get(chat, ()), *texts]
         return any(_names(text, names) for text in texts if text)
 
     def _works_elsewhere(self, chat, identifier):

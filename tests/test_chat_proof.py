@@ -18,6 +18,7 @@ import meeting_prep  # noqa: E402
 import ms_graph  # noqa: E402
 import person_summary  # noqa: E402
 import shared_graph  # noqa: E402
+import machine.sources.calendar as machine_calendar  # noqa: E402
 from machine.sources.calendar import calendar_event  # noqa: E402
 
 NOW = dt.datetime(2026, 11, 9, 12, tzinfo=dt.timezone.utc)
@@ -234,6 +235,45 @@ class ChatProof(unittest.TestCase):
         from whatsapp_images import MARK
         self.assertIsNone(self.outcome(wrote(27, f'{MARK}\nText in it:\nrobin@lumio.example'), chat='wa:00000000031'))
 
+    # An address the owner already dealt with: anybody can say it is theirs
+
+    def known(self, address='robin@lumio.example', name='Robin'):
+        return (mail(300, f'{name} <{address}>', 'sam@acme.example'), mail(299, 'Sam <sam@acme.example>', address, ('SENT',)))
+
+    def test_a_stranger_writing_a_known_contacts_address_is_only_asked_about(self):
+        for chat, message in (('wa:00000000031', wrote(27, 'New number! I am at robin@lumio.example, from Lumio')),
+                              (ROBIN, said(27, 'It is me, robin@lumio.example', headline='Founder at Lumio'))):
+            self.assertEqual(self.outcome(*self.known(), message, chat=chat), 'asked', chat)
+
+    def test_nor_by_booking_with_it_whatever_they_say_and_whoever_the_tool_says_accepted(self):
+        self.assertEqual(self.outcome(*self.known(), said(28, 'I run Lumio', headline='Founder at Lumio'), LINK, booked(25.8, 'robin@lumio.example')), 'asked')
+
+    def test_the_owner_naming_their_company_there_joins_a_known_contact(self):
+        self.assertEqual(self.outcome(*self.known(), *CHAT, LINK, booked(25.8, 'robin@lumio.example')), 'joined')  # CHAT: the owner does
+
+    def test_and_when_they_write_their_address(self):
+        self.assertEqual(self.outcome(*self.known(), *CHAT, said(26, 'It is robin@lumio.example')), 'joined')
+
+    def test_the_surname_on_both_joins_a_known_contact(self):
+        address = 'email:robin.vale@lumio.example'
+        self.assertEqual(self.outcome(*self.known(address[6:]), said(27, 'It is robin.vale@lumio.example'), address=address), 'joined')
+
+    def test_a_personal_chat_with_the_surname_of_a_known_work_contact_is_only_asked_about(self):
+        address = 'email:robin.vale@lumio.example'
+        self.assertEqual(self.outcome(*self.known(address[6:]), wrote(26, 'Mail robin.vale@lumio.example'), chat='wa:00000000031', address=address), 'asked')
+
+    def test_one_met_before_is_known_too(self):
+        met = booked(400, 'robin@lumio.example', start={'dateTime': at(300)}, end={'dateTime': at(299)})
+        self.assertEqual(self.outcome(met, said(27, 'It is robin@lumio.example')), 'asked')
+
+    def test_mail_from_before_what_the_graph_counts_makes_them_known_too(self):
+        old = [{**m, 'occurred_at': at(24 * 500)} for m in self.known()]
+        self.assertEqual(self.outcome(*old, said(27, 'It is robin@lumio.example')), 'asked')
+
+    def test_mail_one_way_or_after_it_was_written_does_not(self):
+        one, two = self.known()
+        self.assertEqual(self.outcome(one, said(27, 'It is robin@lumio.example'), mail(20, 'Sam <sam@acme.example>', 'robin@lumio.example', ('SENT',))), 'joined')
+
     # Their own sides
 
     def test_a_personal_chat_stays_personal_out_of_the_work_briefing_and_never_shared(self):
@@ -267,6 +307,31 @@ class ChatProof(unittest.TestCase):
             row = db.execute('SELECT version,analyzed_version,metadata FROM events').fetchone()
         self.assertEqual((tuple(row)[:2], json.loads(row['metadata'])['created']), (before, at(25.8)))
 
+    def test_no_calendar_read_leaves_it_out_of_the_answer(self):
+        """Google's and Graph's own requests for events narrow nothing (fields, $select): created is in what comes back."""
+        import google_api
+        asked, window = [], {'timeMin': at(48), 'timeMax': at(-48)}
+        event = {'id': 'x', 'createdDateTime': '2026-11-01T08:00:00Z', 'start': {'dateTime': at(-1)[:19], 'timeZone': 'UTC'}, 'end': {'dateTime': at(-2)[:19], 'timeZone': 'UTC'}}
+
+        def graph_call(config, credential, account, method, params, **more):
+            asked.append((method, params))
+            if method == 'calendar.get':
+                return {'id': 'primary', 'owner': {'address': ME['email']}}
+            return {'value': [event], '@odata.deltaLink': 'https://graph.microsoft.com/v1.0/me/calendarView/delta?$deltatoken=1'}
+        with patch_everywhere(ms_graph, 'call', graph_call):
+            page = ms_graph.calendar_call({}, None, {'id': 'o', 'email': ME['email'], 'service': 'outlook'}, 'events.list', window)
+            ms_graph._calendar_view({}, None, {'id': 'o', 'email': ME['email']}, ME['email'], 'team', window)
+        self.assertEqual(page['items'][0]['created'], event['createdDateTime'])
+        reads = [p for m, p in asked if m != 'calendar.get']
+        self.assertEqual(len(reads), 2)
+        source = machine_calendar.Calendar({}, {'id': 'cal', 'email': ME['email']})
+        with patch_everywhere(machine_calendar, 'gog_read', lambda config, account, api, version, method, params, scope: asked.append((method, params)) or {}):
+            source.get('events.list', {'singleEvents': True, **window})
+        for method, params in asked:
+            if method != 'calendar.get':
+                self.assertFalse({'fields', '$select'} & set(params), method)
+        self.assertNotIn('fields', google_api.READ['calendar.events.list'][1])
+
     def test_every_calendar_says_when_it_was_made(self):
         ics = ('BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:1\r\nSUMMARY:Call\r\nCREATED:20261101T080000Z\r\nDTSTART:20261110T100000Z\r\n'
                'DTEND:20261110T110000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n')
@@ -274,7 +339,7 @@ class ChatProof(unittest.TestCase):
         outlook = ms_graph.calendar_item({'id': 'x', 'createdDateTime': '2026-11-01T08:00:00Z', 'start': {'dateTime': '2026-11-10T10:00:00', 'timeZone': 'UTC'},
                                           'end': {'dateTime': '2026-11-10T11:00:00', 'timeZone': 'UTC'}}, ME['email'])
         self.assertEqual(outlook['created'], '2026-11-01T08:00:00Z')
-        self.assertIn('item:DateTimeCreated', ews_calendar.FIELDS)
+        self.assertIn('item:DateTimeCreated', ews_calendar.FIELDS)  # Exchange gives only what is asked for
 
 
 if __name__ == '__main__':

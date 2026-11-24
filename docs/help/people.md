@@ -68,7 +68,7 @@ A name alone is never enough across two domains, since anyone can type one: two 
 
 When only a first name matches at different domains, like "Sam" and "Sam Lee", they are offered only with the same phone number or LinkedIn profile.
 
-When only a first name matches a meeting made from a chat, or you wrote their address in the chat, you are asked. The Machine never opens a link to find out.
+When only a first name matches a meeting made from a chat, or the address is of someone you already knew and only the person in the chat says it is theirs, you are asked. The Machine never opens a link to find out.
 
 A shared address, like info@ or a mailing list, is never joined to the people who write through it. A work contact from outside your company and a personal chat with only a name in common are not joined by themselves: they are listed as a question.
 

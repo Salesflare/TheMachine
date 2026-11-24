@@ -124,6 +124,10 @@ What a chat shows is worked out each build by plain code: no link is opened, no 
   owner's (a short one that redirects) when the meeting itself carries a booking tool's link. It joins when the company
   is named in the chat or their LinkedIn headline, or the surname is in the address or on the booking, and nobody else it
   could be was in touch in those days: no one else with that first name, unless they are known at another company.
+- **An address the owner already dealt with** (mail both ways, or a meeting, before it was written or the link was sent)
+  joins only on more than the chat's own word, since anybody can call themselves Sam and write Sam's address: the surname
+  on both (not between a work contact and a personal chat), or the company named in the chat by the owner. A guest's
+  "accepted" proves nothing, booking tools set it. Otherwise it is a question.
 - **A question instead**: an address the owner wrote; a booking within 72 hours with only the first name in common and
   nobody else it could be; one where the company or surname agrees but somebody else could have booked, or they are
   already known at another company's address; a call agreed without a link (both wrote within 72 hours before it was
