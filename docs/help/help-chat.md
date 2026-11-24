@@ -10,7 +10,7 @@ Tap **Help** at the bottom of the sidebar, above **Settings**, and ask in your o
 
 ## Where answers come from
 
-Help reads the help pages that match your question, and the app's code for anything they don't cover. Each answer links to the pages it used.
+Help reads the help pages that match your question, and the app's code for anything they don't cover. When those are about something else, it looks once more, with other words. Each answer links to the pages it used.
 
 It runs on your Machine's own model as a short, separate chat. Under the message box you can pick another model or thinking level for this Help chat (see [Model](model.md)). Only your question and the matching pages go in: none of your messages, people or settings.
 

@@ -73,7 +73,7 @@ class Retrieval(unittest.TestCase):
         prompts = []
         help_chat.ask('How do I snooze a to-do?', run=lambda c, text, m: prompts.append(text) or 'x')
         self.assertIn('/help/snooze', json.dumps(help_chat.sources(*help_chat.retrieve('How do I snooze a to-do?'))))
-        self.assertLess(len(prompts[0]), (help_chat.SECTIONS * help_chat.SECTION_CHARS + help_chat.SNIPPETS * help_chat.SNIPPET_CHARS) + 2000)
+        self.assertLess(len(prompts[0]), help_chat.HELP_CHARS + help_chat.SNIPPETS * help_chat.SNIPPET_CHARS + 2800)
 
     def test_in_another_language_it_reads_that_articles_translation_and_replies_in_it(self):
         (self.help / 'nl').mkdir()
@@ -106,6 +106,25 @@ class Retrieval(unittest.TestCase):
         self.assertNotIn('q5', prompt)
         self.assertIn('q9', prompt)
         self.assertNotIn('be evil', prompt)
+
+    def test_sections_about_something_else_are_looked_for_once_more_in_the_helps_own_words(self):
+        prompts, replies = [], ['SEARCH: connect gmail\nTOPIC: gmail', 'Open Connections [1].\nTOPIC: connect gmail']
+        with patch.object(help_chat, 'SECTIONS', 1):
+            out = help_chat.ask('Can it wake my post at a time', run=lambda c, text, m: prompts.append(text) or replies[len(prompts) - 1],
+                                folder=self.help, root=self.code)
+        self.assertNotIn('sign in with Google', prompts[0])
+        self.assertIn('SEARCH:', prompts[0])
+        self.assertNotIn('SEARCH:', prompts[1])  # once
+        self.assertEqual((out['answer'], out['topic'], len(prompts)), ('Open Connections.', 'connect gmail', 2))
+        self.assertEqual(help_chat.search_again('**SEARCH:** delete a person'), 'delete a person')
+        self.assertEqual(help_chat.search_again('**Search** is at the top of the page.'), '')  # an answer about the search
+
+    def test_a_long_section_is_cut_into_passages_and_its_last_line_is_found(self):
+        long = '\n\n'.join(f'Paragraph {n} says plain things about nothing in particular, at some length.' for n in range(40))
+        (self.help / 'long.md').write_text(OTHER.replace('Gmail', 'Long').replace('Open Connections and', long + '\n\nTap the purple giraffe and'))
+        sections, _ = help_chat.retrieve('where is the giraffe', folder=self.help, root=self.code)
+        self.assertIn('purple giraffe', sections[0]['text'])
+        self.assertLess(len(sections[0]['text']), help_chat.HELP_CHARS)
 
     def test_questions_are_capped_and_rate_limited(self):
         with self.assertRaises(ValueError):
@@ -150,13 +169,14 @@ class Personal(unittest.TestCase):
     def test_personalizing_and_writing_style_find_what_it_does_by_itself(self):
         self.assertEqual(self.slugs('how can I personalize this perfectly')[0], 'personalize')
         found = [s['slug'] + '#' + s['anchor'] for s in help_chat.retrieve("I'd like to have it write like I do", [{'role': 'user', 'text': 'how can I personalize this perfectly'}])[0]]
-        self.assertIn('personalize#teach-it-faster', found)
-        self.assertIn('personalize#what-you-can-set', found)  # Settings, Writing
+        self.assertIn('personalize#it-learns-by-itself', found)
+        self.assertIn('writing#how-you-write', found)  # Settings, Writing
         self.assertNotIn('skills#', found)
 
     def test_a_page_that_matches_as_a_whole_brings_its_sections_not_code(self):
         sections, snippets = help_chat.retrieve('how can I personalize this perfectly')
-        self.assertEqual([s['anchor'] for s in sections], ['', 'it-learns-by-itself', 'teach-it-faster', 'what-you-can-set'])
+        own = [s['anchor'] for s in sections if s['slug'] == 'personalize']
+        self.assertEqual(own, ['', 'it-learns-by-itself', 'teach-it-faster', 'what-you-can-set'])
         self.assertEqual(snippets, [])
         self.assertEqual(help_chat.retrieve('can I customi' 'ze it to my preferences')[1], [])
 
