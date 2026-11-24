@@ -119,7 +119,7 @@ A work briefing reads no personal notes, and nothing from someone else's Machine
 
 It uses what is already on your Machine. For a first meeting with someone at a company, it also reads the home page of the company's website.
 
-Where a web search provider is set up in OpenClaw (a hosted Machine comes without one), it also does a short web search on their name and company. What it found comes with a link. Only their public name, company name and website go to the search, never your messages. What it found is reused for 30 days.
+When web search is set up on your Machine, it also does a short web search on their name and company. A hosted Machine comes without it; on your own computer you can set it up in OpenClaw. What it found comes with a link. Only their public name, company name and website go to the search, never your messages. What it found is reused for 30 days.
 
 So a first meeting you said yes to can get a briefing before you have exchanged a word: what their company does, what that means for you and, when it's known, who they are. With only a first name, it keeps what the search finds only when that points to one person. With **Look up work contacts** off (Settings, Security), nothing is looked up.
 
