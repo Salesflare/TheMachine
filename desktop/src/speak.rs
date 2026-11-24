@@ -17,9 +17,11 @@ const QUEUE: usize = 3;
 #[derive(Clone, Serialize, Debug, Default, PartialEq)]
 pub struct Meeting {
     pub at: String,
-    /// The first guest's first name, or the meeting's own; empty when notifications hide what they are about.
+    /// The first guest's first name; empty when none has one, or notifications hide what they are about.
     pub who: String,
     pub others: u64,
+    /// The meeting's own name, '' as above. None from a Machine that says it in who.
+    pub title: Option<String>,
     pub join: bool,
 }
 
@@ -143,7 +145,7 @@ fn about(meeting: &Value) -> Option<(String, Say)> {
     let words = |key: &str| meeting[key].as_str().unwrap_or_default().split_whitespace().collect::<Vec<_>>().join(" ").chars().filter(|c| !c.is_control()).take(60).collect::<String>();
     let id = meeting["id"].as_str().filter(|id| crate::todo_id(id).is_ok())?.to_string();
     let (at, link) = (words("at"), meeting["join"].as_str().filter(|l| crate::address::call(l)).map(String::from));
-    let of = Meeting { who: words("who"), others: meeting["others"].as_u64().unwrap_or(0), join: link.is_some(), at: at.clone() };
+    let of = Meeting { who: words("who"), others: meeting["others"].as_u64().unwrap_or(0), title: meeting["title"].is_string().then(|| words("title")), join: link.is_some(), at: at.clone() };
     (!at.is_empty()).then(|| (format!("{} {at}", meeting["event"]), Say { id, meeting: Some(of), link, ..Say::default() }))
 }
 
@@ -432,11 +434,13 @@ mod tests {
         let meeting = json!({"id": "aa01", "event": 7, "at": "2026-11-24T10:00:00+00:00", "who": " Dana\n", "others": 2, "join": "https://zoom.us/j/1"});
         let (key, say) = about(&meeting).unwrap();
         assert_eq!(key, "7 2026-11-24T10:00:00+00:00");
-        assert_eq!(say.meeting, Some(Meeting { at: "2026-11-24T10:00:00+00:00".into(), who: "Dana".into(), others: 2, join: true }));
+        assert_eq!(say.meeting, Some(Meeting { at: "2026-11-24T10:00:00+00:00".into(), who: "Dana".into(), others: 2, title: None, join: true }));
         assert_eq!(say.link.as_deref(), Some("https://zoom.us/j/1"));
         let with = |key: &str, value: Value| { let mut m = meeting.clone(); m[key] = value; about(&m) };
         let (_, other) = with("join", json!("https://zoom.us.example.com/j/1")).unwrap();
         assert!(other.link.is_none() && !other.meeting.unwrap().join);
+        let title = |value: Value| with("title", value).unwrap().1.meeting.unwrap().title;
+        assert_eq!((title(json!(" Kickoff\n")).as_deref(), title(json!("")).as_deref(), title(json!(7))), (Some("Kickoff"), Some(""), None));
         assert!(with("id", json!("../x")).is_none() && with("at", Value::Null).is_none() && about(&Value::Null).is_none());
     }
 }

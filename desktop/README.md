@@ -106,9 +106,10 @@ Always and Never).
 - A robot that may not speak takes nothing. Your Machine pushes to the browser as ever. One it was handed but didn't
   say it got in 90 seconds (an answer lost on the way is sent again) goes to the browser after all.
 - **Decided elsewhere**, on the phone or the dashboard: the bubble goes with the robot's next look.
-- **A meeting that starts within 10 minutes** and has a briefing from your Machine: who it is with and when, **Open brief**,
-  and **Join** for a Zoom, Meet or Teams link. Once. Only while your Machine may push reminders, and none for all-day or
-  declined ones; with hidden text it names nobody. **Join** opens the link in the browser.
+- **A meeting that starts within 10 minutes** and has a briefing from your Machine: who it is with, or its own name,
+  and when, **Open brief**, and **Join** for a Zoom, Meet or Teams link. Once. Only while your Machine may push
+  reminders, and none for all-day or declined ones; with hidden text it names nobody. **Join** opens the link in the
+  browser.
 - While the box is open nothing is said, and what its rows showed isn't said after.
 
 A Machine without this part gives nothing to say, and nothing changes.
