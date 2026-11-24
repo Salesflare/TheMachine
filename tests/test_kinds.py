@@ -94,7 +94,7 @@ KIND_LISTS = {
     'shared_graph_private.py': 5,
     'talk_live.py': 1,
     'dashboard/events-list.js': 1,
-    'dashboard/graph-followups-settings.js': 1,
+    'dashboard/graph-followups.js': 1,
     'dashboard/graph-record.js': 1,
     'dashboard/graph-tabs.js': 1,
     'dashboard/learning-missed.js': 1,

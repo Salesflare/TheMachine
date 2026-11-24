@@ -2,11 +2,13 @@
 // and what a tap on them does. A project's page, a board's "Follow-ups on" line and their settings are in the Graph's
 // part (graph-followups-settings.js); the grouped to-do's fast review is in graph-followups-review.js (LAZY
 // 'followups'): both load when first needed (dashboard_parts.LAZY).
-// A project page's state: how it ended, else how busy it is. A proof its box shows is said there only, not again below it.
-const projState=n=>{const c=n.project;return c?.outcome?endWord(c.outcome,c.deal):heatLabel(n.state)};
+// A proof a project page's box shows is said there only, not again below it.
 const shownProven=n=>{const s=n.success||n.board?.success;return !!(s?.done&&s.done_by==='evidence'&&s.evidence)};
 // The board's follow-ups as last loaded for the Graph (fuLoad): an edit clears them (graphPost).
 let fuKept=null;
+// Read here, in the review (LAZY 'followups') and in the Graph's parts, so they are in the main script
+const FU_CHANNELS={email:'Email',linkedin:'LinkedIn',whatsapp:'WhatsApp',slack:'Slack',telegram:'Telegram',signal:'Signal chats',intercom:'Intercom'};
+const fuChip=()=>html`<span class="fu-chip">${t('Paused')}</span>`;
 function fuGroupCard(g,all){const list=all.filter(s=>s.status==='prepared'),writing=all.length-list.length,names=all.map(s=>s.follow_up.name||s.follow_up.project),first=names.slice(0,3);
  const title=fuGroupTitle(all);
  const card=html`<h3>${list.length?html`<button type="button" class="title-link fu-title" data-fu-review="${g}"><span translate="no">${title}</span></button>`:html`<span translate="no">${title}</span>`}</h3><div class="meta"><div class="card-badges"><span class="meta-side">${time(all.map(s=>s.created_at).sort().pop(),true)}</span></div></div>${writing?html`<p class="fu-progress" role="status">${t(['Writing {} follow-up…','Writing {} follow-ups…'],writing)}</p>`:''}<p class="fu-names">${names.length>3?t('{}, {}, {} and {} more',...first,names.length-3):namesLine(first)}</p>${list.length?html`<div class="actions"><button class="primary" data-fu-review="${g}">${t('Review')}</button></div>`:''}</article>`;
