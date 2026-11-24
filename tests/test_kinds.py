@@ -213,7 +213,7 @@ class Registry(unittest.TestCase):
         self.assertEqual(set(push.NUDGE_KINDS), {*every[:-1], 'handoff'})
         self.assertEqual(handled_check.REACHES, push.NUDGE_KINDS)
         for row in kinds.SENDS.values():
-            self.assertEqual(set(row), {'name', 'text_only', 'to_person', 'send_now'})
+            self.assertEqual(set(row), {'name', 'text_only', 'to_person', 'send_now', 'send_later'})
         # The names that ask the registry now say what they spelled out before it (PR 3 moved them)
         self.assertEqual(cards.SOURCE_KIND, {
             'gmail.message': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack', 'teams.message': 'Teams',

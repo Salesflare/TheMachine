@@ -20,6 +20,8 @@ It comes back as a notification on each device where notifications are on, and o
 
 A to-do The Machine already finished comes back as it was. It works on it again only when something new came in while it was snoozed.
 
+To have the message itself go out at a time, use [Send later](send-later.md).
+
 ## While it's snoozed
 
 The to-do sits under **Coming back later**, and on its day in the [Calendar](calendar.md). **Unsnooze** brings it back now, **Change time** picks another time.

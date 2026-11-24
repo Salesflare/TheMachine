@@ -160,7 +160,7 @@ try{
  assert.deepEqual(await rows(),['Fromowner@home.example','Tosky@home.example']);
  assert.equal(await send.locator('#send-subject').inputValue(),'Have a look at The Machine');
  assert.match(await send.locator('#send-rich-body').textContent(),/^Hi Sky,I use The Machine, .*https:\/\/themachine\.computer/);
- assert.deepEqual(await send.locator('#send-act button:visible').allTextContents(),['Send now','Ask for changes']);
+ assert.deepEqual(await send.locator('#send-act button:visible').allTextContents(),['Send now','Send later','Ask for changes']);
  assert.equal(await page.locator('#machine-invite[open]').count(),0);
  const shoot=async name=>{if(process.env.GRAPH_FLEET_SHOTS)for(const width of [390,1440])for(const scheme of ['light','dark']){await page.setViewportSize({width,height:width<500?844:900});await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(400);
   await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-${name}-${width}-${scheme}.png`})}await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:390,height:844})};

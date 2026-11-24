@@ -118,6 +118,7 @@ if(b.dataset.result){try{if(b.dataset.result==='copy')await copyResult(id);else 
 // A Fleet item among the to-dos (Share, Not now: data-choice too) is not a to-do: its own handler (fleetOn) answers it
 if(!b.dataset.choice||b.closest('.fleet-card'))return;const choice=b.dataset.choice;
 if(choice==='send'){openSend(id);return}
+if(/^send-/.test(choice)){lazyRun('sendlater',()=>laterAct(choice,id));return}  // a scheduled message (todos-send-later.js)
 if(choice==='pick'||choice==='ask-send'){lazyRun('ask',()=>askAct(b));return}  // a to-do's named questions (todos-ask.js)
 if(choice==='change'||choice==='answer'){changing.add(id);dismissing.delete(id);render();$('#feedback-'+id)?.focus();return}
 if(choice==='cancel-change'){changing.delete(id);render();return}

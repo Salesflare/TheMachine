@@ -16,7 +16,7 @@ The **To-dos** page groups them:
 - **For you**: everything waiting on you, what's due by tomorrow first. Each says **Prepared** (a draft or result is ready, and **Do it** or **Send** carries it out), **Needs you** (it needs your decision or an answer first; when the work can't go on or be used without something only you have, like a price, a fact or a choice, a line under the title says what), **Preparing…** (your Machine is working on it) or **To read** (a digest or brief, nothing to decide).
 - **Older**: folded, to-dos with nothing new on them for a week (below).
 - **Waiting on others**: folded, to-dos where the next step is someone else's (below).
-- **Coming back later**: snoozed to-dos, and ones with no answer to **Still needed?** (below).
+- **Coming back later**: snoozed to-dos, messages that [go later](send-later.md), and ones with no answer to **Still needed?** (below).
 - **Promises**: what you promised and what others promised you. See [Promises](promises.md).
 - **Done / dismissed**: every finished to-do, newest first, with when it finished, like "Done 5 minutes ago". To-dos that seem finished already are marked **Looks done**.
 

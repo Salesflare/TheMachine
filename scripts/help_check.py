@@ -65,6 +65,7 @@ FEATURES = {
     'do-it': ('dashboard.html', 'Do it'),
     'history': ('machine/app/history.py', 'def history_step'),
     'snooze': ('dashboard.html', 'id="snooze-dialog"'),
+    'send-later': ('dashboard.html', 'id="send-later"'),
     'card-chat': ('dashboard.html', 'id="chat'),
     'hand-to-agent': ('dashboard.html', 'Hand to Codex'),
     'promises': ('dashboard.html', 'You promised'),

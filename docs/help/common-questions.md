@@ -8,11 +8,11 @@ order: 20
 ---
 ## Send an email later, at a set time
 
-Not possible: a draft never goes out by itself at a time you pick. **Snooze** its to-do until then. The draft waits on it, and you press **Send now** when it comes back. [Follow-ups](follow-ups.md) are the exception: they can go out by themselves if you turn that on.
+Press **Send later** next to **Send now** and pick a time. It goes out exactly as you approved it, and if they write first it waits for you again. See [Send later](send-later.md). LinkedIn and X messages can't wait: **Snooze** the to-do and press **Send now** when it comes back.
 
 ## Take back a sent email or message
 
-Not possible once it went out. Nothing goes before your yes, so read it in **Review and send** first. Two things can still be stopped: in [Talk live](talk-live.md), **Undo** shows for a few seconds after you said yes, and **Stop sending** keeps back the rest of a row of [follow-ups](follow-ups.md).
+Not possible once it went out. Nothing goes before your yes, so read it in **Review and send** first. Some can still be stopped: **Cancel** on one that [goes later](send-later.md), in [Talk live](talk-live.md), **Undo** shows for a few seconds after you said yes, and **Stop sending** keeps back the rest of a row of [follow-ups](follow-ups.md).
 
 ## Where a draft is
 

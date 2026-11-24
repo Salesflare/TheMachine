@@ -81,6 +81,7 @@ def quiet_workers(app, sent):
     transport = FakeTransport(sent)
     original = app.action_step
     app.action_step = lambda transport_=None: original(transport)
+    app.send_later_read, app.send_later_slack = lambda *a, **k: None, lambda *a, **k: []  # no mailbox to read before a scheduled send
     # The address for AIs (ai_reach.py) as once its certificate is in: no dial-back and no CA from the sandbox
     app.ai_reach_start = lambda stop: setattr(app, 'ai_reach_loop', type('Ready', (), {'state': 'ready'})())
     import onboarding

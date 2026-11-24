@@ -34,7 +34,7 @@ import meeting_prep
 from machine import action_basis, hand_back, new_post, todo_kinds
 from models import model_ready
 import next_actions
-from machine.store import message_view, outcomes
+from machine.store import message_view, outcomes, send_later
 from machine.store.core import checkpoint as core_checkpoint
 import own_addresses
 import recurring
@@ -512,7 +512,11 @@ class CardActionsApp:
         if owner_dashboard and re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='dashboard'
         elif not owner_dashboard and re.fullmatch(r'telegram:[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='telegram'
         else:raise OwnerError('Sending approval must come from the owner’s controls')
-        return self.store.confirm_action(args['suggestion_id'],args['revision'],args['approval_id'],source,args.get('recipients'),args.get('sender'))
+        later=args.get('later')  # Send later: picked in the dashboard, never by a chat or an app
+        if later:
+            if source!='dashboard':raise OwnerError('A message is scheduled in the dashboard')
+            later=send_later.pick_time(later)
+        return self.store.confirm_action(args['suggestion_id'],args['revision'],args['approval_id'],source,args.get('recipients'),args.get('sender'),later=later)
 
     def refresh_card_action(self, name, args, owner_dashboard=False):
         with self.store.connect() as db:

@@ -391,6 +391,8 @@ For developers: a feature adds its own entries with `actionAdd({id, group, label
 - Emails come back as a draft with a **Send** button. Read result on the dashboard shows the draft too.
 - In Telegram the to-do shows the draft itself (to, cc, subject, text), so **Send** there sends exactly that revision, and **Edit** opens it in the dashboard. A draft too long for the to-do, or one where you still pick the recipient, first shows a full preview and sends on **Send now**.
 
+**Send later** (next to Send now, in the dashboard and the app only) keeps the approved message until the time you picked. If they write first, or it is over an hour late, the to-do comes back with the reason instead ([help](help/send-later.md), [how](architecture.md#send-later)).
+
 **After a send**
 
 - Sends go through the account's Gmail. The to-do then says who it went to and when, and moves to done (Undo or Reopen bring it back).

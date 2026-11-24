@@ -233,7 +233,7 @@ class Page(unittest.TestCase):
 
 class Registry(unittest.TestCase):
     def test_every_row_is_complete(self):
-        fields = {'name', 'label', 'short', 'sharing', 'unit', 'group', 'last', 'signin', 'transports', 'video', 'video_links'}
+        fields = {'name', 'label', 'short', 'sharing', 'unit', 'group', 'last', 'read_now', 'signin', 'transports', 'video', 'video_links'}
         for key, row in services.SERVICES.items():
             with self.subTest(key):
                 self.assertEqual(set(row), fields)

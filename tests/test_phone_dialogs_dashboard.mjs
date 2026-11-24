@@ -40,8 +40,8 @@ async function run(scheme,shots){
  let m=await measure(page,'#send-dialog');
  // the whole screen, title on top, no page scroll behind it
  assert.deepEqual(m.dialog,[0,844,390]);assert.equal(m.head,0);assert.equal(m.page,'hidden');
- // Send now and Ask for changes in sight, at the bottom; × closes, so no Cancel beside Send
- assert.deepEqual(m.buttons.map(b=>b.label),['Send now','Ask for changes']);
+ // Send now, Send later and Ask for changes in sight, at the bottom; × closes, so no Cancel beside Send
+ assert.deepEqual(m.buttons.map(b=>b.label),['Send now','Send later','Ask for changes']);
  for(const b of m.buttons){assert.ok(b.bottom<=844&&b.top>=844-120,JSON.stringify(b))}
  // the long email scrolls inside its own box, which fills the room between the fields and the buttons; the sheet itself doesn't scroll
  assert.ok(m.editor.scrolls,'the email scrolls inside');assert.equal(m.dialogScrolls,false);
@@ -73,7 +73,7 @@ async function run(scheme,shots){
 }
 try{
  for(const scheme of ['light','dark'])await run(scheme,process.env.SHOTS);
- // a computer: the centered box it always was, Cancel beside Send
+ // a computer: the centered box it always was; × closes here too
  const ctx=await browser.newContext({viewport:{width:1440,height:900},locale:'en-US'});
  await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
  const page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));
@@ -81,7 +81,7 @@ try{
  await page.evaluate(()=>openSend('l1'));await page.locator('#send-rich-body').waitFor();
  const m=await measure(page,'#send-dialog');
  assert.equal(m.dialog[2],560);assert.ok(m.dialog[0]>0);
- assert.deepEqual(m.buttons.map(b=>b.label),['Send now','Ask for changes','Cancel']);
+ assert.deepEqual(m.buttons.map(b=>b.label),['Send now','Send later','Ask for changes']);
  assert.notEqual(m.page,'hidden');
  // Snooze: a compact box with the same title and rows
  await page.evaluate(()=>{document.querySelector('#send-dialog').close();openSnooze('l1')});await page.locator('#snooze-dialog[open]').waitFor();

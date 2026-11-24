@@ -137,7 +137,8 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            # a line of the owner's OpenClaw notes offered as a fact, kept also once dismissed (bring_in.py)
            'bring_in_items': ('text',),
            'decision_asks': ('questions',)}  # the question a note of the owner's answered, beside it (decisions.waiting_questions)
-DERIVED_JSON = (('action_jobs', 'payload', frozenset({'kind'})), ('suggestions', 'next_action', frozenset({'kind'})),
+DERIVED_JSON = (('action_jobs', 'payload', frozenset({'kind'})), ('scheduled_sends', 'payload', frozenset({'kind'})),
+                ('suggestions', 'next_action', frozenset({'kind'})),
                 ('suggestions', 'outcome', frozenset({'state'})))
 # The phone's notifications reach the app through android_inbox, written by the Gateway's plugin
 # (openclaw-plugin/android-feed.ts), which reads the key but has no BLAKE2b with a key in Node: their text is sealed

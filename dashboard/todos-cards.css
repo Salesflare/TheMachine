@@ -196,6 +196,7 @@ dialog::backdrop{background:#15171bb3}
 .snooze-time-row{display:flex;align-items:center;gap:12px;margin:12px 0 4px}
 .snooze-time-row input{width:auto;flex:1;min-width:0;margin:0;background:var(--sunken)}
 #snooze-error:empty{display:none}
+#later-note{margin:6px 12px 10px;color:var(--muted);font-size:.8rem;line-height:1.45}
 .snooze-footer{display:flex;justify-content:space-between;gap:8px;margin-top:14px}
 .month-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}
 .month-nav strong{color:var(--cream)}

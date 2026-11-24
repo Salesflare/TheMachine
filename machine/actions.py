@@ -415,6 +415,14 @@ COMPOSE_ACTIONS = {
     'compose_from',
 }
 OWNER_ACTIONS |= COMPOSE_ACTIONS
+# Send later (SendLaterApp): change the time of a message the owner scheduled, cancel it, or send it now. Scheduling one is
+# confirm_action's, from the dashboard. The owner's own, from the dashboard only.
+SEND_LATER_ACTIONS = {
+    'send_later_cancel',
+    'send_later_move',
+    'send_later_now',
+}
+OWNER_ACTIONS |= SEND_LATER_ACTIONS
 # Settings, Export: export everything and import an export (machine/app/export.py). The owner's own, from the dashboard only.
 EXPORT_ACTIONS = {
     'export_delete',
@@ -471,6 +479,7 @@ DASHBOARD_ACTIONS = frozenset({
     *MEET_ACTIONS,
     *ROUTINE_ACTIONS,
     *SEARCH_ASK_ACTIONS,
+    *SEND_LATER_ACTIONS,
     *SHARE_ACTIONS,
     *SKILL_ACTIONS,
     *SUPPORT_ACTIONS,

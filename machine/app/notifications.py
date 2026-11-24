@@ -203,7 +203,8 @@ class NotificationsApp:
             meetings = [m for m in meetings if m['at'] >= utc(local)] or []
             open_states = todo_states.sql(todo_states.OPEN_NOT_SNOOZED)
             due = [dict(r) for r in db.execute(
-                f"SELECT id,title,status FROM suggestions WHERE (status IN {open_states} AND due=? AND NOT {NOT_FOR_OWNER_SQL}) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
+                f"SELECT id,title,status FROM suggestions WHERE (status IN {open_states} AND due=? AND NOT {NOT_FOR_OWNER_SQL}) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<? "
+                "AND NOT EXISTS(SELECT 1 FROM scheduled_sends w WHERE w.suggestion_id=suggestions.id AND w.state='waiting')) "  # Send later: it goes by itself
                 "ORDER BY created_at LIMIT 20", (local.date().isoformat(), utc(local), utc(end)))]
             overnight = [dict(r) for r in db.execute(
                 "SELECT id,title FROM suggestions WHERE status='pending' AND handled_hint IS NULL AND created_at>=? AND (due IS NULL OR due!=?) "

@@ -62,7 +62,7 @@ from machine.store.decisions import checking_in, handoff_wait, handoffs_of, owne
 from machine.store.events import SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
 from machine.store import message_view
-from machine.store import review_last_look
+from machine.store import review_last_look, send_later
 from machine.store.review import own_message, REVIEW_SESSION_PREFIX
 from machine.text import _address
 import meeting_prep
@@ -92,7 +92,7 @@ import timeutil
 CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'decision_annotations', 'decision_asks', 'decisions', 'digest_items', 'draft_edits', 'email_bounces',
                'events', 'facebook_birthdays', 'facts', 'feedback_prompts', 'fleet_meta', 'fleet_out', 'graph_events', 'graph_identifiers', 'graph_nodes',
                'identity_names', 'mail_cleanup_items', 'person_facts', 'preparation_calls', 'preparation_runs', 'preparations', 'projects',
-               'promises', 'recap_items', 'recurring_cards', 'recurring_series', 'reorder_todos', 'routine_changes', 'routines', 'secondhand_todos', 'skill_clusters', 'skill_task_decided', 'skills',
+               'promises', 'recap_items', 'recurring_cards', 'recurring_series', 'reorder_todos', 'routine_changes', 'routines', 'scheduled_sends', 'secondhand_todos', 'skill_clusters', 'skill_task_decided', 'skills',
                'slack_members', 'subs_items', 'suggestions', 'task_pages', 'thread_snoozes', 'todo_moves', 'whatsapp_photos')
 CARD_KEEP_S = 120
 CARDS = stamps.Kept(4)
@@ -457,6 +457,7 @@ def card_reads(db, cards):
     pre = {'events': {r['id']: r['metadata'] for r in db.execute('SELECT id,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(events, key=str)),))},
            'clusters': {r[0] for r in db.execute('SELECT DISTINCT suggestion_id FROM skill_clusters WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))},
            'jobs': {r[0] for r in db.execute('SELECT DISTINCT suggestion_id FROM action_jobs WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))},
+           'later': {r[0] for r in db.execute("SELECT DISTINCT suggestion_id FROM scheduled_sends WHERE state IN ('waiting','queued') AND suggestion_id IN (SELECT value FROM json_each(?))", (ids,))},
            'preparations': {r['suggestion_id']: r for r in db.execute('SELECT suggestion_id,job_id,status,reason,error FROM preparations WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))}}
     try:  # skills.for_task reads these two; before their columns exist it looks per card as before
         pre['skills'] = {r[0] for r in db.execute("SELECT task FROM skills WHERE task IN (SELECT value FROM json_each(?)) AND status='proposed' AND origin='proposed' "
@@ -593,7 +594,7 @@ class ViewsStore(ConversationStore):
                                    **({'auto':True} if r['approval_id'].startswith('auto-merge:') else {}),
                                    **({'sent_at':r['updated_at']} if r['status']=='sent' else {}),
                                    # Held for a new message in the thread: which one, so the to-do shows it and offers a redo
-                                   **({'held_by':held} if r['status']=='blocked' and r['error']==follow_ups.HELD and (held:=follow_ups.held_message(db,r['id'])) else {}),
+                                   **({'held_by':held} if r['status']=='blocked' and (r['error']==follow_ups.HELD or send_later.is_replied_line(r['error'])) and (held:=follow_ups.held_message(db,r['id'])) else {}),
                                    **({'url':link} if r['status']=='sent' and (link:=doc_writes.link_of(r['message_id'],json.loads(r['payload'] or '{}').get('provider'))) else {}),  # a doc made: its link
                                    # Checked long enough without a trace: the owner may try again, and the card says so.
                                    **({'retry_ok':True,'error':'Last attempt unconfirmed: I found no sign of it going out. Check the conversation; if it isn’t there, try again.'}
@@ -604,6 +605,9 @@ class ViewsStore(ConversationStore):
                               if not pre or suggestion['id'] in pre['jobs'] else ())}
             extra['next_actions']=[{**bounces.mark_draft(db,item),**({'state':states[item['revision']]} if item['revision'] in states else {})} for item in next_actions.visible_actions(action)]
             if action['kind']!='menu' and action['revision'] in states:extra['action_status']=states[action['revision']]
+            if suggestion.get('status') in (todo_states.SNOOZED,todo_states.PREPARED) and (not pre or suggestion['id'] in pre['later']):
+                later=send_later.view(db,suggestion['id'])  # Send later: when it goes, with Send now, Change time and Cancel
+                if later:extra['send_later']=later
             # The draft Telegram shows in full on the card, so its Send there confirms directly (card_draft).
             shown=card_draft({**suggestion,**extra})
             if shown and shown['full']:extra['card_send']=shown['action']['revision']

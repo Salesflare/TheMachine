@@ -19,6 +19,7 @@ from gbrain_app import GBrainApp
 import locale_prefs
 from machine.actions import FAMILY_ACTIONS
 from machine.app.action_runs import ActionRunsApp
+from machine.app.send_later import SendLaterApp
 from machine.app.browser import BrowserApp
 from machine.app.calendar_clashes import CalendarClashesApp
 from machine.app.meeting_prep import MeetingPrepApp
@@ -135,7 +136,7 @@ APP_MIXINS += (ServeApp,)
 APP_MIXINS += (NewCardsApp,)
 APP_MIXINS += (MailApp,)
 APP_MIXINS += (SyncApp,)
-APP_MIXINS += (ActionRunsApp,)
+APP_MIXINS += (ActionRunsApp, SendLaterApp)
 APP_MIXINS += (WorkersApp,)
 APP_MIXINS += (StatusApp,)
 APP_MIXINS += (DocsApp,)

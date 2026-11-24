@@ -295,7 +295,7 @@ def card(row):
     title = row['title'].replace('*', '').replace('_', '')
     t = i18n.t  # what Telegram shows, in the owner's language
     status = {'accepted': t('On it.'), 'rejected': t('Not needed.'),
-              'snoozed': t('Snoozed until {}.', locale_prefs.at_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz()))) if row.get('snoozed_until') else t('Snoozed.'),
+              'snoozed': t('Sends {}.', locale_prefs.at_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz()))) if row.get('send_later') and row.get('snoozed_until') else t('Snoozed until {}.', locale_prefs.at_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz()))) if row.get('snoozed_until') else t('Snoozed.'),
               'instructions': t('Got your feedback. I’ll update this.'),
               'prepared': t('Ready for you.'), 'completed': t('Done.')}.get(row['status'], '')
     # One status line: where it stands and what's left for the owner. A later sign that it's

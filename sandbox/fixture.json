@@ -7791,9 +7791,9 @@
   },
   {
    "key": "open6",
-   "title": "Review the contract redlines from Vantage Rail",
+   "title": "Tell Anouk when the redlines come back",
    "body": "Two points matter to them: the liability cap in section 9 and the data retention period.",
-   "status": "snoozed",
+   "status": "prepared",
    "events": [
     "story:redlines:0"
    ],
@@ -7804,7 +7804,23 @@
    "source": "email from Anouk Valemont",
    "project": null,
    "urgent": false,
-   "snooze_hours": 50
+   "snooze_hours": 50,
+   "send_later": true,
+   "next_action": {
+    "kind": "email",
+    "account_id": "work-gmail",
+    "from": "alex@lumenlabs.example",
+    "to": [
+     "anouk@vantagerail.example"
+    ],
+    "cc": [],
+    "bcc": [],
+    "subject": "Re: Contract redlines",
+    "label": "Send to Anouk",
+    "to_name": "Anouk Valemont",
+    "body": "Hi Anouk,\n\nThank you for the redlines. Both points are with our lawyer now, and you have our answer by Friday.\n\nBest,\nAlex",
+    "revision": "rev0006"
+   }
   },
   {
    "key": "open7",

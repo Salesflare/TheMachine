@@ -29,6 +29,7 @@ PASSPHRASE = 'a synthetic passphrase for tests'
 EXCEPTIONS = {
     'action_jobs': ('status', 'error', 'retry_at', 'updated_at'),   # queued sends wait for the owner
     'deliveries': ('needs_edit',),                                   # their to-dos show Send again
+    'scheduled_sends': ('state', 'job_id', 'updated_at'),            # a scheduled message asks (its to-do: ASKING)
     'agent_jobs': ('status', 'error', 'error_kind', 'progress', 'updated_at', 'finished_at'),  # local jobs stop, work kept
     'activity_blocks': None,                                         # the hold's line, per held send
     'follow_up_pauses': None,                                        # automated follow-ups paused
@@ -38,6 +39,8 @@ EXCEPTIONS = {
     'outbox': ('status', 'error', 'done_at'),                        # Telegram sends wait for the owner
     'data_stamps': None,                                             # change counters for kept answers: the hold's changes count too
 }
+# What the hold writes on the to-do of a scheduled message, which is back with its draft; every other row stays the same
+ASKING = {'action_jobs': 'suggestion_id', 'deliveries': 'suggestion_id', 'todo_moves': 'suggestion_id', 'suggestions': 'id'}
 OLD = '2026-10-01T09:00:00+00:00'
 
 
@@ -199,6 +202,7 @@ class RoundTrip(unittest.TestCase):
 
     def test_every_table_comes_back_the_same(self):
         self.assertEqual(set(self.before), set(self.after))
+        asking = {r['suggestion_id'] for r in self.before['events.sqlite']['scheduled_sends']}
         for name, tables in self.before.items():
             for table, rows in tables.items():
                 with self.subTest(db=name, table=table):
@@ -206,10 +210,21 @@ class RoundTrip(unittest.TestCase):
                     skip = EXCEPTIONS.get(table, ())
                     if skip is None:
                         continue
-                    strip = lambda found: [{k: v for k, v in r.items() if k not in skip} for r in found]
+                    strip = lambda found: [{k: v for k, v in r.items() if k not in skip} for r in found if r.get(ASKING.get(table)) not in asking]
                     self.assertEqual(strip(rows), strip(self.after[name][table]))
         added = {(name, t) for name in self.after for t in self.after[name]} - {(name, t) for name in self.before for t in self.before[name]}
         self.assertEqual(set(), {t for _, t in added} - set(EXCEPTIONS), 'an import made a table the export did not have')
+
+    def test_a_scheduled_message_asks_on_the_new_computer(self):
+        before, after = self.before['events.sqlite'], self.after['events.sqlite']
+        sid, = {r['suggestion_id'] for r in before['scheduled_sends']}
+        self.assertEqual([r['state'] for r in after['scheduled_sends']], ['stopped'])
+        moved = ('status', 'snoozed_until', 'resume_status')
+        was, now = (next(r for r in t['suggestions'] if r['id'] == sid) for t in (before, after))
+        self.assertEqual((was['status'], now['status'], now['snoozed_until']), ('snoozed', 'prepared', None))
+        self.assertEqual({k: v for k, v in was.items() if k not in moved}, {k: v for k, v in now.items() if k not in moved})
+        job, = (r for r in after['action_jobs'] if r['suggestion_id'] == sid)
+        self.assertEqual((job['status'], job['error']), ('blocked', hold.MOVED_SEND))
 
     def test_ids_links_and_times_stay(self):
         before, after = self.before['events.sqlite'], self.after['events.sqlite']

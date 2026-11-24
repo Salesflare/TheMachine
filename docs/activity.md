@@ -19,7 +19,7 @@ its channel already ("Email to …"), so its `where` is only the address or name
 
 | kind | what | source (owner) |
 |---|---|---|
-| `messages` | emails, replies and messages on every channel; auto follow-ups; blocked, failed, undone and canceled ones | `action_jobs` (assistant.py), `follow_up_sends`, `activity_blocks` |
+| `messages` | emails, replies and messages on every channel; auto follow-ups; blocked, failed, undone and canceled ones; a message scheduled with Send later, its time changed, canceled | `action_jobs` (assistant.py), `follow_up_sends`, `activity_blocks`, `scheduled_send_log` (machine/store/send_later.py) |
 | `docs` | docs created or edited | `action_jobs` (`doc_write`; a reply in a doc is a message) |
 | `calendar` | calendar changes | `action_jobs` (`calendar`) |
 | `web` | steps on the web (Do it's browser steps) | `action_jobs` (`finish`) |

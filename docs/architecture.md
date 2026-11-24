@@ -354,6 +354,37 @@ project (scope `project`, which wins). Off by default. What the owner sets ([hel
   email when there is none. A follow-up whose To bounced after its draft is held right before it goes and moved to the
   working address under a new revision (`follow_ups.hold_bounced`). The review gets it as a hint.
 
+### Send later
+
+An approved message waits for the time the owner picked (`machine/store/send_later.py` the rows, `machine/app/send_later.py`
+the service's side; [help](help/send-later.md)). It adds no way to send: at its time it becomes an ordinary outbox job.
+
+- **Approval.** `confirm_action` with `later`, from the owner's dashboard only (OwnerError elsewhere: never chat, voice,
+  Telegram, MCP or Fleet). All of Send's own checks run first. `scheduled_sends` keeps the action as approved; no
+  `action_jobs` row exists until its time, so no second worker, retry or Send path can send it.
+- **The to-do** sleeps under Later until exactly then (`snoozed_until`, back to prepared). `sweep` ends the scheduled send
+  when the to-do left that sleep or its draft isn't the approved revision anymore: edited, replaced, done, dismissed,
+  unsnoozed, superseded.
+- **Someone wrote first** (`replied`): since the approval, in the message's own conversation, in those of the to-do's
+  messages, and for email from any address the Graph knows for the To recipients in any of the owner's mailboxes; also a
+  message between the draft and the approval. A forward or a person's post through a list counts. The owner's own,
+  history and automatic messages (`mail_senders`, as in follow-ups) don't. One already collected takes the message back on
+  the action worker's next round.
+- **At its time** it is queued, and `action_step` runs `send_later_admit` right before it would send: a fresh read of the
+  conversation's accounts (`sync_source` until caught up; Slack's own history and replies; the Telegram and Signal
+  mirrors must have reached their service in the last 15 minutes; WhatsApp's local mirror as it is), then one transaction
+  that checks the replies again and moves the job from `queued` to `sending`. Canceled or sent by another worker in
+  between, that update matches nothing.
+- **It can't be read, or a check before the send can't run now**: the job stays queued and is tried every 2 minutes
+  (`RETRY`), with that on the to-do. An hour after its time (`LATE`) it asks; the same hour bounds a computer that was off,
+  asleep or paused. A send whose outcome is unknown is `uncertain` and reconciled, as any other.
+- **Asking** (`ask`) puts the to-do back with its draft, a blocked outbox job with the reason, the Activity line and the
+  notice a snooze gives. Sending it then is a new approval.
+- **Channels** (`CHANNELS`): email, Slack, WhatsApp, Telegram, Signal, Teams and Intercom. LinkedIn and X are read in
+  the shared browser at a person's pace, so nothing fresh can be promised for that minute; a reply in a doc has no conversation.
+- **Time** is stored in UTC. The picker takes the owner's time zone and refuses a local time that daylight saving skips.
+  The recipient's working day is never guessed.
+
 ### What reviews learn from you
 
 Your decisions and written reasons are summarized into every review prompt. Lasting facts you state are saved

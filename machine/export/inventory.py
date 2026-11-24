@@ -60,7 +60,7 @@ _BY_PART = {
         recurring_cards recurring_offers recurring_series routines routine_offers routine_runs routine_changes mail_cleanup_items mail_cleanup_senders facebook_birthdays digest_items digest_spend secondhand_seen secondhand_spend secondhand_todos subs_items subs_state reorder_mail purchases reorder_todos task_pages follow_up_advice follow_up_basis follow_up_cards
         follow_up_changes follow_up_ends follow_up_holds follow_up_pace follow_up_pauses follow_up_rules follow_up_threads
         missed_audits missed_audit_items missed_audit_calibration review_misses project_success project_success_checks project_stall_runs project_stall_items calendar_clashes meeting_preps meeting_prep_web gateway_starts'''),
-    'drafts': _names('''draft_edits draft_saves draft_seen deliveries action_jobs calendar_writes meeting_writes handoff_mails
+    'drafts': _names('''draft_edits draft_saves draft_seen deliveries action_jobs scheduled_sends scheduled_send_log calendar_writes meeting_writes handoff_mails
         follow_up_sends merge_effects edits_offered'''),
     'decisions': _names('decisions decision_annotations tool_approval_proposals'),
     'promises': _names('promises promise_log'),

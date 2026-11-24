@@ -14,7 +14,7 @@ Click an email address, on a person's page in Graph or as a link in a to-do or a
 
 ## Send it
 
-Write the subject and the message, with bold, lists and links if you like. Nothing goes out until you press **Send now**.
+Write the subject and the message, with bold, lists and links if you like. Nothing goes out until you press **Send now**. Or press **Send later** and pick when it goes: see [Send later](send-later.md).
 
 The email then goes out like any draft you approve: it shows as sent on its own to-do, on the person's page and in your mailbox. If it can't go out, the to-do keeps it, ready to send from there.
 
@@ -26,7 +26,7 @@ Close it with Escape, × or Back and what you typed is kept, with the subject, F
 - An edited draft says **Edited, not sent** on its to-do, on every channel. Open it again and your text is there. A follow-up you edit in **Review** works the same.
 - After a reload, or when your phone closed the app, the window you were typing in opens again.
 
-**Discard** in the window throws away what you typed, and **Undo** brings it back. A message you sent or discarded doesn't come back.
+**Discard** in the window throws away what you typed, and **Undo** brings it back. A message you sent, scheduled or discarded doesn't come back.
 
 If the draft changed meanwhile, you see the new draft and **Use it** shows what you typed. Neither replaces the other until you send. Two tabs with different text work the same way.
 

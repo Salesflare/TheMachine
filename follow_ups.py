@@ -1106,9 +1106,14 @@ def hold(db, job_id, suggestion_id, why, news, now, line=None):
     line = line or (HELD if why == 'changed' else UNCHECKED)
     if db.execute("UPDATE action_jobs SET status='blocked',error=?,retry_at=NULL,updated_at=? WHERE id=? AND status='queued'", (line, now, job_id)).rowcount:
         activity_log.note_block(db, job_id, line, now)  # Activity keeps the hold as history (activity_log.py)
+    note_hold(db, job_id, suggestion_id, why, news, now)
+    return line
+
+
+def note_hold(db, job_id, suggestion_id, why, news, now):
+    """What held it: the to-do shows the message (held_message), and a new Send isn't held for it again (reply_basis)."""
     db.execute('INSERT OR REPLACE INTO follow_up_holds(job_id,suggestion_id,why,news,at) VALUES(?,?,?,?,?)',
                (job_id, suggestion_id, why, json.dumps(news) if news is not None else None, now))
-    return line
 
 
 SNIPPET = 160  # characters of the new message the held to-do shows
@@ -1702,8 +1707,9 @@ def settle(db, now, mine=mine_default):
         if f['status'] in todo_states.CLOSED:
             db.execute("UPDATE follow_up_cards SET state='skipped',closed_at=? WHERE suggestion_id=?", (now, sid))
             continue
-        if any(s in ('queued', 'sending', 'uncertain') for s in jobs):
-            continue  # on its way: the outbox settles it
+        if any(s in ('queued', 'sending', 'uncertain') for s in jobs) or db.execute(
+                "SELECT 1 FROM scheduled_sends WHERE suggestion_id=? AND state='waiting'", (sid,)).fetchone():
+            continue  # on its way, or scheduled (machine/store/send_later.py): the outbox settles it
         if db.execute("SELECT 1 FROM decisions WHERE suggestion_id=? AND choice='update' AND created_at>=?", (sid, f['card_at'])).fetchone():
             # A review brought new news onto it: a normal to-do now, with its own notification
             db.execute("UPDATE follow_up_cards SET state='detached',why='update',closed_at=? WHERE suggestion_id=?", (now, sid))
