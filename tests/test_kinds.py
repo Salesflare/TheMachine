@@ -249,12 +249,15 @@ class Registry(unittest.TestCase):
             'signal.message': 'Signal', 'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'})
         # every connector kind is here, with its connector's view
         from machine.sources.connectors import load_connector
+        checked = 0
         for path in sorted((ROOT / 'connectors').glob('*.py')):
             plugin = load_connector(path.stem)
             for kind in getattr(plugin, 'KINDS', None) or {}:
+                checked += 1
                 with self.subTest(connector=path.stem, kind=kind):
                     self.assertIn(kind, kinds.KINDS)
                     self.assertEqual(kinds.KINDS[kind]['service'], path.stem)
+        self.assertGreater(checked, 3, "the connectors' kinds")
 
     def test_the_messenger_kinds_are_the_viewers(self):
         """events-message.js THREAD_IM names them by their source line's name: the ones it spelled out before it asked the

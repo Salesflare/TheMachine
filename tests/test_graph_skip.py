@@ -100,6 +100,7 @@ class Skip(unittest.TestCase):
             db.isolation_level = None
             _, sql = self.traced(db, lambda: graph.build(db, SETTINGS, NOW.isoformat()))
         read = {t.lower() for s in sql for t in re.findall(r'\b(?:FROM|JOIN)\s+([A-Za-z_]\w*)', s)}
+        self.assertGreater(len(read), 10, 'the tables a build reads')
         self.assertEqual(read - set(graph_setup.GRAPH_INPUTS) - UNCOUNTED, set(), 'add these to graph_setup.GRAPH_INPUTS')
 
     def test_unchanged_until_something_a_build_reads_changes(self):

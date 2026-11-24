@@ -158,7 +158,10 @@ class FocusTest(unittest.TestCase):
             self.assertIn("Your Machine's own browser", (web / 'machine-view.js').read_text())  # a blank page never stands on its own
 
     def test_units_listen_on_loopback_only(self):
-        for unit in browser_viewer.UNITS.glob('machine-browser-*'):
+        units = list(browser_viewer.UNITS.glob('machine-browser-*'))
+        self.assertTrue([u for u in units if 'ListenStream=' in u.read_text()])
+        self.assertTrue([u for u in units if 'websockify' in u.read_text()])
+        for unit in units:
             text = unit.read_text()
             for line in text.splitlines():
                 if line.startswith('ListenStream='):
