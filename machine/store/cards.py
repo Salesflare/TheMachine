@@ -763,7 +763,7 @@ class CardsStore:
             # Done stays done unless something new happened after it was closed: a message from someone else that came
             # in later. Older signals the review only now reaches, and the owner's own sent reply, are kept as evidence.
             shut = promise_closed_at(db, card) or card['created_at']
-            reopen = any(r['id'] in added and r['occurred_at'] > shut and not own_message(dict(r), self.owner_user_ids) for r in rows)
+            reopen = any(r['id'] in added and min(r['occurred_at'], r['ingested_at'] or r['occurred_at']) > shut and not own_message(dict(r), self.owner_user_ids) for r in rows)
         if closed and not reopen:
             db.execute('UPDATE suggestions SET event_ids=?,account_ids=? WHERE id=?', (encoded(ids), encoded(accounts), sid))
             if added:

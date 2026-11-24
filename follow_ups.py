@@ -1673,12 +1673,14 @@ def thread_news(db, suggestion_id, mine=mine_default):
     about; machine.app.follow_ups.newer_activity), oldest first: [{'id', 'mine'}]. Only these show that someone
     followed it up already or answered."""
     from machine.app.follow_ups import newer_activity  # the app's own check, so both judge one conversation alike
+    from machine.store.evidence_moments import Moments
     row = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
     try:
         ids = [i for i in json.loads(row[0] or '[]') if isinstance(i, int)] if row else []
     except ValueError:
         ids = []
-    found = [x['id'] for x in newer_activity(db, ids, limit=50)]
+    moments = Moments(db, ids)
+    found = [x['id'] for x in newer_activity(db, ids, limit=50, after=moments.everywhere or '', moments=moments)]
     rows = {r['id']: r for r in db.execute('SELECT id,kind,occurred_at,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))',
                                            (json.dumps(found),))}
     return [{'id': i, 'mine': mine(dict(rows[i]))} for i in found if i in rows]

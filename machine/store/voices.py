@@ -23,6 +23,7 @@ from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.slack import slack_ids_named
 from machine.store import outcomes
 from machine.store.conversation import one_to_one
+from machine.store.evidence_moments import Moments, conversation_of
 from machine.text import clamp, encoded, unquoted, without_forward
 import i18n
 from mail_senders import addresses
@@ -145,12 +146,6 @@ def voice_block(text):
 def voice_lines(text, indent='  '):
     """A voice block as lines under its channel in a prompt."""
     return ''.join(f'\n{indent}- {line}' for line in voice_block(text).split('\n') if line)
-
-
-def conversation_of(kind, m):
-    """The conversation a message belongs to: an email thread, a Slack channel or DM, a chat."""
-    key = m.get('thread_id') if kind == 'gmail.message' else m.get('channel_id') if kind == 'slack.message' else m.get('chat_id') or m.get('conversation_id')
-    return str(key) if key else None
 
 
 def own_predicate(kind, owner_slack_ids=()):
@@ -727,7 +722,8 @@ class VoicesStore:
                 spots = answer_spots(db, kind, self.card_channels(row['id'], db)[1], draft)
                 if not spots['conversations']:
                     continue
-                newest = db.execute('SELECT max(e.occurred_at) FROM json_each(?) i JOIN events e ON e.id=i.value', (row['event_ids'],)).fetchone()[0]
+                # What it is about: its newest message in any conversation, as no judge reads this (evidence_moments.py)
+                newest = Moments(db, json.loads(row['event_ids'] or '[]')).everywhere
                 sent = sent or authorship.MachineSent.load(db)  # another to-do's send in that conversation isn't theirs
                 # After a Not done only what came in since
                 said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice IN ('not_done','undo','reopen')",

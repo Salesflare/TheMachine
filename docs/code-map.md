@@ -247,7 +247,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   viewer: its view, email, chat, notification or card, and the rules every source keeps there; connectors declare
   `VIEWS` and `APP`), `machine/store/judged_words.py` (what the checks that close to-dos and promises by themselves
   read of a message: its own words, and its files where the source keeps them; made-up cases for a model run:
-  `evals/closing-checks/`), `machine/store/whats_new.py` (the `WhatsNewStore` mixin and `ENTRIES`: the
+  `evals/closing-checks/`), `machine/store/evidence_moments.py` (from when on something is news on a to-do: per
+  conversation its evidence is in, and since its newest message elsewhere), `machine/store/whats_new.py` (the `WhatsNewStore` mixin and `ENTRIES`: the
   pool of What's new candidates, the morning's pick of up to five (`pick_step`, run by `retention_worker`; an entry
   for a Work Fleet or for one main model only goes where that fits) and what a
   person saw; its dialog is
