@@ -190,8 +190,9 @@ impl Speaking {
         self.now.is_some() && self.alive.is_some_and(|alive| at.duration_since(alive) > if self.shown { DEAD } else { SLOW })
     }
 
-    /// The rows of the box were seen, so these are.
+    /// The rows of the box were seen, so these are. The rest waited for a while: it is asked for again first (pop).
     fn seen(&mut self, rows: &[String]) -> usize {
+        self.asked = None;
         let before = self.queue.len();
         let (seen, rest) = std::mem::take(&mut self.queue).into_iter().partition::<Vec<_>, _>(|s| s.meeting.is_none() && rows.contains(&s.id));
         self.queue = rest.into();
@@ -663,6 +664,9 @@ mod tests {
         assert_eq!(s.seen(&["x".into(), "x2".into()]), 1);
         assert_eq!(s.got, ["a1"]);
         assert_eq!(s.queue.iter().map(|q| q.id.as_str()).collect::<Vec<_>>(), ["y", "x2"]);
+        assert!(s.pop(Instant::now()).is_none(), "the browser may have them by now: another look first");
+        s.offered(&json!([{"key": "b2", "id": "y"}]), Some("7 ten"), Instant::now());
+        assert_eq!(s.pop(Instant::now()).unwrap().id, "y");
     }
 
     #[test]
