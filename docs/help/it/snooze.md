@@ -1,28 +1,30 @@
 ---
 title: Posticipa
 area: cards
-summary: Fai ricomparire un’attività più tardi, in un giorno lavorativo e all’ora che scegli.
+summary: Fai ricomparire un’attività più tardi. In un giorno lavorativo, all’ora che scegli.
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
-translated: 9d34f011c74d8119
+translated: e96a4a3f781c20b5
 ---
-## Posticipare un’attività
+## Posticipa un’attività
 
-Premi **Posticipa** sull’attività. Il menu propone alcuni orari, per esempio tra 2 ore, domani o tra una settimana. Per scegliere un altro momento, seleziona **Scegli una data** e **Ora**, poi **Salva l’orario**. Hai posticipato l’attività per sbaglio? Premi **Annulla** nel messaggio per farla ricomparire subito.
+Seleziona **Posticipa** sull’attività. Il menu propone alcuni orari, per esempio tra 2 ore, domani o tra una settimana. Per scegliere un altro momento, seleziona **Scegli una data** e **Ora**, poi **Salva l’orario**. Hai posticipato per sbaglio? Seleziona **Annulla** nel messaggio per farla ricomparire subito.
 
-I posticipi di almeno un giorno ricompaiono all’ora impostata in «I posticipi ricompaiono alle», e le attività di lavoro aspettano un giorno lavorativo. Imposta entrambi in [Orario di lavoro](work-hours.md).
+I posticipi di almeno un giorno tornano all’ora che hai impostato in «I posticipi tornano alle»; le attività di lavoro aspettano un giorno lavorativo. Puoi impostare entrambe le opzioni in [Orario di lavoro](work-hours.md).
 
-Oppure chiedi **Chiedi modifiche**, per esempio: «ricordami questa attività martedì prossimo».
+Puoi anche chiedere all’assistente di farlo con **Chiedi modifiche**, per esempio: «ricordami questa attività martedì prossimo».
 
 ## Quando ricompare
 
-Ricompare come notifica su ogni dispositivo in cui le notifiche sono attive e su Telegram, se lo usi, in base alle impostazioni di **Promemoria** in [Notifiche](notifications.md). Il messaggio di posticipo indica dove. Se non hai attivato nessuna di queste opzioni, l’attività ricompare nella dashboard, dove trovi anche **Attiva le notifiche**. Su iPhone e iPad, scarica l’[app per dispositivi mobili](mobile-app.md) per ricevere le notifiche.
+L’attività ricompare come notifica su ogni dispositivo con le notifiche attive e su Telegram, se lo usi, in base all’opzione **Promemoria** in [Notifiche](notifications.md). Il messaggio di posticipo indica dove. Se non hai attivato le notifiche né i promemoria, l’attività ricompare sulla dashboard, con **Attiva le notifiche** proprio lì. Su iPhone e iPad, scarica l’[app per telefono](mobile-app.md) per ricevere le notifiche.
 
-Un’attività che la Machine ha già completato ricompare nello stato in cui si trovava. La Machine ci lavora di nuovo solo se, mentre era posticipata, è arrivato qualcosa di nuovo.
+Un’attività che la Machine ha già completato ricompare com’era. La Machine ci lavora di nuovo solo se, mentre era posticipata, è arrivato qualcosa di nuovo.
+
+Per inviare il messaggio stesso a un orario preciso, usa [Invia più tardi](send-later.md).
 
 ## Mentre è posticipata
 
-L’attività resta in **Torna più tardi** e compare nel calendario del giorno scelto in [Calendario](calendar.md). **Annulla posticipo** la fa ricomparire subito; con **Cambia orario** puoi scegliere un altro momento.
+L’attività si trova in **Torna più tardi** e nel giorno corrispondente del [Calendario](calendar.md). **Annulla posticipo** la fa ricomparire subito, mentre **Cambia orario** permette di sceglierne un altro.
 
-In Outlook, la conversazione email viene spostata in una cartella Posticipate finché l’attività non ricompare. Scopri di più su [Microsoft](microsoft.md).
+In Outlook, la conversazione email viene spostata in una cartella Posticipati finché l’attività non ricompare. Scopri di più su [Microsoft](microsoft.md).
