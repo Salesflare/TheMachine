@@ -136,7 +136,9 @@ def meeting_key(row, meta):
 
 def is_briefing(dedupe_key):
     """Whether a to-do is a meeting briefing: only for reading, like the Daily digest (nothing to do it with or change).
-    What it lists that needs doing (a promise, a question) has its own to-do."""
+    What it lists that needs doing (a promise, a question) has its own to-do. Its text is for the owner alone: it is
+    written from earlier meetings' notes, later messages and summaries that are not among the to-do's sources, which
+    decide what others may see. So it goes in no handoff (fleet_requests.card_reason) and to no reviewer (fleet_reviews)."""
     return str(dedupe_key or '').startswith(KEY_PREFIX)
 
 
@@ -718,21 +720,27 @@ def _linked(text, urls):
 
 
 def cites(found, day):
-    """{N or E id: (what its source is called, its https link or '')}: an earlier meeting by its title, a message by who
-    wrote it, with the day. day(moment) writes it in the owner's way."""
+    """{N or E id: (what its source is called, its https link or '', what it is called once named)}: an earlier meeting by
+    its title, a message by who wrote it, with the day; after that the day alone, when no other source has that day.
+    day(moment) writes it in the owner's way."""
     name = lambda text: cut(' '.join(re.sub(r'https?://\S+|[\[\]*<>]', ' ', str(text)).split()), 40)  # a guest can name a meeting: plain words only
+    on = lambda at: day(at).replace(' ', '\u00a0') if at else ''  # a day stays on one line
     out = {}
     for n in found.get('notes') or ():
-        out[n['id']] = (', '.join(x for x in (name(n['meeting']), day(n['start'])) if x), n['url'])
+        out[n['id']] = (name(n['meeting']), on(n['start']), n['url'])
     for i, row in {**found['messages'], **(found.get('later') or {})}.items():
         at = _at(row['occurred_at'])
-        out[f'E{i}'] = (', '.join(x for x in (name(earlier_notes.sender(row)), at and day(at)) if x), '')
-    return out
+        out[f'E{i}'] = (name(earlier_notes.sender(row)), on(at), '')
+    days = [d for _, d, _ in out.values()]
+    full = lambda who, d: ', '.join(x for x in (who, d) if x)
+    return {k: (full(who, d), url, d if days.count(d) == 1 and d else full(who, d)) for k, (who, d, url) in out.items()}
 
 
-def _cited(point, called):
-    """A point with its source after it: "Starts in January (Kickoff call, Nov 3)"."""
-    name, url = called.get(point['ref']) or ('', '')
+def _cited(point, called, named):
+    """A point with its source after it: "Starts in January (Kickoff call, Nov 3)". named: the sources named so far."""
+    name, url, again = called.get(point['ref']) or ('', '', '')
+    name = again if point['ref'] in named else name
+    named.add(point['ref'])
     return f"{point['text']} ({f'[{name}]({url})' if url else name})" if name else point['text']
 
 
@@ -740,8 +748,8 @@ def body_text(fields, t, links=None, called=None):
     """The briefing as the to-do's body: one short paragraph per part that has something, each with its label. A line
     from the web carries its source links (links: {'background' or 'company': [url]}), a point from an earlier meeting
     its source (called: cites)."""
-    f, links = fields, links or {}
-    lines = {k: [_cited(p, called or {}) for p in f.get(k) or ()] for k in POINTS}
+    f, links, named = fields, links or {}, set()
+    lines = {k: [_cited(p, called or {}, named) for p in f.get(k) or ()] for k in ('agreed', 'changed', 'open')}  # as they are read
     lines = {k: v[0] if len(v) == 1 else v and '\n• ' + '\n• '.join(v) for k, v in lines.items()}  # more than one: a list
     who = f.get('who') or ''
     if who and f.get('background'):

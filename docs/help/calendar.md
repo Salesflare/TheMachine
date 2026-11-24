@@ -113,7 +113,7 @@ It comes on the morning of a work day: the meeting's own day when it's in the af
 
 Earlier meetings count when someone from outside is in both, whatever the meeting was called and whichever address they used. It reads the notes your Machine has: yours, your meeting app's, or the notes it mailed you, else the transcript or the notes in the calendar event. The newest ones weigh most, and a point settled later isn't shown as open.
 
-A work briefing reads no personal notes, and nothing from someone else's Machine. No briefing reads [History](history.md). With no notes, those lines aren't there.
+A work briefing reads no personal notes, and nothing from someone else's Machine. Its text stays with you: a handoff never takes it along, and it can't go out for review. No briefing reads [History](history.md). With no notes, those lines aren't there.
 
 It uses what is already on your Machine. For a first meeting with someone at a company, it also does a short web search on their name and company, and shows a link next to what it found. Only their public name, company name and website go to the search, never your messages. A search is reused for 30 days. With **Look up work contacts** off (Settings, Security), there's no search.
 

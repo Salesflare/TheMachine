@@ -110,17 +110,16 @@ def prepare(case, text, folder):
     page(meeting('next', NOW.replace(day=10, hour=10), case['title'], case['about'], case['guests']))
     with store.connect() as db:
         for a, b in case['merges']:
-            db.execute('INSERT INTO graph_merges(a,b,same,created_at) VALUES(?,?,1,?)', (*sorted(('email:' + a, 'email:' + b)), NOW.isoformat()))
-        for p in case['promises']:
-            at = ago(p['days']).isoformat()
-            db.execute("INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,created_at,updated_at) VALUES(?,?,?,?,?,'wmeet',?,?,?)",
-                       (p['direction'], p['who'], p['what'], at, record[p['of']], p['status'], at, at))
-        for n, d in enumerate(case['done']):
-            at = ago(d['days']).isoformat()
-            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES(?,?,?,'',?,'[\"wmeet\"]','completed',?)",
-                       (f'done{n}', f'done{n}', d['title'], json.dumps([record[d['of']]]), at))
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,'complete','','dashboard',?)", (f'd{n}', f'done{n}', at))
+            graph.merge(db, 'email:' + a, 'email:' + b, True, NOW.isoformat(), source='owner')
         db.commit()
+        sent = dict(db.execute('SELECT source_id,id FROM events').fetchall())
+    for p in case['promises']:
+        made = store.promise({'direction': p['direction'], 'who': p['who'], 'what': p['what'], 'event_id': sent[f"mail{p['mail']}"]})
+        if p['status'] != 'open':
+            store.update_promise({'id': made['id'], 'status': p['status']}, source='dashboard')
+    for n, d in enumerate(case['done']):
+        card = store.suggest(f'done{n}', d['title'], d['title'], [record[d['of']]])
+        store.decide(card['id'], 'complete', '', f'd{n}', 'dashboard')
     with store.connect() as db:
         graph.build(db, app.config, NOW.isoformat())
     return app
@@ -138,13 +137,12 @@ def facts(case, text):
     if any('team' in m for m in case['meetings']):
         out.append('Lars and Petra are colleagues of Robin.')
     out += [f"Mail on {day(m['days'])} from {'Robin' if m['from'] == 'own' else m['from'][1]}, {m['subject']}: {m['text']}" for m in case['mails']]
-    out += [f"Promise by Robin, now {p['status']}: {p['what']}" for p in case['promises']] + [f"Done: {d['title']}" for d in case['done']]
+    out += [f"Promise by Robin, {p['status']} since {day(6)}: {p['what']}" for p in case['promises']] + [f"Done on {day(6)}: {d['title']}" for d in case['done']]
     return '\n'.join(out)
 
 
 def briefing(case, text, folder, turn):
     """The briefing's text ('' for none), and its turn's (input, output) tokens."""
-    import timeutil
     import meeting_prep
     import i18n
     import inspect
@@ -186,8 +184,13 @@ def main():
     a = p.parse_args()
     sys.path.insert(0, a.root)
     import locale_prefs
-    import timeutil
-    timeutil.LOCAL_TZ = dt.timezone.utc
+    import machine.main  # noqa: F401  every module it sets the clock of is loaded
+    clock = sys.modules['timeutil']
+    clock.LOCAL_TZ = dt.timezone.utc
+    real, settled = clock.now, (NOW - dt.timedelta(days=6)).isoformat()  # when a promise was kept or a to-do done
+    for module in list(sys.modules.values()):
+        if getattr(module, 'now', None) is real:
+            module.now = lambda: settled
     if a.chars:
         import earlier_notes
         earlier_notes.FIRST, earlier_notes.REST = a.chars * earlier_notes.FIRST // earlier_notes.CHARS, a.chars * earlier_notes.REST // earlier_notes.CHARS

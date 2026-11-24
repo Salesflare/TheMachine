@@ -174,15 +174,21 @@
      "text": "Summary\nAna asked for the import to keep the old customer numbers. Decided: old numbers go in a separate field.\nNext steps\n- Robin sends a test import file.\n- Ana nominates two key users."
     }
    ],
-   "mails": [],
+   "mails": [
+    {
+     "days": 17,
+     "from": "own",
+     "text": "Hi Ana, I will send you a test import file this week.",
+     "subject": "Import"
+    }
+   ],
    "promises": [
     {
-     "of": 0,
+     "mail": 0,
      "direction": "mine",
-     "who": "Ana",
-     "what": "a test import file",
-     "status": "kept",
-     "days": 10
+     "who": "Ana Velozo",
+     "what": "send a test import file",
+     "status": "kept"
     }
    ],
    "done": [],
@@ -729,8 +735,7 @@
    "done": [
     {
      "of": 0,
-     "title": "Set up the priority line number for Quaybridge",
-     "days": 6
+     "title": "Set up the priority line number for Quaybridge"
     }
    ],
    "merges": [],

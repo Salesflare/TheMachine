@@ -62,10 +62,11 @@ class EarlierNotes(Base):
         made = self.run_pass()
         [card] = self.cards()
         self.assertEqual(card['id'], made)
-        self.assertEqual(card['body'].split('\n\n'), ['**Who:** Sam Rivera, head of operations at Globex.',
-                                                      '**Agreed earlier:** \n• Starts in January ([Kickoff call, Oct 20](https://zoom.us/doc/1))\n• Ten users ([Kickoff call, Oct 20](https://zoom.us/doc/1))',
-                                                      '**Still open:** Sam sends the list ([Kickoff call, Oct 20](https://zoom.us/doc/1))'])
+        self.assertEqual(card['body'].replace('\u00a0', ' ').split('\n\n'), ['**Who:** Sam Rivera, head of operations at Globex.',
+                                                      '**Agreed earlier:** \n• Starts in January ([Kickoff call, Oct 20](https://zoom.us/doc/1))\n• Ten users ([Oct 20](https://zoom.us/doc/1))',  # named once
+                                                      '**Still open:** Sam sends the list ([Oct 20](https://zoom.us/doc/1))'])
         self.assertEqual(json.loads(card['event_ids']), [self.meeting_id('g1')])  # sources decide what others see
+        self.assertEqual(card['title'], 'Prepare for ' + meeting('g1', '10:00')['title'])  # by code: a title can show on the Team Graph
         self.assertIn('<<<Agreed: start in January. Sam sends the list.>>>', self.prompts[0])  # quoted: evidence, never instructions
         self.assertIn('"owner": "Robin Reyes"', self.prompts[0])
         self.assertNotIn(event, json.loads(card['event_ids']))
@@ -205,9 +206,16 @@ class EarlierNotes(Base):
     def test_a_meetings_own_title_puts_no_link_in_the_briefing(self):
         called = meeting_prep.cites({'notes': [{'id': 'N1', 'meeting': '[Click](https://evil.example/x) **now** <b>', 'start': NOW, 'url': ''}], 'messages': {}},
                                     lambda at: 'Nov 9')
-        self.assertEqual(called['N1'], ('Click ( now b, Nov 9', ''))
+        self.assertEqual(called['N1'], ('Click ( now b, Nov\u00a09', '', 'Nov\u00a09'))
         for bad in ('http://zoom.us/x', 'https://zoom.us/x)y', 'javascript:alert(1)', 'https://zoom.us/<x>'):
             self.assertEqual(earlier_notes._url([{'metadata': json.dumps({'source_url': bad})}]), '')
+
+    def test_a_source_is_named_once_then_by_its_day_unless_another_has_that_day(self):
+        notes = lambda *days: [{'id': f'N{i}', 'meeting': f'Call {i}', 'start': d, 'url': ''} for i, d in enumerate(days, 1)]
+        fields = {'agreed': [{'text': 'A', 'ref': 'N1'}], 'open': [{'text': 'B', 'ref': 'N1'}, {'text': 'C', 'ref': 'N2'}]}
+        told = lambda *days: meeting_prep.body_text(fields, lambda text, *a: text.format(*a), {}, meeting_prep.cites({'notes': notes(*days), 'messages': {}}, str)).split('\n\n')
+        self.assertEqual(told('Nov 9', 'Nov 10'), ['**Agreed earlier:** A (Call 1, Nov\u00a09)', '**Still open:** \n• B (Nov\u00a09)\n• C (Call 2, Nov\u00a010)'])
+        self.assertEqual(told('Nov 9', 'Nov 9')[1], '**Still open:** \n• B (Call 1, Nov\u00a09)\n• C (Call 2, Nov\u00a09)')
 
     def test_an_open_briefing_of_the_format_before_is_written_again_only_when_there_are_notes(self):
         asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
@@ -226,7 +234,7 @@ class EarlierNotes(Base):
         self.graph()
         self.answer['agreed'] = [{'text': 'Starts in January', 'source': 'N1'}]
         self.assertEqual(self.stale_pass(), sid)
-        self.assertIn('**Agreed earlier:** Starts in January (Kickoff call, Oct 20)', self.cards()[0]['body'])
+        self.assertIn('**Agreed earlier:** Starts in January (Kickoff call, Oct\u00a020)', self.cards()[0]['body'])
 
 
 for name in [n for n in dir(Base) if n.startswith('test_')]:  # only the helpers of the other suite

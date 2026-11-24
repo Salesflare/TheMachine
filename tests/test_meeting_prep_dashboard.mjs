@@ -18,10 +18,10 @@ const NOTES='https://zoom.example/doc/1';
 const PARTS=[['Who:','Sam Rivera, head of operations at Globex. Earlier ran pilots at Initech.'],
  ['Organization:',`Globex builds logistics software for mid-size retailers. ([globex.example](${SOURCE}))`,'Globex builds logistics software for mid-size retailers. (globex.example)'],
  ['So far:','On Nov 2 Sam asked whether the pilot can start in December; the plan was offered on Nov 5.'],
- ['Agreed earlier:',`\n• The pilot runs in two stores first ([Scope call, Oct 14](${NOTES}))\n• Weekly check-in on Mondays ([Scope call, Oct 14](${NOTES}))`,
-  '• The pilot runs in two stores first (Scope call, Oct 14)\n• Weekly check-in on Mondays (Scope call, Oct 14)'],
+ ['Agreed earlier:',`\n• The pilot runs in two stores first ([Scope call, Oct 14](${NOTES}))\n• Weekly check-in on Mondays ([Oct 14](${NOTES}))`,
+  '• The pilot runs in two stores first (Scope call, Oct 14)\n• Weekly check-in on Mondays (Oct 14)'],
  ['Changed since:','The start moved from January to December (Sam Rivera, Nov 2)'],
- ['Still open:','Sam Rivera to send the list of store managers (Scope call, Oct 14)'],
+ ['Still open:','Sam Rivera to send the list of store managers (Oct 14)'],
  ['Open promises:','Promised Sam the pilot plan by Tuesday.'],['Open questions:','Who signs the order form on their side.'],
  ['Decide or bring:','The pilot plan; decide on the start date.']];
 const card={id:ID,title:TITLE,body:PARTS.map(([k,v])=>`**${k}** ${v}`).join('\n\n'),status:'pending',scope:'work',created_at:now,event_ids:[41,43],

@@ -33,7 +33,8 @@ On gpt-6.1-sol, effort low (2026-11-24). Before: no notes read.
 | briefings made | 17 of 36 | 34 of 36 | 6 of 18 | 17 of 18 |
 | turn tokens in, average (largest) | 965 (1,081) | 1,631 (2,414) | 975 (1,075) | 1,635 (2,375) |
 
-Held-out ran twice (36 briefings), development once.
+Held-out ran twice (36 briefings), development once. Two cases (`promise-kept`, `h-todo-done`) are made another way since, through
+the store's own functions: the facts recalled in them stayed the same over two runs.
 
 | Notes in a turn (development) | 2,500 characters | 5,000 | 10,000 | 20,000 |
 | --- | --- | --- | --- | --- |

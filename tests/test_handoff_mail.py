@@ -126,6 +126,14 @@ class HandoffMail(unittest.TestCase):
         other = self.handed_card('k-two')
         self.assertEqual([x['key'] for x in self.parts(other)['lines']], ['why', 'contact', 'due'])
 
+    def test_a_briefings_text_goes_in_no_handoff_whatever_its_own_sources_share(self):
+        # It is written from notes and messages that are not among its sources: those say nothing of who may read it
+        briefing, plain = (self.handed_card(key, body='**Agreed earlier:** Forty seats ([Scope call, Oct 14](https://zoom.example/1))') for key in ('meetprep:1', 'k-plain'))
+        self.assertIn('Forty seats', str([self.parts(plain), self.fleet.handoff_draft(plain)]))
+        for found in (self.parts(briefing), self.fleet.handoff_draft(briefing)):
+            self.assertNotIn('Forty seats', str(found))
+            self.assertNotIn('Scope call', str(found))
+
     def test_the_email_holds_exactly_what_the_owner_left_ticked(self):
         card = self.handed_card()
         self.with_draft(card)
