@@ -6,7 +6,7 @@ code: graph.py, crm.py, enrichment.py, dashboard.html
 order: 3
 translated: a69ae21b14edaf94
 ---
-Le organizzazioni vengono ricavate dagli indirizzi e dai nomi nei tuoi messaggi. Il settore, le dimensioni, la sede e il logo vengono recuperati automaticamente: scopri di più in [Dettagli dell’organizzazione](organization-data.md).
+Le organizzazioni vengono ricavate dagli indirizzi e dai nomi nei tuoi messaggi. Il settore, le dimensioni, la sede e il logo vengono recuperati automaticamente: scopri di più in [Dettagli organizzazione](organization-data.md).
 
 ## La pagina di un’organizzazione
 

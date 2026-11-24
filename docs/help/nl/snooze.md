@@ -1,30 +1,32 @@
 ---
-title: Snoozen
+title: Snooze
 area: cards
 summary: Laat een to-do later terugkomen. Op een werkdag, op het tijdstip dat je kiest.
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
-translated: e96a4a3f781c20b5
+translated: df46514238b50289
 ---
 ## Een to-do snoozen
 
-Tik bij een to-do op **Snoozen**. In het menu staan een paar opties, zoals over 2 uur, morgen of over een week. Kies voor een ander moment **Kies een datum** en **Tijd**, en tik daarna op **Tijd opslaan**. Per ongeluk gesnoozed? Met **Ongedaan maken** in het bericht komt de to-do meteen terug.
+Druk bij een to-do op **Snooze**. In het menu staan een paar opties, zoals over 2 uur, morgen of over een week. Kies **Kies een datum** en **Tijd** en daarna **Tijd opslaan** om een ander moment te kiezen. In het menu staat om welke to-do het gaat en wanneer de deadline is. Als de deadline nog een paar dagen weg is, staat er ook een moment voor die deadline bij, zoals "Voor de deadline · wo 9:00". Je kunt nog steeds elk tijdstip kiezen, ook na de deadline.
 
-To-do's die een dag of langer zijn gesnoozed, komen terug op het tijdstip dat is ingesteld bij ‘Snoozes komen terug om’. Werkgerelateerde to-do's wachten tot een werkdag. Stel beide in bij [Werkuren](work-hours.md).
+In het bericht dat daarna verschijnt, staat tot wanneer de to-do is gesnoozed, bijvoorbeeld "Gesnoozed tot morgen 08:00". Per ongeluk gesnoozed? Met **Ongedaan maken** in het bericht komt de to-do meteen terug.
 
-Je kunt het ook zeggen via **Wijzigingen vragen**, bijvoorbeeld: ‘herinner me hier volgende dinsdag aan’.
+Snoozes van een dag of langer komen terug op het tijdstip dat je hebt ingesteld bij "Snoozes komen terug om". To-do's voor werk wachten tot een werkdag. Stel beide in bij [Werkuren](work-hours.md).
 
-## Als de to-do terugkomt
+Je kunt het ook zeggen via **Wijzigingen vragen**, bijvoorbeeld: "herinner me hier volgende dinsdag aan".
 
-De to-do verschijnt als melding op elk apparaat waarop meldingen zijn ingeschakeld, en op Telegram als je dat gebruikt, voor zover **Herinneringen** in [Meldingen](notifications.md) dit toestaan. In het snoozebericht staat waar de to-do is teruggekomen. Als geen van beide is ingeschakeld, staat de to-do weer op het dashboard, met daar meteen **Meldingen aanzetten**. Installeer op iPhone en iPad de [app voor je telefoon](mobile-app.md) om meldingen te ontvangen.
+## Wanneer de to-do terugkomt
 
-Een to-do die The Machine al heeft afgerond, komt ongewijzigd terug. The Machine werkt er alleen opnieuw aan als er tijdens het snoozen iets nieuws is binnengekomen.
+De to-do komt terug als melding op elk apparaat waarop meldingen aanstaan, en op Telegram als je dat gebruikt, afhankelijk van de instelling **Herinneringen** bij [Meldingen](notifications.md). In de melding staat waar de to-do terugkomt. Als meldingen nergens aanstaan, staat de to-do weer op het dashboard, met **Meldingen aanzetten** meteen in beeld. Installeer op iPhone en iPad de [Mobiele app](mobile-app.md) voor meldingen.
 
-Wil je het bericht zelf op een bepaald tijdstip versturen? Gebruik dan [Later versturen](send-later.md).
+Een to-do die The Machine al heeft afgerond, komt terug zoals hij was. The Machine pakt hem alleen weer op als er iets nieuws binnenkwam terwijl hij gesnoozed was.
 
-## Tijdens het snoozen
+Wil je het bericht zelf op een bepaald tijdstip versturen, gebruik dan [Later versturen](send-later.md).
 
-De to-do staat onder **Komt later terug**, en op de juiste dag in de [Agenda](calendar.md). Met **Snooze opheffen** komt de to-do meteen terug. Met **Tijd wijzigen** kies je een ander tijdstip.
+## Terwijl de to-do gesnoozed is
 
-In Outlook wordt de e-mailthread verplaatst naar een map Snoozed totdat de to-do terugkomt. Zie [Microsoft](microsoft.md).
+De to-do staat onder **Komt later terug** en op de betreffende dag in de [Agenda](calendar.md). Met **Snooze opheffen** komt de to-do meteen terug. Met **Tijd wijzigen** kies je een ander tijdstip.
+
+In Outlook wordt de e-mailthread verplaatst naar de map Gesnoozed tot de to-do terugkomt. Bekijk [Microsoft](microsoft.md).

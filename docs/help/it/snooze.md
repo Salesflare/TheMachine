@@ -1,30 +1,32 @@
 ---
 title: Posticipa
 area: cards
-summary: Fai ricomparire un’attività più tardi. In un giorno lavorativo, all’ora che scegli.
+summary: Fai ricomparire un’attività più tardi, in un giorno lavorativo e all’ora che scegli.
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
-translated: e96a4a3f781c20b5
+translated: df46514238b50289
 ---
 ## Posticipa un’attività
 
-Seleziona **Posticipa** sull’attività. Il menu propone alcuni orari, per esempio tra 2 ore, domani o tra una settimana. Per scegliere un altro momento, seleziona **Scegli una data** e **Ora**, poi **Salva l’orario**. Hai posticipato per sbaglio? Seleziona **Annulla** nel messaggio per farla ricomparire subito.
+Premi **Posticipa** su un’attività. Il menu propone alcuni orari, per esempio tra 2 ore, domani o tra una settimana. Per scegliere un altro momento, tocca **Scegli una data** e **Ora**, poi **Salva l’orario**. Il menu indica l’attività e la relativa scadenza. Se mancano alcuni giorni alla scadenza, propone anche un momento precedente, per esempio «Prima della scadenza · mer 9:00». Puoi comunque scegliere qualsiasi orario, anche dopo la scadenza.
 
-I posticipi di almeno un giorno tornano all’ora che hai impostato in «I posticipi tornano alle»; le attività di lavoro aspettano un giorno lavorativo. Puoi impostare entrambe le opzioni in [Orario di lavoro](work-hours.md).
+Il messaggio che compare indica fino a quando l’attività è posticipata, per esempio «Posticipata fino a domani alle 08:00». L’hai posticipata per errore? Tocca **Annulla** nel messaggio per farla ricomparire subito.
 
-Puoi anche chiedere all’assistente di farlo con **Chiedi modifiche**, per esempio: «ricordami questa attività martedì prossimo».
+Le attività posticipate per un giorno o più ricompaiono all’ora impostata in «Orario di ripresa delle attività posticipate» e le attività di lavoro aspettano un giorno lavorativo. Imposta entrambe le opzioni in [Orario di lavoro](work-hours.md).
+
+Oppure chiedilo con **Chiedi modifiche**, per esempio: «ricordamelo martedì prossimo».
 
 ## Quando ricompare
 
-L’attività ricompare come notifica su ogni dispositivo con le notifiche attive e su Telegram, se lo usi, in base all’opzione **Promemoria** in [Notifiche](notifications.md). Il messaggio di posticipo indica dove. Se non hai attivato le notifiche né i promemoria, l’attività ricompare sulla dashboard, con **Attiva le notifiche** proprio lì. Su iPhone e iPad, scarica l’[app per telefono](mobile-app.md) per ricevere le notifiche.
+L’attività ricompare come notifica su ogni dispositivo in cui le notifiche sono attive e, se lo usi, su Telegram, se **Promemoria** in [Notifiche](notifications.md) lo consente. Il messaggio indica dove. Se non ricevi notifiche su nessun dispositivo e non usi Telegram, l’attività ricompare nella dashboard, dove trovi anche **Attiva le notifiche**. Su iPhone e iPad, scarica l’[app mobile](mobile-app.md) per ricevere notifiche.
 
-Un’attività che la Machine ha già completato ricompare com’era. La Machine ci lavora di nuovo solo se, mentre era posticipata, è arrivato qualcosa di nuovo.
+Un’attività che la Machine aveva già completato ricompare com’era. La Machine ci lavora di nuovo solo se, mentre era posticipata, è arrivato qualcosa di nuovo.
 
 Per inviare il messaggio stesso a un orario preciso, usa [Invia più tardi](send-later.md).
 
 ## Mentre è posticipata
 
-L’attività si trova in **Torna più tardi** e nel giorno corrispondente del [Calendario](calendar.md). **Annulla posticipo** la fa ricomparire subito, mentre **Cambia orario** permette di sceglierne un altro.
+L’attività compare in **Torna più tardi** e, nel giorno previsto, nel [Calendario](calendar.md). **Annulla posticipo** la fa ricomparire subito, mentre **Cambia orario** ti permette di scegliere un altro orario.
 
-In Outlook, la conversazione email viene spostata in una cartella Posticipati finché l’attività non ricompare. Scopri di più su [Microsoft](microsoft.md).
+In Outlook, la conversazione email viene spostata in una cartella Posticipati fino a quando l’attività ricompare. Scopri di più su [Microsoft](microsoft.md).
