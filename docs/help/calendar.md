@@ -117,9 +117,11 @@ Notes and messages from [History](history.md) count too, so a briefing knows abo
 
 A work briefing reads no personal notes, and nothing from someone else's Machine. Its text stays with you: a handoff never takes it along, and it can't go out for review. With no notes, those lines aren't there.
 
-It uses what is already on your Machine. For a first meeting with someone at a company, it also reads the home page of the company's website and does a short web search on their name and company, with a link next to what it found. Only their public name, company name and website go out, never your messages. What it found is reused for 30 days.
+It uses what is already on your Machine. For a first meeting with someone at a company, it also reads the home page of the company's website.
 
-So a first meeting you said yes to can get a briefing before you have exchanged a word: who they are, what their company does and what that means for you. With only a first name, it keeps what it finds only when that points to one person. With **Look up work contacts** off (Settings, Security), nothing is looked up.
+Where a web search provider is set up in OpenClaw (a hosted Machine comes without one), it also does a short web search on their name and company. What it found comes with a link. Only their public name, company name and website go to the search, never your messages. What it found is reused for 30 days.
+
+So a first meeting you said yes to can get a briefing before you have exchanged a word: what their company does, what that means for you and, when it's known, who they are. With only a first name, it keeps what the search finds only when that points to one person. With **Look up work contacts** off (Settings, Security), nothing is looked up.
 
 A meeting that repeats gets one only when there is something since the last time: a message, notes, a promise. It says what is new, not what the last briefing said. It comes once the time before is over, for two repeating meetings a day at most.
 

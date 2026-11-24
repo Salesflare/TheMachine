@@ -190,7 +190,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     conversation started and its latest messages, open promises, and the notes of earlier meetings with the same people:
     `earlier_notes.py`, which meetings, which record of each, how much, and what happened since; no table; its eval is
     `evals/meeting-briefings/`; messages and notes may come from history, `graph_history.BOTH`) and, for a first meeting, the organization's
-    own home page (`enrichment.site_text`) and a short web search on their name and organization (`openclaw infer web
+    own home page (`enrichment.site_text`) and, where OpenClaw has a search provider, a short web search on their name and organization (`openclaw infer web
     search`), both cached (`meeting_prep_web`), written in one background turn, or
     none when there is nothing useful; once per meeting, by its iCalUID (and the planned time in a series). Each briefing carries its format
     (`meeting_prep.FORMAT`); once after an upgrade that raises it, open, unedited briefings for meetings still ahead
