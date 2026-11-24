@@ -132,8 +132,9 @@ def late(clock=notify.wall):
 
 def meeting(db, current, owner, gone):
     """The next meeting The Machine wrote a briefing for (meeting_prep.py) that starts within SOON, for the robot to
-    say: {'id': its briefing to-do, 'event', 'at', 'who', 'join'}, or None. Off with push for reminders. who: the first
-    guest from outside by first name and how many others, '' with notification text off. join: a known video service's
+    say: {'id': its briefing to-do, 'event', 'at', 'who', 'others', 'title', 'join'}, or None. Off with push for
+    reminders. who: the first guest from outside by first name, with how many others; title: the meeting's own name. Both
+    '' when there is none, and with notification text off. join: a known video service's
     own link in the event (meet.video_link). owner: the owner's emails and domains, called only when there is one; gone:
     to-do states whose briefing the owner didn't want."""
     if not notify.allowed(db, 'reminder', 'push'):
@@ -149,11 +150,12 @@ def meeting(db, current, owner, gone):
         start, meta = meeting_prep.start_if_on(row['occurred_at'], row['metadata'])
         if not start or row['status'] in gone:
             continue
-        who, others = '', 0
+        who, others, title = '', 0, ''
         if security_levels.notify_text(db, True):
             guests = meeting_prep.outside_guests(meta, *owner())
             named = [g['name'].split()[0] for g in guests if g['name'] and '@' not in g['name']]
-            who, others = (named[0], len(guests) - 1) if named else (' '.join(str(row['title'] or '').split())[:60], 0)
-        return {'id': row['suggestion_id'], 'event': row['id'], 'at': start.isoformat(), 'who': who, 'others': others,
+            who, others = (named[0], len(guests) - 1) if named else ('', 0)
+            title = ' '.join(str(row['title'] or '').split())[:60]
+        return {'id': row['suggestion_id'], 'event': row['id'], 'at': start.isoformat(), 'who': who, 'others': others, 'title': title,
                 'join': meet.video_link(' '.join(str(x or '') for x in (meta.get('location'), meta.get('video'), row['body'])))}
     return None
