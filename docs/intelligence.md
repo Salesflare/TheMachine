@@ -112,7 +112,28 @@ Identities join by themselves only on strong evidence:
 - the same LinkedIn profile found for both by a lookup;
 - their WhatsApp number in mail they wrote themselves (not in quoted mail) with a matching name;
 - their Slack profile's address;
-- the same full name with one person carrying it per channel.
+- the same full name with one person carrying it per channel;
+- an address their one-to-one chat (LinkedIn, WhatsApp, Telegram, Signal, X) shows is theirs, with the same first name
+  (`machine/graph/chat_proof.py`, below).
+
+What a chat shows is worked out each build by plain code: no link is opened, no model is asked and nothing is stored.
+
+- **They wrote the address** in their own chat with the owner (not read off a picture): theirs.
+- **They booked from the link the owner sent there**: a meeting with that address as its only guest from outside, put on
+  the calendar within 7 days after. A booking link is one in `booking_links`, one at a booking tool, or any link of the
+  owner's (a short one that redirects) when the meeting itself carries a booking tool's link. It joins when the company
+  is named in the chat or their LinkedIn headline, or the surname is in the address or on the booking, and nobody else it
+  could be was in touch in those days: no one else with that first name, unless they are known at another company.
+- **A question instead**: an address the owner wrote; a booking within 72 hours with only the first name in common and
+  nobody else it could be; one where the company or surname agrees but somebody else could have booked, or they are
+  already known at another company's address; a call agreed without a link (both wrote within 72 hours before it was
+  made, the company or surname agrees, nobody else it could be).
+- **Never**: another first name (a colleague booking, a link passed on), another surname in the address or on the booking,
+  a shared or role address, a lookalike domain, a series, a meeting with more guests, a pair told apart.
+
+The time a meeting was put on the calendar is the calendar's own (Google, Outlook, Exchange, CalDAV and iCal feeds), kept
+beside it, never a new version; for one read before, it is the first mail with that address. Messages keep their account:
+a personal chat stays personal, out of work briefings and never shared, and Keep private goes with the joined person.
 
 A shared address is never what joins people (`graph_joins.py`): a role or team inbox (info@, sales@, team@), an
 automated sender, a mailing list (the address its List-Id names), or an address seen under two or more people's names

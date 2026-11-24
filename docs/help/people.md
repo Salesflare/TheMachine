@@ -18,7 +18,7 @@ It starts with their photo, name, title, organization and place, and one line on
 - **Also on**: the other places you talk with them. **Slack** opens them in Slack, or your newest Slack thread with them.
 - **People** and **Projects** they're part of, **Open between you** (promises both ways, with **Mark done** and **Drop**), and their **Timeline**.
 
-Someone's addresses and chats are joined by themselves when it's clear they're one person, like a work email with their own address in CC.
+Someone's addresses and chats are joined by themselves when it's clear they're one person, like a work email with their own address in CC. Or when someone you chat with books a call from the link you sent them there, and their company or surname matches.
 
 If a page says **Couldn’t load this page.**, tap **Try again**. If it keeps saying so, use **Something's wrong?** at the bottom of the page.
 
@@ -67,6 +67,8 @@ Someone at an address that only looks like one you know, like acme-corp.example 
 A name alone is never enough across two domains, since anyone can type one: two addresses at different domains are only offered when something else links them, like the same people or a project. Someone using your own name at an address that isn't yours is never offered. Add your other addresses under Settings, [Your addresses](settings.md#your-addresses), instead.
 
 When only a first name matches at different domains, like "Sam" and "Sam Lee", they are offered only with the same phone number or LinkedIn profile.
+
+When only a first name matches a meeting made from a chat, or you wrote their address in the chat, you are asked. The Machine never opens a link to find out.
 
 A shared address, like info@ or a mailing list, is never joined to the people who write through it. A work contact from outside your company and a personal chat with only a name in common are not joined by themselves: they are listed as a question.
 

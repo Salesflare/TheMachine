@@ -906,6 +906,8 @@ def calendar_item(raw, owner):
             'updated': raw.get('lastModifiedDateTime'), 'location': ((raw.get('location') or {}).get('displayName') or None),
             'organizer': {'email': str(organizer.get('address') or '').lower(), 'displayName': organizer.get('name') or ''},
             'attendees': attendees, 'description': raw.get('bodyPreview') or '', 'webLink': web_link(raw.get('webLink'))}
+    if raw.get('createdDateTime'):
+        item['created'] = raw['createdDateTime']
     if raw.get('seriesMasterId'):
         item['recurringEventId'] = raw['seriesMasterId']
         if raw.get('originalStart'):

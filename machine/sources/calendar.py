@@ -79,6 +79,8 @@ def calendar_event(account, raw, timezone):
                 'recurring_event_id': raw.get('recurringEventId'),
                 'original_start': raw.get('originalStartTime'), 'source_url': source_url,
                 'ical_uid': raw.get('iCalUID'), 'truncated': len(body) > 40000}
+    if raw.get('created'):  # when it was put there: whose chat a booking came out of (machine/graph/chat_proof.py)
+        metadata['created'] = raw['created']
     if raw.get('hangoutLink'):  # Google's own call: its link is in no text of the event (meet.video_link, VIDEO_LINKS)
         metadata['video'] = str(raw['hangoutLink'])[:300]
     if raw.get('transparency') == 'transparent':  # shown as free: never a clash (calendar_clashes.py)

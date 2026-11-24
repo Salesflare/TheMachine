@@ -72,7 +72,7 @@ def likely_same(people, union, together, projects, never=lambda a, b: False):
     return sorted(out, key=lambda s: -s[3])[:300]
 
 
-def find_same_people(event_people, node_events, project_people, alike, union, infos, x_names, nodes, owner_names=()):
+def find_same_people(event_people, node_events, project_people, alike, union, infos, x_names, nodes, owner_names=(), asked=()):
     # Same person? Likely pairs for the owner to Merge or keep apart, on both pages and in People. Never with a person
     # the lookalikes pass marked, nor anyone carrying the owner's own name (owner_names: the configured one and the ones
     # they send under).
@@ -98,6 +98,12 @@ def find_same_people(event_people, node_events, project_people, alike, union, in
         if value >= FLOOR:
             on_projects[node].add(pid)
     same_rows = likely_same(alike, union, together, on_projects, never)
+    paired = {frozenset(row[:2]) for row in same_rows}
+    for (one, other), why in (asked or {}).items():  # what a chat shows about an address, not enough to join by itself (chat_proof.py)
+        a, b = sorted((union.find(one), union.find(other)))
+        if a != b and frozenset((a, b)) not in paired and a in alike and b in alike and not union.kept_apart(a, b) and not never(a, b):
+            paired.add(frozenset((a, b)))
+            same_rows.append((a, b, why, round(3 + min(alike[a]['strength'], alike[b]['strength']), 4)))
     for a, b, why, _ in same_rows:
         for one, other in ((a, b), (b, a)):
             asks = infos[one].setdefault('same', [])
