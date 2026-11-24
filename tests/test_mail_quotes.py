@@ -1,6 +1,7 @@
 """A mail's own words and what it quotes: told by structure, in any language, and nothing the sender wrote is lost."""
 import base64
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import signatures
 from machine.mail_quotes import mail_html, new_html
 from machine.sources.gmail import message_event
 from machine.main import Store
+from machine.store.voices import own_text
 from machine.text import QUOTED_MARK, message_attachments, message_body, message_html, own_part, quoted_history, split_quoted_history, trim_quoted_history
 
 ACCOUNT = {'id': 'work', 'email': 'ann@example.com'}
@@ -193,6 +195,12 @@ class Parts(unittest.TestCase):
         self.assertEqual(message_body(payload), f'{ASKED} The bank needs it before the closing.')
         self.assertNotIn('Carl', message_html(payload))
 
+    def test_a_bounce_keeps_its_delivery_status(self):
+        status = part('message/delivery-status', parts=[part('text/plain', 'Final-Recipient: rfc822; carl@example.net\nStatus: 5.1.1')])
+        text = message_body(part('multipart/report', parts=[part('text/plain', 'Not delivered.'), status, self.EML]))
+        self.assertIn('carl@example.net', text)
+        self.assertNotIn('last year', text)
+
     def test_a_message_sent_on_as_a_file_is_labeled_as_such(self):
         inner = part('text/plain', 'I will pay on Monday.', headers=[{'name': 'From', 'value': 'Carl <carl@example.net>'}, {'name': 'Subject', 'value': 'Invoice'}])
         payload = part('multipart/mixed', parts=[part('message/rfc822', parts=[inner], partId='1', body={'attachmentId': 'a', 'size': 9})])
@@ -221,6 +229,43 @@ class Parts(unittest.TestCase):
         related = part('multipart/related', parts=[part('multipart/alternative', parts=[plain, self.HTML]), part('image/png', filename='a.png')])
         self.assertEqual(message_body(part('multipart/mixed', parts=[related])).count(ASKED), 1)
 
+    def test_a_long_quote_above_a_signature_is_cut_to_its_start(self):
+        quote = '\n'.join(f'> Line {n} of what was said before.' for n in range(900))
+        body = trim_quoted_history(f'Sure.\n\nOn Mon, May 3, 2027 at 10:00 AM Ann <ann@example.com> wrote:\n{quote}\n\n--\nBob Roe', 'Re: Contract', PEOPLE)[0]
+        self.assertLess(len(body), 3300 * 2)
+        kept = trim_quoted_history(f'Sure.\n\nOn Mon, May 3, 2027 at 10:00 AM Ann <ann@example.com> wrote:\n{quote}\n\nYes, with Tom.\nBob', 'Re: Contract', PEOPLE)[0]
+        self.assertLess(len(kept), 3300)
+        self.assertEqual(own_part(kept, 'Re: Contract', PEOPLE), 'Sure.\n\nYes, with Tom.\nBob')
+
+
+class SentOn(unittest.TestCase):
+    def test_a_mail_sent_on_is_never_the_senders_own_words(self):
+        for note in ('', 'Can you take this one?'):
+            for name, header in HEADERS.items():
+                if 'unmarked' not in name and 'under' not in name and '@' in header:
+                    for dashes in ('', '---------- Doorgestuurd bericht ---------\n'):
+                        self.assertEqual(own_text(f'{note}\n\n{dashes}{header}{ASKED}'), note, (name, dashes))
+            apple = 'Begin forwarded message:\n\n> From: Ann Poe <ann@example.com>\n> Subject: Contract\n> Date: 3 May 2027 at 10:00\n> To: Bob\n>\n> ' + ASKED
+            self.assertNotIn(ASKED, own_text(f'{note}\n\n{apple}'))
+            inner = part('text/plain', ASKED, headers=[{'name': 'From', 'value': 'Ann Poe <ann@example.com>'}])
+            for subject in ('Contract', 'Fwd: Contract'):
+                payload = part('multipart/mixed', parts=[part('text/plain', note), part('message/rfc822', parts=[inner])])
+                self.assertEqual(own_text(message_event(ACCOUNT, raw(payload, subject, ('SENT',)))['body']), note, subject)
+
+    def test_their_own_words_stay_theirs(self):
+        for text in ('Hi,\n\nWhen: Friday 10:00\nWhere: the office\nWho: Ann and Bob\n\nSee you.', 'One\n\n----------\n\nTwo: 3 May 2027 10:00\n\nThree',
+                     'Invoice: 12\nDate: 3 May 2027\nAmount: 40\n\nCan you pay it?'):
+            self.assertEqual(own_text(text), text)
+
+    def test_a_hostile_mail_is_read_fast(self):
+        begun = time.process_time()
+        for text in ('a' + '\n' * 40000 + 'b', 'a\n' * 20000, '> a\nb\n' * 6600, 'A: b\n' * 8000, '-----' * 8000):
+            own_part(trim_quoted_history(text, 'Re: x', PEOPLE)[0], 'Re: x', PEOPLE)
+            own_text(text)
+        for text in ('<blockquote type="cite">a' * 2000, '<div>' * 8000, '<div id="divRplyFwdMsg">a</div>' * 1200):
+            mail_html(text, 'Re: x', PEOPLE)
+        self.assertLess(time.process_time() - begun, 20)
+
 
 class Stored(unittest.TestCase):
     def setUp(self):
@@ -235,8 +280,23 @@ class Stored(unittest.TestCase):
             return [tuple(x) for x in db.execute('SELECT id,content_hash,body FROM events')]
 
     def test_mail_read_again_stays_as_stored(self):
-        first = self.put('Read by the code of before')
-        self.assertEqual(self.put('Read by the code of today'), first)
+        whole = f'Sure.\n\n{HEADERS["German"]}{ASKED}\n' + 'What we said before that. ' * 200
+        quoted = '\n'.join('> ' + x for x in whole.split('\n')[2:])
+        for before in (whole, f'Sure.\n\n{HEADERS["German"]}{ASKED}'):  # unsplit by the code of before, and a short one
+            for after in (trim_quoted_history(before, 'Re: Contract', PEOPLE)[0], trim_quoted_history(before[:7] + before[7:].replace(whole[7:], quoted), 'Re: Contract')[0]):
+                with self.subTest(before=len(before), after=after[:40]):
+                    self.setUp()
+                    first = self.put(before)
+                    self.assertEqual(self.put(after), first)
+
+    def test_a_mail_whose_text_changed_is_a_change(self):
+        long = 'Sure.\n\n[Quoted earlier messages: first 3,000 of 4,000 characters kept.]\n' + 'word ' * 600
+        for before, after in (('Sure', 'Sure. And Tom too.'), ('Sure.', ''), (long, long.replace('Sure', 'No')), (long, long.replace('4,000', '9,000')),
+                              ('Sure.\n\n> Old', 'Sure.\n\n> Old\n\nAnd Tom.')):
+            with self.subTest(before=before[:40], after=after[:40]):
+                self.setUp()
+                self.put(before)
+                self.assertEqual(self.put(after)[0][2], after)
 
     def test_a_draft_and_a_moved_mail_are_taken_again(self):
         self.put('One', ('DRAFT',))

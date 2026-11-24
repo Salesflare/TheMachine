@@ -16,7 +16,7 @@ import unicodedata
 
 import message_seal
 import portable
-from machine.mail_quotes import FORWARD_SUBJECT, PREFIX, REPLY_HEADER, mail_html, quoted  # noqa: F401 - REPLY_HEADER: importable from here
+from machine.mail_quotes import FORWARD_SUBJECT, PREFIX, REPLY_HEADER, mail_html, quoted, sent_on  # noqa: F401 - REPLY_HEADER: importable from here
 
 LAYER = 0  # message parsing
 
@@ -112,14 +112,30 @@ def _fit(text, subject, people):
     return '\n'.join(out)
 
 
+def _runs_cut(text, subject, people):
+    """A mail's text with each long quote above the sender's last words cut to its start, as the history below them is."""
+    if len(text) <= QUOTED_HISTORY_KEPT:
+        return text
+    lines = text.split('\n')
+    marks, out, room = quoted([x.rstrip('\r') for x in lines], subject, people), [], 0
+    for n, (line, mark) in enumerate(zip(lines, marks)):
+        room = (room if n and marks[n - 1] else QUOTED_HISTORY_KEPT) - len(line) - 1
+        if not mark or room >= 0:
+            out.append(line)
+        elif out[-1:] != ['> […]']:
+            out.append('> […]')
+    return '\n'.join(out)
+
+
 def trim_quoted_history(text, subject='', people=''):
     """Each reply quotes the whole thread below it, and the earlier messages are their own
     signals. Keep the new text whole and only the start of the quoted history."""
     new, history = split_quoted_history(text, subject, people)
+    new = _runs_cut(new, subject, people)
     if len(new) > BODY_KEPT - QUOTED_HISTORY_KEPT:
         new = _fit(new, subject, people)
     if not history:
-        return new if len(text) > BODY_KEPT else text, 0
+        return new if len(new) < len(text) else text, 0
     kept = history[:QUOTED_HISTORY_KEPT]
     return (new + f'\n\n[Quoted earlier messages: first {len(kept):,} of {len(history):,} characters kept. '
             'Earlier messages in this thread are separate signals.]\n' + kept), len(history)
@@ -127,7 +143,7 @@ def trim_quoted_history(text, subject='', people=''):
 
 # The line trim_quoted_history puts between a reply and its quoted history. It tells the model the earlier messages are
 # separate signals; people never see it (shown_body).
-QUOTED_MARK = re.compile(r'\n*\[Quoted earlier messages(?::[^\]\n]*)?\]\n?')
+QUOTED_MARK = re.compile(r'(?<!\n)\n*\[Quoted earlier messages(?::[^\]\n]*)?\]\n?')
 
 
 def shown_body(text):
@@ -141,6 +157,21 @@ def shown_body(text):
     clipped = bool(counts) and int(counts[1].replace(',', '')) < int(counts[2].replace(',', ''))
     before, after = text[:match.start()].rstrip(), text[match.end():].lstrip('\n')
     return (before + '\n\n' + after if before and after else before or after), clipped
+
+
+def same_text(one, other):
+    """Whether two stored bodies are the same mail's text, only split differently into new words and kept history: the
+    same characters (a quote's marks and white space aside), up to where one's history was cut, out of about as many."""
+    def read(text):
+        shown, clipped = shown_body(str(text or '').replace('\r', ''))
+        found = QUOTED_MARK.search(str(text or ''))
+        count = re.search(r'of ([\d,]+) characters', found[0]) if found else None
+        total = len(str(text)[:found.start()].rstrip()) + int(count[1].replace(',', '')) if count else len(str(text or '').strip())
+        return re.sub(r'[\s>]+', '', shown), clipped, total
+    (a, a_cut, a_all), (b, b_cut, b_all) = read(one), read(other)
+    if a == b and not a_cut and not b_cut:
+        return True
+    return (a_cut and b.startswith(a) or b_cut and a.startswith(b)) and abs(a_all - b_all) <= max(a_all, b_all) // 4
 
 
 def _marked(text, subject='', people=''):
@@ -164,6 +195,12 @@ def unquoted(text, subject='', people=''):
     if not any(own) and not PREFIX.match(subject or ''):  # nothing of its own, and no answer: what isn't marked as quoted
         own = [x for x in lines if not x.lstrip().startswith('>')]
     return re.sub(r'\n{3,}', '\n\n', '\n'.join(own)).strip()
+
+
+def without_forward(text):
+    """What someone wrote themselves above a mail they send on: in a forward that mail's text is its own sender's."""
+    lines = text.split('\n')
+    return '\n'.join(lines[:sent_on(lines)]).strip()
 
 
 def quoted_history(text, subject='', people=''):
@@ -270,8 +307,8 @@ def _part_text(part):
 
 
 def _attached(part):
-    """A message attached to this one (a forwarded .eml): its text is its own."""
-    return str(part.get('mimeType') or '').lower().startswith('message/')
+    """A message attached to this one (a forwarded .eml): its text is its own. A bounce's delivery status is part of it."""
+    return str(part.get('mimeType') or '').lower() in ('message/rfc822', 'message/global')
 
 
 def _attached_messages(part):

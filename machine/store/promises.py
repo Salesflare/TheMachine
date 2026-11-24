@@ -18,7 +18,7 @@ from machine.store.cards import awaiting_key, awaiting_match, same_thread_card
 from machine.store.review import AUTOMATED_LABELS, CARD_OPEN, own_message, ROBOT_SENDER
 from machine.store.voices import OWN_KINDS
 from machine.mail_quotes import PREFIX
-from machine.text import _address, encoded, mail_people, unquoted
+from machine.text import _address, encoded, mail_people, unquoted, without_forward
 import memory_use
 import todo_areas
 from timeutil import local_tz, now
@@ -685,6 +685,7 @@ class PromisesStore:
         def new_text(row):
             # a forward's quotes too are someone else's questions: read without its prefix
             text = unquoted(row['body'], PREFIX.sub('', row['title'] or ''), mail_people(json.loads(row['metadata'])))
+            text = without_forward(text) if row['mine'] else text
             text = '\n'.join(line for line in text.splitlines() if not line.lstrip().startswith('>'))
             return re.sub(r'(?:https?://|www\.)\S+', '', text)  # a ? in a link (tracking, signatures) isn't a question
         found = {'sent': [], 'asked': []}

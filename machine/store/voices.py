@@ -21,7 +21,7 @@ from machine.kinds import CHAT, KINDS
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.slack import slack_ids_named
 from machine.store import outcomes
-from machine.text import clamp, encoded, unquoted
+from machine.text import clamp, encoded, unquoted, without_forward
 import i18n
 import memory_use
 import next_actions
@@ -157,8 +157,8 @@ def own_predicate(kind, owner_slack_ids=()):
 
 
 def own_text(body):
-    """What the owner wrote in a message, without the quoted history below it."""
-    return unquoted(body)
+    """What the owner wrote in a message, without the quoted history below it or a mail they send on."""
+    return without_forward(unquoted(body))
 
 
 def tune_voice(channel, text, current):
@@ -327,7 +327,7 @@ class VoicesStore:
                 for row in db.execute(f'SELECT id,source_id,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
                                       'ORDER BY occurred_at DESC,id DESC LIMIT ?', (kind, *params, limit * VOICE_STUDY_SCAN)):
                     text = own_text(row['body'])
-                    if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, text):
+                    if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, unquoted(row['body'])):
                         continue
                     gist = ' '.join(re.sub(r'^\W*(?:hey|hi|hello|dear|hoi|dag)\b[^,\n!]{0,40}[,\n!]', '', text[:400], flags=re.I).split()).lower()[:120]
                     if sum(gist == other or (len(gist) > 60 and len(other) > 60 and similar(gist, other)) for other in copies) >= 1:
@@ -512,7 +512,7 @@ class VoicesStore:
         picked = []
         for row in rows:
             text = own_text(row['body'])
-            if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, text):
+            if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, unquoted(row['body'])):
                 continue
             m = json.loads(row['metadata'] or '{}')
             to = {a.lower() for _, a in email.utils.getaddresses([str(m.get(f) or '') for f in ('to', 'cc')]) if a}
@@ -541,7 +541,7 @@ class VoicesStore:
         here, there = [], []
         for row in rows:
             text = own_text(row['body'])
-            if not text or PROFILE_SKIP.match(text) or sent.wrote(row, text):  # one-word replies count: they are how short it gets
+            if not text or PROFILE_SKIP.match(text) or sent.wrote(row, unquoted(row['body'])):  # one-word replies count: they are how short it gets
                 continue
             there.append(len(text))
             if conversation_of(kind, json.loads(row['metadata'] or '{}')) in conversations:
@@ -623,7 +623,7 @@ class VoicesStore:
                 found = next((e for e in db.execute(f'SELECT id,account_id,source_id,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
                                                     'AND occurred_at>? AND occurred_at<=? ORDER BY occurred_at,id LIMIT 50', (kind, *params, row['ready'], until))
                               if (e['account_id'], conversation_of(kind, json.loads(e['metadata'] or '{}'))) in conversations
-                              and not sent.wrote(e, own_text(e['body']))), None)
+                              and not sent.wrote(e, unquoted(e['body']))), None)
                 if not found:
                     continue
                 text, before = own_text(found['body']), next_actions.draft_text(draft).strip()
@@ -679,7 +679,7 @@ class VoicesStore:
                                                     (kind, *params, *keys, newest or row['created_at'], row['created_at'], row['created_at'], said or ''))
                               if (e['account_id'], conversation_of(kind, m := json.loads(e['metadata'] or '{}'))) in conversations
                               and (kind != 'slack.message' or str(m.get('channel_id') or '').startswith('D') or str(m.get('thread_ts') or '') in threads)
-                              and (text := own_text(e['body'])) and not PROFILE_SKIP.match(text) and not sent.wrote(e, text)), None)
+                              and (text := unquoted(e['body'])) and not PROFILE_SKIP.match(text) and not sent.wrote(e, text)), None)
                 if not found:
                     continue
                 if row['done_when']:  # their part went out, the result it is for hasn't come yet

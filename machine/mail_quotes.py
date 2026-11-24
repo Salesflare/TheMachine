@@ -158,9 +158,28 @@ def _sent_on(lines, subject, people):
     return False
 
 
+def sent_on(lines):
+    """The index of the first line of a mail sent on in these lines, which is someone else's: a forward's dashed line or
+    the mail's own header, marked or not; None when there is none."""
+    first = _next(lines, 0)
+    for i, line in enumerate(lines):
+        if FORWARDED.match(line):
+            after = _next(lines, i + 1)
+            if i == first or _shape([x.lstrip('> ') for x in lines[after:after + 14]], 0):
+                return i
+        elif _mark(line) and (i == 0 or not _mark(lines[i - 1])):
+            if _sent_on(lines[i:i + 12], '', '-'):
+                return i
+        elif (values := _shape(lines, i)) and ADDRESS.search(values[0]):
+            while i and (not lines[i - 1].strip() or RULE.match(lines[i - 1]) or DASHED.match(lines[i - 1])):
+                i -= 1
+            return i
+    return None
+
+
 def _wrote(lines, i):
     """Whether lines[i] starts a reply header with nothing marked under it ("On …, Ann <a@b.c> wrote:")."""
-    if not re.match(r'(?i)(?:On|Le|Op|Am|El|Il|Den|Em)\b', lines[i]):
+    if not re.match(r'(?i)(?:On|Le|Op|Am|El|Il|Den|Em)\b', lines[i]) or not any(x.rstrip().endswith(':') for x in lines[i:i + 4]):
         return False
     match = REPLY_HEADER.match('\n'.join(lines[i:i + 4]))
     if not match:
@@ -263,6 +282,7 @@ REST_IDS = {'divrplyfwdmsg', 'appendonsend', 'mail-editor-reference-message-cont
 QUOTE_CLASSES = {'gmail_quote', 'yahoo_quoted', 'protonmail_quote', 'tutanota_quote', 'moz-cite', 'mail-quote'}
 
 
+NESTED, CONTAINERS = 40, 2000  # quote containers followed in each other, and in one mail: what is deeper has the outer ones' place
 LINE = re.compile('\r\n|[\n\r\x0b\x0c\x1c-\x1e\x85\u2028\u2029]')  # as str.splitlines
 
 
@@ -272,7 +292,7 @@ class _Lines(HTMLParser):
     def __init__(self):
         super().__init__()
         self.lines = [{'text': '', 'in': (), 'at': None, 'soft': False}]
-        self.open, self.hidden, self.ids, self.rest, self.at = [], 0, 0, False, None
+        self.open, self.inside, self.tags, self.hidden, self.ids, self.at = [], (), {}, 0, 0, None
         self.kinds, self.starts, self.offsets = {}, {}, [0]
 
     def read(self, value):
@@ -287,7 +307,7 @@ class _Lines(HTMLParser):
 
     def _break(self, soft=False):
         """A new line; soft: only where a container starts or ends, a line of its own when that container is a quote."""
-        self.lines.append({'text': '', 'in': tuple(q for _, q in self.open if q), 'at': None, 'soft': soft})
+        self.lines.append({'text': '', 'in': self.inside, 'at': None, 'soft': soft})
 
     def _container(self, tag, attrs):
         attrs = {k: str(v or '') for k, v in attrs}
@@ -302,7 +322,7 @@ class _Lines(HTMLParser):
             kind = 'cite'
         elif 'gmail_quote' in classes:
             kind = 'around'  # holds the attribution, the quote and any answers between; a forward too
-        if kind is None:
+        if kind is None or len(self.inside) >= NESTED or self.ids >= CONTAINERS:
             return None
         self.ids += 1
         self.kinds[self.ids], self.starts[self.ids] = kind, self._offset()
@@ -317,6 +337,8 @@ class _Lines(HTMLParser):
         found = self._container(tag, attrs)
         if tag not in VOID:
             self.open.append((tag, found))
+            self.tags[tag] = self.tags.get(tag, 0) + 1
+            self.inside += (found,) if found else ()
         if tag == 'img':
             self.at = None
         if not self.hidden and (tag in BREAKS or found):
@@ -326,12 +348,18 @@ class _Lines(HTMLParser):
         if tag in ('script', 'style'):
             self.hidden = max(0, self.hidden - 1)
             return
-        for i in range(len(self.open) - 1, -1, -1):
+        for i in range(len(self.open) - 1, -1, -1) if self.tags.get(tag) else ():
             if self.open[i][0] == tag:
+                for name, _ in self.open[i:]:
+                    self.tags[name] -= 1
                 closed = [q for _, q in self.open[i:] if q]
                 rest = [q for q in closed if self.kinds[q] == 'rest']
                 del self.open[i:]
-                self.open += [('#rest', q) for q in rest]  # no end tag closes it
+                for q in rest:  # no end tag closes it
+                    self.open.append(('#rest', q))
+                    self.tags['#rest'] = self.tags.get('#rest', 0) + 1
+                if closed:
+                    self.inside = tuple(q for _, q in self.open if q)
                 if closed and not self.hidden:
                     self._break(soft=True)
                 break
@@ -360,9 +388,12 @@ def _read_html(value, subject='', people=''):
     every = reader.read(str(value or ''))
     rows = [x for x in every if x['text'].strip()]
     text = [x['text'].strip() for x in rows]
-    counts = set()
+    counts, held = set(), {}
+    for n, x in enumerate(rows):
+        for q in x['in']:
+            held.setdefault(q, []).append(n)
     for q, kind in () if FORWARD_SUBJECT.match(subject or '') else reader.kinds.items():
-        inside = [n for n, x in enumerate(rows) if q in x['in']]
+        inside = held.get(q)
         if not inside:
             continue
         before = inside[0] - 1

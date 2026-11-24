@@ -32,7 +32,7 @@ from machine.sources.exclusions import excluded_by_rules, routine_rules
 from machine.sources.gmail import machine_notice
 from machine.sources.slack import slack_named, slack_raw_title
 from machine.store import history as history_store
-from machine.text import encoded
+from machine.text import encoded, same_text
 import meeting_notes
 import message_seal
 from sources import transient
@@ -78,9 +78,9 @@ READ_AS = ('truncated', 'quoted_history_chars', 'quoted_history_shortened', veri
 
 
 def reread(old, event):
-    """Whether a stored mail (a row) is this same mail, only its text read differently: by a later version of the code
-    that tells a reply from what it quotes (machine/mail_quotes.py). A mail that arrived or went out never changes, so
-    it stays as stored: no new version, no second review. A draft's text does change."""
+    """Whether a stored mail (a row) is this same mail, only its text split differently: by a later version of the code
+    that tells a reply from what it quotes (machine/mail_quotes.py). It stays as stored: no new version, no second
+    review. One whose text did change (a draft, a body that was incomplete) is a change."""
     if event.get('deleted') or old['deleted'] or 'DRAFT' in (event['metadata'].get('labels') or ()):
         return False
     try:
@@ -88,7 +88,7 @@ def reread(old, event):
     except ValueError:
         return False
     plain = lambda meta: encoded({k: v for k, v in meta.items() if k not in READ_AS and not (k == 'attachments' and not v)})
-    return old['title'] == event['title'] and old['occurred_at'] == event['occurred_at'] and plain(before) == plain(event['metadata'])
+    return old['title'] == event['title'] and old['occurred_at'] == event['occurred_at'] and plain(before) == plain(event['metadata']) and same_text(old['body'], event.get('body'))
 
 
 def found_news_line(last_success):
@@ -331,7 +331,7 @@ class EventsStore:
                 digest = hashlib.sha256(encoded(digest_event).encode()).hexdigest()
                 facts = event['kind'] == 'intercom.conversation' and isinstance(event.get('metadata'), dict)
                 old = db.execute('SELECT id,content_hash' + (',title' if slack else '') + (',metadata' if facts else '')
-                                 + (',title,occurred_at,metadata,deleted' if event['kind'] in MAIL_KINDS else '')
+                                 + (',title,occurred_at,metadata,deleted,body' if event['kind'] in MAIL_KINDS else '')
                                  + ' FROM events WHERE account_id=? AND source_id=?', (account, event['source_id'])).fetchone()
                 if facts and not history:
                     event = {**event, 'metadata': intercom_seen(old['metadata'] if old else None, event['metadata'], now())}
