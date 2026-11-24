@@ -119,6 +119,19 @@ class FreeBusy(Pinned):
         self.assertEqual(self.told([CAL, *others])[1], [])
         self.assertEqual(self.told(others), ([], ALL))
 
+    def test_the_calendar_that_isnt_known_is_named_for_the_owner(self):
+        two = {'id': 'cal2', 'service': 'caldav', 'email': 'me@two.example', 'display_name': 'Home'}
+        named = lambda *accounts: calendar_busy.unread(self.db, {'accounts': list(accounts)}, NOW)
+        self.read()
+        self.assertEqual(named(MAIL, CAL, two), ['Home'])
+        self.read('cal2', hours_ago=25, error='invalid_grant')
+        self.assertEqual(named(MAIL, CAL, two), ['Home'])
+        self.read('cal2')
+        self.assertEqual(named(MAIL, CAL, two), [])
+        self.assertEqual(named(MAIL), [])
+        self.db.execute('DROP TABLE checkpoints')
+        self.assertEqual(named(MAIL, CAL, two), ['me@one.example', 'Home'])
+
     def test_an_all_day_event_marked_busy_is_busy(self):
         self.read()
         self.add('2026-12-01T00:00', '2026-12-04T00:00', all_day=True, transparency='opaque')

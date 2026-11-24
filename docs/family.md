@@ -9,7 +9,8 @@ self-hosted. Your Machines coordinate over the Network, under rules each of you 
   answers from its owner's own calendars with **busy times only**: start and end, never what, where or with whom.
   Your Machine works out the times everyone is free (between 8:00 and 21:00, at least an hour) and shows them as they
   answer. A time someone's calendar doesn't tell (none connected, not read for a day, or more than 30 days ahead) is
-  never one of them, and that person is named: "2 of 3 calendars · not all known: Alex".
+  never one of them, and that person is named: "2 of 3 calendars · not all known: Alex". When it is your
+  own, your Machine says which account ("not all known: you (work@example.com)"). Nobody else's does.
 - **To-dos.** Ask one member to do something ("Pick up the groceries", with a due date if you like). It waits on their
   Machine as a to-do with **Accept** and **Decline**. Once accepted it is their to-do, and on its due
   day their Machine reminds them once (phone, and Telegram when that is on). You see asked, accepted, declined, and done

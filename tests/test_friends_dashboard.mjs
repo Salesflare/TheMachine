@@ -51,7 +51,7 @@ try{
   assert.equal(flat[1],'Their calendar isn’t known for these days');
   assert.match(flat[2],/^Free, except not known: .*21.*–.*22/);
   assert.match(flat[3],/^Busy: .*21.*–.*22.* · Not known: .*23.*–.*24/);
-  assert.equal(flat[4],'Busy: free the whole time');
+  assert.equal(flat[4],'Free the whole time');
   assert.doesNotMatch(await friends.innerText(),/Work Fleet|Sam Doe/);  // nothing of the Work Fleet, not the owner as a friend
   // The rules per friend live under Sharing, with the Fleets' rules.
   const sharing=page.locator('[data-pane="sharing"]');assert.equal(await friends.locator('.fleet-rule').count(),0);

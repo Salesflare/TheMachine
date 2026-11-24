@@ -24,7 +24,6 @@ KINDS = ('relationships', 'meeting', 'intro', 'availability')
 MAX_DAYS, MAX_BLOCKS = 14, 300
 SLOT = re.compile(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z')
 USERNAME = re.compile(r'[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])')
-UNSAID = 'declined: not all of your calendar is known, and their Machine needs an update to be told so'
 ACTIONS = ('add', 'withdraw', 'accept', 'decline', 'block', 'remove', 'unblock')
 
 
@@ -89,6 +88,12 @@ def sendable(question, answer, current=None):
     free, so it gets no answer (Declined) when any time from now on isn't known."""
     at = _slot(current or timeutil.clock())
     return answer if question.get('unknown') or all(b <= at for _, b in answer.get('unknown') or ()) else None
+
+
+def unsaid(db, config):
+    """The owner's own log line of an answer sendable kept back: which calendar isn't known, when it is one."""
+    which = ', '.join(calendar_busy.unread(db, config, timeutil.clock()))
+    return f'declined: not all of your calendar is known{f" ({which})" if which else ""}, and their Machine needs an update to be told so'
 
 
 def unknown_in(question, answer, at, tz):

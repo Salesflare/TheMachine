@@ -367,6 +367,7 @@ class Family:
         ref = self.family_ref()
         if not ref:
             return None
+        import calendar_busy
         import friends
         tz = self.local_now().tzinfo
         since = (timeutil.clock() - dt.timedelta(days=SHOWN_DAYS)).isoformat(timespec='seconds')
@@ -386,6 +387,7 @@ class Family:
             if g['kind'] == 'free':
                 with self.connect() as db:
                     calendars = [(None, friends.free_busy(db, self.config, q), timeutil.clock())]  # None: the owner's own
+                    unread = calendar_busy.unread(db, self.config, timeutil.clock())  # whose name only the owner sees
                 calendars += [(a['name'], a['answer'], a['told']) for a in g['answers'] if a['status'] == 'answered' and a['answer']]
                 unknown, lists = [], []
                 for name, answer, at in calendars:
@@ -397,7 +399,7 @@ class Family:
                 slots = common_free(lists, q['start'], q['days'], tz) if lists else []
                 free.append({'id': g['id'], 'at': g['at'], 'start': q['start'], 'days': q['days'], 'known': len(lists) // 2,
                              'asked': len(g['answers']), 'waiting': [a['name'] for a in g['answers'] if a['status'] in ('asked', 'waiting')],
-                             'unknown': unknown,
+                             'unknown': unknown, 'unread': unread,
                              'slots': [{'from': a, 'until': b, 'text': free_text([a, b])} for a, b in slots[:12]]})
             elif g['kind'] == 'todo':
                 a = g['answers'][0]

@@ -14,6 +14,7 @@ import json
 import sqlite3
 
 import own_addresses
+from machine import names
 
 STALE = dt.timedelta(hours=24)         # a calendar not read for this long: what is on it now isn't known
 OLD_DAYS = 30                          # how far ahead a Machine from before `unknown` reads its calendars
@@ -75,6 +76,22 @@ def known(db, account_id, current):
     since = moment(state.get('read_from') or (state.get('time_min') if done else None))
     until = moment(state.get('read_until') or (state.get('time_max') if done else None))
     return (since, until) if since and until and since < until else None
+
+
+def unread(db, config, current):
+    """The owner's own calendars nothing is known of now (never read, or not for STALE), by their names on Connections.
+    For the owner only: on their own dashboard, never in an answer."""
+    accounts, out = config.get('accounts') or [], []
+    for account_id in calendars(config):
+        if not known(db, account_id, current):
+            account = next(a for a in accounts if a.get('id') == account_id)
+            try:
+                row = db.execute('SELECT state FROM checkpoints WHERE account_id=?', (account_id,)).fetchone()
+                state = json.loads(row['state'] or '{}') if row else {}
+            except (sqlite3.OperationalError, ValueError):
+                state = {}
+            out.append(names.card_title(account, accounts, state))
+    return list(dict.fromkeys(out))
 
 
 def read(db, config, start, end, current):

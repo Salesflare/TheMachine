@@ -384,9 +384,10 @@ def activity_lines(db, limit):
         if not line:
             continue
         args = json.loads(r['args'] or '[]')
+        which = ', '.join(args[1:]) if r['outcome'] == 'mine' else ''
         out.append({'id': f"meet:{r['id']}", 'kind': 'calendar', 'at': r['at'], 'what': t(line[1], r['name'] or t('someone'), *args[:1]),
                     'where': t('The Machine Network'), 'outcome': outcome, 'status': t(status), 'by': None,
-                    'todo': {'id': r['card_id'], 'title': ' '.join(str(r['todo_title']).split())[:120]} if r['card_id'] and r['todo_title'] is not None else None, 'detail': t(detail) if detail else None})
+                    'todo': {'id': r['card_id'], 'title': ' '.join(str(r['todo_title']).split())[:120]} if r['card_id'] and r['todo_title'] is not None else None, 'detail': t('Your calendar isn’t known for these days: {}', which) if which else t(detail) if detail else None})
     return out
 
 
@@ -457,6 +458,8 @@ class Meet:
         return self.meet_setting()
 
     def _meet_log(self, db, what, name, args, outcome, peer=None, card_id=None):
+        if outcome == 'mine':  # which of their calendars it is: a line on the owner's own Machine, never sent
+            args = [*args[:1], *calendar_busy.unread(db, self.config, self._meet_now())]
         db.execute('INSERT INTO meet_log(at,direction,peer,name,what,args,outcome,card_id) VALUES(?,?,?,?,?,?,?,?)',
                    (stamp(self._meet_now()), LINES[what][0], peer, ' '.join(str(name or '').split())[:80], what, json.dumps(list(args)), outcome, card_id))
         db.execute('DELETE FROM meet_log WHERE id NOT IN (SELECT id FROM meet_log ORDER BY id DESC LIMIT 1000)')

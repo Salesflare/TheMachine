@@ -45,7 +45,8 @@ booked. Code: `meet.py` (protocol, the to-do's states) and `cloud/meet.py` in th
 - **Not known.** Free means known to be free. No calendar of the owner's own, one not read for 24 hours, and days past
   what is read ahead (30 days, machine/sources/calendar.py) are never offered, on either side or on a booking link
   (calendar_busy.py). Nothing known in the window: the answer is `no`, and the proposer's to-do keeps its email draft.
-  Activity then says the calendar isn't known, not that no time fits.
+  Activity then says the calendar isn't known, not that no time fits, and on the owner's own Machine which account it
+  is. That name is never sent.
 - **Activity.** Each exchange is a line under Activity, Calendar: who asked, which window, which slot, how it ended.
   Never an event's title or details.
 

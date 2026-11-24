@@ -2109,7 +2109,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 elif rule == 'always':
                     body = self.compute(db, kind, question, details, fleet, scope, ok=gate)
                     status = 'answered' if body is not None else 'declined'
-                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question, db), friends.UNSAID if body is None else
+                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question, db), friends.unsaid(db, self.config) if body is None else
                              ('answered with what the Team Graph shares: ' if kind == 'brief' or gate else 'answered: ') + answer_text(kind, body))
                 else:
                     draft = None
@@ -2189,7 +2189,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             db.execute('UPDATE fleet_in SET status=?,decided_at=?,choice=? WHERE id=?', (status, now(), choice, row['id']))
             self.log(db, 'in', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], question, db),
                      ('answered: ' + answer_text(row['kind'], answer)) if answer is not None
-                     else friends.UNSAID if choice in ('once', 'always') else 'declined')
+                     else friends.unsaid(db, self.config) if choice in ('once', 'always') else 'declined')
         if retell and row['telegram_message_id'] and self.retell:
             self.retell(row['telegram_message_id'])
         if choice in ('always', 'never'):  # the same teammate's other waiting questions of this kind follow the new rule
@@ -2228,7 +2228,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 rule, gate = self.answer_gate(db, row['fleet'], row['member_id'], row['kind'], rule)
                 if rule == 'always' and verdict != 'never':
                     answer = self.compute(db, row['kind'], question, details, row['fleet'], scope, ok=gate)
-                    status, outcome = ('declined', friends.UNSAID) if answer is None else (
+                    status, outcome = ('declined', friends.unsaid(db, self.config)) if answer is None else (
                         'answered', ('answered with what the Team Graph shares: ' if gate
                                      else 'shared automatically (your Always rule): ') + answer_text(row['kind'], answer))
                 elif rule == 'never' or verdict == 'never':

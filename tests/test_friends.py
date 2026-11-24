@@ -213,7 +213,7 @@ class Friends(unittest.TestCase):
         # a Machine from before it could be told: no answer, not a wrong "free"
         self.assertEqual(self.friend_ask('availability', {'start': start, 'days': 1}, 'fq2'), 'declined')
         self.assertEqual(self.answered(), {'id': 'fq2', 'status': 'declined'})
-        self.assertIn('not all of your calendar is known', self.fleet.view()['log'][0]['outcome'])
+        self.assertIn('not all of your calendar is known (owner@gmail.com)', self.fleet.view()['log'][0]['outcome'])  # which: the owner only
         # the same once the owner answers it, or an Always rule does later
         self.fleet.set_rule(FR, 'fp_lou', 'availability', 'ask')
         for ask_id in ('fq3', 'fq4'):
@@ -224,6 +224,7 @@ class Friends(unittest.TestCase):
         sent = {x['id']: x for x in self.relay.sent('/answer')}
         self.assertEqual((sent['fq4']['status'], sent['fq5']['status']), ('declined', 'answered'))
         self.assertTrue(sent['fq5']['answer']['unknown'])
+        self.assertNotIn('owner@gmail.com', json.dumps(self.relay.sent('/answer')))
 
     def test_what_a_friends_calendar_doesnt_tell_shows_as_not_known(self):
         timeutil.pin(NOW)

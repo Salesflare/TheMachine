@@ -87,9 +87,9 @@ class Machine:
         self.root.mkdir(parents=True)
         self.path = self.root / 'db.sqlite'
         net.person(name, email)
-        self.account = 'cal-' + name
+        self.account, self.calendar_name = 'cal-' + name, name.title() + ' at work'
         config = {'database': str(self.path), 'network_keys': str(self.root / 'network-keys.json'),
-                  'accounts': [{'id': 'cal-' + name, 'service': 'calendar', 'email': email}], 'fleet': {'url': 'https://cp.example/api/fleet'}}
+                  'accounts': [{'id': 'cal-' + name, 'service': 'calendar', 'email': email, 'display_name': self.calendar_name}], 'fleet': {'url': 'https://cp.example/api/fleet'}}
         with self.connect() as db:
             db.executescript('CREATE TABLE events(id INTEGER PRIMARY KEY,account_id TEXT,source_id TEXT,kind TEXT,occurred_at TEXT,title TEXT,'
                              'body TEXT,metadata TEXT,deleted INTEGER DEFAULT 0);'
@@ -245,7 +245,8 @@ class Scheduling(unittest.TestCase):
         self.run_both()
         self.assertEqual((self.ann.session()['state'], self.ann.session()['note'], self.ann.session()['free']), ('fallback', 'theirs', None))
         self.assertEqual(self.outcome(self.ann), ('Not known', 'Their calendar isn’t known for these days'))
-        self.assertEqual(self.outcome(self.bob), ('Not known', 'Your calendar isn’t known for these days'))
+        self.assertEqual(self.outcome(self.bob), ('Not known', 'Your calendar isn’t known for these days: ' + self.bob.calendar_name))
+        self.assertNotIn(self.bob.calendar_name, json.dumps([self.ann.log(), dict(self.ann.session())], ensure_ascii=False))
         # a failed read or two changes nothing
         self.bob.calendar_read(until=MONDAY + dt.timedelta(days=30), at=MONDAY - dt.timedelta(hours=5))
         self.ann.box.meet_start('c2', 'bob@two.example', 'Bob', start='2026-11-03', days=2)

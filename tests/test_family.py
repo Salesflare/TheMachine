@@ -188,10 +188,13 @@ class Family(unittest.TestCase):
         self.assertEqual(free(alex={'busy': [], 'unknown': [[noon, window[1]]]})[:2], (3, ['Alex']))
         for slot in self.fleet.view()['family']['free'][0]['slots']:
             self.assertLessEqual(dt.datetime.fromisoformat(slot['until']), dt.datetime.combine(NOW.date() + dt.timedelta(days=1), dt.time(12), tz))
-        # nor the owner's own
+        self.assertEqual(self.fleet.view()['family']['free'][0]['unread'], [])
+        # nor the owner's own, named for them only
         with self.store.connect() as db:
             db.execute("DELETE FROM checkpoints WHERE account_id='homecal'")
         self.assertEqual(free(alex={'busy': [], 'unknown': [window]}, robin={'busy': [], 'unknown': [window]}), (0, [None, 'Robin', 'Alex'], 0))
+        self.assertEqual(self.fleet.view()['family']['free'][0]['unread'], ['owner@gmail.com'])
+        self.assertNotIn('owner@gmail.com', json.dumps(self.relay.sent('/ask')))
 
     # -- to-dos
     def test_a_todo_waits_for_the_member_then_becomes_their_card_with_one_reminder(self):
