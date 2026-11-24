@@ -25,7 +25,7 @@ email_bounce_events.via email_bounce_cc_scan.flagged event_vector_skips.reason
 facts.merged_into facts.side fact_search_config.k fact_search_config.v family_invite_log.what fault_versions.fingerprint
 faults.fingerprint faults.origin first_pass.verdict first_pass.what fleet_briefs.every fleet_claims.offer
 fleet_learn_removed.fp fleet_learn_seen.fp fleet_learn_used.fp fleet_learn_vectors.fp fleet_learnings.fp fleet_notices.reason
-fleet_out.context fleet_splits.meeting fleet_reviews.scope fleet_reviews.decided fleet_rules.rule fleet_scopes.scope folder_overviews.basis
+fleet_out.context fleet_questions.hold fleet_splits.meeting fleet_reviews.scope fleet_reviews.decided fleet_rules.rule fleet_scopes.scope folder_overviews.basis
 follow_up_basis.basis follow_up_cards.channel follow_up_cards.why follow_up_holds.why follow_up_pauses.scope follow_up_rules.scope
 follow_up_rules.settings follow_up_sends.batch follow_up_sends.grp forgotten_people.digest forgotten_salt.salt
 gbrain_pages.section graph_imports.counts graph_links.a graph_links.b graph_merges.a graph_merges.b graph_relations.a graph_relations.b

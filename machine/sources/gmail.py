@@ -15,6 +15,7 @@ from machine.text import QUOTED_HISTORY_KEPT, _address, email_body, trim_quoted_
 import ms_graph
 from sources import MICROSOFT_SERVICES, SourceError, gog_read, transient
 from timeutil import now
+import verified_sender
 
 
 
@@ -152,6 +153,8 @@ def message_event(account, raw, config=None):
         if headers.get(key):
             metadata[key] = headers[key]
     metadata.update(list_headers(headers))
+    if verified_sender.verified(account, raw.get('payload', {}).get('headers')):
+        metadata[verified_sender.KEY] = True
     report = bounces.read_report(raw.get('payload'))  # a delivery report (bounce): its recipients, read from its structure
     if report:
         metadata['bounce'] = report

@@ -198,12 +198,13 @@ KIND_LABEL.update(skill='skills')
 for _kind in ('work', 'family'):
     ASKS[_kind] = ASKS[_kind] + (fleet_reviews.KIND,)
 KIND_LABEL.update(review='reviews')
-# Questions (family_questions.py): a member asks one other member's Machine. Ask me first or Never; the owner sends every
-# answer. Offered only where the Network says it carries them (the directory's asks).
+# Questions (family_questions.py): a member asks one other member's Machine. Ask me first or Never; Always only for one
+# person (PERSON_RULES), and then only what family_question_always.py lets go after its hold. Offered only where the Network says it carries them (the directory's asks).
 ASKS['family'] += (family_questions.KIND,)
 RULE_KINDS['family'] += (family_questions.KIND,)
 KIND_LABEL.update(question='questions')
 KIND_RULES[family_questions.KIND] = ('ask', 'never')
+PERSON_RULES = {family_questions.KIND: ('ask', 'always', 'never')}  # what one person may have and the group may not
 NO_DETAILS += (family_questions.KIND,)
 
 
@@ -1469,6 +1470,8 @@ def telegram_message(rows, root):
             outcome = (fleet_requests.Requests.marked_line(how) if how else t('Marked as yours')) + '. ' + t('Not mine on the to-do undoes it.')
         if row['status'] == 'withdrawn':  # their Machine took it back (fleet_requests.take_withdrawn)
             outcome = fleet_requests.taken_line(row['name'])
+        if row['kind'] == family_questions.KIND and row['status'] == 'answered':
+            outcome = t('Answered by itself') if row['choice'] == 'always' else t('Answered')
         prefix = f'{n}. ' if many else ''
         if row['kind'] == 'anything':
             # Their words, quoted, then the draft built from your own accounts. Send this answer sends exactly that draft.
@@ -1483,8 +1486,11 @@ def telegram_message(rows, root):
                 buttons.append(([{'text': prefix + t('Send this answer'), 'value': f"assistant:fleet:{row['id']}:once"}] if draft else [])
                                + [{'text': t('Don’t answer'), 'value': f"assistant:fleet:{row['id']}:decline"}])
             continue
-        lines.append((f'{n}. ' if many else '') + asks_line(row) + (f'\n   → {outcome}' if outcome else ''))
-        if row['status'] == 'waiting' and row['kind'] == family_questions.KIND:  # sent only where its draft and sources show
+        held = row['status'] == 'waiting' and family_questions.held_line(row)  # an answer that goes by itself, until its time
+        lines.append((f'{n}. ' if many else '') + asks_line(row) + (f'\n   {held}' if held else '') + (f'\n   → {outcome}' if outcome else ''))
+        if held:
+            buttons.append([{'text': prefix + t('Stop'), 'value': f"assistant:fleet:{row['id']}:stop"}])
+        elif row['status'] == 'waiting' and row['kind'] == family_questions.KIND:  # sent only where its draft and sources show
             buttons.append([{'text': prefix + t('Decline'), 'value': f"assistant:fleet:{row['id']}:decline"}])
         elif row['status'] == 'waiting':
             staged = row['kind'] in fleet_requests.STAGED
@@ -1783,10 +1789,10 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
     def rule(self, db, fleet, member_id, kind, raw=False):
         """A teammate's rule for a kind of question: their exception if they have one, else the Fleet's rule (member ALL).
         In a Careful Work Fleet it applies without Always and without names (security_levels.py); raw is as stored."""
-        row = (db.execute('SELECT rule,details FROM fleet_rules WHERE fleet=? AND member_id=? AND kind=?', (fleet, member_id, kind)).fetchone()
-               or db.execute('SELECT rule,details FROM fleet_rules WHERE fleet=? AND member_id=? AND kind=?', (fleet, ALL, kind)).fetchone())
+        own = db.execute('SELECT rule,details FROM fleet_rules WHERE fleet=? AND member_id=? AND kind=?', (fleet, member_id, kind)).fetchone()
+        row = own or db.execute('SELECT rule,details FROM fleet_rules WHERE fleet=? AND member_id=? AND kind=?', (fleet, ALL, kind)).fetchone()
         found = (row['rule'], bool(row['details'])) if row else (self.default_rule(fleet, kind), self.default_details(fleet, kind))
-        found = (self.shown_rule(fleet, kind, found[0]), found[1])
+        found = (self.shown_rule(fleet, kind, found[0], member_id if own else ALL), found[1])
         return found if raw else security_levels.clamp(self.level(fleet), *found)
 
     def follows_graph(self, fleet, kind):
@@ -1797,9 +1803,11 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             return False
         return kind == 'handling' or self.team_sharing(fleet)
 
-    def kind_rules(self, fleet, kind):
+    def kind_rules(self, fleet, kind, member_id=ALL):
         """The rules a kind takes in one Fleet: an ask that follows the Team Graph takes Always or Never, no Ask me first;
-        anything else what the kind takes everywhere."""
+        anything else what the kind takes everywhere, and for one person (member_id) what only a person may have."""
+        if member_id != ALL and kind in PERSON_RULES:
+            return PERSON_RULES[kind]
         return ('always', 'never') if self.follows_graph(fleet, kind) else KIND_RULES.get(kind, RULES)
 
     def default_details(self, fleet, kind):
@@ -1845,6 +1853,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                     had_scope = {m: json.dumps(self.scope(db, ref, m, kind, raw=True), sort_keys=True) for m in mates} if scoped else {}
                     common = collections.Counter(had.values()).most_common()
                     wide = common[0][0] if len(common) == 1 or common[0][1] > common[1][1] else ('ask', False)
+                    if wide[0] not in self.kind_rules(ref, kind):  # a person's own choice only (PERSON_RULES): never everyone's
+                        wide = ('ask', False)
                     db.execute('INSERT OR REPLACE INTO fleet_rules(fleet,member_id,kind,rule,details,updated_at) VALUES(?,?,?,?,?,?)',
                                (ref, ALL, kind, wide[0], int(wide[1]), now()))
                     for m, value in had.items():
@@ -1865,10 +1875,11 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                                            (ref, m, kind, value, now()))
                 db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)', (done, now()))
 
-    def shown_rule(self, ref, kind, rule):
-        """A stored rule as it reads now: one a kind no longer takes is Ask me first, or for brief facts and a Standard
-        Work Fleet's teammate asks (which follow the Team Graph, no Ask me first) the Fleet's default, Always."""
-        if rule in self.kind_rules(ref, kind):
+    def shown_rule(self, ref, kind, rule, member_id=ALL):
+        """A stored rule (of one person, or everyone's) as it reads now: one a kind no longer takes is Ask me first, or for
+        brief facts and a Standard Work Fleet's teammate asks (which follow the Team Graph, no Ask me first) the Fleet's
+        default, Always."""
+        if rule in self.kind_rules(ref, kind, member_id):
             return rule
         return 'always' if kind == 'brief' or self.follows_graph(ref, kind) else 'ask'
 
@@ -1941,6 +1952,15 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         """From one status to the next, once: 0 when it isn't in that status any more (so nothing is sent twice)."""
         return db.execute('UPDATE fleet_in SET status=?,choice=?,decided_at=? WHERE id=? AND status=?',
                           (status, choice, decided_at, str(ask_id), was)).rowcount
+
+    @staticmethod
+    def told_in(db, ask_id, at):
+        """When its owner was told of it; None: they are told again."""
+        db.execute('UPDATE fleet_in SET notified_at=? WHERE id=?', (at, str(ask_id)))
+
+    @staticmethod
+    def telegram_in(db, ask_id, message_id):
+        db.execute('UPDATE fleet_in SET telegram_message_id=? WHERE id=?', (str(message_id), str(ask_id)))
 
     def set_member_rule(self, db, fleet, member_id, kind, rule):
         """One member's own rule for a kind, from the owner's choice on their question."""
@@ -2228,8 +2248,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
 
     def decide_from_telegram(self, ask_id, choice, message_id):
         """A tap on the Telegram message this Machine sent for that question, and only that message.
-        Never is for the dashboard. A question decided elsewhere or expired just shows its outcome."""
-        if choice not in ('once', 'always', 'decline'):
+        Never is for the dashboard. A question decided elsewhere or expired just shows its outcome. Stop: an answer to a
+        family question that would go by itself (family_question_hold.py)."""
+        if choice not in ('once', 'always', 'decline') and not (choice == 'stop' and self.is_question(ask_id)):
             raise OwnerError('Choose once, always or decline')
         with self.connect() as db:
             row = db.execute('SELECT telegram_message_id FROM fleet_in WHERE id=?', (str(ask_id),)).fetchone()
@@ -2245,7 +2266,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
 
     def telegram_view(self, message_id):
         with self.connect() as db:
-            rows = db.execute("SELECT i.*,m.value AS silent,q.asked,q.state AS question_state FROM fleet_in i LEFT JOIN fleet_meta m ON m.key='handoff_silent:'||i.id "
+            rows = db.execute("SELECT i.*,m.value AS silent,q.asked,q.hold,q.state AS question_state,q.draft AS drafted FROM fleet_in i LEFT JOIN fleet_meta m ON m.key='handoff_silent:'||i.id "
                               'LEFT JOIN fleet_questions q ON q.id=i.id WHERE i.telegram_message_id=? ORDER BY i.at,i.id', (str(message_id),)).fetchall()
         return telegram_message(rows, dashboard_link(self.config)) if rows else None
 
@@ -2408,9 +2429,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
     def untold(self, db):
         """Waiting questions the owner wasn't told about yet, and may be now: free questions wait for their work hours.
         Brief asks never notify: they wait quietly in the Fleet tab, never as a to-do (QUIET)."""
-        rows = db.execute("SELECT i.*,q.asked,q.state AS question_state FROM fleet_in i LEFT JOIN fleet_questions q ON q.id=i.id "
-                          "WHERE i.status='waiting' AND i.notified_at IS NULL AND i.kind NOT IN (%s) ORDER BY i.at,i.id"
-                          %','.join('?' * len(QUIET)), QUIET).fetchall()
+        rows = db.execute("SELECT i.*,q.asked,q.state AS question_state FROM fleet_in i LEFT JOIN fleet_questions q ON q.id=i.id WHERE i.status='waiting' "
+                          "AND i.notified_at IS NULL AND q.hold IS NULL AND i.kind NOT IN (%s) ORDER BY i.at,i.id"  # a held answer's notice: hold_tell
+                          % ','.join('?' * len(QUIET)), QUIET).fetchall()
         return rows if self.working() else [r for r in rows if r['kind'] != 'anything']
 
     def set_rule(self, fleet, member_id, kind, rule=None, details=None, scope=None, clear=False):
@@ -2427,8 +2448,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 return {'rule': rule, 'details': details, 'scope': self.scope(db, fleet, member_id, kind)}
             current, current_details = self.rule(db, fleet, member_id, kind, raw=True)
             rule = current if rule is None else rule
-            if rule not in self.kind_rules(fleet, kind):
-                raise OwnerError('A rule is ' + ' or '.join(self.kind_rules(fleet, kind)))
+            if rule not in self.kind_rules(fleet, kind, member_id):
+                raise OwnerError('A rule is ' + ' or '.join(self.kind_rules(fleet, kind, member_id)))
             details = current_details if details is None else bool(details)
             db.execute('INSERT OR REPLACE INTO fleet_rules(fleet,member_id,kind,rule,details,updated_at) VALUES(?,?,?,?,?,?)',
                        (fleet, member_id, kind, rule, int(details), now()))
@@ -3618,14 +3639,14 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                         'joined_at': found.get('joined_at'),  # when the owner joined or made it: the Fleet tab's order
                         'people': [person(m) for m in found.get('members', [])], **self.rules_view(ref, kind, rules, scopes),
                         'members': [{'member_id': m['member_id'], 'name': label(m), 'machine': m.get('machine'),
-                                     'rules': {k: (lambda r: {**r, 'rule': self.shown_rule(ref, k, r['rule'])})(
+                                     'rules': {k: (lambda r: {**r, 'rule': self.shown_rule(ref, k, r['rule'], m['member_id'] if (ref, m['member_id'], k) in rules else ALL)})(
                                          rules.get((ref, m['member_id'], k)) or rules.get((ref, ALL, k), {'rule': self.default_rule(ref, k), 'details': self.default_details(ref, k)})) for k in RULE_KINDS.get(kind, ())}}
                                     for m in self.teammates(ref)],
                         'kind_rules': {k: list(self.kind_rules(ref, k)) for k in RULE_KINDS.get(kind, ())},
                         **({'learnings': self.learnings_view(ref)} if kind == 'work' else {})})
         return {'on': True, 'off': self.off, 'fleets': out, 'friends': self.friends_view(), 'network': self.network_view(), 'meet': self.meet_setting() if self.meet_on else None, 'family': self.family_view(), 'waiting': waiting, 'asked': asked, 'log': log, 'notices': notices,
                 **self.requests_view(), 'ask_meetings': self.meetings_on(), 'kinds': KIND_LABEL, 'free': free, 'briefs': self.briefs(), 'brief': self.brief_settings(),
-                'kind_rules': {k: list(KIND_RULES.get(k, RULES)) for k in KIND_LABEL}, 'no_details': list(NO_DETAILS),
+                'kind_rules': {k: list(KIND_RULES.get(k, RULES)) for k in KIND_LABEL}, 'person_rules': {k: list(v) for k, v in PERSON_RULES.items()}, 'no_details': list(NO_DETAILS),
                 'scoped': list(SCOPED), 'scopes': scopes, 'sealing': self.relay.view() if isinstance(self.relay, network.Sealing) else None}
 
     def learnings_view(self, ref):

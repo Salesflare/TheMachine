@@ -18,13 +18,23 @@ No work questions go through a Family Fleet.
 
 In your Family's pane on the Fleet tab, pick one person and ask: "Any news about the carpet?"
 
-- Their Machine drafts an answer from their own personal messages. They see the draft and the messages it comes from, change it if they like, and send it. Nothing reaches you before that.
+- Their Machine drafts an answer from their own personal messages. They see the draft and the messages it comes from, change it if they like, and send it. Nothing reaches you before that, unless they set [Always](family.md#always-for-one-person) for you.
 - The answer shows in your Family's pane and as a notice. After three days without one it says **No answer**.
-- A draft never comes from work, from anything sensitive or kept private, or from codes, links and account numbers. Your Machine is careful with gifts and surprises too. When it isn't sure, there is no draft and you answer in your own words.
+- A draft leaves out work, what is marked sensitive or kept private, and codes, links and account numbers. Your Machine is careful with gifts and surprises too, but it can miss one. When it isn't sure, there is no draft and you answer in your own words.
 - A question that isn't an ordinary household matter gets no draft and nothing is looked up. You only see the question.
-- Every question to you, and exactly what you sent, is in [Activity](activity.md).
+- Every question to you, and exactly what was sent, is in [Activity](activity.md).
 - Don't want questions from someone? Set **Never** for them on the Sharing pane. They aren't told.
 - A Machine that isn't up to date can't answer yet; you see that.
+
+## Always for one person
+
+On the Sharing pane, **Add an exception** sets **Always** for one person's questions. Plain household answers to them then go by themselves, also on something they didn't know of yet.
+
+- Asks you first: health, money, work, legal trouble, gifts and surprises, relationships, passwords and codes, anything private or told in confidence, other people's affairs, or where you are. Anything unclear too. It can miss one, so set it for someone you would mostly answer anyway.
+- First comes a notification with **Stop**. The to-do shows the answer and its messages: change it, **Send now**, **Stop** or **Decline**. Otherwise it goes 10 to 18 minutes later. At night it waits for your morning.
+- Around gift holidays and their birthday, anything bought or booked asks you first.
+- Answers only come from mail of a sender your mail service verified, or from a thread you wrote in. A later message that changes things, or one about another home, car or person, asks you first.
+- At most 3 a day. They see that it was answered by itself. **Activity** shows each one too, with **Ask me first** to take Always back.
 
 ## Invite suggestions
 

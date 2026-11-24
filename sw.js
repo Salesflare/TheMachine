@@ -215,7 +215,7 @@ self.addEventListener('push', event => {
     icon: 'brand/app-icon-192.png', badge: 'brand/app-icon-badge-96.png',
     data: {url: new URL(data.url || '.', self.registration.scope).href},
     // Quick buttons (machine/delivery/push.py QUICK), at most two. Fleet questions: Answer once and Decline open the
-    // dashboard at the question, which asks to confirm.
+    // dashboard at the question, which asks to confirm. Stop, on an answer that goes by itself, stops it there at once.
     actions: Array.isArray(data.actions) ? data.actions.slice(0, 2) : [],
   }).catch(e => swReport(e, 'push')));
 });
@@ -240,7 +240,7 @@ async function quickTake(id) {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   let url = event.notification.data?.url || self.registration.scope;
-  if (['once', 'decline'].includes(event.action) && /#fleet=q_[a-f0-9]{16}$/.test(url)) url += '&choice=' + event.action;
+  if (['once', 'decline', 'stop'].includes(event.action) && /#fleet=q_[a-f0-9]{16}$/.test(url)) url += '&choice=' + event.action;
   // A to-do's notification opens the to-do itself in the list (#card=), wherever it is now, never its chat. One shown
   // before this worker (#chat=<id>, or #card=<id>&or=chat) too. Open draft lands there as well, its draft in full.
   url = url.replace(/#chat=([a-f0-9]{16})$/, '#card=$1').replace(/#card=([a-f0-9]{16})&or=chat$/, '#card=$1');

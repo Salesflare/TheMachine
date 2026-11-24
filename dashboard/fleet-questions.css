@@ -1,5 +1,6 @@
 /*@lazy*/
 /* A family question's messages beside its draft: each opens in the reader (dashboard/fleet-questions.js) */
 .fleet-source{display:inline;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-align:left;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
+.fleet-card .fleet-goes{margin:8px 0 0;color:var(--muted);font-size:.9rem}
 .family-ask .family-answer{margin:2px 0 0;overflow-wrap:anywhere}
 /*@eager*/
