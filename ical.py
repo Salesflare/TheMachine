@@ -431,10 +431,16 @@ def _base(event, zones, default, owner):
         if isinstance(stamp, dt.datetime):
             updated = stamp.astimezone(dt.timezone.utc).isoformat()
             break
+    try:
+        created = parse_when({}, prop(event, 'CREATED')[1], zones, dt.timezone.utc) if prop(event, 'CREATED')[1] else None
+    except ValueError:
+        created = None
     item = {'summary': text_of(event, 'SUMMARY') or '(untitled event)', 'description': text_of(event, 'DESCRIPTION')[:40000],
             'location': text_of(event, 'LOCATION') or None, 'organizer': organizer, 'attendees': attendees,
             'status': 'cancelled' if text_of(event, 'STATUS').lower() == 'cancelled' else 'confirmed', 'updated': updated,
             'iCalUID': text_of(event, 'UID')[:500] or None}
+    if isinstance(created, dt.datetime):
+        item['created'] = created.astimezone(dt.timezone.utc).isoformat()
     if text_of(event, 'TRANSP').upper() == 'TRANSPARENT':
         item['transparency'] = 'transparent'
     item['busy'] = text_of(event, 'TRANSP').upper() == 'OPAQUE'  # left out, an all-day event's Busy isn't the calendar's word

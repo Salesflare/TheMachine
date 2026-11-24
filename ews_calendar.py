@@ -302,7 +302,7 @@ def view_ids(account, password, start, end):
     return [e.get('Id') for e in tree.iter(_q(T, 'ItemId')) if e.get('Id')]
 
 
-FIELDS = ('item:Subject', 'item:Body', 'item:LastModifiedTime', 'calendar:Start', 'calendar:End', 'calendar:IsAllDayEvent',
+FIELDS = ('item:Subject', 'item:Body', 'item:LastModifiedTime', 'item:DateTimeCreated', 'calendar:Start', 'calendar:End', 'calendar:IsAllDayEvent',
           'calendar:Location', 'calendar:Organizer', 'calendar:RequiredAttendees', 'calendar:OptionalAttendees',
           'calendar:Resources', 'calendar:IsCancelled', 'calendar:LegacyFreeBusyStatus', 'calendar:UID',
           'calendar:CalendarItemType', 'calendar:RecurrenceId', 'calendar:MyResponseType')
@@ -354,6 +354,8 @@ def item_of(element, owner):
             'status': 'cancelled' if text('IsCancelled').lower() == 'true' else 'confirmed',
             'updated': _utc(text('LastModifiedTime')).isoformat() if text('LastModifiedTime') else None,
             'location': text('Location') or None, 'description': text('Body')[:40000], 'iCalUID': uid[:500] or None}
+    if text('DateTimeCreated'):
+        item['created'] = _utc(text('DateTimeCreated')).isoformat()
     organizer = _person(element.find(_q(T, 'Organizer') + '/' + _q(T, 'Mailbox')))
     if organizer.get('email') in owner or text('MyResponseType') == 'Organizer':
         organizer['self'] = True

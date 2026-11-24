@@ -1,15 +1,16 @@
 """Who is one person: identities joined on strong evidence only (merges, the directory, one message or
-conversation, a LinkedIn profile, a number in a signature, the same full name), and people the owner
-added by hand."""
+conversation, a LinkedIn profile, a number in a signature, the same full name, what a chat shows), and people
+the owner added by hand."""
 
 import collections
 import json
 
 import lookalike
 from graph import Union, linkedin_key, person_name, signature_pairs
+from machine.graph import chat_proof
 
 
-def join_identities(db, per_event, gone, names, keys, senders):
+def join_identities(db, per_event, gone, names, keys, senders, booking_links=()):
     merges = db.execute('SELECT a,b,same,source FROM graph_merges ORDER BY created_at').fetchall()
     # Not the same, and an undone merge; and never an address with one at a domain imitating it, by any join but the
     # owner's own merge (lookalike.py): the imitation would read as the real contact
@@ -62,7 +63,11 @@ def join_identities(db, per_event, gone, names, keys, senders):
     # The same full name on different channels is one person, unless two people carry it on one channel, someone said
     # they differ, or it is a work contact and a personal chat with nothing but the name in common: then it is a question.
     keys.join_names(db, union, known, best)
+    # An address their own chat shows is theirs: they wrote it there, or booked with it from the link the owner sent there.
+    sure, asked = chat_proof.find(db, per_event, union, keys, best, booking_links)
+    for chat, address, why in sure:
+        union.join(address, chat, why)
     joined = collections.defaultdict(list)
     for a, b, why in union.edges:
         joined[union.find(a)].append((a, b, why))
-    return (union, manual, manual_people, joined)
+    return (union, manual, manual_people, joined, asked)

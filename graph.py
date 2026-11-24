@@ -12,7 +12,8 @@ People are matched by identifiers only (email address, phone, Slack user, Linked
 conversation, GitHub login), joined on strong evidence only: Slack reports the user's email, the same
 full name is on two identities in one message or conversation, a lookup found the same LinkedIn
 profile for both, their WhatsApp number is in their own mail, the same full name appears on two
-different channels (one person with it per channel; never through a shared address, graph_joins.py), or the owner or agent says so (merges). Weaker
+different channels (one person with it per channel; never through a shared address, graph_joins.py), their own chat shows the
+address is theirs (machine/graph/chat_proof.py), or the owner or agent says so (merges). Weaker
 evidence (that name shared by two people on one channel or by a work contact and a personal chat, a similar name with the same company, people,
 project or role; only a first name in common across domains, with the same company domain, phone or LinkedIn) is only offered as "Same person?" (graph_same); the owner's Merge or Not the same is
 kept in graph_merges, and Not the same also undoes a merge for good. Projects are named
@@ -865,7 +866,8 @@ def auto_side(address, threads, projects, accounts):
 # Same person? Why two identities were joined (strong evidence), as the person page says it.
 JOINED_WHY = {'owner': 'merged by you', 'agent': 'merged by a review', 'directory': 'their Slack profile has this address',
               'message': 'same name, both on one message', 'thread': 'same name, both in one conversation',
-              'profile': 'the same LinkedIn profile', 'signature': 'this number is in their own email', 'name': 'same full name on two channels'}
+              'profile': 'the same LinkedIn profile', 'signature': 'this number is in their own email', 'name': 'same full name on two channels',
+              'written': 'they wrote this address in their chat', 'booking': 'booked from the link in their chat'}
 PHONE = re.compile(r'(?<![\w+])(?:\+|00)?\d[\d ()./-]{7,18}\d(?![\w])')
 QUOTED = re.compile(r'^(?:>|On .{4,200} wrote:\s*$|-{2,} ?(?:Original|Forwarded) |From: |Van: |Le .{4,200} a écrit|Am .{4,200} schrieb)', re.M)
 SIGNATURE_MAILS = 12     # recent mails read per address for a phone number in its own text
@@ -1235,7 +1237,8 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     # The passes (machine/graph/), in the order they run: each one reads what the ones before it found; lap times each.
     (kept, mailings, listed, warmup, gone, per_event, names, x_names, crm_names, paying_names, said_orgs, appears,
      owner_events, headlines, keys, senders, wrote) = lap('identities', read_identities(db, signals, old, owner, current, config, past))
-    union, manual, manual_people, joined = lap('joins', join_identities(db, per_event, gone, names, keys, senders))
+    union, manual, manual_people, joined, asked = lap('joins', join_identities(db, per_event, gone, names, keys, senders,
+                                                                               (config.get('booking_links') or {}).values()))
     (roles, live_roles, pair_day, node_events, event_people, direct_people, next_meeting, accounts, history_events,
      last_day, age, strength, live, signal_events) = lap('strength', weigh_contact(per_event, union, current, tz, past))
     (projects, spread, probable, heat_day, project_events, project_people, project_people_last,
@@ -1255,7 +1258,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     lap('lookalikes', lookalike.mark(nodes, lookalike.first_seen(strength, node_events, history_events), owner.domains, FREEMAIL,
                                      {n for n, r in roles.items() if r.get('owner') or r.get('met')}, set(paying_names)))  # no review role, no "Same person?"
     same_rows, nodes, kept = lap('same_person', find_same_people(event_people, node_events, project_people, alike, union, infos,
-                                                                 x_names, nodes, [config.get('owner_name'), *owner.names]))
+                                                                 x_names, nodes, [config.get('owner_name'), *owner.names], asked))
     lap('org_nodes', org_and_project_nodes(heat_day, history_events, live, named_orgs, said, manual, nodes, named, last_day,
                                            edits, links, members, inboxes, profiles, site_logos, org_name, paying_names,
                                            wrong, current, projects, project_events, tz, kept, project_people,
@@ -1287,7 +1290,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     lap('publish')
     return {'mark': mark,'people': sum(1 for n in nodes if n[1] == 'person'), 'projects': sum(1 for n in nodes if n[1] == 'project'),
             'links': len(links), 'signals': len(signals), 'history': len(old), 'probable': len(probable), 'unnamed': len(unnamed_rows), 'same': len(same_rows),
-            'joined': sum(1 for _, _, why in union.edges if why in ('message', 'thread', 'profile', 'signature', 'name')), 'took_ms': took,
+            'joined': sum(1 for _, _, why in union.edges if why in ('message', 'thread', 'profile', 'signature', 'name', 'written', 'booking')), 'took_ms': took,
             'passes_ms': lap.ms}
 
 

@@ -435,6 +435,8 @@ SERVER_TEXT = {
     'machine/sources/calendar_setup.py': ['LABELS', 'WHAT', 'NOTES', 'SECRETS', 'ASKS', 'FIELDS', 'REFUSED', 'MISSING'],
     'shared_graph.py': ['why'],          # why a thread is shared or not, under Sharing
     'machine/graph/same_person.py': ['likely_same'],  # why two people look like one
+    'machine/graph/chat_proof.py': ['ASKS'],
+    'graph.py': ['JOINED_WHY'],          # why two identities are one person, under Joined from
     'crm.py': ['org_doubles'],           # why two organizations look like one
     'fleet.py': ['KIND_LABEL'],          # what a Fleet asks about, in a sentence and (capitalized) as a row's name
     'family.py': ['LABELS'],
