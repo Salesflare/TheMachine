@@ -109,10 +109,9 @@ button.stat:hover,[data-theme="light"] button.stat:hover{background:var(--tile)}
 button.stat[aria-expanded="true"]::after{left:40%;right:40%;height:2px;border-radius:2px}
 
 /* Section heads: the serif, ink, with a quiet count. */
-.section-head{margin:var(--sp-6) 0 var(--sp-3);gap:var(--sp-2)}
+.section-head{margin:var(--sp-6) 0 var(--sp-3)}
 .section-head h2{font:var(--fw-heading) var(--fs-xl)/var(--lh-tight) var(--serif);letter-spacing:0;color:var(--text)}
 :is(#later-list,#promises-list,#waiting-list,#older-list,#finished-list)>summary{font:var(--fw-heading) var(--fs-lg)/var(--lh-tight) var(--serif);letter-spacing:0;color:var(--text)}
-.section-head .count{font:var(--fw-medium) var(--fs-sm) var(--sans);color:var(--faint)}
 .section-head p{font-size:var(--fs-sm);color:var(--faint)}
 .day-head{font:var(--fw-medium) var(--fs-xs)/1.4 var(--sans);letter-spacing:0;text-transform:none;color:var(--faint)}
 
@@ -166,8 +165,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .card .actions:not(.result-actions)>:is(button,a.open){border-radius:var(--r-sm);font-weight:var(--fw-medium);box-shadow:none}
 .card .actions:not(.result-actions)>:is(button,a.open):not(.primary):not(.quiet){background:var(--surface-2);border:1px solid var(--border-strong)}
 .card .actions:not(.result-actions)>:is(button,a.open):not(.primary):hover{background:color-mix(in srgb,var(--surface-2),var(--text) 5%)}
-.card .more-actions>summary{border-radius:var(--r-sm);background:transparent;box-shadow:none;border:1px solid transparent;color:var(--muted)}
-.card .more-actions>summary:hover{background:var(--tile);color:var(--text)}
+.card .more-actions>summary{border-radius:var(--r-sm);box-shadow:none;border:1px solid transparent;color:var(--muted)}
+.card .more-actions>summary:hover{color:var(--text)}
 summary:hover{color:var(--text)}
 .push-toggle,.theme-toggle{background:var(--sunken);border-color:var(--border)}
 .push-toggle:hover,.theme-toggle:hover{border-color:var(--border-strong)}
@@ -219,8 +218,7 @@ dialog h2,.snooze-heading h2{font:var(--fw-heading) var(--fs-xl)/var(--lh-tight)
   .card .body{font-size:var(--fs-md)}
   .card .actions:not(.result-actions){display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-4)}
   .card .actions:not(.result-actions)>:is(button,a.open){flex:0 0 auto;min-height:36px;padding:7px 14px;font-size:var(--fs-sm)}
-  .card .actions:not(.result-actions)>.more-actions{margin-left:auto}
-  .card .more-actions>summary{min-height:36px;font-size:var(--fs-sm);padding:7px 12px}
+  .card .more-actions>summary{min-height:36px;font-size:var(--fs-sm)}
 }
 #needs-you .head-link,.notice-card .head-link,.fleet-pane button:not(.primary),.fleet-box button:not(.primary){background:var(--surface-2)}
 /* Handoffs on a Work Fleet: one row each, open ones first; accepted and done ones quieter. The time leads two lines of

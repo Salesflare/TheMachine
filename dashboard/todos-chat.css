@@ -13,7 +13,7 @@
 body.m-chat #fixed-notice,body.m-chat #banners:not(:has(>#limit-banner:not([hidden]))){display:none}
 /* Calm, like a chat app: replies are plain text, your own messages soft pills, sources light quotes, taps and times
    small and muted; only what the Machine made for you (a draft, an outcome, files, the call it needs) is a raised card. */
-.chat-layout{--chat-body:1rem;--chat-meta:.75rem;--chat-col:720px;--chat-quiet:color-mix(in srgb,var(--text) 55%,var(--bg));display:grid;grid-template-columns:clamp(240px,calc(100% - var(--chat-col) - 92px),300px) minmax(0,1fr);gap:32px;align-items:start}
+.chat-layout{--chat-body:1rem;--chat-meta:.75rem;--chat-col:720px;--chat-quiet:color-mix(in srgb,var(--text) 55%,var(--bg));display:grid;gap:32px;align-items:start}
 .chat-side{position:sticky;top:12px;max-height:calc(100dvh - 24px);overflow:auto;display:grid;grid-auto-rows:max-content;align-content:start;gap:2px;padding-right:6px}
 /* Thin, quiet scrollbars: a faint thumb that only shows up more on hover */
 .chat-side::-webkit-scrollbar,.chat-log::-webkit-scrollbar,.side-cards::-webkit-scrollbar{width:6px;height:6px;background:transparent}
