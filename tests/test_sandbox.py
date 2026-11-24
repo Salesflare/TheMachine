@@ -74,6 +74,28 @@ class StatesTest(unittest.TestCase):
                 self.assertEqual(kinds, set() if state == 'fresh' else {'trip', 'event'})
 
 
+class MeetingsTest(unittest.TestCase):
+    def test_moving_off_a_weekend_keeps_a_meeting_on_its_side_of_now(self):
+        # Loaded early on a Monday, yesterday's meeting moved from Sunday to later that Monday: it had not happened yet,
+        # so a person with few other signals fell out of the Graph's active people and the demo recorded then lost them.
+        code = ('''import sys, json, datetime as dt; sys.path.insert(0, "sandbox"); import load
+out = []
+for hour in range(24 * 14):
+    base = dt.datetime(2026, 11, 16, 0, 23, tzinfo=dt.timezone.utc) + dt.timedelta(hours=hour)
+    for ago in (*range(-9000, 9000, 211), 1503):
+        meant = base - dt.timedelta(minutes=ago)
+        got = load.working_hours(meant, 45, ago, base).astimezone(load.BRUSSELS)
+        out.append([base.isoformat(), meant.astimezone(load.BRUSSELS).weekday() > 4, ago > 0, got <= base, got.weekday(), got.isoformat()])
+print(json.dumps(out))''')
+        rows = json.loads(subprocess.run([sys.executable, '-c', code], cwd=ROOT, check=True, capture_output=True, text=True, timeout=60).stdout)
+        self.assertEqual([r for r in rows if r[4] > 4], [])
+        moved = [r for r in rows if r[1]]
+        self.assertGreater(len(moved), 1000)
+        self.assertEqual([r for r in moved if r[2] != r[3]], [])
+        monday = [r for r in rows if r[0].startswith('2026-11-23T05')]
+        self.assertTrue([r for r in monday if r[5].startswith('2026-11-20') and r[1]])  # yesterday's is Friday's, over
+
+
 class SendStubTest(unittest.TestCase):
     """The sandbox's phone and Telegram stubs hold wherever a send is bound: on assistant, in the module its code came
     from, and in a module the code moves to later (machine/). A send that went around a stub fails here."""
