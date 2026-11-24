@@ -117,6 +117,7 @@ jobs:
           failed=0
           python3 smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots "$certificate" || failed=1
           python3 smoke/window.py "sandbox-build/The Machine.app" "out/The Machine.app" shots/window "$certificate" || failed=1
+          python3 smoke/hangs.py "sandbox-build/The Machine.app" - shots/hangs || failed=1
           exit $failed
       - name: Its certificate is trusted no more
         if: always() && steps.use.outcome != 'skipped'
@@ -125,6 +126,39 @@ jobs:
         if: always()
         with:
           name: the-machine-desktop-mac-screenshots
+          path: desktop/shots/
+          retention-days: 14
+
+  # What can keep it waiting, on an older macOS and on Intel too: there WebKit itself waits on the main thread for more
+  mac-hangs:
+    if: github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        on: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.on }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Build
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '13.0'
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          cargo +stable build --release --locked --features sandbox
+          mac/bundle.sh sandbox-build target/release/the-machine-desktop
+      - name: Use it
+        run: python3 smoke/hangs.py "sandbox-build/The Machine.app" - shots
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-hangs-${{ matrix.on }}
           path: desktop/shots/
           retention-days: 14
 

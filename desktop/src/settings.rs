@@ -58,7 +58,7 @@ pub fn open(app: &AppHandle) {
         }
     };
     let _ = window.show();
-    let _ = window.set_focus();
+    windows::front(&window);
 }
 
 #[tauri::command]
@@ -73,7 +73,7 @@ pub fn settings_fit(app: AppHandle, height: f64) {
         if OPENING.swap(false, Ordering::Relaxed) {
             let _ = window.center();
             let _ = window.show();
-            let _ = window.set_focus();
+            windows::front(&window);
         }
     });
 }

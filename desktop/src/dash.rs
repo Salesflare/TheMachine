@@ -256,10 +256,8 @@ fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
 fn navigation(app: &AppHandle, url: &Url) -> bool {
     let shared = app.state::<Shared>();
     let machine = machine_url(app).unwrap_or_default();
-    let (own_page, there) = match &shared.dash.lock().unwrap().at {
-        At::Own(_) => (true, false),
-        At::Machine(_, there) => (false, *there),
-    };
+    let there = |at: &At| if let At::Machine(_, there) = at { (false, *there) } else { (true, false) };
+    let (own_page, there) = there(&shared.dash.lock().unwrap().at);
     let to = match goes(&machine, &signin::account(), url) {
         Goes::Here => return true,
         Goes::Own => return own_page,
@@ -325,7 +323,7 @@ pub fn show(app: &AppHandle, path: &str) {
     }
     let _ = window.unminimize();
     let _ = window.show();
-    let _ = window.set_focus();
+    windows::front(&window);
     shared.over_dash.store(true, Ordering::Relaxed);
     windows::close_box(app);
     #[cfg(windows)]
@@ -358,8 +356,13 @@ fn load(app: &AppHandle, window: &WebviewWindow, machine: &Machine) {
         (dash.path.clone(), dash.loads)
     };
     let Ok(url) = Url::parse(&format!("{}{path}", machine.url)) else { return };
-    card::session(window, machine, &url);
-    let _ = window.navigate(url);
+    let (here, to) = (app.clone(), url.clone());
+    card::session(window, machine, &url, move || {
+        let this = here.state::<Shared>().dash.lock().unwrap().loads == load;
+        if let (Some(window), true) = (self::window(&here), this) {
+            let _ = window.navigate(to);
+        }
+    });
     look(app, machine, load);
 }
 
@@ -418,10 +421,10 @@ fn view(app: &AppHandle, view: View) {
 }
 
 pub fn now(app: &AppHandle) -> View {
-    match app.state::<Shared>().dash.lock().unwrap().at {
-        At::Own(view) => view,
-        At::Machine(..) => View::Blank,
-    }
+    let shared = app.state::<Shared>();
+    let own = |at: &At| if let At::Own(view) = at { *view } else { View::Blank };
+    let view = own(&shared.dash.lock().unwrap().at);
+    view
 }
 
 /// Try again.
@@ -554,11 +557,12 @@ pub fn moved(app: &AppHandle) {
     if odd || !window.is_visible().unwrap_or(false) {
         return;
     }
+    let wide = window.is_maximized().unwrap_or(false) && !cfg!(target_os = "macos");
+    let (at, size, unit) = (window.outer_position(), window.inner_size(), unit(&window));
     let shared = app.state::<Shared>();
     let mut saved = shared.saved.lock().unwrap();
-    saved.wide = window.is_maximized().unwrap_or(false) && !cfg!(target_os = "macos");
-    if let (Ok(at), Ok(size), false) = (window.outer_position(), window.inner_size(), saved.wide) {
-        let unit = unit(&window);
+    saved.wide = wide;
+    if let (Ok(at), Ok(size), false) = (at, size, wide) {
         saved.window = Some([at.x.into(), at.y.into(), size.width.into(), size.height.into()].map(|n: f64| n / unit));
     }
 }
@@ -751,11 +755,13 @@ pub fn open_file(app: &AppHandle, url: &Url) {
             }
             #[cfg(target_os = "linux")]
             crate::linux_app::prepare(&window);
-            if let Some(machine) = app.state::<Shared>().machine() {
-                card::session(&window, &machine, url);
+            let (page, to) = (window.clone(), url.clone());
+            let go = move || { let _ = page.navigate(to); };
+            match app.state::<Shared>().machine() {
+                Some(machine) => card::session(&window, &machine, url, go),
+                None => go(),
             }
-            let _ = window.navigate(url.clone());
-            let _ = window.set_focus();
+            windows::front(&window);
         }
         Err(error) => eprintln!("could not open a file: {error}"),
     }
@@ -778,9 +784,12 @@ static OPENING: std::sync::Mutex<Vec<(String, Url)>> = std::sync::Mutex::new(Vec
 /// A file's window that asked for what is kept instead.
 #[cfg(target_os = "linux")]
 pub fn kept(app: &AppHandle, url: &Url, over: bool) {
-    let mut opening = OPENING.lock().unwrap();
-    if let Some(i) = opening.iter().position(|(_, of)| of == url) {
-        let name = if over { opening.swap_remove(i).0 } else { opening[i].0.clone() };
+    let name = {
+        let mut opening = OPENING.lock().unwrap();
+        let at = opening.iter().position(|(_, of)| of == url);
+        at.map(|i| if over { opening.swap_remove(i).0 } else { opening[i].0.clone() })
+    };
+    if let Some(name) = name {
         later(app, move |app| gone(app, &name, over));
     }
 }

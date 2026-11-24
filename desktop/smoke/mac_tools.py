@@ -1,5 +1,6 @@
 """What mac.py and window.py share on a Mac: the screen, the mouse and the keys, the app's windows and pages, and the steps."""
 import base64
+import contextlib
 import ctypes
 import json
 import os
@@ -27,7 +28,7 @@ for f, r, a in ((cg.CGEventCreateMouseEvent, P, [P, U, Point, U]), (cg.CGEventCr
                 (cg.CGEventSetIntegerValueField, None, [P, U, ctypes.c_int64]), (cg.CGEventSetFlags, None, [P, ctypes.c_uint64]),
                 (cg.CGEventKeyboardSetUnicodeString, None, [P, ctypes.c_ulong, P]), (cg.CGEventPost, None, [U, P]), (cf.CFRelease, None, [P]),
                 (cg.CGWindowListCopyWindowInfo, P, [U, U]), (cf.CFPropertyListCreateData, P, [P, P, ctypes.c_long, U, P]),
-                (cf.CFDataGetBytePtr, P, [P]), (cf.CFDataGetLength, ctypes.c_long, [P])):
+                (cf.CFDataGetBytePtr, P, [P]), (cf.CFDataGetLength, ctypes.c_long, [P]), (cg.CGEventCreate, P, [P]), (cg.CGEventGetLocation, Point, [P])):
     f.restype, f.argtypes = r, a
 
 out = pathlib.Path(sys.argv[3]).resolve()
@@ -184,7 +185,7 @@ class Rect:
 
 
 class App:
-    def __init__(self, bundle, debug=True, over=None, window=False, account=None):
+    def __init__(self, bundle, debug=True, over=None, window=False, account=None, more=None):
         self.bundle, self.program = bundle, str(pathlib.Path(bundle, 'Contents/MacOS', NAME))
         for pid in self.pids():  # a step before this one failed
             os.kill(pid, 9)
@@ -192,6 +193,7 @@ class App:
         env = {'MACHINE_SANDBOX_ACCOUNT': account or f'http://127.0.0.1:{PORT}', 'MACHINE_SANDBOX_MAIL': str(MAIL), **({'MACHINE_SANDBOX_DEBUG': str(DEBUG)} if debug else {})}
         if over:
             env.update(MACHINE_SANDBOX_ACCOUNT=over.at, MACHINE_SANDBOX_ROOT=str(CERTIFICATE / 'root.pem'))
+        env.update(more or {})
         self.env = dict(os.environ, **env)
         # As Finder does, or as macOS at login: that takes nothing from the front
         made = run('open', '-n', *(() if window else ('-g',)), bundle, *[x for k, v in env.items() for x in ('--env', f'{k}={v}')], *(() if window else ('--args', '--login')))
@@ -318,6 +320,43 @@ def in_corner(app, n=0):
     return abs(area[2] - r.right - 16) <= 1 and abs(area[3] - r.bottom - 12) <= 1 and r.width == 88, f'robot {r}, free {area}, {screens()[n]["scale"]} pixels a point'
 
 
+def hung():
+    """After each step what is there of the app answers within 3 seconds, with the pointer over the robot too; and its own watch
+    (hangs.log) saw nothing, but where a step makes it stuck."""
+    log, seen = LIBRARY / 'Application Support' / ID / 'hangs.log', hangs['seen']
+    hangs['seen'] = log.read_text() if log.exists() else ''
+    if hangs['seen'] != seen and hangs['seen'] and not hangs['wanted']:
+        for file in (log, *log.parent.glob('hang-*.txt')):
+            shutil.copy(file, out / f'{len(results):02d}-{file.name}')
+        return 'hangs.log: ' + hangs['seen'].strip().replace('\n', ' | ')
+    ours = {int(x) for x in run('pgrep', '-x', NAME).stdout.split()}
+    robot = next((Rect(x['kCGWindowBounds']) for x in all_windows() if x['kCGWindowOwnerPID'] in ours and 0 < x['kCGWindowLayer'] < 20 and 40 < x['kCGWindowBounds']['Width'] < 250), None)
+    if not robot:
+        return ''
+    at = pointer()
+    move((robot.left + robot.right) // 2, (robot.top + robot.bottom) // 2)
+    time.sleep(0.2)
+    since = time.time()
+    try:
+        told = page('robot', '1')
+    except ConnectionError:
+        told = 1  # the build for people has no such door
+    except (OSError, ValueError):
+        told = None
+    move(*at)
+    return '' if told == 1 and time.time() - since < 3 else f'the robot does not answer within 3 s ({told})'
+
+
+def pointer():
+    event = cg.CGEventCreate(None)
+    at = cg.CGEventGetLocation(event)
+    cf.CFRelease(event)
+    return at.x, at.y
+
+
+hangs = {'seen': '', 'wanted': False}
+
+
 def step(name):
     def do(f):
         try:
@@ -326,6 +365,8 @@ def step(name):
         except Exception as e:  # noqa: BLE001 (the next steps still tell something)
             results.append((name, False, f'{type(e).__name__}: {e}'))
             traceback.print_exc()
+        if (stuck := hung()) and results[-1][1]:
+            results[-1] = (name, False, f'{stuck}; {told}')
         try:
             png(f'{len(results):02d}-{name.replace(" ", "-")}')
         except Exception:  # noqa: BLE001
@@ -404,7 +445,7 @@ def asks(button=None):
 def finish():
     for report in (LIBRARY / 'Logs/DiagnosticReports').glob(NAME + '*'):
         shutil.copy(report, out)
-    (out / 'note.txt').unlink()
+    (out / 'note.txt').unlink(missing_ok=True)
     failed = [r for r in results if not r[1]]
     lines = [line(*r) for r in results]
     skipped = sum(x.startswith('skip') for x in lines)

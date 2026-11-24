@@ -4,7 +4,7 @@ use crate::place::Rect;
 use crate::{dash, later, mac_app, windows, Shared};
 use block2::{Block, RcBlock};
 use objc2::rc::Retained;
-use objc2::runtime::{AnyClass, AnyObject, ClassBuilder, NSObjectProtocol, ProtocolObject, Sel};
+use objc2::runtime::{AnyClass, AnyObject, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{class, define_class, msg_send, sel, AnyThread, ClassType, MainThreadMarker};
 use objc2_app_kit::{
     NSApplication, NSApplicationActivationOptions, NSApplicationDidChangeScreenParametersNotification,
@@ -16,6 +16,7 @@ use objc2_foundation::{NSArray, NSBundle, NSDictionary, NSNotification, NSNotifi
 use std::cell::RefCell;
 use std::ptr::NonNull;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use std::time::Duration;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
@@ -75,11 +76,9 @@ thread_local! {
 
 /// The pointer came over the bubble, or left it. Its page doesn't know: WebKit follows the pointer only where the keys are.
 fn over(on: bool) {
-    BUBBLE.with_borrow(|bubble| {
-        if let Some(bubble) = bubble {
-            let _ = bubble.emit_to("bubble", "over", on);
-        }
-    });
+    if let Some(bubble) = BUBBLE.with_borrow(Clone::clone) {
+        let _ = bubble.emit_to("bubble", "over", on);
+    }
 }
 
 fn native(window: &WebviewWindow) -> Option<Retained<NSWindow>> {
@@ -125,7 +124,10 @@ pub fn prepare(window: &WebviewWindow) {
             let preferences: Retained<AnyObject> = msg_send![&configuration, preferences];
             let () = msg_send![&preferences, setTabFocusesLinks: true];
             if leaves {
-                links_leave(view);
+                mac_app::subclass(view, sel!(navigationDelegate), sel!(setNavigationDelegate:), LEAVES, |class| {
+                    class.add_method(sel!(webView:decidePolicyForNavigationAction:decisionHandler:), decide as extern "C-unwind" fn(_, _, _, _, _));
+                    mac_app::keeps(class);
+                });
                 mac_app::asks(view);
             }
             if let (true, Some(bubble)) = (speaks, page.ns_window().cast::<AnyObject>().as_ref()) {
@@ -157,23 +159,6 @@ extern "C-unwind" fn decide(this: &AnyObject, _: Sel, view: &AnyObject, action: 
 
 const LEAVES: &std::ffi::CStr = c"TheMachineLinks";
 
-/// # Safety
-/// On the main thread, for a WKWebView.
-unsafe fn links_leave(view: &NSView) {
-    let delegate: Option<Retained<AnyObject>> = msg_send![view, navigationDelegate];
-    let Some(delegate) = delegate else { return };
-    let class = AnyClass::get(LEAVES).unwrap_or_else(|| {
-        let mut class = ClassBuilder::new(LEAVES, delegate.class()).expect("a name of its own");
-        class.add_method(
-            sel!(webView:decidePolicyForNavigationAction:decisionHandler:),
-            decide as extern "C-unwind" fn(_, _, _, _, _),
-        );
-        class.register()
-    });
-    if class.superclass() == Some(delegate.class()) {
-        AnyObject::set_class(&delegate, class); // it holds nothing more than wry's
-    }
-}
 
 /// Shows it, the keys stay where they are.
 pub fn show(window: &WebviewWindow) {
@@ -185,15 +170,22 @@ pub fn show(window: &WebviewWindow) {
 /// Something is full screen, beside the robot: then it doesn't speak.
 pub static FULL: AtomicBool = AtomicBool::new(false);
 
-/// A window of the program in front covers a whole screen (beside the notch, where there is one), its menu bar too. Where
-/// windows are macOS tells without a permission; only what they are called needs one.
-fn covers(program: i32, mtm: MainThreadMarker) -> bool {
+/// A window on the screen: its layer, whose it is, and where.
+pub struct There {
+    layer: f64,
+    program: f64,
+    at: Rect,
+}
+
+/// The windows on the screen. Where they are macOS tells without a permission; only what they are called needs one. Not on
+/// the main thread: the window system answers when it can.
+pub fn there() -> Vec<There> {
     #[link(name = "CoreGraphics", kind = "framework")]
     extern "C" {
         fn CGWindowListCopyWindowInfo(which: u32, beside: u32) -> *mut NSArray<NSDictionary<NSString, AnyObject>>;
     }
     // SAFETY: a plain call: those on the screen, without the desktop's own; the list is this one's own, or nothing.
-    let Some(windows) = (unsafe { Retained::from_raw(CGWindowListCopyWindowInfo(1 | 16, 0)) }) else { return false };
+    let Some(windows) = (unsafe { Retained::from_raw(CGWindowListCopyWindowInfo(1 | 16, 0)) }) else { return Vec::new() };
     let number = |of: &NSDictionary<NSString, AnyObject>, name: &str| {
         let found = of.objectForKey(&NSString::from_str(name))?;
         found.downcast_ref::<NSNumber>().map(|n| n.doubleValue())
@@ -204,9 +196,14 @@ fn covers(program: i32, mtm: MainThreadMarker) -> bool {
         let of = unsafe { &*Retained::as_ptr(&found).cast::<NSDictionary<NSString, AnyObject>>() };
         Some(Rect { x: number(of, "X")?, y: number(of, "Y")?, w: number(of, "Width")?, h: number(of, "Height")? })
     };
-    let of = |layer: f64| windows.iter().filter(move |w| number(w, "kCGWindowLayer") == Some(layer));
-    let bars: Vec<Rect> = of(24.0).filter_map(|w| at(&w)).collect(); // kCGMainMenuWindowLevel
-    let mine: Vec<Rect> = of(0.0).filter(|w| number(w, "kCGWindowOwnerPID") == Some(f64::from(program))).filter_map(|w| at(&w)).collect();
+    windows.iter().filter_map(|w| Some(There { layer: number(&w, "kCGWindowLayer")?, program: number(&w, "kCGWindowOwnerPID")?, at: at(&w)? })).collect()
+}
+
+/// A window of the program in front covers a whole screen (beside the notch, where there is one), its menu bar too.
+fn covers(program: i32, there: &[There], mtm: MainThreadMarker) -> bool {
+    let of = |layer: f64| there.iter().filter(move |w| w.layer == layer);
+    let bars: Vec<Rect> = of(24.0).map(|w| w.at).collect(); // kCGMainMenuWindowLevel
+    let mine: Vec<Rect> = of(0.0).filter(|w| w.program == f64::from(program)).map(|w| w.at).collect();
     let top = top(mtm);
     NSScreen::screens(mtm).iter().any(|screen| {
         let f = screen.frame();
@@ -220,11 +217,11 @@ fn covers(program: i32, mtm: MainThreadMarker) -> bool {
 }
 
 /// Whether that changed.
-pub fn full_screen() -> bool {
+pub fn full_screen(there: &[There]) -> bool {
     let Some(mtm) = MainThreadMarker::new() else { return false };
     let full = NSWorkspace::sharedWorkspace().frontmostApplication().is_some_and(|front| {
         // SAFETY: it has this method, which gives a pid_t.
-        covers(unsafe { msg_send![&front, processIdentifier] }, mtm)
+        covers(unsafe { msg_send![&front, processIdentifier] }, there, mtm)
     });
     FULL.swap(full, Ordering::Relaxed) != full
 }
@@ -329,10 +326,8 @@ fn choosing(app: &AppHandle) {
     }
 }
 
-thread_local! {
-    /// The program the sign-in's links went to before.
-    static LINKS: RefCell<Option<Retained<NSURL>>> = const { RefCell::new(None) };
-}
+/// The program the sign-in's links went to before: its address.
+static LINKS: Mutex<Option<String>> = Mutex::new(None);
 
 fn links_go_to(program: &NSURL) {
     let scheme = NSString::from_str(crate::signin::SCHEME);
@@ -340,19 +335,20 @@ fn links_go_to(program: &NSURL) {
 }
 
 /// The program's Info.plist names the sign-in's links, but the phone's app on this Mac does too. While it signs in they
-/// come here.
+/// come here. Not on the main thread: what knows the programs answers when it can.
 pub fn take_links() {
     let Some(link) = NSURL::URLWithString(&NSString::from_str(&format!("{}://", crate::signin::SCHEME))) else { return };
     let own = NSBundle::mainBundle().bundleURL();
     let now = NSWorkspace::sharedWorkspace().URLForApplicationToOpenURL(&link);
     if let Some(now) = now.filter(|now| now.path() != own.path()) {
         links_go_to(&own);
-        LINKS.set(Some(now));
+        *LINKS.lock().unwrap() = now.absoluteString().map(|a| a.to_string());
     }
 }
 
 pub fn give_links() {
-    if let Some(before) = LINKS.take() {
+    let before = LINKS.lock().unwrap().take();
+    if let Some(before) = before.and_then(|b| NSURL::URLWithString(&NSString::from_str(&b))) {
         links_go_to(&before);
     }
 }
@@ -363,15 +359,16 @@ pub fn give_back() {
     if !app.isActive() {
         return;
     }
-    BEFORE.with_borrow(|before| match before.as_ref().filter(|p| !p.isTerminated()) {
+    let before = BEFORE.with_borrow(Clone::clone); // macOS may tell of another one meanwhile
+    match before.filter(|p| !p.isTerminated()) {
         Some(before) => {
             if app.respondsToSelector(sel!(yieldActivationToApplication:)) { // since macOS 14
-                app.yieldActivationToApplication(before);
+                app.yieldActivationToApplication(&before);
             }
             before.activateWithOptions(NSApplicationActivationOptions::empty());
         }
         None => app.deactivate(),
-    });
+    }
 }
 
 /// On macOS 15 the pages of one program can wait for each other for good over their saved shaders (Metal's own lock): about
