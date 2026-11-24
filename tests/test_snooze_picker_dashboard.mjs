@@ -54,7 +54,7 @@ try{
   await page.locator('#snooze-dialog [data-snooze]').last().click();
   assert.equal(await said(page),'Snoozed until Thursday 08:00. I’ll send you a notification.');
   const sent=actions.find(a=>a.action==='decide').args;assert.deepEqual([sent.choice,sent.snoozed_until,sent.snooze_option],['snooze',BEFORE,undefined]);
-  if(shots){await page.waitForTimeout(300);await page.screenshot({path:`${shots}/toast-${width}x${height}-${scheme}.png`})}
+  if(shots)await page.screenshot({path:`${shots}/toast-${width}x${height}-${scheme}.png`,animations:'disabled'});
   // Another one: its own title, no due left over
   await page.evaluate(id=>openSnooze(id),B);
   assert.deepEqual(await page.locator('#snooze-for>*').allTextContents(),['Ask the landlord about the boiler']);
@@ -81,7 +81,7 @@ try{
   await page.locator('html[lang="nl"]').waitFor({state:'attached'});
   await page.evaluate(id=>openSnooze(id),A);await page.locator('#snooze-dialog [data-snooze]').last().click();
   assert.equal(await said(page),'Gesnoozed tot donderdag 08:00. Ik stuur je een melding.');
-  if(shots){await page.waitForTimeout(300);await page.screenshot({path:`${shots}/toast-390-nl.png`})}
+  if(shots)await page.screenshot({path:`${shots}/toast-390-nl.png`,animations:'disabled'});
   await context.close()}
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
