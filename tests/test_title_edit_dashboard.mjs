@@ -109,7 +109,7 @@ try{
   assert.equal(f.cut,false,at+': chat header');near(lines[0].y,text[0].y,.6,at+': chat line');near(lines[0].left,text[0].left,.6,at+': chat text');
   assert.ok(width===1440||lines.length>1,at+': longer than the header is wide');assert.ok(f.left>=0&&f.right<=width,at);
   // Turned around, the field follows the title's new width
-  if(width===390){await page.setViewportSize({width:844,height:390});await page.waitForTimeout(200);const t=await field(page);await page.evaluate(()=>document.querySelector('#twin').remove());assert.equal(t.cut,false,at+': turned');assert.ok(t.right-t.left>f.right-f.left,at+': turned, wider')}
+  if(width===390){await page.setViewportSize({width:844,height:390});await page.waitForFunction(([s,w])=>document.querySelector(s).offsetWidth>w,[FIELD,f.right-f.left]);const t=await field(page);await page.evaluate(()=>document.querySelector('#twin').remove());assert.equal(t.cut,false,at+': turned');assert.ok(t.right-t.left>f.right-f.left,at+': turned, wider')}
   await page.keyboard.press('Escape');await gone(page);await context.close()}
  assert.deepEqual(errors,[]);
  console.log('title edit: the field wraps over the title, on the card, in the chat and in the sidebar');
