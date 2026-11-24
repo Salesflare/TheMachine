@@ -80,7 +80,7 @@ It doesn't search your Drive. It sees comments, shares and suggestions only on d
 
 If Google Docs under **Connections** shows **Allow Sheets and Slides**, press it and allow both. Google asks to let your Machine see your Sheets and Slides files. It can't change them.
 
-Then your Machine also reads a Google Sheet or Slides file linked in a to-do's messages, or pasted in its chat, only while it works on that to-do. It keeps no copy:
+Then your Machine also reads a Google Sheet or Slides file linked in a to-do's messages, or pasted in its chat, only while it works on that to-do:
 
 - From a sheet, the linked tab or cells first, then the other tabs, up to 2,000 cells. A formula shows as its value. Hidden tabs are read only when linked or asked for.
 - From slides, the text and speaker notes, in order. Images and charts aren't read.

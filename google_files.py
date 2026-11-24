@@ -1,4 +1,4 @@
-"""A Google Sheet or Slides file linked in a to-do, read for one run (connectors/docs.py): read-only, small, nothing kept.
+"""A Google Sheet or Slides file linked in a to-do, read for one run (connectors/docs.py): read-only, small.
 
 A sheet: its tabs with their sizes, then the cells as they show (a formula's value, never the formula), the linked tab or
 range first, at most MAX_CELLS of them. Slides: each slide's text and speaker notes, in order. The rest is read with a
