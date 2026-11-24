@@ -792,6 +792,7 @@ class Architecture(unittest.TestCase):
     def test_every_machine_area_declares_its_layer(self):
         areas = {p.stem for p in (ROOT / 'machine').glob('*.py') if p.stem != '__init__'}
         areas |= {p.parent.name for p in (ROOT / 'machine').glob('*/__init__.py')}
+        self.assertLessEqual({'owner_error', 'store'}, areas)
         self.assertEqual(sorted(areas - set(MACHINE_LAYERS)), [], 'declare LAYER = <n> at the top of each')
         self.assertEqual(MACHINE_LAYERS['owner_error'], 0)
         self.assertEqual(MACHINE_LAYERS['store'], 2)  # a package declares it in its __init__.py

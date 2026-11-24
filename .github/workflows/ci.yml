@@ -72,6 +72,11 @@ jobs:
           # a pull request: its merge commit and main under it; main: its history, back to the last full run
           fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
           persist-credentials: false
+      - name: Check whitespace
+        # A pull request's own changes (its merge commit and main under it). Without two commits to compare, git diff
+        # looks at a clean checkout and finds nothing.
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        run: git diff --check HEAD^1 HEAD
       - name: Choose the tests and split them into shards
         id: split
         env:
@@ -287,8 +292,6 @@ jobs:
           path: ${{ runner.temp }}/impact-part/
           retention-days: 1
           if-no-files-found: ignore
-      - name: Check whitespace
-        run: git diff --check
       - name: Help articles, catalogs and secrets (started at the top of shard 1)
         if: ${{ !cancelled() && steps.checks.outcome == 'success' }}
         run: |
