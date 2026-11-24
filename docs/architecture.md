@@ -136,7 +136,8 @@ dashboard in use, the kinds turned off, hidden text.
   Without the robot the app asks the person (`browser` in the answer), and says when none is here (`none=`).
 - **Nothing lost.** Its next look names what it got (`got=`); until then it gets it again, and says it once. Not named
   in 90 seconds, or the robot went quiet before: that computer's browser gets the push after all. Without notifications on in that browser it waits 15 minutes for the
-  robot (its box was open, something was full screen). Phones and other computers get theirs either way.
+  robot (its box was open, something was full screen). Phones and other computers get theirs either way. What it names
+  was shown on a computer: its waiting email goes, except for what's urgent or due today (`notify.reached`).
 
 
 ## Reviews

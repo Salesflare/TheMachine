@@ -87,8 +87,8 @@ class Calm(unittest.TestCase):
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1',?,'accept','','telegram',?)", (sid, at))
         self.assertEqual(self.reason('urgent'), '')  # a Telegram answer counts as being here
 
-    def deliver(self, now=Daytime, config=None):
-        fake = patch_everywhere(machine_delivery_telegram, 'telegram', side_effect=lambda c, row, action: self.told.append(row) or {'messageId': '7'}) if config is None \
+    def deliver(self, now=Daytime, config=None):  # a web- id: no Telegram message reached anyone, so its email is held
+        fake = patch_everywhere(machine_delivery_telegram, 'telegram', side_effect=lambda c, row, action: self.told.append(row) or {'messageId': 'web-7'}) if config is None \
             else patch.object(subprocess, 'run', side_effect=AssertionError('no Telegram helper'))
         with patch.object(dt, 'datetime', now), fake, patch_everywhere(machine_delivery_push, 'push_notify') as push, patch_everywhere(machine_delivery_push, 'hold_mail') as mail:
             self.assertTrue(machine_delivery_deliver.deliver_one(self.store, config or dict(self.config, telegram_owner='42'), edit_cards=False))

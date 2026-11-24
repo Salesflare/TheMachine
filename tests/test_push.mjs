@@ -44,4 +44,16 @@ let seen;
 assert.equal(await send(subscription, {title: 't'}, keys, async (url, init) => { seen = init; return {status: 201}; }), 201);
 assert.equal(seen.headers['Content-Encoding'], 'aes128gcm'); assert.equal(seen.headers.TTL, '86400');
 assert.equal(await send(subscription, {title: 't'}, keys, async () => { throw new Error('offline'); }), 0);
+// Each device's payload carries its own name (shown), which its service worker says back once it showed it (sw.js).
+const opened = message => {
+  const salt = message.subarray(0, 16), sender = message.subarray(21, 21 + message[20]);
+  const prk = hkdf(phone.computeSecret(sender), auth, Buffer.concat([Buffer.from('WebPush: info\0'), phone.getPublicKey(), sender]), 32);
+  const d = crypto.createDecipheriv('aes-128-gcm', hkdf(prk, salt, Buffer.from('Content-Encoding: aes128gcm\0'), 16), hkdf(prk, salt, Buffer.from('Content-Encoding: nonce\0'), 12));
+  const body = message.subarray(21 + message[20]); d.setAuthTag(body.subarray(-16));
+  return JSON.parse(Buffer.concat([d.update(body.subarray(0, -16)), d.final()]).subarray(0, -1).toString());
+};
+for (const [device, want] of [[{...subscription, shown: 'f'.repeat(32)}, {title: 't', shown: 'f'.repeat(32)}], [subscription, {title: 't'}]]) {
+  await send(device, {title: 't'}, keys, async (url, init) => { seen = init; return {status: 201}; });
+  assert.deepEqual(opened(seen.body), want);
+}
 console.log('push sender ok');

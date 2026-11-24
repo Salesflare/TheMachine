@@ -76,6 +76,12 @@ def look(desk, up, got=(), clock=notify.wall, on='', none=''):
     return [{k: w[k] for k in ('key', 'id', 'kind')} for w in there]
 
 
+def had(desk, got):
+    """The to-dos of the notifications this robot says it got (look's got)."""
+    with _lock:
+        return [w['id'] for w in (_desks.get(desk) or {'waiting': ()})['waiting'] if w['key'] in got]
+
+
 def link(db, desk, endpoint, at):
     """A page the robot opened says which push subscription its browser has ('' for none)."""
     if not ID.fullmatch(str(desk or '')):

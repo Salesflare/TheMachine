@@ -1,7 +1,8 @@
 // Web Push for the installed dashboard app Node's built-in crypto only:
 // VAPID (RFC 8292) signing and aes128gcm payload encryption (RFC 8291/8188).
 // stdin {"action":"key"}  -> {"key": <VAPID public key, base64url>}, creating the key pair once.
-// stdin {"action":"send","subscriptions":[{endpoint,p256dh,auth}],"payload":{...}}
+// stdin {"action":"send","subscriptions":[{endpoint,p256dh,auth,shown}],"payload":{...}}
+// shown goes in that device's payload: what it answers with once it showed it (sw.js).
 //   -> {"results":[{endpoint,status}]}; status 0 means the push service was unreachable.
 import crypto from 'node:crypto';
 import {readFileSync, writeFileSync, existsSync} from 'node:fs';
@@ -48,7 +49,7 @@ export async function send(subscription, payload, keys, fetcher = fetch) {
   try {
     const response = await fetcher(subscription.endpoint, {method: 'POST', signal: AbortSignal.timeout(10000), headers: {
       'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '86400', Urgency: 'high',
-      Authorization: vapidHeader(subscription.endpoint, keys)}, body: encrypt(JSON.stringify(payload), subscription.p256dh, subscription.auth)});
+      Authorization: vapidHeader(subscription.endpoint, keys)}, body: encrypt(JSON.stringify(subscription.shown ? {...payload, shown: subscription.shown} : payload), subscription.p256dh, subscription.auth)});
     return response.status;
   } catch { return 0; }
 }

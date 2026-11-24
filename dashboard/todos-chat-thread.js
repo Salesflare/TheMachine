@@ -1,5 +1,5 @@
 // Like Slack: in use means visible, in focus and touched in the last 10 minutes. Open in the background, minimized or
-// idle, it isn't, and the Machine notifies (a push a minute after, an email if still unseen later). The page says so
+// idle, it isn't, and the Machine notifies (a push a minute after, an email if nothing reached them). The page says so
 // at once when that changes, and every minute while in use; the Machine forgets a page after two.
 // Touched means a person's own input: a press, a key, a wheel, a touch or a mouse that really moved. Never the page
 // loading or reloading itself (an update, a restart), a scroll the page made, the browser's own still mouse moves, or

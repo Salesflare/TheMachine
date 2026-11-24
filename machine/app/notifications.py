@@ -177,6 +177,9 @@ class NotificationsApp:
         its snooze choices as the dashboard's, and a meeting about to start that has a briefing. {} for anything else,
         and while it may not speak. `browser`: it is quiet because a browser that may be on its computer has
         notifications on (desk.maybe), for an app that asks the person (none=)."""
+        for tag in desk.had(ident, got):  # it showed these: their waiting email goes (notify.reached)
+            with self.store.connect() as db:
+                notify.reached(db, tag, 'computer')
         found = desk.look(ident, up, got, on=on, none=none)
         if not up or not desk.ID.fullmatch(ident or ''):
             return {}
@@ -410,7 +413,8 @@ class NotificationsApp:
 
     def notify_step(self, current=None, push=None, mail=None):
         """Held notifications (notify.take_due): a push a minute after the owner left the dashboard, and one email for
-        what is still unseen and waiting a while later. Within work hours only; a held push outside them is dropped."""
+        what nothing reached the owner about and is still unseen and waiting a while later. Within work hours only; a
+        held push outside them is dropped."""
         local = (current or timeutil.clock()).astimezone(local_tz())
         for subscriptions, payload in desk.late():  # the robot didn't get it: that computer's browser after all
             web_send(self.store, self.config, subscriptions, payload, 'late', push)
