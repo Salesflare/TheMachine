@@ -191,7 +191,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     `earlier_notes.py`, which meetings, which record of each, how much, and what happened since; no table; its eval is
     `evals/meeting-briefings/`; messages and notes may come from history, `graph_history.BOTH`) and, for a first meeting, the organization's
     own home page (`enrichment.site_text`) and, where OpenClaw has a search provider, a short web search on their name and organization (`openclaw infer web
-    search`), both cached (`meeting_prep_web`), written in one background turn, or
+    search`; else, only with `meeting_prep_signin_search` on, one search on the owner's ChatGPT or Claude sign-in:
+    `machine/signin_search`, `claude_print.search`, `openclaw-plugin/web-search.ts`, which puts the hosted search in that one
+    request and no other; on ChatGPT the addresses are those the answer names), both cached (`meeting_prep_web`), written in one background turn, or
     none when there is nothing useful; once per meeting, by its iCalUID (and the planned time in a series). Each briefing carries its format
     (`meeting_prep.FORMAT`); once after an upgrade that raises it, open, unedited briefings for meetings still ahead
     are written again (`stale`, `meeting_prep_rebuild`; done per format in `learning_state`).

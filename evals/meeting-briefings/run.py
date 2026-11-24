@@ -219,6 +219,7 @@ def main():
     p.add_argument('--effort', default='low')
     p.add_argument('--runs', type=int, default=1)
     p.add_argument('--jobs', type=int, default=3)
+    p.add_argument('--cases', default=str(HERE / 'cases.json'))
     p.add_argument('--set', default='')
     p.add_argument('--only', default='')
     p.add_argument('--root', default=str(HERE.parent.parent))
@@ -241,7 +242,7 @@ def main():
         earlier_notes.FIRST, earlier_notes.REST = a.chars * earlier_notes.FIRST // earlier_notes.CHARS, a.chars * earlier_notes.REST // earlier_notes.CHARS
         earlier_notes.CHARS = a.chars
     locale_prefs._current.update(locale='en-US', language='en')
-    spec = json.loads((HERE / 'cases.json').read_text())
+    spec = json.loads(Path(a.cases).read_text())
     cases = [c for c in spec['cases'] if (not a.set or c['set'] == a.set) and (not a.only or c['id'] in a.only.split(','))]
     spent = [0, 0]
     with tempfile.TemporaryDirectory() as folder:

@@ -87,6 +87,7 @@
 | `memory_rebuild_hours` | `[23, 7]` | A quiet window each night for an OpenClaw memory rebuild that keeps getting cut off; `false` turns it off ([Install](operations.md#install)) |
 | `meeting_prep` | on | A briefing to-do before a meeting with people from outside, while reviews are on; `false` turns it off |
 | `meeting_prep_research` | on | For a first meeting, the organization's own home page and, where a web search provider is set up in OpenClaw (a hosted Machine comes without one), a short web search on the guest's public name and organization (only while Look up work contacts is on); `false` turns it off |
+| `meeting_prep_signin_search` | off | `true`: where no search provider is set up in OpenClaw, that short web search runs on your ChatGPT or Claude sign-in, at most once a day per person or organization and reused for 30 days. Only their public name, organization and website go out; a provider you set up keeps priority. On Claude a result counts only at an address the search returned; on ChatGPT the addresses are those the answer names |
 | `calendar_clashes` | on | A to-do when a work meeting and a personal event overlap; `false` turns it off |
 | `owner_phones` | `[]` | Your own phone numbers (also per account), as About you in Settings sets them |
 | `message_key_store` | file | `keyring` keeps the message key in your desktop keyring ([below](#the-key-in-your-keyring-linux-desktop)) |

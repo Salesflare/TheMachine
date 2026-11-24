@@ -78,7 +78,7 @@ from machine.store.conversation import one_to_one
 from machine.store.evidence_moments import conversation_of
 
 SCHEMA = ('CREATE TABLE IF NOT EXISTS meeting_preps(dedupe_key TEXT PRIMARY KEY,event_id INTEGER NOT NULL,suggestion_id TEXT,'
-          'verdict TEXT NOT NULL,starts_at TEXT NOT NULL,created_at TEXT NOT NULL,format INTEGER,body_sha TEXT,rebuilt_at TEXT)')
+          'verdict TEXT NOT NULL,starts_at TEXT NOT NULL,created_at TEXT NOT NULL,format INTEGER,body_sha TEXT,rebuilt_at TEXT,searches INTEGER)')
 # format: the briefing format it was made in, or last written again in (NULL: made before the stamp, told by its labels);
 # body_sha: the body as The Machine wrote it, so an owner's change is seen; rebuilt_at: a turn writing it again (PER_DAY)
 FORMAT = 3                           # raise when a briefing's parts change: open briefings in an older one are written again
@@ -124,7 +124,7 @@ def ensure(db):
     db.execute(SCHEMA)
     db.execute(WEB_SCHEMA)
     have = {r[1] for r in db.execute('PRAGMA table_info(meeting_preps)')}
-    for column, kind in (('format', 'INTEGER'), ('body_sha', 'TEXT'), ('rebuilt_at', 'TEXT')):
+    for column, kind in (('format', 'INTEGER'), ('body_sha', 'TEXT'), ('rebuilt_at', 'TEXT'), ('searches', 'INTEGER')):
         if column not in have:  # a Machine from before the format stamp
             db.execute(f'ALTER TABLE meeting_preps ADD COLUMN {column} {kind}')
 
@@ -298,14 +298,22 @@ def repeated(db, meeting, current):
     return {}
 
 
-def keep(db, meeting, verdict, suggestion_id, stamp, body=None):
+def keep(db, meeting, verdict, suggestion_id, stamp, body=None, searches=None):
     """Records a meeting as judged. After its turn: 'made' (its to-do, with the body it got), 'nothing' (nothing
     useful), 'personal' or 'failed'. Without one: 'taken' (another to-do already holds the meeting) or 'family' (only
-    family and friends)."""
+    family and friends). searches: web searches it took."""
     ensure(db)
-    db.execute('INSERT OR IGNORE INTO meeting_preps(dedupe_key,event_id,suggestion_id,verdict,starts_at,created_at,format,body_sha) VALUES(?,?,?,?,?,?,?,?)',
+    db.execute('INSERT OR IGNORE INTO meeting_preps(dedupe_key,event_id,suggestion_id,verdict,starts_at,created_at,format,body_sha,searches) VALUES(?,?,?,?,?,?,?,?,?)',
                (meeting['key'], meeting['id'], suggestion_id, verdict, meeting['start'].isoformat(), stamp, FORMAT,
-                body_sha(body) if body is not None else None))
+                body_sha(body) if body is not None else None, searches or None))
+
+
+def searched(db, suggestion_id):
+    """(web searches a briefing took, when it was written), or None: its chat says so."""
+    if not _has(db, 'meeting_preps') or 'searches' not in {r[1] for r in db.execute('PRAGMA table_info(meeting_preps)')}:
+        return None
+    row = db.execute('SELECT searches,created_at FROM meeting_preps WHERE suggestion_id=? AND searches>0', (suggestion_id,)).fetchone()
+    return (row[0], row[1]) if row else None
 
 
 def _label_heads(keys, t):
@@ -679,7 +687,10 @@ def _named(name, text):
 
 
 def _host(url):
+    """A plain https page's host, else '' (one that names someone before its host, or can break out of a link, is none)."""
     import urllib.parse
+    if re.search(r'[\s<>"\[\]\\]|//[^/]*@', str(url or '')):
+        return ''
     try:
         parts = urllib.parse.urlsplit(str(url or ''))
     except ValueError:
