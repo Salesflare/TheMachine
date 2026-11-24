@@ -865,7 +865,8 @@ class Preparation(unittest.TestCase):
         self.assertEqual([c['action'] for c in calls],['stop']);self.assertEqual(self.job()['status'],'blocked')  # not confirmed yet
         with self.store.connect() as db:db.execute('UPDATE preparation_runs SET retry_at=NULL')
         calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'lost' if r['action']=='stop' else 'admitted'})
-        self.assertEqual([c['action'] for c in calls],['stop']);self.assertEqual(self.job()['status'],'queued')  # after a pause
+        # nothing ran any more: asked once how it ended, then tried again after a pause
+        self.assertEqual([c['action'] for c in calls],['stop','status']);self.assertEqual(self.job()['status'],'queued')
         with self.store.connect() as db:db.execute('UPDATE preparations SET retry_at=NULL')
         calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
         self.assertEqual([c['action'] for c in calls],['start']);self.assertNotEqual(self.job()['job_id'],first)

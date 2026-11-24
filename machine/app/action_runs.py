@@ -37,6 +37,7 @@ from machine import todo_states
 # A run that saved its result or blocker usually still writes its last reply: it gets this long to end by itself
 # before it is stopped, so its record says how it ended (ok) instead of a stop's lost/aborted.
 PREPARATION_SETTLE_SECONDS = 120
+PREPARATION_SETTLE_REPLACED_SECONDS = 30  # something new already waits for its session
 
 
 def queue_thread_snooze(db, action, job):
@@ -374,20 +375,27 @@ class ActionRunsApp:
             # Its own result or blocker is saved (not replaced, canceled or timed out): the run normally ends by itself
             # seconds later. Read how it ended; stop it only when it is still going after PREPARATION_SETTLE_SECONDS.
             # Also one whose preparation was canceled after its blocker was saved (reason kept: settle_ahead before it kept
-            # the blocker): that run finished by itself too, so it is never stopped and recorded as lost.
-            saved=run['prep_status'] in ('done','blocked') or run['prep_status']=='cancelled' and bool((run['prep_reason'] or '').strip())
+            # the blocker): that run finished by itself too, so it is never stopped and recorded as lost. And one whose
+            # place is taken already (a doc made right after its save, the owner's next message): its row is gone, what
+            # it saved is on the run itself (preparation_state.note_saved).
+            replaced=run['prep_status'] is None
+            saved=bool(run['saved_at']) or run['prep_status'] in ('done','blocked') or run['prep_status']=='cancelled' and bool((run['prep_reason'] or '').strip())
             if saved and run['prep_error'] not in ('completion_unconfirmed','stopped'):  # stopped: the chat's Stop, at once
                 outcome=runner({'action':'status','job_id':run['job_id'],'session_job_id':run['session_job_id']})
                 if outcome.get('status') in preparation_state.TERMINAL:
                     with self.store.connect() as db:
                         db.execute('UPDATE preparation_runs SET status=?,finished_at=? WHERE job_id=? AND finished_at IS NULL',(outcome['status'],now(),run['job_id']))
                     continue
-                settled=dt.datetime.fromisoformat(run['prep_updated'] or run['started_at'])
-                if (dt.datetime.fromisoformat(now())-settled).total_seconds()<PREPARATION_SETTLE_SECONDS:
+                settled=dt.datetime.fromisoformat(run['prep_updated'] or run['saved_at'] or run['started_at'])
+                if (dt.datetime.fromisoformat(now())-settled).total_seconds()<(PREPARATION_SETTLE_REPLACED_SECONDS if replaced else PREPARATION_SETTLE_SECONDS):
                     with self.store.connect() as db:
-                        db.execute('UPDATE preparation_runs SET retry_at=? WHERE job_id=?',((dt.datetime.fromisoformat(now())+dt.timedelta(seconds=10)).isoformat(),run['job_id']))
+                        db.execute('UPDATE preparation_runs SET retry_at=? WHERE job_id=?',((dt.datetime.fromisoformat(now())+dt.timedelta(seconds=5 if replaced else 10)).isoformat(),run['job_id']))
                     continue
             outcome=runner({'action':'stop','job_id':run['job_id'],'session_job_id':run['session_job_id']})
+            if outcome.get('status')=='lost':  # nothing was running any more: how it ended, when the Gateway still knows
+                ended=runner({'action':'status','job_id':run['job_id'],'session_job_id':run['session_job_id']})
+                if ended.get('status') in preparation_state.TERMINAL:
+                    outcome=ended
             with self.store.connect() as db:
                 if outcome.get('status') not in preparation_state.TERMINAL:
                     db.execute('UPDATE preparation_runs SET retry_at=? WHERE job_id=?',((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=1)).isoformat(),run['job_id']))
