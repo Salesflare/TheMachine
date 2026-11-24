@@ -14,6 +14,7 @@ import learning_loop
 import locale_prefs
 import meeting_prep
 import person_summary
+from machine import model_reply
 from machine.config import LOG
 from machine.prompts import bias
 from machine.sources.calendar import calendar_owned
@@ -62,17 +63,21 @@ class MeetingPrepApp:
 
     def meeting_prep_next(self, current=None):
         """The soonest meeting due a briefing and not judged yet, with what it reads; None when there is none or the
-        day's turns are used. One with no evidence is passed over (it may have some on a later pass), never asked."""
+        day's turns are used. One with no evidence is passed over (it may have some on a later pass), never asked. After a
+        reply that couldn't be read none is due for a while, then the others first (model_reply.Waiting)."""
+        wait = model_reply.waiting(self, 'meeting-prep')
+        if wait.resting():
+            return None
         current = current or dt.datetime.fromisoformat(now())
         sides = {a['id']: graph.account_side(a) for a in self.config.get('accounts', []) if a.get('id')}
         with self.store.connect() as db:
-            if meeting_prep.judged_today(db, (current - dt.timedelta(days=1)).isoformat()) >= meeting_prep.PER_DAY:
+            if meeting_prep.judged_today(db, (current - dt.timedelta(days=1)).isoformat()) + wait.today() >= meeting_prep.PER_DAY:
                 return None
             emails, domains = self.meeting_prep_owner(db)
             found = meeting_prep.upcoming(db, current, calendar_owned, emails, domains, local_tz())
             done = meeting_prep.judged(db, [m['key'] for m in found])
-            for meeting in found:
-                if meeting['key'] in done:
+            for meeting in sorted(found, key=lambda m: wait.tries(m['key'])):
+                if meeting['key'] in done or wait.spent(meeting['key']):
                     continue
                 if meeting_prep.taken(db, meeting['id'], CARD_OPEN):  # the review already made a to-do for it
                     meeting_prep.keep(db, meeting, 'taken', None, now())
@@ -135,7 +140,8 @@ class MeetingPrepApp:
 
     def meeting_prep_brief(self, meeting):
         """Research when it warrants it, then the meeting's one turn: its answer checked (meeting_prep.parse), or None.
-        Raises help_chat.Unavailable when there is no model now, and what the turn raised."""
+        Raises help_chat.Unavailable when there is no model now, model_reply.Unreadable when its reply couldn't be read
+        (asked once more), and what the turn raised."""
         try:
             self.meeting_prep_research(meeting)
         except (sqlite3.Error, OSError, ValueError, TypeError) as error:  # a briefing without research beats none
@@ -143,7 +149,12 @@ class MeetingPrepApp:
         swap = background_model(self.config)  # the model meeting_prep_model_turn runs on, for its own bias correction
         note = bias.model_note('/'.join(swap) if swap else openclaw_model(self.config))
         text = meeting_prep.prompt(meeting, meeting['evidence'], local_tz(), i18n.prompt_rule(locale_prefs.language_of(self.config)), note)
-        return meeting_prep.parse(self.meeting_prep_model_turn(text), meeting['evidence'])
+        return model_reply.ask(self.meeting_prep_model_turn, text, lambda reply: meeting_prep.parse(reply, meeting['evidence']))
+
+    def meeting_prep_unreadable(self, meeting):
+        """The reply couldn't be read, twice: no verdict, a later pass asks again (model_reply.Waiting)."""
+        model_reply.waiting(self, 'meeting-prep').missed([meeting['key']])
+        LOG.warning('meeting prep reply unreadable')
 
     def meeting_prep_run(self, meeting):
         """The meeting's one turn, then its to-do, or nothing when the turn found nothing useful. Returns the to-do's id."""
@@ -153,6 +164,8 @@ class MeetingPrepApp:
         except help_chat.Unavailable:
             LOG.info('meeting prep: no model now')
             return None  # not judged: the next pass asks again
+        except model_reply.Unreadable:
+            return self.meeting_prep_unreadable(meeting)
         except (OSError, ValueError, TypeError) as failure:  # the turn may have run: never a second one for this meeting
             LOG.warning('meeting prep error=%s', type(failure).__name__)
             with self.store.connect() as db:
@@ -183,7 +196,11 @@ class MeetingPrepApp:
     def meeting_prep_stale_next(self, current=None):
         """Once after an upgrade that raised meeting_prep.FORMAT: the soonest open briefing still in an older format to
         write again (meeting_prep.stale), with what it reads; None when there is none now or the day's turns are used.
-        Once none is left the pass is kept as done (learning_state) and never looks again, until the next format."""
+        Once none is left the pass is kept as done (learning_state) and never looks again, until the next format. One whose
+        replies couldn't be read (model_reply.Waiting) stays as it is after a few."""
+        wait = model_reply.waiting(self, 'meeting-prep')
+        if wait.resting():
+            return None
         current = current or dt.datetime.fromisoformat(now())
         sides = {a['id']: graph.account_side(a) for a in self.config.get('accounts', []) if a.get('id')}
         picked = []
@@ -194,7 +211,7 @@ class MeetingPrepApp:
                 side = sides.get(meeting['account_id'])
                 found = meeting_prep.evidence(db, meeting, side, sides, emails, current, CARD_OPEN, graph.resolve,
                                               person_summary.prep_lines, graph.excerpt)
-                if not meeting_prep.worth_asking(found):
+                if not meeting_prep.worth_asking(found) or wait.spent(meeting['key']):
                     meeting_prep.stamp(db, meeting['key'], db.execute('SELECT body FROM suggestions WHERE id=?', (meeting['suggestion_id'],)).fetchone()[0])
                     continue  # nothing to write it from now: it stays as it is
                 picked.append({**meeting, 'side': side, 'evidence': found})
@@ -203,7 +220,7 @@ class MeetingPrepApp:
         try:
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
-                if meeting_prep.judged_today(db, (current - dt.timedelta(days=1)).isoformat()) >= meeting_prep.PER_DAY:
+                if meeting_prep.judged_today(db, (current - dt.timedelta(days=1)).isoformat()) + wait.today() >= meeting_prep.PER_DAY:
                     return None
                 learning_loop.run_once(db, STALE_ONCE + str(meeting_prep.FORMAT), pick)
         except sqlite3.Error as error:  # a busy database: the next pass tries again
@@ -221,6 +238,8 @@ class MeetingPrepApp:
         except help_chat.Unavailable:
             LOG.info('meeting prep: no model now')
             return None  # not stamped: a later pass asks again
+        except model_reply.Unreadable:
+            return self.meeting_prep_unreadable(meeting)
         except (OSError, ValueError, TypeError) as failure:  # the turn may have run: never a second one for it
             LOG.warning('meeting prep rebuild error=%s', type(failure).__name__)
             found = None

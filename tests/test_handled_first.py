@@ -15,6 +15,7 @@ import machine.app.preparation as machine_app_preparation
 import machine.app.promise_checks as machine_app_promise_checks
 import machine.cards as machine_cards
 import machine.main as machine_main
+from machine import model_reply
 import models
 import threading
 import timeutil
@@ -240,6 +241,33 @@ class HandledFirst(unittest.TestCase):
         self.at('2026-10-22T07:00:00+00:00')
         self.run_step(app)
         self.assertEqual(self.promise_row(pid)['status'], 'carded')
+
+    def test_a_check_that_cannot_be_read_holds_the_promise_for_a_later_one(self):
+        pid = self.promise(direction='mine')
+        self.commit(email('sent', '2026-10-20T10:00:00+00:00', sent=True, thread='t2', title='Signed contract', body='Here is the signed contract.'))
+        good = json.dumps([{'promise': pid, 'state': 'kept', 'event_id': self.event('sent'), 'reason': 'Sent Sam the signed contract on Oct 20'}])
+        replies, calls = iter([good[:-9], 'No idea.', good[:-9], good]), []
+        app = self.app()
+        app.promise_check_model = lambda config, text: (calls.append(text), next(replies))[1]
+        self.at('2026-10-22T07:00:00+00:00')
+        self.run_step(app)
+        self.run_step(app)  # it rests: no turn, and no to-do meanwhile
+        self.assertEqual((len(calls), self.promise_row(pid)['status'], self.cards()), (2, 'open', []))
+        self.assertNotIn('checked', [h['kind'] for h in self.store.promise_page(pid)['history']])
+        with patch.object(model_reply, 'REST_SECONDS', 0):
+            self.run_step(app)
+        self.assertEqual((len(calls), self.promise_row(pid)['status'], self.cards()), (4, 'kept', []))
+
+    def test_a_check_that_is_never_read_leaves_the_to_do_as_before(self):
+        pid = self.promise()
+        self.commit(email('reply', '2026-10-20T10:00:00+00:00', sent=True, title='Re: Contract', body='Thanks!'))
+        app, calls = self.app(), []
+        app.promise_check_model = lambda config, text: (calls.append(text), '[{"promise": ')[1]
+        self.at('2026-10-22T07:00:00+00:00')
+        with patch.object(model_reply, 'REST_SECONDS', 0.0):
+            for _ in range(8):
+                self.run_step(app)
+        self.assertEqual((len(calls), self.promise_row(pid)['status']), (2 * model_reply.TRIES, 'carded'))
 
     # Waiting on them: a nudge ready, under Waiting on others
 

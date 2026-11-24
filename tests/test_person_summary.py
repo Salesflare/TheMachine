@@ -329,6 +329,21 @@ class PersonSummary(unittest.TestCase):
             db.execute('UPDATE person_summary_runs SET started_at=?', ((self.now - dt.timedelta(hours=2)).isoformat(),))
             self.assertEqual([p['id'] for p in person_summary.due(db)], [ANN])
 
+    def test_lines_that_cannot_be_read_are_asked_once_more_and_the_person_stays_due(self):
+        good = json.dumps(self.lines())
+        self.answer = lambda prompt: good[:-20]
+        self.run_pass()
+        self.assertEqual(len(self.prompts), 2)
+        later = lambda db: db.execute('UPDATE person_summary_runs SET started_at=?', ((self.now - dt.timedelta(hours=2)).isoformat(),))
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute('SELECT 1 FROM person_summaries').fetchone())
+            self.assertEqual(tuple(db.execute('SELECT status,error FROM person_summary_runs').fetchone()), ('failed', 'unreadable'))
+            later(db)
+            self.assertEqual([p['id'] for p in person_summary.due(db)], [ANN])
+            self.assertEqual(person_summary.due(db, skip=lambda node_id: True), [])
+        self.answer = lambda prompt: good if 'could not be read' in prompt else good[:-20]
+        self.assertEqual(self.run_pass(), 1)
+
     def test_it_stays_on_this_machine_sealed(self):
         self.answer = lambda prompt: json.dumps(self.lines())
         self.run_pass()

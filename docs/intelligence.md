@@ -528,7 +528,8 @@ Tables: `project_stall_runs` (counts only), `project_stall_items` (which to-do w
   (decided, asked, planned, promised), everyone in it named as the evidence names them, no guessed roles. It judges
   meaning, not words. A rejected line is written again once with the reason and checked again; one that still fails is
   dropped. With nothing specific left, a summary The Machine wrote goes, and the page shows none. A check that can't
-  be read saves nothing, and the people stay due.
+  be read saves nothing, and the people stay due. Lines that can't be read are asked once more; then nothing is saved
+  either, and after three such passes in a day those people wait until the next.
 - Your edit wins: a rewrite then shows a **Suggested update** with Use it and Keep mine. **Let The Machine write it**
   gives it back.
 - Preparations add a "summary:" part with only the lines whose sources are in the to-do's area (a personal line never
