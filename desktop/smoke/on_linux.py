@@ -11,6 +11,8 @@ import sys
 import time
 import traceback
 
+import answers
+
 HOME = pathlib.Path.home()
 if not (HOME / '.made-up-home').exists():
     sys.exit('only by linux.sh')
@@ -51,6 +53,10 @@ def until(what, seconds=15, every=0.25):
 def need(ok, text):
     if not ok:
         raise AssertionError(text)
+
+
+def pointer():
+    return [int(v.split(':')[1]) for v in x('getmouselocation').split()[:2]]
 
 
 def click(at_x, at_y):
@@ -354,7 +360,9 @@ def drop_from(app, *files):
 
 def choose(file):
     time.sleep(1)
-    write(str(file))
+    write('/')  # shows the field
+    time.sleep(0.8)
+    write(str(file)[1:])
     time.sleep(0.8)
     key(ENTER)
 
@@ -421,6 +429,9 @@ def step(name):
         except Exception as e:  # noqa: BLE001 (the next steps still tell something)
             results.append((name, False, f'{type(e).__name__}: {e}'))
             traceback.print_exc()
+        robot = App.last and App.last.pids() and answers.after(HOME / '.config' / ID / 'hangs.log', out, len(results), App.last.center, pointer, lambda *at: x('mousemove', *at), lambda: page('robot', '1', 4))
+        if robot and results[-1][1]:
+            results[-1] = (name, False, f'{robot}; {results[-1][2]}')
         png(f'{len(results):02d}-{name.replace(" ", "-")}')
         print(line(*results[-1]), flush=True)
     return do

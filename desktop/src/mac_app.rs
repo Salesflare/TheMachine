@@ -133,6 +133,15 @@ pub fn process(window: &WebviewWindow) -> Option<u32> {
     told.recv_timeout(std::time::Duration::from_secs(5)).ok().flatten().and_then(|pid| u32::try_from(pid).ok()).filter(|pid| *pid > 0)
 }
 
+/// Its page's process ends, also one that is stuck, and then there is a fresh one (dash.rs, `died`).
+pub fn end_page(window: WebviewWindow) {
+    std::thread::spawn(move || {
+        if let Some(page) = process(&window) {
+            let _ = std::process::Command::new("/bin/kill").args(["-9", &page.to_string()]).status();
+        }
+    });
+}
+
 /// A session's cookies, for the page at this host. wry's own waits for each, on the main thread.
 pub fn cookies(window: &WebviewWindow, cookies: Vec<(String, String)>, host: String, secure: bool, done: impl Fn() + Send + 'static) {
     let _ = window.with_webview(move |page| {

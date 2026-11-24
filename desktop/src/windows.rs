@@ -2,8 +2,11 @@
 //! layer-shell (Hyprland, Sway, KDE) they are layer surfaces: a normal Wayland window can't stay on top or choose its
 //! place. Elsewhere they are borderless windows that stay on top, out of the taskbar. All of this runs on the main thread.
 use crate::place::{self, box_at, peek, tail, Corner, Rect, BOX_WIDTH, BUBBLE_WIDTH, ROBOT, SHADOW};
-use crate::{later, Shared};
+#[cfg(not(target_os = "macos"))]
+use crate::later;
+use crate::Shared;
 use std::sync::atomic::Ordering;
+#[cfg(not(target_os = "macos"))]
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
@@ -159,9 +162,15 @@ pub fn fit_bubble(app: &AppHandle, height: f64) {
     }
 }
 
-/// Its page doesn't answer: the next one gets a new window.
+/// Its page doesn't answer: the next one gets a new window, or on macOS a new page (mac.rs: its windows stay).
 pub fn drop_bubble(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("bubble") {
+        #[cfg(target_os = "macos")]
+        {
+            seen(&window, false);
+            crate::mac_app::end_page(window);
+        }
+        #[cfg(not(target_os = "macos"))]
         let _ = window.destroy();
     }
 }
@@ -183,10 +192,18 @@ pub fn bubble_tail(app: &AppHandle) -> (f64, bool) {
 }
 
 /// Its page doesn't answer any more (hangs.rs): a fresh one.
+#[cfg(target_os = "macos")]
+pub fn again(app: &AppHandle, label: &'static str) {
+    if let Some(window) = app.get_webview_window(label) {
+        crate::mac_app::end_page(window);
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
 pub fn again(app: &AppHandle, label: &'static str) {
     if label == "box" {
         close_box(app);
-        #[cfg(any(windows, target_os = "macos"))]
+        #[cfg(windows)]
         if let Some(card) = app.get_webview_window("card") {
             let _ = card.destroy();
         }
@@ -205,7 +222,7 @@ pub fn again(app: &AppHandle, label: &'static str) {
                 }
                 return;
             }
-            #[cfg(any(windows, target_os = "macos"))]
+            #[cfg(windows)]
             if build_box(app).is_ok() {
                 let _ = crate::card::build(app);
             }
