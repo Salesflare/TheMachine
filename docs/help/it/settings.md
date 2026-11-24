@@ -16,7 +16,7 @@ Apri **Impostazioni** con l’icona a forma di ingranaggio in alto. Le schede:
 - **Notifiche**: cosa ricevi e dove, e il tuo orario di lavoro. Vedi [Notifiche](notifications.md) e [Orario di lavoro](work-hours.md).
 - **Scrittura**: firme e il tuo modo di scrivere. Vedi [Scrittura](writing.md).
 - **Skill**: le guide che la tua Machine segue. Vedi [Skill](skills.md).
-- **App**: le app di The Machine per il telefono e il computer, poi Claude, ChatGPT e le altre IA che hai collegato, e cosa può fare ognuna. Vedi [L’app mobile](mobile-app.md) e [Collega altre IA](ai-connections.md).
+- **App**: le app di The Machine per il telefono e il computer, poi Claude, ChatGPT e le altre IA che hai collegato, e cosa può fare ognuna. Vedi [L’app mobile](mobile-app.md) e [Collegare altre IA](ai-connections.md).
 - **Modello**: l’IA che legge e prepara bozze per te, e i suoi limiti. Vedi [Modello](model.md). C’è anche **Codex e Claude Code**: vedi [Passa a Claude Code o Codex](hand-to-agent.md). E **Ricerca per significato**, qui sotto.
 
 Le schede senza contenuti sono nascoste.

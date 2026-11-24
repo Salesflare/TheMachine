@@ -1,34 +1,34 @@
 ---
-title: Hulp vragen
+title: Help vragen
 area: getting-started
-summary: Vraag hoe The Machine werkt. Je krijgt antwoorden op basis van deze helppagina's, met links.
+summary: Stel vragen over hoe The Machine werkt. Antwoorden komen uit deze helppagina’s, met links.
 covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
-translated: d99f5fc9b9ac3a95
+translated: 85d9614a8670bdf4
 ---
-Tik onderaan de zijbalk op **Help**, boven **Instellingen**, en stel je vraag in je eigen woorden, bijvoorbeeld: "Hoe snooze ik een to-do?". Enter verstuurt je vraag, met Shift+Enter voeg je een regel toe. Help antwoordt in de taal van je app of in de taal waarin je schrijft. Links naar helppagina's openen direct in het paneel, in die taal.
+Klik onderaan de zijbalk op **Help**, boven **Instellingen**, en stel je vraag in je eigen woorden, bijvoorbeeld: "Hoe snooze ik een to-do?" Met Enter verstuur je je vraag, met Shift+Enter voeg je een regel toe. Help antwoordt in de taal van je app of in de taal waarin je schrijft. Links naar helppagina’s openen meteen in het paneel, in die taal.
 
-## Waar de antwoorden vandaan komen
+## Waar antwoorden vandaan komen
 
-Help leest de helppagina's die bij je vraag passen en gebruikt de code van de app voor alles wat daarin niet aan bod komt. Elk antwoord bevat links naar de pagina's die zijn gebruikt.
+Help leest de helppagina’s die bij je vraag passen en raadpleegt de code van de app voor informatie die daar niet in staat. Als die informatie over iets anders gaat, zoekt Help nog een keer met andere woorden. Elk antwoord bevat links naar de pagina’s die zijn gebruikt.
 
-Help gebruikt het eigen model van je Machine in een korte, aparte chat. Onder het berichtvak kun je een ander model of niveau van denkwerk kiezen voor deze Help-chat (zie [Model](model.md)). Alleen je vraag en de bijbehorende pagina's worden meegestuurd. Je berichten, personen en instellingen worden niet meegestuurd.
+Help draait op het eigen model van je Machine, in een korte, aparte chat. Onder het berichtvak kun je een ander model of niveau voor denkwerk kiezen voor deze Help-chat (zie [Model](model.md)). Alleen je vraag en de helppagina’s die erbij passen worden meegestuurd: geen van je berichten, personen of instellingen.
 
-De assistent stemt het antwoord af op jouw niveau: begrijpelijke taal voor de meeste mensen, met meer uitleg als je vragen technisch zijn. Hij schat je niveau in op basis van je instellingen, je rol en hoe je je vragen stelt. Alleen die inschatting wordt meegestuurd.
+Help geeft antwoord op jouw niveau: in gewone woorden voor de meeste mensen en met meer details als je vragen technisch zijn. Help schat je niveau in op basis van je installatie, je rol en hoe je je vragen stelt. Alleen die inschatting wordt meegestuurd.
 
-Help wijst eerst op wat The Machine al kan en stelt alleen een skill voor als geen ingebouwde functie geschikt is. Zie [Personaliseren](personalize.md).
+Help wijst eerst op wat The Machine al kan en stelt alleen een skill voor als er geen ingebouwde functie is die het kan. Zie [Personaliseren](personalize.md).
 
 ## Wat het team ziet
 
-Om de hulp te verbeteren, telt je Machine een paar woorden die aangeven waar elke vraag over gaat, zoals "een to-do snoozen". Je vraag of het antwoord wordt nooit meegestuurd, net zomin als namen, adressen of nummers. Alleen woorden uit deze helppagina's. De tellingen worden eenmaal per dag zonder je account naar het team van The Machine gestuurd.
+Om de Help te verbeteren, telt je Machine een paar woorden over het onderwerp van elke vraag, zoals "een to-do snoozen". Nooit je vraag of het antwoord, en geen namen, adressen of nummers: alleen woorden uit deze helppagina’s. Eén keer per dag gaan de tellingen naar **Het team van The Machine**, zonder je accountgegevens.
 
-Je kunt dit uitzetten via **Delen wat aan Help gevraagd wordt** in **Instellingen**, onder **Beveiliging** en **Het team van The Machine**. Je kunt ook het beveiligingsniveau **Voorzichtig** kiezen ([beveiligingsniveaus](security-levels.md)). Hiervoor is [The Machine Network](/network) nodig. Wat nog niet is verstuurd, wordt verwijderd.
+Je kunt dit uitschakelen via **Delen wat aan Help gevraagd wordt** onder **Instellingen**, **Beveiliging**, bij **Het team van The Machine**. Je kunt ook het beveiligingsniveau **Voorzichtig** kiezen ([beveiligingsniveau](security-levels.md)). Hiervoor is [The Machine Network](/network) nodig. Gegevens die nog niet zijn verstuurd, worden verwijderd.
 
 ## Wat Help niet kan
 
-De assistent beantwoordt vragen. Hij kan je gegevens niet zien en verandert niets. Hij vertelt je waar je moet tikken.
+Help beantwoordt vragen. Het kan je gegevens niet zien en verandert niets: het vertelt je waar je moet klikken.
 
-Als je beschrijving klinkt als iets wat kapot is in plaats van een vraag over hoe iets werkt, eindigt het antwoord met **Deze bug melden**. Daarmee open je **Een bug melden**, met een korte beschrijving van wat je hebt gedaan, wat je verwachtte en wat er gebeurde. De ondersteuningsmelding is alvast aangevinkt. Je kunt alles daar aanpassen. Er wordt niets verstuurd totdat je op **Versturen** drukt.
+Als je beschrijving klinkt als iets dat niet goed werkt en niet als een vraag over hoe je iets doet, eindigt het antwoord met **Deze bug melden**. Daarmee open je **Een bug melden**, met een korte beschrijving van wat je hebt gedaan, wat je verwachtte en wat er gebeurde. Het vakje voor de supportmelding is dan aangevinkt. Je kunt alles daar aanpassen. Er wordt niets verstuurd totdat je op **Versturen** klikt.
 
 **Een bug melden** is ook een eigen tabblad in hetzelfde paneel. Zie [Hulp krijgen](get-support.md#report-a-bug).

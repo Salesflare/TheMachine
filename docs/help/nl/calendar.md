@@ -1,120 +1,120 @@
 ---
 title: Agenda
 area: calendar
-summary: De komende week op één plek: afspraken, to-do's met een deadline, gesnoozede to-do's en beloftes.
+summary: De komende week in één overzicht: meetings, to-do’s met een deadline, gesnoozede to-do’s en beloftes.
 covers: tab:calendar
 code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py, trip_notes.py, event_notes.py, bookings.py
 order: 1
-translated: 24033419578a8c8f
+translated: 9f38e3718f3e8639
 ---
 ## Wat je ziet
 
 Je dagen vanaf vandaag, met:
 
-- afspraken uit de agenda's die je hebt gekoppeld,
-- to-do's met een deadline op die dag en gesnoozede to-do's op de dag dat ze terugkomen,
-- opvolging van werk dat je hebt overgedragen,
+- meetings uit de agenda’s die je hebt gekoppeld,
+- to-do’s met een deadline op die dag en gesnoozede to-do’s op de dag waarop ze terugkomen,
+- check-ins over werk dat je hebt overgedragen,
 - beloftes met een datum,
 - [reizen en evenementen](calendar.md#trips-and-events) uit je boekings- en ticketmails.
 
-Een afspraak in twee agenda's wordt maar één keer getoond. Een agenda die iemand met je heeft gedeeld, toont diens afspraken gedimd, met diens voornaam. Die leveren nooit een to-do op. Afspraken die de hele dag of meerdere dagen duren, worden op elke dag waarop ze vallen als afspraken voor de hele dag getoond. Een reis staat in **Agenda** bovenaan op elk van de reisdagen, en in **Week** en **Maand** als één balk over die dagen, bijvoorbeeld 'Reis naar Lissabon'.
+Een meeting die in twee agenda’s staat, wordt maar één keer getoond. Een agenda die iemand met je heeft gedeeld, toont diens afspraken gedempt en met diens voornaam. Die leiden nooit tot een to-do. Afspraken die de hele dag duren en afspraken over meerdere dagen worden elke dag waarop ze vallen als dagvullend getoond. Een reis staat in Agenda op elke dag als eerste, en in Week en Maand als één balk over de dagen, bijvoorbeeld ‘Reis naar Lissabon’.
 
-Een gezamenlijk gemaakt plan is één belofte, met 'Met' en de naam van de ander erbij. Een belofte over een afspraak op die dag met diezelfde persoon staat op de regel van die afspraak.
+Een gezamenlijk plan is één belofte, met ‘Met’ en de naam van de ander erbij. Een belofte over een meeting met die persoon op die dag staat op de rij van die meeting.
 
-**Te laat** staat bovenaan. Bij een afspraak met een open to-do zie je de status: **Voorbereiding klaar**, **Wordt voorbereid** of **To-do**. Een to-do die gedaan lijkt, omdat je al hebt gereageerd of omdat de uitvoering heeft uitgewezen dat die al gedaan is, wordt niet als **Deadline** getoond.
+**Te laat** staat bovenaan. Bij een meeting met een open to-do zie je: **Voorbereiding klaar**, **Wordt voorbereid** of **To-do**. Een to-do die afgerond lijkt, omdat je al hebt geantwoord of omdat de uitvoering heeft vastgesteld dat hij klaar is, wordt niet als **Deadline** getoond.
 
 ## Agenda, week of maand
 
-- **Agenda** toont elke dag apart. Scroll omlaag voor latere dagen of omhoog (of tik op **Eerdere dagen tonen**) voor eerdere dagen. De agenda gaat terug tot een week voordat je je agenda koppelde. Bovenaan staat vanaf welke dag hij begint. Zodra je [geschiedenis](history.md) is ingeladen, gaat hij ongeveer een jaar terug.
+- **Agenda** toont elke dag. Scrol omlaag voor latere dagen of omhoog (of tik op **Eerdere dagen tonen**) voor eerdere dagen. Je kunt terug tot een week voordat je je agenda koppelde. Bovenaan staat vanaf welke dag. Zodra je [geschiedenis](history.md) is ingeladen, kun je ongeveer een jaar terug.
 - **Week** toont een raster van maandag tot en met zondag. Op een telefoon zie je drie dagen.
-- **Maand** toont de hele maand. Op een computer zie je maximaal drie items per dag. Op een telefoon zie je stippen. Tik op een dag om de items te bekijken.
+- **Maand** toont de hele maand. Op een computer zie je maximaal drie items per dag. Op een telefoon zie je stippen; tik op een dag om de items te bekijken.
 
-Met **Vandaag**, ‹ en › bovenaan blader je door weken of maanden. De gekozen weergave wordt op dat apparaat onthouden.
+Met **Vandaag**, ‹ en › bovenaan blader je door de weken of maanden. De gekozen weergave wordt op dit apparaat onthouden.
 
-In het weekraster staan afspraken die op hetzelfde moment plaatsvinden naast elkaar, zodat ze leesbaar blijven. De overige afspraken worden weergegeven als **+N**. Daarmee open je die dag in de agendaweergave.
+In het weekraster staan afspraken die op hetzelfde moment plaatsvinden naast elkaar, zodat ze leesbaar blijven. De rest wordt weergegeven als **+N**. Tik daarop om die dag in de agenda te openen.
 
 ## Iets openen
 
-Klik op een regel om de chat van de to-do, de belofte, de reis of het evenement, of de afspraak te openen. Bij een afspraak die je hier niet kunt wijzigen, bijvoorbeeld omdat die van iemand anders is of gasten heeft, zie je de details: wanneer, waar en wie. Personen die je Graph kent, en de organisaties en projecten bij de afspraak, zijn links naar hun pagina. Met **Openen in Google Agenda** (of **Openen in Outlook**) open je de afspraak daar. Bekijken verandert niets.
+Klik op een rij om de chat van de to-do, de belofte, de reis of het evenement, of de meeting te openen. Bij een meeting die je hier niet kunt wijzigen, bijvoorbeeld die van iemand anders of een meeting met gasten, zie je de details: wanneer, waar en wie. Iemand die je Graph kent, en de organisaties en projecten waaraan de meeting is gekoppeld, linken naar hun pagina. Met **Openen in Google Calendar** (of **Openen in Outlook**) open je de meeting daar. Alleen kijken verandert niets.
 
-Een vergaderruimte die bij een afspraak is geboekt, staat bij de locatie. Hij wordt nooit als persoon of in je Graph getoond.
+Een meetingruimte die bij een meeting is geboekt, staat onder de locatie. Hij wordt nooit als persoon of in je Graph weergegeven.
 
-Een meetinglink wordt weergegeven met de naam van de dienst, zoals Zoom, Google Meet of Teams, of als **Videogesprek**. Open de afspraak om deel te nemen.
+Een link naar een meeting wordt getoond met de naam van de dienst, zoals Zoom, Google Meet of Teams, of als **Videogesprek**. Open de meeting om deel te nemen.
 
 ## Reizen en evenementen
 
-Wanneer een boeking voor een vlucht, hotel, vakantiehuis, trein, bus, veerboot, huurauto, taxi of parkeerplaats bij het vliegveld in je mail binnenkomt, voegt je Machine die toe aan een reis. Boekingen voor één reis komen samen op één reis, uit al je mailboxen: de trein naar het vliegveld, de vluchten, de auto, het verblijf en de terugreis. Boekingen worden gecombineerd als hun datums elkaar overlappen of als de ene eindigt op de dag waarop de andere begint.
+Wanneer een boeking voor een vlucht, hotel, vakantiehuis, trein, bus, veerboot, huurauto, taxi of luchthavenparking in je mail binnenkomt, voegt je Machine die toe aan een reis. Boekingen voor één reis komen bij elkaar, uit al je mailboxen: de trein naar het vliegveld, de vluchten, de auto, het verblijf en de terugreis. Boekingen worden samengevoegd als de dagen elkaar overlappen of de ene aansluit op de andere.
 
-De reis wordt als één balk over de reisdagen getoond. Open de reis om alle boekingen op volgorde te bekijken, met de tijden, het adres, de boekingscode en de stoel.
+De reis wordt als één balk over de dagen getoond. Open de reis om alle boekingen op tijdsvolgorde te zien, met de tijden, het adres, de boekingscode en de stoel.
 
-Tickets voor een concert, wedstrijd, festival of conferentie maken een evenement aan, één per evenement, met de locatie, boekingscode, stoel en het aantal tickets. Een tweede bestelling voor hetzelfde evenement wordt aan hetzelfde evenement toegevoegd. Een evenement dat via je werkmailbox is geboekt, is Werk. Anders is het Privé. Tickets voor iets tijdens een reis worden aan de reis toegevoegd.
+Tickets voor een concert, wedstrijd, festival of conferentie maken een evenement aan, één per evenement, met de locatie, boekingscode, stoel en het aantal tickets. Een tweede bestelling voor hetzelfde evenement wordt aan hetzelfde evenement toegevoegd. Een evenement dat in je werkmailbox is geboekt, is Werk; anders is het Persoonlijk. Tickets voor iets dat tijdens een reis plaatsvindt, worden aan de reis toegevoegd.
 
-Voor een reis die nog moet plaatsvinden, laat je Machine zien wat er ontbreekt, zoals **Geen verblijf geboekt voor 2 nachten**, of dat er niets is geboekt van het vliegveld naar je hotel. Die regels zijn gedimd en hebben het label **Geen boeking**. Bij een reis zonder verblijf wordt niets over overnachtingen vermeld.
+Bij een reis die nog moet plaatsvinden, geeft je Machine aan wat er ontbreekt, bijvoorbeeld **Geen verblijf geboekt voor 2 nachten** of dat er niets is geboekt van het vliegveld naar je hotel. Die regels zijn gedempt en hebben het label **Geen boeking**. Bij een reis zonder verblijf wordt niets over overnachtingen vermeld.
 
-- Op elke regel staat van wie de boeking afkomstig is, bijvoorbeeld **Van Example Tickets**. Klik erop om de mail te openen.
-- Als er vanuit de mail een to-do is gemaakt, bijvoorbeeld om voor de tickets te betalen, kun je die openen met **De to-do openen**.
-- Een gewijzigde boeking werkt de regel bij. Een geannuleerde boeking wordt verwijderd. Als alle boekingen zijn geannuleerd, wordt ook de reis of het evenement verwijderd.
-- Een boeking voor iemand anders, zoals een vlucht van een collega die naar je is doorgestuurd, komt niet bij je reizen te staan.
+- Elke regel vermeldt van wie de boeking afkomstig is, bijvoorbeeld **Van Example Tickets**, en opent die mail.
+- Komt er een to-do uit de mail, bijvoorbeeld om voor de tickets te betalen, dan toont **De to-do openen** die to-do.
+- Een gewijzigde boeking werkt de regel bij. Een geannuleerde boeking verdwijnt. Als alle boekingen zijn geannuleerd, verdwijnt ook de reis of het evenement.
+- Een boeking voor iemand anders, zoals een vlucht van een collega die naar jou is doorgestuurd, komt niet bij je reizen te staan.
 
-In de meeste bevestigingen staan de gegevens in een formaat dat je Machine zonder AI kan lezen. Bij bevestigingen in een ander formaat, zoals een doorgestuurde mail of een kleine boekingssite, leest je [model](model.md) de mail op de achtergrond, een paar tegelijk, en wacht als je dicht bij je gebruikslimiet zit. Boekingsmails uit het jaar aan [geschiedenis](history.md) dat je Machine bewaart, worden op de achtergrond gelezen zodra die geschiedenis is ingeladen.
+De meeste bevestigingen bevatten de boekingsgegevens in een vorm die je Machine zonder AI kan lezen. Bij bevestigingen die dat niet doen, zoals doorgestuurde mail of mail van een kleine boekingssite, leest je [model](model.md) de mail op de achtergrond, een paar tegelijk. Het wacht daarmee als je bijna aan je gebruikslimiet zit. Boekingsmails uit het jaar aan [geschiedenis](history.md) dat je Machine bewaart, worden op de achtergrond gelezen zodra die geschiedenis is ingeladen.
 
 ## Meetingnotities en transcript
 
-De details van een afspraak bestaan uit twee delen. **Notities** is de samenvatting: beslissingen en actiepunten. **Transcript** is alles wat er woord voor woord is gezegd. Het transcript is ingeklapt en toont hoe lang het is. Met **Tonen** open je het.
+De details van een meeting bestaan uit twee delen. **Notities** is de samenvatting: beslissingen en actiepunten. **Transcript** is woord voor woord wat er is gezegd. Het staat eerst ingeklapt, met de duur erbij. Met **Tonen** open je het.
 
-Als de inhoud niet laadt, probeert de app het ongeveer een halve minuut lang automatisch opnieuw. Tik daarna op **Opnieuw proberen**.
+Als ze niet laden, probeert de app dat ongeveer een halve minuut vanzelf opnieuw. Tik daarna op **Opnieuw proberen**.
 
-Voor beide onderdelen zijn er aparte opties: **Notities toevoegen** of **Transcript toevoegen**, **Bestand uploaden** voor een Markdown- of tekstbestand, **Bewerken** en **Verwijderen** (tik twee keer). Wat je aan het ene onderdeel toevoegt, blijft daar staan. Bij een afspraak die je kunt wijzigen, open je de notities via **Notities** onder het formulier.
+Je kunt voor elk onderdeel apart **Notities toevoegen** of **Transcript toevoegen**, een Markdown- of tekstbestand **Bestand uploaden**, en **Bewerken** of **Verwijderen** (tik twee keer). Wat je aan het ene onderdeel toevoegt, blijft daar staan. Bij een meeting die je kunt wijzigen, open je de notities met **Notities** onder het formulier.
 
-Als [Zoom](zoom.md), [Google Meet](google-meet.md) of [Granola](granola.md) is gekoppeld, staan de notities bij Notities en het transcript bij Transcript, met het label **Van Zoom**, **Van Google Meet** of **Van Granola**. Ze vervangen nooit wat je zelf hebt toegevoegd. Als beide aanwezig zijn, worden ze allebei getoond.
+Als [Zoom](zoom.md), [Google Meet](google-meet.md) of [Granola](granola.md) is gekoppeld, verschijnen de notities onder Notities en het transcript onder Transcript, met het label **Van Zoom**, **Van Google Meet** of **Van Granola**. Ze vervangen nooit wat je zelf hebt toegevoegd. Als beide aanwezig zijn, worden ze allebei getoond.
 
-Notities kunnen ook in de agenda-afspraak zelf staan, toegevoegd nadat de meeting begon, of per mail van Zoom of Gemini binnenkomen. Na afloop van de afspraak maakt The Machine er alleen to-do's van als er duidelijke vervolgstappen zijn. Als dezelfde notities op twee manieren binnenkomen, levert dat één to-do op, met de afspraak als bron: 'Bron: notities van' de afspraak.
+Notities kunnen ook in de agenda-afspraak zelf staan, nadat de meeting is begonnen zijn toegevoegd, of per mail van Zoom of Gemini binnenkomen. Na afloop van de meeting maakt The Machine daar alleen to-do’s van als er duidelijke vervolgstappen in staan. Als dezelfde notities op twee manieren binnenkomen, ontstaat er één to-do, met de meeting als bron: ‘Bron: notities van’ de meeting.
 
-Bij een afspraak met een transcript maar zonder notities staat **Notities maken**. The Machine maakt notities op basis van het transcript: een korte samenvatting, beslissingen en actiepunten met erbij wie ze uitvoert, in de taal van de afspraak.
+Bij een meeting met een transcript maar zonder notities staat **Notities maken**. The Machine maakt notities op basis van het transcript: een korte samenvatting, beslissingen en actiepunten met erbij wie ze uitvoert, in de taal van de meeting.
 
-Je ziet **Notities schrijven…**. Het schrijven gaat door als je de afspraak sluit. Bij een lange afspraak duurt het een paar minuten. Hiervoor wordt je eigen model gebruikt. Bij de notities staat **Door The Machine geschreven**. Ze vervangen nooit notities die je zelf hebt toegevoegd.
+Je ziet **Notities schrijven…**. Het schrijven gaat door als je de meeting sluit. Een lange meeting kan een paar minuten duren en gebruikt je eigen model. Bij de notities staat **Geschreven door The Machine**. Ze vervangen nooit notities die je zelf hebt toegevoegd.
 
-Je kunt The Machine ook vragen ze toe te voegen, bijvoorbeeld via een to-do: 'voeg dit transcript toe aan de boardmeeting van vandaag'. Een transcript komt bij Transcript te staan en een samenvatting bij Notities. Bij een afspraak met notities of een transcript staat **Notities** of **Transcript** in de agenda.
+The Machine kan ook notities toevoegen. Vraag dat in een to-do, bijvoorbeeld: ‘voeg dit transcript toe aan de boardmeeting van vandaag’. Een transcript komt onder Transcript, een samenvatting onder Notities. Bij een meeting met notities of een transcript staat in de agenda **Notities** of **Transcript**.
 
-The Machine leest beide om de vervolgacties van de afspraak te bepalen. Ze zijn Werk of Privé, net als de afspraak, en worden alleen met je team gedeeld als de afspraak ook met je team wordt gedeeld.
+The Machine leest beide om de vervolgacties van de meeting te bepalen. Die zijn Werk of Persoonlijk, net als de meeting, en worden alleen met je team gedeeld als de meeting dat ook wordt.
 
-Een afspraak opent met deze details, waar je hem ook vindt: op een tijdlijn, in een berichtzoekopdracht of als bron van een to-do. Met **Originele uitnodiging** onderaan bekijk je de uitnodiging zoals die is binnengekomen.
+Je kunt de details van een meeting overal openen waar je die tegenkomt: op een tijdlijn, in een berichtzoekopdracht of als bron van een to-do. **Originele uitnodiging** onderaan toont de uitnodiging zoals die is binnengekomen.
 
 ## Een afspraak toevoegen of wijzigen
 
-Je eigen Google-agenda kun je hier wijzigen. Outlook en andere agenda's zijn alleen-lezen. Met **Nieuwe afspraak** voeg je een afspraak toe (op een telefoon vind je deze optie onder **+** in de bovenbalk): kies de agenda, een titel en een tijd. Klik op een afspraak zonder gasten in die agenda om hem te wijzigen, of op **Verwijderen** om hem te verwijderen (tik twee keer).
+Je kunt je eigen Google-agenda hier wijzigen. Outlook en andere agenda’s zijn alleen-lezen. Met **Nieuwe afspraak** voeg je een afspraak toe (op een telefoon vind je deze onder **+** in de bovenste balk): kies de agenda, een titel en een tijd. Klik op een afspraak zonder gasten in die agenda om deze te wijzigen of **Verwijderen** (tik twee keer).
 
-**Waar** stelt tijdens het typen locaties voor: eerst locaties die je eerder hebt gebruikt en je organisaties, daarna adressen van [OpenStreetMap](https://www.openstreetmap.org), een gratis kaart. Alleen de woorden die je typt, worden verstuurd om ze op te zoeken. Kies een suggestie of houd je eigen tekst aan.
+**Waar** stelt tijdens het typen locaties voor: eerst plekken die je eerder hebt gebruikt en je organisaties, daarna adressen van [OpenStreetMap](https://www.openstreetmap.org), een gratis kaart. Alleen de woorden die je typt, worden verstuurd om ze op te zoeken. Kies een suggestie of houd je eigen tekst.
 
-Met **Uitnodigen** voeg je mensen uit je Graph of een e-mailadres toe. Deze optie is alleen beschikbaar voor je eigen agenda. Boven de knop zie je wie een uitnodiging krijgt. Op de knop staat hoeveel mensen je uitnodigt: **Toevoegen en 2 uitnodigen**. Google verstuurt de uitnodigingen pas als je erop tikt. Zonder gasten krijgt niemand een uitnodiging of update.
+Met **Uitnodigen** voeg je mensen uit je Graph of een e-mailadres toe. Deze optie staat alleen bij je eigen agenda. Boven de knop zie je wie een uitnodiging krijgt. Op de knop staat hoeveel mensen je uitnodigt: **Toevoegen en 2 uitnodigen**. Google verstuurt de uitnodigingen als je erop tikt, niet eerder. Zonder gasten wordt niemand uitgenodigd en krijgt niemand een update.
 
-Een to-do kan ook een wijziging voorstellen, bijvoorbeeld om een ophaalmoment toe te voegen. Je ziet precies wat er verandert. De wijziging wordt pas doorgevoerd als je op **Toevoegen**, **Opslaan** of **Verwijderen** klikt.
+Een to-do kan ook een wijziging voorstellen, bijvoorbeeld een ophaalmoment om toe te voegen. Je ziet precies wat er verandert. Alleen met **Toevoegen**, **Opslaan** of **Verwijderen** voer je de wijziging door.
 
-Nog geen afspraken? Zonder agenda opent **Koppel je agenda** Koppelingen, waar je [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) of [een andere agenda](other-calendars.md) kunt koppelen.
+Nog geen meetings? Zonder agenda opent **Koppel je agenda** de Koppelingen: koppel [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) of [een andere agenda](other-calendars.md).
 
 ## Conflicten met je andere agenda
 
-Als een werkafspraak overlapt met iets in je privéagenda, of andersom, maakt The Machine één to-do over de afspraak die later is toegevoegd. The Machine kan een kort bericht opstellen om de afspraak te verzetten, of voorstellen om die af te zeggen. Er wordt niets verstuurd voordat je het goedkeurt.
+Als een werkmeeting overlapt met iets in je persoonlijke agenda, of andersom, maakt The Machine één to-do over de nieuwste van de twee. Hij kan een kort bericht opstellen om de afspraak te verzetten of voorstellen om de uitnodiging af te wijzen. Er wordt niets verstuurd voordat je het goedkeurt.
 
-Afspraken die de hele dag duren, als vrij gemarkeerd zijn of voorlopig zijn, tellen niet mee. Elk conflict wordt maar één keer gemeld. Een Werk-to-do vermeldt alleen dat er een conflict is, zodat je team de privéafspraak nooit ziet. Alleen jij ziet waarmee de afspraak botst.
+Afspraken die de hele dag duren, als vrij zijn gemarkeerd of voorlopig zijn, tellen nooit mee. Elk conflict wordt één keer getoond. Een Werk-to-do vermeldt alleen dat er een conflict is, zodat je team de persoonlijke afspraak nooit ziet. Alleen jij ziet waarmee de afspraak conflicteert.
 
-## Klaar voor je afspraken
+## Goed voorbereid op je meetings
 
-Voor een afspraak met mensen van buiten je bedrijf maakt The Machine één to-do: **Voorbereiden:** met de naam van de afspraak. Die bevat een korte briefing:
+Voor een meeting met mensen van buiten je bedrijf maakt The Machine één to-do: **Voorbereiden op** de meeting. Dat is een korte briefing:
 
-- **Wie:** wie ze zijn volgens je Graph, met informatie over hun achtergrond als die bekend is.
-- **Organisatie:** wat hun bedrijf doet dat relevant is voor de afspraak.
-- **Tot nu toe:** wat jullie hebben besproken, gevraagd en aangeboden, en wat de stand van zaken is. Na de afspraak zijn die berichten de bronnen van de to-do.
-- **Open beloftes:** wat jij of de ander nog moet doen.
-- **Openstaande vragen:** wat nog niet is beantwoord.
-- **Beslissen of meebrengen:** wat je moet beslissen of meebrengen, en wat waarschijnlijk belangrijk is voor de ander.
+- **Wie:** wie ze zijn, op basis van je Graph, met informatie over hun achtergrond als die bekend is.
+- **Organisatie:** wat hun bedrijf doet dat relevant is voor de meeting.
+- **Tot nu toe:** wat je hebt besproken, gevraagd en aangeboden, en wat de stand van zaken is. Die berichten zijn na de meeting de bronnen van de to-do.
+- **Open beloftes:** wat jij of de ander nog moet doen, op basis van de beloftes op je Machine.
+- **Open vragen:** wat nog onbeantwoord is.
+- **Beslissen of meenemen:** wat je moet beslissen of meenemen, en wat voor hen waarschijnlijk belangrijk is.
 
-De briefing verschijnt op de ochtend van een werkdag: op de dag van de afspraak als die 's middags plaatsvindt, anders op de voorafgaande werkdag. Je kunt de briefing alleen lezen. Tik op **Gedaan** als je hem hebt gelezen. Een belofte of vraag waar iets mee moet gebeuren, krijgt een eigen to-do.
+De to-do verschijnt op de ochtend van een werkdag: op de dag van de meeting zelf als die ’s middags plaatsvindt, anders op de werkdag ervoor. Je kunt hem alleen lezen. Tik op **Gedaan** als je hem hebt gelezen. Een belofte of vraag uit de briefing waar iets mee moet gebeuren, krijgt een eigen to-do.
 
-De briefing is gebaseerd op wat al op je Machine staat. Voor een eerste afspraak met iemand bij een bedrijf zoekt The Machine ook kort op het web naar diens naam en bedrijf. Naast de gevonden informatie staat een link. Alleen de openbare naam, bedrijfsnaam en website van die persoon worden voor de zoekopdracht gebruikt, nooit je berichten. Een zoekopdracht wordt 30 dagen hergebruikt. Als **Werkcontacten opzoeken** uitstaat (Instellingen, Beveiliging), wordt er niet gezocht.
+De briefing gebruikt informatie die al op je Machine staat. Voor een eerste meeting met iemand bij een bedrijf zoekt The Machine ook kort op het web naar de naam en het bedrijf, en toont een link naast de gevonden informatie. Alleen de openbare naam, bedrijfsnaam en website van die persoon worden meegestuurd voor de zoekopdracht, nooit je berichten. Een zoekopdracht wordt 30 dagen hergebruikt. Als **Werkcontacten opzoeken** uitstaat (Instellingen, Beveiliging), wordt er niet gezocht.
 
-Als er geen bruikbare geschiedenis is, wordt er geen to-do aangemaakt. Terugkerende, interne en privéafspraken, en afspraken die zijn afgewezen, krijgen geen to-do. Als een afspraak wordt verzet, blijft dezelfde to-do behouden, met de nieuwe tijd. Een afgewezen to-do komt niet terug. De to-do van een geannuleerde afspraak wordt automatisch gesloten.
+Zonder bruikbare geschiedenis wordt er geen to-do gemaakt. Terugkerende, interne, persoonlijke en afgewezen meetings krijgen er geen. Als een meeting wordt verzet, blijft de ene to-do behouden en krijgt die de nieuwe tijd. Een afgewezen to-do komt niet terug. De to-do van een geannuleerde meeting wordt vanzelf gesloten.
 
-Als een update de inhoud van een briefing verandert, worden open briefings voor afspraken die nog moeten plaatsvinden één keer opnieuw opgesteld. De titel, bronnen en plek in je lijst blijven hetzelfde. Een briefing die je hebt gewijzigd, gesnoozed of gesloten, blijft zoals die is. Dat geldt ook voor een briefing van een afspraak die over een paar minuten begint.
+Als een wijziging de inhoud van een briefing verandert, worden briefings voor toekomstige meetings één keer opnieuw opgesteld. De titel, bronnen en plek in je lijst blijven hetzelfde. Een briefing die je hebt gewijzigd, gesnoozed of gesloten, blijft zoals die is. Dat geldt ook voor een briefing van een meeting die binnen een paar minuten begint.
 
-Bij de afspraakdetails vind je de to-do onder **To-do**. Tik erop om de chat te openen.
+In de details van de meeting staat de to-do onder **To-do**, één tik verwijderd van de chat.

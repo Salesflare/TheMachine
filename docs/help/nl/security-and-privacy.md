@@ -34,7 +34,7 @@ In het artikel over elke koppeling staat wat die leest en kan versturen. Je kunt
 
 ## Hulp
 
-Hulp draait op je eigen Machine en kan je gegevens niet zien. Alleen het onderwerp van elke vraag gaat naar het team van The Machine, nooit wat je zelf schrijft. Zie [Hulp vragen](help-chat.md#what-the-team-sees).
+Hulp draait op je eigen Machine en kan je gegevens niet zien. Alleen het onderwerp van elke vraag gaat naar het team van The Machine, nooit wat je zelf schrijft. Zie [Help vragen](help-chat.md#what-the-team-sees).
 
 ## Meer
 
