@@ -34,7 +34,7 @@ El artículo de cada conexión explica qué datos lee y cuáles puede enviar. Pu
 
 ## Ayuda
 
-La ayuda funciona en tu Machine y no puede ver tus datos. Al equipo de The Machine solo se envía el tema de cada pregunta, nunca lo que escribes. Consulta [Preguntar a Ayuda](help-chat.md#what-the-team-sees).
+La ayuda funciona en tu Machine y no puede ver tus datos. Al equipo de The Machine solo se envía el tema de cada pregunta, nunca lo que escribes. Consulta [Pedir ayuda](help-chat.md#what-the-team-sees).
 
 ## Más información
 

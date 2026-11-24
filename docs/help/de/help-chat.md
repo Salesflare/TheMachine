@@ -1,34 +1,34 @@
 ---
 title: Hilfe fragen
 area: getting-started
-summary: Frag, wie The Machine funktioniert. Die Antworten stammen aus diesen Hilfeseiten und enthalten Links.
+summary: Frag, wie The Machine funktioniert. Die Antworten basieren auf diesen Hilfeseiten und enthalten Links.
 covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
-translated: d99f5fc9b9ac3a95
+translated: 85d9614a8670bdf4
 ---
-Tippe unten in der Seitenleiste auf **Hilfe**, über **Einstellungen**, und frag in deinen eigenen Worten, zum Beispiel: „Wie stelle ich eine Aufgabe zurück?“ Mit Enter sendest du deine Frage, mit Shift+Enter fügst du eine Zeile hinzu. Die Hilfe antwortet in der Sprache deiner App oder in der Sprache, in der du schreibst. Links zu Hilfeseiten öffnen sich direkt im Fenster und in der jeweiligen Sprache.
+Tippe unten in der Seitenleiste über **Einstellungen** auf **Hilfe** und frag in deinen eigenen Worten, zum Beispiel: „Wie stelle ich eine Aufgabe zurück?“ Mit Enter stellst du die Frage, mit Shift+Enter fügst du eine Zeile hinzu. Die Hilfe antwortet in der Sprache deiner App oder in der Sprache, in der du schreibst. Links zu Hilfeseiten öffnen sich direkt im Bereich und in der jeweiligen Sprache.
 
 ## Woher die Antworten kommen
 
-Die Hilfe liest die Hilfeseiten, die zu deiner Frage passen, und greift für alles, was dort nicht behandelt wird, auf den Code der App zurück. Jede Antwort enthält Links zu den verwendeten Seiten.
+Die Hilfe liest die Hilfeseiten, die zu deiner Frage passen, und bei Themen, die dort nicht behandelt werden, den App-Code. Wenn die Ergebnisse nicht passen, sucht sie einmal mit anderen Begriffen weiter. Jede Antwort enthält Links zu den verwendeten Seiten.
 
-Die Hilfe läuft auf dem Modell deiner Machine als kurzer, separater Chat. Unter dem Nachrichtenfeld kannst du für diesen Hilfe-Chat ein anderes Modell oder eine andere Nachdenken-Stufe auswählen (siehe [Modell](model.md)). Es werden nur deine Frage und die passenden Seiten verwendet, keine deiner Nachrichten, Personen oder Einstellungen.
+Die Hilfe läuft auf dem eigenen Modell deiner Machine als kurzer, separater Chat. Unter dem Nachrichtenfeld kannst du für diesen Hilfe-Chat ein anderes Modell oder eine andere Nachdenkstufe auswählen (siehe [Modell](model.md)). Verwendet werden nur deine Frage und die passenden Seiten, nicht deine Nachrichten, Personen oder Einstellungen.
 
-Die Antwort passt sich deinem Kenntnisstand an: Sie ist für die meisten leicht verständlich und enthält mehr Details, wenn deine Fragen technisch sind. Die Hilfe schätzt deinen Kenntnisstand anhand deiner Einrichtung, deiner Rolle und deiner Fragen ein. Nur diese Einschätzung wird weitergegeben.
+Die Hilfe passt die Antworten an dein Kenntnisniveau an: meist in einfachen Worten, bei technischen Fragen mit mehr Details. Sie schätzt dein Niveau anhand deiner Einrichtung, deiner Rolle und der Art, wie du fragst. Übermittelt wird nur diese Einschätzung.
 
-Zuerst zeigt sie dir, was The Machine bereits kann. Einen Skill schlägt sie nur vor, wenn keine integrierte Funktion dafür geeignet ist. Siehe [Anpassen](personalize.md).
+Die Hilfe verweist zuerst auf Funktionen, die The Machine bereits bietet, und schlägt nur dann einen Skill vor, wenn keine integrierte Funktion dafür infrage kommt. Siehe [Anpassen](personalize.md).
 
 ## Was das Team sieht
 
-Damit wir die Hilfe verbessern können, zählt deine Machine ein paar Wörter dazu, worum es bei jeder Frage geht, zum Beispiel „Aufgabe zurückstellen“. Niemals deine Frage oder die Antwort und keine Namen, Adressen oder Zahlen, sondern nur Wörter aus diesen Hilfeseiten. Einmal am Tag werden die Zählwerte ohne dein Konto an das **Team von The Machine** gesendet.
+Damit die Hilfe besser wird, zählt deine Machine einige Wörter dazu, worum es in jeder Frage geht, zum Beispiel „Aufgabe zurückstellen“. Niemals deine Frage oder die Antwort und auch keine Namen, Adressen oder Zahlen: Es werden nur Wörter aus diesen Hilfeseiten gezählt. Einmal täglich werden die Zählungen ohne dein Konto an das **Team von The Machine** gesendet.
 
-Um das zu deaktivieren, schalte unter **Einstellungen** > **Sicherheit** > **Team von The Machine** die Option **Fragen an die Hilfe teilen** aus oder wähle die Sicherheitsstufe **Vorsichtig** ([Sicherheitsstufen](security-levels.md)). Dafür brauchst du [The Machine Network](/network). Noch nicht gesendete Daten werden gelöscht.
+Um das zu deaktivieren, schalte unter **Einstellungen** > **Sicherheit** > **Team von The Machine** die Option **Fragen an die Hilfe teilen** aus oder wähle die Sicherheitsstufe **Vorsichtig** (siehe [Sicherheitsstufen](security-levels.md)). Dafür ist [The Machine Network](/network) erforderlich. Noch nicht gesendete Daten werden gelöscht.
 
 ## Was die Hilfe nicht kann
 
-Die Hilfe beantwortet Fragen. Sie kann deine Daten nicht sehen und ändert nichts. Stattdessen erklärt sie dir, wo du tippen musst.
+Die Hilfe beantwortet Fragen. Sie kann deine Daten nicht sehen und ändert nichts daran. Stattdessen zeigt sie dir, wo du tippen musst.
 
-Wenn deine Beschreibung eher nach einem Fehler als nach einer Frage zur Bedienung klingt, endet die Antwort mit **Diesen Fehler melden**. Damit öffnet sich **Fehler melden** mit einer kurzen Beschreibung davon, was du getan hast, was du erwartet hast und was passiert ist. Die Support-Meldung ist dabei bereits ausgewählt. Du kannst alles ändern. Gesendet wird erst, wenn du auf **Senden** tippst.
+Wenn deine Beschreibung eher nach einem Fehler als nach einer Frage zur Bedienung klingt, endet die Antwort mit **Diesen Fehler melden**. Dadurch wird **Fehler melden** geöffnet. Dort findest du eine kurze Beschreibung dessen, was du getan hast, was du erwartet hast und was passiert ist. Die Supportmeldung ist bereits angehakt. Du kannst alles nach Belieben ändern. Es wird nichts gesendet, bevor du auf **Senden** tippst.
 
-**Fehler melden** ist auch ein eigener Tab im selben Fenster. Siehe [Support kontaktieren](get-support.md#report-a-bug).
+**Fehler melden** gibt es außerdem als eigenen Tab im selben Bereich. Siehe [Support kontaktieren](get-support.md#report-a-bug).

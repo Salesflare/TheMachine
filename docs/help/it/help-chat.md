@@ -1,34 +1,34 @@
 ---
 title: Chiedi aiuto
 area: getting-started
-summary: Chiedi come funziona The Machine. Le risposte si basano su queste pagine di assistenza e includono link.
+summary: Chiedi come funziona The Machine. Le risposte arrivano da queste pagine di aiuto, con link.
 covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
-translated: d99f5fc9b9ac3a95
+translated: 85d9614a8670bdf4
 ---
-Tocca **Aiuto** in fondo alla barra laterale, sopra **Impostazioni**, e fai la tua domanda con parole tue, per esempio «Come faccio a posticipare un’attività?». Con Invio invii la domanda, con Maiusc+Invio aggiungi una riga. Aiuto risponde nella lingua dell’app o in quella in cui scrivi. I link alle pagine di assistenza si aprono direttamente nel pannello, in quella lingua.
+Tocca **Aiuto** in fondo alla barra laterale, sopra **Impostazioni**, e fai una domanda con parole tue, per esempio «Come faccio a posticipare un’attività?». Invio invia la domanda, Maiusc+Invio aggiunge una riga. Aiuto risponde nella lingua dell’app o in quella in cui scrivi. I link alle pagine di aiuto si aprono direttamente nel pannello, nella stessa lingua.
 
 ## Da dove arrivano le risposte
 
-Aiuto consulta le pagine di assistenza pertinenti alla tua domanda e, per ciò che non trattano, il codice dell’app. Ogni risposta include i link alle pagine consultate.
+Aiuto consulta le pagine di aiuto pertinenti alla tua domanda e il codice dell’app per gli argomenti che non trattano. Se non trova quello che cerchi, riprova una volta usando altre parole. Ogni risposta contiene link alle pagine consultate.
 
-La funzione usa il modello della tua Machine come una chat breve e separata. Sotto il campo del messaggio puoi scegliere un altro modello o un livello di ragionamento per questa chat di Aiuto (vedi [Modello](model.md)). Vengono usate solo la tua domanda e le pagine pertinenti, non i tuoi messaggi, le persone o le impostazioni.
+Funziona con il modello della tua Machine, in una chat breve e separata. Sotto la casella del messaggio puoi scegliere un altro modello o un livello di ragionamento per questa chat di Aiuto (vedi [Modello](model.md)). Al modello vengono inviate solo la tua domanda e le pagine pertinenti, non i tuoi messaggi, le persone o le impostazioni.
 
-Le risposte sono adatte al tuo livello: usa parole semplici per la maggior parte delle persone e aggiunge dettagli se le tue domande sono tecniche. Stima il tuo livello in base alla configurazione, al tuo ruolo e al modo in cui fai le domande. Viene usata solo la stima.
+Le risposte si adattano al tuo livello: usa parole semplici per la maggior parte delle persone e dà più dettagli quando le domande sono tecniche. Stima il tuo livello in base alla configurazione, al ruolo e a come fai le domande. Al modello viene inviata solo la stima.
 
-Indica prima ciò che The Machine sa già fare e suggerisce una skill solo se nessuna funzione integrata può aiutarti. Vedi [Personalizza](personalize.md).
+Prima ti indica cosa può già fare The Machine e suggerisce una skill solo se nessuna funzione integrata è adatta. Vedi [Personalizza](personalize.md).
 
 ## Cosa vede il team
 
-Per migliorare l’assistenza, la tua Machine conta alcune parole che indicano l’argomento di ogni domanda, per esempio «posticipare un’attività». Non vengono mai conteggiati la tua domanda o la risposta, né nomi, indirizzi o numeri: solo parole tratte da queste pagine di assistenza. Una volta al giorno, i conteggi vengono inviati al team di The Machine, senza i dati del tuo account.
+Per migliorare l’aiuto, la tua Machine conta alcune parole che descrivono l’argomento di ogni domanda, per esempio «posticipare un’attività». Non vengono mai conteggiate le tue domande o le risposte, né nomi, indirizzi o numeri: solo parole tratte da queste pagine di aiuto. Una volta al giorno, i conteggi vengono inviati al **Il team di The Machine**, senza il tuo account.
 
-Per interrompere l’invio, disattiva **Condividi cosa si chiede all’aiuto** in **Impostazioni**, **Sicurezza**, sotto **Il team di The Machine**, oppure scegli il livello di sicurezza **Prudente** ([livelli di sicurezza](security-levels.md)). Serve [The Machine Network](/network). I dati non ancora inviati vengono eliminati.
+Per interrompere l’invio, disattiva **Condividi cosa si chiede all’aiuto** in **Impostazioni**, **Sicurezza**, sotto **Il team di The Machine**, oppure scegli il livello di sicurezza **Prudente** ([livello di sicurezza](security-levels.md)). Serve [The Machine Network](/network). I dati non ancora inviati vengono eliminati.
 
 ## Cosa non può fare
 
-Aiuto risponde alle domande. Non può vedere i tuoi dati e non modifica nulla: ti indica dove toccare.
+Aiuto risponde alle domande. Non può vedere i tuoi dati né modificare nulla: ti indica dove toccare.
 
-Se quello che descrivi sembra un problema, anziché una domanda su come fare qualcosa, la risposta termina con **Segnala questo bug**. Si apre **Segnala un bug** con una breve descrizione di cosa hai fatto, cosa ti aspettavi e cosa è successo, e la casella per la segnalazione all’assistenza già selezionata. Puoi modificare tutto quello che vuoi. Non viene inviato nulla finché non premi **Invia**.
+Se da ciò che descrivi sembra che qualcosa non funzioni, anziché essere una domanda su come fare, la risposta termina con **Segnala questo bug**. Si apre **Segnala un bug** con una breve descrizione di cosa hai fatto, cosa ti aspettavi e cosa è successo, e la segnalazione all’assistenza già selezionata. Puoi modificare quello che vuoi. Non viene inviato nulla finché non premi **Invia**.
 
-Anche **Segnala un bug** ha una scheda dedicata nello stesso pannello. Vedi [Contatta l’assistenza](get-support.md#report-a-bug).
+**Segnala un bug** è anche una scheda a sé nello stesso pannello. Vedi [Contatta l’assistenza](get-support.md#report-a-bug).

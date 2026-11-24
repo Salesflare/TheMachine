@@ -34,7 +34,7 @@ L’article de chaque connexion indique ce qu’elle lit et ce qu’elle peut en
 
 ## Aide
 
-L’aide fonctionne sur votre propre Machine et ne peut pas voir vos données. Seul le sujet de chaque question est transmis à l’équipe de The Machine, jamais vos mots. Voir [Poser une question à l’aide](help-chat.md#what-the-team-sees).
+L’aide fonctionne sur votre propre Machine et ne peut pas voir vos données. Seul le sujet de chaque question est transmis à l’équipe de The Machine, jamais vos mots. Voir [Demander de l’aide](help-chat.md#what-the-team-sees).
 
 ## Pour en savoir plus
 
