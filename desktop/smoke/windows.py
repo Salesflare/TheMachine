@@ -1752,7 +1752,7 @@ def _():
     if app.box():
         press(app, '#close')
     need(until(lambda: not app.wide()), 'nothing is there')
-    script, where, one, two = (out / n for n in ('source.ps1', 'source.txt', 'notes.txt', 'plan & b.txt'))
+    script, where, one, two = (out.resolve() / n for n in ('source.ps1', 'source.txt', 'notes.txt', 'plan & b.txt'))
     script.write_text(SOURCE, encoding='utf-8')
     for f in (one, two):
         f.write_text('made up')
