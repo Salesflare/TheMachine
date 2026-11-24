@@ -1931,8 +1931,10 @@ def _():
         return 'NOT TESTED: no certificate'
     if app.card():
         key(ESCAPE)
+        need(until(lambda: not app.card() and app.box() and small()), 'Escape: back to the list')
     need(until(app.box), 'the box is there')
     press(app, '#more')
+    need(until(lambda: says('#menu-signout')), 'its menu opens')
     press(app, '#menu-signout')
     time.sleep(1)
     if not app.box():

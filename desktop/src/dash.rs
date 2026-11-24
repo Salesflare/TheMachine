@@ -19,6 +19,10 @@ const ZOOMS: [f64; 13] = [0.5, 0.67, 0.75, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 
 /// How the dashboard knows where it is: it is the same page, but nothing to install, and downloads say where they landed.
 const SCRIPT: &str = "Object.defineProperty(window,'machineDesktop',{value:Object.freeze({version:1})});";
 
+/// WebKit's own speech recognition on a Mac ends a program that has no permission of its own for it. The Machine hears what
+/// is dictated itself.
+pub const NO_SPEECH: &str = if cfg!(target_os = "macos") { "delete window.webkitSpeechRecognition;" } else { "" };
+
 /// The window, or one with a file, is in front.
 static FRONT: AtomicBool = AtomicBool::new(false);
 
@@ -172,6 +176,7 @@ fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .zoom_hotkeys_enabled(cfg!(windows))
         .additional_browser_args(&windows::browser())
         .initialization_script(SCRIPT)
+        .initialization_script(NO_SPEECH)
         .on_navigation(move |url| navigation(&goes_to, url))
         .on_new_window(move |url, _| {
             later(&opens, move |app| open_link(app, &url));
@@ -189,6 +194,8 @@ fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
                 loaded(&loads, page.url());
             }
         });
+    #[cfg(target_os = "macos")]
+    let window = window.title_bar_style(tauri::TitleBarStyle::Transparent); // else the page is under it too
     let window = window.build()?;
     #[cfg(target_os = "macos")]
     crate::mac_app::prepare(&window);
@@ -431,14 +438,17 @@ pub fn close(app: &AppHandle) {
     let Some(window) = window(app) else { return };
     if !window.is_fullscreen().unwrap_or(false) {
         let _ = window.hide();
-        return;
+        return focused(app, LABEL, false);
     }
     // A full screen that is hidden stays as an empty one
     let _ = window.set_fullscreen(false);
     let app = app.clone();
     std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(1200));
-        later(&app, move |_| { let _ = window.hide(); });
+        later(&app, move |app| {
+            let _ = window.hide();
+            focused(app, LABEL, false);
+        });
     });
 }
 
@@ -619,6 +629,8 @@ pub fn open_file(app: &AppHandle, url: &Url) {
                 let _ = window.set_title(title.trim());
             }
         });
+    #[cfg(target_os = "macos")]
+    let window = window.title_bar_style(tauri::TitleBarStyle::Transparent);
     match window.build() {
         Ok(window) => {
             #[cfg(target_os = "macos")]

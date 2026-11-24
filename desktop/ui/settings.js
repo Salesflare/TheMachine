@@ -13,6 +13,8 @@
     $('robot').checked = s.robot;
     $('notify').checked = s.notify;
     $('notify-row').hidden = s.robot || !s.can_notify;
+    $('notify-hint').textContent = s.blocked ? t.setNotifyBlocked : t.setNotifyHint;
+    $('notify-hint').classList.toggle('warn', s.blocked);
     $('login').checked = s.login === 'on';
     $('quits').value = s.quits ? '1' : '';
     $('account').hidden = !s.machine;

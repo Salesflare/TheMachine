@@ -26,7 +26,7 @@ pub struct Saved {
     /// Settings: no robot, closing the window quits, and without a robot the system's own notifications.
     pub no_robot: bool,
     pub quits: bool,
-    pub notify: bool,
+    pub notify: Option<bool>,
     /// A random name for this robot, for its Machine to know which computer's it is (speak.rs).
     pub desk: String,
 }

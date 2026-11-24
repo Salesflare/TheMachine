@@ -6,6 +6,16 @@ use tauri::{AppHandle, Manager};
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
 
+/// Whether the system lets the app.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub enum Lets {
+    /// It hasn't asked the person.
+    Unasked,
+    Yes,
+    No,
+}
+
 /// Whether this system has them here.
 pub fn there() -> bool {
     cfg!(target_os = "macos")
@@ -21,7 +31,7 @@ pub fn start(app: &AppHandle) {
 /// The person wants them, instead of a robot.
 fn wanted(shared: &Shared) -> bool {
     let saved = shared.saved.lock().unwrap();
-    saved.no_robot && saved.notify && saved.machine.is_some()
+    saved.no_robot && saved.notify == Some(true) && saved.machine.is_some()
 }
 
 /// Settings changed.
@@ -34,23 +44,33 @@ pub fn follow(app: &AppHandle) {
 /// It may tell now: the person wants it, the system lets it, and the dashboard isn't in front.
 pub fn may(app: &AppHandle) -> bool {
     #[cfg(target_os = "macos")]
-    crate::mac_app::notices_look(|_| {}); // as it is at the next look
-    wanted(&app.state::<Shared>()) && allowed() && !dash::front()
+    crate::mac_app::notices_look(|| {}); // as it is at the next look
+    #[cfg(target_os = "macos")]
+    let lets = crate::mac_app::notices_lets();
+    #[cfg(not(target_os = "macos"))]
+    let lets = Lets::No;
+    wanted(&app.state::<Shared>()) && lets == Lets::Yes && !dash::front()
 }
 
-pub fn allowed() -> bool {
+/// As it is now. Not on the main thread.
+pub fn look() -> Lets {
     #[cfg(target_os = "macos")]
-    return crate::mac_app::notices_allowed();
+    {
+        let (tell, told) = std::sync::mpsc::channel();
+        crate::mac_app::notices_look(move || { let _ = tell.send(()); });
+        let _ = told.recv_timeout(std::time::Duration::from_secs(1));
+        crate::mac_app::notices_lets()
+    }
     #[cfg(not(target_os = "macos"))]
-    false
+    Lets::No
 }
 
 /// The system asks the person, when it hasn't.
-pub fn ask(told: impl Fn(bool) + Send + 'static) {
+pub fn ask(told: impl Fn() + Send + 'static) {
     #[cfg(target_os = "macos")]
     crate::mac_app::notices_ask(told);
     #[cfg(not(target_os = "macos"))]
-    told(false);
+    told();
 }
 
 pub fn show(id: &str, title: &str, line: &str) {

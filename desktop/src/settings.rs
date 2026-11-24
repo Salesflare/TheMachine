@@ -14,9 +14,10 @@ pub struct Settings {
     login: login::State,
     quits: bool,
     notify: bool,
-    /// The system has them and lets the app.
+    /// The system has them here.
     can_notify: bool,
-    allowed: bool,
+    /// They are on, and the system doesn't let the app.
+    blocked: bool,
     machine: Option<String>,
 }
 
@@ -38,9 +39,10 @@ pub fn open(app: &AppHandle) {
                 .center()
                 .visible(false) // until its page says how tall it is
                 .additional_browser_args(&windows::browser())
-                .on_navigation(|url| url.scheme() == "tauri" || url.host_str() == Some("tauri.localhost"))
-                .build();
-            match built {
+                .on_navigation(|url| url.scheme() == "tauri" || url.host_str() == Some("tauri.localhost"));
+            #[cfg(target_os = "macos")]
+            let built = built.title_bar_style(tauri::TitleBarStyle::Transparent);
+            match built.build() {
                 #[cfg(windows)]
                 Ok(window) => {
                     windows::no_menu(&window);
@@ -72,16 +74,16 @@ pub fn settings_fit(app: AppHandle, height: f64) {
 #[tauri::command]
 pub async fn settings_state(app: AppHandle) -> Result<Settings, String> {
     away(move || {
-        let login = login::state();
+        let (login, notices) = (login::state(), notify::look());
         let shared = app.state::<Shared>();
         let saved = shared.saved.lock().unwrap();
         Ok(Settings {
             robot: !saved.no_robot,
             login,
             quits: saved.quits,
-            notify: saved.notify && notify::allowed(),
+            notify: saved.notify == Some(true) && notices != notify::Lets::No,
             can_notify: notify::there(),
-            allowed: notify::allowed(),
+            blocked: saved.notify == Some(true) && notices == notify::Lets::No,
             machine: saved.machine.clone(),
         })
     }).await
@@ -92,8 +94,18 @@ pub async fn settings_set(app: AppHandle, id: String, on: bool) -> Result<(), St
     let shared = app.state::<Shared>();
     match id.as_str() {
         "robot" => {
-            shared.saved.lock().unwrap().no_robot = !on;
+            let mut saved = shared.saved.lock().unwrap();
+            saved.no_robot = !on;
+            // What it said is told another way, unless the person turned that off
+            let tells = !on && notify::there() && saved.notify != Some(false);
+            if tells {
+                saved.notify = Some(true);
+            }
+            drop(saved);
             later(&app, robot);
+            if tells {
+                asks(&app);
+            }
         }
         "login" => {
             if !away(move || Ok(login::set(on))).await? {
@@ -102,14 +114,10 @@ pub async fn settings_set(app: AppHandle, id: String, on: bool) -> Result<(), St
         }
         "quits" => shared.saved.lock().unwrap().quits = on,
         "notify" => {
+            shared.saved.lock().unwrap().notify = Some(on);
             if on {
-                let (tell, told) = std::sync::mpsc::channel();
-                notify::ask(move |yes| { let _ = tell.send(yes); });
-                if !away(move || told.recv().map_err(|_| "failed".to_string())).await? {
-                    return Err("notify".into());
-                }
+                asks(&app);
             }
-            shared.saved.lock().unwrap().notify = on;
         }
         _ => return Err("failed".into()),
     }
@@ -117,6 +125,15 @@ pub async fn settings_set(app: AppHandle, id: String, on: bool) -> Result<(), St
     shared.look_soon(); // whether it speaks
     notify::follow(&app);
     Ok(())
+}
+
+/// The system asks the person, when it hasn't before. The page shows what came of it.
+fn asks(app: &AppHandle) {
+    let app = app.clone();
+    notify::ask(move || {
+        app.state::<Shared>().look_soon();
+        let _ = app.emit_to(LABEL, "settings", ());
+    });
 }
 
 /// With the robot, or without one: then the app is its window only.

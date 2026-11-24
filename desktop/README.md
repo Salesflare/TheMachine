@@ -87,7 +87,7 @@ app's own: the same page as in a browser, signed in as the robot is, with no sec
 - **Settings** (Command-comma): **Show the robot**, **Notifications** (only without the robot), **Start at login** and what
   closing the window does: **Keep running** (the usual) or **Quit**. Without the robot it is a plain app: no robot, no icon in the menu bar.
 - **Notifications**, without the robot: what the robot would have said, as macOS' own, while the app runs and isn't in front.
-  A click opens the to-do. With the robot there are none, so nothing comes twice. The number on its Dock icon is For you's.
+  A click opens the to-do. They turn on when you turn the robot off (macOS asks you then), unless you turned them off before. With the robot there are none, so nothing comes twice. The number on its Dock icon is For you's.
 - **Not reachable, signed out or moved to another address**: the window says so and how to go on.
 
 The robot is away while the window is in front. At login only the robot comes, no window.
