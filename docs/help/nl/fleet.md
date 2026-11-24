@@ -81,7 +81,7 @@ Een eigenaar of admin kan Stripe of Intercom één keer koppelen en met het team
 
 ## Wat je Machine beantwoordt
 
-Stel dit per Fleet in via het paneel Delen. Zie [Regels voor delen](sharing-rules.md). Onder **Instellingen** vind je een snelkoppeling: **Fleet-regels**.
+Stel dit per Fleet in via het paneel Delen. Zie [Deelregels](sharing-rules.md). Onder **Instellingen** vind je een snelkoppeling: **Fleet-regels**.
 
 ## Inloggen met je bedrijfsaccount
 

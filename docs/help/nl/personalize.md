@@ -33,7 +33,7 @@ In **Instellingen**:
 - **Beveiliging**: Standaard of Voorzichtig, voor hoeveel er op je telefoon verschijnt en hoe lang dingen bewaard blijven. Zie [Beveiligingsniveaus](security-levels.md).
 - **Taal en regio**: de taal die hij met je gebruikt, en hoe datums eruitzien. Zie [Instellingen](settings.md#general).
 
-Wat je team ziet, staat in [Regels voor delen](sharing-rules.md) en [Beveiliging en privacy](security-and-privacy.md).
+Wat je team ziet, staat in [Deelregels](sharing-rules.md) en [Beveiliging en privacy](security-and-privacy.md).
 
 ## Skills, voor je eigen stappen
 
