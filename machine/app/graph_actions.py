@@ -480,7 +480,10 @@ class GraphActionsApp:
         with self.store.connect() as db:
             mailbox = self.invite_mailbox(db, node)
             senders = own_addresses.senders(db, self.config)
-            for open_id, action in db.execute("SELECT id,next_action FROM suggestions WHERE status='prepared' AND origin='owner' AND title=?", (title,)):
+            # its title is sealed in the database: compared on the opened row
+            for open_id, named, action in db.execute("SELECT id,title,next_action FROM suggestions WHERE status='prepared' AND origin='owner'"):
+                if named != title:
+                    continue
                 draft = next((a for a in next_actions.actions(json.loads(action or 'null')) if a.get('kind') == 'email' and invite['email'] in a.get('to', ())), None)
                 if draft:  # the one made before and not sent yet: the same to-do, opened again
                     return {'suggestion_id': open_id, 'revision': draft['revision']}

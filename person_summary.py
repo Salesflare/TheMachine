@@ -151,6 +151,15 @@ def newest(db, node_id, info, last):
     return max(stamps) or None
 
 
+def flagged_at(hint):
+    """When a to-do was flagged as looking handled ('' when its flag holds no time)."""
+    try:
+        found = json.loads(hint)
+    except ValueError:
+        return ''
+    return str(found.get('at') or '') if isinstance(found, dict) else ''
+
+
 def changes(db, since):
     """{node_id: when} for the people a matter changed with after `since` (an ISO time): a to-do on their messages made,
     brought up to date by the review (update_card), flagged as looking handled, closed or reopened; a promise on their
@@ -162,19 +171,24 @@ def changes(db, since):
         if str(event_id).isdigit() and at and at > stamps.get(int(event_id), ''):
             stamps[int(event_id)] = at
     if _table(db, 'suggestions') and _table(db, 'decisions'):
-        hinted = ("UNION ALL SELECT id,json_extract(handled_hint,'$.at') FROM suggestions WHERE handled_hint IS NOT NULL "
-                  "AND json_valid(handled_hint) AND json_extract(handled_hint,'$.at')>? "
-                  if any(c[1] == 'handled_hint' for c in db.execute('PRAGMA table_info(suggestions)')) else '')
         marks = ','.join('?' for _ in TODO_CHANGES)
-        for r in db.execute('SELECT s.event_ids,max(x.at) at FROM (SELECT id,created_at at FROM suggestions WHERE created_at>? '
-                            f'UNION ALL SELECT suggestion_id,created_at FROM decisions WHERE created_at>? AND choice IN ({marks}) {hinted}) x '
-                            'JOIN suggestions s ON s.id=x.id GROUP BY s.id', (since, since, *TODO_CHANGES, *((since,) if hinted else ()))):
+        moved = {r['id']: r['at'] for r in db.execute(
+            'SELECT x.id,max(x.at) at FROM (SELECT id,created_at at FROM suggestions WHERE created_at>? '
+            f'UNION ALL SELECT suggestion_id,created_at FROM decisions WHERE created_at>? AND choice IN ({marks})) x GROUP BY x.id',
+            (since, since, *TODO_CHANGES))}
+        # When it was flagged is inside the sealed flag, which SQL cannot read: the rows open as they are read
+        if any(c[1] == 'handled_hint' for c in db.execute('PRAGMA table_info(suggestions)')):
+            for r in db.execute('SELECT id,handled_hint FROM suggestions WHERE handled_hint IS NOT NULL'):
+                at = flagged_at(r['handled_hint'])
+                if at > since and at > moved.get(r['id'], ''):
+                    moved[r['id']] = at
+        for r in db.execute('SELECT id,event_ids FROM suggestions WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(list(moved)),)):
             try:
                 ids = json.loads(r['event_ids'] or '[]')
             except ValueError:
                 continue
             for event_id in ids if isinstance(ids, list) else ():
-                mark(event_id, r['at'])
+                mark(event_id, moved[r['id']])
     if _table(db, 'promises'):
         logged = ('UNION ALL SELECT p.event_id,l.at FROM promise_log l JOIN promises p ON p.id=l.promise_id '
                   f"WHERE l.at>? AND l.kind IN ({','.join('?' for _ in PROMISE_CHANGES)})" if _table(db, 'promise_log') else '')

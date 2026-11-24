@@ -415,6 +415,26 @@ class PersonSummary(unittest.TestCase):
             promise_logged(db, self.promise, 'due', 'later')  # a new date for the contract
         self.assertEqual(self.due_now(), [ANN])
 
+    def test_a_to_do_that_looks_handled_makes_them_due_early(self):
+        """The flag is kept sealed (this store is), with the time it was set inside it: it counts all the same."""
+        self.answer = lambda prompt: json.dumps(self.lines())
+        self.run_pass()
+        ask = self.message(ANN, 'Can you drop off the samples?', hours_ago=8)
+        card = self.store.suggest('samples-ann', 'Drop off the samples', 'Ann asks for the samples.', [ask], match=True)['id']
+        self.made(7)
+        self.written(6)
+        self.assertEqual(self.due_now(), [])
+        done = self.message(ANN, 'Got the samples, thanks!', hours_ago=0.5)
+        self.store.looks_handled(card, 'Ann has the samples', [done])
+        with self.store.connect() as db:
+            db.execute("DELETE FROM decisions WHERE choice='update'")  # the flag by itself
+            # one whose flag is older than the summary, or that holds no time, moves nothing
+            self.assertEqual(list(person_summary.changes(db, (self.now + dt.timedelta(hours=1)).isoformat())), [])
+        self.assertEqual(self.due_now(), [ANN])
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET handled_hint='not JSON' WHERE id=?", (card,))
+        self.assertEqual(self.due_now(), [])
+
     def test_someone_only_in_cc_or_an_unrelated_change_is_not_due_early(self):
         """Only people a message came from or went to directly; a to-do about someone else leaves Ann's summary alone."""
         self.answer = lambda prompt: json.dumps(self.lines())

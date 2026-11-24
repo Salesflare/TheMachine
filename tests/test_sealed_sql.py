@@ -157,6 +157,10 @@ class ExistingTestsSealed(unittest.TestCase):
         import test_calendar_writes
         sealed_run(test_calendar_writes.Suggestions, 'test_own_places_first_then_the_map_with_only_the_text')
 
+    def test_an_invite_opened_again_is_the_to_do_made_before(self):
+        import test_family_invites
+        sealed_run(test_family_invites.PersonInviteDraft, 'test_the_invite_is_a_ready_draft_for_the_send_dialog')
+
     def test_a_failing_test_is_reported_and_one_without_a_store_does_not_count(self):
         class Fails(unittest.TestCase):
             def test_it(self):
