@@ -587,8 +587,9 @@ def _():
             (DOWNLOADS / at).unlink(missing_ok=True)
         if kind == 'file':
             png('a-file-from-a-to-do')
-            run('osascript', '-e', f'tell application "System Events" to tell process "{NAME}" to click (first button of window 1 whose subrole is "AXCloseButton")')
+            run('osascript', '-e', f'tell application "System Events" to tell process "{NAME}" to click (first button of (first window whose subrole is "AXStandardWindow") whose subrole is "AXCloseButton")')
             until(lambda: not app.window(), 5)
+            need(app.card(), 'the to-do is still there')
         if kind == 'dashboard' and app.window():
             shut(app)
         if kind == 'browser':

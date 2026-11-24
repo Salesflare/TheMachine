@@ -85,7 +85,7 @@ def back_to_it():
     if ID not in in_front():
         run('open', sandbox)
     need(until(lambda: ID in in_front(), 10), 'in front: ' + in_front())
-    time.sleep(0.5)
+    time.sleep(1)
 
 
 def landed(name):
@@ -414,6 +414,7 @@ def _():
     need(until(lambda: not app.window(), 8), 'hidden')
     run('open', sandbox)
     need(until(app.window, 8), 'and back')
+    back_to_it()
     key(M, CMD)
     need(until(lambda: not app.window(), 8), 'in the Dock')
     run('open', sandbox)
