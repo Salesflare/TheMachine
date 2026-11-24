@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings</title>
+<link rel="stylesheet" href="style.css">
+<script src="strings.js" defer></script>
+<script src="settings.js" defer></script>
+</head>
+<body class="settings">
+<main id="panel">
+  <label class="set"><span><span id="robot-name"></span><span class="sub" id="robot-hint"></span></span><input id="robot" type="checkbox" role="switch"></label>
+  <label class="set" id="notify-row" hidden><span><span id="notify-name"></span><span class="sub" id="notify-hint"></span></span><input id="notify" type="checkbox" role="switch"></label>
+  <label class="set"><span><span id="login-name"></span></span><input id="login" type="checkbox" role="switch"></label>
+  <label class="set"><span><span id="quits-name"></span></span><select id="quits"><option value="" id="keep"></option><option value="1" id="quit"></option></select></label>
+  <p class="error" id="error" role="alert"></p>
+  <footer id="account" hidden><span id="where"></span><button id="signout" type="button" class="link"></button></footer>
+</main>
+</body>
+</html>

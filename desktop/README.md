@@ -6,8 +6,10 @@ notification. A dot shows when something is new since you last looked.
 The dashboard, the phone app and the Machine don't change for it. It is not part of a release, and off means not started.
 
 It never sends or approves anything itself. A to-do opens as the dashboard shows it, where its draft is read first. It starts with
-nothing of its own: no start at login, no hotkey. On Windows it has an icon by the clock while it runs, with the same dot
+nothing of its own: no start at login unless you turn that on, no hotkey. On Windows it has an icon by the clock while it runs, with the same dot
 (Windows may put it behind the arrow there), and on a Mac one in the menu bar.
+
+On a Mac it is also an app with the dashboard in a window of its own, and the robot is a setting of it (**The window**).
 
 **Quick buttons.** On a row, with the mouse over it or the keys in it: those of its notification on Android that do
 something (Do it, Snooze, Mark done), in your Machine's words. Snooze offers the to-do's own choices, as the dashboard's
@@ -47,7 +49,7 @@ Windows (10 or 11, 64-bit): download `the-machine-desktop-windows-unsigned` from
 
 Mac (macOS 13 or newer, Apple silicon or Intel): download `the-machine-desktop-mac` from the newest run of the same
 workflow, unpack it, move **The Machine** to Applications and open it there. macOS asks once whether you want to open an app
-from the internet: **Open**. It isn't in the Dock: it is the robot, and its icon in the menu bar.
+from the internet: **Open**. Its window opens to sign in, and the robot stands in its corner when another program is in front.
 A pull request's build is `the-machine-desktop-mac-unsigned`. macOS stops that one: **Done**, then System Settings,
 Privacy & Security, scroll down, **Open Anyway**, and your password.
 
@@ -56,7 +58,7 @@ gtk-layer-shell (`libgtk-layer-shell.so.0`, from the system or in `lib/` next to
 read-only: a plain `cp` over a running robot's library would crash it, so it is refused. Replace it with a new file (`cp
 -f`, `install`, `mv`, `tar`).
 
-The robot stands in the bottom right corner, and the first time its box opens by itself to sign in:
+The robot stands in the bottom right corner, and the first time its box (on a Mac the window) opens by itself to sign in:
 
 - **Sign in** opens your account in your browser and comes back, for a hosted Machine or one on The Machine Network.
 - **Self-hosted?** takes your Machine's own address. Like the dashboard, it only works where you are its owner: a computer
@@ -70,6 +72,25 @@ move it, also to another monitor. Right-click it, or **...** in the box, for whe
 A hidden robot never goes away altogether: it looks over the bottom edge of the screen, dot and all. Click it and it is
 back where it stood; so do a click on its icon by the clock (Windows), **Show robot** in its menu bar menu (Mac) and
 starting the program again. The first time, the box says so.
+
+## The window
+
+So far on a Mac. The Dock icon, **Open dashboard** and a to-do opened from the box open the dashboard in a window of the
+app's own: the same page as in a browser, signed in as the robot is, with no second sign-in and none of the app's commands.
+
+- **Links** to elsewhere open in the browser, mail addresses in the mail app, and your account's pages in the browser. A
+  link to a place in the dashboard stays in the window.
+- **Files** open in a window of their own (Command-S keeps a copy), and downloads land in Downloads, under a name that is
+  free there.
+- **What a browser has around a page**: copy and paste, Command-F to find, zoom, full screen, choosing and dropping files,
+  questions a page asks, and the microphone for Talk and dictation, for which macOS asks you once. Size, place and zoom are kept.
+- **Settings** (Command-comma): **Show the robot**, **Notifications** (only without the robot), **Start at login** and what
+  closing the window does: **Keep running** (the usual) or **Quit**. Without the robot it is a plain app: no robot, no icon in the menu bar.
+- **Notifications**, without the robot: what the robot would have said, as macOS' own, while the app runs and isn't in front.
+  A click opens the to-do. With the robot there are none, so nothing comes twice. The number on its Dock icon is For you's.
+- **Not reachable, signed out or moved to another address**: the window says so and how to go on.
+
+The robot is away while the window is in front. At login only the robot comes, no window.
 
 ## For you
 
@@ -126,7 +147,8 @@ where you may have to sign in, and a mail address in your mail app. What is sent
 there is so by you, as in the dashboard. On a Machine whose dashboard hasn't that page (`compact` in `api/session`) the row
 opens the app.
 
-What opens outside the box goes to the Machine's installed app when there is one, in the window that is open, else to the
+On a Mac what opens outside the box goes to the app's own window, and its files to Downloads or a window of their own.
+Elsewhere it goes to the Machine's installed app when there is one, in the window that is open, else to the
 browser. The robot finds the app where Chrome or Edge listed it when you installed it (Linux: the applications menu;
 Windows: the Start menu and installed apps; Mac: the app of its own they made, also Brave's and Vivaldi's), only for the Machine you are signed in to, and starts that browser with the
 app's id and the address. No shell, no setting and no prompt. Signing in stays in the browser.
@@ -173,6 +195,8 @@ Tauri 2: a small Rust program and the system's own web view. Three parts, each r
 | Part | Files | Knows |
 |---|---|---|
 | Windows | `src/windows.rs`, `src/place.rs`, `src/mac.rs` | Where the robot and the box are. Nothing of the Machine. |
+| The window | `src/dash.rs`, `src/mac_app.rs`, `src/files.rs`, `ui/app.*` | Which page it may be, where links and files go, its place. |
+| Settings | `src/settings.rs`, `src/login.rs`, `src/notify.rs`, `ui/settings.*` | The app's own choices, not your Machine's. |
 | A to-do in the box | `src/card.rs` | Which page it may be, and where its links go. |
 | Pages | `ui/` | What is in them. `robot.js` only clicks and drags; `box.js` asks `native.js` for everything. |
 | The Machine | `src/machine.rs`, `src/signin.rs`, `src/address.rs`, `src/saved.rs` | The same requests and address rules as the phone app (`mobile/`). |
@@ -196,7 +220,8 @@ the dashboard's own token and Origin. No others.
 | | Windows | Linux: layer-shell (Hyprland, Sway, KDE) | Linux: X11, GNOME (XWayland) | macOS |
 |---|---|---|---|---|
 | Built | yes, by CI | yes | yes | yes, by CI |
-| On top, no taskbar entry | window flags | layer surface | window hints | a floating panel on every Space, no Dock icon |
+| On top, no taskbar entry | window flags | layer surface | window hints | a floating panel on every Space; the Dock icon is the window's |
+| The dashboard's window | not yet | not yet | not yet | yes |
 | Full screen | hidden, says nothing | under it; says nothing on Hyprland | the window manager decides; says nothing | beside it; says nothing |
 | Away while the app is in front | yes | Hyprland only, by the socket it tells it on | yes, XWayland apps on GNOME only | yes |
 | Clicks beside the robot | taken in the window's corners | go through | go through | go through |
@@ -210,7 +235,7 @@ cargo test --manifest-path desktop/Cargo.toml
 ```
 
 CI also uses the Windows and the Mac build, with real mouse and keys against a made-up Machine (`smoke/windows.py`,
-`smoke/mac.py`), and keeps the screenshots with the run. They move the mouse and change the screen, so they are for a
+`smoke/mac.py` and `smoke/mac_window.py`), and keeps the screenshots with the run. They move the mouse and change the screen, so they are for a
 throwaway computer. Also over https, as a hosted Machine: with a certificate made for that run
 (`smoke/certificate.sh`), which only a sandbox build and that computer trust, until it ends.
 
@@ -224,7 +249,7 @@ windows are made at the start.
 
 - The box as a page of the Machine's, so its words come from the catalogs (`i18n/`); `native.js` is the seam.
 - A check of the whole hosted sign-in.
-- Settings to turn it on, a hotkey and start at login for who wants them, updates, signing on Windows.
+- The window on Windows and Linux, a hotkey for who wants one, updates, signing on Windows.
 - Talk and dictation: the dashboard has no address that opens Talk yet.
 
 The robot's images come from `brand/` ([TRADEMARKS.md](../TRADEMARKS.md)). The font is Inter (`ui/fonts/Inter-OFL.txt`).

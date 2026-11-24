@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeSet, VecDeque};
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 /// At most this many after another; the dot says there is more.
 const QUEUE: usize = 3;
@@ -55,6 +55,8 @@ pub struct Speaking {
     /// The notifications it has (the Machine's keys of them), until the Machine no longer offers them: an answer can be
     /// lost on the way, so the Machine keeps each until a look names it.
     got: Vec<String>,
+    /// What the system told (notify.rs), and whether it was in For you since.
+    notices: Vec<(String, bool)>,
     /// The meetings it said.
     told: BTreeSet<String>,
 }
@@ -84,12 +86,19 @@ impl Speak {
 /// It may speak: the person sees the robot, nothing is full screen or presented, the screen isn't locked, and they want it.
 pub fn up(app: &AppHandle) -> bool {
     let shared = app.state::<Shared>();
+    if no_robot(&shared) {
+        return crate::notify::may(app) && !quiet::away(); // else the phone and the browser have it
+    }
     let may = showing(&shared) && !crate::front::full() && !quiet::away() && wants(&shared);
     #[cfg(feature = "sandbox")]
     if !may {
         eprintln!("doesn't speak: showing {}, full screen {}, away {}, do not disturb {}", showing(&shared), crate::front::full(), quiet::away(), quiet::disturb());
     }
     may
+}
+
+fn no_robot(shared: &Shared) -> bool {
+    shared.saved.lock().unwrap().no_robot
 }
 
 fn wants(shared: &Shared) -> bool {
@@ -99,7 +108,7 @@ fn wants(shared: &Shared) -> bool {
 
 fn showing(shared: &Shared) -> bool {
     let off = [&shared.hidden, &shared.away, &shared.full, &shared.picking].iter().any(|f| f.load(Ordering::Relaxed));
-    !off && shared.saved.lock().unwrap().speak != Speak::Never
+    !off && !crate::dash::front() && shared.saved.lock().unwrap().speak != Speak::Never
 }
 
 /// What came with a look. Asked of the Machine once more, as the phone app does: its words, and its buttons now.
@@ -127,6 +136,12 @@ pub fn came(app: &AppHandle, machine: &Machine, notices: &Value, meeting: &Value
         let mut speaking = shared.speaking.lock().unwrap();
         let soon = about(meeting).filter(|(key, _)| speaking.told.insert(key.clone())).map(|(_, say)| say);
         for say in said.into_iter().rev().chain(soon) {
+            if no_robot(&shared) {
+                speaking.notices.retain(|(id, _)| *id != say.id);
+                speaking.notices.push((say.id.clone(), false));
+                let _ = app.emit_to("robot", "notify", say); // its page has the words
+                continue;
+            }
             speaking.queue.retain(|s| s.id != say.id);
             speaking.queue.push_back(say);
             while speaking.queue.len() > QUEUE {
@@ -245,6 +260,15 @@ pub fn follow(app: &AppHandle, marks: &[crate::seen::Mark]) {
             say.listed |= here;
             stays
         };
+        speaking.notices.retain_mut(|(id, listed)| {
+            let here = there(id);
+            let stays = here || !*listed;
+            *listed |= here;
+            if !stays {
+                crate::notify::gone(id);
+            }
+            stays
+        });
         speaking.queue.retain_mut(&mut stays);
         speaking.now.as_mut().is_some_and(|say| !stays(say) && !say.held)
     };

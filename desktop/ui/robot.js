@@ -35,6 +35,8 @@
   let turn = Promise.resolve();
   const take = () => { turn = turn.then(news).catch(() => {}); };
   listen('news', take).then(take);
+  // Without a robot the system says what it would
+  listen('notify', e => { const [title, line] = window.Parts.said(e.payload); invoke('robot_notify', {id: e.payload.id, title, line: line || ''}); });
 
   robot.addEventListener('pointerdown', e => {
     dragged = asked = false;

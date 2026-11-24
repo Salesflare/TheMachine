@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const {core: {invoke}, event: {listen}} = window.__TAURI__;
-  const t = window.MachineText, {icon, when, fill} = window.Parts;
+  const t = window.MachineText, {icon, when, minutes, said} = window.Parts;
   const kept = {}; // what is said takes the place of some, and they come back
   const $ = id => (kept[id] ??= document.getElementById(id));
   const STAYS = 12000, AFTER = 4000, UNDO = 8000;
@@ -45,7 +45,7 @@
     $('said').className = '';
     $('open').hidden = $('close').hidden = false;
     $('said').replaceChildren($('open'));
-    const [title, line] = text(say);
+    const [title, line] = said(say);
     $('title').textContent = title;
     $('line').textContent = line;
     $('open').setAttribute('aria-label', [title, line].filter(Boolean).join('. '));
@@ -53,15 +53,6 @@
     drawn();
     stay(STAYS);
   }
-  const minutes = at => Math.round((new Date(at) - Date.now()) / 60000);
-  // The first guest's first name, or the meeting's own name where none has one. A Machine without title says both in who:
-  // there several words are the meeting's own
-  function soon({at, who, others, join, title}) {
-    const name = !who ? title : title == null && /\s/.test(who) ? who : fill(join ? t.callWith : t.meetingWith, others ? fill(others === 1 ? t.andOne : t.andMore.replace('{n}', others), who) : who);
-    const left = minutes(at);
-    return (name || (join ? t.call : t.meeting)) + ' ' + (left > 0 ? fill(t.inMinutes, left) : t.now);
-  }
-  const text = say => (say.meeting ? [soon(say.meeting), ''] : [say.title, say.line]);
   const isSnooze = q => q.act.startsWith('snooze') && say.snooze.length;
   // Snooze's choices under the buttons, as in the box
   function drawn() {

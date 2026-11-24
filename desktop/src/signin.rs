@@ -23,7 +23,7 @@ pub enum Back {
     Own(String),
 }
 
-fn account() -> String {
+pub fn account() -> String {
     if cfg!(feature = "sandbox") {
         if let Some(stand_in) = std::env::var("MACHINE_SANDBOX_ACCOUNT").ok().filter(|s| !s.is_empty()) {
             return stand_in;
@@ -36,7 +36,7 @@ pub fn start() -> Result<(Pending, String), String> {
     let mut raw = [0u8; 32];
     getrandom::fill(&mut raw).map_err(|_| "failed")?;
     let verifier = URL_SAFE_NO_PAD.encode(raw);
-    let address = format!("{}/open?to=app&c={}", account(), challenge(&verifier));
+    let address = format!("{}/open?to=app&on=desktop&c={}", account(), challenge(&verifier));
     Ok((Pending { verifier, since: Instant::now() }, address))
 }
 
@@ -83,7 +83,7 @@ mod tests {
         // RFC 7636, appendix B
         assert_eq!(challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"), "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
         let (pending, address) = start().unwrap();
-        assert!(address.ends_with(&challenge(&pending.verifier)) && !address.contains(&pending.verifier));
+        assert!(address.contains("/open?to=app&on=desktop&c=") && address.ends_with(&challenge(&pending.verifier)) && !address.contains(&pending.verifier));
         assert_eq!(pending.verifier.len(), 43);
     }
 

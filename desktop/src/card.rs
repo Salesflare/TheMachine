@@ -3,7 +3,8 @@
 //! The page gets none of the app's commands (no capability names this window), keeps nothing on the disk, and stays on that
 //! page of its Machine: its other links open the app or the browser. It tells its state in its title, "<state>: <to-do>".
 use crate::place::{Rect, BOX_WIDTH, SHADOW};
-use crate::{later, windows, Shared};
+use crate::machine::Machine;
+use crate::{dash, files, later, windows, Shared};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 use tauri::webview::{Cookie, DownloadEvent, NewWindowResponse};
@@ -117,6 +118,9 @@ pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
             NewWindowResponse::Deny
         })
         .on_download(move |_, download| {
+            if dash::here() {
+                return files::download(&saves, download);
+            }
             if let DownloadEvent::Requested { url, .. } = download {
                 later(&saves, move |app| follow(app, &url)); // the browser keeps files
             }
@@ -165,16 +169,23 @@ fn follow(app: &AppHandle, url: &Url) {
                 windows::close_box(app);
             }
         }
-        Link::Web => {
-            #[cfg(feature = "sandbox")] // a test opens no mail app
-            if let (Some(file), "mailto") = (std::env::var_os("MACHINE_SANDBOX_MAIL"), url.scheme()) {
-                let _ = std::fs::write(file, url.as_str());
-                return;
-            }
-            let _ = app.opener().open_url(url.as_str(), None::<&str>);
-        }
+        Link::Web if dash::here() && file(&machine, url) => dash::open_file(app, url),
+        Link::Web => web(app, url),
         Link::No => {}
     }
+}
+
+/// In the browser, or the mail app.
+pub fn web(app: &AppHandle, url: &Url) {
+    if !matches!(url.scheme(), "https" | "http" | "mailto") {
+        return;
+    }
+    #[cfg(feature = "sandbox")] // a test opens no mail app
+    if let (Some(file), "mailto") = (std::env::var_os("MACHINE_SANDBOX_MAIL"), url.scheme()) {
+        let _ = std::fs::write(file, url.as_str());
+        return;
+    }
+    let _ = app.opener().open_url(url.as_str(), None::<&str>);
 }
 
 /// Starts loading it; it shows once the page has drawn it.
@@ -189,10 +200,7 @@ pub fn open(app: &AppHandle, todo: &str) -> tauri::Result<()> {
         Some(w) => w,
         None => build(app)?,
     };
-    for (name, value) in machine.cookie.iter().flat_map(|c| c.split("; ")).filter_map(|c| c.split_once('=')) {
-        let host = url.host_str().unwrap_or_default().to_string();
-        window.set_cookie(Cookie::build((name.to_string(), value.to_string())).domain(host).path("/").secure(url.scheme() == "https").http_only(true).build())?;
-    }
+    session(&window, &machine, &url);
     if was.is_some() && !drawn {
         after(app, Duration::from_millis(1500), { // the same title: nothing says that it is drawn
             let todo = todo.to_string();
@@ -206,6 +214,14 @@ pub fn open(app: &AppHandle, todo: &str) -> tauri::Result<()> {
         });
     }
     if drawn { Ok(()) } else { window.navigate(url) }
+}
+
+/// A hosted Machine's session, for the page at this address.
+pub fn session(window: &WebviewWindow, machine: &Machine, url: &Url) {
+    for (name, value) in machine.cookie.iter().flat_map(|c| c.split("; ")).filter_map(|c| c.split_once('=')) {
+        let host = url.host_str().unwrap_or_default().to_string();
+        let _ = window.set_cookie(Cookie::build((name.to_string(), value.to_string())).domain(host).path("/").secure(url.scheme() == "https").http_only(true).build());
+    }
 }
 
 fn after(app: &AppHandle, wait: Duration, work: impl FnOnce(&AppHandle) + Send + 'static) {

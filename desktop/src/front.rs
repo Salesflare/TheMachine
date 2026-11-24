@@ -1,7 +1,7 @@
 //! Whether the Machine's installed app is the window in front: then the robot goes away (README.md). Asked of the window
 //! system when another window comes to the front, and only which program's window that is: the id its browser gave the
 //! app, as webapp.rs knows it. Never its title or what is in it. A dashboard in a browser's tab is the browser's.
-use crate::{later, looked, webapp, windows, Shared};
+use crate::{dash, later, looked, webapp, windows, Shared};
 use std::sync::atomic::Ordering;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::Duration;
@@ -53,7 +53,7 @@ fn follow(app: &AppHandle, changes: &Receiver<()>) {
         while changes.recv_timeout(SETTLE).is_ok() {}
         let shared = app.state::<Shared>();
         let now = shared.signed_in().map_or(Front::Other, |(machine, alone)| system::front(&webapp::ids(&machine, alone)));
-        let now = if now == Front::Nothing && windows::box_open(app) { Front::Own } else { now };
+        let now = if dash::front() { Front::App } else if now == Front::Nothing && windows::box_open(app) { Front::Own } else { now };
         let todo = change(was, now);
         was = now;
         if let Some(gone) = todo {
