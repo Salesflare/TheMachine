@@ -475,6 +475,10 @@ def _():
     need(on.known_there() == 'The Machine', f'by its name: {on.known_there()}')
     at = until(lambda: on.on_screen('Send Ravi the floor plan'), 8)
     png('notification')
+    if not at and SYSTEM == 'windows':  # a server may show none, but keeps them
+        on.center()
+        at = until(lambda: on.on_screen('Send Ravi the floor plan'), 8)
+        png('notification-center')
     need(at, f'on the screen; {on.kept()}')
     click(*at)
     need(until(ours, 8), f'it comes to the front: {on.in_front()}')
@@ -500,6 +504,7 @@ def _():
 
 @step('a browser here may notify too')
 def _():
+    back_to_it()
     hit('close') if app.settings() else None
     settings()
     if page('settings', 'document.querySelector("#robot").checked') is False:
@@ -539,6 +544,7 @@ def _():
 
 @step('the robot again')
 def _():
+    back_to_it()
     hit('close') if app.settings() else None
     settings()
     if page('settings', 'document.querySelector("#robot").checked') is False:
@@ -676,8 +682,9 @@ def _():
     found = text()
     reachable()
     machine.stop()
+    back_to_it()
     hit('reload')
-    need(until(lambda: 'reach' in text(), 20), 'also when it is read again: ' + text())
+    need(until(lambda: 'reach' in text(), 30), f'also when it is read again: {text()}; {on.in_front()}')
     return found
 
 

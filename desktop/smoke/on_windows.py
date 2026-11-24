@@ -90,7 +90,10 @@ def which(name):
 
 
 def page(name, script, wait=10):
-    return windows_tools.page(which(name), script, wait)
+    try:
+        return windows_tools.page(which(name), script, wait)
+    except StopIteration:
+        return None  # it isn't there yet
 
 
 def says(selector, name='box'):
@@ -291,6 +294,14 @@ def known_there():
             return winreg.QueryValueEx(k, 'DisplayName')[0]
     except OSError:
         return None
+
+
+def center():
+    """Opens or closes where Windows keeps the notifications."""
+    key(0x5B, False)
+    key(ord('N'))
+    key(0x5B, True)
+    time.sleep(2)
 
 
 def on_screen(text):

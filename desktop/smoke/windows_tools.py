@@ -37,7 +37,7 @@ user.SendMessageTimeoutW.argtypes = [w.HWND, w.UINT, w.WPARAM, w.LPARAM, w.UINT,
 EACH = ctypes.WINFUNCTYPE(w.BOOL, w.HWND, w.LPARAM)
 SM = user.GetSystemMetrics
 
-out = pathlib.Path(sys.argv[3])
+out = pathlib.Path(sys.argv[3]).resolve()
 out.mkdir(parents=True, exist_ok=True)
 CERTIFICATE = pathlib.Path(sys.argv[4]).resolve() if len(sys.argv) > 4 else None
 results = []
