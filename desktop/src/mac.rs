@@ -7,7 +7,7 @@ use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject, ClassBuilder, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{class, define_class, msg_send, sel, AnyThread, ClassType, MainThreadMarker};
 use objc2_app_kit::{
-    NSApplication, NSApplicationActivationOptions, NSApplicationDidChangeScreenParametersNotification, 
+    NSApplication, NSApplicationActivationOptions, NSApplicationDidChangeScreenParametersNotification,
     NSEvent, NSPanel, NSResponder, NSRunningApplication, NSScreen, NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow,
     NSWindowAnimationBehavior, NSWindowCollectionBehavior, NSWindowDidBecomeKeyNotification, NSWindowDidChangeOcclusionStateNotification,
     NSWindowDidResignKeyNotification, NSWindowStyleMask, NSWorkspace, NSWorkspaceDidActivateApplicationNotification,

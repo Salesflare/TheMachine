@@ -554,7 +554,7 @@
   $('close').addEventListener('click', close);
   $('card-close').addEventListener('click', close);
   $('notice-ok').addEventListener('click', close);
-  addEventListener('keydown', e => { 
+  addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (card) return cardBack();
     if (snooze !== null) return snoozing(null);
