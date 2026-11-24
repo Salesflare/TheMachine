@@ -114,6 +114,8 @@ def _runs_cut(text, subject, people):
         return text
     lines = text.split('\n')
     marks, out, room = quoted([x.rstrip('\r') for x in lines], subject, people), [], 0
+    if not any(x.strip() and not m for x, m in zip(lines, marks)):  # nothing of their own: kept as it came
+        return text
     for n, (line, mark) in enumerate(zip(lines, marks)):
         room = (room if n and marks[n - 1] else QUOTED_HISTORY_KEPT) - len(line) - 1
         if not mark or room >= 0:

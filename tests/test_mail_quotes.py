@@ -233,6 +233,7 @@ class Parts(unittest.TestCase):
         quote = '\n'.join(f'> Line {n} of what was said before.' for n in range(900))
         body = trim_quoted_history(f'Sure.\n\nOn Mon, May 3, 2027 at 10:00 AM Ann <ann@example.com> wrote:\n{quote}\n\n--\nBob Roe', 'Re: Contract', PEOPLE)[0]
         self.assertLess(len(body), 3300 * 2)
+        self.assertIn('Line 899', trim_quoted_history(f'On Mon, May 3, 2027 at 10:00 AM Ann <ann@example.com> wrote:\n{quote}', 'Re: Contract', PEOPLE)[0])
         kept = trim_quoted_history(f'Sure.\n\nOn Mon, May 3, 2027 at 10:00 AM Ann <ann@example.com> wrote:\n{quote}\n\nYes, with Tom.\nBob', 'Re: Contract', PEOPLE)[0]
         self.assertLess(len(kept), 3300)
         self.assertEqual(own_part(kept, 'Re: Contract', PEOPLE), 'Sure.\n\nYes, with Tom.\nBob')
