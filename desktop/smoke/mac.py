@@ -20,7 +20,7 @@ import time
 
 from mac_tools import (
     A, BACK, CERTIFICATE, CMD, CTRL, DOWN, ENTER, ESCAPE, F, ID, LIBRARY, MAIL, NAME, PORT, Q, V, VERSION, W,
-    all_windows, App, asks, click, downloaded, drag, finish, fresh, in_corner, in_front, key, move, need, need_window,
+    all_windows, App, asks, click, downloaded, drag, finish, fresh, in_corner, in_front, key, move, need, need_window, no_browser,
     other, out, page, people, png, press, Rect, run, sandbox, saved, says, screens, shut, step, tray_menu, until,
     work_area, write,
 )
@@ -592,7 +592,7 @@ def _():
         if kind == 'dashboard' and app.window():
             shut(app)
         if kind == 'browser':
-            run('osascript', '-e', 'tell application "Safari" to quit')
+            no_browser()
     if app.card():
         press(app, '#card-close')
         need(until(lambda: not app.wide()), 'both go')
@@ -890,7 +890,7 @@ def _():
     need(until(lambda: goes_to(link) == phone, 5), f'and then go where they went: {goes_to(link)}')
     run(lsregister, '-u', str(phone))
     shutil.rmtree(phone)
-    run('osascript', '-e', 'tell application "Safari" to quit')
+    no_browser()
     return says('#state') + f' | the browser was {was}'
 
 
@@ -950,7 +950,7 @@ def _():
     finally:
         key(F, CMD | CTRL)
         time.sleep(3)
-        run('osascript', '-e', 'tell application "Safari" to quit')
+        no_browser()
     need(until(lambda: machine.desks[-1][1] == '1', 45), 'it speaks again')
 
 
@@ -1181,7 +1181,7 @@ def _():
     need(run('open', '-a', sandbox, hosted.links[-1]).returncode == 0, 'the link it goes to')
     need(until(lambda: says('#compose'), 25), f'signed in {says("#panel")}')
     need(saved()['machine'] == hosted.at + '/' and saved()['cookie'] in hosted.cookies, 'with its session')
-    run('osascript', '-e', 'tell application "Safari" to quit')
+    no_browser()
     return hosted.at
 
 

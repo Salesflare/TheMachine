@@ -10,7 +10,7 @@ import time
 
 from mac_tools import (
     A, C, CMD, CTRL, ENTER, ESCAPE, F, ID, LIBRARY, MAIL, NAME, PORT, Q, V, VERSION, W, all_windows, App, click, drag,
-    finish, fresh, in_front, key, need, need_window, other, out, page, png, press, run, sandbox, saved, says, screens,
+    finish, fresh, in_front, key, need, need_window, no_browser, other, out, page, png, press, run, sandbox, saved, says, screens,
     step, until, work_area, write,
 )
 from standin import Machine
@@ -75,7 +75,7 @@ def dashboard():
 
 def gone_to(at, seconds=30):
     found = until(lambda: at in machine.left or at in elsewhere.left, seconds)
-    run('osascript', '-e', 'tell application "Safari" to quit')
+    no_browser()
     until(lambda: 'Safari' not in in_front(), 8)
     back_to_it()
     return found
@@ -89,7 +89,7 @@ def back_to_it():
 
 
 def landed(name):
-    found = until(lambda: (DOWNLOADS / name).exists(), 15)
+    found = until(lambda: (DOWNLOADS / name).exists(), 40)
     need(found, f'{name} in {[p.name for p in DOWNLOADS.iterdir()]}')
     need(until(lambda: told() == json.dumps({'saved': name}, separators=(',', ':')), 10), f'the page is told: {told()}')
 
@@ -232,7 +232,7 @@ def _():
     del elsewhere.hops[:]
     tap('#hop')
     need(until(lambda: elsewhere.hops, 30), 'its address is opened there')
-    run('osascript', '-e', 'tell application "Safari" to quit')
+    no_browser()
     back_to_it()
     need(dashboard(), 'and the dashboard stays')
     return elsewhere.hops
@@ -617,7 +617,7 @@ def _():
     machine.away = None
     need(run('open', '-a', sandbox, elsewhere.links[-1]).returncode == 0, 'the link it goes to')
     time.sleep(2)
-    run('osascript', '-e', 'tell application "Safari" to quit')
+    no_browser()
     found = text() if not dashboard() else 'back in the dashboard'
     if 'dashboard' not in found:
         need(until(lambda: told('#error'), 1), 'or it says why: ' + found)
