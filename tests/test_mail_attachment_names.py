@@ -37,7 +37,16 @@ class AttachmentNames(unittest.TestCase):
         self.assertEqual(event['metadata']['attachments'], [{'name': 'Statement 2025 - unit 12.pdf', 'type': 'application/pdf'}])
         self.assertNotIn('123.45', json.dumps(event))
         plain = machine_sources_gmail.message_event(WORK, {**statement('m2'), 'payload': {**statement()['payload'], 'parts': statement()['payload']['parts'][:1]}})
-        self.assertNotIn('attachments', plain['metadata'])  # no files: no key, so mail without files hashes as before
+        self.assertEqual(plain['metadata']['attachments'], [])  # read, and it had none
+
+    def test_mail_without_files_is_no_new_version_of_one_read_before_that_was_kept(self):
+        raw = {**statement('m2'), 'payload': {**statement()['payload'], 'parts': statement()['payload']['parts'][:1]}}
+        now = machine_sources_gmail.message_event(WORK, raw)
+        before = {**now, 'metadata': {k: v for k, v in now['metadata'].items() if k != 'attachments'}}
+        with tempfile.TemporaryDirectory() as temp:
+            store = machine_main.Store(Path(temp) / 'events.sqlite')
+            self.assertEqual(store.commit_page('work', {'history_id': '1'}, [before]), 1)
+            self.assertEqual(store.commit_page('work', {'history_id': '2'}, [now]), 0)
 
     def test_outlook_mime_keeps_the_name_too(self):
         mime = email.message.EmailMessage()

@@ -179,7 +179,7 @@ TOOL = {t['name']: t for t in TOOLS}
 MAIN_TOOLS = [
     {'type': 'function', 'name': 'list_todos',
      'description': ('All the owner’s open to-dos, in the order the dashboard shows them: the ones for the owner first, '
-                     'most urgent first, each prepared (a draft is ready), needs you (a decision or an answer first) or '
+                     'what is due by tomorrow first, each prepared (a draft is ready), needs you (a decision or an answer first) or '
                      'preparing (still being worked on, no draft yet); then '
                      'waiting on others and snoozed. Each has an id, its state, its title and who it is from; counts has '
                      'how many there are in each state. One that looks done is in Done, not here: find_todos finds it.'),

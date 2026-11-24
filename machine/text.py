@@ -127,6 +127,16 @@ def shown_body(text):
     return (before + '\n\n' + after if before and after else before or after), clipped
 
 
+def own_part(text, subject=''):
+    """What someone wrote themselves in an email: without the quoted history, the lines quoted with > and the signature
+    under "-- ". A forward keeps its lines: they are what it sends."""
+    text = '\n'.join(x.rstrip() for x in split_quoted_history(str(text or '').replace('\r', ''), subject)[0].split('\n'))
+    if not FORWARD_SUBJECT.match(subject or ''):
+        text = '\n'.join(x for x in QUOTED_MARK.split(text, maxsplit=1)[0].split('\n') if not x.lstrip().startswith('>'))
+        text = re.split(r'\n--\n', text, maxsplit=1)[0]
+    return re.sub(r'\n{3,}', '\n\n', text).strip()
+
+
 # Zero-width and filler characters newsletters use to pad preview text.
 INVISIBLE = re.compile('[\u200b-\u200f\u2060\u034f\u00ad\ufeff\u2007\u180e]')
 
