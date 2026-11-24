@@ -19,7 +19,7 @@ import time
 from standin import Machine
 
 on = importlib.import_module({'darwin': 'on_mac', 'win32': 'on_windows'}[sys.platform])
-App, SYSTEM, PORT, need, out, page, png, press, step, until = on.App, on.SYSTEM, on.PORT, on.need, on.out, on.page, on.png, on.press, on.step, on.until
+App, SYSTEM, PORT, need, out, page, png, step, until = on.App, on.SYSTEM, on.PORT, on.need, on.out, on.page, on.png, on.step, on.until
 newer = pathlib.Path(sys.argv[2]).resolve()
 NEW = '9.9.9'
 WINDOWS = SYSTEM == 'windows'
@@ -151,8 +151,8 @@ def _():
     png('no-update')
     app.kill()
     spoiled = False
-    told = [h for p, h in asked if p == '/latest.json'][0]
-    need(not any('0.0.1' in v for v in told.values()), f'it says nothing of itself {told}')
+    told = {k.lower(): v for k, v in [h for p, h in asked if p == '/latest.json'][0].items()}
+    need(set(told) == {'accept', 'user-agent', 'host'} and told['user-agent'].startswith('tauri-plugin-updater/'), f'it says nothing of itself {told}')
     return str(told)
 
 
@@ -169,7 +169,7 @@ def _():
     png('an-update')
     was = running()
     need(page('settings', 'document.querySelector("#update-hint").innerText') == f'{NEW} is ready', 'says so')
-    press(app, '#update', 'settings')
+    on.click(*on.here(app, '#update', 'settings'))
     need(until(lambda: version() == NEW, 90), f'it is in place: {version()}')
     need(until(lambda: running() and not set(running()) & set(was), 60), f'it runs again: {was} {running()}')
     time.sleep(6)
@@ -184,6 +184,7 @@ def _():
         app.kill()
         for pid in running():
             os.kill(pid, 9)
+        shutil.rmtree(HOME.parent)  # so that nothing after this opens it
         return 'NOT TESTED: a Mac app is deleted by the person'
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\Windows\CurrentVersion\Run') as key:
         winreg.SetValueEx(key, 'The Machine', 0, winreg.REG_SZ, f'"{program}" --login')

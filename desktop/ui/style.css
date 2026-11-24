@@ -102,6 +102,7 @@ body.settings{background:var(--page)}
 .settings .error{font-size:13px;margin:10px 0 0}
 .settings .error:empty{display:none}
 .settings footer{display:flex;justify-content:space-between;gap:16px;padding-top:12px;font-size:13px;color:var(--text-2)}
+.settings main:has(>#account[hidden])>#update-row{border-bottom:0}
 .settings footer span{overflow-wrap:anywhere}
 .settings footer .link{flex:none}
 @media (prefers-reduced-motion:reduce){.set input,.set input::after{transition:none}}

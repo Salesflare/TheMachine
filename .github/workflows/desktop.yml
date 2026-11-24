@@ -140,10 +140,10 @@ jobs:
           trap 'sudo security delete-certificate -c "Made-up Machine root" "$system"' EXIT
           sudo security add-trusted-cert -d -r trustRoot -p ssl -k "$system" "$certificate/root.pem"
           failed=0
+          MACHINE_SANDBOX_UPDATES_KEY="$(cat "$RUNNER_TEMP/made-up.key.pub")" python3 smoke/updates.py "sandbox-build/The Machine.app" newer/newer.app.tar.gz shots/updates || failed=1
           python3 smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots "$certificate" || failed=1
           python3 smoke/window.py "sandbox-build/The Machine.app" "out/The Machine.app" shots/window "$certificate" || failed=1
           python3 smoke/hangs.py "sandbox-build/The Machine.app" - shots/hangs || failed=1
-          MACHINE_SANDBOX_UPDATES_KEY="$(cat "$RUNNER_TEMP/made-up.key.pub")" python3 smoke/updates.py "sandbox-build/The Machine.app" newer/newer.app.tar.gz shots/updates || failed=1
           exit $failed
       - name: Its certificate is trusted no more
         if: always() && steps.use.outcome != 'skipped'
