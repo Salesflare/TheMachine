@@ -108,7 +108,9 @@ def drag(a, b, steps=25):
         time.sleep(0.03)
     time.sleep(0.3)
     mouse(2, *b, 0, 1)
-    time.sleep(0.6)
+    time.sleep(0.2)
+    move(b[0] + 1, b[1])  # as a hand does: macOS 15 may only tell that the button is up with what comes next
+    time.sleep(0.4)
 
 
 ENTER, ESCAPE, DOWN, UP, BACK, TAB, A, C, V, Q, W, F = 36, 53, 125, 126, 51, 48, 0, 8, 9, 12, 13, 3
@@ -335,7 +337,7 @@ def tray_menu(app, name):
 
 def downloaded(bundle):
     """A copy, marked as what a browser downloaded, and opened."""
-    copy = pathlib.Path.home() / 'Downloads' / 'The Machine.app'
+    copy = out.parent / 'downloads' / 'The Machine.app'
     shutil.rmtree(copy, ignore_errors=True)
     run('ditto', bundle, str(copy))
     run('xattr', '-r', '-w', 'com.apple.quarantine', f'0083;{int(time.time()):08x};Safari;{uuid.uuid4()}', str(copy))
@@ -572,6 +574,7 @@ def _():
 def _():
     press(app, '#more')
     need(until(lambda: f'Signed in to 127.0.0.1:{PORT}' in says('#menu')), says('#menu'))
+    need('Always' in says('#menu') and 'Never' in says('#menu') and 'Disturb' not in says('#menu'), says('#menu'))
     png('menu')
     key(ESCAPE)
     need(until(lambda: not says('#menu')), 'it closes')
@@ -1125,7 +1128,7 @@ def goes_to(link):
 
 def made_up_app(lsregister):
     """Another app that names the same links, as the phone's app on a Mac does, and has them."""
-    there = pathlib.Path.home() / 'Applications/Made up.app'
+    there = out.parent / 'Made up.app'
     (there / 'Contents/MacOS').mkdir(parents=True, exist_ok=True)
     told = plistlib.loads((pathlib.Path(sandbox) / 'Contents/Info.plist').read_bytes())
     told.update(CFBundleIdentifier='computer.themachine.app', CFBundleName='Made up', CFBundleDisplayName='Made up', CFBundleExecutable='made-up')

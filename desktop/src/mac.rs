@@ -331,6 +331,14 @@ pub fn give_back() {
     });
 }
 
+/// On macOS 15 the pages of one program can wait for each other for good over their saved shaders (Metal's own lock): about
+/// one start in fifty on the test runners, then the robot or the box never answers. Made anew at each start, they never did.
+pub fn fresh_shaders(app: &AppHandle) {
+    let Some(of) = std::env::temp_dir().parent().map(|user| user.join("C")) else { return };
+    let pages = format!("com.apple.WebKit.WebContent+{}", app.config().identifier);
+    let _ = std::fs::remove_dir_all(of.join(pages).join("com.apple.WebKit.WebContent/com.apple.metal"));
+}
+
 /// Once macOS has brought it to the front.
 pub fn give_back_soon(app: &AppHandle) {
     let app = app.clone();

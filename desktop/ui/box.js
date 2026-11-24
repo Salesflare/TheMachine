@@ -273,10 +273,11 @@
     const where = machine && connected ? [el('li', {className: 'where', textContent: fill(t.signedIn, new URL(machine).host)})] : [];
     $('menu').replaceChildren(...where, ...items.map(id => el('li', {}, el('button', {type: 'button', className: 'name', id: 'menu-' + id, textContent: names[id], onclick: () => (id === 'dashboard' ? native.openDashboard().catch(fail) : native.menuItem(id))}))));
     if (machine) $('menu-dashboard').parentElement.after(el('li', {id: 'menu-speak', role: 'radiogroup', ariaLabel: t.speak, title: t.speakHint}, el('span', {className: 'where', textContent: t.speak}),
-      ...Object.entries(t.speaks).map(([when, name]) => el('button', {type: 'button', className: 'name', id: 'speak-' + when, role: 'radio', onclick: () => setSpeaks(when)}, name, icon('done')))));
+      ...Object.entries(t.speaks).filter(([when]) => when !== 'calm' || !mac).map(([when, name]) => el('button', {type: 'button', className: 'name', id: 'speak-' + when, role: 'radio', onclick: () => setSpeaks(when)}, name, icon('done')))));
     showSpeaks();
     $('menu').querySelector('button').focus();
   }
+  const mac = navigator.platform.startsWith('Mac'); // which doesn't tell whether a Focus is on
   function showSpeaks() {
     for (const b of document.querySelectorAll('#menu-speak button')) b.setAttribute('aria-checked', String(b.id === 'speak-' + speaks));
   }
