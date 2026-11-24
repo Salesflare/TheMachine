@@ -39,7 +39,7 @@ if(draft.kind==='finish'){sendTask=id;sendRevision=draft.revision;sendDraft=draf
 // Files it uploads are listed and open from the card; without any, the dialog says nothing gets attached.
 const files=draft.attachments||[];$('#send-files').hidden=!files.length;setHTML($('#send-files'),draftFileLinks(id,files));
 sendHeader=()=>sendRows([...(draft.url?[['Page',draft.url]]:[]),...(githubWay(draft)?[[t('How'),githubWay(draft)]]:[]),...(draft.message&&draft.to_name?[['To',draft.to_name]]:[]),...(draft.message?[['What',draft.preview]]:[]),...(draft.message&&!files.length?[['Files','None']]:[])]);sendHeader();sendBody(draftText(draft));
-sendFine(draft.message?`Confirm types exactly this text on the page (replacing an earlier draft there), ${files.length?`attaches ${files.length>1?'these '+files.length+' files':'this file'}`:'attaches no file'}, submits it, checks that it went through and reports back.`:files.length?`Confirm does only this last step with ${files.length>1?'these files':'this file'}, checks that it went through and reports back.`:'Confirm does only this last step, checks that it went through and reports back.');$('#send-dialog').showModal();return}
+sendFine(draft.message?`Confirm types exactly this text on the page (replacing an earlier draft there), ${files.length?`attaches ${files.length>1?'these '+files.length+' files':'this file'}`:'attaches no file'}, submits it, checks that it went through and reports back.`:files.length?`Confirm does only this last step with ${files.length>1?'these files':'this file'}, checks that it went through and reports back.`:'Confirm does only this last step, checks that it went through and reports back.');$('#send-dialog').showModal();if(self.keptMark?.(task,draft))editSend();return}
 sendTask=id;sendRevision=draft.revision;sendDraft=draft;$('#send-editor').hidden=true;$('#send-preview').hidden=false;$('#send-edit').hidden=draft.kind==='email_demo';$('#send-subject-label').hidden=SEND_CHATS.includes(draft.kind);
 // Handing it to someone: the card then waits for their reply.
 const waits=draft.delegate?`After sending, this to-do waits ${draft.wait_days} day${draft.wait_days>1?'s':''} for ${draft.to_name?draft.to_name+'’s':'a'} reply; it closes when they answer.`:'';
@@ -76,7 +76,7 @@ const sendRecipients=()=>[...document.querySelectorAll('#send-recipients input:c
 function editSend(focus=true){const mail=sendDraft.kind==='email';$('#send-subject').value=sendDraft.subject||'';$('#send-body-label').hidden=mail;$('#send-rich').hidden=!mail;$('#send-rich-link').hidden=true;
  if(mail){mailLoad(draftText(sendDraft));if(KB_MAC)for(const[k,v]of[['b','Bold (Ctrl B)'],['i','Italic (Ctrl I)'],['link','Link (Ctrl K)']]){const x=document.querySelector(`[data-mail-tool="${k}"]`);if(x)x.title=t(v).replace('Ctrl ','⌘')}}  /* on a Mac the keys are ⌘ */
  else $('#send-body').value=plainDraft(draftText(sendDraft));
- $('#send-editor').hidden=false;sendHeader(false);subjectFit();sendCaptionFit();$('#send-preview').hidden=true;$('#send-edit').hidden=true;if(focus!==false)(mail?mailRich():$('#send-body')).focus()}
+ $('#send-editor').hidden=false;sendHeader(false);subjectFit();sendCaptionFit();$('#send-preview').hidden=true;$('#send-edit').hidden=true;if(focus!==false)(mail?mailRich():$('#send-body')).focus();lazyRun('kept',()=>keptOpen())}
 // An email is edited as it will look (bold, italic, lists, links), never as marks or HTML. The editor holds only what
 // an email can carry: a paste or a drop comes in as plain text, and Send reads the page back into the email's marks
 // (mailBody), draws those once more the way the mail will be written (mailHtml) and sends only when both read the same.
@@ -163,7 +163,7 @@ $('#send-edit').onclick=()=>editSend();
 $('#send-ask-open').onclick=()=>{$('#send-act').hidden=true;$('#send-ask').hidden=false;$('#send-ask-text').focus()};
 $('#send-ask-back').onclick=()=>{$('#send-ask').hidden=true;$('#send-act').hidden=false};
 $('#send-ask-save').onclick=async()=>{const text=$('#send-ask-text').value.trim(),b=$('#send-ask-save');if(!text){$('#send-ask-text').focus();toast('Tell me what to change first.',true);return}
- b.disabled=true;try{await saveDecision(sendTask,'other',text);$('#send-dialog').close()}catch(e){errCaught(e);$('#send-error').textContent=e.message}finally{b.disabled=false}};
+ b.disabled=true;try{await saveDecision(sendTask,'other',text);$('#send-ask-text').value='';self.ktType?.();$('#send-dialog').close()}catch(e){errCaught(e);$('#send-error').textContent=e.message}finally{b.disabled=false}};
 $('#send-ask-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)&&!e.isComposing){e.preventDefault();$('#send-ask-save').click()}});
 $('#send-cancel').onclick=()=>$('#send-dialog').close();
 // A closed send panel keeps nothing: the next one fills it again, and a sent or canceled draft never reads as typing
@@ -178,9 +178,9 @@ $('#send-confirm').onclick=async()=>{const b=$('#send-confirm');b.disabled=true;
 if(sendDraft?.compose){await composeSend(b);return}  // a new email (todos-compose.js, there while it's open)
 if(!$('#send-editor').hidden){const mail=sendDraft.kind==='email',typed=$('#send-body').value,body=mail?mailOut(draftText(sendDraft)):typed===plainDraft(draftText(sendDraft))?draftText(sendDraft):unplainDraft(typed,draftText(sendDraft)),subject=[...TEXT_SENDS,'finish'].includes(sendDraft.kind)?undefined:$('#send-subject').value;
 if(body==null){b.disabled=false;return}
-if(body!==draftText(sendDraft)||subject!==sendDraft.subject){const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'revise_draft',args:{suggestion_id:sendTask,revision:sendRevision,body,subject}})});sendRevision=r.revision;
+if(body!==draftText(sendDraft)||subject!==sendDraft.subject){const r=await fleetPost('revise_draft',{suggestion_id:sendTask,revision:sendRevision,body,subject});sendRevision=r.revision;
  // The saved text is what goes out. When saving changed it (a blank line before the name), it shows first and Send waits.
- if(r.body!=null){sendDraft={...sendDraft,revision:r.revision,...(subject===undefined?{}:{subject}),...(sendDraft.kind==='finish'?{[sendDraft.message?'message':'preview']:r.body}:{body:r.body})};
+ if(r.body!=null){sendDraft={...sendDraft,revision:r.revision,...(subject===undefined?{}:{subject}),...(sendDraft.kind==='finish'?{[sendDraft.message?'message':'preview']:r.body}:{body:r.body})};self.keptGone?.();
   if(r.body.trim()!==body.trim()){if(mail)mailLoad(r.body);else $('#send-body').value=plainDraft(r.body);$('#send-error').textContent=t('Saved with a small change. Check the message, then send.');b.disabled=false;return}}}}
 const extra={...($('#send-recipients').hidden?{}:{recipients:sendRecipients()}),...(sendDraft.kind==='email'&&sendDraft.from_options?.length>1&&sendFrom?{sender:sendFrom}:{})};
 // Several: Next keeps this one, the last Send sends each in order

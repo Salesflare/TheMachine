@@ -72,7 +72,7 @@ const localCache=(()=>{const DB='tm-cache',MAX_AGE=7*864e5,MAX_BYTES=8e6,MAX_ITE
  const aad=name=>new TextEncoder().encode(CACHE_SCOPE+'\n'+name);  // a copy only opens under its own name and owner
  const SECRET=/^(csrf|token|secret|password|passcode|api_?key|private_?key|cookie|authorization)$|_(token|secret|password|key)$/i;
  const scrub=v=>Array.isArray(v)?v.map(scrub):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).filter(([k])=>!SECRET.test(k)).map(([k,x])=>[k,scrub(x)])):v;
- let opened=null,db=null,last=0,blocked=false;const writes=new Map(),durable=name=>['outbox','chat-drafts'].includes(name);
+ let opened=null,db=null,last=0,blocked=false;const writes=new Map(),durable=name=>['outbox','chat-drafts','kept'].includes(name);
  const open=()=>opened||(opened=(async()=>{db=await new Promise((ok,no)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{r.result.createObjectStore('meta');r.result.createObjectStore('data')};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);r.onblocked=()=>no(Error('blocked'))});
   db.onversionchange=()=>{db.close();db=null;opened=null};
   let meta=await req(store(db,'meta').get('key'));
@@ -94,7 +94,7 @@ const localCache=(()=>{const DB='tm-cache',MAX_AGE=7*864e5,MAX_BYTES=8e6,MAX_ITE
   return {value:JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:row.iv,additionalData:aad(name)},key,row.ct))),at:row.at}}catch{return null}}
  // Everything this device kept: the data, its key, the loading outline's shape (skeleton-*) and the service worker's copy of the page.
  async function wipe(){blocked=true;await Promise.allSettled([...writes.values()]);try{await opened}catch{}opened=null;try{db?.close()}catch{}db=null;
-  try{for(const k of ['skeleton-cards','skeleton-head','skeleton-setup','skeleton-fleet','skeleton-talk'])localStorage.removeItem(k)}catch{}
+  try{for(const k of ['kept','skeleton-cards','skeleton-head','skeleton-setup','skeleton-fleet','skeleton-talk'])localStorage.removeItem(k)}catch{}
   await Promise.all([new Promise(ok=>{try{const r=indexedDB.deleteDatabase(DB);r.onsuccess=r.onerror=r.onblocked=()=>ok()}catch{ok()}}),
    (async()=>{try{for(const k of await caches.keys())if(k.startsWith('tm-'))await caches.delete(k)}catch{}})()])}
  return {on,put,read,wipe}})();

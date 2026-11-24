@@ -8,9 +8,9 @@
 // on the owner's Send like any other.
 let composeBusy=false;
 async function openCompose(to,subject,href,body){if(composeBusy)return;composeBusy=true;let r=null;
- try{r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'compose_from',args:{to}})})}
+ try{r=await fleetPost('compose_from',{to})}
  catch(e){errCaught(e)}finally{composeBusy=false}
- if(!r?.from?.length){location.href=href;return}
+ if(!r?.from?.length){if(href)location.href=href;return}
  if($('#send-dialog').open)$('#send-dialog').close();
  sendBatch=null;sendTask=null;sendRevision=null;sendDraft={kind:'email',compose:true,to:[to],to_name:r.to_name||'',subject:subject||'',body:body||'',from:r.from};
  sendFrom=r.from.some(c=>c.from===r.default)?r.default:r.from[0].from;
@@ -33,7 +33,7 @@ async function composeSend(b){const d=sendDraft,subject=$('#send-subject').value
  const miss=!subject?t('Add a subject first.'):!body.trim()?t('Write the message first.'):'';
  if(miss){$('#send-error').textContent=miss;(subject?mailRich():$('#send-subject')).focus();b.disabled=false;return}
  const pick=d.from.find(c=>c.from===sendFrom)||d.from[0];
- const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'compose_email',args:{to:d.to[0],account_id:pick.account_id,subject,body}})});
+ const r=await fleetPost('compose_email',{to:d.to[0],account_id:pick.account_id,subject,body});self.keptGone?.();
  try{await sendConfirmed(r.suggestion_id,r.revision,'email',(r.from_options||[]).length>1?{sender:pick.from}:{})}
  catch(e){errCaught(e);$('#send-dialog').close();toastOpen(t('Not sent. The email waits in a to-do.'),r.suggestion_id);await refresh();return}
  $('#send-dialog').close();toast(t('Sending your email…'));await refresh()}

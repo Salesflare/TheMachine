@@ -61,7 +61,8 @@ try{
    }
    const sizes=await page.evaluate(()=>({page:document.documentElement.scrollWidth,viewport:innerWidth,dialog:document.querySelector('#send-dialog').getBoundingClientRect().width}));
    assert.ok(sizes.page<=sizes.viewport&&sizes.dialog<=sizes.viewport,at+': no overflow '+JSON.stringify(sizes));
-   await page.keyboard.press('Escape');
+   // What was typed on it goes (todos-kept.js), the next one starts from its draft
+   if(files.length)await page.locator('#send-cancel',{hasText:'Discard'}).click();else await page.keyboard.press('Escape');
   }
   await context.close();
  }

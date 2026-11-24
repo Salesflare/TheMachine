@@ -1,0 +1,8 @@
+/*@lazy*/
+/* What was typed and not sent (todos-kept.js): a quiet row for a new email, a line on its draft, a line in the send dialog */
+:is(.kept-row,.kept-mark,.kept-note){display:flex;flex-wrap:wrap;gap:0 14px;align-items:baseline;margin:0;font-size:var(--fs-sm);line-height:1.4;color:var(--muted)}
+:is(.kept-row,.kept-mark,.kept-note)>span{min-width:0;overflow-wrap:anywhere}
+:is(.kept-row,.kept-mark,.kept-note) button.link{min-height:32px;margin:0;padding:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.kept-rows{margin:0 0 12px}.kept-row>span{color:var(--text)}
+.kept-note{margin:0 0 10px;padding:3px 10px;border-radius:8px;background:#eca45b1f;color:var(--amber)}
+#send-dialog.kept-on:not(#_) #send-cancel:not(#_){display:block}
