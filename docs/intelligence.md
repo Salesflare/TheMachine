@@ -380,7 +380,10 @@ email signature, or them saying where they work in their own message.
   headline, Oct 15" with a link to the organization.
 - A stated name joins the organization with that name or domain, or stands as its own (`org:named:acme`, never looked
   up). The owner's own company marks a colleague instead.
-- A work address wins over a review's statement; your own word (Edit or Add on the person page) wins over both.
+- With several work domains it is the one they last wrote from, going by mail whose sender was checked
+  (`verified_sender`) when there is any (`people.company_now`).
+- A work address wins over a review's statement, unless they said it after they last wrote from one. Your own word
+  (Edit or Add on the person page) wins over both.
 - Nothing else is read from it: no seniority, no role. Reviews get up to five people with a headline and no
   organization, each once a month; one organizations pass (`profile_runs` kind `orgs`) runs once per install.
 

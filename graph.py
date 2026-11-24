@@ -1234,7 +1234,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     lap('setup')
     # The passes (machine/graph/), in the order they run: each one reads what the ones before it found; lap times each.
     (kept, mailings, listed, warmup, gone, per_event, names, x_names, crm_names, paying_names, said_orgs, appears,
-     owner_events, headlines, keys, senders) = lap('identities', read_identities(db, signals, old, owner, current, config, past))
+     owner_events, headlines, keys, senders, wrote) = lap('identities', read_identities(db, signals, old, owner, current, config, past))
     union, manual, manual_people, joined = lap('joins', join_identities(db, per_event, gone, names, keys, senders))
     (roles, live_roles, pair_day, node_events, event_people, direct_people, next_meeting, accounts, history_events,
      last_day, age, strength, live, signal_events) = lap('strength', weigh_contact(per_event, union, current, tz, past))
@@ -1247,7 +1247,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
      alike) = lap('people', person_nodes(db, owner, names, strength, union, keys, x_names, roles, last_day, current, tz, listed,
                                          kept, node_events, mailings, appears, kin, thread_sides, on_projects, project_side,
                                          accounts, side_of_account, headlines, live_roles, next_meeting, manual_people,
-                                         history_events, live, joined))
+                                         history_events, live, joined, wrote))
     org_name, infos = lap('organizations', place_in_organizations(manual, named_orgs, owner, warmup, members, crm_names, edits,
                                                                   named, paying_names, profiles, said_orgs, inboxes, mailings,
                                                                   nodes, stated, strength))
