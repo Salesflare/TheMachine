@@ -70,7 +70,7 @@ window.visualViewport?.addEventListener('resize',chatKeyboard);window.visualView
 function paintChat(){const log=$('#chat-log'),s=chatOpen();if(!log||!s)return;chatKeepPlace(()=>chatPatch(log,chatLog(s)));
  const st=$('#chat-status'),sh=chatStatus(s);if(st&&st.innerHTML!==String(sh))setHTML(st,sh);const menu=$('#chat-menu');if(menu&&!menu.open){const rest=chatParts(s).rest;menu.toggleAttribute('data-empty',!rest);setHTML(menu.querySelector('.chat-menu-list'),html`${rest}<button type="button" class="ghost" data-chat-drawer aria-expanded="${chatDrawer}">All tasks</button>`);}
  const picks=$('#chat-picks');if(picks){const ph=chatPicks(s);if(picks.innerHTML!==String(ph))setHTML(picks,ph);picks.hidden=!chatPicksShown()}
- chatSendState();chatFades();chatPreviews();cmPaint('chat')}
+ chatSendState();chatFades();chatPreviews();cmPaint('chat');self.keptBoxes?.()}
 // The chat this device kept for the card: shown at once while the live one loads (that one replaces it in place)
 async function chatKept(id){const hit=await localCache.read('chat:'+id);if(!hit||id!==chatId||chat&&!(chat.unavailable&&!chat.items?.length))return;chat={...hit.value,cursor:null,active:false};paintChat();requestAnimationFrame(chatScrollStart)}
 // Reads that failed in a row on the open chat: each waits twice as long as the one before (4 s up to a minute), so a

@@ -3,7 +3,7 @@ title: Write a new email
 area: cards
 summary: Click an email address to write to it from your own mailbox, in the same window as a to-do's draft.
 covers: email-composer
-code: machine/app/mail.py, dashboard/todos-compose.js, dashboard/todos-kept.js
+code: machine/app/mail.py, dashboard/todos-compose.js, dashboard/todos-kept.js, dashboard/todos-kept-box.js
 order: 12
 ---
 ## Open it
@@ -29,6 +29,8 @@ Close it with Escape, × or Back and what you typed is kept, with the subject, F
 **Discard** in the window throws away what you typed, and **Undo** brings it back. A message you sent, scheduled or discarded doesn't come back.
 
 If the draft changed meanwhile, you see the new draft and **Use it** shows what you typed. Neither replaces the other until you send. Two tabs with different text work the same way.
+
+**New to-do**, **Ask for changes**, an answer to your Machine and a review for someone else keep what you typed too. **Cancel** throws it away.
 
 What you typed stays in this browser only, encrypted, for 30 days. It goes when you sign out or someone else signs in. Other devices don't see it. Without https it lasts while the page is open.
 

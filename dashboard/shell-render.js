@@ -35,7 +35,7 @@ const pk=document.querySelector('.project-picker'),pkIn=pk?.closest('.chat-main,
 const foldsBack=foldsKeep($('#suggestions'));
 return()=>{for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
 for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
-if(pk&&!pk.isConnected)(pkIn?document.getElementById(pkIn):$('.chat-main'))?.append(pk);}}
+if(pk&&!pk.isConnected)(pkIn?document.getElementById(pkIn):$('.chat-main'))?.append(pk);self.keptBoxes?.()}}
 function render(view){
 // What stands over the to-dos (dashboard_parts.LAZY_EARLY: the mail check's line, a milestone; and an unsent email's row, todos-kept.js) comes with the first
 // drawing: while its file, fetched with the page, is still on its way, the loading outline stays (once, a moment)
