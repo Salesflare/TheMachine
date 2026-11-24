@@ -14,7 +14,7 @@ CODE_NAME = re.compile(
 
 # Other names, the same: what the code writes there is a code, an id, a time, a number, or JSON of those.
 CODES = '''
-activity_accounts.service activity_seen.ref agent_jobs.outcome ai_activity.outcome
+activity_accounts.service activity_seen.ref agent_jobs.outcome ai_activity.outcome ai_activity.args
 agent_key_pins.slot agent_key_pins.fingerprint ai_clients.auth_method ai_codes.challenge ai_connections.level ai_connections.area
 analyses.items analyses.resumed_from android_feed_health.last_checked android_feed_health.last_recorded android_inbox.payload
 board_backfill_asks.fit board_backfills.ranked board_fits.fit board_suggestions.projects boards.visibility board_suggestions.visibility
