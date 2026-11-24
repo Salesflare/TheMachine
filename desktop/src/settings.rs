@@ -1,6 +1,6 @@
 //! Settings, a small window of the app's own: the robot, starting at login, what closing the dashboard's window does, and
 //! notifications when there is no robot. What the Machine itself does is set in the dashboard.
-use crate::{away, later, login, notify, speak, windows, Shared};
+use crate::{away, later, login, notify, speak, updates, windows, Shared};
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
@@ -22,6 +22,9 @@ pub struct Settings {
     /// Nothing is said here: a browser here may tell (speak.rs).
     browser: bool,
     machine: Option<String>,
+    version: &'static str,
+    /// The version that is fetched and waits for a restart (updates.rs).
+    update: Option<String>,
 }
 
 pub fn open(app: &AppHandle) {
@@ -92,6 +95,8 @@ pub async fn settings_state(app: AppHandle) -> Result<Settings, String> {
             blocked: saved.notify == Some(true) && notices == notify::Lets::No,
             browser: shared.browser.load(Ordering::Relaxed) > 0 && (!saved.no_robot || saved.notify == Some(true) && notices == notify::Lets::Yes),
             machine: saved.machine.clone(),
+            version: env!("CARGO_PKG_VERSION"),
+            update: updates::ready(),
         })
     }).await
 }

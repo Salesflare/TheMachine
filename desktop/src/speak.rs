@@ -66,6 +66,8 @@ pub struct Speaking {
     /// What is said now shows, and when its page last said it is there.
     shown: bool,
     alive: Option<Instant>,
+    /// The mouse or the keys were touched since: it stays its time from then.
+    touched: bool,
     /// When the Machine last said what it offers.
     asked: Option<Instant>,
     /// Why it may not speak, as it was last noted.
@@ -181,7 +183,7 @@ impl Speaking {
             return None;
         }
         self.now = self.queue.pop_front();
-        (self.shown, self.alive) = (false, Some(at));
+        (self.shown, self.alive, self.touched) = (false, Some(at), false);
         self.now.as_ref()
     }
 
@@ -368,6 +370,45 @@ pub fn shown(app: &AppHandle) {
     };
     note(&shared, if first.meeting.is_some() { "showed a bubble, of a meeting" } else { "showed a bubble" });
     shared.look_soon(); // the Machine hears so right away: then the browser doesn't get it too
+    let app = app.clone();
+    std::thread::spawn(move || attend(&app, &first));
+}
+
+/// It stays until someone is there to see it: once the mouse or the keys are touched, on a screen that isn't locked, its
+/// page counts. Meanwhile it makes way for what is presented or in full screen; the dot still tells.
+fn attend(app: &AppHandle, say: &Say) {
+    let (shared, mut watch, mut rounds) = (app.state::<Shared>(), crate::touched::Watch::new(), 0);
+    loop {
+        let round = Instant::now();
+        std::thread::sleep(Duration::from_millis(500));
+        let dark = round.elapsed() > FRESH || rounds % 4 == 0 && quiet::locked();
+        {
+            let mut speaking = shared.speaking.lock().unwrap();
+            if !speaking.now.as_ref().is_some_and(|now| (&now.id, &now.key, &now.told) == (&say.id, &say.key, &say.told)) {
+                return;
+            }
+            if dark {
+                speaking.alive = Some(Instant::now()); // the computer slept, or a page that isn't drawn keeps no time
+            }
+        }
+        rounds += 1;
+        if rounds % 4 == 0 && (quiet::presented() || crate::front::full()) {
+            note(&shared, "a bubble went: something is full screen or presented");
+            return later(app, |app| hush(app, false));
+        }
+        if !shared.speaking.lock().unwrap().touched && watch.touched() {
+            if quiet::locked() {
+                watch = crate::touched::Watch::new(); // the one who unlocks it hasn't seen it
+                continue;
+            }
+            shared.speaking.lock().unwrap().touched = true;
+            let _ = app.emit_to("bubble", "touched", ());
+        }
+    }
+}
+
+pub fn touched(shared: &Shared) -> bool {
+    shared.speaking.lock().unwrap().touched
 }
 
 /// Without a robot: the system was asked to show it (notify.rs).
@@ -465,6 +506,14 @@ pub fn follow(app: &AppHandle, marks: &[crate::seen::Mark]) {
 /// What the system tells without asking for a permission. `away`: the screen is locked, something is presented, or nobody
 /// is there; it never speaks then. `disturb`: the person switched Do Not Disturb on.
 mod quiet {
+    /// Nothing was touched for this long: nobody is there.
+    #[cfg(any(windows, target_os = "macos"))]
+    const LONG: std::time::Duration = std::time::Duration::from_secs(5 * 60);
+
+    pub fn away() -> bool {
+        locked() || presented() || idle()
+    }
+
     #[cfg(target_os = "linux")]
     mod bus {
         use zbus::blocking::{connection::Builder, fdo::DBusProxy, Connection, Proxy};
@@ -498,8 +547,18 @@ mod quiet {
     }
 
     #[cfg(target_os = "linux")]
-    pub fn away() -> bool {
-        bus::locked()
+    pub fn locked() -> bool {
+        bus::locked() || crate::front::locked()
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn presented() -> bool {
+        false // what is full screen is front::full
+    }
+
+    #[cfg(target_os = "linux")]
+    fn idle() -> bool {
+        false // a bubble waits for who comes back
     }
 
     #[cfg(target_os = "linux")]
@@ -517,17 +576,23 @@ mod quiet {
             && !Settings::new(SCHEMA).boolean("show-banners")
     }
 
-    /// Locked or the screen saver (1), an app or a game in full screen (2, 3), a presentation (4), the screen shown twice; or
-    /// nothing was touched for five minutes. That the screen is shared in a call Windows doesn't tell.
+    /// Locked or the screen saver (1).
     #[cfg(windows)]
-    pub fn away() -> bool {
-        use windows_sys::Win32::System::SystemInformation::GetTickCount;
-        use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO};
-        let mut last = LASTINPUTINFO { cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
-        // SAFETY: the one argument is a valid place for the answer.
-        let idle = unsafe { GetLastInputInfo(&mut last) != 0 && GetTickCount().wrapping_sub(last.dwTime) > 5 * 60 * 1000 };
+    pub fn locked() -> bool {
+        says().0 == 1
+    }
+
+    /// An app or a game in full screen (2, 3), a presentation (4), the screen shown twice. That the screen is shared in a call
+    /// Windows doesn't tell.
+    #[cfg(windows)]
+    pub fn presented() -> bool {
         let (state, _, doubled) = says();
-        idle || doubled || (1..=4).contains(&state)
+        doubled || (2..=4).contains(&state)
+    }
+
+    #[cfg(windows)]
+    fn idle() -> bool {
+        crate::touched::idle().is_some_and(|idle| idle > LONG)
     }
 
     /// Do Not Disturb (Windows 11; Focus turns it on too): only priority notifications, or only alarms. Not the switch that
@@ -575,28 +640,39 @@ mod quiet {
         }
     }
 
-    /// Locked, the screen shown twice, or nothing was touched for five minutes. Full screen is front::full.
     #[cfg(target_os = "macos")]
-    pub fn away() -> bool {
+    pub fn locked() -> bool {
         use objc2_foundation::{ns_string, NSDictionary, NSNumber, NSString};
         #[link(name = "CoreGraphics", kind = "framework")]
         extern "C" {
-            fn CGEventSourceSecondsSinceLastEventType(source: i32, event: u32) -> f64;
             fn CGSessionCopyCurrentDictionary() -> *mut NSDictionary<NSString>;
+        }
+        // SAFETY: a plain call; the dictionary is this one's own, or nothing.
+        unsafe { objc2::rc::Retained::from_raw(CGSessionCopyCurrentDictionary()) }
+            .and_then(|s| s.objectForKey(ns_string!("CGSSessionScreenIsLocked")))
+            .and_then(|v| v.downcast::<NSNumber>().ok())
+            .is_some_and(|v| v.boolValue())
+    }
+
+    /// The screen shown twice. Full screen is front::full.
+    #[cfg(target_os = "macos")]
+    pub fn presented() -> bool {
+        #[link(name = "CoreGraphics", kind = "framework")]
+        extern "C" {
             fn CGGetOnlineDisplayList(most: u32, displays: *mut u32, count: *mut u32) -> i32;
             fn CGDisplayIsInMirrorSet(display: u32) -> u32;
         }
         let (mut displays, mut count) = ([0; 16], 0);
-        // SAFETY: plain calls, the list with its own size; the dictionary is this one's own, or nothing.
+        // SAFETY: plain calls, the list with its own size.
         unsafe {
-            let locked = objc2::rc::Retained::from_raw(CGSessionCopyCurrentDictionary())
-                .and_then(|s| s.objectForKey(ns_string!("CGSSessionScreenIsLocked")))
-                .and_then(|v| v.downcast::<NSNumber>().ok())
-                .is_some_and(|v| v.boolValue());
             let told = CGGetOnlineDisplayList(16, displays.as_mut_ptr(), &mut count) == 0;
-            let twice = told && displays.iter().take(count as usize).any(|d| CGDisplayIsInMirrorSet(*d) != 0);
-            locked || twice || CGEventSourceSecondsSinceLastEventType(0, u32::MAX) > 5.0 * 60.0
+            told && displays.iter().take(count as usize).any(|d| CGDisplayIsInMirrorSet(*d) != 0)
         }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn idle() -> bool {
+        crate::touched::idle().is_some_and(|idle| idle > LONG)
     }
 
     /// Whether a Focus is on, macOS only tells with a permission: the box doesn't offer the choice there.
@@ -606,7 +682,17 @@ mod quiet {
     }
 
     #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
-    pub fn away() -> bool {
+    pub fn locked() -> bool {
+        false
+    }
+
+    #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
+    pub fn presented() -> bool {
+        false
+    }
+
+    #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
+    fn idle() -> bool {
         false
     }
 

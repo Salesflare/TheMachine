@@ -1,5 +1,6 @@
 // What the robot says: a to-do's notification, with its quick buttons and the one that opens it. There is no Send and no
-// Approve here: a to-do opens in the dashboard, where its draft is read first. It goes by itself, not under the pointer.
+// Approve here: a to-do opens in the dashboard, where its draft is read first. It stays until someone touches the mouse or
+// the keys (src/touched.rs), then goes by itself, not under the pointer.
 (function () {
   'use strict';
   const {core: {invoke}, event: {listen}} = window.__TAURI__;
@@ -7,7 +8,7 @@
   const kept = {}; // what is said takes the place of some, and they come back
   const $ = id => (kept[id] ??= document.getElementById(id));
   const STAYS = 12000, AFTER = 4000, UNDO = 8000;
-  let say = null, hour12 = false, over = false, left = 0, since = 0, timer = 0, busy = false, picks = false;
+  let say = null, hour12 = false, over = false, waits = false, left = 0, since = 0, timer = 0, busy = false, picks = false;
 
   $('close').append(icon('close'));
   $('close').title = t.dismiss;
@@ -19,11 +20,12 @@
   new ResizeObserver(fit).observe($('panel'));
   setInterval(fit, 10000); // its window knows this page still is there
   // As long as it isn't hovered
-  function stay(ms) { left = ms; since = Date.now(); clearTimeout(timer); if (!over && !busy) timer = setTimeout(done, ms); }
+  function stay(ms) { left = ms; since = Date.now(); clearTimeout(timer); if (!over && !busy && !waits) timer = setTimeout(done, ms); }
   function done() { clearTimeout(timer); say = null; $('panel').hidden = true; invoke('bubble_done'); }
   function hovered(on) {
     if (on === over) return;
     over = on;
+    waits = false;
     clearTimeout(timer);
     if (on) left = Math.max(2000, left - (Date.now() - since));
     else stay(left);
@@ -31,6 +33,13 @@
   let told = false; // by its window (Linux)
   $('panel').addEventListener('pointerenter', () => told || hovered(true));
   $('panel').addEventListener('pointerleave', () => told || hovered(false));
+  listen('touched', () => { if (waits) { waits = false; stay(left); } });
+  // A meeting's minutes while it waits
+  setInterval(() => {
+    if (!waits || !say?.meeting) return;
+    if (!(minutes(say.meeting.at) > -2)) return done();
+    $('title').textContent = said(say)[0];
+  }, 15000);
   listen('over', e => { told = true; hovered(e.payload); });
 
   async function show() {
@@ -40,6 +49,7 @@
     if (say.meeting && !(minutes(say.meeting.at) > -2)) return done(); // it waited for the box to close
     hour12 = s.hour12;
     busy = over = picks = false;
+    waits = s.waits;
     $('panel').hidden = false;
     $('panel').classList.toggle('below', s.below);
     $('tail').style.left = s.tail + 'px';
@@ -70,7 +80,7 @@
     $('choices').hidden = !q;
     fit();
   }
-  function pick(on) { picks = on; drawn(); stay(STAYS); }
+  function pick(on) { picks = on; waits = false; drawn(); stay(STAYS); }
   async function open() {
     try { await invoke('bubble_open', {todo: say.id}); done(); } catch (e) { fail(e); }
   }
@@ -91,7 +101,7 @@
       }));
     } catch (e) { if (say === of) fail(e); }
   }
-  function hold() { busy = true; clearTimeout(timer); invoke('bubble_hold'); $('panel').querySelectorAll('#buttons button,#choices button').forEach(b => { b.disabled = true; }); }
+  function hold() { busy = true; waits = false; clearTimeout(timer); invoke('bubble_hold'); $('panel').querySelectorAll('#buttons button,#choices button').forEach(b => { b.disabled = true; }); }
   function went(line, undo) {
     busy = false;
     $('said').className = 'went';

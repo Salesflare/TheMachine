@@ -9,7 +9,7 @@ import time
 
 import mac_tools
 from mac_tools import (  # noqa: F401 (window.py's)
-    A, C, CMD, CTRL, ENTER, ESCAPE, F, ID, LIBRARY, MAIL, NAME, PORT, Q, V, W, App, click, drag, finish, fresh, in_front, key, need, need_window, no_browser, other,
+    A, C, CMD, CTRL, ENTER, ESCAPE, F, ID, LIBRARY, MAIL, NAME, PORT, Q, V, W, App, click, drag, finish, fresh, in_front, key, move, need, need_window, no_browser, other,
     out, page, png, press, run, sandbox, saved, says, screens, step, until, work_area, write,
 )
 

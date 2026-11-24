@@ -3,7 +3,7 @@
   'use strict';
   const {core: {invoke}, event: {listen}} = window.__TAURI__;
   const t = window.MachineText, $ = id => document.getElementById(id);
-  const names = {'robot-name': t.setRobot, 'robot-hint': t.setRobotHint, 'notify-name': t.setNotify, 'notify-hint': t.setNotifyHint, 'browser-name': t.setBrowser, 'browser-hint': t.setBrowserHint, 'browser-yes': t.setBrowserYes, 'browser-no': t.setBrowserNo, 'login-name': t.setLogin, 'quits-name': t.setClose, keep: t.setKeep, quit: t.setQuit, signout: t.signOut};
+  const names = {'robot-name': t.setRobot, 'robot-hint': t.setRobotHint, 'notify-name': t.setNotify, 'notify-hint': t.setNotifyHint, 'browser-name': t.setBrowser, 'browser-hint': t.setBrowserHint, 'browser-yes': t.setBrowserYes, 'browser-no': t.setBrowserNo, 'login-name': t.setLogin, 'quits-name': t.setClose, keep: t.setKeep, quit: t.setQuit, update: t.setUpdate, signout: t.signOut};
   for (const [id, text] of Object.entries(names)) $(id).textContent = text;
   document.title = t.settings;
   const SETS = ['robot', 'notify', 'login'];
@@ -20,6 +20,9 @@
     $('browser-row').hidden = !s.browser;
     $('login').checked = s.login === 'on';
     $('quits').value = s.quits ? '1' : '';
+    $('update-name').textContent = t.setVersion.replace('{}', s.version);
+    $('update-hint').textContent = s.update ? t.setUpdateHint.replace('{}', () => s.update) : '';
+    $('update').hidden = !s.update;
     $('account').hidden = !s.machine;
     if (s.machine) $('where').textContent = t.signedIn.replace('{}', () => new URL(s.machine).host);
   }
@@ -40,6 +43,11 @@
   };
   $('browser-yes').addEventListener('click', () => answer(true));
   $('browser-no').addEventListener('click', () => answer(false));
+  $('update').addEventListener('click', async () => {
+    $('error').textContent = '';
+    $('update').disabled = true;
+    try { await invoke('update_apply'); } catch { $('error').textContent = t.errors.update; $('update').disabled = false; }
+  });
   $('quits').addEventListener('change', () => set('quits', !!$('quits').value));
   $('signout').addEventListener('click', async () => { await invoke('menu_item', {id: 'signout'}); });
   const fit = () => invoke('settings_fit', {height: Math.ceil($('panel').getBoundingClientRect().height)});

@@ -45,7 +45,9 @@ dashboard in a browser's tab isn't seen by it. To know this it keeps fingerprint
 
 Windows (10 or 11, 64-bit): download `the-machine-desktop-windows-unsigned` from the newest run of
 [Desktop prototype](https://github.com/Salesflare/TheMachine/actions/workflows/desktop.yml), unpack it and start
-`the-machine-desktop.exe`. It isn't signed, so Windows warns: **More info**, **Run anyway**.
+`the-machine-desktop-setup.exe`. It installs for you alone, without an administrator, in `%LOCALAPPDATA%\The Machine`.
+`the-machine-desktop.exe` runs as it is, without updates. Neither is signed yet, so Windows warns: **More info**, **Run
+anyway**.
 
 Mac (macOS 13 or newer, Apple silicon or Intel): download `the-machine-desktop-mac` from the newest run of the same
 workflow, unpack it, move **The Machine** to Applications and open it there. macOS asks once whether you want to open an app
@@ -106,8 +108,10 @@ the dashboard. Follow-ups of a board and Fleet items open with the dashboard.
 ## It speaks up
 
 When a to-do's notification would buzz on this computer, the robot says it in a small bubble instead: the notification's
-own title and line, and its buttons (Open, Do it, Snooze with its choices, Mark done; never Send). It goes after about 12
-seconds, not while the mouse is on it, and the dot stays. It makes no sound and never takes the keys. **Speak up** in
+own title and line, and its buttons (Open, Do it, Snooze with its choices, Mark done; never Send). It stays until
+the mouse or the keyboard is touched, then about 12 seconds more, not while the mouse is on it, and the dot stays. Where the
+system doesn't tell that (a Linux desktop without `ext-idle-notify-v1`, GNOME's idle monitor or X11's screen saver) it stays
+about 12 seconds. It makes no sound and never takes the keys. **Speak up** in
 **...** says when: **Always** (to start with), **Not in Do Not Disturb** or **Never** (a Mac has
 Always and Never).
 
@@ -124,7 +128,9 @@ Always and Never).
   tells without a permission, while the screen is locked or presented. Windows: the lock screen and screen saver, an app
   or game in full screen, presentation mode, duplicated displays, or no mouse and keys for 5 minutes. Linux: a lock the
   sign-in manager knows of, as GNOME's and KDE's, or Hyprland. Mac: the lock screen, an app in full screen, mirrored displays,
-  or no mouse and keys for 5 minutes. That the screen is shared in a call no system tells an app like this.
+  or no mouse and keys for 5 minutes. That the screen is shared in a call no system tells an app like this. A bubble that is there
+  stays behind a lock and waits for who comes back; it goes when something is full screen, presented or mirrored.
+- **The dashboard open, but not in front:** it speaks. In front it doesn't.
 - **Notifications switched off** on the computer don't keep it quiet. **Do Not Disturb** does only with **Not in Do Not
   Disturb**: on Windows 11 (23H2 and later; Focus turns it on too; also the first hour of a new account, which Windows
   keeps quiet), KDE, dunst, mako (a mode named do-not-disturb or dnd) and GNOME. Elsewhere the system doesn't tell, and
@@ -178,6 +184,23 @@ the rest. Other Wayland desktops tell a program nothing about other windows, so 
 To quit: the menu above; on Windows also its icon by the clock, or Alt+F4 after a click on the robot; on a Mac its menu bar
 menu, or Command-Q in the box. The program with `--quit` stops it whatever state it is in.
 
+## Updates
+
+On a Mac, and on Windows when the installer put it there, it looks for a newer version a minute after it starts and once a
+day, fetches it and waits: **Settings** has **Restart to update**. Elsewhere, what installed it updates it.
+
+- **What it asks:** one fixed address on GitHub (`tauri.conf.json`). No version, id or account goes with it.
+- **What it takes:** only what is signed with the one key it trusts, whose public half is in `tauri.conf.json`.
+- **The key** is the secret `DESKTOP_UPDATER_KEY` of this repository's `mac-signing` environment, which pull requests don't
+  get, and `desktop-updater-key` in the maintainers' key vault. It has no password. Lost, no installed app can be updated
+  any more: people would install a new one by hand.
+- **To publish:** `the-machine-desktop-updates` of a run on the branch has the files, their signatures and `latest.json`.
+  Put them at that address. Nothing is there yet.
+
+Windows: `windows/installer.json` and `windows/hooks.nsh` make the installer, `windows/sign.ps1` signs the program, the
+installer and the uninstaller with Azure Artifact Signing once the environment has a profile for it (`ARTIFACT_SIGNING_PROFILE`).
+GitHub's own word of which job asks opens it: no key or password is kept.
+
 ## When it hangs
 
 It writes a line in `hangs.log` next to `app.json` when it doesn't answer for 5 seconds, or when the robot's page doesn't, with
@@ -186,7 +209,8 @@ names. Nothing is sent anywhere. A page of the robot that stays stuck is made ag
 
 ## Remove it
 
-Quit it, delete the program, and delete its folders:
+On Windows uninstall it in Settings, Apps: its folders and what it put in the registry go with it. Else quit it, delete the
+program, and delete its folders:
 
 | | Address, session, place, `speaks.log`, `hangs.log` | Page cache |
 |---|---|---|
@@ -250,7 +274,7 @@ cargo test --manifest-path desktop/Cargo.toml
 ```
 
 CI also uses the Windows and the Mac build, with real mouse and keys against a made-up Machine (`smoke/windows.py` and
-`smoke/mac.py` the robot, `smoke/window.py` the window), and keeps the screenshots with the run. They move the mouse and
+`smoke/mac.py` the robot, `smoke/window.py` the window, `smoke/updates.py` the installer and an update), and keeps the screenshots with the run. They move the mouse and
 change the screen, so they are for a throwaway computer. `smoke/linux.sh` runs `window.py` on a screen that isn't there,
 with a home of its own: nothing of the desktop it is started on is seen or touched. Also over https, as a hosted Machine: with a certificate made for that run
 (`smoke/certificate.sh`), which only a sandbox build and that computer trust, until it ends.
@@ -265,7 +289,7 @@ robot's windows are all made at the start.
 
 - The box as a page of the Machine's, so its words come from the catalogs (`i18n/`); `native.js` is the seam.
 - A check of the whole hosted sign-in.
-- A hotkey for who wants one, updates, signing on Windows.
+- A hotkey for who wants one, signing on Windows, a first update published.
 - Talk and dictation: the dashboard has no address that opens Talk yet.
 
 The robot's images come from `brand/` ([TRADEMARKS.md](../TRADEMARKS.md)). The font is Inter (`ui/fonts/Inter-OFL.txt`).
