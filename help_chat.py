@@ -3,13 +3,16 @@ and the app's own code second, with links to what the answer used. The articles 
 (docs/help/<language>/, the English one where a translation is missing), and the answer comes in that language unless
 the person writes in another one.
 
-Cheap by design: only the few sections that match the question go in (never every article), with a short prompt,
-as a one-shot turn on the Machine's own model through OpenClaw (`openclaw infer model run --gateway`: its own
+Cheap by design: only the few passages that match the question go in (help_search.py; never every article), with a short
+prompt, as a one-shot turn on the Machine's own model through OpenClaw (`openclaw infer model run --gateway`: its own
 session, no tools, no workspace files; on a Claude sign-in Claude Code's own print mode, the same way: claude_print.py),
 so it can answer and change nothing. Nothing about the owner goes in: no
 messages, people or settings, only the question, the last few turns of this help chat, the public docs and code, and
 one line on how technical they likely are (level), guessed here from their setup, the role in USER.md and how they
 write; the role itself stays out.
+
+When the passages are about something else than the question, the model says once what to look for instead, in the help's
+own words, and answers from those (SEARCH_LINE): a question in another language or in unusual words still finds its page.
 
 Each answer also names its topic in a few generic words (TOPIC:), for The Machine team's count of what people ask
 (help_topics.py); the question never leaves."""
@@ -24,34 +27,29 @@ import time
 from pathlib import Path
 
 import claude_print
+import help_search
 import i18n
 import locale_prefs
+from help_search import STOP, WORD, stem, words  # help_topics.py reads them here
 from i18n import t
 from machine.owner_error import OwnerError
 
 ROOT = Path(__file__).resolve().parent
 HELP = ROOT / 'docs' / 'help'
+# More words people use for an article than its own `keywords`: here, so a word added makes no translation out of date
+KEYWORDS = ROOT / 'help_keywords.json'
 SITE = 'https://themachine.computer/help/'
 CODE = 'https://github.com/Salesflare/TheMachine/blob/main/'
-SECTIONS, SNIPPETS = 4, 2          # what goes in: the best help sections, then a couple of code docstrings
-SECTION_CHARS, SNIPPET_CHARS = 1400, 700
+SECTIONS, SNIPPETS = 6, 2          # what goes in: the best help passages, then a couple of code docstrings
+HELP_CHARS, SNIPPET_CHARS = 2200, 700  # of help text in all, of each docstring
 QUESTION_CHARS, HISTORY_TURNS, TURN_CHARS = 600, 4, 600
 PER_HOUR = 30
 BUG = re.compile(r'^[ \t]*\**BUG:?\**[ \t]*$', re.M)  # the model's own line before a bug write-up
 BUG_CHARS = 1500
 TOPIC_LINE = re.compile(r'^[ \t]*\**TOPIC:?\**[ \t]*(.*)$', re.M | re.I)  # the model's last line: what the question is about
+SEARCH_LINE = re.compile(r'\A[\W_]*SEARCH:[\W_]*([^\n]{2,120})')  # the model's whole first reply: what to look for instead
 TIMEOUT = 120
 CODE_FILES = ('*.py', 'machine/**/*.py', 'connectors/*.py')  # the app's own modules; never config, data or tests
-STOP = set('a an and are as at be by can do does for from has have how i if in is it its me my of on or so that the this '
-           'to was what when where which who why will with you your'.split()
-           # the same small words in the other languages of the app, so "hoe" or "comment" finds nothing on its own
-           + 'de het een en van in op is ik je jij mijn hoe wat waar wie waarom met voor naar dat die dit er niet kan '
-             'le la les un une des et du au aux en est je tu vous mon ma mes comment que quoi où qui pourquoi avec pour '
-             'pas ne ce cette il elle der die das ein eine und von zu im ist ich du mein wie was wo wer warum mit für '
-             'nicht kann el los las unos y del al es yo mi cómo qué dónde quién por con para no se lo il lo gli i una '
-             'di da è io mio come cosa dove chi perché per non o os um uma e do da no na eu meu como onde quem por '
-             'com não posso puedo posso kann'.split())
-WORD = re.compile(r'\w+')  # any language's words: "configuración", "Einstellungen"
 _cache = {}
 _lock = threading.Lock()
 _asked = []
@@ -59,44 +57,6 @@ _asked = []
 
 class Unavailable(Exception):
     """No answer now: no model, too many questions, or the model run failed. Its text is for the owner."""
-
-
-IRREGULAR = {'wrote': 'write', 'written': 'write', 'writes': 'write', 'tone': 'tone', 'sent': 'send', 'got': 'get'}
-
-
-def stem(w):
-    """A rough stem, so "writing", "wrote" and "write", or "personalize" and "personalized", find the same section."""
-    w = IRREGULAR.get(w, w)
-    if len(w) > 4 and w.endswith('s') and not w.endswith('ss'):
-        w = w[:-1]
-    for suffix in ('ation', 'ing', 'ed'):
-        if w.endswith(suffix) and len(w) - len(suffix) >= 4:
-            w = w[:-len(suffix)]
-            break
-    if len(w) > 6 and w.endswith(('is', 'ise')):
-        w = w[:w.rindex('is')] + 'iz'  # British -ise as -ize
-    return w[:-1] if len(w) > 3 and w.endswith('e') else w
-
-
-# Chinese and Japanese write without spaces, Korean glues particles to its words: those runs count by each pair of
-# characters ("设置语言" is 设置, 置语, 语言), so a question finds the section with the same words in it.
-CJK = re.compile(r'[぀-ヿ㐀-鿿가-힯]+')
-
-
-def words(text):
-    out = []
-    for w in WORD.findall(str(text).lower()):
-        if w in STOP:
-            continue
-        if not CJK.search(w):
-            out.append(stem(w))
-            continue
-        for part in re.split(f'({CJK.pattern})', w):
-            if CJK.fullmatch(part):
-                out += [part] if len(part) == 1 else [part[i:i + 2] for i in range(len(part) - 1)]
-            elif part:
-                out.append(stem(part))
-    return out
 
 
 def heading_id(text):
@@ -129,19 +89,21 @@ def _article(path, lang='en'):
 
 def help_sections(folder=HELP, lang='en'):
     """Every help article split at its headings, in the language: {slug, anchor, title, heading, text, keywords, english}."""
-    out = []
+    out, more = [], json.loads(KEYWORDS.read_text(encoding='utf-8')) if Path(folder) == HELP else {}
     for path in sorted(Path(folder).glob('*.md')):
         fields, parts, english = _article(path, lang)
         en_fields = _front(path.read_text(encoding='utf-8'))[0]
         title = fields.get('title') or path.stem
         intro = (fields.get('summary', '') + '\n' + parts[0]).strip()
-        also = lambda i: '' if parts is english else ' '.join([en_fields.get('title', ''), english[i], english[i + 1] if i else ''])
+        local = parts is not english
+        english_of = lambda i: {'en_title': en_fields.get('title', ''), 'en_heading': english[i] if i else '',
+                                'english': english[i + 1] if i else en_fields.get('summary', '') + '\n' + english[0]} if local else {}
         # keywords: words people use for it that the article doesn't ("personalize", "tone"), searched, never shown
         out.append({'slug': path.stem, 'anchor': '', 'title': title, 'heading': '', 'text': intro,
-                    'keywords': en_fields.get('keywords', ''), 'english': also(0)})
+                    'keywords': f"{en_fields.get('keywords', '')}, {more.get(path.stem, '')}", **english_of(0)})
         for i in range(1, len(parts) - 1, 2):
             out.append({'slug': path.stem, 'anchor': heading_id(english[i]), 'title': title, 'heading': parts[i].strip(),
-                        'text': parts[i + 1].strip(), 'english': also(i)})
+                        'text': parts[i + 1].strip(), **english_of(i)})
     return out
 
 
@@ -222,10 +184,7 @@ def indexes(folder=HELP, root=ROOT, lang='en'):
     key = (str(folder), str(root), lang)
     with _lock:
         if key not in _cache:
-            # a heading and the article's title count twice: they say what a section is about. A translated section is
-            # found by its English words too, for a question in English.
-            _cache[key] = (Index(help_sections(folder, lang), lambda d: f"{d['title']} {d['title']} {d['heading']} {d['heading']} "
-                                 f"{d.get('keywords', '')} {d.get('keywords', '')} {d['text']} {d.get('english', '')}"),
+            _cache[key] = (help_search.Help(help_sections(folder, lang), lang),
                            Index(code_snippets(root), lambda d: f"{d['name']} {d['text']}"))
         return _cache[key]
 
@@ -234,24 +193,33 @@ def link(section):
     return SITE + section['slug'] + ('#' + section['anchor'] if section['anchor'] else '')
 
 
-def retrieve(question, history=(), folder=HELP, root=ROOT, lang='en'):
-    """(help sections, code snippets) for a question: help first; code only for what the help leaves open."""
+def fitting(found):
+    """The best of what help_search.Help.search found, as much as may go in."""
+    out, room = [], HELP_CHARS
+    for x in found[:SECTIONS]:
+        if x[0] >= found[0][0] * 0.35 and (not out or len(x[3]) <= room):
+            out.append(x)
+            room -= len(x[3])
+    return out
+
+
+def retrieve(question, history=(), folder=HELP, root=ROOT, lang='en', look=''):
+    """(help sections, code snippets) for a question: help first; code only for what the help leaves open. A section holds
+    only its passages that match, and at most HELP_CHARS go in. look: the words the model asked for after the first search
+    didn't answer it (search_again): then what that search left out comes, after its best."""
     docs, code = indexes(folder, root, lang)
-    query = ' '.join([question, *[t['text'] for t in history if t.get('role') == 'user'][-1:]])
-    found = docs.search(query, SECTIONS)
-    best = found[0][0] if found else 0
-    found = [doc for score, doc in found if score >= best * 0.35]
-    # An article named in the question ("Do it", "Snooze") leads, even when its name is only common words
-    named = [d for d in docs.docs if not d['anchor'] and any(len(n) > 3 and re.search(rf'(?i)\b{re.escape(n)}\b', question)
-                                                              for n in {d['title'], re.split(r',| and ', d['title'])[0].strip()})]
-    found = ([d for d in named if d not in found] + found)[:SECTIONS]
-    best = max(best, 6 if named else 0)
-    # A page that matches as a whole brings its own sections: its intro only says what it is about
-    if found and not found[0]['anchor']:
-        own = [d for d in docs.docs if d['slug'] == found[0]['slug'] and d['anchor']]
-        found = [found[0], *[d for d in found if d in own], *[d for d in own if d not in found], *[d for d in found[1:] if d not in own]][:SECTIONS]
-    snippets = [doc for score, doc in code.search(query, SNIPPETS)] if len(found) < SECTIONS or best < 6 else []
-    return found, snippets[:SNIPPETS]
+    earlier = ' '.join([t['text'] for t in history if t.get('role') == 'user'][-1:])
+    found = docs.search(question, earlier)
+    if look:
+        place = lambda x: (x[1]['slug'], x[1]['anchor'], x[2])
+        seen = [place(x) for x in fitting(found)]
+        found = found[:1] + [x for x in docs.search(look, question) if place(x) not in seen]
+    picked = {}
+    for _, section, n, text in fitting(found):
+        picked.setdefault((section['slug'], section['anchor']), (section, {}))[1][n] = text
+    sections = [{**section, 'text': '\n\n'.join(parts[n] for n in sorted(parts))} for section, parts in picked.values()]
+    snippets = [doc for score, doc in code.search(look or question, SNIPPETS)] if not found or found[0][0] < 6 else []
+    return sections, snippets[:SNIPPETS]
 
 
 def sources(sections, snippets):
@@ -309,37 +277,36 @@ def level(config=None, role='', said=()):
     return ('technical' if points >= 3 else 'some' if points >= 1 else 'everyday'), why
 
 
-def prompt(question, history, sections, snippets, audience=None, lang='en'):
-    """The whole turn: a short brief, the matching sections and snippets, the last few turns and the question."""
+def prompt(question, history, sections, snippets, audience=None, lang='en', again=False):
+    """The whole turn: a short brief, the matching sections and snippets, the last few turns and the question. again: it
+    looked a second time, so it answers now."""
     name, why = audience or ('everyday', [])
-    parts = ["You answer questions about The Machine, an assistant app, in its dashboard's Help panel. Answer only from the "
-             "help sections below; use the code notes only for what they leave open. If neither covers "
-             "it, say so and suggest Report a bug or support@themachine.computer. You can't see or change the person's Machine, "
-             "settings or data, and you take no actions: tell them where to click instead. Reply in at most 120 words, short "
-             "sentences, in light markdown: **bold** for what to click, a - list for steps, no headings, no em dashes. Mark "
-             "each fact with the number of its source, like [1].",
-             "Give the answer itself: the concrete things from the sections that do what they ask, most useful first, with "
-             "where to click. Don't send them off to read a page instead; the source numbers link it. Never comment on how "
-             "the question is worded, or on what the pages don't say or promise. Ask a question back only when the answer "
-             "really depends on it.",
-             "Prefer what The Machine already does by itself (it learns from what they send, edit, dismiss and say in a to-do's "
-             "chat) and what they can set in Settings over building something new. Suggest a skill, an agent or code only when "
-             "nothing built in covers it, or they ask for one.",
+    parts = ["You answer questions in the Help panel of The Machine, an assistant app, only from the help sections below, and the "
+             "code notes for what they leave open. "
+             + ("If neither covers it, say so and suggest Report a bug or support@themachine.computer. " if again else "") +
+             "When they say something isn't possible, say so first, then what works instead. You can't see or change their "
+             "Machine or data and take no actions: tell them where to click. At most 120 words, short sentences, light "
+             "markdown: **bold** for what to click, a - list for steps, no headings, no em dashes. Mark each fact with the "
+             "number of its source, like [1].",
+             "Give the answer itself: the concrete things from the sections that do what they ask, most useful first. Don't "
+             "send them off to read a page instead; the source numbers link it. Never comment on how the question is worded, "
+             "or on what the pages don't say or promise. Ask back only when the answer really depends on it.",
+             "Prefer what The Machine does by itself (it learns from what they send, edit, dismiss and say in a to-do's chat) "
+             "and what Settings has. Suggest a skill, an agent or code only when nothing built in covers it, or they ask for one.",
              f"How technical they likely are: {name}" + (f" ({', '.join(why)})" if why else '') + f". Answer in {LEVELS[name]}. "
-             "If how they write in this chat says otherwise, follow that.",
-             "Judge from what they mean, not from the words they use, "
-             "whether they describe something in The Machine not working as it should (a bug, not a how-to question). Only then, "
-             "after your answer, add a line that is just BUG: and below it a short report for The Machine team, in their "
-             "language: what they did, what they expected and what happened, one line each, from what they said only.",
+             "If how they write here says otherwise, follow that.",
+             "Judge from what they mean, not from the words they use, whether something in The Machine isn't working as it "
+             "should (a bug, not a how-to question). Only then, after your answer, add a line that is just BUG: and below it a "
+             "short report for The Machine team, in their language: what they did, expected and what happened, one line each, "
+             "from what they said only.",
              f"Reply in {i18n.language_name(lang)}, the language of their app, unless they write to you in another language: "
-             "then reply in that language. Name buttons and screens as the help sections below do.",
-             "Last, always end with one line TOPIC: and 2 to 5 lowercase English words for what the question is about, the way "
-             "the help pages would say it, like \"snooze a to-do\" or \"writing style\". Never a name, company, address, "
-             "number or their own words.", '']
+             "then reply in that language. Name buttons and screens as the help sections do.",
+             "Always end with one line TOPIC: and 2 to 5 lowercase English words for what the question is about, the way the "
+             "help pages would say it, like \"snooze a to-do\". Never a name, company, address, number or their own words.", '']
     n = 0
     for s in sections:
         n += 1
-        parts += [f"[{n}] Help: {s['title']}" + (f" > {s['heading']}" if s['heading'] else ''), s['text'][:SECTION_CHARS], '']
+        parts += [f"[{n}] Help: {s['title']}" + (f" > {s['heading']}" if s['heading'] else ''), s['text'], '']
     for s in snippets:
         n += 1
         parts += [f"[{n}] Code note: {s['path']} {s['name']}", s['text'][:SNIPPET_CHARS], '']
@@ -348,6 +315,10 @@ def prompt(question, history, sections, snippets, audience=None, lang='en'):
     if history:
         parts += ['Earlier in this help chat:'] + [f"{'Person' if t['role'] == 'user' else 'You'}: {t['text']}" for t in history] + ['']
     parts += ['Question: ' + question]
+    if not again:
+        parts += ["First check: do the sections above say what this question asks for? If they are about something else, don't "
+                  "answer: reply with only one line, SEARCH: and up to 6 English words the help pages would use for it, and "
+                  "you get other sections."]
     return '\n'.join(parts)
 
 
@@ -403,8 +374,12 @@ def ask(question, history=(), run=None, config=None, model=None, folder=HELP, ro
     if limited():
         raise Unavailable(t('That’s a lot of questions for one hour. Try again a bit later.'))
     audience = level(config, role, [question, *[t['text'] for t in history if t['role'] == 'user']])
-    answer = (run or openclaw_model_run)(config, prompt(question, history, sections, snippets, audience, lang), model,
-                                         **({'thinking': thinking} if thinking else {}))
+    turn = lambda text: (run or openclaw_model_run)(config, text, model, **({'thinking': thinking} if thinking else {}))
+    answer = turn(prompt(question, history, sections, snippets, audience, lang))
+    look = search_again(answer)
+    if look:
+        sections, snippets = retrieve(question, history, folder, root, lang, look)
+        answer = turn(prompt(question, history, sections, snippets, audience, lang, again=True))
     answer, topic = split_topic(answer)
     answer, bug = split_bug(answer)
     used = sources(sections, snippets)
@@ -420,6 +395,13 @@ def ask(question, history=(), run=None, config=None, model=None, folder=HELP, ro
     return out
 
 
+def search_again(answer):
+    """The words to look for instead, when the first sections didn't answer the question (their wording, or their language,
+    isn't the help's); '' when it did."""
+    m = SEARCH_LINE.match(answer or '')
+    return ' '.join(m[1].split('TOPIC:')[0].split()) if m else ''
+
+
 def split_topic(answer):
     """(answer, topic or ''): the TOPIC: line the turn ends with, taken out of what the owner sees."""
     found = list(TOPIC_LINE.finditer(answer or ''))
@@ -432,7 +414,7 @@ def split_topic(answer):
 def vocabulary(folder=HELP, root=ROOT):
     """Every word stem the public help pages use: a topic may use only these (help_topics.clean)."""
     docs, _ = indexes(folder, root)
-    return {w for terms in docs.terms for w in terms}
+    return {w for terms in docs.terms for w in terms} | {stem(w) for w in STOP}
 
 
 def split_bug(answer):
