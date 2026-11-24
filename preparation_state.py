@@ -27,7 +27,8 @@ REVIEW_REASONS = {'mcp_runtime_limit','context_overflow','model_unavailable','au
 # waited on. A bare Try again runs once, as asked, without new automatic retries. After that the to-do waits, stuck.
 AUTO_RETRIES = 2
 AUTO_RETRY_BACKOFF = (60, 900)
-FAILED_BEFORE = ('ai_run_failed', 'ai_run_timed_out', 'run_ended_without_preparation', 'completion_unconfirmed', 'ai_run_interrupted')
+FAILED_BEFORE = ('ai_run_failed', 'ai_run_timed_out', 'run_ended_without_preparation', 'completion_unconfirmed', 'ai_run_interrupted',
+                 'prompt_too_long', 'invalid_attachments', 'invalid_request')
 
 
 def retry_left(job):
@@ -82,17 +83,18 @@ def initialize(db):
 START_KEEP_DAYS = 2
 
 
-def same_start(db, request, stamp):
+def same_start(db, request, stamp, usable=lambda kept: True):
     """The start to send for this run id. Its id is the Gateway's idempotency key, and an earlier start under it may have
     reached the Gateway: OpenClaw (2026.11.2) refuses the same key with other content for good ("Pending input
     idempotency key conflicts with the accepted input"), and a retry builds its message again (newer agent work, files),
-    so every retry under one id sends exactly the first one it built. Kept until the run is admitted or over."""
+    so every retry under one id sends exactly the first one it built. Kept until the run is admitted or over. A kept one
+    that is not `usable` (it can't have reached the Gateway) is replaced."""
     db.execute('DELETE FROM gateway_starts WHERE created_at<?',
                ((datetime.datetime.fromisoformat(stamp) - datetime.timedelta(days=START_KEEP_DAYS)).isoformat(),))
     row = db.execute('SELECT request FROM gateway_starts WHERE job_id=?', (request['job_id'],)).fetchone()
     if row:
         kept = json.loads(row[0])
-        if kept.get('kind') == request.get('kind') and kept.get('session_job_id') == request.get('session_job_id'):
+        if kept.get('kind') == request.get('kind') and kept.get('session_job_id') == request.get('session_job_id') and usable(kept):
             return kept
     db.execute('INSERT OR REPLACE INTO gateway_starts(job_id,request,created_at) VALUES(?,?,?)',
                (request['job_id'], json.dumps(request, ensure_ascii=False), stamp))

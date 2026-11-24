@@ -22,6 +22,7 @@ import i18n
 from machine.app.graph_actions import account_services
 from machine.app.prep_reads import history_once, review_brief
 from machine.app.recall import recall
+from machine.app import start_message
 from machine.browser import (
     browser_lease_script,
     browser_link,
@@ -62,7 +63,8 @@ from machine.owner_error import OwnerError
 from machine.dashboard_link import dashboard_link
 
 
-# The longest turn message the runner (preparation-run.mjs) starts; it refuses longer ones before the Gateway sees them.
+# The longest turn message, in characters, that the runner (preparation-run.mjs) starts; it refuses longer ones before
+# the Gateway sees them. Every start is put together within it (start_message.py); preparation_gateway checks it.
 PROMPT_LIMIT = 60000
 
 
@@ -185,6 +187,10 @@ def newer_activity_lines(found):
             + activity_lines(found))
 
 
+# The end of a start that carries on in a session with earlier work.
+SAME_SESSION = '\nThis continues the SAME session, with earlier work in context. Before changing anything in an app, read assistant_signals preparation_history (offset 0, then any next_offset): a compact list of earlier calls. Summaries are shortened: when reconciling a call, request preparation_history with its call_ref, offset 0 and any next_offset for exact saved parameters and receipts. If detail_complete=false, check the retained transcript or original app for the missing suffix. Do not repeat an external step that already happened; check uncertain ones against the app first. If the owner\'s latest note asks for something different (a rewrite, another approach), do that. Saving your result or a blocker is always allowed.'
+
+
 # Without a confirmed completion by then, a preparation stops: 25 minutes plus 10 for connection outages.
 PREPARATION_DEADLINE_SECONDS = 2100
 
@@ -197,10 +203,10 @@ def note_failed(db, job, receipt, error, version=None):
     and an abort from outside, in OpenClaw itself or by a restart, is left out."""
     if receipt.get('status') == 'aborted' or 'runtime_aborted' in (receipt.get('error'), error):
         return
-    code = receipt.get('error') if receipt.get('error') in preparation_state.REVIEW_FAILURES | {'session_archived'} else error
+    code = receipt.get('error') if receipt.get('error') in preparation_state.REVIEW_FAILURES | start_message.REFUSED | {'session_archived'} else error
     phase = receipt.get('error_phase') if receipt.get('error_phase') in preparation_state.REVIEW_FAILURE_PHASES else 'runtime'
     reason = receipt.get('reason') if receipt.get('reason') in preparation_state.REVIEW_REASONS else None
-    after = 'retry' if preparation_state.retry_left(job) else 'stopped'
+    after = 'retry' if preparation_state.retry_left(job) and code not in start_message.REFUSED else 'stopped'
     LOG.warning('preparation failed error=%s phase=%s after=%s' + (' reason=%s' if reason else ''), code, phase, after, *([reason] if reason else []))
     try:
         error_feed.record(db, 'job', code + ('.' + reason if reason else ''), f'{phase} {after}', 'machine/app/preparation.py', 'preparation_run_step', None, version)
@@ -221,10 +227,10 @@ def preparation_overdue(db, job, version=None):
     db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(job['suggestion_id'],))
 
 
-# A run that failed by itself, also on its automatic retry: the AI run failing, timing out, ending without a result or
-# never confirming it finished. Never a blocker the AI recorded (a question, a sign-in), the owner's Stop or a usage
+# A run that failed by itself, also on its automatic retry: the AI run failing, timing out, ending without a result,
+# never confirming it finished, or a start that could never succeed. Never a blocker the AI recorded (a question, a sign-in), the owner's Stop or a usage
 # limit (that one waits, queued, for the reset).
-RUNTIME_FAILURES = ('ai_run_failed', 'ai_run_timed_out', 'run_ended_without_preparation', 'completion_unconfirmed')
+RUNTIME_FAILURES = ('ai_run_failed', 'ai_run_timed_out', 'run_ended_without_preparation', 'completion_unconfirmed', *sorted(start_message.REFUSED))
 UPDATE_RETRY_DAYS = 7  # stuck longer ago than this: only the owner's Try again starts it
 
 
@@ -415,16 +421,15 @@ class PreparationApp:
                'tool_approval_proposal': 'tool_approval_proposal_action',
                'preparation_blocked': 'preparation_blocked_action'}
 
-    def routine_change_lines(self, job, message):
+    def routine_change_lines(self, job):
         """A run on the owner's note on a routine's to-do: the routine's words and when to offer a lasting change of them
-        (routine_changes.py). Empty for any other run, or when it doesn't fit."""
+        (routine_changes.py). Empty for any other run."""
         try:
             with self.store.connect() as db:
-                lines = routine_changes.prompt_lines(db, job)
+                return routine_changes.prompt_lines(db, job)
         except Exception as error:
             LOG.error('routine change line error=%s', type(error).__name__)
             return ''
-        return lines if len(message) + len(lines) < PROMPT_LIMIT - 1000 else ''
 
     def preparation_step(self, runner=None):
         runner=runner or self.preparation_gateway
@@ -621,103 +626,14 @@ class PreparationApp:
             if not fast:
                 with self.store.connect() as db:fast=False if chat_model.fast_reset(db,request['session_job_id']) else None
             if fast is not None:request['fast']=fast
-            if str(job.get('decision_id') or '').startswith('chat-') and request['session_job_id']!=job['job_id'] and not job.get('finish') and not job['ahead'] and not changing:
-                request['message']=chat_prompt(job,self.config)
-                # what was learned since the session read the list (a small delta), and earlier facts outside that list that bear on it
-                memory=recall(self,'todo_chat',{'todo':job['suggestion_id'],'session':request['session_job_id']},PROMPT_LIMIT)
-                for block in ('new','retained'):
-                    lines=memory.text(block)
-                    if lines:request['message']+='\n\n'+lines
-                try:  # its area now: the owner may have moved it since the chat began
-                    with self.store.connect() as db:
-                        row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
-                        sources=card_sources(db,job['suggestion_id'])
-                        unplaced=bool(owner_area_open(db,job['suggestion_id']))
-                    request['message']+=area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=True,unplaced=unplaced)  # their own message in its chat
-                    request['message']+=evidence_line(self.config,row['account_ids'] if row else '[]',sources)
-                except Exception as error:LOG.error('area line error=%s',type(error).__name__)
-                request['message']+=self.routine_change_lines(job,request['message'])
-            else:
-                self.store.note_rule_files(RULE_FILES)
-                try:style=self.store.style_text(job['suggestion_id'])
-                except Exception as error:  # a draft without the owner's voice beats no preparation
-                    LOG.error('style context error=%s',type(error).__name__);style=''
-                memory=recall(self,'preparation',{'todo':job['suggestion_id']},PROMPT_LIMIT)  # what was learned that this card needs, not all of it
-                rules=memory.text('rules')
-                try:gaps=self.gap_lines(job['suggestion_id'])  # what isn't known about the people on it (gap_note.py)
-                except Exception as error:LOG.error('gap note error=%s',type(error).__name__);gaps=''
-                facts='\n\n'.join(filter(None,(memory.text('facts'),memory.text('retained'))))  # history that bears on it (retained_facts.py)
-                request['message']=preparation_prompt(job,facts,self.config,'' if style else self.store.draft_edits_text(),
-                                                      rules,style,gaps,request.get('model') or openclaw_model(self.config))
-                try:  # how to read the card's own sources (its accounts' notes, and those its messages came in on)
-                    with self.store.connect() as db:
-                        row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
-                        sources,unplaced=card_sources(db,job['suggestion_id']),bool(owner_area_open(db,job['suggestion_id']))
-                    lines=source_notes(account_services(self.config,[*(json.loads(row['account_ids'] or '[]') if row else []),*(a for _,a in sources)]))
-                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                    # its area, and asking to move it; a run the owner started (not prepared ahead) also reads its own sources
-                    lines=area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=not job['ahead'],unplaced=unplaced)
-                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                    lines=evidence_line(self.config,row['account_ids'] if row else '[]',sources)
-                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                except Exception as error:LOG.error('source notes error=%s',type(error).__name__)
-                if not job.get('finish'):
-                    try:  # what its review found (its messages, who and which thread), so the run looks up only what is missing
-                        with self.store.connect() as db:lines=review_brief(db,job['suggestion_id'])
-                        if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                    except Exception as error:LOG.error('review brief error=%s',type(error).__name__)
-                request['message']+=self.routine_change_lines(job,request['message'])
-                try:request['message']+=memory.fit('records',len(request['message']),1000)
-                except Exception as error:LOG.error('graph lines error=%s',type(error).__name__)
-                try:  # someone may have answered since: what is already synced, no model call
-                    with self.store.connect() as db:
-                        row=db.execute('SELECT title,event_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
-                        ids=json.loads(row['event_ids'] or '[]') if row else []
-                        # with the people its title names too, and the group DMs with them (handled_check.py)
-                        found=self.handled_since(db,ids,self.handled_people(db,ids,row['title'] if row else ''))
-                    lines=newer_activity_lines(found)
-                    if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                except Exception as error:LOG.error('newer activity error=%s',type(error).__name__)
-                try:  # an automated follow-up: which one, its channel, what earlier ones said (follow_ups.py)
-                    lines=self.follow_up_lines(job['suggestion_id'])+changing
-                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                except Exception as error:LOG.error('follow-up lines error=%s',type(error).__name__)
-                try:  # a recurring to-do: how the previous one went (recurring.py)
-                    with self.store.connect() as db:lines=recurring.prep_lines(db,job['suggestion_id'],today=getattr(self,'recurring_today',lambda:None)())
-                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                except Exception as error:LOG.error('recurring lines error=%s',type(error).__name__)
-                try:  # a recurring to-do: its way of doing it, kept from earlier runs (recurring.method_lines)
-                    with self.store.connect() as db:lines=recurring.method_lines(db,job['suggestion_id'])
-                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                except Exception as error:LOG.error('recurring method error=%s',type(error).__name__)
-                try:  # the owner's skill that fits this to-do (or follow-up): its instructions, ranked above the defaults
-                    request['message']+=memory.fit('skills',len(request['message']),1000,rules,PROMPT_LIMIT-1000-len(request['message']))
-                except Exception as error:LOG.error('skill lines error=%s',type(error).__name__)
-                if not job['ahead']:request['message']+=learned_skills.LEARN  # a run the owner started may teach a skill (learned_skills.py)
-                if getattr(self, 'fleet', None):
-                    try:request['message']+=memory.fit('team',len(request['message']),1000)
-                    except Exception as error:LOG.error('fleet lines error=%s',type(error).__name__)
-                try:request['message']+=memory.fit('related',len(request['message']),500)  # by meaning, or by words without it
-                except Exception as error:LOG.error('related error=%s at=%s',type(error).__name__,fault_where(error))
-                if getattr(self,'skills',None) and not job.get('finish'):
-                    try:  # "There's a skill for this": an installed one that isn't ready, or one on ClawHub (the agent can search it)
-                        lines=self.skills.hint_prompt(clawhub=True)
-                        if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1500:request['message']+='\n\n'+lines
-                    except Exception as error:LOG.error('skill hint error=%s',type(error).__name__)
-            if str(job.get('decision_id') or '').startswith(talk_live.RELAY_PREFIX):request['message']+='\n\n'+talk_live.RELAY_NOTE  # asked in Talk live: look it up now, answer for the ear
-            elif str(job.get('decision_id') or '').startswith(talk_live.ASK_PREFIX):request['message']+='\n\n'+talk_live.RELAY_NOTE+'\n'+talk_live.ASK_MACHINE_NOTE  # Talk's ask_machine: its own new to-do
-            try:
-                lines=self.agent_work(job['suggestion_id'])
-                if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+            start=start_message.StartMessage(PROMPT_LIMIT,self.start_tail(job,request))
+            chat=str(job.get('decision_id') or '').startswith('chat-') and request['session_job_id']!=job['job_id'] and not job.get('finish') and not job['ahead'] and not changing
+            memory=(self.chat_start if chat else self.full_start)(job,request,start,changing)
+            if str(job.get('decision_id') or '').startswith(talk_live.RELAY_PREFIX):start.add('talk','\n\n'+talk_live.RELAY_NOTE,start_message.HOW_TO_READ)  # asked in Talk live: look it up now, answer for the ear
+            elif str(job.get('decision_id') or '').startswith(talk_live.ASK_PREFIX):start.add('talk','\n\n'+talk_live.RELAY_NOTE+'\n'+talk_live.ASK_MACHINE_NOTE,start_message.HOW_TO_READ)  # Talk's ask_machine: its own new to-do
+            try:start.add('agent',self.agent_work(job['suggestion_id']),start_message.OWNER)
             except Exception as error:LOG.error('agent work error=%s',type(error).__name__)
-            if request['session_job_id'] != job['job_id']:
-                request['message']+='\nThis continues the SAME session, with earlier work in context. Before changing anything in an app, read assistant_signals preparation_history (offset 0, then any next_offset): a compact list of earlier calls. Summaries are shortened: when reconciling a call, request preparation_history with its call_ref, offset 0 and any next_offset for exact saved parameters and receipts. If detail_complete=false, check the retained transcript or original app for the missing suffix. Do not repeat an external step that already happened; check uncertain ones against the app first. If the owner\'s latest note asks for something different (a rewrite, another approach), do that. Saving your result or a blocker is always allowed.'
-            try:  # files the owner added to the message that started this run: images as images, all of them as files
-                with self.store.connect() as db:
-                    images,lines=chat_files.for_run(db,self.config,job.get('decision_id'),job['job_id'],job['suggestion_id'],request['session_job_id']==job['job_id'])
-                if images:request['attachments']=images
-                request['message']+=lines
-            except OSError as error:LOG.error('chat files error=%s',type(error).__name__)
+            request['message']=start.text()
         if memory:request['_memory'],request['_memory_for']=memory.rows(),memory.purpose  # a retry resends its first start, with that start's list
         result=runner(request)
         if request.get('_memory') and result.get('status')=='admitted':
@@ -748,8 +664,9 @@ class PreparationApp:
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
             elif status in ('ok','error','aborted','timed_out','lost'):  # lost: the Gateway refused this run id for good
                 error={'ok':'run_ended_without_preparation','timed_out':'ai_run_timed_out'}.get(status,'ai_run_failed')
+                refused=result.get('error') if status=='error' and result.get('error') in start_message.REFUSED else None
                 note_failed(db,current,result,error if status=='ok' else {'timed_out':'runtime_timeout','lost':'runtime_lost'}.get(status,'runtime_error'),self.store.code_version)
-                if preparation_state.retry_left(current):
+                if preparation_state.retry_left(current) and not refused:
                     # Continue the retained session once, after a pause (preparation_state.AUTO_RETRY_BACKOFF). Its durable
                     # tool history must be read before further writes, including calls whose result was lost. A run cut
                     # off from outside (a Gateway restart) counts too: a restart never brings more runs than a failure.
@@ -765,6 +682,8 @@ class PreparationApp:
                 details={'run_ended_without_preparation':'The AI run ended without saving a result or a blocker.',
                          'ai_run_timed_out':'The AI run hit its time limit.'}.get(error,'The AI run failed (often a model timeout or overload).')+(
                          ' The automatic retry ended the same way.' if current['auto_retries'] else ' No more automatic retries until something new comes in.')
+                if refused:  # never a turn: the same start would be refused again, so no automatic retry
+                    error,reason,details=refused,start_message.REFUSED_REASON.get(refused,start_message.REFUSED_ELSE),start_message.REFUSED_DETAILS[refused]
                 db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,error=?,updated_at=? WHERE job_id=?",(reason,details,error,now(),job['job_id']))
                 pause_idle_steps(db,job['suggestion_id'])
                 db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(job['suggestion_id'],))
@@ -782,6 +701,106 @@ class PreparationApp:
                 db.execute('UPDATE preparations SET error=?,retry_at=? WHERE job_id=?',('openclaw_unavailable',(dt.datetime.fromisoformat(now())+dt.timedelta(minutes=1)).isoformat(),job['job_id']))
             elif status=='pending':
                 db.execute('UPDATE preparations SET error=NULL,retry_at=NULL WHERE job_id=?',(job['job_id'],))
+
+    def start_tail(self, job, request):
+        """What always ends a start's message, so its room is set aside first: that the session carries on, and the files
+        the owner added to the message that started this run (images as images, all of them as files)."""
+        tail=''
+        if request['session_job_id'] != job['job_id']:
+            tail=SAME_SESSION
+        try:
+            with self.store.connect() as db:
+                images,lines=chat_files.for_run(db,self.config,job.get('decision_id'),job['job_id'],job['suggestion_id'],request['session_job_id']==job['job_id'])
+            if images:request['attachments']=images
+            tail+=lines
+        except OSError as error:LOG.error('chat files error=%s',type(error).__name__)
+        return tail
+
+    def chat_start(self, job, request, start, changing):
+        """A chat message's turn (chat_prompt) with what changed since its session began; returns what it read of what
+        was learned."""
+        start.base=chat_prompt(job,self.config)
+        # what was learned since the session read the list (a small delta), and earlier facts outside that list that bear on it
+        memory=recall(self,'todo_chat',{'todo':job['suggestion_id'],'session':request['session_job_id']},PROMPT_LIMIT)
+        for block in ('new','retained'):
+            lines=memory.text(block)
+            if lines:start.add(block,'\n\n'+lines,start_message.RECORDS,lambda block=block:memory.drop(block))
+        try:  # its area now: the owner may have moved it since the chat began
+            with self.store.connect() as db:
+                row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
+                sources=card_sources(db,job['suggestion_id'])
+                unplaced=bool(owner_area_open(db,job['suggestion_id']))
+            start.add('area',area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=True,unplaced=unplaced),start_message.HOW_TO_READ)  # their own message in its chat
+            start.add('evidence',evidence_line(self.config,row['account_ids'] if row else '[]',sources),start_message.HOW_TO_READ)
+        except Exception as error:LOG.error('area line error=%s',type(error).__name__)
+        start.add('routine',self.routine_change_lines(job),start_message.OWNER)
+        return memory
+
+    def full_start(self, job, request, start, changing):
+        """A preparation's full context in `start` (the instructions, then its blocks by rank); returns what it read of
+        what was learned."""
+        self.store.note_rule_files(RULE_FILES)
+        try:style=self.store.style_text(job['suggestion_id'])
+        except Exception as error:  # a draft without the owner's voice beats no preparation
+            LOG.error('style context error=%s',type(error).__name__);style=''
+        memory=recall(self,'preparation',{'todo':job['suggestion_id']},PROMPT_LIMIT)  # what was learned that this card needs, not all of it
+        rules=memory.text('rules')
+        try:gaps=self.gap_lines(job['suggestion_id'])  # what isn't known about the people on it (gap_note.py)
+        except Exception as error:LOG.error('gap note error=%s',type(error).__name__);gaps=''
+        model=request.get('model') or openclaw_model(self.config)
+        parts={'facts':memory.text('facts'),'retained':memory.text('retained'),  # with the history that bears on it (retained_facts.py)
+               'rules':rules,'style':style,'gaps':gaps,'edits':'' if style else self.store.draft_edits_text()}
+        build=lambda p:preparation_prompt(job,'\n\n'.join(filter(None,(p['facts'],p['retained']))),self.config,p['edits'],p['rules'],p['style'],p['gaps'],model)
+        start.base,gone=start_message.trimmed(build,parts,('edits','gaps','retained','style','facts','rules'),start.base_room())
+        for block in set(gone)&{'facts','retained','rules'}:memory.drop(block)
+        try:  # how to read the card's own sources (its accounts' notes, and those its messages came in on)
+            with self.store.connect() as db:
+                row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
+                sources,unplaced=card_sources(db,job['suggestion_id']),bool(owner_area_open(db,job['suggestion_id']))
+            start.add('sources',source_notes(account_services(self.config,[*(json.loads(row['account_ids'] or '[]') if row else []),*(a for _,a in sources)])),start_message.HOW_TO_READ)
+            # its area, and asking to move it; a run the owner started (not prepared ahead) also reads its own sources
+            start.add('area',area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=not job['ahead'],unplaced=unplaced),start_message.HOW_TO_READ)
+            start.add('evidence',evidence_line(self.config,row['account_ids'] if row else '[]',sources),start_message.HOW_TO_READ)
+        except Exception as error:LOG.error('source notes error=%s',type(error).__name__)
+        if not job.get('finish'):
+            try:  # what its review found (its messages, who and which thread), so the run looks up only what is missing
+                with self.store.connect() as db:start.add('brief',review_brief(db,job['suggestion_id']),start_message.BRIEF)
+            except Exception as error:LOG.error('review brief error=%s',type(error).__name__)
+        start.add('routine',self.routine_change_lines(job),start_message.OWNER)
+        try:start.add('records',memory.text('records'),start_message.RECORDS,lambda:memory.drop('records'))
+        except Exception as error:LOG.error('graph lines error=%s',type(error).__name__)
+        try:  # someone may have answered since: what is already synced, no model call
+            with self.store.connect() as db:
+                row=db.execute('SELECT title,event_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
+                ids=json.loads(row['event_ids'] or '[]') if row else []
+                # with the people its title names too, and the group DMs with them (handled_check.py)
+                found=self.handled_since(db,ids,self.handled_people(db,ids,row['title'] if row else ''))
+            start.add('newer',newer_activity_lines(found),start_message.NEWER)
+        except Exception as error:LOG.error('newer activity error=%s',type(error).__name__)
+        try:  # an automated follow-up: which one, its channel, what earlier ones said (follow_ups.py)
+            start.add('follow_up',self.follow_up_lines(job['suggestion_id'])+changing,start_message.OWNER)
+        except Exception as error:LOG.error('follow-up lines error=%s',type(error).__name__)
+        try:  # a recurring to-do: how the previous one went (recurring.py)
+            with self.store.connect() as db:start.add('recurring',recurring.prep_lines(db,job['suggestion_id'],today=getattr(self,'recurring_today',lambda:None)()),start_message.NEWER)
+        except Exception as error:LOG.error('recurring lines error=%s',type(error).__name__)
+        try:  # a recurring to-do: its way of doing it, kept from earlier runs (recurring.method_lines)
+            with self.store.connect() as db:start.add('method',recurring.method_lines(db,job['suggestion_id']),start_message.NEWER)
+        except Exception as error:LOG.error('recurring method error=%s',type(error).__name__)
+        try:  # the owner's skill that fits this to-do (or follow-up): its instructions, ranked above the defaults
+            start.add('skills',memory.text('skills',rules,start.room()),start_message.SKILLS,lambda:memory.drop('skills'))
+        except Exception as error:LOG.error('skill lines error=%s',type(error).__name__)
+        if not job['ahead']:start.add('learn',learned_skills.LEARN,start_message.LEARN)  # a run the owner started may teach a skill (learned_skills.py)
+        if getattr(self, 'fleet', None):
+            try:start.add('team',memory.text('team'),start_message.TEAM,lambda:memory.drop('team'))
+            except Exception as error:LOG.error('fleet lines error=%s',type(error).__name__)
+        try:start.add('related',memory.text('related'),start_message.RELATED,lambda:memory.drop('related'))  # by meaning, or by words without it
+        except Exception as error:LOG.error('related error=%s at=%s',type(error).__name__,fault_where(error))
+        if getattr(self,'skills',None) and not job.get('finish'):
+            try:  # "There's a skill for this": an installed one that isn't ready, or one on ClawHub (the agent can search it)
+                lines=self.skills.hint_prompt(clawhub=True)
+                if lines:start.add('hint','\n\n'+lines,start_message.HINT)
+            except Exception as error:LOG.error('skill hint error=%s',type(error).__name__)
+        return memory
 
     def preparation_progress(self, suggestion_id):
         with self.store.connect() as db:
@@ -845,19 +864,41 @@ class PreparationApp:
                 over=self.limit_fallback()
                 swap=tuple(over.split('/',1)) if over else background_model(self.config)  # never the costliest model for background work
                 if swap:sent={**request,'provider':swap[0],'model':swap[1]}
-            with self.store.connect() as db:sent=preparation_state.same_start(db,sent,now())
+            # One kept too long never reached the Gateway (the runner refuses it first): this one takes its place
+            with self.store.connect() as db:sent=preparation_state.same_start(db,sent,now(),lambda kept:not start_message.too_long(kept.get('message'),PROMPT_LIMIT))
             if sent is not request:
                 for key in [k for k in request if k not in sent]:del request[key]
                 request.update(sent)
+            if start_message.too_long(sent.get('message'),PROMPT_LIMIT):  # the runner would refuse it on every retry
+                LOG.error('start refused kind=%s error=prompt_too_long chars=%s limit=%s',request.get('kind') or 'preparation',len(sent['message']),PROMPT_LIMIT)
+                return {'run_id':request['job_id'],'status':'error','error':'prompt_too_long','error_phase':'runtime'}
         try:
             result=subprocess.run([node_bin(self.config),str(ROOT/'preparation-run.mjs')],env=node_env(self.config),
                                   input=encoded({k:v for k,v in sent.items() if not k.startswith('_')}),capture_output=True,text=True,timeout=30)
-            receipt=json.loads(result.stdout) if result.returncode==0 else {'status':'unavailable'}
-        except (ValueError,subprocess.TimeoutExpired):return {'status':'unavailable'}
+            receipt=json.loads(result.stdout) if result.returncode==0 else {'status':'unavailable','reason':'runner_failed'}
+        except ValueError:receipt={'status':'unavailable','reason':'runner_failed'}
+        except subprocess.TimeoutExpired:receipt={'status':'unavailable','reason':'runner_timeout'}
+        self.note_unavailable(request,receipt)
         if receipt.get('status')=='admitted' or receipt.get('status') in preparation_state.TERMINAL:
             with self.store.connect() as db:preparation_state.start_settled(db,request['job_id'])
         self.note_usage_limit(receipt)
         return receipt
+
+    def note_unavailable(self, request, receipt):
+        """Why a call got no answer, in the service log: a fixed code, once while it stays the same for that run (it is
+        tried again every minute), never a text. A start refused before the Gateway is one too."""
+        seen=self.__dict__.setdefault('unavailable_seen',{})
+        kind,action=request.get('kind') or 'preparation',request.get('action')
+        if receipt.get('error') in start_message.REFUSED:
+            LOG.error('start refused kind=%s error=%s',kind,receipt['error'])
+        if receipt.get('status')!='unavailable':
+            seen.pop(request['job_id'],None)
+            return
+        reason=start_message.unavailable(receipt.get('reason'))
+        if seen.get(request['job_id'])!=(action,reason):
+            if len(seen)>=200:seen.clear()
+            seen[request['job_id']]=(action,reason)
+            LOG.warning('gateway call unavailable kind=%s action=%s reason=%s',kind,action,reason)
 
     def preparation_worker(self):
         while not self.stop.wait(5):

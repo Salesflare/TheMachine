@@ -166,6 +166,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     put in (`memory_use.note`), and the builder logs that once its run is admitted (`memory_use.record`). A new reader
     of memory is a block there, not another call in a builder. `machine/app/senders.py` is the review's `sender`
     block: one line per sender of the claimed batch the Graph knows something specific about.
+  - `machine/app/start_message.py`: a run's start message, put together within the runner's limit: what always goes is
+    set aside first, the rest by rank. A new block of a preparation's start is an `add` there, never appended to the
+    message. Also the codes of a start that can never go out (`REFUSED`).
   - `machine/app/review_facts.py` (`ReviewFacts`): which facts a review gets once they no longer all fit its cap: the
     standing ones first, then the closest to the waiting signals (stored vectors), and a turn for the one a review saw
     longest ago.

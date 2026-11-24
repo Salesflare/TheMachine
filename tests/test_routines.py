@@ -107,6 +107,16 @@ class Runs(unittest.TestCase):
         self.assertTrue(ROUTINE_ACTIONS <= OWNER_ACTIONS & DASHBOARD_ACTIONS)
         self.assertNotIn('routine_result', OWNER_ACTIONS | DASHBOARD_ACTIONS)
 
+    def test_a_run_that_can_never_start_ends_at_once(self):
+        self.make()
+        self.now = T(2026, 11, 9, 9, 1)
+        self.answer['start'] = {'status': 'error', 'error': 'prompt_too_long', 'error_phase': 'runtime'}
+        for _ in range(3):
+            self.app.routines_step()
+        self.assertEqual(len([s for s in self.sent if s['action'] == 'start']), 1)
+        run, = self.runs()
+        self.assertEqual((run['state'], run['error']), ('failed', 'prompt_too_long'))
+
     def test_a_due_run_starts_once_and_its_report_is_its_result(self):
         rid = self.make()
         self.app.routines_step()

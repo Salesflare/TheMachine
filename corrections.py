@@ -356,6 +356,7 @@ def fix(db, suggestion_id, decision_id, kind, target, value, came_from, now, wro
 
 REDO_PREFIX = 'correction:'  # the decision that redoes one other draft: correction:<change id>:<to-do id>
 REDO_SOURCE = 'correction'
+REDO_NOTES = 10  # a redo's message carries the newest this many fixes
 # An approved or sending step keeps its draft: only a canceled one, or one done or sent for another draft, doesn't
 SETTLED_STEPS = ('cancelled', 'done', 'sent')
 
@@ -439,7 +440,7 @@ def redo_note(fixed):
 
 def redo_prompt(notes):
     """The line a run that redoes a draft after fixes gets (preparation_run_step)."""
-    fixes = '; '.join(_clip(n.split(': ', 2)[-1], 300) for n in notes)
+    fixes = '; '.join(_clip(n.split(': ', 2)[-1], 300) for n in notes[-REDO_NOTES:])
     return ('\nThe owner fixed what this to-do\'s draft was built on, on another to-do: ' + fixes + '. Draft it again with that and '
             'keep the rest as it was. Only the draft changes: nothing is sent or changed anywhere.')
 

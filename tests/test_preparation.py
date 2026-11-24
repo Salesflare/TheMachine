@@ -496,9 +496,9 @@ class Preparation(unittest.TestCase):
         self.assertNotIn("security, permission, OAuth or credential changes",prompt)
 
     def test_longest_prompt_fits_the_runner_limit(self):
-        # The runner refuses longer prompts, and the service can only see that as "OpenClaw unavailable" (2026-10-13).
+        # The runner refuses longer prompts (2026-10-13).
         self.accept();job=dict(self.job(),next_step='x'*2000)
-        limit=int(__import__('re').search(r'message\.length>(\d+)',(machine_config.ROOT/'preparation-run.mjs').read_text())[1])
+        limit=int(__import__('re').search(r'message\)\.length>(\d+)',(machine_config.ROOT/'preparation-run.mjs').read_text())[1])
         self.assertLess(len(machine_app_preparation.preparation_prompt(job,'- '+'f'*3000+'\n…')),limit-2000)
         self.assertLess(len(machine_app_preparation.preparation_prompt({**job,'ahead':True},'- '+'f'*3000+'\n…',None,'- '+'e'*4500)),limit-2000)
         # The plugin's contextFile shortens anything longer, so the rules must fit whole.
@@ -582,7 +582,7 @@ class Preparation(unittest.TestCase):
         self.assertEqual(self.job()['status'],'running')  # not past a deadline counted from before the outage
 
     def test_a_start_that_fails_otherwise_keeps_its_deadline(self):
-        # Unavailable without offline (a timeout, a refused prompt): not proof the Gateway is down, so the deadline holds
+        # Unavailable without offline (a timeout, a refusal by the Gateway): not proof the Gateway is down, so the deadline holds
         self.accept()
         self.app.preparation_step(lambda r:{'status':'unavailable'})
         with self.store.connect() as db:db.execute("UPDATE preparations SET started_at='2000-01-01T00:00:00+00:00',retry_at=NULL")

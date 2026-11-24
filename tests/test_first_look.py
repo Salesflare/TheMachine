@@ -114,7 +114,7 @@ class FirstLook(unittest.TestCase):
 
     def test_the_runner_and_the_service_agree_on_the_prompt_limit(self):
         runner = open(a.ROOT / 'preparation-run.mjs').read()
-        self.assertIn(f'request.message.length>{a.PROMPT_LIMIT})', runner)
+        self.assertIn(f'Array.from(request.message).length>{a.PROMPT_LIMIT})', runner)
 
     def test_a_failed_first_look_keeps_coming_back_at_most_five_minutes_apart(self):
         self.store.commit_page('work', {}, [signal('m1', days_ago=3)])
