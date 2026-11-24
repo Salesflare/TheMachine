@@ -30,6 +30,17 @@ resolution(1920, 1080)
 print('screen', SM(0), SM(1), 'of', SM(80), 'monitors', flush=True)
 
 
+# WebView2's very first start on this computer takes more than the 5 s that count as a hang, whichever program starts it:
+# once before anything is tried, and nothing of it is kept
+
+at = time.time()
+app = App(people, '--login', debug=False)
+until(app.robot, 60)
+print(f'the very first start: {time.time() - at:.1f} s', flush=True)
+app.process.kill()
+app.process.wait()
+fresh()
+
 # The build for people, as it first starts with Windows
 
 app = App(people, '--login', debug=False)

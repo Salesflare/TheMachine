@@ -115,6 +115,12 @@ else:
     def refused():
         return on.mac_tools.asks()
 
+    def stop():
+        need(until(lambda: not on.mac_tools.asks('Done'), 30), 'what macOS asks is answered')  # the one that waits for it ends, and nothing is in front of what is tried next
+        app.kill()
+        for pid in running():
+            os.kill(pid, 9)
+
 before = left() if WINDOWS else None
 
 
@@ -180,8 +186,10 @@ def _():
     again = lambda: running() and not set(running()) & set(was)
     if not until(lambda: again() or refused(), 60) or not again():
         png('updated')
-        need(refused(), f'it runs again: {was} {running()}')
-        return f'NOT TESTED: that it starts again; macOS opens no new app that Apple did not notarize: {refused()}'
+        told = refused()
+        need(told, f'it runs again: {was} {running()}')
+        stop()
+        return f'NOT TESTED: that it starts again; macOS opens no new app that Apple did not notarize: {told}'
     time.sleep(6)
     png('updated')
     need(len(running()) == 1, running())
@@ -191,10 +199,7 @@ def _():
 @step('it goes, and leaves nothing')
 def _():
     if not WINDOWS:
-        need(until(lambda: not on.mac_tools.asks('Done'), 30), 'what macOS asks is answered')  # it stays in front of what is tried next
-        app.kill()
-        for pid in running():
-            os.kill(pid, 9)
+        stop()
         shutil.rmtree(HOME.parent)  # so that nothing after this opens it
         return 'NOT TESTED: a Mac app is deleted by the person'
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\Windows\CurrentVersion\Run') as key:
