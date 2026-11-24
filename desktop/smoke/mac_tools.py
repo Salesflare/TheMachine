@@ -101,7 +101,10 @@ def drag(a, b, steps=25):
     for i in range(1, steps + 1):
         mouse(6, a[0] + (b[0] - a[0]) * i / steps, a[1] + (b[1] - a[1]) * i / steps)
         time.sleep(0.03)
-    time.sleep(0.3)
+    for i in range(4):  # held still above it, as a hand is: a page is asked first whether it takes it
+        time.sleep(0.25)
+        mouse(6, b[0] + i % 2, b[1])
+    time.sleep(0.2)
     mouse(2, *b, 0, 1)
     time.sleep(0.2)
     move(b[0] + 1, b[1])  # as a hand does: macOS 15 may only tell that the button is up with what comes next

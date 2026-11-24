@@ -18,7 +18,12 @@ import subprocess
 import sys
 import time
 
-from mac_tools import *  # noqa: F403 (the steps are written in it)
+from mac_tools import (
+    A, BACK, CERTIFICATE, CMD, CTRL, DOWN, ENTER, ESCAPE, F, ID, LIBRARY, MAIL, NAME, PORT, Q, V, VERSION, W,
+    all_windows, App, asks, click, downloaded, drag, finish, fresh, in_corner, in_front, key, move, need, need_window,
+    other, out, page, people, png, press, Rect, run, sandbox, saved, says, screens, shut, step, tray_menu, until,
+    work_area, write,
+)
 from standin import SNOOZE, Machine, TODOS
 
 fresh()
@@ -901,6 +906,7 @@ def opens(n, at):
 
 @step('a to-do of a Machine without that page')
 def _():
+    machine.compact = False
     opens(1, '#card=aa01')
     need(until(lambda: not app.robot(), 8), 'the robot goes while the dashboard is in front')
     need(ID in in_front(), in_front())
@@ -1113,6 +1119,8 @@ def _():
     need(not says('#signin'), 'signed in')
     need(app.again() == 0 and len(app.pids()) == 1, 'a second start ends')
     need(until(app.window), 'and opens the dashboard')
+    run('open', sandbox)
+    need(until(lambda: ID in in_front(), 8), 'in front: ' + in_front())
     shut(app)
     return in_front()
 
