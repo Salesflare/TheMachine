@@ -322,6 +322,166 @@ class NotReached(Base):
             self.assertEqual(notify.reached(db, 'x', 'phone'), 0)
 
 
+class TelegramFails(Base):
+    """A Telegram message that fails, or whose outcome isn't known, never holds back the push; and it goes once."""
+    def setUp(self):
+        super().setUp()
+        self.browser(PHONE, 'other'); self.phone_app()
+
+    def refuse(self, row): raise DeliveryNotSent('gateway_preflight_failed')
+
+    def unknown(self, row): raise ValueError('timeout')
+
+    def delivery(self, sid):
+        with self.store.connect() as db:
+            return dict(db.execute('SELECT status,error,message_id,pushed_at FROM deliveries WHERE suggestion_id=?', (sid,)).fetchone())
+
+    def retry(self, times=3):
+        for _ in range(times):
+            self.later(2); self.deliver()
+
+    def went(self):
+        return len(self.pushed), len(self.woken)
+
+    def test_the_push_goes_and_the_retries_send_no_second(self):
+        self.telegram = self.refuse
+        sid = self.todo()
+        self.assertEqual(self.went(), (1, 1))
+        self.assertEqual(self.pushed[0]['payload']['title'], 'Send quote 1')
+        self.assertNotIn('silent', self.pushed[0]['payload'])
+        self.retry()
+        self.assertEqual(self.went(), (1, 1))
+        self.assertEqual((self.delivery(sid)['status'], self.delivery(sid)['error']), ('queued', 'gateway_preflight_failed'))
+
+    def test_telegram_taking_it_later_sends_no_second_push(self):
+        self.telegram = self.refuse
+        sid = self.todo()
+        self.later(2)
+        self.telegram = lambda row: {'messageId': '90'}
+        self.deliver()
+        self.assertEqual((self.delivery(sid)['status'], self.delivery(sid)['message_id'], self.delivery(sid)['error']), ('sent', '90', None))
+        self.assertEqual(self.went(), (1, 1))
+        self.assertEqual(self.emailed(), 0)
+
+    def test_an_unknown_outcome_found_in_the_chat(self):
+        self.telegram = self.unknown
+        sid = self.todo()
+        self.assertEqual(self.went(), (1, 1))
+        self.later(3)
+        with patch_everywhere(a, 'cached_card_ids', return_value=[91]):
+            a.reconcile_uncertain(self.store, self.config)
+        self.assertEqual(self.delivery(sid)['status'], 'sent')
+        self.retry()
+        self.assertEqual(self.went(), (1, 1))
+
+    def test_an_unknown_outcome_tried_again(self):
+        self.telegram = self.unknown
+        sid = self.todo()
+        tried = []
+        for telegram in (self.unknown, self.refuse, lambda row: {'messageId': '92'}):
+            self.later(31)
+            with patch_everywhere(a, 'cached_card_ids', return_value=[]):
+                a.reconcile_uncertain(self.store, self.config)
+            self.telegram = lambda row, telegram=telegram: tried.append(1) or telegram(row)
+            self.retry(1)
+        self.assertEqual(len(tried), 3)
+        self.assertEqual(self.delivery(sid)['status'], 'sent')
+        self.assertEqual(self.went(), (1, 1))
+
+    def test_a_crash_during_a_retry_sends_no_second_push(self):
+        self.telegram = self.refuse
+        sid = self.todo()
+        with self.store.connect() as db:
+            db.execute("UPDATE deliveries SET status='sending' WHERE suggestion_id=?", (sid,))
+        self.later(5); self.deliver()  # interrupted: its outcome isn't known
+        self.assertEqual((self.delivery(sid)['status'], self.delivery(sid)['error']), ('uncertain', 'interrupted_delivery'))
+        self.later(31)
+        with patch_everywhere(a, 'cached_card_ids', return_value=[]):
+            a.reconcile_uncertain(self.store, self.config)
+        self.retry()
+        self.assertEqual(self.went(), (1, 1))
+
+    def test_a_new_notification_about_it_pushes_again_once(self):
+        """Snoozed and back, while Telegram still fails."""
+        for fails, until_tried in ((self.refuse, 'sent'), (self.unknown, 'uncertain')):
+            with self.subTest(fails=fails.__name__):
+                self.telegram = fails
+                sid = self.todo(1 if fails == self.refuse else 2)
+                first = len(self.pushed)
+                with self.store.connect() as db:
+                    db.execute('UPDATE suggestions SET status=\'snoozed\',resume_status=\'pending\',snoozed_until=? WHERE id=?', (a.now(), sid))
+                    db.execute('UPDATE deliveries SET status=? WHERE suggestion_id=?', (until_tried, sid))
+                self.later(10)
+                self.store.wake_snoozed()
+                self.assertEqual((self.delivery(sid)['status'], self.delivery(sid)['error']), ('queued', None))
+                self.deliver()
+                self.assertEqual(len(self.pushed), first + 1)
+                self.retry()
+                self.assertEqual(len(self.pushed), first + 1)
+                with self.store.connect() as db:
+                    db.execute("UPDATE deliveries SET status='sent' WHERE suggestion_id=?", (sid,))
+                self.later(10)
+
+    def test_a_burst_buzzes_the_phone_once_and_telegram_as_before(self):
+        self.telegram = self.refuse
+        self.todo(1)
+        self.later(0.5)
+        silent = []
+        self.telegram = lambda row: silent.append(row['_silent']) or {'messageId': '93'}
+        self.todo(2)
+        self.assertEqual([bool(p['payload'].get('silent')) for p in self.pushed], [False, True])
+        self.assertEqual(silent, [False])  # nothing buzzed there yet
+        self.assertEqual(len(self.woken), 1)
+
+    def test_quiet_and_calm_ones_push_nothing(self):
+        self.telegram = self.refuse
+        sid = self.todo(deliver=False)
+        self.deliver(why='')  # it can wait
+        self.assertEqual(self.went(), (0, 0))
+        self.assertIsNone(self.delivery(sid)['pushed_at'])
+        self.retry()  # a retry by the rules it has then: now it can't wait, so its push goes, once
+        self.assertEqual(self.went(), (1, 1))
+        with patch('machine.delivery.deliver.todo_kinds.quiet', return_value=True):
+            self.later(10); self.todo(2)
+        self.assertEqual(self.went(), (1, 1))
+
+    def test_held_while_a_dashboard_is_in_use(self):
+        self.telegram = self.refuse
+        with patch.object(notify, 'push_now', return_value=False):
+            self.todo()
+            self.retry()
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM notify_queue WHERE channel='push'").fetchone()[0], 1)
+        self.assertEqual(self.went(), (0, 0))
+        self.step()
+        self.assertEqual(self.went(), (1, 1))
+
+    def test_push_off_for_this_kind(self):
+        self.telegram = self.refuse
+        with patch.object(notify, 'allowed', side_effect=lambda db, kind, channel: channel != 'push'):
+            sid = self.todo()
+        self.assertEqual(self.went(), (0, 0))
+        self.assertIsNone(self.delivery(sid)['pushed_at'])
+
+    def test_one_that_was_handled_meanwhile_pushes_nothing(self):
+        self.telegram = self.refuse
+        sid = self.todo(deliver=False)
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='dismissed' WHERE id=?", (sid,))
+        self.deliver()
+        self.assertEqual(self.went(), (0, 0))
+
+    def test_the_email_goes_when_the_phone_did_not_show_it_and_not_when_it_did(self):
+        self.telegram = self.refuse
+        self.todo(1)
+        self.phone_asks()
+        self.assertEqual(self.emailed(), 0)
+        self.later(60); self.woken.clear()
+        self.todo(2)
+        self.deliver()  # the first one's retry went before it
+        self.assertEqual(self.emailed(), 1)
+
+
 class Fleet(Base):
     ROWS = [{'id': 'q1', 'kind': 'ask', 'text': 'one'}, {'id': 'q2', 'kind': 'ask', 'text': 'two'}]
 
