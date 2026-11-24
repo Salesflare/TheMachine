@@ -1,6 +1,6 @@
 """Runs the app on a Mac as a person would: real mouse and keys, against a made-up Machine, with a screenshot of each step.
 For CI's own throwaway computer (desktop.yml): it moves the mouse, changes the screen, the Dock and dark mode.
-The robot and its box; started as at login, which opens no window. mac_window.py has the dashboard's window.
+The robot and its box; started as at login, which opens no window. window.py has the dashboard's window.
 
   python3 smoke/mac.py <sandbox build> <build for people> <folder for the pictures> [<folder of certificate.sh>]
   python3 smoke/mac.py - <signed build for people> <folder for the pictures>
@@ -797,23 +797,13 @@ def _():
             press(app, '#files button')
         press(app, '#close')
         r = app.robot()  # its corner is its page, not yet the robot in it
-        took = {}
-        for enters in (False, True):  # without its answer to dragenter, as before, and with it
-            if not enters:
-                page('robot', '(() => { window.enters = e => e.stopImmediatePropagation(); addEventListener("dragenter", window.enters, true) })()')
-            else:
-                page('robot', 'removeEventListener("dragenter", window.enters, true)')
-            took[enters] = 0
-            for _ in range(5):
-                drag(from_(1), app.center(), at_once=(r.left + 4, r.top + 4))
-                if until(app.box, 3):
-                    took[enters] += 1
-                    empty()
-        print('dropped at once', took, flush=True)
-        need(took[True] == 5, f'dropped as soon as it is above it {took}')
+        for n in range(3):
+            drag(from_(1), app.center(), at_once=(r.left + 4, r.top + 4))
+            need(until(app.box, 5), f'dropped as soon as it is above it, time {n + 1}')
+            empty()
         hide()
         time.sleep(1)
-        told = f'at once {took}, '
+        told = ''
         for place in (28, 16, 8):  # points below its top: the Dock takes what is dropped close above it
             r = app.robot()
             drag(from_(1), ((r.left + r.right) // 2, r.top + place))

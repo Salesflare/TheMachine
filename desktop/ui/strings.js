@@ -35,7 +35,11 @@ window.MachineText = {
   setLogin: 'Start at login',
   setNotify: 'Notifications',
   setNotifyHint: 'In the robot’s place',
-  setNotifyBlocked: 'Not allowed. Turn on The Machine in System Settings, Notifications.',
+  setNotifyBlocked: {
+    Mac: 'Not allowed. Turn on The Machine in System Settings, Notifications.',
+    Windows: 'Not allowed. Turn on The Machine in Settings, System, Notifications.',
+    Linux: 'Your desktop shows no notifications.',
+  },
   setBrowser: 'Does a browser on this computer notify you too?',
   setBrowserHint: 'It’s quiet here until you say.',
   setBrowserYes: 'Yes, open it',
@@ -106,8 +110,11 @@ window.MachineText = {
     file: 'That can’t be added. Try a file.',
     long: 'Cut to 2,000 characters.',
     shot: 'Couldn’t take a screenshot.',
-    login: 'Couldn’t change that. Try System Settings, General, Login Items.',
-
+    login: {
+      Mac: 'Couldn’t change that. Try System Settings, General, Login Items.',
+      Windows: 'Couldn’t change that. Try Settings, Apps, Startup.',
+      Linux: 'Couldn’t change that.',
+    },
     screen: 'Allow The Machine in System Settings, Privacy & Security, Screen & System Audio Recording. Then quit it and open it again.',
   },
 };

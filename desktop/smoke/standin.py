@@ -29,7 +29,7 @@ if (window.launchQueue) launchQueue.setConsumer(p => { const u = p.targetURL && 
 onfocus = tell;
 tell();
 </script>'''
-# The dashboard in the app's own window: what it does with a browser around it (mac_window.py)
+# The dashboard in the app's own window: what it does with a browser around it (window.py)
 WINDOW = b'''<!doctype html><link rel="manifest" href="manifest.webmanifest"><title>Stand-in</title><style>body{margin:0;padding:16px;background:light-dark(#f8f7f3,#1b1c1f);color:light-dark(#222,#eee);color-scheme:light dark;font:15px sans-serif}
 #drop{border:1px dashed;padding:20px;width:260px}iframe{width:300px;height:60px;border:1px solid}p{margin:8px 0}</style>
 <h1>Stand-in dashboard</h1><p id="told"></p><p id="ipc"></p><p><input id="field" value="some words"> <input id="pick" type="file" multiple> <span id="picked"></span></p>

@@ -43,12 +43,25 @@ fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri
         .accept_first_mouse(true) // macOS: a click counts while another program is in front
         .disable_drag_drop_handler() // the page takes dropped files itself
         .additional_browser_args(&browser())
-        .on_navigation(|url| url.scheme() == "tauri" || url.host_str() == Some("tauri.localhost")) // only its own pages
-        .build()?;
+        .on_navigation(|url| url.scheme() == "tauri" || url.host_str() == Some("tauri.localhost")); // only its own pages
+    // WebKitGTK asks the first page there is, for all of them
     #[cfg(target_os = "linux")]
-    linux::prepare(app, &window, label)?;
+    let window = {
+        let saves = app.clone();
+        window.on_download(move |_, event| crate::files::download(&saves, event))
+    };
+    let window = window.build()?;
+    #[cfg(target_os = "linux")]
+    {
+        linux::prepare(app, &window, label)?;
+        crate::linux_app::lives(&window);
+        crate::linux_app::keeps(&window);
+    }
     #[cfg(windows)]
-    no_menu(&window);
+    {
+        no_menu(&window);
+        crate::windows_app::lives(&window);
+    }
     #[cfg(target_os = "macos")]
     crate::mac::prepare(&window);
     Ok(window)
@@ -62,14 +75,15 @@ pub fn focus(window: &WebviewWindow) {
     let _ = window.set_focus();
 }
 
-/// Windows opens a window's menu on Alt alone: here an unseen one, that keeps the page waiting until a click. No menu then.
+/// Windows opens a window's menu on Alt alone: here an unseen one, that keeps the page waiting until a click. No menu then;
+/// Alt and Space opens the one a title bar has.
 #[cfg(windows)]
 pub fn no_menu(window: &WebviewWindow) {
     use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
     use windows_sys::Win32::UI::Shell::{DefSubclassProc, SetWindowSubclass};
     use windows_sys::Win32::UI::WindowsAndMessaging::{SC_KEYMENU, WM_SYSCOMMAND};
-    unsafe extern "system" fn told(window: HWND, message: u32, w: WPARAM, l: LPARAM, _: usize, _: usize) -> LRESULT {
-        if message == WM_SYSCOMMAND && w & 0xFFF0 == SC_KEYMENU as usize {
+    unsafe extern "system" fn told(window: HWND, message: u32, w: WPARAM, l: LPARAM, _: usize, bar: usize) -> LRESULT {
+        if message == WM_SYSCOMMAND && w & 0xFFF0 == SC_KEYMENU as usize && !(bar == 1 && l == 32) {
             return 0;
         }
         // SAFETY: what Windows gave, passed on.
@@ -77,7 +91,7 @@ pub fn no_menu(window: &WebviewWindow) {
     }
     if let Ok(hwnd) = window.hwnd() {
         // SAFETY: the program's own window, on its own thread; the function is the program's.
-        unsafe { SetWindowSubclass(hwnd.0, Some(told), 1, 0) };
+        unsafe { SetWindowSubclass(hwnd.0, Some(told), 1, window.is_decorated().unwrap_or(false).into()) };
     }
 }
 
@@ -504,9 +518,18 @@ pub mod linux {
 
     /// Files dropped on it: WebKitGTK gives its page none. Links and text are the page's.
     fn files(app: &AppHandle, label: &str, page: &impl IsA<gtk::Widget>) {
+        let (app, label) = (app.clone(), label.to_string());
+        dropped(page, true, |_| (), move |paths, _| {
+            let (app, label) = (app.clone(), label.clone());
+            std::thread::spawn(move || crate::take_given(&app, &label, crate::given::Given::read(&paths)));
+        });
+    }
+
+    /// Where files are above a page (None: no longer), and those dropped there. `all`: links and text are for it too.
+    pub fn dropped(page: &impl IsA<gtk::Widget>, all: bool, over: impl Fn(Option<(i32, i32)>) + 'static, drop: impl Fn(Vec<std::path::PathBuf>, (i32, i32)) + 'static) {
         use std::path::PathBuf;
         use std::rc::Rc;
-        let over: Rc<RefCell<Vec<PathBuf>>> = Rc::default();
+        let (above, over) = (Rc::new(over), Rc::<RefCell<Vec<PathBuf>>>::default());
         let held = over.clone();
         page.connect_drag_data_received(move |_, _, _, _, data, _, _| {
             let uris = data.uris();
@@ -517,13 +540,16 @@ pub mod linux {
         });
         // WebKit's yes comes after the motion it is to, and only counts with the next one: a quick drop would be refused
         let here = Rc::new(std::cell::Cell::new(false));
-        let on = here.clone();
-        page.connect_drag_motion(move |_, drag, _, _, time| {
+        let (on, held, told) = (here.clone(), over.clone(), above.clone());
+        page.connect_drag_motion(move |_, drag, x, y, time| {
             on.set(true);
-            let (on, drag) = (on.clone(), drag.clone());
+            if !held.borrow().is_empty() {
+                told(Some((x, y)));
+            }
+            let (on, drag, held) = (on.clone(), drag.clone(), held.clone());
             if drag.list_targets().iter().any(|t| ["text/uri-list", "text/plain", "text/plain;charset=utf-8", "UTF8_STRING"].contains(&t.name().as_str())) {
                 gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(30), move || {
-                    if on.get() {
+                    if on.get() && (all || !held.borrow().is_empty()) {
                         drag.drag_status(gdk::DragAction::COPY, time);
                     }
                 });
@@ -534,18 +560,20 @@ pub mod linux {
         let held = over.clone();
         page.connect_drag_leave(move |_, _, _| {
             here.set(false);
-            let held = held.clone();
-            gtk::glib::idle_add_local_once(move || held.borrow_mut().clear());
+            let (held, told) = (held.clone(), above.clone());
+            gtk::glib::idle_add_local_once(move || {
+                if !std::mem::take(&mut *held.borrow_mut()).is_empty() {
+                    told(None);
+                }
+            });
         });
-        let (app, label) = (app.clone(), label.to_string());
-        page.connect_drag_drop(move |_, drag, _, _, time| {
+        page.connect_drag_drop(move |_, drag, x, y, time| {
             let paths = std::mem::take(&mut *over.borrow_mut());
             if paths.is_empty() {
                 return false;
             }
             drag.drop_finish(true, time);
-            let (app, label) = (app.clone(), label.clone());
-            std::thread::spawn(move || crate::take_given(&app, &label, crate::given::Given::read(&paths)));
+            drop(paths, (x, y));
             true
         });
     }

@@ -8,6 +8,10 @@ mod dash;
 mod files;
 mod front;
 mod given;
+#[cfg(not(target_os = "macos"))]
+mod keys;
+#[cfg(target_os = "linux")]
+mod linux_app;
 mod login;
 mod machine;
 #[cfg(target_os = "macos")]
@@ -26,6 +30,8 @@ mod speak;
 mod webapp;
 mod why;
 mod windows;
+#[cfg(windows)]
+mod windows_app;
 
 use machine::{Machine, Waiting};
 use saved::Saved;
@@ -221,10 +227,11 @@ fn ask_status(app: &AppHandle, shared: &Shared, machine: &Machine) -> Result<(Va
         let saved = shared.saved.lock().unwrap();
         (saved.desk.clone(), saved.none)
     };
-    let mut status = machine.status(since.as_deref(), &desk, speak::up(app), &speak::got(shared), none)?;
+    let up = speak::up(app);
+    let mut status = machine.status(since.as_deref(), &desk, up, &speak::got(shared), none)?;
     let said = (status["notices"].take(), status["meeting"].take()); // not part of the status
     let browser = status["browser"].take();
-    if !said.0.is_null() {
+    if up && !said.0.is_null() { // it is only told when it may speak, which it may not with the dashboard in front
         speak::unsure(app, browser.as_u64().unwrap_or(0));
     }
     // The Fleet's items, when its part says they changed (a change list without that part: they didn't)
@@ -254,11 +261,22 @@ fn listed(app: &AppHandle, waiting: Waiting) {
     }
     let _ = app.emit_to("box", "listed", ());
     follow_tray(app);
+    badge(app);
+}
+
+/// How many wait, on the Dock's icon or the taskbar's.
+pub fn badge(app: &AppHandle) {
+    #[cfg(any(windows, target_os = "macos"))]
+    let count = app.state::<Shared>().count();
     #[cfg(target_os = "macos")]
     if let Some(robot) = app.get_webview_window("robot") {
-        let count = app.state::<Shared>().count() as i64;
-        let _ = robot.set_badge_count((count > 0).then_some(count)); // the Dock icon's
+        let count = count as i64;
+        let _ = robot.set_badge_count((count > 0).then_some(count));
     }
+    #[cfg(windows)]
+    windows_app::badge(app, count);
+    #[cfg(target_os = "linux")]
+    let _ = app;
 }
 
 /// The dot: something is new. While the box or the Machine's app is open the person sees it, so it isn't.
@@ -504,6 +522,8 @@ fn chosen(app: &AppHandle, id: &str) {
 fn toggle(app: &AppHandle) {
     if windows::box_open(app) {
         windows::close_box(app);
+    } else if dash::here() && app.state::<Shared>().saved.lock().unwrap().no_robot {
+        dash::show(app, "");
     } else {
         open(app);
     }
@@ -898,10 +918,15 @@ fn tray(app: &AppHandle) -> tauri::Result<()> {
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
     let item = |id, text| MenuItem::with_id(app, id, text, true, None::<&str>);
     let (hide, dashboard) = (item("hide", "Hide")?, item("dashboard", "Open dashboard")?);
+    let (settings, quit) = (item("settings", "Settings…")?, item("quit", "Quit")?);
     #[cfg(windows)]
-    let menu = Menu::with_items(app, &[&hide, &dashboard, &item("quit", "Quit")?])?;
+    let menu = Menu::with_items(app, &[&hide, &dashboard])?;
     #[cfg(target_os = "macos")]
-    let menu = Menu::with_items(app, &[&item("open", "Open")?, &dashboard, &hide, &item("settings", "Settings…")?, &item("quit", "Quit")?])?;
+    let menu = Menu::with_items(app, &[&item("open", "Open")?, &dashboard, &hide])?;
+    if dash::here() {
+        menu.append(&settings)?;
+    }
+    menu.append(&quit)?;
     let mut icon = TrayIconBuilder::with_id("tray")
         .tooltip("The Machine")
         .menu(&menu)
@@ -926,7 +951,12 @@ fn tray(app: &AppHandle) -> tauri::Result<()> {
         icon = icon.icon(image.clone());
     }
     icon.build(app)?;
-    app.manage(TrayItems { hide, dashboard });
+    app.manage(TrayItems {
+        hide,
+        dashboard,
+        #[cfg(windows)]
+        menu,
+    });
     follow_tray(app);
     Ok(())
 }
@@ -935,6 +965,8 @@ fn tray(app: &AppHandle) -> tauri::Result<()> {
 struct TrayItems {
     hide: tauri::menu::MenuItem<tauri::Wry>,
     dashboard: tauri::menu::MenuItem<tauri::Wry>,
+    #[cfg(windows)]
+    menu: tauri::menu::Menu<tauri::Wry>,
 }
 
 /// The icon by the clock has the robot's dot too, and its menu what can be done now.
@@ -944,8 +976,13 @@ fn follow_tray(app: &AppHandle) {
         let shared = app.state::<Shared>();
         let _ = items.hide.set_text(if shared.hidden.load(Ordering::Relaxed) { "Show robot" } else { "Hide" });
         let _ = items.dashboard.set_enabled(shared.machine().is_some());
+        let robot = !shared.saved.lock().unwrap().no_robot;
         #[cfg(target_os = "macos")]
-        let _ = icon.set_visible(!shared.saved.lock().unwrap().no_robot); // then the Dock icon is the way in
+        let _ = icon.set_visible(robot); // then the Dock icon is the way in
+        #[cfg(windows)]
+        if items.menu.get("hide").is_some() != robot {
+            let _ = if robot { items.menu.insert(&items.hide, 0) } else { items.menu.remove(&items.hide) };
+        }
         let count = shared.count();
         let _ = icon.set_icon(Some(if shared.dot.load(Ordering::Relaxed) { dotted(image) } else { image.clone() }));
         let _ = icon.set_tooltip(Some(if count > 0 { format!("The Machine. {count} for you.") } else { "The Machine".into() }));
@@ -965,6 +1002,32 @@ fn dotted(image: &tauri::image::Image<'_>) -> tauri::image::Image<'static> {
         }
     }
     tauri::image::Image::new_owned(px, w, h)
+}
+
+/// A sandbox build's pages, for smoke/: a page's label on the first line, what to ask it after. WebKit has nothing like this
+/// of its own.
+#[cfg(all(feature = "sandbox", not(windows)))]
+fn debug(app: &AppHandle) {
+    use std::io::{Read, Write};
+    let Some(port) = std::env::var("MACHINE_SANDBOX_DEBUG").ok().and_then(|p| p.parse::<u16>().ok()) else { return };
+    let Ok(listener) = std::net::TcpListener::bind(("127.0.0.1", port)) else { return };
+    let app = app.clone();
+    std::thread::spawn(move || {
+        for mut stream in listener.incoming().flatten() {
+            let mut asked = String::new();
+            if stream.read_to_string(&mut asked).is_err() {
+                continue;
+            }
+            let (label, script) = asked.split_once('\n').unwrap_or_default();
+            let (tell, told) = std::sync::mpsc::channel();
+            let found = app.get_webview_window(label).map(|w| w.eval_with_callback(script, move |answer| { let _ = tell.send(answer); }));
+            let answer = match found {
+                Some(Ok(())) => told.recv_timeout(Duration::from_secs(5)).unwrap_or_default(),
+                _ => String::new(),
+            };
+            let _ = stream.write_all(answer.as_bytes());
+        }
+    });
 }
 
 fn watch(app: AppHandle) {
@@ -1017,9 +1080,8 @@ fn main() {
     let builder = tauri::Builder::default();
     #[cfg(target_os = "macos")]
     let builder = builder.activate_ignoring_other_apps(false).on_web_content_process_terminate(|page| {
-        if page.label() == dash::LABEL {
-            later(page.app_handle(), dash::died);
-        }
+        let label = page.label().to_string();
+        later(page.app_handle(), move |app| dash::died(app, &label));
     });
     builder
         .plugin(tauri_plugin_single_instance::init(|app, args, _| {
@@ -1139,9 +1201,9 @@ fn main() {
                 mac::menu(app.handle())?;
                 mac::follow_screens(app.handle());
                 mac::follow_front(app.handle());
-                #[cfg(feature = "sandbox")]
-                mac::debug(app.handle());
             }
+            #[cfg(all(feature = "sandbox", not(windows)))]
+            debug(app.handle());
             #[cfg(target_os = "macos")]
             mac::fresh_shaders(app.handle());
             let opens = dash::here() && !login::started();
@@ -1178,6 +1240,7 @@ fn main() {
                 _ => {}
             }
             if let RunEvent::Exit = event {
+                notify::quits();
                 if app.state::<Shared>().saved.lock().unwrap().window.is_some() {
                     app.state::<Shared>().save(); // its place
                 }

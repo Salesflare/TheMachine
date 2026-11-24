@@ -1,4 +1,4 @@
-"""What mac.py and mac_window.py share: the screen, the mouse and the keys, the app's windows and pages, and the steps."""
+"""What mac.py and window.py share on a Mac: the screen, the mouse and the keys, the app's windows and pages, and the steps."""
 import base64
 import ctypes
 import json

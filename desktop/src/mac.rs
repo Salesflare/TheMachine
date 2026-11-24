@@ -514,29 +514,3 @@ fn close(app: &AppHandle) {
         if window.label() == dash::LABEL { dash::close(app) } else { dash::close_file(app, window.label()) }
     }
 }
-
-/// A sandbox build's pages, for smoke/mac.py: a page's label on the first line, what to ask it after. WebKit has nothing
-/// like this of its own.
-#[cfg(feature = "sandbox")]
-pub fn debug(app: &AppHandle) {
-    use std::io::{Read, Write};
-    let Some(port) = std::env::var("MACHINE_SANDBOX_DEBUG").ok().and_then(|p| p.parse::<u16>().ok()) else { return };
-    let Ok(listener) = std::net::TcpListener::bind(("127.0.0.1", port)) else { return };
-    let app = app.clone();
-    std::thread::spawn(move || {
-        for mut stream in listener.incoming().flatten() {
-            let mut asked = String::new();
-            if stream.read_to_string(&mut asked).is_err() {
-                continue;
-            }
-            let (label, script) = asked.split_once('\n').unwrap_or_default();
-            let (tell, told) = std::sync::mpsc::channel();
-            let found = app.get_webview_window(label).map(|w| w.eval_with_callback(script, move |answer| { let _ = tell.send(answer); }));
-            let answer = match found {
-                Some(Ok(())) => told.recv_timeout(Duration::from_secs(5)).unwrap_or_default(),
-                _ => String::new(),
-            };
-            let _ = stream.write_all(answer.as_bytes());
-        }
-    });
-}
