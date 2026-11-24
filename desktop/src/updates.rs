@@ -107,6 +107,7 @@ mod there {
             *READY.lock().unwrap() = Some((update, bytes));
             return Err("failed".into());
         }
+        crate::hangs::LEAVES.store(true, std::sync::atomic::Ordering::Relaxed);
         app.request_restart();
         Ok(())
     }

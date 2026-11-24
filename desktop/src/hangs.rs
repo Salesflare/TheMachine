@@ -21,6 +21,9 @@ const STACKS: u64 = 5;
 /// The last work the main thread was given (main.rs, `later`), and whether that is done.
 static LAST: Mutex<Option<(&'static Location<'static>, Instant, bool)>> = Mutex::new(None);
 
+/// A newer version takes over: this one waits for the system to start it, which may ask the person first.
+pub static LEAVES: AtomicBool = AtomicBool::new(false);
+
 pub fn starts(of: &'static Location<'static>) {
     if let Ok(mut last) = LAST.lock() {
         *last = Some((of, Instant::now(), false));
@@ -58,6 +61,9 @@ fn main_thread(app: &AppHandle, file: &Path) {
             return; // it ends
         }
         if !within(&answered, STUCK) {
+            if LEAVES.load(Ordering::Relaxed) {
+                return;
+            }
             let since = Instant::now();
             note(file, &format!("the main thread doesn't answer for 5 s ({}); last work: {}", about(), last()));
             stack(file, std::process::id());

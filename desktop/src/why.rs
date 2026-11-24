@@ -21,6 +21,7 @@ pub fn note(file: &Path, reason: &str) {
         }
     }
     let seconds = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs());
+    let _ = file.parent().map(fs::create_dir_all); // the very first start may hang before anything is kept
     if let Ok(mut out) = OpenOptions::new().create(true).append(true).open(file) {
         let _ = writeln!(out, "{} {reason}", at(seconds));
     }
