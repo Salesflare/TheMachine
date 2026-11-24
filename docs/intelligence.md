@@ -744,10 +744,10 @@ founded 1989)") and the roles run. Profiles are kept in `org_profiles`.
 **Logos.** A lookup's logo is kept only as a plain `https` address and loads straight from the service's image host,
 with no referrer, lazily and at a fixed size; the initial shows until it loads.
 
-- When the lookup brought no logo, the Machine asks the organization's own website for the icon its home page names
-  (`apple-touch-icon` or `icon`, never SVG; else `/favicon.ico`): https only, public addresses, up to 200 kB of PNG,
-  JPEG, WebP or ICO, ten organizations a pass. It is saved here (`person_photos` as `logo:<domain>`), so no logo
-  service learns which organizations you deal with.
+- When the lookup brought no logo, the Machine uses the icon the organization's website names, from that website or the
+  host it names for it (`apple-touch-icon` or `icon`, never SVG; else `/favicon.ico`): https only, public addresses,
+  up to 200 kB of PNG, JPEG, WebP or ICO, ten organizations a pass. It is saved here (`person_photos` as
+  `logo:<domain>`), so no logo service learns which organizations you deal with.
 - A logo from the lookup or your own picture wins. A site without one is asked again after 30 days (`org_logo_tries`).
 - A lookup that found the organization without a logo is asked once more after `LOGO_RETRY_DAYS` (7), at most five a
   pass (`org_logo_retries`).
