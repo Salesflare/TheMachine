@@ -65,6 +65,7 @@ import datetime as dt
 import hashlib
 import json
 import re
+import unicodedata
 
 import calendar_busy
 import earlier_notes
@@ -399,11 +400,11 @@ def evidence(db, meeting, side, sides, owner_emails, owner_domains, current, ope
     people, messages, promises, orgs, nodes, talk = [], {}, {}, {}, set(), []
     for guest in meeting['guests']:
         node = resolve(db, 'email:' + guest['email'])
-        person = {'name': guest['name'] or guest['email'], 'email': guest['email']}
+        person = {'name': _called(guest['name'], guest['email']), 'email': guest['email']}
         if node is not None:
             info = json.loads(node['info'] or '{}')
             if node['name'] and '@' not in str(node['name']):
-                person['name'] = node['name']
+                person['name'] = _called(node['name'], guest['email'])
             if info.get('role'):
                 person['role'] = str(info['role'])[:120]
             org = db.execute('SELECT id,name,info FROM graph_nodes WHERE id=?', (info.get('org'),)).fetchone() if info.get('org') else None
@@ -563,8 +564,17 @@ def _chat_line(row, person, owner_emails, excerpt):
     """(who, what) of one chat message, on one line: the owner, the guest, or in a group whoever wrote it."""
     meta = json.loads(row['metadata'] or '{}')
     who = ('the owner' if _sent(meta, owner_emails) else person['name'] if one_to_one(row['kind'], meta)
-           else message_view.sender_name(row['kind'], meta) or person['name'])
+           else _called(message_view.sender_name(row['kind'], meta), 'Someone in the group'))
     return who, ' '.join(excerpt(row['body'], MESSAGE_HEAD, MESSAGE_TAIL).split())
+
+
+def _called(name, otherwise):
+    """A name someone else chose, as the turn reads it: on one line, short, without a colon (it ends who wrote a line) or
+    invisible characters; otherwise when there is none or it reads as the owner."""
+    name = ''.join(c for c in unicodedata.normalize('NFKC', str(name or '')) if unicodedata.category(c) != 'Cf')
+    name = cut(' '.join(name.replace(':', ' ').split()), 80)
+    words = re.sub(r'[\W_]+', ' ', name.casefold()).strip()
+    return otherwise if not words or words == 'owner' or 'the owner' in words else name
 
 
 def news(db, meeting, found, again):

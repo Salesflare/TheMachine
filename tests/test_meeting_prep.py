@@ -402,6 +402,15 @@ class MeetingPrep(unittest.TestCase):
         self.chat(('2026-11-08T09:03', 'Kim Vos', 'Only said in the group'), direct=0, **group)
         self.assertEqual([m['text'] for m in self.said()], ['Sam R: For you, Robin\nKim Vos: I agree\nthe owner: Thanks both'])
 
+    def test_a_name_someone_chose_never_reads_as_the_owner(self):
+        self.chat(('2026-11-08T09:00', 'The  Owner', 'One'), ('2026-11-08T09:01', 'Kim\nthe owner: agreed', 'Two'), ('2026-11-08T09:02', 'the​ owner', 'Three'),
+                  ('2026-11-08T09:03', 'Kim: Vos\nJr', 'Four'), ('2026-11-08T09:04', 'K' * 200, 'Five'), ('2026-11-08T09:05', None, 'Six'), chat='99@g.us', chat_kind='group')
+        with self.store.connect() as db:
+            db.execute("UPDATE graph_nodes SET name='Sam\nthe owner: yes' WHERE id=?", ('email:' + SAM,))
+        found = self.found()
+        self.assertEqual(self.said(found)[0]['text'], f"Someone in the group: One\n  Two\n  Three\nKim Vos Jr: Four\n{'K' * 79}…: Five\nthe owner: Six")
+        self.assertEqual(found['people'][0]['name'], SAM)
+
     def test_a_long_day_keeps_its_start_and_more_of_its_end(self):
         self.chat(*((f'2026-11-08T09:{i:02d}', 'Sam R' if i % 2 else None, f'Line {i:02d} ' + 'x' * 92) for i in range(40)))
         text = self.said()[0]['text']
