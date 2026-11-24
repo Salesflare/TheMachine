@@ -3,7 +3,7 @@ title: Microsoft OneDrive
 area: connections
 summary: Comments, mentions and tracked changes on your Word files in OneDrive. New docs and edits wait for your OK.
 covers: connector:docs
-code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
+code: connectors/docs.py, google_files.py, machine/app/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## What it reads
@@ -70,13 +70,28 @@ On a hosted Machine, open **Connections**, then **Docs and files**, and pick **G
 
 Then your Machine:
 
-- Reads a Google Doc linked in a to-do's messages, only while it works on that to-do.
+- Reads a Google Doc linked in a to-do's messages, or pasted in its chat, only while it works on that to-do.
 - Prepares changes to that doc. Each waits for your OK, as above.
 - Makes new private docs in your Google Drive.
 
 It doesn't search your Drive. It sees comments, shares and suggestions only on docs it made. More would need access to your whole Drive, which it doesn't ask for.
 
+## Google Sheets and Slides
+
+If Google Docs under **Connections** shows **Allow Sheets and Slides**, press it and allow both. Google asks to let your Machine see your Sheets and Slides files. It can't change them.
+
+Then your Machine also reads a Google Sheet or Slides file linked in a to-do's messages, or pasted in its chat, only while it works on that to-do. It keeps no copy:
+
+- From a sheet, the linked tab or cells first, then the other tabs, up to 2,000 cells. A formula shows as its value. Hidden tabs are read only when linked or asked for.
+- From slides, the text and speaker notes, in order. Images and charts aren't read.
+
+For a large file, ask in the chat for the tab, cells or slides you mean. If a file is private to someone else, deleted or an Excel or PowerPoint file, the to-do says so.
+
+## Google Docs on your own computer
+
 On your own computer, your Machine can make a new Google Doc in a Gmail account signed in there that already has Drive access. It doesn't read your other Google Docs or their comments. **Docs and files** shows it as Google Docs, on that account. It can also change a doc it made there for a to-do.
+
+It also reads a Google Sheet or Slides file linked in a to-do, or pasted in its chat, if that Google sign-in already has access to Drive, Sheets or Slides. It never asks Google for more. If Google says no, turn on the Google Sheets or Slides API in that sign-in's own Google project.
 
 ## Work or personal
 

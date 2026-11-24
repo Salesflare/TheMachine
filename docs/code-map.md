@@ -291,7 +291,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   CRM actions into `GraphActionsApp`, `learning_undo` into `FleetApp` and the review run's own actions into
   `ReviewApp`, `machine/app/card_actions.py` (`CardActionsApp`: a to-do's own actions of `App.action`: prepare,
   decide, revise_draft, confirm_action, refresh_card, chat files and task_import, with the helpers only they use),
-  `machine/app/docs.py` (`DocsApp`: doc_text, doc_find, doc_write_draft) and `machine/app/status.py` (`StatusApp`: the
+  `machine/app/docs.py` (`DocsApp`: doc_text, doc_find, doc_write_draft; a linked Google Sheet or Slides file is read by `google_files.py`) and `machine/app/status.py` (`StatusApp`: the
   status action with `needs_you`, `compact_status`, `sign_in_help` and `agent_work_status`), App methods for feedback
   prompts, profile steps, digest and notify, gbrain, skills and support: into FeedbackApp, ProfileApp,
   NotificationsApp, GBrainApp, SkillsApp and SupportApp, Browser and sign-in App methods into BrowserApp;
