@@ -123,7 +123,7 @@ dashboard in use, the kinds turned off, hidden text.
 - **No channel of its own.** It reads `api/status?look=1` every half minute for its dot (that opens nothing: no visit,
   no to-do seen). `desk=` (its random id) and `up=1` (it may speak) add what waits for it to that answer, as
   `notices` (ids and the snooze choices; the words come from `api/notice`, as for the phone app) and `meeting` (one that
-  starts within 10 minutes and has a briefing: `meeting_prep.py`).
+  starts within 10 minutes and has a briefing: `meeting_prep.py`; its first guest as `who`, its own name as `title`).
 - **Which browser is its computer's.** It opens the dashboard with `?desk=<id>`; the page says its push subscription
   with `push_desk`. Unknown: the robot stays quiet while any browser has notifications on.
 - **Nothing lost.** Its next look names what it got (`got=`); until then it gets it again, and says it once. Not named

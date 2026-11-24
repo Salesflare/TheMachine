@@ -178,14 +178,19 @@ class Desk(unittest.TestCase):
         self.assertIsNone(self.meeting())  # none prepared yet
         self.event(body='Join: https://us02web.zoom.us/u/kx1 or https://us02web.zoom.us/j/8412?pwd=a.')
         found = self.meeting()
-        self.assertEqual((found['id'], found['who'], found['others'], found['join']), (CARD['id'], 'Dana', 0, 'https://us02web.zoom.us/j/8412?pwd=a'))
+        self.assertEqual((found['id'], found['who'], found['others'], found['title'], found['join']), (CARD['id'], 'Dana', 0, 'Pilot review', 'https://us02web.zoom.us/j/8412?pwd=a'))
         self.assertIsNone(self.meeting(NOW - dt.timedelta(minutes=1)))  # not yet
         self.assertIsNone(self.meeting(NOW + dt.timedelta(minutes=10)))  # started
         with self.store.connect() as db:
             security_levels.set_pref(db, 'notify_text', 'off')
-        self.assertEqual(self.meeting()['who'], '')
+        self.assertEqual((self.meeting()['who'], self.meeting()['title']), ('', ''))
         self.app.action('notify_set', {'kind': 'reminder', 'channel': 'push', 'on': False}, owner_dashboard=True)
         self.assertIsNone(self.meeting())
+
+    def test_a_meeting_whose_guests_have_no_name_has_its_own(self):
+        self.event({'attendees': [MINE, {'email': 'dana@globex.example'}, {'email': 'lee@globex.example', 'displayName': 'lee@globex.example'}]})
+        found = self.meeting()
+        self.assertEqual((found['who'], found['others'], found['title']), ('', 0, 'Pilot review'))  # never a name it would be with
 
     def test_not_one_canceled_declined_all_day_unwanted_or_without_a_briefing(self):
         for case in ({'meta': {'status': 'cancelled'}}, {'meta': {'attendees': [{**MINE, 'responseStatus': 'declined'}]}}, {'meta': {'all_day': True}},
