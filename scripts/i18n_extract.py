@@ -447,6 +447,7 @@ SERVER_TEXT = {
     'machine/browser.py': ['PREPARING_OTHER', 'PREPARING_TOOLS', 'PREPARING_CONNECTED', 'PREPARING_BROWSER', 'PREPARING_ACTIONS',
                            'PREPARING_MAIL', 'PREPARING_CALENDAR', 'PREPARING_DRAFT', 'PREPARING_PDF', 'PREPARING_PROGRAMS',
                            'PREPARING_GOG'],
+    'machine/store/send_later.py': ['REPLIED', 'LATE_LINE', 'UNREAD_LINE', 'ON_ITS_WAY', 'NOT_WAITING'],  # why a scheduled message didn't go
     'machine/store/whats_new.py': ['ENTRIES'],  # What's new: each entry's title, text and button
     'routine_templates.py': ['TEMPLATES'],  # the Routines page's Templates: each one's name and what it does
     'secondhand_app.py': ['WALL_TEXT'],  # a Second-hand finds to-do: why a site stopped its search

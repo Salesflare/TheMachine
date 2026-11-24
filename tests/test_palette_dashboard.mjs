@@ -157,7 +157,7 @@ try{
   assert.equal((await labels(page))[0],'Review the email…');await page.keyboard.press('Enter');await page.locator('#send-dialog').waitFor();
   // (the page's own bookkeeping and reads may post meanwhile on a busy machine)
   const acted=actions.slice(before).filter(a=>!PAGE_BOOKKEEPING.has(a.action));assert.deepEqual(acted,[],'opening the review posts nothing');assert.match(await page.locator('#send-preview').textContent(),/Thursday works/);
-  await page.locator('#send-cancel').click();assert.equal(sent('confirm_action').length,0);
+  await page.locator('#send-dialog [aria-label="Cancel send"]').click();assert.equal(sent('confirm_action').length,0);
   // In a chat: R writes in the chat's box; J goes to the next card
   await page.locator(`#side-cards a[href="#chat=${id(3)}"]`).click();await page.locator('#chat-log').waitFor();await page.locator('body').click({position:{x:700,y:5}});
   await page.keyboard.press('r');assert.equal(await page.evaluate(()=>document.activeElement.id),'chat-input');

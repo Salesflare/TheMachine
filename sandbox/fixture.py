@@ -133,10 +133,11 @@ STORIES = [
      'thread': [(3000, False, 'Partnership idea', 'Hi Alex,\n\nI run partnerships at Pinecrest Legal. Our clients keep asking for a CRM integration and yours came up three times this month.\n\nDorian'),
                 (2800, True, 'Re: Partnership idea', 'Hi Dorian,\n\nInteresting. What do you have in mind?\n\nAlex'),
                 (330, False, 'Re: Partnership idea', 'A shared client list and matter updates flowing into your timeline. Open to a 20 minute call next week?\n\nDorian')]},
-    {'key': 'redlines', 'person': ('Anouk Valemont', 'Vantage Rail'), 'status': 'snoozed', 'snooze_hours': 50, 'minutes': 340,
-     'title': 'Review the contract redlines from Vantage Rail',
+    {'key': 'redlines', 'person': ('Anouk Valemont', 'Vantage Rail'), 'status': 'prepared', 'snooze_hours': 50, 'send_later': True, 'minutes': 340,
+     'title': 'Tell Anouk when the redlines come back',
      'body': 'Two points matter to them: the liability cap in section 9 and the data retention period.',
-     'thread': [(380, False, 'Contract redlines', 'Hi Alex,\n\nAttached are our legal team’s redlines. Two points matter most to us: the liability cap in section 9 and the data retention period. The rest is cosmetic.\n\nCheers,\nAnouk')]},
+     'thread': [(380, False, 'Contract redlines', 'Hi Alex,\n\nAttached are our legal team’s redlines. Two points matter most to us: the liability cap in section 9 and the data retention period. The rest is cosmetic.\n\nCheers,\nAnouk')],
+     'draft': ('email', 'Hi Anouk,\n\nThank you for the redlines. Both points are with our lawyer now, and you have our answer by Friday.\n\nBest,\nAlex')},
     {'key': 'support', 'slack': True, 'company': 'Tidewater Foods', 'status': 'prepared', 'minutes': 400,
      'title': 'Reply in #support about duplicate reminders',
      'body': 'Tidewater Foods gets every reminder twice since this morning’s deploy. Priya and Tomasz are on the thread.',
@@ -586,7 +587,7 @@ def build(profile):
             out.append(based_on)
         card = {'key': 'open' + str(i), 'title': story['title'], 'body': story['body'], 'status': story['status'], 'events': out, 'accounts': [account],
                 'minutes_ago': story['minutes'], 'source': source, 'project': story.get('project'), 'urgent': bool(story.get('urgent')),
-                'snooze_hours': story.get('snooze_hours'), **({'based_on': based_on} if based_on else {}),
+                'snooze_hours': story.get('snooze_hours'), **({'send_later': True} if story.get('send_later') else {}), **({'based_on': based_on} if based_on else {}),
                 **({'asks': story['asks']} if story.get('asks') else {}),  # its chat's taps, as the review writes them (chat_asks)
                 **({'outcome': story['outcome']} if story.get('outcome') else {}),  # what its run said is left (Store.prepare)
                 **({'done_by': {'name': story['done_by'][0], 'minutes_ago': story['done_by'][1]}} if story.get('done_by') else {})}

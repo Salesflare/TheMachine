@@ -695,6 +695,16 @@ def load_skills(db, states, fixture, base):
                     fixture['network']['work']['team'][0]['member_id'] if author else None, note, at, at))
 
 
+def send_later_card(db, card, card_id, at, base):
+    """Approved, and waiting for a time someone picked, on the hour (machine/store/send_later.py)."""
+    from machine.store import send_later
+    import next_actions
+    revision = card['next_action']['revision']
+    action = next_actions.selected(json.dumps(card['next_action']), revision)
+    send_at = dt.datetime.fromisoformat(stamp(-card['snooze_hours'] * 60, base)).replace(minute=0, second=0, microsecond=0).isoformat()
+    send_later.schedule(db, {'id': card_id}, revision, action, 'later-' + card_id, 'dashboard', None, send_at, at)
+
+
 def load_cards(db, fixture, ids, base):
     import graph
     for name in fixture['projects']:
@@ -705,7 +715,7 @@ def load_cards(db, fixture, ids, base):
             continue
         card_id = hashlib.sha256(card['key'].encode()).hexdigest()[:16]
         created = stamp(card['minutes_ago'], base)
-        snoozed = stamp(-card['snooze_hours'] * 60, base) if card.get('snooze_hours') else None
+        snoozed = stamp(-card['snooze_hours'] * 60, base) if card.get('snooze_hours') and not card.get('send_later') else None
         db.execute('INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,snoozed_until,resume_status,next_action,'
                    'urgent,source_line,project) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                    (card_id, 'sandbox:' + card['key'], card['title'], card['body'], json.dumps(event_ids), json.dumps(card['accounts']), card['status'],
@@ -725,6 +735,8 @@ def load_cards(db, fixture, ids, base):
         if card.get('based_on') in ids:  # the teammate's input the draft follows: "Based on Priya in #sales"
             db.execute('UPDATE suggestions SET based_on=? WHERE id=?', (ids[card['based_on']], card_id))
         db.execute('INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,?,?)', (card_id, 'sent', created))
+        if card.get('send_later'):
+            send_later_card(db, card, card_id, created, base)
         if card.get('project'):  # Graph > Projects: the card's thread carries its project, as a review labels it
             graph.label(db, event_ids, card['project'], 'review', created)
         if card.get('choice'):

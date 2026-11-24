@@ -100,7 +100,7 @@ function todoLists(shown,fleet=[],lead){
  fuv.foryou=leadFirst(forYouList(fuv.ready,fuv.needs));
  return {outstanding,later,finished,lookDone,waitingOn,open,older,needs,ready,fuv,leadFirst}}
 // A snooze whose time has passed is over, whatever the Machine's last answer said. When the next one ends.
-function wakeDue(list){const now=Date.now();let next=Infinity;for(const s of list||[]){if(s.status!=='snoozed'||!s.snoozed_until)continue;const at=Date.parse(s.snoozed_until);
+function wakeDue(list){const now=Date.now();let next=Infinity;for(const s of list||[]){if(s.status!=='snoozed'||!s.snoozed_until||s.send_later)continue;const at=Date.parse(s.snoozed_until);
   if(at<=now)Object.assign(s,{status:TODO.OPEN_NOT_SNOOZED.includes(s.resume_status)?s.resume_status:'pending',snoozed_until:null,resume_status:null});else next=Math.min(next,at)}
  return next}
 const statusRow=x=>x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).length===1&&'='in x;

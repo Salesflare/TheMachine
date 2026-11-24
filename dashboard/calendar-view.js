@@ -129,7 +129,7 @@ function calParts(it){const hm=v=>humanHM(new Date(v)),late=it.day==='overdue';
    href:it.s?'#chat='+it.s.id:'',edit:!it.s&&m.edit?m.id:'',view:!it.s&&!m.edit?m.id:'',badge:c?chip(c[0],c[1]):'',prep:c?c[0]:'',tone:m.shared?'theirs':it.s?'prep t-'+(c?c[1]:'muted'):'meeting'}}
  if(it.kind==='promise'){const p=it.p;return {time:late?calShort(p.due):'Due',title:p.what&&p.what[0].toUpperCase()+p.what.slice(1),sub:calSaid(p),href:promiseHref(p),tone:late?'late':'promise'}}
  const s=it.s;if(it.kind==='checkin')return {time:hm(s.snoozed_until),title:t('Check in with {}',s.handoff_wait.name),sub:t('If no answer')+' · '+s.title,href:'#chat='+s.id,tone:'back'};
- if(it.kind==='back')return {time:hm(s.snoozed_until),title:s.title,sub:'Comes back',href:'#chat='+s.id,tone:'back'};
+ if(it.kind==='back')return {time:hm(s.snoozed_until),title:s.title,sub:s.send_later?'Goes out':'Comes back',href:'#chat='+s.id,tone:'back'};
  return {time:late?calShort(s.due):'Due',title:s.title,sub:calCardWho(s),href:'#chat='+s.id,tone:late?'late':'due'}}
 // Who a due card is with, never its status: the person it waits on, or the promise it came from
 function calCardWho(s){let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}const name=s.handoff_wait?.name||w.name;if(name)return t('Waiting on {}',name);

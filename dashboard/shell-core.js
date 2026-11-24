@@ -31,7 +31,7 @@ function localeFmt(v,loc,o,time){const d=v instanceof Date?v:new Date(v);if(isNa
 const localeDate=(v,loc,o)=>localeFmt(v,loc,o,false),localeTime=(v,loc,o)=>localeFmt(v,loc,o,true);
 const fmtHM=(v,o)=>localeTime(v,H12?'en-US':'en-GB',{...(H12?{hour:'numeric',minute:'2-digit',hour12:true}:{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}),...o});
 const fmtDHM=(v,d,o)=>localeDate(v,DL,{...d,...o})+', '+fmtHM(v,o);  // Sat, Oct 24, 14:05
-let snoozeId=null,snoozeDay=null,snoozeMonth=null,lastOk=0,refreshFailed=false;
+let snoozeId=null,snoozeDay=null,snoozeMonth=null,snoozePick=null,lastOk=0,refreshFailed=false;
 let state={};  // csrf, UI_VERSION and CACHE_SCOPE: the page's own script before this one (dashboard.html)
 // Selectors an older browser rejects with a SyntaxError (:modal, :focus-visible): asked here, with a fallback.
 const modalOpen=()=>{try{return!!document.querySelector('dialog[open]:modal')}catch{return!!document.querySelector('dialog[open]')}};

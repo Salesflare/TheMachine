@@ -15,7 +15,7 @@ async function openCompose(to,subject,href,body){if(composeBusy)return;composeBu
  sendBatch=null;sendTask=null;sendRevision=null;sendDraft={kind:'email',compose:true,to:[to],to_name:r.to_name||'',subject:subject||'',body:body||'',from:r.from};
  sendFrom=r.from.some(c=>c.from===r.default)?r.default:r.from[0].from;
  for(const id of ['send-step','send-recipients','send-bounce','send-files','send-ask','send-ask-open','send-edit','send-subject-label'])$('#'+id).hidden=id!=='send-subject-label';
- $('#send-title').textContent=t('New email');$('#send-act').hidden=false;$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-confirm').textContent=t('Send now');
+ $('#send-title').textContent=t('New email');$('#send-act').hidden=false;$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-confirm').textContent=t('Send now');$('#send-later').hidden=false;
  $('#send-cancel').textContent=t('Cancel');$('#send-error').textContent='';$('#send-preview').classList.remove('code');sendFine('');
  $('#send-mailapp').hidden=false;sendHeader=composeHead;$('#send-dialog').showModal();editSend(false);
  (subject?mailRich():$('#send-subject')).focus()}
@@ -28,15 +28,15 @@ function composeHead(){const d=sendDraft;if(!d?.compose)return;const froms=d.fro
  setHTML($('#send-head dd'),cmTrigger('from','from',sendFrom,'from-pick',html` id="send-from" translate="no"`))}
 // Send: the subject and the message first; then the draft on its to-do, and that exact revision confirmed. When the
 // confirm doesn't go through, the email waits on its to-do, ready to send from there.
-async function composeSend(b){const d=sendDraft,subject=$('#send-subject').value.trim(),body=mailOut(d.body);
+async function composeSend(b,later){const d=sendDraft,subject=$('#send-subject').value.trim(),body=mailOut(d.body);
  if(body==null){b.disabled=false;return}
  const miss=!subject?t('Add a subject first.'):!body.trim()?t('Write the message first.'):'';
  if(miss){$('#send-error').textContent=miss;(subject?mailRich():$('#send-subject')).focus();b.disabled=false;return}
  const pick=d.from.find(c=>c.from===sendFrom)||d.from[0];
  const r=await fleetPost('compose_email',{to:d.to[0],account_id:pick.account_id,subject,body});self.keptGone?.();
- try{await sendConfirmed(r.suggestion_id,r.revision,'email',(r.from_options||[]).length>1?{sender:pick.from}:{})}
+ try{await sendConfirmed(r.suggestion_id,r.revision,'email',{later,...((r.from_options||[]).length>1?{sender:pick.from}:{})})}
  catch(e){errCaught(e);$('#send-dialog').close();toastOpen(t('Not sent. The email waits in a to-do.'),r.suggestion_id);await refresh();return}
- $('#send-dialog').close();toast(t('Sending your email…'));await refresh()}
+ await sendDone(later,t('Sending your email…'))}
 // Open in email: the address's own mailto, with the subject and the text typed so far
 $('#send-mailapp a').addEventListener('click',e=>{const d=sendDraft;if(!d?.compose)return;e.preventDefault();
  const q=[['subject',$('#send-subject').value.trim()],['body',mailRich().innerText.trim()]].filter(x=>x[1]).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');

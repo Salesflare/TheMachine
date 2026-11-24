@@ -15,7 +15,7 @@ WhatsApp linked again) brings in what happened before that moment as history (ma
 signal, so no review, first look or to-do picks up an old message again."""
 import sqlite3
 
-from machine.store import history
+from machine.store import history, send_later
 
 MOVED_SEND = 'Not sent: The Machine moved to this computer. Check it and send it again.'
 MOVED_UNSURE = 'The Machine moved while this was going out. I won’t resend it.'
@@ -40,7 +40,7 @@ def hold(db, at, since, keys=False, source=None):
         for job in queued:
             db.execute("UPDATE action_jobs SET status='blocked',error=?,retry_at=NULL,updated_at=? WHERE id=?", (MOVED_SEND, at, job))
             activity_log.note_block(db, job, MOVED_SEND, at)
-        held['sends'] = len(queued)
+        held['sends'] = len(queued) + send_later.hold_moved(db, MOVED_SEND, at)  # and the scheduled ones
         held['sends_unsure'] = db.execute("UPDATE action_jobs SET status='uncertain',error=?,retry_at=NULL,updated_at=? "
                                           "WHERE status IN ('sending','undoing')", (MOVED_UNSURE, at)).rowcount
         if queued and _has(db, 'deliveries'):

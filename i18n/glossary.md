@@ -66,6 +66,7 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailsca
 | handoff | overdracht, overdragen | transfert, transférer | Übergabe, übergeben | traspaso, pasar | passaggio, passare, passaggi | repasse, passar | 转交 | 引き継ぎ | 인계, 넘기기 | передача, передачи, передачу, передать, передаче, передачей |
 | Ready | Klaargezet, klaar | Prêt, Prête, Prêts | Bereit | Para revisar, Listo, Lista, Listos | Pronto, Pronta, Pronti, Pronte | Para revisar, Pronto, Pronta, Prontos, Prontas | 已备好, 备好 | 準備完了, 準備済み, 準備でき | 준비됨, 준비 완료, 준비되 | Подготовлено, Подготовлена, Подготовлен, Подготовлены, Готово к, Готова к, Готовы к |
 | To decide | Te beslissen | À décider | Zu entscheiden | Por decidir | Da decidere | A decidir | 待决定 | 判断待ち | 결정 필요 | Решить |
+| Send later | Later versturen, later verstuurd | Envoyer plus tard | Später senden | Enviar más tarde | Invia più tardi | Enviar mais tarde | 稍后发送 | 後で送信 | 나중에 보내기 | Отправить позже |
 | Not needed | Niet nodig | Pas nécessaire | Nicht nötig | No hace falta | Non serve | Não precisa | 不需要 | 不要 | 필요 없음 | Не нужно |
 | signal | signaal, signalen | signal, signaux | Signal, Signale | señal, señales | segnale, segnali | sinal, sinais | 信号 | シグナル | 신호 | сигнал, сигналы, сигнала, сигналов, сигналу, сигналам, сигналами, сигналах, сигнале, сигналом |
 | draft | concept, concepten | brouillon, brouillons | Entwurf, Entwürfe | borrador, borradores | bozza, bozze | rascunho, rascunhos | 草稿 | 下書き | 초안 | черновик, черновики, черновика, черновиков, черновику, черновике, черновиком, черновикам, черновиками, черновиках |

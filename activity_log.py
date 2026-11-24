@@ -162,6 +162,17 @@ def _to(payload):
     return _clip(to or payload.get('to_email') or payload.get('as_name') or '', 80)
 
 
+def message_what(p):
+    """A message's line: 'Email to Sam: Pricing', 'Slack message to Sam'."""
+    to, subject = _to(p), _clip(p.get('subject'), 100)
+    if p['kind'] in ('email', 'email_demo'):
+        return i18n.t('Email to {}: {}', to, subject) if to and subject else i18n.t('Email to {}', to) if to else i18n.t('Email')
+    if p['kind'] == 'doc_reply':
+        return i18n.t('Reply in a doc')
+    channel = MESSAGE_KINDS[p['kind']]
+    return i18n.t('{} message to {}', channel, to) if to else i18n.t('{} message', channel)
+
+
 def _job_kind(kind):
     if kind in MESSAGE_KINDS:
         return 'messages'
@@ -241,16 +252,9 @@ def _jobs(db, config, limit, tables, kinds):
         outcome, status = _job_status(kind, r['status'])
         if kind == 'docs' and outcome == 'done' and p.get('op') == 'create':
             status = i18n.t('Created')
-        to, label = _to(p), _clip(p.get('label'), 120)
+        label = _clip(p.get('label'), 120)
         if kind == 'messages':
-            channel = MESSAGE_KINDS[p['kind']]
-            subject = _clip(p.get('subject'), 100)
-            if p['kind'] in ('email', 'email_demo'):
-                what = i18n.t('Email to {}: {}', to, subject) if to and subject else i18n.t('Email to {}', to) if to else i18n.t('Email')
-            elif p['kind'] == 'doc_reply':
-                what = i18n.t('Reply in a doc')
-            else:
-                what = i18n.t('{} message to {}', channel, to) if to else i18n.t('{} message', channel)
+            what = message_what(p)
         elif kind == 'docs':
             title = _clip(p.get('title') or p.get('label'), 100)
             what = i18n.t('New doc: {}', title) if p.get('op') == 'create' else i18n.t('Doc edited: {}', title)

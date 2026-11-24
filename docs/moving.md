@@ -63,6 +63,7 @@ you pick; an export code alone never carries them. The whole archive is encrypte
 
 - Sends that were queued are blocked with "Not sent: The Machine moved to this computer." Their to-dos show Send again.
   One that was going out at that moment is uncertain and never resent. The Telegram and Signal chats' outboxes stop the same way.
+- Messages scheduled with Send later ask first, with the same line.
 - Local agent jobs that ran or waited end with their work kept in their folder.
 - Automated follow-ups are paused on every board that has them, until you resume them.
 - Notifications for the old Machine are dropped; without keys, so are AI connector tokens and phone sign-ups.
@@ -72,7 +73,7 @@ you pick; an export code alone never carries them. The whole archive is encrypte
 ## Documented differences after a round trip
 
 `tests/test_export_roundtrip.py` exports a fully seeded install, imports it into a fresh one and compares every table
-and file. Apart from the hold above (`action_jobs`, `deliveries`, `agent_jobs`, `activity_blocks`, `follow_up_pauses`,
+and file. Apart from the hold above (`action_jobs`, `scheduled_sends`, `suggestions` of those, `deliveries`, `agent_jobs`, `activity_blocks`, `follow_up_pauses`,
 `notify_queue`, `ai_tokens`, `ai_codes`, `push_subscriptions`, `moved_in`, the Telegram `outbox`) they are the same.
 Also different by design: message text is opened in the export and sealed again with the new install's own key, and
 OpenClaw's sign-in tables keep the new install's own sign-ins, and `data_stamps` (change counters for answers kept

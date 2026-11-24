@@ -43,6 +43,8 @@ LAZY = {
     'palette': ('shell-palette.js',),
     'compose': ('todos-send.js', 'todos-compose.js'),
     'kept': ('todos-kept.css', 'todos-kept.js'),
+    'docwrite': ('todos-send-doc.js',),
+    'sendlater': ('todos-send-later.js',),
     'signin': ('connections-signin-dialog.js',),
     'logins': ('connections-logins.css', 'connections-logins.js'),
     'loginimport': ('connections-login-import.css', 'connections-login-import.js'),
@@ -98,7 +100,7 @@ LAZY_WITH = {
          # a to-do's box: todos-cards.js asks lazyIn(box), box one of these
          'routinetodos', 'digest', 'subs', 'secondhand', 'reorder'),
     # drawn or opened only by that part
-    'digest': ('routines',), 'fbpeople': ('routinetodos',), 'fleetask': ('fleet',),
+    'digest': ('routines',), 'docwrite': ('compose',), 'fbpeople': ('routinetodos',), 'fleetask': ('fleet',),
     'logins': ('signin',), 'msgview': ('emailframe',), 'msshare': ('milestone',), 'split': ('graph',),
     'emailframe': ('msgview',),  # emailOpen waits for it
     'fleet': ('settings', 'connections'),  # fleetView waits for Settings', connectAdd for Connections'

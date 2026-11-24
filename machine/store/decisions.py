@@ -44,7 +44,7 @@ import skills
 from timeutil import local_tz, now
 import todo_areas
 from machine import todo_states
-from machine.store import todo_moves
+from machine.store import send_later, todo_moves
 from machine.owner_error import OwnerError
 from machine.kinds import SEND
 
@@ -1235,7 +1235,9 @@ class DecisionsStore:
             db.execute('BEGIN IMMEDIATE')
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE message_id IS NOT NULL AND suggestion_id IN (SELECT id FROM suggestions WHERE undo_until<=?)',(now(),))
             db.execute('UPDATE suggestions SET undo_until=NULL WHERE undo_until<=?',(now(),))
-            rows = db.execute("SELECT id,resume_status FROM suggestions WHERE status='snoozed' AND snoozed_until<=?",(now(),)).fetchall()
+            # One that waits for a message to go at that time (Send later) is woken by it, not by the clock
+            rows = db.execute("SELECT id,resume_status FROM suggestions WHERE status='snoozed' AND snoozed_until<=? AND NOT EXISTS("
+                              "SELECT 1 FROM scheduled_sends w WHERE w.suggestion_id=suggestions.id AND w.state='waiting')",(now(),)).fetchall()
             for row in rows:
                 status = row['resume_status'] if row['resume_status'] in todo_states.OPEN_NOT_SNOOZED else 'pending'
                 db.execute('UPDATE suggestions SET snoozed_until=NULL,resume_status=NULL WHERE id=?',(row['id'],))
@@ -1489,7 +1491,8 @@ class DecisionsStore:
         if basis['kind']=='none':action_basis.missing(db,'confirm_action.'+re.sub(r'[^A-Za-z0-9_]','_',str(source))[:30],self.code_version)
         return json.dumps(basis,ensure_ascii=False)
 
-    def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None,sender=None,hold=None,basis=None):
+    def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None,sender=None,hold=None,basis=None,later=None):
+        # later: the moment the owner picked for it (Send later, machine/store/send_later.py): the same approval, only no outbox job yet
         # hold: seconds the send waits before the outbox takes it (a yes by voice: Undo in the chat meanwhile, undo_voice_send)
         # basis: what allowed it, when the caller knows better than its source (the owner's words in chat: action_basis.chat)
         with self.connect() as db:
@@ -1504,7 +1507,9 @@ class DecisionsStore:
             # A review to-do (fleet_reviews.py) never sends or acts for anyone: the review goes back to the one who asked.
             if row and str(row['dedupe_key']).startswith('fleet-review:'):
                 raise OwnerError('A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.')
-            if not row or row['status']!='prepared' or not action or action['kind'] not in (*SEND,'merge','prepare','finish','calendar','doc_write','linear'):
+            # Several messages at once, for the same moment: the first put the to-do under Later until then
+            ready=row and (row['status']=='prepared' or later and row['status']=='snoozed' and row['snoozed_until']==later and send_later.waiting(db,suggestion_id))
+            if not ready or not action or action['kind'] not in (*SEND,'merge','prepare','finish','calendar','doc_write','linear'):
                 raise OwnerError('This result changed or is no longer ready. Use its current buttons.')
             off=abilities.refuse(self.config,action.get('account_id'))  # its Can do things was turned off since the draft
             if off:raise ValueError(off)
@@ -1524,6 +1529,9 @@ class DecisionsStore:
             if action['kind'] in ('prepare','finish') and db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')",(suggestion_id,)).fetchone():
                 raise OwnerError('An earlier send is still being checked. Wait for that outcome before changing the result.')
             previous=db.execute('SELECT * FROM action_jobs WHERE suggestion_id=? AND revision=?',(suggestion_id,revision)).fetchone()
+            if later:
+                if previous and previous['status'] not in send_later.RESEND:return {'status':previous['status'],'duplicate':True}
+                return send_later.schedule(db,row,revision,action,approval_id,source,self.based(db,basis,source,approval_id),later,now())
             if previous and action['kind'] in ('prepare','finish') and previous['status'] in ('needs_input','finish_uncertain','cancelled','failed','blocked','paused') and previous['approval_id']!=approval_id:
                 # The same approved step resumes, not a new operation. An unknown outcome
                 # starts with reconciliation of that exact step, never a blind new submission.
@@ -1549,10 +1557,8 @@ class DecisionsStore:
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
                 return {'status':previous['status'],'duplicate':True}
             job_id=uuid.uuid4().hex;stamp=now()
-            db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id,retry_at,basis) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
-                (job_id,suggestion_id,revision,encoded(action),'local_preparation' if action['kind'] in ('prepare','finish') else 'queued',stamp,stamp,approval_id,source,
-                 '<assistant-'+job_id+'@'+action['from'].split('@')[1]+'>' if action['kind']=='email' else '',
-                 (dt.datetime.fromisoformat(stamp)+dt.timedelta(seconds=hold)).isoformat() if hold else None,self.based(db,basis,source,approval_id)))
+            send_later.insert_job(db,job_id,suggestion_id,revision,action,'local_preparation' if action['kind'] in ('prepare','finish') else 'queued',stamp,approval_id,source,
+                self.based(db,basis,source,approval_id),retry_at=(dt.datetime.fromisoformat(stamp)+dt.timedelta(seconds=hold)).isoformat() if hold else None)
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                 (approval_id,suggestion_id,'prepare_next' if action['kind']=='prepare' else 'send','',source,stamp))
             if action['kind'] not in ('prepare','finish'):follow_ups.queued(db,suggestion_id,job_id,action,stamp)  # an automated follow-up: spaced with its batch

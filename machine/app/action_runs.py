@@ -23,7 +23,7 @@ from machine.sources.connectors import docs_transport, docs_write_transport, int
 from machine.store.decisions import note_first, NOTHING_SENT, settle_sent
 from machine.store.first_look import VERIFIED_KINDS
 from machine.store.machine_cards import parked_redo
-from machine.store import todo_moves
+from machine.store import send_later, todo_moves
 from machine.text import encoded
 import next_actions
 import parked_fixes
@@ -168,6 +168,8 @@ class ActionRunsApp:
             if result.get('message_id') and action['kind']=='merge':
                 self.merge_effect(job,action,result,'merge',transport.pick(action) if hasattr(transport,'pick') else transport)
             return
+        scheduled=self.send_later_due(job)  # Send later: not over an hour after its time, and not before its conversation was read now
+        if scheduled=='asked':return 'held'
         try:transport.preflight(action)
         except next_actions.LinkedInBusy:
             # The shared browser is in use: wait, nothing was sent and the approval stands.
@@ -175,13 +177,18 @@ class ActionRunsApp:
                 db.execute("UPDATE action_jobs SET retry_at=?,updated_at=? WHERE id=? AND status='queued'",((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=2)).isoformat(),now(),job['id']))
             return 'waiting'
         except Exception as error:
+            if scheduled and not isinstance(error,ValueError):
+                with self.store.connect() as db:send_later.wait_unread(db,scheduled,now())
+                return 'waiting'
             reason=str(error) if isinstance(error,ValueError) else 'The fix could not be checked. Nothing was merged.' if action['kind']=='merge' else 'The doc could not be checked. Nothing was changed.' if action['kind']=='doc_write' else 'Linear could not be checked. Nothing was changed.' if action['kind']=='linear' else 'The calendar could not be checked. Nothing was changed.' if action['kind']=='calendar' else ({'linkedin':'LinkedIn','slack':'Slack','x':'X','whatsapp':'WhatsApp','telegram':'Telegram','signal':'Signal','intercom':'Intercom','teams':'Teams','doc_reply':'The doc'}.get(action['kind'],mailbox_name(self.config,action))+' could not be checked. Nothing was sent.')
             with self.store.connect() as db:
                 stamp=now()
                 if db.execute("UPDATE action_jobs SET status='blocked',error=?,updated_at=? WHERE id=? AND status='queued'",(reason,stamp,job['id'])).rowcount:
                     activity_log.note_block(db,job['id'],reason,stamp)  # Activity keeps the block as history (activity_log.py)
+                send_later.held(db,job['id'],stamp)
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
             return 'blocked'
+        if scheduled and not self.send_later_recheck(scheduled):return 'held'
         # The thread read again right before it goes: anything new since the draft holds it (follow_ups.py). A follow-up
         # reads it fresh too; any other reply the owner approved checks what was collected (reply_since)
         recheck=self.follow_up_recheck(job,action)
@@ -191,13 +198,16 @@ class ActionRunsApp:
             if not current or current['status']!='queued':return
             if current['suggestion_status']!='prepared' or not next_actions.selected(current['next_action'],job['revision']):
                 db.execute("UPDATE action_jobs SET status='cancelled' WHERE id=?",(job['id'],));return
+            if scheduled and not self.send_later_admit(db,job):return 'held'
             if recheck and recheck[0]=='bounced':
                 follow_ups.hold_bounced(db,job,current['next_action'],recheck[1],now())
+                send_later.held(db,job['id'],now())
                 follow_ups.settle(db,now(),self.follow_up_mine())  # no working address: the draft stops ("Email bounced")
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
                 return 'held'
             if recheck and recheck[0]:
                 follow_ups.hold(db,job['id'],job['suggestion_id'],recheck[0],recheck[1],now())
+                send_later.held(db,job['id'],now())
                 follow_ups.settle(db,now(),self.follow_up_mine())  # a reply ends the round; the owner's own send counts as this one
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
                 return 'held'
@@ -246,6 +256,7 @@ class ActionRunsApp:
                 queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result);self.handoff_mail.sent(db,action,job,result)
                 if action['kind']=='doc_write':settle_doc_write(self.store,db,job['suggestion_id'],job['id'],action,result.get('url'))
                 elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else linear_writes.done(action) if action['kind']=='linear' else None)
+            if scheduled and status!='sent':send_later.failed(db,job['id'],now())
             if status=='sent' and action['kind']=='merge' and result.get('commit'):db.execute('INSERT OR IGNORE INTO merge_effects VALUES(?,?,?,?,?)',(job['id'],'merge',encoded(result),'pending',now()))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
         if status=='sent' and action['kind']=='merge':
@@ -308,6 +319,8 @@ class ActionRunsApp:
                 except Exception as error:LOG.error('bounce check error=%s',type(error).__name__)
                 try:self.follow_up_step()
                 except Exception as error:LOG.error('follow-up error=%s',type(error).__name__)
+            try:self.send_later_step()  # before the outbox: what is due joins it, what was answered is taken back
+            except Exception as error:loop_failed(LOG,'send later',error)
             try:self.action_step()
             except Exception as error:loop_failed(LOG,'approved action',error)
             try:self.undo_step()

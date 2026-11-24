@@ -116,9 +116,11 @@ function chatParts(s){const t=document.createElement('template');setHTML(t,sugge
  if(back&&!back.dataset.fuBack)back.textContent=s.status==='snoozed'?(s.handoff_wait?'Check in now':'Unsnooze'):'Reopen';
  // The way back is in the ⋯ too, so the menu is never empty on a done to-do
  const backItem=back?.cloneNode(true);if(back)back.className='link chat-inline';
+ // A scheduled message's Send now, Change time and Cancel stand there too
+ const later=s.send_later?acts.filter(n=>/^send-/.test(n.dataset.choice)):[];
  const sends=chatSends(s),going=sends.some(x=>chatGoing(x.st)),went=sends.some(x=>x.st.status==='sent');
  // While a message goes out nothing is the next step yet; once it went out, Mark done is; after a failure, Try again
- let lead=back&&!ld||going?null:acts.find(n=>n.classList.contains('primary'))||(withTeammate(s)?acts.find(n=>n.dataset.choice==='complete'):null)||null;
+ let lead=back&&!ld||going||later.length?null:acts.find(n=>n.classList.contains('primary'))||(withTeammate(s)?acts.find(n=>n.dataset.choice==='complete'):null)||null;
  if(went&&!going&&!back&&!lead?.dataset.smart)lead=acts.find(n=>n.dataset.choice==='complete')||lead;
  if(lead?.dataset.smart&&chatFailed(sends.find(x=>String(x.a.revision)===lead.dataset.smart)?.st))lead.textContent='Try again';
  const ready=sendReady(s);
@@ -126,14 +128,14 @@ function chatParts(s){const t=document.createElement('template');setHTML(t,sugge
  // On the card the title, project and area change with a tap on each; here they are in the menu too.
  const edits=document.createElement('template');setHTML(edits,closed(s)||ld?'':html`<button type="button" class="ghost" data-rename="${s.id}">${window.t('Rename')}</button>${s.project_node?html`<button type="button" class="ghost" data-card-project="${s.id}">${window.t('Change project')}</button>`:''}${moveTargets(s).length?html`<button type="button" class="ghost" data-card-area="${s.id}">${window.t('Change area')}</button>`:''}`);
  // Looks done: Done's menu (Reopen), and Mark done to say it is
- const rest=ld?[]:[...acts.filter(n=>n!==lead&&n!==back),...edits.content.children];
+ const rest=ld?[]:[...acts.filter(n=>n!==lead&&n!==back&&!later.includes(n)),...edits.content.children];
  const decide=rest.filter(n=>['complete','snooze','reject','accept','retry'].includes(n.dataset.choice)||n.dataset.smart!=null);
  if(backItem)rest.unshift(backItem);
  const status=card?.querySelector('.status-line:not(.ask-line):not(.done-line)')?.textContent.trim()||card?.querySelector('.card-badges .chip')?.textContent.trim()||'';
  const body=card?.querySelector('.body');body?.classList.remove('clamp');
  const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"],[data-rt-change]')).map(n=>nodeHTML(n))}${s.preparation_status==='blocked'?(s.preparation_browser?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):['running','starting'].includes(s.preparation_status)?chatPeek(s):''}`;
  const outer=n=>n?nodeHTML(n):'';
- return {sends,single:taskActions(s).filter(a=>SENDS.includes(a.kind)).length<2,going,sheet:outer(card?.querySelector('.agent-form')),lead:outer(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:outer(back),rest:orEmpty(html`${rest.map(outer)}`),options:orEmpty(html`${[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return nodeHTML(n)})}`),
+ return {sends,single:taskActions(s).filter(a=>SENDS.includes(a.kind)).length<2,going,sheet:outer(card?.querySelector('.agent-form')),lead:outer(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:later.length?html`${later.map((n,i)=>{n.className='link chat-inline';return html`${i?html`<span aria-hidden="true">·</span>`:''}${outer(n)}`})}`:outer(back),rest:orEmpty(html`${rest.map(outer)}`),options:orEmpty(html`${[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return nodeHTML(n)})}`),
   status,intro:orEmpty(nodeHTML(...body?.childNodes||[])),ask:outer(card?.querySelector('.ask-line')),agent:outer(card?.querySelector('.agent-job')),
   links:orEmpty(nodeHTML(...card?.querySelector('.foot-links')?.childNodes||[])),panel:orEmpty(panel)}}
 // What the card asks of the owner, in one plain line, when its text doesn't already ask: the question its run wrote,
@@ -324,7 +326,7 @@ const SEND=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentC
 const DOTS=html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>`;
 const chatUntil=v=>{const d=new Date(v),days=(d-Date.now())/864e5;return (chatDayOf(v)==='Today'?'today':days<6&&days>-1?localeDate(d,DL,{weekday:'short'}):localeDate(d,DL,{weekday:'short',day:'numeric',month:'short'}))+' '+chatHM(v)};
 // One small line over the message box: where the card stands, with its one way back (Unsnooze, Reopen) as a text button
-function chatStatus(s,p=chatParts(s)){const text=chat?.active?'Working on it…':s.status==='snoozed'?(s.snoozed_until?(s.handoff_wait?checkinLabel(s):'Snoozed until '+chatUntil(s.snoozed_until)):'Snoozed')
+function chatStatus(s,p=chatParts(s)){const text=chat?.active?'Working on it…':s.send_later?laterLine(s):s.status==='snoozed'?(s.snoozed_until?(s.handoff_wait?checkinLabel(s):'Snoozed until '+chatUntil(s.snoozed_until)):'Snoozed')
   :closed(s)?(s.status==='completed'&&!lapsed(s)?'Done':'Not needed'):looksDone(s)?'Looks done':waitsAfterOwner(s)?p.status:stillWaiting(s)?stillWaiting(s):s.preparation_status==='working'||waitAhead(s)?cardState(s):s.preparation_status==='blocked'&&s.preparation_error==='stopped'?'':s.preparation_status==='blocked'?p.status||cardState(s):['queued','starting','running'].includes(s.preparation_status)||TODO.PREPARING.includes(s.status)&&s.preparation_status!=='handed'?'Preparing':'';
  return text?html`<span>${text}</span>${p.back&&!chat?.active?html`<span aria-hidden="true">·</span>${p.back}`:''}`:''}
 function chatView(s,groups){const p=chatParts(s);

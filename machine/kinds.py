@@ -108,22 +108,25 @@ KINDS = {
 # - to_person: it reaches a person: their conversations are read before it shows (handled_check), the owner is nudged
 #   to send it (push), an agent job edits its draft (agent_jobs); a reply in a doc's comments is none of these
 # - send_now: a connected AI may send its draft when the owner says so in a later message (card_actions send_now)
+# - send_later: it can wait for its time (machine/store/send_later.py): its conversation can be read right before it goes.
+#   Not LinkedIn and X, where that read is the shared browser at that very minute, nor a reply in a doc's comments
 SENDS = {
-    'email': {'name': 'Email', 'text_only': False, 'to_person': True, 'send_now': True},
-    'linkedin': {'name': 'LinkedIn', 'text_only': True, 'to_person': True, 'send_now': True},
-    'slack': {'name': 'Slack', 'text_only': True, 'to_person': True, 'send_now': True},
-    'x': {'name': 'X', 'text_only': True, 'to_person': True, 'send_now': True},
-    'whatsapp': {'name': 'WhatsApp', 'text_only': True, 'to_person': True, 'send_now': False},
-    'telegram': {'name': 'Telegram', 'text_only': True, 'to_person': True, 'send_now': False},
-    'signal': {'name': 'Signal', 'text_only': True, 'to_person': True, 'send_now': False},
-    'intercom': {'name': 'Intercom', 'text_only': True, 'to_person': True, 'send_now': False},
-    'teams': {'name': 'Teams', 'text_only': True, 'to_person': True, 'send_now': False},
-    'doc_reply': {'name': 'Docs', 'text_only': True, 'to_person': False, 'send_now': False},
+    'email': {'name': 'Email', 'text_only': False, 'to_person': True, 'send_now': True, 'send_later': True},
+    'linkedin': {'name': 'LinkedIn', 'text_only': True, 'to_person': True, 'send_now': True, 'send_later': False},
+    'slack': {'name': 'Slack', 'text_only': True, 'to_person': True, 'send_now': True, 'send_later': True},
+    'x': {'name': 'X', 'text_only': True, 'to_person': True, 'send_now': True, 'send_later': False},
+    'whatsapp': {'name': 'WhatsApp', 'text_only': True, 'to_person': True, 'send_now': False, 'send_later': True},
+    'telegram': {'name': 'Telegram', 'text_only': True, 'to_person': True, 'send_now': False, 'send_later': True},
+    'signal': {'name': 'Signal', 'text_only': True, 'to_person': True, 'send_now': False, 'send_later': True},
+    'intercom': {'name': 'Intercom', 'text_only': True, 'to_person': True, 'send_now': False, 'send_later': True},
+    'teams': {'name': 'Teams', 'text_only': True, 'to_person': True, 'send_now': False, 'send_later': True},
+    'doc_reply': {'name': 'Docs', 'text_only': True, 'to_person': False, 'send_now': False, 'send_later': False},
 }
 SEND = tuple(SENDS)  # every send kind: a draft the owner approves before it goes out
 TEXT_ONLY = tuple(k for k, s in SENDS.items() if s['text_only'])  # a message without a subject
 TO_PERSON = tuple(k for k, s in SENDS.items() if s['to_person'])  # it reaches a person, not a doc's comments
 SEND_NOW = tuple(k for k, s in SENDS.items() if s['send_now'])  # a connected AI may send it at the owner's word
+SEND_LATER = tuple(k for k, s in SENDS.items() if s['send_later'])  # the owner can pick when it goes
 
 
 def of(*, family=None, view=None, timeline=None, service=None, send=None, flag=None):

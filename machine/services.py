@@ -21,6 +21,8 @@ A service's row:
   Gmail and Google Calendar together. None for one connected another way.
 - transports: the internal tools an account without a `service` of its own names in its `transport` instead
   (names.TRANSPORT_SERVICES): an account with transport 'gog' is Gmail.
+- read_now: its newest messages can be read at any minute by a read of the account, without the shared browser: what
+  Send later waits for before a message goes (machine/app/send_later.py). Not Slack, where it reads the conversation.
 - video: for a video call service, the key a meeting booked with it keeps (meet.VIDEO, meet_sessions.video), named
   by its `short` name; video_links: the parts of an address that are a link to such a call (meet.VIDEO_LINKS).
 
@@ -42,20 +44,20 @@ LAYER = 0  # every service a connection reads, with what the code knows of each 
 MAIL, CALENDAR, CHAT, MEETINGS, DOCS, CUSTOMERS, WORK, OTHER = 'mail', 'calendar', 'chat', 'meetings', 'docs', 'customers', 'work', 'other'
 GROUPS = (MAIL, CALENDAR, CHAT, MEETINGS, DOCS, CUSTOMERS, WORK, OTHER)  # + Add's groups, in the order its list shows them
 
-_NO = {'label': None, 'short': None, 'sharing': None, 'unit': None, 'group': None, 'last': False, 'signin': None, 'transports': (),
+_NO = {'label': None, 'short': None, 'sharing': None, 'unit': None, 'group': None, 'last': False, 'read_now': False, 'signin': None, 'transports': (),
        'video': None, 'video_links': ()}
 
 SERVICES = {
     # mail and calendars
-    'gmail': {**_NO, 'name': 'Gmail', 'label': 'Gmail', 'short': 'Gmail', 'sharing': 'Gmail', 'group': MAIL, 'signin': 'google',
+    'gmail': {**_NO, 'name': 'Gmail', 'read_now': True, 'label': 'Gmail', 'short': 'Gmail', 'sharing': 'Gmail', 'group': MAIL, 'signin': 'google',
               'transports': ('gog', 'gogcli', 'himalaya')},
     'calendar': {**_NO, 'name': 'Google Calendar', 'label': 'Google Calendar', 'short': 'Calendar', 'sharing': 'Google Calendar',
                  'unit': 'events', 'group': CALENDAR, 'signin': 'google'},
-    'outlook': {**_NO, 'name': 'Outlook', 'label': 'Outlook', 'short': 'Outlook', 'sharing': 'Outlook', 'group': MAIL, 'signin': 'microsoft',
+    'outlook': {**_NO, 'name': 'Outlook', 'read_now': True, 'label': 'Outlook', 'short': 'Outlook', 'sharing': 'Outlook', 'group': MAIL, 'signin': 'microsoft',
                 'transports': ('msgraph', 'msgraph-cli')},
     'outlook_calendar': {**_NO, 'name': 'Outlook Calendar', 'label': 'Outlook Calendar', 'short': 'Outlook Calendar',
                          'sharing': 'Outlook Calendar', 'unit': 'events', 'group': CALENDAR, 'signin': 'microsoft'},
-    'imap': {**_NO, 'name': 'Other email', 'label': 'Other email', 'short': 'Other email', 'group': MAIL, 'last': True},
+    'imap': {**_NO, 'name': 'Other email', 'read_now': True, 'label': 'Other email', 'short': 'Other email', 'group': MAIL, 'last': True},
     'icloud_calendar': {**_NO, 'name': 'iCloud Calendar', 'label': 'iCloud Calendar', 'short': 'iCloud Calendar', 'sharing': 'iCloud Calendar',
                         'unit': 'events', 'group': CALENDAR},
     'caldav': {**_NO, 'name': 'Calendar', 'label': 'Other calendar', 'short': 'Calendar', 'sharing': 'Other calendar', 'unit': 'events',
@@ -73,15 +75,15 @@ SERVICES = {
     'salesforce': {**_NO, 'name': 'Salesforce', 'short': 'Salesforce', 'unit': 'updates', 'group': CUSTOMERS, 'signin': 'salesforce'},
     'android': {**_NO, 'name': 'Android', 'label': 'Android notifications', 'short': 'Android notifications', 'unit': 'notifications',
                 'transports': ('openclaw-feed', 'existing_openclaw_feed')},
-    'whatsapp': {**_NO, 'name': 'WhatsApp', 'label': 'WhatsApp', 'short': 'WhatsApp', 'sharing': 'WhatsApp', 'group': CHAT,
+    'whatsapp': {**_NO, 'name': 'WhatsApp', 'read_now': True, 'label': 'WhatsApp', 'short': 'WhatsApp', 'sharing': 'WhatsApp', 'group': CHAT,
                  'transports': ('wacli', 'wacli-local', 'existing_wacli_local_store')},
-    'telegram': {**_NO, 'name': 'Telegram', 'label': 'Telegram chats', 'short': 'Telegram chats', 'sharing': 'Telegram', 'group': CHAT,
+    'telegram': {**_NO, 'name': 'Telegram', 'read_now': True, 'label': 'Telegram chats', 'short': 'Telegram chats', 'sharing': 'Telegram', 'group': CHAT,
                  'transports': ('telegram_mirror', 'telegram_mirror_store')},
-    'signal': {**_NO, 'name': 'Signal', 'label': 'Signal chats', 'short': 'Signal chats', 'sharing': 'Signal chats', 'group': CHAT,
+    'signal': {**_NO, 'name': 'Signal', 'read_now': True, 'label': 'Signal chats', 'short': 'Signal chats', 'sharing': 'Signal chats', 'group': CHAT,
                'transports': ('signal_mirror', 'signal_mirror_store')},
     'linkedin': {**_NO, 'name': 'LinkedIn', 'short': 'LinkedIn', 'sharing': 'LinkedIn', 'group': CHAT, 'transports': ('linkedin-inbox',)},
     'x': {**_NO, 'name': 'X', 'short': 'X', 'sharing': 'X', 'group': CHAT, 'transports': ('x-inbox',)},
-    'intercom': {**_NO, 'name': 'Intercom', 'short': 'Intercom', 'sharing': 'Intercom', 'unit': 'conversations', 'group': CUSTOMERS,
+    'intercom': {**_NO, 'name': 'Intercom', 'read_now': True, 'short': 'Intercom', 'sharing': 'Intercom', 'unit': 'conversations', 'group': CUSTOMERS,
                  'signin': 'intercom'},
     # meetings, work, docs and the rest
     'zoom': {**_NO, 'name': 'Zoom', 'short': 'Zoom', 'group': MEETINGS, 'signin': 'zoom', 'video': 'zoom', 'video_links': ('zoom.us/',)},
@@ -95,7 +97,7 @@ SERVICES = {
     'google_meet': {**_NO, 'name': 'Google Meet', 'short': 'Google Meet', 'unit': 'meetings', 'group': MEETINGS, 'signin': 'google_meet',
                     'video': 'meet', 'video_links': ('meet.google.com/',)},
     # after Zoom and Google Meet: a tie between video links goes to the first row (meet.video_habit)
-    'teams': {**_NO, 'name': 'Microsoft Teams', 'short': 'Teams', 'group': CHAT, 'signin': 'microsoft_teams',
+    'teams': {**_NO, 'name': 'Microsoft Teams', 'read_now': True, 'short': 'Teams', 'group': CHAT, 'signin': 'microsoft_teams',
               'video': 'teams', 'video_links': ('teams.microsoft.com/', 'teams.live.com/')},
     'granola': {**_NO, 'name': 'Granola', 'short': 'Granola', 'unit': 'meetings', 'group': MEETINGS},
     'rss': {**_NO, 'name': 'RSS', 'short': 'Feed', 'unit': 'items'},

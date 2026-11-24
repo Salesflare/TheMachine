@@ -58,7 +58,7 @@ topic_routes.events topic_routes.left voices.channel voices.ref voice_merges.cha
 # Words that stay plain, and why. docs/configuration.md ("What stays readable") says the same to the owner.
 WORDS = {
     'learned: feedback, facts, rules, voices and skills stay readable, for support and to improve The Machine': '''
-        decisions.feedback action_jobs.basis preparation_runs.basis learning_changes.target decision_annotations.reason facts.text facts.quote fact_search.text fact_search_idx.segid fact_search_idx.term
+        decisions.feedback action_jobs.basis scheduled_sends.basis preparation_runs.basis learning_changes.target decision_annotations.reason facts.text facts.quote fact_search.text fact_search_idx.segid fact_search_idx.term
         fact_search_idx.pgno rule_changes.text voices.text voice_merges.previous voice_merges.merged_text profile_runs.draft
         skills.slug skills.name skills.description skills.body skills.author skills.their_slug skills.replaces skills.note
         skills.related skills.imported skills.task skill_clusters.name skill_clusters.description skill_clusters.body skill_clusters.target_name
