@@ -5,6 +5,8 @@
 mod address;
 mod card;
 mod dash;
+#[cfg(windows)]
+mod elevated;
 mod files;
 mod front;
 mod given;
@@ -702,16 +704,23 @@ async fn connect(app: AppHandle, address: String) -> Result<(), String> {
     away(move || signed_in(&app, Machine { url, cookie: None })).await
 }
 
-/// The account's sign-in, in the person's browser. The scheme it comes back on is registered only while it runs.
+/// The account's sign-in, in the person's browser. The scheme it may come back on is registered only while it runs.
 #[tauri::command]
 async fn sign_in(app: AppHandle) -> Result<(), String> {
     away(move || {
-        let (pending, address) = signin::start()?;
+        let here = app.clone();
+        let address = {
+            let shared = app.state::<Shared>();
+            let mut pending = shared.pending.lock().unwrap();
+            if !pending.as_ref().is_some_and(signin::Pending::lasts) {
+                *pending = Some(signin::start(move |link| came_back(&here, link))?);
+            }
+            pending.as_ref().map(signin::Pending::address).unwrap_or_default()
+        };
         #[cfg(target_os = "macos")]
         mac::take_links();
         #[cfg(not(target_os = "macos"))]
         app.deep_link().register(signin::SCHEME).map_err(|_| "scheme")?;
-        *app.state::<Shared>().pending.lock().unwrap() = Some(pending);
         app.opener().open_url(address, None::<&str>).map_err(|_| "browser".to_string())
     }).await
 }
@@ -733,10 +742,15 @@ pub fn no_links(app: &AppHandle) {
     }
 }
 
-fn came_back(app: &AppHandle, link: &str) {
+/// Whether it was the sign-in that goes on.
+fn came_back(app: &AppHandle, link: &str) -> bool {
     let shared = app.state::<Shared>();
-    let Some(found) = shared.pending.lock().unwrap().as_ref().and_then(|p| signin::back(link, p)) else { return };
-    *shared.pending.lock().unwrap() = None; // once
+    let found = {
+        let mut pending = shared.pending.lock().unwrap();
+        let Some(found) = pending.as_ref().and_then(|p| signin::back(link, p)) else { return false };
+        *pending = None; // once
+        found
+    };
     no_links(app);
     let app = app.clone();
     std::thread::spawn(move || {
@@ -750,6 +764,7 @@ fn came_back(app: &AppHandle, link: &str) {
         let _ = app.emit_to(dash::LABEL, "signin", error);
         later(&app, says_so);
     });
+    true
 }
 
 /// Signed in or out: the dashboard's window says so when it is there, else the box.
@@ -1114,6 +1129,10 @@ fn main() {
     if std::env::args().nth(1).as_deref() == Some("--quit") && quit::event::ask() {
         return;
     }
+    #[cfg(windows)]
+    if elevated::hands_over() || elevated::leaves() {
+        return;
+    }
     let builder = tauri::Builder::default();
     #[cfg(target_os = "macos")]
     let builder = builder.activate_ignoring_other_apps(false).on_web_content_process_terminate(|page| {
@@ -1131,7 +1150,9 @@ fn main() {
                 Some("--toggle") => toggle(app),
                 #[cfg(feature = "sandbox")]
                 Some("--hang") => std::thread::sleep(Duration::from_secs(args.get(2).and_then(|s| s.parse().ok()).unwrap_or(60))), // for smoke/: --quit still has to work
-                Some(link) if link.starts_with(signin::SCHEME) => came_back(app, link),
+                Some(link) if link.starts_with(signin::SCHEME) => {
+                    came_back(app, link);
+                }
                 _ if dash::here() => dash::show(app, ""),
                 _ => {
                     show(app);
@@ -1165,7 +1186,11 @@ fn main() {
                         _ => windows::close_box(app),
                     }
                 }
-                WindowEvent::ScaleFactorChanged { .. } => later(app, windows::place), // once the window system is done with its own move
+                WindowEvent::ScaleFactorChanged { .. } => later(app, |app| { // once the window system is done with its own move
+                    windows::place(app);
+                    #[cfg(windows)]
+                    settings::again(app);
+                }),
                 WindowEvent::Focused(on) if dash::label(window.label()) => dash::focused(app, window.label(), *on),
                 WindowEvent::Moved(_) | WindowEvent::Resized(_) if window.label() == dash::LABEL => dash::moved(app),
                 _ => {}
@@ -1231,6 +1256,8 @@ fn main() {
             if app.deep_link().is_registered(signin::SCHEME).unwrap_or(false) {
                 no_links(app.handle());
             }
+            #[cfg(windows)]
+            elevated::hears();
             #[cfg(windows)]
             quit::event::wait(app.handle());
             #[cfg(target_os = "macos")]

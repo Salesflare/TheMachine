@@ -62,6 +62,7 @@ window.MachineText = {
   welcome: 'You’re in. Write a to-do, or ask about your messages. What’s for you shows here too.',
   signIn: 'Sign in',
   waitingBrowser: 'Continue in your browser.',
+  nothingBack: 'Nothing came back from your browser.',
   own: 'Self-hosted?',
   account: 'Sign in with an account',
   address: 'Your Machine’s address',

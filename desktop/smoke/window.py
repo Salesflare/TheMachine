@@ -115,7 +115,7 @@ def _():
     hit('paste')
     key(ENTER)
     need(dashboard(), 'the dashboard')
-    seen = machine.seen[-1]
+    seen = until(lambda: machine.seen and machine.seen[-1], 8) or {}
     need(seen.get('desktop') == '1', f'it knows where it is: {seen}')
     need(until(lambda: told('#ipc') == 'refused', 8), 'it gets none of the app: ' + told('#ipc'))
     need(not told(), told())
@@ -683,6 +683,24 @@ def _():
         need(until(lambda: told('#error'), 1), 'or it says why: ' + found)
         return 'the sign-in itself is over https only, see mac.py: ' + found
     return found
+
+
+@step('signed out, and the browser comes back by itself')
+def _():
+    machine.away = elsewhere.at + '/open?to=' + 'app'
+    hit('reload')
+    need(until(lambda: 'Signed out' in text(), 10), text())
+    del elsewhere.links[:], elsewhere.asked[:]
+    elsewhere.loopback, machine.away = True, None
+    tap('#go')
+    need(until(lambda: elsewhere.links, 40), 'the account opens in the browser')
+    found = until(dashboard, 10)
+    no_browser()
+    elsewhere.loopback = False
+    need(found, text())
+    q = elsewhere.asked[-1]
+    need(set(q) == {'to', 'on', 'c', 'p'} and len(q['c']) == 43, q)
+    return q
 
 
 def reachable():

@@ -23,7 +23,7 @@ jobs:
   windows:
     if: github.head_ref != 'desktop-bubble' # its push has it
     runs-on: windows-latest
-    timeout-minutes: 80
+    timeout-minutes: 95
     outputs:
       sha: ${{ steps.build.outputs.sha }}
     defaults:
@@ -63,7 +63,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Use it, with a made-up Machine
-        timeout-minutes: 45
+        timeout-minutes: 60
         run: | # its own certificate is trusted on this runner while this runs, for 127.0.0.1 only, and never by the build for people
           grep -q MACHINE_SANDBOX_ROOT sandbox-build/the-machine-desktop.exe
           if grep -q MACHINE_SANDBOX_ROOT out/the-machine-desktop.exe; then exit 1; fi
@@ -74,6 +74,8 @@ jobs:
           failed=0
           python smoke/windows.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots "$RUNNER_TEMP/certificate" || failed=1
           python smoke/window.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/window || failed=1
+          python smoke/text.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/text || failed=1
+          python smoke/signin.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/signin || failed=1
           MACHINE_SANDBOX_UPDATES_KEY="$(cat "$RUNNER_TEMP/made-up.key.pub")" python smoke/updates.py sandbox-build/setup-0.0.1.exe sandbox-build/setup-9.9.9.exe shots/updates || failed=1
           exit $failed
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
