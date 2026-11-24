@@ -380,6 +380,7 @@ For developers: a feature adds its own entries with `actionAdd({id, group, label
 **Do it** queues a preparation: an isolated turn `agent:main:assistant-review-preparation-<job>` of your main agent with `USER.md`, `PREPARATION.md`, the to-do, your latest note and the full evidence.
 
 - Up to `preparation_concurrency` run at once and share the OpenClaw browser through a lease.
+- A command the run waits for is stopped after 10 minutes (2 in a to-do prepared ahead and in a routine), so one that hangs doesn't hold the run. The run is told and carries on. A command given its own time (`timeoutSeconds`) keeps it, and setting `tools.exec.timeoutSeconds` in your OpenClaw config replaces this limit.
 - The agent does the work and saves a short result with `prepare` (longer output goes in `memory/assistant/` in the workspace), or records a plain-language blocker.
 
 **What comes back**
