@@ -66,7 +66,7 @@ The robot stands in the bottom right corner, and the first time its box (on a Ma
 
 The box greets you by the first name your Machine knows, by this computer's clock, and says so when nothing needs you; or
 that you aren't signed in, or that your Machine doesn't answer. Click the robot to open and close it, and drag the robot to
-move it, also to another monitor. Right-click it, or **...** in the box, for where you are signed in, **Open dashboard**,
+move it, also to another monitor. The box comes above it, below it where that fits better, or else beside it. Right-click it, or **...** in the box, for where you are signed in, **Open dashboard**,
 **Hide**, **Sign out** and **Quit**. For a key of your own, bind it to the program with `--toggle`.
 
 A hidden robot never goes away altogether: it looks over the bottom edge of the screen, dot and all. Click it and it is
@@ -112,8 +112,10 @@ Always and Never).
   every 30 seconds, that it is there and may speak. So a bubble comes up to 30 seconds after the phone's push.
 - **Never twice on one computer.** While the robot may speak, your Machine doesn't push to the browser or app on the
   robot's computer. Which one that is it knows after the robot has opened the dashboard there once; until then it stays
-  quiet if any browser has notifications on. A second browser with notifications on this computer still shows its own.
-  Phones and other computers get theirs as ever.
+  quiet if a browser that may be there has notifications on: one on the same system, and not on another robot's computer.
+  Settings then asks **Does a browser on this computer notify you too?** **Yes, open it** opens the dashboard there, and
+  your Machine knows. **No** holds until another such browser turns them on. Without the robot a notification asks it
+  once. A second browser with notifications on this computer still shows its own. Phones and other computers get theirs as ever.
 - **It may not speak** while it is hidden, off, or away for the app or something in full screen; nor, where the system
   tells without a permission, while the screen is locked or presented. Windows: the lock screen and screen saver, an app
   or game in full screen, presentation mode, duplicated displays, or no mouse and keys for 5 minutes. Linux: a lock the

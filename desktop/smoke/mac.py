@@ -233,6 +233,10 @@ def _():
     need(until(lambda: f'Signed in to 127.0.0.1:{PORT}' in says('#menu')), says('#menu'))
     need('Always' in says('#menu') and 'Never' in says('#menu') and 'Disturb' not in says('#menu'), says('#menu'))
     png('menu')
+    time.sleep(0.5)
+    box, robot = app.box(), app.robot()
+    need(box.bottom - 14 <= robot.top or box.top + 14 >= robot.bottom or box.right - 14 <= robot.left or box.left + 14 >= robot.right,
+         f'the robot is not covered: {box} {robot}')
     key(ESCAPE)
     need(until(lambda: not says('#menu')), 'it closes')
 
@@ -792,14 +796,29 @@ def _():
         for _ in range(2):
             press(app, '#files button')
         press(app, '#close')
+        r = app.robot()  # its corner is its page, not yet the robot in it
+        took = {}
+        for enters in (False, True):  # without its answer to dragenter, as before, and with it
+            if not enters:
+                page('robot', '(() => { window.enters = e => e.stopImmediatePropagation(); addEventListener("dragenter", window.enters, true) })()')
+            else:
+                page('robot', 'removeEventListener("dragenter", window.enters, true)')
+            took[enters] = 0
+            for _ in range(5):
+                drag(from_(1), app.center(), at_once=(r.left + 4, r.top + 4))
+                if until(app.box, 3):
+                    took[enters] += 1
+                    empty()
+        print('dropped at once', took, flush=True)
+        need(took[True] == 5, f'dropped as soon as it is above it {took}')
         hide()
         time.sleep(1)
-        told = ''
+        told = f'at once {took}, '
         for place in (28, 16, 8):  # points below its top: the Dock takes what is dropped close above it
             r = app.robot()
             drag(from_(1), ((r.left + r.right) // 2, r.top + place))
             if until(app.box, 4):
-                told = f'on a hidden one {place} of {r.height} points below its top'
+                told += f'on a hidden one {place} of {r.height} points below its top'
                 break
         need(app.box() and until(back), 'a hidden one comes back with it')
         need(until(lambda: value().startswith('Ask Dana')), str(value()))

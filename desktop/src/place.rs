@@ -57,8 +57,13 @@ pub fn peek(robot: Rect, area: Rect) -> Rect {
 
 /// How tall the box is with a to-do open in it: comfortable, in the larger space above or below the robot.
 pub fn tall(robot: Rect, area: Rect) -> f64 {
+    room(robot, area).clamp(420.0, 640.0).min(area.h - 16.0).max(200.0)
+}
+
+/// How tall the box can be above or below the robot.
+pub fn room(robot: Rect, area: Rect) -> f64 {
     let (above, below) = (robot.y - area.y, area.y + area.h - robot.y - robot.h);
-    (above.max(below) - GAP - 8.0).clamp(420.0, 640.0).min(area.h - 16.0).max(200.0)
+    above.max(below) - GAP - 8.0
 }
 
 /// Where the robot's middle is along a bubble, so that its tail points there.
@@ -67,15 +72,24 @@ pub fn tail(robot: Rect, bubble: Rect) -> f64 {
     (robot.x + robot.w / 2.0 - bubble.x - bubble.w / 2.0).clamp(-half, half) + BUBBLE_WIDTH / 2.0
 }
 
-/// The window of the box, or of a bubble, for a robot: above it, its right edge over the robot's, below it when there is no room above, and
-/// always within the area. height is the page's own, without the shadow.
+/// The window of the box, or of a bubble, for a robot: above it, its right edge over the robot's, below it when there is no room above, beside it
+/// when there is none there either, and always within the area. height is the page's own, without the shadow.
 pub fn box_at(robot: Rect, area: Rect, width: f64, height: f64) -> Rect {
     let (w, h) = (width + 2.0 * SHADOW, height.min(area.h) + 2.0 * SHADOW);
     let over = SHADOW - 8.0; // the box keeps 8 from the edges, its shadow not
     let x = (robot.x + robot.w - width - SHADOW).max(area.x - over).min(area.x + area.w - w + over);
     let above = robot.y - GAP - height - SHADOW;
-    let y = if above >= area.y - over { above } else { robot.y + robot.h + GAP - SHADOW };
-    Rect { x, y: y.min(area.y + area.h - h + over).max(area.y - over), w, h }
+    let mut y = if above >= area.y - over { above } else { robot.y + robot.h + GAP - SHADOW };
+    let inside = |y: f64| y.min(area.y + area.h - h + over).max(area.y - over);
+    let mut x = x;
+    if y >= robot.y && inside(y) < y {
+        let (left, right) = (robot.x - GAP - width - SHADOW, robot.x + robot.w + GAP - SHADOW);
+        let fits = |x: f64| x >= area.x - over && x + w <= area.x + area.w + over;
+        if let Some(beside) = [left, right].into_iter().find(|x| fits(*x)) {
+            (x, y) = (beside, robot.y + robot.h - height - SHADOW);
+        }
+    }
+    Rect { x, y: inside(y), w, h }
 }
 
 #[cfg(test)]
@@ -134,6 +148,24 @@ mod tests {
                     let seen = Rect { x: b.x + SHADOW, y: b.y + SHADOW, w: b.w - 2.0 * SHADOW, h: b.h - 2.0 * SHADOW };
                     assert!(seen.x >= AREA.x && seen.x + seen.w <= AREA.x + AREA.w, "{right} {bottom} {height} {seen:?}");
                     assert!(seen.y >= AREA.y && seen.y + seen.h <= AREA.y + AREA.h, "{right} {bottom} {height} {seen:?}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn the_box_never_covers_the_robot() {
+        for area in [AREA, Rect { x: 0.0, y: 31.0, w: 1024.0, h: 648.0 }, Rect { x: 0.0, y: 0.0, w: 1366.0, h: 720.0 }] {
+            for right in [0.0, 16.0, 500.0, 900.0] {
+                for bottom in [0.0, 12.0, 250.0, 560.0] {
+                    for height in [150.0, 420.0, 570.0, 620.0] {
+                        let robot = Corner { right, bottom }.robot(area);
+                        let b = box_at(robot, area, BOX_WIDTH, height);
+                        let (x, y) = (b.x + SHADOW, b.y + SHADOW);
+                        let over = x < robot.x + robot.w && x + BOX_WIDTH > robot.x && y < robot.y + robot.h && y + height > robot.y;
+                        assert!(!over, "{area:?} {right} {bottom} {height} {b:?}");
+                        assert!(x >= area.x && x + BOX_WIDTH <= area.x + area.w && y >= area.y && y + height <= area.y + area.h, "{area:?} {right} {bottom} {height} {b:?}");
+                    }
                 }
             }
         }

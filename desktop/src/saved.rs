@@ -27,6 +27,10 @@ pub struct Saved {
     pub no_robot: bool,
     pub quits: bool,
     pub notify: Option<bool>,
+    /// The person said no browser with notifications on is on this computer, for those there then (the Machine's number
+    /// of them); and for which it was asked in a notification.
+    pub none: u64,
+    pub asked: u64,
     /// A random name for this robot, for its Machine to know which computer's it is (speak.rs).
     pub desk: String,
 }

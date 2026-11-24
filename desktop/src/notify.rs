@@ -6,6 +6,9 @@ use tauri::{AppHandle, Manager};
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
 
+/// The notification that asks whether a browser here tells too (speak.rs). A tap opens Settings.
+pub const ASKS: &str = "browser";
+
 /// Whether the system lets the app.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
@@ -91,6 +94,9 @@ pub fn gone(id: &str) {
 /// One was tapped.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn opened(id: &str) {
+    if let (Some(app), ASKS) = (APP.get(), id) {
+        return later(app, crate::settings::open);
+    }
     if let (Some(app), Ok(())) = (APP.get(), crate::todo_id(id)) {
         let path = format!("#card={id}");
         later(app, move |app| {

@@ -215,6 +215,30 @@ impl Speaking {
     }
 }
 
+/// Whether the Machine keeps it quiet here because a browser that may be on this computer has notifications on (its
+/// number of those, or 0). Settings asks the person. Without a robot a notification says so, once: nothing else would.
+pub fn unsure(app: &AppHandle, browser: u64) {
+    let shared = app.state::<Shared>();
+    if shared.browser.swap(browser, Ordering::Relaxed) == browser {
+        return;
+    }
+    let _ = app.emit_to("settings", "settings", ());
+    if browser == 0 {
+        return crate::notify::gone(crate::notify::ASKS);
+    }
+    note(&shared, "a browser that may be on this computer has notifications on");
+    let asks = {
+        let mut saved = shared.saved.lock().unwrap();
+        saved.no_robot && std::mem::replace(&mut saved.asked, browser) != browser
+    };
+    if asks {
+        shared.save();
+        if app.get_webview_window("settings").is_none() {
+            let _ = app.emit_to("robot", "asks", ()); // its page has the words
+        }
+    }
+}
+
 /// What came with a look. Asked of the Machine once more, as the phone app does: its words, and its buttons now. It isn't
 /// given up as got here: only when it shows (shown), or when there is nothing to show any more.
 pub fn came(app: &AppHandle, machine: &Machine, notices: &Value, meeting: &Value) {

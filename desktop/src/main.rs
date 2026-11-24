@@ -90,6 +90,9 @@ pub struct Shared {
     /// What the robot says, and will (speak.rs); how tall its bubble is.
     speaking: Mutex<speak::Speaking>,
     tall: Mutex<f64>,
+    /// A browser that may be on this computer has notifications on, so nothing is said here until the person says which
+    /// it is: the Machine's number of those, or 0 (speak.rs).
+    browser: AtomicU64,
     /// The to-do the box opens on.
     pub wanted: Mutex<Option<String>>,
     given: Mutex<Option<Given>>,
@@ -214,9 +217,16 @@ fn ask_status(app: &AppHandle, shared: &Shared, machine: &Machine) -> Result<(Va
         }
         (held.token.clone(), held.fleet.clone())
     };
-    let desk = shared.saved.lock().unwrap().desk.clone();
-    let mut status = machine.status(since.as_deref(), &desk, speak::up(app), &speak::got(shared))?;
+    let (desk, none) = {
+        let saved = shared.saved.lock().unwrap();
+        (saved.desk.clone(), saved.none)
+    };
+    let mut status = machine.status(since.as_deref(), &desk, speak::up(app), &speak::got(shared), none)?;
     let said = (status["notices"].take(), status["meeting"].take()); // not part of the status
+    let browser = status["browser"].take();
+    if !said.0.is_null() {
+        speak::unsure(app, browser.as_u64().unwrap_or(0));
+    }
     // The Fleet's items, when its part says they changed (a change list without that part: they didn't)
     let part = &status["fleet"];
     let due = (part["on"] == true && fleet_held.as_ref() != Some(&part["stamp"])).then(|| part["stamp"].clone());
@@ -319,7 +329,9 @@ fn robot_list(app: AppHandle, machine: String, todos: Option<Vec<machine::Todo>>
 /// Without a robot: the system tells it (notify.rs), in its page's words.
 #[tauri::command]
 fn robot_notify(app: AppHandle, id: String, title: String, line: String) {
-    if todo_id(&id).is_ok() {
+    if id == notify::ASKS {
+        notify::show(&id, &title, &line);
+    } else if todo_id(&id).is_ok() {
         notify::show(&id, &title, &line);
         speak::notified(&app, &id);
     }
@@ -610,8 +622,8 @@ async fn box_look(app: AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn box_fit(app: AppHandle, height: f64) {
-    windows::fit_box(&app, height);
+fn box_fit(app: AppHandle, height: f64) -> f64 {
+    windows::fit_box(&app, height)
 }
 
 #[tauri::command]
@@ -866,9 +878,13 @@ fn open_path(app: &AppHandle, path: &str) -> Result<(), String> {
         later(app, move |app| dash::show(app, &path));
         return Ok(());
     }
-    // Which robot opens it: the page tells the Machine what browser is on this computer (speak.rs)
+    open_outside(app, &machine, alone, path)
+}
+
+/// Says which robot opens it: the page tells the Machine what browser is on this computer (speak.rs).
+fn open_outside(app: &AppHandle, machine: &str, alone: bool, path: &str) -> Result<(), String> {
     let address = format!("{machine}?desk={}{path}", app.state::<Shared>().saved.lock().unwrap().desk);
-    if webapp::open(&machine, &address, alone) {
+    if webapp::open(machine, &address, alone) {
         return Ok(());
     }
     app.opener().open_url(address, None::<&str>).map_err(|_| "browser".to_string())
@@ -1089,6 +1105,7 @@ fn main() {
                 wanted: Mutex::default(),
                 given: Mutex::default(),
                 tall: Mutex::new(90.0),
+                browser: AtomicU64::new(0),
                 dot: AtomicBool::new(false),
                 snip: AtomicBool::new(false),
                 picking: AtomicBool::new(false),

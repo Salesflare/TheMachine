@@ -512,6 +512,36 @@ def _():
     return f'{hint}; the banner itself is NOT TESTED'
 
 
+@step('a browser here may notify too')
+def _():
+    key(W, CMD) if app.settings() else None
+    settings()
+    if page('settings', 'document.querySelector("#robot").checked') is False:
+        need(switch('robot') is True, 'on')
+    asks = lambda: page('settings', '!document.querySelector("#browser-row").hidden') is True
+    need(not asks(), 'nothing is asked')
+    machine.browser = 7
+    other()  # nothing is said with the dashboard in front
+    need(until(lambda: machine.desks[-1][1] == '1', 45), str(machine.desks[-3:]))
+    back_to_it()
+    settings()
+    need(until(asks, 45), 'it asks')
+    png('browser-asked')
+    tap('#browser-yes', 'settings')
+    need(until(lambda: machine.paired == [saved()['desk']], 30), f'the browser opens it and says so {machine.paired}')
+    no_browser()
+    back_to_it()
+    settings()
+    tap('#browser-no', 'settings')
+    need(until(lambda: not asks(), 5) and saved()['none'] == 7, f'answered {saved()["none"]}')
+    other()
+    need(until(lambda: machine.says[-1] == ('mac', '7'), 45), str(machine.says[-3:]))
+    back_to_it()
+    settings()
+    need(not asks(), 'not asked again')
+    machine.browser = 0
+
+
 @step('the robot again')
 def _():
     key(W, CMD) if app.settings() else None

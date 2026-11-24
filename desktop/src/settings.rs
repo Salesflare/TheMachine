@@ -18,6 +18,8 @@ pub struct Settings {
     can_notify: bool,
     /// They are on, and the system doesn't let the app.
     blocked: bool,
+    /// Nothing is said here: a browser here may tell (speak.rs).
+    browser: bool,
     machine: Option<String>,
 }
 
@@ -84,6 +86,7 @@ pub async fn settings_state(app: AppHandle) -> Result<Settings, String> {
             notify: saved.notify == Some(true) && notices != notify::Lets::No,
             can_notify: notify::there(),
             blocked: saved.notify == Some(true) && notices == notify::Lets::No,
+            browser: shared.browser.load(Ordering::Relaxed) > 0 && (!saved.no_robot || saved.notify == Some(true) && notices == notify::Lets::Yes),
             machine: saved.machine.clone(),
         })
     }).await
@@ -113,6 +116,16 @@ pub async fn settings_set(app: AppHandle, id: String, on: bool) -> Result<(), St
             }
         }
         "quits" => shared.saved.lock().unwrap().quits = on,
+        // The browser tells the Machine that it is here, as it opens; or none is
+        "browser" if on => {
+            let (machine, alone) = shared.signed_in().ok_or("notowner")?;
+            return crate::open_outside(&app, &machine, alone, "");
+        }
+        "browser" => {
+            let browser = shared.browser.swap(0, Ordering::Relaxed);
+            let mut saved = shared.saved.lock().unwrap();
+            saved.none = saved.none.max(browser);
+        }
         "notify" => {
             shared.saved.lock().unwrap().notify = Some(on);
             if on {
