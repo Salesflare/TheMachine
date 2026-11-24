@@ -103,18 +103,23 @@ def make_config(directory, fixture, states, port, network_port):
     return config, path
 
 
-def working_hours(start, duration, slot):
+def working_hours(start, duration, slot, base):
     """The same day (a weekend moves to Friday or Monday), on a round half hour between 09:00 and 18:00 in Brussels,
-    so a meeting reads like one whenever the sandbox starts. `slot` picks the half hour."""
+    so a meeting reads like one whenever the sandbox starts. `slot` picks the half hour. A Sunday that is over when the
+    sandbox loads (base) moves back when Monday's hour is still to come, and a Saturday to come moves on when Friday's
+    has gone: the move off the weekend never puts a meeting on the other side of now."""
     local = start.astimezone(BRUSSELS)
-    day = local.date() + dt.timedelta(days={5: -1, 6: 1}.get(local.weekday(), 0))
     latest = (18 * 60 - duration) // 30  # the last half hour it still ends by 18:00
     minutes = 9 * 60 + 30 * (slot % (latest - 18 + 1))
-    return dt.datetime.combine(day, dt.time(minutes // 60, minutes % 60), BRUSSELS).astimezone(dt.timezone.utc)
+    on = lambda days: dt.datetime.combine(local.date() + dt.timedelta(days=days), dt.time(minutes // 60, minutes % 60), BRUSSELS).astimezone(dt.timezone.utc)
+    if local.weekday() < 5:
+        return on(0)
+    near, other = {5: (-1, 2), 6: (1, -2)}[local.weekday()]
+    return on(near) if (on(near) <= base) == (start <= base) else on(other)
 
 
 def calendar_meta(meta, base):
-    start = working_hours(base - dt.timedelta(minutes=meta['start_minutes_ago']), meta['duration_minutes'], meta['start_minutes_ago'])
+    start = working_hours(base - dt.timedelta(minutes=meta['start_minutes_ago']), meta['duration_minutes'], meta['start_minutes_ago'], base)
     end = start + dt.timedelta(minutes=meta['duration_minutes'])
     out = {k: v for k, v in meta.items() if k not in ('start_minutes_ago', 'duration_minutes', 'attendees', 'organizer')}
     return {**out, 'start': {'dateTime': start.isoformat()}, 'end': {'dateTime': end.isoformat()}, 'end_at': end.isoformat(), 'all_day': False,
