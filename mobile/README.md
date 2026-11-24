@@ -152,8 +152,9 @@ Description:
 Accounts are created and paid for on the web. The app has no sign-up, plans, prices or buying links (App Store
 3.1.3(b), multiplatform services): the start page only says "Use your account from themachine.computer" without a
 link, and the dashboard hides every plan, billing and upgrade element when it runs in the app (its user agent ends in
-`TheMachineApp/<n>`). Deleting the account stays reachable in the app (Settings, Account, Open account), as App Store
-5.1.1(v) asks.
+`TheMachineApp/<n>`). The account's pages it opens in the phone's browser say they are the app's (`from=app`: the account
+adds it to a hosted Machine's, the dashboard to a self-hosted Machine's links), so they show none either.
+Deleting the account stays reachable in the app (Settings, Account, Open account), as App Store 5.1.1(v) asks.
 
 ### Privacy labels (App Store) and Data safety (Play)
 

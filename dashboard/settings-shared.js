@@ -78,7 +78,7 @@ const aiPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Con
 // Get your address (and Pair this Machine in Connections): the tab opens within the click, then goes to the account's
 // page once it is known; a browser that blocks it goes there in this tab. Then ai_pair_state every 2.5 s, up to 10 minutes.
 async function aiPairGo(done){const tab=window.open('','_blank');
- try{const r=await aiPost('ai_pair_start',{});if(tab&&!tab.closed){tab.opener=null;tab.location.href=r.url}else location.href=r.url;
+ try{const r=await aiPost('ai_pair_start',{}),to=acctUrl(r.url);if(tab&&!tab.closed){tab.opener=null;tab.location.href=to}else location.href=to;
   if(aiView){aiView.reach={...(aiView.reach||{}),pairing:r.code?{url:r.url,code:r.code,state:'waiting'}:null};renderAi()}
   aiPairUntil=Date.now()+600000;aiPairPoll(done)}
  catch(e){if(tab)tab.close();errCaught(e);notice(e.message,true)}}

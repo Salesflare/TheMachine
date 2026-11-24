@@ -150,6 +150,29 @@ try{
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/account-paired-${width}-${scheme}.png`,fullPage:true});
   await context.close();
  }
+ // In the phone app a self-hosted Machine's links to the account say so (from=app), as the phone's browser opens them;
+ // in a browser, or the desktop robot's window, they are as they were. Other links, and other sites', never change.
+ const IPHONE='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
+ for(const [name,ua,app] of [['iphone app',IPHONE+' TheMachineApp/1',true],['android app','Mozilla/5.0 (Linux; Android 15; Pixel 8) Chrome/130.0 Mobile Safari/537.36 TheMachineApp/12',true],
+   ['iphone browser',IPHONE+' Safari/604.1',false],['robot','Mozilla/5.0 (X11; Linux x86_64) Safari/605.1.15 TheMachineDesktop/0.1.0 (linux)',false],['computer',null,false]]){
+  mode='paired';
+  const context=await browser.newContext({viewport:{width:390,height:900},...(ua?{userAgent:ua}:{})});await context.clock.setFixedTime(NOW);const page=await context.newPage();
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base+'/#settings/account');await page.locator('#acct-danger a[data-acct-go="delete"]').waitFor();
+  // added last, so it sees the address the click opens, and keeps the page here
+  await page.evaluate(()=>{window.went=null;addEventListener('click',e=>{const a=e.target.closest('a');if(a){window.went=a.href;e.preventDefault()}})});
+  const opens=async sel=>{await page.locator(sel).click();return page.evaluate(()=>window.went)};
+  const account='#settings-acct a[data-acct-go="account"]',security='#settings-acct a[data-acct-go="security"]',out='#acct-danger a[data-acct-go="delete"]';
+  assert.equal(await opens(account),APP+'/account'+(app?'?from=app':''),name);
+  assert.equal(await opens(security),APP+'/account?tab=security&focus=1'+(app?'&from=app':''),name);
+  assert.equal(await opens(security),APP+'/account?tab=security&focus=1'+(app?'&from=app':''),name+': once');
+  assert.equal(await opens(out),APP+'/account?tab=data&focus=1'+(app?'&from=app':'')+'#wipe',name);
+  for(const path of ['/support','/connectors'])assert.equal(await page.evaluate(u=>acctUrl(u),APP+path),APP+path+(app?'?from=app':''),name);
+  for(const other of [APP+'/setup#google',APP+'/connect/start/'+'x'.repeat(32),APP+'/accounts','https://elsewhere.example/account','https://app.themachine.computer:8443/account'])
+   assert.equal(await page.evaluate(u=>acctUrl(u),other),other,name);
+  await context.close();
+ }
  assert.deepEqual(errors,[]);
  console.log('account dashboard ok');
 }finally{await browser?.close();server.close()}
