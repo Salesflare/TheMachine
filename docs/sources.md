@@ -307,7 +307,8 @@ Comments, replies and @mentions on the owner's docs (`docs.comment`, `docs.menti
 **Acting on docs:**
 
 - A to-do's preparation can read one doc's text with `assistant doc --event <id> --job <job>`, only while that job runs and only for the task's own doc events.
-- It can also find docs with `assistant doc-find '<words>' --job <job>` (Docs connections of the to-do's area) and read one by `--file <file id>`: one that search found for this run, or a Google Doc linked in the task's messages.
+- It can also find docs with `assistant doc-find '<words>' --job <job>` (Docs connections of the to-do's area) and read one by `--file <file id>`: one that search found for this run, or a Google Doc linked in the task's messages or in what the owner wrote in its chat.
+- A Google Sheet or Slides file linked there reads the same way (`google_files.py`): read-only, for that run. A sheet gives its tabs, then the linked tab or range first and the other visible tabs, as the values they show, up to 2,000 cells (500 rows and 50 columns of a tab, six tabs a call). Slides give text and speaker notes in order, 60 slides a call. `--range 'Tab!A1:H200'` or `--range 21-40` reads another part. Its sign-in needs `spreadsheets.readonly` and `presentations.readonly` (Google classes both as sensitive, not restricted), or a wider scope it already holds.
 - In OneDrive, `doc-find` finds files of any kind by name, type and link (the owner's own OneDrive, not SharePoint sites or files shared with them). It reads the text of Word, PDF and plain text files. A PDF is read in a process of its own with a time and memory limit, up to 10 MB; scanned and protected ones give no text. Found files are never docs to edit.
 - All of this, and the writes below, only while the connection's **Can do things** is on ([abilities](#abilities)).
 
@@ -318,6 +319,7 @@ Every connection brings in signals; one that can send, reply, change events or w
 - **Brings in signals off:** no sync runs (the service restarts to stop it). The card shows no sync counts. A Docs connection still checks its consent hourly (`docs.refresh`), so its card says what it may write.
 - **Can do things off:** no draft through it (`next_actions.validate`), no approval through it (`Store.confirm_action`), no doc reads, finds or writes, and no calendar changes.
 - **Google Docs without drive.readonly:** a Docs connection works with `documents.readonly` (a Google Doc's text by its id) and `drive.file` (new docs, and the docs this app made: finding them and their comments). Neither is a restricted scope. With `drive.readonly` it reads, finds and syncs every doc, as before.
+- **Google Sheets and Slides:** a hosted Machine's Google Docs sign-in asks for them only with **Allow Sheets and Slides** on its card (the source `google_docs_files`, announced by the control plane with `docs_files_consent`), never by itself. A self-hosted Machine's `gog` Google sign-in reads them when it already holds `spreadsheets`, `presentations`, `drive` or their read-only forms; nothing asks `gog` for more, and that sign-in's own Google project needs the Sheets or Slides API on. Excel and PowerPoint files in Drive aren't read.
 - A `doc_reply` next action goes through the same review and confirm as email (`next_actions.DocReplyTransport`: posted once, never re-sent on an unknown outcome).
 - A `doc_write` next action creates a doc or edits one of the task's own docs, the same way ([Doc writes](#doc-writes)).
 

@@ -51,6 +51,10 @@ READ = {
     'drive.comments.get': ('GET', 'https://www.googleapis.com/drive/v3/files/{fileId}/comments/{commentId}'),
     'docs.documents.get': ('GET', 'https://docs.googleapis.com/v1/documents/{documentId}'),
     'drive.files.generateIds': ('GET', 'https://www.googleapis.com/drive/v3/files/generateIds'),
+    # A linked Google Sheet or Slides file (google_files.py), with spreadsheets.readonly or presentations.readonly
+    'sheets.spreadsheets.get': ('GET', 'https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}'),
+    'sheets.spreadsheets.values.get': ('GET', 'https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}'),
+    'slides.presentations.get': ('GET', 'https://slides.googleapis.com/v1/presentations/{presentationId}'),
     # Google Meet (connectors/google_meet.py), with meetings.space.readonly from Meet's own Google sign-in; the Gemini
     # notes doc is read with docs.documents.get and documents.readonly, never a Drive scope
     'meet.conferenceRecords.list': ('GET', 'https://meet.googleapis.com/v2/conferenceRecords'),
@@ -77,7 +81,8 @@ WRITE = {
 }
 # Where requests may go: Google's API hosts, over HTTPS. A URL built from a method template and its parameters is
 # checked once more before it's opened, and the broker's address must be HTTPS too (it gets this machine's token).
-GOOGLE_HOSTS = frozenset({'gmail.googleapis.com', 'www.googleapis.com', 'docs.googleapis.com', 'meet.googleapis.com'})
+GOOGLE_HOSTS = frozenset({'gmail.googleapis.com', 'www.googleapis.com', 'docs.googleapis.com', 'meet.googleapis.com',
+                          'sheets.googleapis.com', 'slides.googleapis.com'})
 _tokens: dict = {}
 _lock = threading.Lock()
 
