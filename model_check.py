@@ -28,6 +28,7 @@ import time
 
 import model_budget
 import model_fallback
+from machine import ai_training
 
 NAME = 'model_check'
 PROMPT = model_fallback.PROMPT  # fixed: nothing of the owner's goes out
@@ -37,6 +38,8 @@ FALLBACK_SECONDS = 300  # a fallback is looked for again at most this often
 TIMEOUT = model_fallback.TIMEOUT
 ERROR_CHARS = 300
 FALLBACKS = 3  # at most this many other models checked per round
+# A check that never reached the AI, in our own words (the cloud's ai_plan.py knows them too)
+NOT_REACHED = (f'No answer within {TIMEOUT} seconds.', 'OpenClaw could not be started.')
 
 # What never shows from a provider's error: anything like a key or token, an address
 SECRET = re.compile(r'(?i)\b(?:sk|rk|pk|key)-[A-Za-z0-9_-]{6,}|\bBearer\s+\S+|\b[A-Za-z0-9_\-]{32,}\b|[\w.+-]+@[\w-]+\.[\w.-]+')
@@ -85,12 +88,28 @@ def probe(config, model=None, run=subprocess.run):
     try:
         ok, data, stderr = model_fallback.turn(config, model, run)
     except subprocess.TimeoutExpired:
-        return False, f'No answer within {TIMEOUT} seconds.'
+        return False, NOT_REACHED[0]
     except OSError:
-        return False, 'OpenClaw could not be started.'
+        return False, NOT_REACHED[1]
     if ok:
         return True, None
     return False, _error(data, stderr) or 'The model gave an empty answer.'
+
+
+def plan_note(found, status):
+    """{'plan': 'chatgpt' or 'claude', 'plan_free': True when its provider says the account is free} for the line about
+    the plan under a failed check, else {}. Claude needs a paid plan: also when its plan is unknown. Codex comes with
+    ChatGPT's free plan too: only when ChatGPT says the account is free. `status` is what Settings shows
+    (model_usage.model_status): nothing is read for this. Not for a check that never reached the AI, a limit reached, an
+    API key or another provider, nor a plan its provider says is paid."""
+    status = status or {}
+    if found.get('error') in NOT_REACHED or status.get('limit_reached') or status.get('model') != found.get('model'):
+        return {}
+    plan = 'chatgpt' if status.get('chatgpt') else 'claude' if status.get('claude_plan') else None
+    kind = ai_training.plan_kind(status.get('plan'))
+    if not plan or kind not in (('free',) if plan == 'chatgpt' else (None, 'free')):
+        return {}
+    return {'plan': plan, **({'plan_free': True} if kind else {})}
 
 
 WARM_KEY = 'agent:main:assistant-warm-up'

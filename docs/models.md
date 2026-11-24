@@ -22,7 +22,10 @@ prompt ("Reply with OK.") to check that the AI answers (`model_check.py`). A tes
 one is retried after 1, 2, then every 5 minutes, and at once after a new sign-in. With an API key or a ChatGPT sign-in
 that is `openclaw infer model run --gateway`, a raw model call. A Claude model that runs through Claude Code goes
 through Claude Code's own print mode (`claude_print.py`, about 550 tokens), since `infer model run` never takes the
-Claude Code route. Only that model can answer: no fallback stands in.
+Claude Code route. Only that model can answer: no fallback stands in. When a Claude plan fails it, the dashboard adds
+that this needs a paid plan, unless Claude reports the plan as paid. When a ChatGPT sign-in fails it, it adds that the
+account is on the free plan only if ChatGPT reports so (not in the phone app). Neither when a limit is reached or
+nothing answered (`model_check.plan_note`).
 
 ### Your ChatGPT plan
 
