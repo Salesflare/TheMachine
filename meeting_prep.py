@@ -49,6 +49,7 @@ import hashlib
 import json
 import re
 
+import calendar_busy
 import timeutil
 from machine import model_reply, todo_states
 from machine.store import graph_promises
@@ -152,7 +153,7 @@ def eligible(meta, owned, owner_emails, owner_domains):
         return False, 'all_day'
     if meta.get('status') == 'cancelled':
         return False, 'cancelled'
-    if meta.get('transparency') == 'transparent':
+    if not calendar_busy.blocks(meta):
         return False, 'free'
     if not owned(meta):
         return False, 'not_theirs'

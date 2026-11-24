@@ -14,6 +14,8 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+
+import calendar_busy
 import timeutil
 from machine.owner_error import OwnerError
 
@@ -22,6 +24,7 @@ KINDS = ('relationships', 'meeting', 'intro', 'availability')
 MAX_DAYS, MAX_BLOCKS = 14, 300
 SLOT = re.compile(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z')
 USERNAME = re.compile(r'[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])')
+UNSAID = 'declined: not all of your calendar is known, and their Machine needs an update to be told so'
 ACTIONS = ('add', 'withdraw', 'accept', 'decline', 'block', 'remove', 'unblock')
 
 
@@ -38,54 +41,80 @@ def parse_availability(question):
         return None
     if not isinstance(days, int) or isinstance(days, bool) or not 1 <= days <= MAX_DAYS:
         return None
-    return {'start': start, 'days': days}
+    # unknown: the asker understands an answer that says what isn't known (older Machines don't send it)
+    return {'start': start, 'days': days, **({'unknown': True} if question.get('unknown') is True else {})}
+
+
+def _clean(spans):
+    return [[b[0], b[1]] for b in spans[:MAX_BLOCKS]
+            if isinstance(b, list) and len(b) == 2 and all(isinstance(x, str) and SLOT.fullmatch(x) for x in b) and b[0] < b[1]]
 
 
 def clean_availability(answer):
-    """A friend's free/busy answer: busy blocks only, [start, end] in UTC minutes. Anything else is dropped."""
+    """A friend's free/busy answer: busy blocks and unknown times only, [start, end] in UTC minutes. Anything else is
+    dropped. An older Machine's has no `unknown`."""
     if not isinstance(answer, dict) or not isinstance(answer.get('busy'), list):
         return None
-    busy = [[b[0], b[1]] for b in answer['busy'][:MAX_BLOCKS]
-            if isinstance(b, list) and len(b) == 2 and all(isinstance(x, str) and SLOT.fullmatch(x) for x in b) and b[0] < b[1]]
-    return {'busy': busy}
+    return {'busy': _clean(answer['busy']), **({'unknown': _clean(answer['unknown'])} if isinstance(answer.get('unknown'), list) else {})}
 
 
 def _slot(stamp):
     return stamp.astimezone(dt.timezone.utc).strftime('%Y-%m-%dT%H:%MZ')
 
 
-def free_busy(db, config, question):
-    """The owner's busy blocks for the days asked, from their own calendars: start and end only. All-day events,
-    canceled ones, ones they declined, and calendars shared with them by someone else don't count. Overlaps merge."""
+def _at(slot):
+    return dt.datetime.strptime(slot, '%Y-%m-%dT%H:%MZ').replace(tzinfo=dt.timezone.utc)
+
+
+def window(question):
+    """The days asked, in any time zone: from 14 hours before the first to 14 after the last."""
     start = dt.datetime.fromisoformat(question['start']).replace(tzinfo=dt.timezone.utc) - dt.timedelta(hours=14)
-    end = start + dt.timedelta(days=question['days'], hours=28)
-    own = [a['id'] for a in config.get('accounts', [])]
-    if not own:
-        return {'busy': []}
-    blocks = []
-    for row in db.execute("SELECT occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND account_id IN (SELECT value FROM json_each(?)) "
-                          'AND occurred_at<? AND occurred_at>=?', (json.dumps(list(own)), end.isoformat(), (start - dt.timedelta(days=2)).isoformat())):
-        m = json.loads(row['metadata'] or '{}')
-        if m.get('all_day') or m.get('status') == 'cancelled' or m.get('access') == 'shared_read_only':
-            continue
-        if any(isinstance(a, dict) and a.get('self') and a.get('responseStatus') == 'declined' for a in m.get('attendees') or []):
-            continue
-        try:
-            a = dt.datetime.fromisoformat(str(row['occurred_at']).replace('Z', '+00:00'))
-            b = dt.datetime.fromisoformat(str(m.get('end_at') or '').replace('Z', '+00:00'))
-        except ValueError:
-            continue
-        if a.tzinfo is None or b.tzinfo is None or b <= a or b <= start or a >= end:
-            continue
-        blocks.append([max(a, start), min(b, end)])
-    blocks.sort()
-    merged = []
-    for a, b in blocks:
-        if merged and a <= merged[-1][1]:
-            merged[-1][1] = max(merged[-1][1], b)
-        else:
-            merged.append([a, b])
-    return {'busy': [[_slot(a), _slot(b)] for a, b in merged if _slot(a) < _slot(b)][:MAX_BLOCKS]}
+    return start, start + dt.timedelta(days=question['days'], hours=28)
+
+
+def free_busy(db, config, question, current=None):
+    """The owner's busy blocks for the days asked, from their own calendars, and the times those don't tell (unknown,
+    calendar_busy.py): start and end only. Events that are Free, all-day ones not marked Busy, canceled ones, ones they
+    declined, and calendars shared with them by someone else don't count. Overlaps merge."""
+    start, end = window(question)
+    busy, unknown = calendar_busy.read(db, config, start, end, current or timeutil.clock())
+    if len(busy) > MAX_BLOCKS:  # what doesn't fit isn't free
+        unknown, busy = calendar_busy.merge([*unknown, (busy[MAX_BLOCKS][0], end)]), busy[:MAX_BLOCKS]
+    return {'busy': [[_slot(a), _slot(b)] for a, b in busy if _slot(a) < _slot(b)],
+            'unknown': [[_slot(a), _slot(b)] for a, b in unknown if _slot(a) < _slot(b)]}
+
+
+def sendable(question, answer, current=None):
+    """The answer as the asker's Machine can take it, else None. One from before `unknown` would show an unknown time as
+    free, so it gets no answer (Declined) when any time from now on isn't known."""
+    at = _slot(current or timeutil.clock())
+    return answer if question.get('unknown') or all(b <= at for _, b in answer.get('unknown') or ()) else None
+
+
+def unknown_in(question, answer, at, tz):
+    """What an answer given at `at` doesn't tell of the days asked (from then on, in tz): [(from, until)], and whether
+    that is all of it. An older Machine never says: nothing busy may as well be no calendar, and it read OLD_DAYS
+    ahead."""
+    first = dt.datetime.combine(dt.date.fromisoformat(question['start']), dt.time(), tz).astimezone(dt.timezone.utc)
+    last = dt.datetime.combine(dt.date.fromisoformat(question['start']) + dt.timedelta(days=question['days']), dt.time(), tz).astimezone(dt.timezone.utc)
+    first = max(first, at) if at < last else first
+    if 'unknown' in answer:
+        spans = [(_at(a), _at(b)) for a, b in answer['unknown']]
+    else:
+        spans = [(at + dt.timedelta(days=calendar_busy.OLD_DAYS), last)] if answer.get('busy') else [(first, last)]
+    spans = calendar_busy.merge((max(a, first), min(b, last)) for a, b in spans)
+    return spans, spans == [(first, last)]
+
+
+def answered_at(row):
+    return calendar_busy.moment(row['answered_at'] or row['at']) or timeutil.clock()
+
+
+def shown(row, tz):
+    """An answer as the Fleet tab shows it: the busy times, and what isn't known of the days asked ('all' or its spans)."""
+    answer = json.loads(row['answer'])
+    spans, everything = unknown_in(json.loads(row['question']), answer, answered_at(row), tz)
+    return {'busy': answer.get('busy', []), 'unknown': 'all' if everything else [[_slot(a), _slot(b)] for a, b in spans]}
 
 
 def question_text(question):
@@ -94,11 +123,12 @@ def question_text(question):
 
 
 def answer_text(answer):
-    busy = (answer or {}).get('busy') or []
+    busy, unknown = (answer or {}).get('busy') or [], (answer or {}).get('unknown')
     if not busy:
-        return 'free the whole time'
+        return 'free the whole time' if unknown == [] else 'nothing busy that is known; not all of it is known'
     shown = ', '.join(f'{a[5:10]} {a[11:16]}–{b[11:16] if a[:10] == b[:10] else b[5:10] + " " + b[11:16]} UTC' for a, b in busy[:6])
-    return f'busy {len(busy)} time{"s" if len(busy) != 1 else ""}: {shown}' + (' …' if len(busy) > 6 else '')
+    return (f'busy {len(busy)} time{"s" if len(busy) != 1 else ""}: {shown}' + (' …' if len(busy) > 6 else '')
+            + ('; not all of it is known' if unknown else ''))
 
 
 class Friends:
@@ -151,7 +181,7 @@ class Friends:
         ref = self.friends_ref()
         if not ref or not self.member(ref, member_id):
             raise OwnerError('Not one of your friends')
-        question = parse_availability({'start': start, 'days': days})
+        question = parse_availability({'start': start, 'days': days, 'unknown': True})
         if not question:
             raise OwnerError(f'Pick a day and 1 to {MAX_DAYS} days')
         return self.ask('availability', question, fleet=ref, to=[member_id])

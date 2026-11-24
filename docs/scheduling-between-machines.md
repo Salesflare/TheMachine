@@ -40,7 +40,12 @@ booked. Code: `meet.py` (protocol, the to-do's states) and `cloud/meet.py` in th
 - **Limits.** The cloud limits lookups (20 an hour, 60 a day) and messages per person and per pair. Each Machine also
   answers at most 6 asks a day from one person and 40 a day in all.
 - **The answer.** Only the asked window, at most 14 days, starting within 60 days. Free times inside work hours only,
-  busy times widened to the 15-minute grid. Private and personal events count as busy, without any detail.
+  busy times widened to the 15-minute grid. Private and personal events count as busy, without any detail; events
+  marked Free don't, and all-day ones only when they are marked Busy.
+- **Not known.** Free means known to be free. No calendar of the owner's own, one not read for 24 hours, and days past
+  what is read ahead (30 days, machine/sources/calendar.py) are never offered, on either side or on a booking link
+  (calendar_busy.py). Nothing known in the window: the answer is `no`, and the proposer's to-do keeps its email draft.
+  Activity then says the calendar isn't known, not that no time fits.
 - **Activity.** Each exchange is a line under Activity, Calendar: who asked, which window, which slot, how it ended.
   Never an event's title or details.
 
@@ -64,13 +69,16 @@ All sealed, all with a session id (32 hex):
 | Type | From | Body |
 |---|---|---|
 | `ask` | proposer | window `start` (a date) and `days`, `minutes` |
-| `free` | other | free times `[[start, end]]` UTC on the 15-minute grid, preferred ones, `book` (can show the to-do) |
-| `no` | other | nothing else (the reason stays in its own Activity) |
+| `free` | other | free times `[[start, end]]` UTC on the 15-minute grid, preferred ones, `known` (`all` or `some` of the work hours asked), `book` (can show the to-do) |
+| `no` | other | `known`: `none` when its calendar isn't known then; nothing else (any other reason stays in its own Activity) |
 | `propose` | proposer | `start`, `end`, `video`, `round` |
 | `ok` | other | the `start` its owner tapped Book it on |
 | `other` | other | asks for another time |
 | `cancel` | either | Not needed, or the proposer gave up |
 | `booked` | proposer | `start`, `end`: the invite went out |
+
+A Machine from before `known` ignores it, and reads a `no` as Declined. Its own `free` is used up to 30 days ahead, and
+not at all when every work hour in it is free: that may as well be no calendar.
 
 ## Preferences
 
@@ -80,7 +88,8 @@ from the owner's own recent meetings (Zoom, Google Meet or Teams links); the to-
 
 ## No Machine: a link to pick a time
 
-When the ask falls back for lack of a Machine, an answer, a fitting time or rounds (not when the other side declined),
+When the ask falls back for lack of a Machine, an answer, a fitting time, rounds or their calendar (not when the other side declined, or
+the owner's own calendar isn't known),
 the proposer's Machine makes a booking link (meet_link.py) and adds it to the to-do's email draft as one line,
 `[Pick a time](link)`: a link with those words in the HTML part, the words with the address on its own line in the plain
 text. The email carries no branding and stays the owner's own words; the page has the footer "<Name>'s Machine found

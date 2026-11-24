@@ -195,7 +195,8 @@ def plan_body(sender, question, calendar=None):
 
 def common_free(busy_lists, start, days, tz, hours=(FREE_FROM, FREE_UNTIL), minutes=FREE_MINUTES):
     """The times everyone is free: within `hours` local time on each day, at least `minutes` long. busy_lists holds each
-    member's busy blocks ([start, end] UTC slots, as friends.free_busy gives them). Plain code."""
+    member's busy blocks ([start, end] UTC slots, as friends.free_busy gives them), and the times one's calendar doesn't
+    tell, which are never free. Plain code."""
     blocks = []
     for busy in busy_lists:
         for a, b in busy or []:
@@ -259,7 +260,7 @@ class Family:
         """Ask everyone in the Family when they are busy; the common free times show once they answer."""
         import friends
         ref = self._family()
-        question = friends.parse_availability({'start': start, 'days': days})
+        question = friends.parse_availability({'start': start, 'days': days, 'unknown': True})
         if not question:
             raise OwnerError(f'Pick a day and 1 to {friends.MAX_DAYS} days')
         sent, context = self.ask_context('availability', question, 'family-free:', ref)
@@ -372,24 +373,31 @@ class Family:
         with self.connect() as db:
             rows = db.execute("SELECT * FROM fleet_out WHERE fleet=? AND context LIKE 'family-%' AND at>=? ORDER BY at DESC LIMIT 200",
                               (ref, since)).fetchall()
-            mine = {}
             groups = {}
             for r in rows:
                 kind, token = r['context'].split(':', 1)
                 group = groups.setdefault(r['context'], {'id': token, 'kind': kind[7:], 'at': r['at'], 'question': json.loads(r['question']), 'answers': []})
                 answer = json.loads(r['answer']) if r['answer'] else None
-                group['answers'].append({'member_id': r['member_id'], 'name': r['name'], 'status': r['status'], 'answer': answer})
+                group['answers'].append({'member_id': r['member_id'], 'name': r['name'], 'status': r['status'], 'answer': answer,
+                                         'told': friends.answered_at(r)})
         free, todos, plans = [], [], []
         for g in groups.values():
             q = g['question']
             if g['kind'] == 'free':
-                answered = [a for a in g['answers'] if a['status'] == 'answered' and a['answer']]
-                if g['id'] not in mine:
-                    with self.connect() as db:
-                        mine[g['id']] = friends.free_busy(db, self.config, q).get('busy', [])
-                slots = common_free([mine[g['id']], *[a['answer'].get('busy') for a in answered]], q['start'], q['days'], tz)
-                free.append({'id': g['id'], 'at': g['at'], 'start': q['start'], 'days': q['days'], 'answered': len(answered),
+                with self.connect() as db:
+                    calendars = [(None, friends.free_busy(db, self.config, q), timeutil.clock())]  # None: the owner's own
+                calendars += [(a['name'], a['answer'], a['told']) for a in g['answers'] if a['status'] == 'answered' and a['answer']]
+                unknown, lists = [], []
+                for name, answer, at in calendars:
+                    spans, everything = friends.unknown_in(q, answer, at, tz)
+                    if spans:  # not known, or not all of it: said, and never a free time
+                        unknown.append(name)
+                    if not everything:
+                        lists += [answer.get('busy'), [[a.isoformat(), b.isoformat()] for a, b in spans]]
+                slots = common_free(lists, q['start'], q['days'], tz) if lists else []
+                free.append({'id': g['id'], 'at': g['at'], 'start': q['start'], 'days': q['days'], 'known': len(lists) // 2,
                              'asked': len(g['answers']), 'waiting': [a['name'] for a in g['answers'] if a['status'] in ('asked', 'waiting')],
+                             'unknown': unknown,
                              'slots': [{'from': a, 'until': b, 'text': free_text([a, b])} for a, b in slots[:12]]})
             elif g['kind'] == 'todo':
                 a = g['answers'][0]

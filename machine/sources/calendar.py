@@ -83,6 +83,9 @@ def calendar_event(account, raw, timezone):
         metadata['video'] = str(raw['hangoutLink'])[:300]
     if raw.get('transparency') == 'transparent':  # shown as free: never a clash (calendar_clashes.py)
         metadata['transparency'] = 'transparent'
+    elif 'date' in start and raw.get('busy', raw.get('eventType') not in ('birthday', 'workingLocation')):
+        # all day and Busy, as its calendar says (busy: not Google's, whose events are Busy unless they say Free)
+        metadata['transparency'] = 'opaque'
     if raw.get('eventType') == 'birthday':  # a contact's birthday Google puts on the calendar (birthdays.py), or the owner's own
         props = raw.get('birthdayProperties') or {}
         metadata.update(event_type='birthday', birthday={'type': str(props.get('type') or 'birthday')[:20]})
@@ -300,6 +303,13 @@ def calendar_keys(metadata, title, start, end):
     return keys
 
 
+def read_window(state):
+    """The days a calendar was read in full, kept while the window is read again (calendar_busy.known)."""
+    if state.get('read_until'):
+        return {k: state[k] for k in ('read_from', 'read_until')}
+    return {'read_from': state['time_min'], 'read_until': state['time_max']} if state.get('mode') == 'incremental' else {}
+
+
 def sync_calendar(store, config, account):
     if account.get('service') != 'outlook_calendar':
         return _sync_calendar(store, config, account)
@@ -319,9 +329,10 @@ def _sync_calendar(store, config, account):
                      current >= dt.datetime.fromisoformat(state['refresh_at'])) or (
             outlook_read and state.get('outlook_read') != ms_graph.CALENDAR_READ and not state.get('page_token')):
         # Refresh the rolling window daily so unchanged recurring occurrences enter it.
+        read = read_window(state)
         state = {'mode': 'bootstrap', 'time_min': (current - dt.timedelta(days=CALENDAR_BACK_DAYS)).isoformat(),
                  'time_max': (current + dt.timedelta(days=30)).isoformat(), 'seen': [],
-                 'refresh_at': (current + dt.timedelta(days=1)).isoformat(), **outlook_read}
+                 'refresh_at': (current + dt.timedelta(days=1)).isoformat(), **outlook_read, **read}
         store.commit_page(account['id'], state, [], record_sync=False)
     params = {'singleEvents': True, 'showDeleted': True, 'maxResults': 100}
     if state['mode'] == 'incremental':
@@ -388,6 +399,7 @@ def _sync_calendar(store, config, account):
                     e = store.tombstone(account['id'], row['source_id'])
                     e['metadata']['removal_reason'] = 'absent_from_complete_window'
                     events.append(e)
+            next_state.update(read_from=min(state.get('read_from') or state['time_min'], state['time_min']), read_until=state['time_max'])
         next_state.update(mode='incremental', sync_token=page['nextSyncToken'])
         next_state.pop('page_token', None)
         next_state.pop('seen', None)

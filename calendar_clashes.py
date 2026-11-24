@@ -30,6 +30,8 @@ import datetime as dt
 import hashlib
 import json
 import sqlite3
+
+import calendar_busy
 from machine import todo_states
 
 SCHEMA = ('CREATE TABLE IF NOT EXISTS calendar_clashes(dedupe_key TEXT PRIMARY KEY,suggestion_id TEXT,event_id INTEGER NOT NULL,'
@@ -72,7 +74,7 @@ def _own_response(metadata):
 
 def firm(metadata, owned):
     """Whether an event blocks the owner's time for sure: timed, busy, live, theirs and not tentative."""
-    if metadata.get('all_day') or metadata.get('transparency') == 'transparent':
+    if metadata.get('all_day') or not calendar_busy.blocks(metadata):  # one rule for what is Busy
         return False
     if metadata.get('status') in ('tentative', 'cancelled'):
         return False

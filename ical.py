@@ -437,6 +437,7 @@ def _base(event, zones, default, owner):
             'iCalUID': text_of(event, 'UID')[:500] or None}
     if text_of(event, 'TRANSP').upper() == 'TRANSPARENT':
         item['transparency'] = 'transparent'
+    item['busy'] = text_of(event, 'TRANSP').upper() == 'OPAQUE'  # left out, an all-day event's Busy isn't the calendar's word
     return item
 
 

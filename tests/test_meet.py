@@ -87,12 +87,15 @@ class Machine:
         self.root.mkdir(parents=True)
         self.path = self.root / 'db.sqlite'
         net.person(name, email)
+        self.account = 'cal-' + name
         config = {'database': str(self.path), 'network_keys': str(self.root / 'network-keys.json'),
                   'accounts': [{'id': 'cal-' + name, 'service': 'calendar', 'email': email}], 'fleet': {'url': 'https://cp.example/api/fleet'}}
         with self.connect() as db:
             db.executescript('CREATE TABLE events(id INTEGER PRIMARY KEY,account_id TEXT,source_id TEXT,kind TEXT,occurred_at TEXT,title TEXT,'
                              'body TEXT,metadata TEXT,deleted INTEGER DEFAULT 0);'
-                             'CREATE TABLE graph_nodes(id TEXT PRIMARY KEY,kind TEXT,name TEXT,strength REAL,info TEXT);')
+                             'CREATE TABLE graph_nodes(id TEXT PRIMARY KEY,kind TEXT,name TEXT,strength REAL,info TEXT);'
+                             'CREATE TABLE checkpoints(account_id TEXT PRIMARY KEY,state TEXT NOT NULL,last_success TEXT);')
+        self.calendar_read(until=MONDAY + dt.timedelta(days=90), at=MONDAY + dt.timedelta(days=60))
         self.relay = Relay(net, name)
         self.box = fleet.Fleet(self.connect, config, lambda: 'token', relay=self.relay)
         self.box.relay._publish()  # its keys on the Network, as a directory round does
@@ -130,7 +133,13 @@ class Machine:
     def busy(self, start, end, title='Board review', **meta):
         with self.connect() as db:
             db.execute("INSERT INTO events(account_id,kind,occurred_at,title,metadata) VALUES(?,'calendar.event',?,?,?)",
-                       (self.box.config['accounts'][0]['id'], start, title, json.dumps({'end_at': end, **meta})))
+                       (self.account, start, title, json.dumps({'end_at': end, **meta})))
+
+    def calendar_read(self, until, at=MONDAY):
+        """The calendar was read at `at`, in full up to `until`."""
+        state = {'mode': 'incremental', 'read_from': (MONDAY - dt.timedelta(days=7)).isoformat(), 'read_until': until.isoformat()}
+        with self.connect() as db:
+            db.execute('INSERT OR REPLACE INTO checkpoints VALUES(?,?,?)', (self.account, json.dumps(state), at.isoformat()))
 
     def session(self, role=None):
         with self.connect() as db:
@@ -224,6 +233,71 @@ class Scheduling(unittest.TestCase):
         self.run_both()
         self.assertEqual(self.ann.session('asker')['state'], 'fallback')  # Ann's to-do keeps its email draft
         self.assertEqual(self.ann.session('asker')['note'], 'declined')
+
+    def outcome(self, machine):
+        with machine.connect() as db:
+            return next((x['status'], x['detail']) for x in meet.activity_lines(db, 10))
+
+    def test_a_calendar_that_isnt_known_is_never_offered(self):
+        # theirs: refused, with no times, and said as not known rather than declined
+        self.bob.calendar_read(until=MONDAY + dt.timedelta(days=30), at=MONDAY - dt.timedelta(hours=25))
+        self.ann.box.meet_start('c1', 'bob@two.example', 'Bob', start='2026-11-03', days=2)
+        self.run_both()
+        self.assertEqual((self.ann.session()['state'], self.ann.session()['note'], self.ann.session()['free']), ('fallback', 'theirs', None))
+        self.assertEqual(self.outcome(self.ann), ('Not known', 'Their calendar isn’t known for these days'))
+        self.assertEqual(self.outcome(self.bob), ('Not known', 'Your calendar isn’t known for these days'))
+        # a failed read or two changes nothing
+        self.bob.calendar_read(until=MONDAY + dt.timedelta(days=30), at=MONDAY - dt.timedelta(hours=5))
+        self.ann.box.meet_start('c2', 'bob@two.example', 'Bob', start='2026-11-03', days=2)
+        self.run_both()
+        self.assertEqual(self.ann.session()['state'], 'proposed')
+        # the owner's own: theirs isn't asked at all
+        self.ann.calendar_read(until=MONDAY + dt.timedelta(days=30))
+        sent = len(self.net.sent)
+        self.assertEqual(self.ann.box.meet_start('c3', 'bob@two.example', 'Bob', start='2026-12-07', days=5), 'fallback')
+        self.assertEqual((self.ann.session()['note'], len(self.net.sent)), ('mine', sent))
+        self.assertEqual(self.outcome(self.ann), ('Not known', 'Your calendar isn’t known for these days'))
+
+    def test_only_the_known_days_of_a_window_are_offered(self):
+        self.bob.calendar_read(until=dt.datetime(2026, 12, 2, 12, 0, tzinfo=dt.timezone.utc))
+        self.ann.busy('2026-12-01T00:00:00+00:00', '2026-12-02T11:00:00+00:00')
+        self.ann.box.meet_start('c1', 'bob@two.example', 'Bob', start='2026-12-01', days=4)
+        self.run_both()
+        self.assertEqual(json.loads(self.ann.session('asker')['slot']), ['2026-12-02T11:15Z', '2026-12-02T11:45Z'])
+        self.ann.busy('2026-12-01T00:00:00+00:00', '2026-12-02T12:00:00+00:00')
+        self.ann.box.meet_start('c2', 'bob@two.example', 'Bob', start='2026-12-01', days=4)
+        self.run_both()
+        self.assertEqual(self.ann.session('asker')['note'], 'some')  # not "No time fits you both"
+        self.assertEqual(self.outcome(self.ann), ('No time found', 'No time on the days both calendars are known'))
+
+    def test_a_machine_from_before_known(self):
+        send, sent = self.bob.box._meet_send, []
+
+        def older(row, payload):  # Bob's Machine on an older release: it doesn't say what it knows
+            sent.append(payload)
+            return send(row, {k: v for k, v in payload.items() if k != 'known'})
+        self.bob.box._meet_send = older
+        # every work hour free may as well be no calendar
+        self.ann.box.meet_start('c1', 'bob@two.example', 'Bob', start='2026-11-03', days=3)
+        self.run_both()
+        self.assertEqual((self.ann.session()['state'], self.ann.session()['note']), ('fallback', 'theirs'))
+        self.run_both()
+        self.assertEqual(self.bob.session('answerer')['state'], 'canceled')
+        # with a busy time in it, it is one; but not past the days an older Machine reads
+        self.bob.busy('2026-11-03T12:00:00+00:00', '2026-11-03T13:00:00+00:00')
+        self.ann.box.meet_start('c2', 'bob@two.example', 'Bob', start='2026-11-03', days=3)
+        self.run_both()
+        self.assertEqual(self.ann.session('asker')['state'], 'proposed')
+        self.bob.busy('2026-12-08T12:00:00+00:00', '2026-12-08T13:00:00+00:00')
+        self.ann.box.meet_start('c3', 'bob@two.example', 'Bob', start='2026-12-07', days=5)
+        self.run_both()
+        self.assertEqual((self.ann.session()['state'], self.ann.session()['note']), ('fallback', 'theirs'))
+        # and an older asker reads a refusal in the shape it knows
+        self.bob.calendar_read(until=MONDAY + dt.timedelta(days=30), at=MONDAY - dt.timedelta(days=3))
+        self.ann.box.meet_start('c4', 'bob@two.example', 'Bob', start='2026-11-03', days=3)
+        self.run_both()
+        self.assertEqual(sent[-1], {'t': 'no', 'known': 'none'})
+        self.assertEqual(self.ann.session()['note'], 'declined')
 
     def test_no_machine_falls_back_to_the_email_draft(self):
         self.assertEqual(self.ann.box.meet_start('c1', 'carol@three.example', 'Carol'), 'fallback')

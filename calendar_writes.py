@@ -310,6 +310,8 @@ def body(action, key=None):
         out['attendees'] = [{'email': g} for g in action['guests']]
     if action['op'] == 'create':
         out['id'] = event_id(key)
+        if action['all_day']:  # Free, as Google's own form adds one: the API alone would say Busy all day
+            out['transparency'] = 'transparent'
     return out
 
 

@@ -9,7 +9,7 @@ order: 5
 ---
 ## Friends
 
-Add someone by their exact username, in the **Fleet** tab under Friends. Friends can ask who knows someone, get meeting context and warm intros, and see when you're busy (busy times only, never what). Remove or block a friend any time.
+Add someone by their exact username, in the **Fleet** tab under Friends. Friends can ask who knows someone, get meeting context and warm intros, and see when you're busy (busy times only, never what). Days a calendar doesn't tell show as not known, never as free. Remove or block a friend any time.
 
 ## Find people you know
 
@@ -33,6 +33,8 @@ Phone numbers count too: the numbers in your WhatsApp chats with people you wrot
 When someone with a Machine writes "let's meet next week", your Machine asks theirs for free times and finds one that suits you both, within your work hours. Each of you gets one to-do, like "Meet Alex Example", with the time below it. Tap **Book it**, **Other time** or **Not needed**. The invite goes out only once you both tapped Book it.
 
 Only free or busy goes over, sealed end to end, for at most 14 days and rounded to 15 minutes. Private events count as busy. A Machine can ask only when you emailed each other both ways. Set it under **What other Machines may ask mine**: **Free/busy for scheduling** or **Off**, with your meeting length, buffer and preferred times. Each ask shows in Activity, under Calendar.
+
+A time counts as free only when your calendar says so. Your Machine offers none with no calendar connected, when it couldn't be read for a day, or more than 30 days ahead. All-day events count when you marked them Busy, and events marked Free never do.
 
 No Machine there, or no answer: the email draft gets a link where they pick one of your free times. Their pick is a to-do with **Book it**; nothing is booked before you tap it.
 

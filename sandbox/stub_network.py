@@ -130,7 +130,7 @@ class Network:
             return {'stage': 'accepted'} if index == 0 else None
         if kind == 'availability':  # the first one busy most mornings, from tomorrow
             day = dt.datetime.now(dt.timezone.utc).date() + dt.timedelta(days=1)
-            return {'busy': [[f'{day + dt.timedelta(days=n)}T07:00Z', f'{day + dt.timedelta(days=n)}T10:30Z'] for n in range(7)] if index == 0 else []}
+            return {'busy': [[f'{day + dt.timedelta(days=n)}T07:00Z', f'{day + dt.timedelta(days=n)}T10:30Z'] for n in range(7)] if index == 0 else [], 'unknown': []}
         return None
 
     def answer_later(self, ids, kind, fleet_id):

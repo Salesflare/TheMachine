@@ -8,7 +8,8 @@ self-hosted. Your Machines coordinate over the Network, under rules each of you 
 - **When are we all free?** In the Fleet tab under your Family, pick a day and how many days. Every member's Machine
   answers from its owner's own calendars with **busy times only**: start and end, never what, where or with whom.
   Your Machine works out the times everyone is free (between 8:00 and 21:00, at least an hour) and shows them as they
-  answer.
+  answer. A time someone's calendar doesn't tell (none connected, not read for a day, or more than 30 days ahead) is
+  never one of them, and that person is named: "2 of 3 calendars · not all known: Alex".
 - **To-dos.** Ask one member to do something ("Pick up the groceries", with a due date if you like). It waits on their
   Machine as a to-do with **Accept** and **Decline**. Once accepted it is their to-do, and on its due
   day their Machine reminds them once (phone, and Telegram when that is on). You see asked, accepted, declined, and done
@@ -130,7 +131,7 @@ Under **Sharing**, the Family has the same rules as a Work Fleet, one per kind f
 
 | Kind | Default | What they get |
 | --- | --- | --- |
-| Free/busy times | Always | your busy times on those days, never what |
+| Free/busy times | Always | your busy times on those days, and the times your calendar doesn't tell; never what |
 | To-dos | Ask me first | accepted, then done when you finish it |
 | Plans | Ask me first | "is in" or "can't make it"; never your calendar |
 | To-dos you already did | Always | "done" and the day, for a to-do you both have (a code, never the to-do); Always or Never only |

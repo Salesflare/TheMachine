@@ -1981,7 +1981,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             return brief_facts(db, self.fleet_accounts(fleet or 'work'), question['since'], secret, self.internal(fleet or 'work'),
                                team=team, mine=self.my_emails(), allowed=self.brief_shares(db, fleet or 'work'))
         if kind == 'availability':  # a friend's free/busy question: busy blocks only (friends.py)
-            return friends.free_busy(db, self.config, question)
+            return friends.sendable(question, friends.free_busy(db, self.config, question))
         if kind == 'relationships':
             return relationships(db, question['about'], accounts, details, keep, ok)
         if self.kind_of(fleet or 'work') == friends.KIND:  # a friend's meeting: never about the owner themselves
@@ -2108,8 +2108,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                              f'declined: {FREE_OPEN} of their questions already wait for you')
                 elif rule == 'always':
                     body = self.compute(db, kind, question, details, fleet, scope, ok=gate)
-                    status = 'answered'
-                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question, db),
+                    status = 'answered' if body is not None else 'declined'
+                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question, db), friends.UNSAID if body is None else
                              ('answered with what the Team Graph shares: ' if kind == 'brief' or gate else 'answered: ') + answer_text(kind, body))
                 else:
                     draft = None
@@ -2188,7 +2188,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         with self.connect() as db:
             db.execute('UPDATE fleet_in SET status=?,decided_at=?,choice=? WHERE id=?', (status, now(), choice, row['id']))
             self.log(db, 'in', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], question, db),
-                     ('answered: ' + answer_text(row['kind'], answer)) if answer is not None else 'declined')
+                     ('answered: ' + answer_text(row['kind'], answer)) if answer is not None
+                     else friends.UNSAID if choice in ('once', 'always') else 'declined')
         if retell and row['telegram_message_id'] and self.retell:
             self.retell(row['telegram_message_id'])
         if choice in ('always', 'never'):  # the same teammate's other waiting questions of this kind follow the new rule
@@ -2227,8 +2228,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 rule, gate = self.answer_gate(db, row['fleet'], row['member_id'], row['kind'], rule)
                 if rule == 'always' and verdict != 'never':
                     answer = self.compute(db, row['kind'], question, details, row['fleet'], scope, ok=gate)
-                    status, outcome = 'answered', ('answered with what the Team Graph shares: ' if gate
-                                                   else 'shared automatically (your Always rule): ') + answer_text(row['kind'], answer)
+                    status, outcome = ('declined', friends.UNSAID) if answer is None else (
+                        'answered', ('answered with what the Team Graph shares: ' if gate
+                                     else 'shared automatically (your Always rule): ') + answer_text(row['kind'], answer))
                 elif rule == 'never' or verdict == 'never':
                     answer, status, outcome = None, 'declined', 'declined automatically (your Never rule)'
                 else:
@@ -3622,7 +3624,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                       **({'withdrawn': True} if r['id'] in withdrawn else {}),
                       'question': question_text(r['kind'], json.loads(r['question']), db),
                       'answer': answer_text(r['kind'], json.loads(r['answer'])) if r['answer'] else None,
-                      **({'busy': json.loads(r['answer']).get('busy', [])} if r['kind'] == 'availability' and r['answer'] else {}),
+                      **(friends.shown(r, self.local_now().tzinfo) if r['kind'] == 'availability' and r['answer'] else {}),
                       **({'delivered': delivered[r['id']]} if r['id'] in delivered and r['status'] in ('asked', 'waiting') else {}),
                       **({'no_ping': True} if r['status'] in ('asked', 'waiting') and r['id'] in noping else {})}
                      for r in db.execute("SELECT * FROM fleet_out WHERE (context IS NULL OR (context NOT LIKE 'card:%' AND context NOT LIKE 'brief:%' "

@@ -190,6 +190,18 @@ class BookingLinks(unittest.TestCase):
         self.assertEqual(self.ann.cards, {})
         self.assertEqual(self.ann.log()[-1]['outcome'], 'taken')
 
+    def test_a_calendar_that_isnt_known_offers_nothing(self):
+        link = self.start()
+        slot = self.links.page(link)['slots'][2]
+        self.ann.calendar_read(until=tm.MONDAY + dt.timedelta(days=30), at=tm.MONDAY - dt.timedelta(hours=25))
+        self.links.pick(link, slot)
+        self.ann.box.meet_round()
+        self.assertEqual(self.ann.cards, {})
+        self.assertEqual(self.ann.log()[-1]['outcome'], 'mine')  # not "no longer free"
+        self.ann.clock += dt.timedelta(hours=2)
+        self.ann.box.meet_round()
+        self.assertEqual(self.links.page(link)['slots'], [])
+
     def test_the_page_follows_the_calendar(self):
         link = self.start()
         first = self.links.page(link)['slots'][0]
