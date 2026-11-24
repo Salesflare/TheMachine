@@ -6,16 +6,29 @@ import json
 
 import enrichment
 from graph import (
-    FLOOR, FREEMAIL, JOINED_WHY, auto_side, linkedin_key, name_words, org_from_name, person_shown, personal_relation,
+    FLOOR, FREEMAIL, JOINED_WHY, auto_side, linkedin_key, name_words, org_from_name, parse_time, person_shown, personal_relation,
     plain_name, shown_id, shown_name,
 )
 from machine.graph.same_person import phone_key
 from mail_senders import address_name, bulk, relay, shared_inbox
 
 
+def company_now(group, domains, wrote):
+    """(domains with the one they are at now first, when they last wrote from any of them). Now: where they last wrote
+    from, going by mail whose sender was checked (verified_sender) when there is any. One they only got mail at says less."""
+    last = {}  # domain -> (checked, at)
+    for i in group:
+        domain = i.rpartition('@')[2]
+        if i in wrote and domain in domains:
+            at, checked = wrote[i]
+            last[domain] = max(last.get(domain, (False, at)), (bool(checked), checked or at))
+    heard = max((wrote[i][0] for i in group if i in wrote and i.rpartition('@')[2] in last), default=None)
+    return sorted(domains, key=lambda d: (d in last, *last.get(d, ())), reverse=True) if last else domains, heard
+
+
 def person_nodes(db, owner, names, strength, union, keys, x_names, roles, last_day, current, tz, listed, kept,
                  node_events, mailings, appears, kin, thread_sides, on_projects, project_side, accounts,
-                 side_of_account, headlines, live_roles, next_meeting, manual_people, history_events, live, joined):
+                 side_of_account, headlines, live_roles, next_meeting, manual_people, history_events, live, joined, wrote):
     # Write.
     nodes, links, members = [], [], collections.defaultdict(list)
     inboxes = collections.defaultdict(list)  # domain -> [(node, strength)] of its shared inboxes: they count for the organization
@@ -64,14 +77,15 @@ def person_nodes(db, owner, names, strength, union, keys, x_names, roles, last_d
         # Automated senders (a no-reply, Gemini's meeting notes) are no one's colleague: their domain makes no organization
         domains = sorted({i.split('@', 1)[1] for i in group if i.startswith('email:') and not bulk(i[6:]) and not relay(i[6:])}
                          - FREEMAIL - owner.domains)
+        domains, heard = company_now(group, domains, wrote)
         if domains and shared_inbox(group, name, domains[0], listed, kept, org_from_name(name, domains[0]), enrichment.registrable(domains[0])):
             inboxes[domains[0]].append((node, value)); members.setdefault(domains[0], [])
             mailings.found[node] = [name, 'shared', len(node_events[node]), last_day[node].isoformat() if node in last_day else '', value]
             continue
         said_org = max((stated_rows[i] for i in group if i in stated_rows),
                        key=lambda r: (r['source'] == 'owner', r['said_at'] or '', r['created_at'], r['identifier'] == node), default=None)
-        if said_org and said_org['source'] != 'owner' and domains:
-            said_org = None  # a work address says it already
+        if said_org and said_org['source'] != 'owner' and domains and not (heard and said_org['said_at'] and parse_time(said_org['said_at']) > heard):
+            said_org = None  # a work address says it, unless they said so after they last wrote from one
         if said_org and said_org['org']:
             stated[node] = said_org
         elif domains and not said_org:
