@@ -682,6 +682,41 @@ class OwnConnections(unittest.TestCase):
         self.assertIn('say only that you found nothing from or with Zephyr Quill', prompt)
         self.assertNotIn('these messages', prompt)
 
+    def test_a_sender_who_is_not_in_the_graph_by_the_name_on_the_message(self):
+        self.add(home_chat(1, 'Zoë Quill', 'The sauna is booked, and the pilot too.'), home_chat(2, 'Zoeline Quill', 'Any news on the sauna?'))  # after the Graph was built
+        for asked in ('Zoe', 'ZOË QUILL'):
+            prompt = self.about(f'what did {asked} say about the sauna?', person=asked, about='sauna')
+            self.assertIn(f'The messages below from Zoë Quill are from someone with the name they ask about ({asked})', prompt)
+            self.assertNotIn('found nothing from or with', prompt)
+            self.assertLess(prompt.index('The sauna is booked'), prompt.index('Any news on the sauna'))
+        self.assertIn('[1] whatsapp from Zoë Quill', prompt)  # first, though the other is older
+        # part of a word, or only in the text, is no name of theirs, and neither is an address
+        for other in ('Zoel', 'Sauna', 'zoe@quill.example'):
+            self.assertIn(f'found nothing from or with {other}', self.about('the sauna?', person=other, about='sauna'))
+        # "with the name" never counts what the owner wrote
+        with mock.patch.object(self.app, 'search_ask_owner', lambda db: lambda meta: True):
+            self.assertIn('found nothing from or with Zoe', self.about('the sauna, said Zoe', person='Zoe', about='sauna'))
+
+    def test_a_sender_who_is_not_in_the_graph_in_a_named_place(self):
+        self.add({**work_mail(1, 'Zoë Quill <zoe@quill.example>', 'Hall', 'The hall is free on Friday.'), 'account_id': 'birch'},
+                 home_chat(1, 'Zoë Quill', 'The sauna is booked.'))
+        prompt = self.about('what did Zoe send to my birch mail?', connections=[2], person='Zoe', said_by='person')
+        self.assertIn('The hall is free', prompt)
+        self.assertNotIn('The board pack', prompt)  # only theirs, when the search finds none of it
+        self.assertNotIn('sauna is booked', prompt)  # and only there
+        self.assertNotIn('found nothing from or with', prompt)
+        prompt = self.about('what did Zoe write to my home mail about the sauna?', connections=[3], person='Zoe', about='sauna')
+        self.assertRegex(prompt, r'whatsapp \(elsewhere: [^)]+\) from Zoë Quill')
+        self.assertIn('found nothing about it there, then, if one marked elsewhere', prompt)
+        for area, question, person in (('work', 'what did Zoe write to my birch mail about the sauna?', 'Zoe'), (None, 'what did Yara write to my home mail about the sauna?', 'Yara')):
+            prompt = self.about(question, area, connections=[2 if area else 3], person=person, about='sauna')  # never out of the area, and only theirs
+            self.assertNotIn('sauna is booked', prompt)
+        self.assertIn('found nothing from or with Yara', prompt)
+        with self.store.connect() as db:
+            db.execute("UPDATE checkpoints SET error='imap_auth_failed',failures=40,last_success=? WHERE account_id='home'", (tg.at(4),))
+            db.commit()
+        self.assertNotIn('sauna is booked', self.about('what did Zoe write to my home mail about the sauna?', connections=[3], person='Zoe', about='sauna'))
+
 
 if __name__ == '__main__':
     unittest.main()

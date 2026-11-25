@@ -277,6 +277,10 @@ def _scope_lines(scope):
                      f'{name}{" from " + days if days else ""} (or the best of them), oldest first. They already are '
                      'that person and that time: who and when are not in doubt.')
         lines.append('Summarize what was said, concretely, with the day for each point.')
+    elif scope.get('named'):
+        senders = ', '.join(dict.fromkeys(_data(n) for n in scope['named'].values()))
+        lines.append(f'The messages below from {senders} are from someone with the name they ask about ({_data(scope["unknown"])}), by the name on the '
+                     'message. Say what those say; the others are not from that person.' + (' Say which of them by full name.' if ', ' in senders else ''))
     elif scope.get('unknown'):
         lines.append(f'Nothing in their mail and chats is from or with {_data(scope["unknown"])}. Unless what is below answers it all '
                      f'the same, say only that you found nothing from or with {_data(scope["unknown"])}.')
@@ -382,5 +386,6 @@ def ask(question, rows, run, lang='en', body=lambda text: text, scope=None, coun
         raise Unavailable('limit')
     if scope:
         found.sort(key=lambda s: s['at'], reverse=bool(scope.get('newest')))  # oldest first: what was said, in order; what is new, newest first
+        found.sort(key=lambda s: s['id'] not in (scope.get('named') or {}))  # from someone with the name asked about, first
         found.sort(key=lambda s: s['id'] in (scope.get('beyond') or {}))  # what is not from the place they named, last
     return parse(run(prompt(question, found, lang, scope, memory)), found, kept)
