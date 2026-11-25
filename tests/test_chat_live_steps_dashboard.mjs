@@ -18,14 +18,14 @@ const asked=[{kind:'source',from:'Sam Lee',via:'email',title:'Team day',text:'Ca
 const done=[{kind:'steps',count:4,steps:[{line:['Checked the calendar'],n:2},{line:['Searched messages'],n:2}],at:t0+1000},
  {kind:'reply',text:'Tuesday is free. Here is a short reply that says so.',at:t0+2000}];
 const fold=n=>({kind:'steps',count:n,steps:[{text:'Find the booking page',n:1},{text:'Check for a free date',n:1}],at:t0+500});
-let phase='running',step=null,own=0,live=null;
+let phase='running',step=null,own=0,live=null,reads=0;
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/progress'){  // the card's Preparing line: never the chat's
   res.end(JSON.stringify({status:phase==='running'?'running':'prepared',started_at:now,steps:[{title:'Working on it',at:now}],browser:null,peek:false}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body);
-  if(r.action==='card_chat'){const active=phase!=='done';
+  if(r.action==='card_chat'){reads++;const active=phase!=='done';
    res.end(JSON.stringify({session:true,status:active?phase:'prepared',active,cursor:null,items:!active?[...asked,...done]:own?[...asked,fold(own)]:asked,
     live:active?live:null,step:phase==='running'&&!own?step:null}));return}
   res.end('{}');return}
@@ -40,6 +40,8 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   const shot=async n=>{if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/${n}-${tag}-${scheme}.png`})};
+  // The chat read its run again, and painted it: the read after the one that brought it has been asked for
+  const readAgain=async()=>{const n=reads;for(let i=0;reads<n+3;i++){assert.ok(i<150,'the chat stopped reading its run');await new Promise(r=>setTimeout(r,100))}};
   const now_=()=>page.evaluate(()=>({row:document.querySelector('#chat-log .chat-live .steps')?.textContent||'',above:document.querySelector('#chat-status').textContent,
    said:document.querySelectorAll('#chat-log [role=status]').length,fold:document.querySelector('#chat-log .chat-steps summary')?.textContent||'',
    you:document.querySelector('#chat-log .chat-msg.you').getBoundingClientRect().top,box:document.querySelector('.chat-box').getBoundingClientRect().top}));
@@ -58,7 +60,7 @@ try{
   await page.locator('#chat-log .chat-steps summary').click();own=12;
   await page.locator('#chat-log .chat-steps summary',{hasText:'Checked 12 things'}).waitFor({timeout:9000});
   assert.equal(await page.locator('#chat-log .chat-steps[open] li').count(),2,'the fold stays open');
-  await page.waitForTimeout(4500);await until('the opened fold, after a look at the progress','','Working on it…');
+  await readAgain();await until('the opened fold, some reads later','','Working on it…');
   await shot('own-steps');
   live={text:'Tuesday is free'};await page.locator('#chat-log .chat-live .bubble',{hasText:'Tuesday is free'}).waitFor({timeout:9000});
   await until('writing the answer','','Working on it…');live=null;
@@ -90,7 +92,7 @@ try{
   await page.evaluate(()=>{chat={...chat,active:true,status:'queued',cursor:null};paintChat();chatPoll()});
   await page.locator('#chat-log .chat-live .typing').waitFor();
   await until('queued','','Working on it…');
-  phase='running';card.preparation_status='running';await page.waitForTimeout(2200);
+  phase='running';card.preparation_status='running';await readAgain();
   await until('no step from the run before','','Working on it…');
   // A read that failed mid-run keeps what is shown, once
   step={title:'Reading the mail',at:now};await until('a step again','Reading the mail','');
