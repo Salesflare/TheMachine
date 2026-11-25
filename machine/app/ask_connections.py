@@ -195,14 +195,16 @@ def health(view, account, t, tz):
 
 
 def facts(app, db, got, area, lang, tz):
-    """The lines an answer gets about the connections a question is about (resolve)."""
+    """(the lines an answer gets about the connections a question is about (resolve), whether what they hold is known:
+    every one of them connected, in view and read)."""
     t = lambda text, *args: i18n.t(text, *args, lang=lang)
     page, out = t('Connections'), []
     by_id = {a['id']: a for a in own(app.config)}
-    told = []
+    told, readable = [], bool(got['ids']) and not (got['missing'] or got['elsewhere'] or got['other'] or got['outside'])
     for view in app.store.connector_views(db, [by_id[i] for i in got['ids'] if i in by_id]):
         account = by_id[view['id']]
         words, meaning = health(view, account, t, tz)
+        readable = readable and bool(view.get('last_success')) and UNREAD not in meaning
         read = f', last read in full {search_ask.local_at(view["last_success"], tz)}' if view.get('last_success') else ''
         side = {'work': t('Work'), 'personal': t('Personal')}.get(graph.account_side(account))
         told.append((not meaning, f'{got["names"][got["ids"].index(view["id"])]}{f" ({side})" if side else ""} is connected, on the page “{page}” it says “{words}”{read}'
@@ -220,4 +222,4 @@ def facts(app, db, got, area, lang, tz):
     for words in got['outside']:
         out.append(f'“{_clean(words)[:80]}” is none of their {here.get(area, "")} connections, and only those are in view here. '
                    f'They can ask this with “{t("All")}” picked.')
-    return out
+    return out, readable

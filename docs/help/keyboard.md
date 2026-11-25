@@ -20,6 +20,8 @@ Ask about someone and a time, like “what did Kim say last week?”, and it rea
 
 Ask about one of your own mailboxes or chat accounts, like “what's new in my personal mail?”, its address, or “what did Kim send on WhatsApp?”, and it reads only the messages from there, the newest if you ask for nothing more. It knows how that connection is doing, like Needs your help on Connections, and up to when it was read. It doesn't read it anew.
 
+If nothing there is about your subject, it also looks in the rest of the area you're viewing, and says where it found it.
+
 An address you haven't connected, it says so: add it in Connections. A mailbox that is Personal isn't in view with Work picked, and the other way around.
 
 It also reads what the Machine already keeps on the question: promises (open, or closed in the last 30 days), what it learned, the summary of the person, project or organization you ask about, and meeting notes. Each one the answer used shows under it, named as what it is (like Promise, Learned, Summary or Meeting notes), and opens where it lives. Only what matches is read, from the area you're viewing.

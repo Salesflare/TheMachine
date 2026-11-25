@@ -7,7 +7,7 @@ about, else the one the owner is most in touch with; the others are named to the
 means. Their messages are the ones the Graph has them directly on (from or with them), never a message that only
 mentions the name. A question about a time reads only the messages of those days, in the owner's time zone. A
 question about the owner's own mailbox or chat account reads only its messages, and gets what the Machine knows of it
-(ask_connections.py)."""
+(ask_connections.py); with a subject nothing there matches, the rest of the area in view too (search_ask_beyond)."""
 import datetime as dt
 import json
 import logging
@@ -33,6 +33,7 @@ FOUND = 16          # messages the search brings back before the best SOURCES go
 FOUND_IN_DAYS = 400  # keyword matches looked at for a question about a time, before only those days are kept
 PEOPLE = 8          # people with the name asked about that are weighed
 NEWEST = 120        # of the connections asked about, the newest looked at for what came in
+THERE, BEYOND = 8, 4  # messages of the place asked about and from elsewhere, when nothing there matches the subject
 PERSON_ROWS = 400   # of one person's messages in the days asked about, the newest looked at
 EXAMPLE_PEOPLE = 6  # people from the open to-dos a suggested question may be about
 WORD_LEADS = 3      # the best keyword matches that always reach the answer's messages
@@ -168,6 +169,19 @@ class SearchAskApp:
         rows = self.search_ask_keep(rows, area)
         return [r for r in rows if mine(_meta(r)) == (said_by == 'owner')][:search_ask.SCOPED_SOURCES]
 
+    def search_ask_beyond(self, scope, rows, look, area, only, search):
+        """The messages of the place a question names (rows), where nothing matches its subject, and after them what
+        search(connections) finds in the rest of the area in view: the subject may be meant elsewhere, or the place was
+        only mentioned. scope['beyond'] says where each of those is from. look: false for a place that can't be read now
+        (what it misses says nothing), or without a subject."""
+        others = [a for a in self.search_ask_accounts(area) if a not in only] if look else []
+        found = search(others)[:BEYOND] if others else []
+        if not found:
+            return rows
+        accounts = {a['id']: a for a in self.config.get('accounts', []) if a.get('id')}
+        scope['beyond'] = {r['id']: ask_connections.name(accounts[r['account_id']], accounts.values()) for r in found}
+        return rows[:THERE] + found
+
     def search_ask_owner(self, db):
         """mine(meta): whether the owner wrote a message (their address, Slack user or own number; a sent mail)."""
         owner = graph.Owner(self.config, db)
@@ -253,7 +267,8 @@ class SearchAskApp:
         with self.store.connect() as db:
             got = ask_connections.resolve(self, db, plan, listed, area, question)
             if got:
-                scope['connections'] = {'names': got['names'], 'facts': ask_connections.facts(self, db, got, area, lang, tz)}
+                told, readable = ask_connections.facts(self, db, got, area, lang, tz)
+                scope['connections'] = {'names': got['names'], 'facts': told}
                 only = got['ids']
         if got and not only:  # not connected, or not in view: nothing to read
             return [], scope
@@ -262,13 +277,13 @@ class SearchAskApp:
             if not days and not got:
                 return None, None
             rows = self.search_ask_rows(about, area, days, hits, only) if about else []
-            if not rows and days:
-                rows = self.search_ask_days_rows(area, days, only)
-            elif not rows:
-                rows = self.search_ask_newest(area, only, mine, plan['said_by'])
-                scope['newest'] = True
-                scope['nomatch'] = about
-            scope['none'] = not rows
+            if not rows:
+                rows = self.search_ask_days_rows(area, days, only) if days else self.search_ask_newest(area, only, mine, plan['said_by'])
+                scope['newest'] = not days
+                scope['none'] = not rows
+                if got:
+                    scope['nomatch'] = about
+                    rows = self.search_ask_beyond(scope, rows, about and readable, area, only, lambda others: self.search_ask_rows(about, area, days, None, others))
             return rows, scope
         accounts = self.search_ask_within(area, only)
         with self.store.connect() as db:
@@ -294,21 +309,28 @@ class SearchAskApp:
         top = weighed[0][1]
         scope['others'] = [people[n][0]['name'] for count, strength, n in weighed[1:]
                            if people[n][0]['name'] and people[n][0]['name'] != scope['name'] and (count or (top and strength >= top / 3))][:3]
-        rows = self.search_ask_person_rows(row['id'], words, ids, days, area, plan['said_by'], mine, only=only)
-        if rows and plan.get('about'):
+        theirs = lambda within: self.search_ask_person_rows(row['id'], words, ids, days, area, plan['said_by'], mine, only=within)
+
+        def matching(rows, accounts):
             # what they said about something: the messages that match it first, then the rest by date
             with self.store.connect() as db:
-                hits = embeddings.fts_ids(db, accounts, plan['about'], FOUND_IN_DAYS)
-            place = {e: n for n, e in enumerate(hits)}
-            rows.sort(key=lambda r: place.get(r['id'], len(place)))
+                place = {e: n for n, e in enumerate(embeddings.fts_ids(db, accounts, about, FOUND_IN_DAYS))}
+            return sorted(rows, key=lambda r: place.get(r['id'], len(place))), any(r['id'] in place for r in rows)
+        rows, matched, none = theirs(only), False, False
+        if about and accounts:
+            rows, matched = matching(rows, accounts)
             rows = rows[:search_ask.SCOPED_SOURCES]
-        elif rows:
-            rows = spread(rows, search_ask.SCOPED_SOURCES)
+        if got and about and not matched:
+            scope['nomatch'], there = about, rows
+            rows = self.search_ask_beyond(scope, there, readable, area, only, lambda others: matching(theirs(others), others)[0])
+            none = bool(rows) and not there
+        if rows:
+            rows = rows if about else spread(rows, search_ask.SCOPED_SOURCES)
         elif days:
             scope['empty'] = True  # nothing in those days: their latest messages from another day
             rows = self.search_ask_person_rows(row['id'], words, ids, None, area, plan['said_by'], mine, 40, only)
             rows = [r for r in rows if str(r['occurred_at'])[:10] == str(rows[0]['occurred_at'])[:10]][:3] if rows else []
-        scope['none'] = not rows
+        scope['none'] = none or not rows
         return rows, scope
 
     @staticmethod

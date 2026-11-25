@@ -1,4 +1,5 @@
 {
+ "owner": "Sam Hale",
  "accounts": [
   {"id": "acme", "service": "gmail", "email": "sam@acme.example", "scope": "work", "boundary": "work:acme"},
   {"id": "birch", "service": "gmail", "email": "sam@birch.example", "scope": "work", "boundary": "work:birch"},
@@ -7,7 +8,8 @@
   {"id": "wa", "service": "whatsapp", "email": "Sam’s WhatsApp", "scope": "personal", "boundary": "personal:chats"}
  ],
  "owner_emails": ["sam.old@post.example"],
- "failing": {"club": {"error": "outlook_invalid_grant", "days": 4}},
+ "read": {"club": 4},
+ "failing": {"club": "outlook_invalid_grant"},
  "messages": [
   ["acme", 0.1, "Kim Vale <kim@initech.example>", "Pilot moves to March", "Hi Sam, the pilot moves to March 12, budget unchanged. Kim"],
   ["acme", 0.3, "Lee Park <lee@globex.example>", "Contract v3", "Attached is contract v3. We changed the notice period to 60 days. Lee"],
@@ -43,8 +45,8 @@
   {"id": "not-connected-own", "lang": "nl", "q": "wat is er nieuw in mijn mailbox sam.old@post.example?", "only": [], "fact": "It says that sam.old@post.example isn't connected, and that it can be added in Connections (Koppelingen)."},
   {"id": "not-connected-fr", "lang": "fr", "q": "As-tu lu ma boîte sam@ailleurs.example ?", "only": [], "fact": "It says that sam@ailleurs.example isn't connected, and that it can be added in Connections (Connexions)."},
   {"id": "subject", "lang": "en", "q": "is there an invoice in my mailbox sam@home.example?", "only": ["home"], "fact": "Yes: the energy invoice of 96 euros (Volt Energy), collected on November 20. It must not mention invoice 2041 or the flyers."},
-  {"id": "subject-nl", "lang": "nl", "q": "staat er iets over een factuur in mijn birch mailbox?", "only": ["birch"], "fact": "Yes: the invoice for the flyers of 410 euros (Omar). It must not mention invoice 2041 or the energy invoice."},
-  {"id": "subject-none", "lang": "en", "q": "what does my mailbox sam@birch.example say about the dentist?", "only": ["birch"], "fact": "It says there is nothing about the dentist in that mailbox."},
+  {"id": "subject-nl", "lang": "nl", "q": "staat er iets over een factuur in mijn birch mailbox?", "only": ["birch"], "beyond": true, "fact": "Yes: the invoice for the flyers of 410 euros (Omar). It must not mention invoice 2041 or the energy invoice."},
+  {"id": "subject-none", "lang": "en", "q": "what does my mailbox sam@birch.example say about the dentist?", "only": ["birch"], "beyond": true, "fact": "It says there is nothing about the dentist in that mailbox. It may add the appointment on November 18, only if it says that is from another mailbox (sam@home.example)."},
   {"id": "person", "lang": "en", "q": "what did Kim write to my sam@birch.example mailbox?", "only": ["birch"], "fact": "Kim can do December 3 for the Birch workshop. It must not mention the pilot, March or seats."},
   {"id": "person-fr", "lang": "fr", "q": "Qu'est-ce que Robin a écrit dans ma boîte sam@home.example ?", "only": ["home"], "fact": "Robin wrote about dinner on Saturday at seven with the board games, and that the trip photos are in the shared album. It must not mention bread or the plumber."},
   {"id": "person-chat", "lang": "nl", "q": "wat zei Robin op WhatsApp?", "only": ["wa"], "fact": "Robin asked to pick up bread and said the plumber comes Tuesday at nine. It must not mention dinner or photos."},
@@ -55,15 +57,15 @@
   {"id": "check-mail", "lang": "en", "q": "check my mail", "only": ["acme", "birch", "home", "club"], "fact": "It tells some of what is new in the mail: for example Kim's pilot to March, contract v3, the board pack or the library book. It must not claim it just checked or synced the mail; it may say up to when mail was read."},
   {"id": "check-mail-work", "lang": "nl", "area": "work", "q": "check mijn werkmail even", "only": ["acme", "birch"], "fact": "It tells some of what is new in work mail: for example Kim's pilot to March, contract v3 or the board pack. Nothing personal. It must not claim it just checked or synced the mail."},
   {"id": "other-area", "lang": "en", "area": "work", "q": "what's new in my mailbox sam@home.example?", "only": [], "fact": "It says that mailbox is Personal, and so not in view here (Work): pick Personal or All. Nothing from that mailbox is told."},
-  {"id": "ord-person-time", "ordinary": true, "lang": "en", "q": "what did Kim say last week?", "only": ["acme", "birch"], "fact": "Last week (November 2 to 8) Kim asked for 24 seats instead of 18, and can do December 3 for the Birch workshop. It must not mention the pilot moving to March (this week)."},
-  {"id": "ord-person", "ordinary": true, "lang": "nl", "q": "wat heeft Lee Park over het contract geschreven?", "fact": "Contract v3 changed the notice period to 60 days."},
-  {"id": "ord-time", "ordinary": true, "lang": "fr", "q": "Qui m'a écrit hier ?", "only": ["acme", "home"], "fact": "On November 8: Robin (dinner on Saturday), and Noor (move Thursday's demo to 15:00)."},
-  {"id": "ord-subject", "ordinary": true, "lang": "en", "q": "how many seats do we need for the pilot?", "fact": "24 seats instead of 18."},
-  {"id": "ord-owner", "ordinary": true, "lang": "en", "q": "what did I promise Lee?", "fact": "To send the new quote by Friday."},
-  {"id": "ord-unknown", "ordinary": true, "lang": "en", "q": "what did Zephyr Quill say last week?", "fact": "Nothing was found from Zephyr Quill, said simply. It must not say that messages don't establish something, or speak of 'these messages'."},
-  {"id": "ord-unknown-nl", "ordinary": true, "lang": "nl", "q": "heeft peter@elders.example nog iets gestuurd?", "fact": "Nothing was found from peter@elders.example, said simply, or NO ANSWER."},
-  {"id": "ord-empty", "ordinary": true, "lang": "fr", "q": "Qu'a dit Andrea cette semaine ?", "fact": "Andrea sent nothing this week; the latest, of October 31, says that the venue for the offsite is booked, Hall B."},
-  {"id": "ask-send", "ordinary": true, "lang": "en", "q": "send Kim an email that March is fine", "fact": "Either it shows no answer at all (NO ANSWER), or it says that it can't do that here and where to ask for it (a new to-do). It must not claim it was or will be sent, or that it was asked or allowed."},
+  {"id": "ord-person-time", "ordinary": true, "whole": true, "lang": "en", "q": "what did Kim say last week?", "only": ["acme", "birch"], "fact": "Last week (November 2 to 8) Kim asked for 24 seats instead of 18, and can do December 3 for the Birch workshop. It must not mention the pilot moving to March (this week)."},
+  {"id": "ord-person", "ordinary": true, "whole": true, "lang": "nl", "q": "wat heeft Lee Park over het contract geschreven?", "fact": "Contract v3 changed the notice period to 60 days."},
+  {"id": "ord-time", "ordinary": true, "whole": true, "lang": "fr", "q": "Qui m'a écrit hier ?", "only": ["acme", "home"], "fact": "On November 8: Robin (dinner on Saturday), and Noor (move Thursday's demo to 15:00)."},
+  {"id": "ord-subject", "ordinary": true, "whole": true, "lang": "en", "q": "how many seats do we need for the pilot?", "fact": "24 seats instead of 18."},
+  {"id": "ord-owner", "ordinary": true, "whole": true, "lang": "en", "q": "what did I promise Lee?", "fact": "To send the new quote by Friday."},
+  {"id": "ord-unknown", "ordinary": true, "whole": true, "lang": "en", "q": "what did Zephyr Quill say last week?", "fact": "Nothing was found from Zephyr Quill, said simply. It must not say that messages don't establish something, or speak of 'these messages'."},
+  {"id": "ord-unknown-nl", "ordinary": true, "whole": true, "lang": "nl", "q": "heeft peter@elders.example nog iets gestuurd?", "fact": "Nothing was found from peter@elders.example, said simply, or NO ANSWER."},
+  {"id": "ord-empty", "ordinary": true, "whole": true, "lang": "fr", "q": "Qu'a dit Andrea cette semaine ?", "fact": "Andrea sent nothing this week; the latest, of October 31, says that the venue for the offsite is booked, Hall B."},
+  {"id": "ask-send", "ordinary": true, "whole": true, "lang": "en", "q": "send Kim an email that March is fine", "fact": "Either it shows no answer at all (NO ANSWER), or it says that it can't do that here and where to ask for it (a new to-do). It must not claim it was or will be sent, or that it was asked or allowed."},
   {"id": "ask-sync", "lang": "en", "q": "sync my mailbox sam@home.example now", "fact": "Either it shows no answer at all (NO ANSWER), or it says it can't start that here, or only says up to when that mailbox was read and/or what is in it. It must not claim it synced or checked just now."}
  ]
 }
