@@ -2,6 +2,8 @@
 owner's own messages in the area in view, with its sources; a name or keywords get nothing; no model, nothing; a failed
 turn says so. It never sends or makes a to-do. All names and messages here are made up."""
 import json
+from pathlib import Path
+import re
 import unittest
 from unittest import mock
 
@@ -11,7 +13,7 @@ graph = tg.graph
 import help_chat  # noqa: E402
 import search_ask  # noqa: E402
 import shared_graph  # noqa: E402
-from machine.app import ask_memory, search_ask as app_ask  # noqa: E402
+from machine.app import ask_connections, ask_memory, search_ask as app_ask  # noqa: E402
 import embeddings
 import machine.actions as machine_actions
 import person_summary
@@ -484,6 +486,148 @@ class AskMemory(unittest.TestCase):
             self.ask('what is the state of the initech pilot?', 'work')
         self.assertLessEqual(len(ask_memory.INTRO) + len(self.memory()), 300)
         self.assertEqual({'signal'}, {r[0] for r in self.log()[before:] if r[2] == 'search'} | {'signal'})
+
+
+BOXES = {'owner_emails': ['sam.old@post.example'], 'accounts': [
+    {'id': 'work', 'service': 'gmail', 'email': 'sam@acme.example', 'scope': 'work', 'boundary': 'work:x'},
+    {'id': 'birch', 'service': 'gmail', 'email': 'sam@birch.example', 'scope': 'work', 'boundary': 'work:x'},
+    {'id': 'home', 'service': 'imap', 'email': 'sam@home.example', 'scope': 'personal', 'boundary': 'personal:x'},
+    {'id': 'chat', 'service': 'whatsapp', 'email': 'Personal WhatsApp', 'scope': 'personal', 'boundary': 'personal:x'},
+    {'id': 'cal', 'service': 'calendar', 'email': 'sam@days.example', 'scope': 'personal', 'boundary': 'personal:x'},
+    {'id': 'theirs', 'service': 'gmail', 'email': 'team@acme.example', 'scope': 'work', 'boundary': 'work:x', 'shared': True}]}
+
+
+class OwnConnections(unittest.TestCase):
+    """A question about one of the owner's own mailboxes or chat accounts (machine/app/ask_connections.py)."""
+
+    add, ask = tg.Graph.add, SearchAsk.ask
+
+    def setUp(self):
+        SearchAsk.setUp(self)
+        self.app.config = BOXES
+        self.app.store.accounts = BOXES['accounts']
+        self.add(*[{**work_mail(d, sender, title, body), 'account_id': account} for account, d, sender, title, body in (
+            ('birch', 3, 'Dana Roe <dana@birch.example>', 'Board pack', 'The board pack needs your numbers.'),
+            ('birch', 4, 'Kim Vale <kim@initech.example>', 'Workshop', 'The workshop can be on December 3.'),
+            ('home', 1, 'City Library <info@library.example>', 'Book ready', 'Your book is ready to pick up.'),
+            ('home', 6, 'Volt <bill@volt.example>', 'Invoice', 'Your energy invoice is ready.'))])
+        self.graph()
+
+    def graph(self):
+        with self.store.connect() as db:
+            db.isolation_level = None
+            graph.build(db, self.app.config, tg.at(0))
+
+    def about(self, question, area=None, **plan):
+        self.plan = {'question': True, 'person': None, 'said_by': 'both', 'from': None, 'to': None, 'about': '', 'connections': [], **plan}
+        before = len(self.prompts)
+        self.ask(question, area)
+        return self.prompts[-1] if len(self.prompts) > before else ''
+
+    def test_the_first_turn_picks_from_the_connections_in_view(self):
+        self.about("what's new in my birch mail?")
+        self.assertIn('Mailboxes: 1 Gmail sam@acme.example (work); 2 Gmail sam@birch.example (work); 3 ', self.plans[-1])
+        self.assertIn('Chat accounts: 4 ', self.plans[-1])
+        self.assertNotIn('team@acme.example', self.plans[-1])  # shared with them, not theirs
+        self.assertNotIn('days.example', self.plans[-1])  # a calendar brings in no messages
+        self.about("what's new in my birch mail?", 'work')
+        self.assertNotIn('home.example', self.plans[-1])  # only the area in view
+
+    def test_the_first_turn_stays_small(self):
+        many = [{'name': 'Gmail ' + 'x' * 54, 'side': 'personal', 'mail': True}] * ask_connections.LISTED
+        day = search_ask.dt.date(2026, 10, 16)
+        small, large = len(search_ask.plan_prompt('a question', day)), len(search_ask.plan_prompt('a question', day, 'en', many))
+        self.assertLess(small, 2300)
+        self.assertLess(large - small, ask_connections.LISTED * (ask_connections.NAME_CHARS + 20))
+
+    def test_its_newest_messages_only_newest_first(self):
+        prompt = self.about('what is new in my birch mail?', connections=[2])
+        self.assertIn('The board pack needs your numbers.', prompt)
+        self.assertLess(prompt.index('The board pack'), prompt.index('The workshop can be'))
+        for other in ('Your book is ready', 'The pilot moves', 'The pilot of the plane'):
+            self.assertNotIn(other, prompt)
+        self.assertIn('never say you checked', prompt)
+
+    def test_an_own_address_is_never_a_person(self):
+        for person in ('sam@home.example', 'Sam <SAM@home.example>'):
+            prompt = self.about('you should check the mailbox from sam@home.example', person=person)
+            self.assertIn('Your book is ready', prompt)
+            self.assertNotIn('The pilot moves', prompt)
+            self.assertNotIn('Nothing in their mail and chats', prompt)
+
+    def test_a_pick_not_on_the_list_is_refused(self):
+        for picks in ([9], [0], [-1], ['99'], [True], [None], [{'id': 'home'}], ['home'], ['sam@home.example']):  # none of them typed
+            self.assertIn('The pilot moves', self.about('what about the pilot', connections=picks, about='pilot'))
+            self.assertNotIn('They ask about the mailbox', self.prompts[-1])
+        self.assertIn('The pilot moves', self.about('what about the pilot', connections='home', about='pilot'))
+
+    def test_the_area_in_view_limits_it(self):
+        prompt = self.about('what is new in sam@home.example?', 'work', person='sam@home.example')
+        self.assertIn('sam@home.example is connected, and is Personal; only Work is in view here', prompt)
+        self.assertNotIn('Your book is ready', prompt)
+        self.assertIn('Your book is ready', self.about('what is new in sam@home.example?', 'personal', person='sam@home.example'))
+
+    def test_work_never_reads_a_personal_thread(self):
+        with mock.patch.object(self.app, 'search_ask_keep', lambda rows, area: [r for r in rows if area != 'work' or r['title'] != 'Board pack']):
+            prompt = self.about('what is new in my birch mail?', 'work', connections=[2])
+        self.assertNotIn('The board pack', prompt)
+        self.assertIn('The workshop can be', prompt)
+
+    def test_with_a_subject_a_person_or_days(self):
+        prompt = self.about('is there an invoice in my home mail?', connections=[3], about='invoice')
+        self.assertIn('Your energy invoice is ready.', prompt)
+        self.assertNotIn('Your book is ready', prompt)
+        prompt = self.about('does my home mail say anything on skiing?', connections=[3], about='skiing')
+        self.assertIn('Answer from those about “skiing”', prompt)
+        prompt = self.about('what did Kim write to my birch mailbox?', connections=[2], person='Kim', said_by='person')
+        self.assertIn('The workshop can be', prompt)
+        self.assertNotIn('The pilot moves', prompt)
+        prompt = self.about('what did Kim write to my home mailbox?', connections=[3], person='Kim', said_by='person')
+        self.assertIn('Nothing from Kim Vale is in there', prompt)
+        self.assertNotIn('<<<The ', prompt)
+        prompt = self.about('what came in on sam@home.example on Thursday?', connections=[3], **{'from': '2026-10-15', 'to': '2026-10-15'})
+        self.assertIn('Your book is ready', prompt)
+        self.assertNotIn('energy invoice', prompt)
+
+    def test_not_connected(self):
+        for address, plan in (('sam.old@post.example', {'person': 'sam.old@post.example'}), ('sam@nowhere.example', {'connections': ['sam@nowhere.example']})):
+            prompt = self.about(f'check the mailbox {address}', **plan)
+            self.assertIn(f'“{address}” is not connected', prompt)
+            self.assertIn('the page “Connections”', prompt)
+            self.assertNotIn('<<<The ', prompt)
+        self.assertIn('is connected as Google Calendar only', self.about('is sam@days.example connected?', connections=['sam@days.example']))
+        # someone else's address is the person it is about, and one shared with them is not missing
+        self.assertIn('from Kim Vale', self.about('mail from kim@initech.example?', connections=['kim@initech.example'], said_by='person').replace('from or with', 'from'))
+        self.assertNotIn('not connected', self.about('the pilot on team@acme.example', connections=['team@acme.example'], about='pilot'))
+
+    def test_how_it_is_doing(self):
+        with self.store.connect() as db:
+            db.execute("UPDATE checkpoints SET error='imap_auth_failed',failures=40,last_success=? WHERE account_id='home'", (tg.at(4),))
+            db.commit()
+        prompt = self.about('anything new in sam@home.example?', person='sam@home.example')
+        self.assertIn('“Needs your help”, last read in full', prompt)
+        self.assertIn('anything newer is not known', prompt)
+        self.assertNotIn('imap_auth_failed', prompt)
+
+    def test_the_words_are_those_of_connections(self):
+        root = Path(search_ask.__file__).parent
+        shared = (root / 'dashboard' / 'connections-shared.js').read_text(encoding='utf-8')
+        health = shared[shared.index('function connectorHealth'):shared.index('function connectorTone')]
+        here = (root / 'machine' / 'app' / 'ask_connections.py').read_text(encoding='utf-8')
+        words = {a or b for a, b in re.findall(r"text:'([^']+)'|\bt\('([^']+)'", health)}
+        # not the owner's own, or no mail and chat connection
+        words -= {'Rests while your own connection {} reads the same.', 'Waiting for your OK to read docs', 'Phone disconnected'}
+        self.assertGreater(len(words), 8)
+        self.assertEqual([w for w in words if f"'{w.strip()}'" not in here and f'"{w.strip()}"' not in here], [])
+        self.assertIn(re.search(r'/\(auth.*?\)/', health)[0].strip('/'), here)
+        stops = (root / 'dashboard' / 'todos-cards.js').read_text(encoding='utf-8')
+        stops = dict(re.findall(r"(\w+):'([^']+)'", re.search(r'TELEGRAM_STOP=\{(.*?)\}', stops)[1]))
+        self.assertEqual({k: word(lambda text: text) for k, word in ask_connections.STOPS.items()}, stops)
+
+    def test_an_unknown_person_is_said_simply(self):
+        prompt = self.about('what did Zephyr Quill say about the pilot?', person='Zephyr Quill', about='pilot')
+        self.assertIn('say only that you found nothing from or with Zephyr Quill', prompt)
+        self.assertNotIn('these messages', prompt)
 
 
 if __name__ == '__main__':

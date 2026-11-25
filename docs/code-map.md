@@ -159,6 +159,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     graph worker skips a timed build while nothing it reads changed.
   - `machine/app/search_ask.py` (`SearchAskApp`): Ask from search: the messages a question in Search finds in the area
     in view and the one-shot turn that answers it (`search_ask.py` has the prompt and the answer).
+  - `machine/app/ask_connections.py`: a question about the owner's own mailbox or chat account: the list the first turn
+    picks from, the check of what it picks, and what the Machine knows of it (how it is doing in Connections' own words,
+    up to when it was read, or not connected).
   - `machine/app/ask_memory.py`: what Ask reads besides messages, as four blocks on the `ask` recall: promises, facts,
     the asked-about record's summary and meeting notes that match the question, cited as what they are.
   - `machine/app/recall.py` (`recall(app, purpose, about, budget)`): the one way a prompt reads memory. The review,
