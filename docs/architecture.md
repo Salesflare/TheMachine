@@ -196,6 +196,15 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   `assistant_signals` tool, checks decisions, earlier to-dos and related evidence, saves to-dos with `when`/`due`
   timing, and finishes the analysis. Skills OpenClaw's skill workshop wrote about `assistant_signals` repeat these
   instructions, so reviews and Do it runs skip them. Your own chats still load them, and the files stay as they are.
+- **Behind, recent messages first.** Normally a claim is shared out over the sources by how much waits in each, the
+  oldest and the newest by turns. When more than two whole reviews' worth waits (after a usage limit or a long pause),
+  two thirds of each new claim go to what likely needs you, recent first and by turns over the sources: to-dos you
+  wrote, meetings in the next 48 hours (at most a tenth), people writing to you directly whom you haven't answered,
+  then other people's messages, never mailings or notifications. A conversation is claimed together, so a question and
+  what came after it are judged in one review. The other third goes to what came in first, so a signal with N older ones
+  waiting is claimed within about N / 40 new reviews, whatever keeps coming in. An unfinished claim still resumes
+  first. Plain code, no model call; previews and the first look keep their own order
+  (`machine/store/review_catch_up.py`).
 - **Handed on.** A to-do's preparation starts from what its review found: the job message lists the to-do as saved
   and each message it came from with who wrote it, to whom, the subject, the thread and the time (never the text), and
   asks the run to look up only what is still missing. Within one run, a message it already read whole comes back from

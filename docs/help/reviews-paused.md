@@ -26,7 +26,7 @@ To keep room for your own chats, checks pause at about 65% of your AI plan's 5-h
 
 While checks wait, the top of the dashboard says until when, like "Checks wait until 07:15 to save your ChatGPT week." **Check now** starts one anyway. **Settings**, **Model** shows your limits.
 
-Nothing is lost: what came in is checked once it can.
+Nothing is lost: what came in is checked once it can. After a long wait, recent messages from people go first, and part of each check works through the oldest.
 
 ## At night
 
