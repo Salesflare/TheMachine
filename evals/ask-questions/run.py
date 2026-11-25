@@ -21,7 +21,6 @@ import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-CHATS = ('whatsapp', 'telegram', 'signal', 'linkedin')
 NOW = dt.datetime(2026, 11, 9, 16, tzinfo=dt.timezone.utc)  # a Monday
 JUDGE = ('You grade one answer of the search box of an assistant, which answers its owner from their own mail and chats. Today is Monday November 9, 2026. '
          'Reference is what a right answer says and what it must not; the answer may be in another language and shorter than the reference ("and/or" '
@@ -49,10 +48,11 @@ def ask(prompt, args, model, effort, used):
 
 
 def message(world, n, row):
+    from machine import services
     account, days, sender, title, body, *to = row
     at, mine = (NOW - dt.timedelta(days=days)).isoformat(), sender.startswith(world['owner'])
     address, service = next((a['email'], a['service']) for a in world['accounts'] if a['id'] == account)
-    if service in CHATS:
+    if service not in services.of(group=services.MAIL):
         chat = str(sum(map(ord, title))) + ('@s.whatsapp.net' if service == 'whatsapp' else '')
         return {'account_id': account, 'source_id': f'c{n}', 'kind': f'{service}.message', 'occurred_at': at, 'title': title, 'body': body, 'deleted': False,
                 'metadata': {'chat_id': chat, 'chat_name': title, 'chat_kind': 'dm', 'from_me': mine, 'from': sender, 'sender_display': sender, 'sender_id': None if mine else chat}}
