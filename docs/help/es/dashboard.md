@@ -59,7 +59,7 @@ Cuando se publica una función o mejora importante, una pequeña nota de **Noved
 
 Abre la búsqueda con `⌘K` en Mac o `Ctrl K` en Windows y Linux, o con el icono de búsqueda en el móvil. Escribe dos letras o más: **Mensajes** muestra las mejores coincidencias de todo lo que ha leído tu Machine, por significado o por palabras. En el [historial](history.md) antiguo, las coincidencias se basan en las palabras.
 
-También puedes hacer una pregunta, como la que sugiere una búsqueda vacía, para obtener una respuesta breve basada en tus propios mensajes ([El teclado y la paleta de comandos](keyboard.md)).
+También puedes hacer una pregunta, como la que sugiere una búsqueda vacía, para obtener una respuesta breve basada en tus propios mensajes ([Teclado y paleta de comandos](keyboard.md)).
 
 **Ver todos los resultados** abre la lista completa, de todas las cuentas o de una sola. Cada resultado se abre en un lector, con un enlace a su origen. Una búsqueda vacía muestra los mensajes más recientes.
 

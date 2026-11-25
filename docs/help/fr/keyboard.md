@@ -1,54 +1,56 @@
 ---
 title: Clavier et palette de commandes
 area: getting-started
-summary: Accédez à tout le tableau de bord au clavier : palette, raccourcis de navigation, déplacement entre les tâches et raccourcis d’une tâche.
+summary: Accédez à tout le tableau de bord depuis le clavier : palette, raccourcis de navigation, déplacement dans les tâches et raccourcis d’une tâche.
 covers: keyboard
 code: dashboard.html
 order: 5
-translated: ea580f7ec40293d5
+translated: 706aa2ca54d329fb
 ---
 ## La palette
 
-Appuyez sur `⌘K` sur Mac, sur `Ctrl K` sur Windows et Linux, ou sur `/` pour ouvrir **Recherche et commandes**. Saisissez une partie d’un nom : une action, une page, une tâche, une personne, une organisation, un projet ou un message. Utilisez les flèches et Entrée, ou Échap pour fermer. Les commandes récentes s’affichent en premier. **Afficher tous les résultats** ouvre tous les messages correspondants.
+Appuyez sur `⌘K` sur Mac, `Ctrl K` sur Windows et Linux, ou `/` pour ouvrir **Recherche et commandes**. Saisissez une partie d’un nom : action, page, tâche, personne, organisation, projet ou message. Utilisez les touches fléchées et Entrée, ou Échap pour fermer. Les commandes récentes apparaissent en premier. **Voir tous les résultats** affiche tous les messages correspondants.
 
-Sur un téléphone, appuyez sur l’icône de recherche dans la barre supérieure.
+Sur mobile, appuyez sur l’icône de recherche dans la barre supérieure.
 
 ## Poser une question
 
-Saisissez une question, par exemple « qu’a dit Kim à propos du projet pilote ? ». Une réponse courte, tirée de vos e-mails et messages, s’affiche au-dessus des résultats, avec un lien vers chaque message utilisé. La réponse est dans la langue de votre question et porte uniquement sur l’espace affiché (Tout, Travail ou Personnel). Un nom ou quelques mots-clés lancent simplement une recherche.
+Saisissez une question, comme « Qu’est-ce que Kim a dit au sujet du projet pilote ? » : une réponse courte, tirée de vos e-mails et messages, s’affiche au-dessus des résultats, avec un lien vers chaque message utilisé. La réponse est dans la langue de votre question et porte uniquement sur la zone affichée (**Tout**, **Travail** ou **Personnel**). Un nom ou quelques mots-clés lancent simplement une recherche.
 
-Posez une question sur une personne et une période, par exemple « qu’a dit Kim la semaine dernière ? ». La Machine ne lit que les messages envoyés par cette personne ou échangés avec elle pendant cette période, selon votre fuseau horaire. Si cette personne n’a rien envoyé à ce moment-là, la réponse vous l’indique et affiche son dernier message avec sa date.
+Posez une question sur une personne et une période, comme « Qu’est-ce que Kim a dit la semaine dernière ? » : la recherche porte uniquement sur les messages envoyés par cette personne ou échangés avec elle ces jours-là, dans votre fuseau horaire. Si elle n’a rien envoyé pendant cette période, la réponse vous le précise et affiche son dernier message avec sa date.
 
-Posez une question sur l’une de vos boîtes mail ou l’un de vos comptes de chat, par exemple « quoi de neuf dans ma boîte mail personnelle ? », indiquez son adresse ou demandez « qu’est-ce que Kim a envoyé sur WhatsApp ? ». La Machine ne lit que les messages de ce compte, et les plus récents si vous ne précisez rien. Elle connaît l’état de cette connexion, par exemple « Nécessite votre aide » dans Connexions, ainsi que la date de sa dernière lecture. Elle ne relit pas les messages.
+Posez une question sur l’une de vos boîtes mail ou l’un de vos comptes de chat, comme « Quoi de neuf dans ma boîte mail personnelle ? », indiquez son adresse ou demandez « Qu’est-ce que Kim a envoyé sur WhatsApp ? ». La recherche porte uniquement sur les messages de ce compte et affiche les plus récents si vous ne précisez rien. La Machine connaît l’état de cette connexion, par exemple **Nécessite votre aide** dans **Connexions**, la date de sa dernière lecture et si cette lecture est arrivée jusqu’au bout. Elle ne relit pas les messages.
 
-Si aucun message ne traite du sujet, la Machine cherche aussi dans le reste de l’espace affiché et vous indique où elle a trouvé les informations.
+Demandez ce qui vient d’arriver, par exemple « Un e-mail est arrivé il y a 8 minutes dans ma boîte mail professionnelle » : la recherche porte sur tout ce qui y est arrivé depuis environ ce moment-là, quelle que soit la formulation. Un message est trouvé dès qu’il est lu, avant d’être examiné. Les noms correspondent même sans accents ni traits d’union : « Soren Kjaer » trouve Søren Kjær.
 
-Si une adresse n’est pas connectée, la Machine vous le signale : ajoutez-la dans Connexions. Une boîte mail personnelle n’apparaît pas lorsque Travail est sélectionné, et inversement.
+Si aucun message ne concerne le sujet demandé, la recherche porte aussi sur le reste de la zone affichée, et la réponse vous indique où le message a été trouvé.
 
-La Machine consulte aussi ce qu’elle a déjà enregistré à ce sujet : les promesses (en cours ou clôturées au cours des 30 derniers jours), ce qu’elle a appris, le résumé de la personne, du projet ou de l’organisation concernée, ainsi que les notes de réunion. Chaque élément utilisé dans la réponse apparaît en dessous, avec son type (par exemple Promesse, Appris, Résumé ou Notes de réunion), et s’ouvre à l’endroit où il se trouve. La Machine ne consulte que les éléments correspondants dans l’espace affiché.
+Si vous n’avez pas connecté une adresse, la réponse vous le précise : ajoutez-la dans **Connexions**. Une boîte mail personnelle n’apparaît pas si la zone **Travail** est sélectionnée, et inversement.
 
-Si plusieurs personnes portent ce nom, la réponse précise de qui il s’agit. Les autres messages consultés apparaissent sous Messages. La question suggérée lors d’une recherche vide est une question pour laquelle des messages existent. La réponse n’envoie rien et n’ajoute aucune tâche. Elle nécessite un modèle (Paramètres, Modèle).
+La recherche porte aussi sur les informations que la Machine conserve déjà à ce sujet : les promesses (ouvertes ou clôturées au cours des 30 derniers jours), ce qu’elle a appris, le résumé de la personne, du projet ou de l’organisation concerné, et les notes de réunion. Chaque élément utilisé dans la réponse apparaît en dessous, sous son nom (par exemple Promise, Learned, Summary ou Meeting notes), et s’ouvre à l’endroit où il se trouve. Seules les informations correspondantes sont consultées, dans la zone affichée.
+
+Si plusieurs personnes portent ce nom, la réponse précise de qui il s’agit. Si l’une des autres a écrit au cours des 3 dernières heures, la réponse présente les messages des deux personnes. Les autres messages consultés apparaissent sous **Messages**. La question suggérée dans une recherche vide est choisie uniquement parmi celles pour lesquelles des messages existent. La réponse n’envoie rien et n’ajoute aucune tâche. Elle nécessite un modèle (**Paramètres**, **Modèle**).
 
 ## Raccourcis
 
-Appuyez sur `?` pour afficher **Raccourcis clavier**, la liste complète des raccourcis de votre ordinateur.
+Appuyez sur `?` pour afficher **Raccourcis clavier**, la liste complète pour votre ordinateur.
 
-- Accéder à une page : `G`, puis `T` pour les tâches, `C` pour Agenda, `R` pour les routines, `P` pour les personnes, `O` pour les organisations, `J` pour les projets, `F` pour Fleet, `L` pour l’apprentissage, `N` pour les connexions et `,` pour les paramètres. `G` puis `E` ouvrent les résultats de recherche de messages.
-- `N` ajoute une tâche. `T` lance Talk ou y met fin lorsqu’il est en cours. `J` et `K` (ou `↓` et `↑`) permettent de parcourir une liste. Appuyez sur Entrée pour ouvrir un élément.
-- Dans une tâche : `E` la renomme, `S` la met en attente, `D` la marque comme faite et `R` ouvre son chat.
-- Dans Agenda : `T` affiche la date du jour, `J` et `K` (ou `→` et `←`) passent à la semaine ou au mois suivant ou précédent. `A`, `W` et `M` permettent de passer à Agenda, Semaine et Mois.
-- Sur un ordinateur, `⌘B` sur Mac ou `Ctrl B` sur Windows et Linux réduit la barre latérale à ses icônes ou la rétablit.
+- Accéder à une page : `G`, puis `T` pour **Tâches**, `C` pour **Agenda**, `R` pour **Routines**, `P` pour **Personnes**, `O` pour **Organisations**, `J` pour **Projets**, `F` pour **Fleet**, `L` pour **Apprentissage**, `N` pour **Connexions**, `,` pour **Paramètres**. `G`, puis `E` ouvre les résultats de recherche des messages.
+- `N` ajoute une tâche. `T` lance **Parler**, ou met fin à la conversation si elle est en cours. `J` et `K` (ou `↓` et `↑`) permettent de parcourir une liste. Appuyez sur Entrée pour ouvrir un élément.
+- Sur une tâche : `E` la renomme, `S` la met en attente, `D` la marque comme faite, `R` ouvre son chat pour y écrire.
+- Dans **Agenda** : `T` affiche la date du jour, `J` et `K` (ou `→` et `←`) passent à la semaine ou au mois suivant ou précédent. `A`, `W` et `M` permettent de passer à **Agenda**, **Semaine** et **Mois**.
+- Sur ordinateur, `⌘B` sur Mac ou `Ctrl B` sur Windows et Linux réduit la barre latérale à ses icônes, ou la rétablit.
 
 Les raccourcis ne fonctionnent pas lorsque vous saisissez du texte dans un champ.
 
 ## Se déplacer
 
-- Quand vous ouvrez une page au clavier, le premier élément est sélectionné.
-- `J` ou `↓` passe à la tâche suivante, `K` ou `↑` à la précédente. Le début d’une liste réduite est aussi un arrêt : appuyez sur Entrée ou `→` pour l’ouvrir, puis sur `←` pour la réduire à nouveau.
-- Appuyez sur Entrée sur une tâche pour ouvrir son chat, où vous pouvez écrire. Échap ferme le champ de saisie. Appuyez de nouveau sur Échap pour fermer le chat et revenir à la tâche. Si le champ est vide, une seule pression sur Échap suffit à le fermer.
-- Échap ferme aussi une boîte de dialogue, la palette et la liste des raccourcis, puis replace la sélection à son emplacement précédent.
-- Tab permet de passer d’un bouton à l’autre. L’élément sélectionné est entouré d’un cercle.
+- Lorsque vous ouvrez une page au clavier, le focus est placé sur son premier élément.
+- `J` ou `↓` passe à la tâche suivante, `K` ou `↑` à la précédente. Le début d’une liste repliée est aussi une étape : appuyez sur Entrée ou `→` pour l’ouvrir, et sur `←` pour la replier.
+- Appuyez sur Entrée sur une tâche pour ouvrir son chat, prêt à recevoir votre texte. Échap ferme la zone de saisie. Appuyez de nouveau sur Échap pour fermer le chat et revenir à la tâche. Si la zone de saisie est vide, une seule pression sur Échap suffit.
+- Échap ferme aussi une boîte de dialogue, la palette et la liste des raccourcis, puis rétablit le focus à son emplacement précédent.
+- Tab permet de passer d’un bouton à l’autre. Un contour indique l’élément qui a le focus.
 
-## Aucune touche n’envoie quoi que ce soit
+## Rien n’est envoyé par une touche
 
-Aucune touche ni commande de la palette n’envoie, n’approuve ni ne publie quoi que ce soit. Des commandes comme « Vérifier l’e-mail » ouvrent uniquement le brouillon. Vous pouvez le lire, le modifier, puis l’envoyer avec le bouton correspondant. La seule exception est [Passer en revue](cards.md) : dans cette section, Entrée envoie le brouillon affiché en entier.
+Aucune touche ni entrée de la palette n’envoie, n’approuve ou ne publie quoi que ce soit. Les entrées comme « Examiner l’e-mail » ouvrent uniquement le brouillon, pour que vous puissiez le lire, le modifier et l’envoyer avec son propre bouton. La seule exception est [Passer en revue](cards.md) : dans cette section, Entrée envoie le brouillon affiché en entier.
