@@ -59,7 +59,7 @@ Wanneer er een grotere functie of verbetering verschijnt, krijg je een korte mel
 
 Open Zoeken op een Mac met `⌘K` of op Windows en Linux met `Ctrl K`, of tik op het zoekpictogram op een telefoon. Typ minstens twee letters. **Berichten** toont de beste resultaten uit alles wat je Machine heeft gelezen, op betekenis of op woorden. Oudere resultaten in de [geschiedenis](history.md) worden op woorden gevonden.
 
-Je kunt daar ook een vraag stellen, bijvoorbeeld de suggestie die bij een lege zoekopdracht verschijnt. Je krijgt dan een kort antwoord uit je eigen berichten ([Toetsenbord en het opdrachtenmenu](keyboard.md)).
+Je kunt daar ook een vraag stellen, bijvoorbeeld de suggestie die bij een lege zoekopdracht verschijnt. Je krijgt dan een kort antwoord uit je eigen berichten ([Toetsenbord en opdrachtenpalet](keyboard.md)).
 
 Met **Alle resultaten bekijken** open je de volledige lijst, voor alle accounts of één account. Elk resultaat opent in een leesvenster met een link naar de oorspronkelijke bron. Bij een lege zoekopdracht worden de nieuwste berichten getoond.
 
