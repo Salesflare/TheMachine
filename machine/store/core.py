@@ -34,7 +34,7 @@ from machine.config import LOG
 from machine.sources.exclusions import calendar_title_excluded, email_subject_excluded, excluded_by_rules, routine_rules
 from machine.store import history as history_store
 from machine.store.profile import QUALITY_TABLES
-from machine.store import review_whys, send_later, todo_moves
+from machine.store import ahead_hold, review_whys, send_later, todo_moves
 from machine.store.views import CARD_TABLES
 from machine import stamps
 from machine.text import QUOTED_HISTORY_KEPT, encoded, open_copy, seal_copy, trim_quoted_history
@@ -440,6 +440,7 @@ class StoreCore:
             # write lock behind a first import (tests/test_first_view_no_lock_wait.py)
             help_topics.ensure(db)  # what help was asked about (help_topics.py)
             send_later.ensure(db)  # messages that wait for their time (machine/store/send_later.py)
+            ahead_hold.ensure(db)  # drafts ahead that wait while reviews are far behind (machine/store/ahead_hold.py)
             todo_moves.ensure(db)  # each to-do's moves between statuses (machine/store/todo_moves.py)
             # Promises the owner made and promises made to them, from reviewed messages. Each is
             # checked when due: still open, it becomes a card (status carded, suggestion_id).
