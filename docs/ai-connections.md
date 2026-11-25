@@ -308,8 +308,9 @@ only, no email address). A paired self-hosted one does it in `ai_reach.py`:
 - **The certificate**: ACME (RFC 8555) with TLS-ALPN-01 (RFC 8737), from Let's Encrypt only, on an account with no
   contact. A failed try or a rate limit waits 10 minutes, doubling up to a day, or the CA's `Retry-After` when longer.
   Key and certificate stay next to the database (0600) and never leave the Machine; renewed with 30 days left; gone on
-  Unpair. It needs the `cryptography` package: without it Settings, Apps says "Install the cryptography package to use
-  this address" and nothing starts.
+  Unpair. Anything unexpected in between is logged and tried again within half an hour. It needs the `cryptography`
+  package, and the version your system ships will do (Ubuntu 24.04 has 41): without it Settings, Apps says "Install the
+  cryptography package to use this address" and nothing starts.
 - **Request bodies**: `Content-Length` or `Transfer-Encoding: chunked` (extensions ignored, trailers dropped), up to 64 KB
   (413 past it, before reading more). Both headers at once is 400.
 
