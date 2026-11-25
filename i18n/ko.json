@@ -8060,7 +8060,7 @@
   "other": "사람에게서 온 항목 {}개"
  },
  "{} from your history to review": "검토할 기록 {}개",
- "{} from {} (a source)": "{1}에게서 온 {0}",
+ "{} from {} (a source)": "{}: {}",
  "{} from {} moved to {}.": "{}: {}에서 {}로 이동했어요.",
  "{} from {}: bought about every {} days, last on {} for {}.": "{} · {}에서 구매: 약 {}일마다 구매하며, 마지막 구매일은 {}이고 금액은 {}예요.",
  "{} from {}: bought about every {} weeks, last on {} for {}.": "{} · {}에서 구매: 약 {}주마다 구매하며, 마지막 구매일은 {}이고 금액은 {}예요.",
