@@ -1,54 +1,56 @@
 ---
-title: Tastiera e barra dei comandi
+title: Tastiera e tavolozza dei comandi
 area: getting-started
-summary: Usa la tastiera per accedere a tutto dalla dashboard: la barra dei comandi, i tasti di navigazione, gli spostamenti tra le attività e i tasti disponibili su un’attività.
+summary: Raggiungi tutto dalla dashboard con la tastiera: la tavolozza, i tasti di navigazione, gli spostamenti tra le attività e i tasti per le singole attività.
 covers: keyboard
 code: dashboard.html
 order: 5
-translated: ea580f7ec40293d5
+translated: 706aa2ca54d329fb
 ---
-## La barra dei comandi
+## La tavolozza
 
-Premi `⌘K` su Mac, `Ctrl K` su Windows e Linux oppure `/` per aprire **Cerca e comandi**. Digita parte di un nome: un’azione, una pagina, un’attività, una persona, un’organizzazione, un progetto o un messaggio. Usa i tasti freccia e Invio oppure Esc per chiudere. I comandi recenti compaiono per primi. **Mostra tutti i risultati** apre tutti i messaggi corrispondenti.
+Premi `⌘K` su Mac, `Ctrl K` su Windows e Linux oppure `/` per aprire **Ricerca e comandi**. Digita parte di un nome: un’azione, una pagina, un’attività, una persona, un’organizzazione, un progetto o un messaggio. Usa i tasti freccia e Invio, oppure Esc per chiudere. I comandi recenti vengono mostrati per primi e **Vedi tutti i risultati** apre tutti i messaggi corrispondenti.
 
 Sul telefono, tocca l’icona di ricerca nella barra superiore.
 
 ## Fai una domanda
 
-Scrivi una domanda, per esempio «cosa ha detto Kim del progetto pilota?». Sopra i risultati compare una breve risposta, basata sulle tue email e sui tuoi messaggi, con un link a ogni messaggio utilizzato. La risposta è nella lingua in cui hai scritto la domanda e si basa solo sull’area che stai visualizzando (Tutto, Lavoro o Personale). Se scrivi solo un nome o alcune parole chiave, la ricerca è normale.
+Digita una domanda, come «che cosa ha detto Kim sul progetto pilota?», e sopra i risultati vedrai una breve risposta basata sulle tue email e sui tuoi messaggi, con un link a ogni messaggio usato. La risposta è nella lingua in cui fai la domanda e si basa solo sull’area che stai visualizzando (Tutto, Lavoro o Personale). Un nome o poche parole chiave avviano solo una ricerca.
 
-Chiedi di una persona e di un periodo, per esempio «cosa ha detto Kim la settimana scorsa?». La tua assistente legge solo i messaggi inviati da quella persona o scambiati con lei in quei giorni, secondo il tuo fuso orario. Se in quel periodo non ha inviato nulla, te lo dice e mostra il suo messaggio più recente con la data.
+Chiedi di una persona e di un periodo, per esempio «che cosa ha detto Kim la settimana scorsa?», e verranno letti solo i messaggi inviati da quella persona o scambiati con lei in quei giorni, in base al tuo fuso orario. Se in quel periodo non ha inviato nulla, te lo dirà e mostrerà il suo messaggio più recente con la data.
 
-Chiedi di una delle tue caselle email o dei tuoi account di chat, per esempio «cosa c’è di nuovo nella mia email personale?», indicane l’indirizzo oppure chiedi «cosa mi ha inviato Kim su WhatsApp?». La tua assistente legge solo i messaggi di quell’account e, se non specifichi altro, mostra quelli più recenti. Sa come sta andando quella connessione, per esempio se in Connessioni compare «Serve il tuo intervento», e fino a quando è stata letta. Non la legge di nuovo.
+Chiedi di una delle tue caselle email o dei tuoi account di chat, per esempio «che novità ci sono nella mia email personale?», indicane l’indirizzo oppure chiedi «che cosa mi ha inviato Kim su WhatsApp?». Verranno letti solo i messaggi di quell’account, partendo dai più recenti se non specifichi altro. La Machine conosce lo stato della connessione, per esempio se in Connessioni compare «Serve il tuo intervento», quando è stata letta l’ultima volta e se la lettura è arrivata fino in fondo. Non la rilegge.
 
-Se non trova nulla sull’argomento, cerca anche nel resto dell’area che stai visualizzando e ti dice dove ha trovato le informazioni.
+Chiedi dei messaggi appena arrivati, per esempio «è arrivata un’email 8 minuti fa nella mia casella di lavoro», e verranno letti tutti quelli ricevuti lì da circa quell’ora, a prescindere dalle parole che usi. Un messaggio viene trovato appena viene letto, prima ancora di essere esaminato. I nomi vengono riconosciuti anche senza accenti e trattini: «Soren Kjaer» trova Søren Kjær.
 
-Se non hai ancora collegato un indirizzo, te lo dice e ti invita ad aggiungerlo in Connessioni. Se hai selezionato Lavoro, non vedrai una casella email Personale, e viceversa.
+Se non trova nulla sull’argomento nell’account, cerca anche nel resto dell’area che stai visualizzando e ti dice dove ha trovato le informazioni.
 
-La tua assistente legge anche le informazioni che Machine ha già salvato sulla domanda: promesse (aperte o chiuse negli ultimi 30 giorni), informazioni apprese, il riepilogo della persona, del progetto o dell’organizzazione di cui chiedi e gli appunti delle riunioni. Ogni informazione usata nella risposta compare sotto, con il suo tipo (per esempio Promessa, Appreso, Riepilogo o Appunti della riunione), e apre la relativa pagina. Vengono lette solo le informazioni corrispondenti, nell’area che stai visualizzando.
+Se non hai collegato un indirizzo, te lo dice: aggiungilo in Connessioni. Una casella Personale non è visibile quando hai selezionato Lavoro, e viceversa.
 
-Se più persone hanno lo stesso nome, ti dice a chi si riferisce. Gli altri messaggi letti compaiono sotto Messaggi. La domanda suggerita quando la ricerca è vuota riguarda solo una persona per cui sono disponibili messaggi. La risposta non invia nulla né aggiunge attività e richiede un modello (Impostazioni, Modello).
+La Machine legge anche le informazioni che ha già salvato sull’argomento: promesse aperte o chiuse negli ultimi 30 giorni, ciò che ha imparato, il riepilogo della persona, del progetto o dell’organizzazione di cui chiedi e gli appunti delle riunioni. Ogni informazione usata nella risposta compare sotto di essa, con il relativo nome, per esempio Promise, Learned, Summary o Meeting notes, e apre la posizione in cui si trova. Vengono lette solo le informazioni pertinenti, nell’area che stai visualizzando.
+
+Se più persone hanno lo stesso nome, ti dice a chi si riferisce. Se un’altra di quelle persone ha scritto nelle ultime 3 ore, mostra i messaggi di entrambe. Gli altri messaggi letti compaiono sotto Messaggi. La domanda suggerita quando la ricerca è vuota riguarda solo argomenti per cui sono disponibili messaggi. La risposta non invia nulla né aggiunge attività. Per usarla serve un modello (**Impostazioni**, **Modello**).
 
 ## Scorciatoie
 
 Premi `?` per aprire **Scorciatoie da tastiera**, l’elenco completo per il tuo computer.
 
-- Vai a una pagina: `G` e poi `T` per Attività, `C` per Calendario, `R` per Routine, `P` per Persone, `O` per Organizzazioni, `J` per Progetti, `F` per Fleet, `L` per Apprendimento, `N` per Connessioni, `,` per Impostazioni. `G` e poi `E` aprono i risultati della ricerca nei messaggi.
-- `N` crea una nuova attività. `T` avvia Talk o lo termina quando è in corso. `J` e `K` (oppure `↓` e `↑`) permettono di spostarti nell’elenco. Invio apre l’elemento selezionato.
-- Su un’attività: `E` la rinomina, `S` la posticipa, `D` la segna come fatta, `R` apre la chat per scriverci.
-- Nel Calendario: `T` passa a oggi, `J` e `K` (oppure `→` e `←`) passano alla settimana o al mese successivo o precedente. `A`, `W` e `M` selezionano rispettivamente Agenda, Settimana e Mese.
-- Su un computer, `⌘B` su Mac oppure `Ctrl B` su Windows e Linux riduce la barra laterale a icone e la ripristina.
+- Vai a una pagina: `G`, poi `T` per le attività, `C` per il calendario, `R` per le routine, `P` per le persone, `O` per le organizzazioni, `J` per i progetti, `F` per Fleet, `L` per l’apprendimento, `N` per le connessioni e `,` per le impostazioni. `G` e poi `E` aprono i risultati della ricerca dei messaggi.
+- `N` aggiunge una nuova attività. `T` avvia Talk o lo termina quando è in corso. `J` e `K` (oppure `↓` e `↑`) spostano l’evidenziazione nell’elenco. Premi Invio per aprire.
+- Su un’attività: `E` la rinomina, `S` la posticipa, `D` la segna come completata, `R` apre la chat per scriverci.
+- Nel calendario: `T` passa a oggi, `J` e `K` (oppure `→` e `←`) passano alla settimana o al mese successivo o precedente. `A`, `W` e `M` passano rispettivamente alla vista Agenda, Settimana e Mese.
+- Su computer, `⌘B` su Mac oppure `Ctrl B` su Windows e Linux riducono la barra laterale a icone o la ripristinano.
 
-I tasti non funzionano mentre scrivi in un campo.
+I tasti non funzionano mentre digiti in un campo.
 
 ## Spostarsi
 
 - Quando apri una pagina con la tastiera, il primo elemento riceve il focus.
-- `J` o `↓` passa all’attività successiva, `K` o `↑` a quella precedente. Anche l’inizio di un elenco chiuso è una tappa: premi Invio o `→` per aprirlo, `←` per richiuderlo.
-- Invio su un’attività apre la relativa chat, pronta per scrivere. Esc esce dal campo di testo; premendolo di nuovo, la chat si chiude e torni all’attività. Se il campo è vuoto, basta premere Esc una volta per chiuderlo.
-- Esc chiude anche una finestra di dialogo, la barra dei comandi e l’elenco delle scorciatoie, riportando il focus alla posizione precedente.
-- Tab passa da un pulsante all’altro. Un indicatore circolare mostra l’elemento che ha il focus.
+- `J` o `↓` passa all’attività successiva, `K` o `↑` a quella precedente. Anche la prima voce di un elenco chiuso è una tappa: premi Invio o `→` per aprirlo, `←` per richiuderlo.
+- Premi Invio su un’attività per aprire la relativa chat, pronta per scrivere. Esc esce dal campo; premendolo di nuovo, la chat si chiude e torni all’attività. Se il campo è vuoto, basta premere Esc una volta per chiuderlo.
+- Esc chiude anche una finestra di dialogo, la tavolozza e l’elenco delle scorciatoie, e riporta il focus al punto in cui si trovava.
+- Tab sposta il focus tra i pulsanti. Un anello indica l’elemento selezionato.
 
 ## I tasti non inviano nulla
 
-Nessun tasto o elemento della barra dei comandi invia, approva o pubblica contenuti. Elementi come «Rivedi l’email» aprono solo la bozza, così puoi leggerla, modificarla e inviarla con il relativo pulsante. L’unica eccezione è [Esamina](cards.md): in quel caso, premendo Invio invii la bozza completa che viene mostrata.
+Nessun tasto o voce della tavolozza invia, approva o pubblica contenuti. Voci come «Esamina l’email» aprono solo la bozza, così puoi leggerla, modificarla e inviarla con il pulsante dedicato. L’unica eccezione è [Esamina](cards.md): in quel caso, premendo Invio viene inviata la bozza mostrata per intero.
