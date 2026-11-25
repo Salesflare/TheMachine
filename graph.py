@@ -54,6 +54,7 @@ import timeutil
 import enrichment
 import graph_joins
 import graph_publish
+import help_search
 import lookalike
 import mail_senders
 from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, address_name, addresses, automated, bulk, list_unsubscribes, mass_mail, owner_kept, relay, shared_inbox  # noqa: F401
@@ -1391,7 +1392,7 @@ def find(db, text, limit=10, kinds=('person', 'project', 'org'), also=None):
     words = [w for w in re.findall(r'[\w@.+-]+', str(text or '').casefold()) if len(w) > 1]
     if not words:
         return []
-    folded = lambda s: s.lower() if s.isascii() else unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().casefold()
+    folded = lambda s: s.lower() if s.isascii() else help_search.fold(s).casefold()  # any alphabet, without accents
     also, words, cursor = also or {}, [folded(w) for w in words], db.cursor()
     cursor.row_factory = None  # each node's text as plain values and folded once, only the matches read whole: all were read and folded per word
     texts = ((i, folded(f"{name} {i} {_opened_info(db, i) if 'mc1_sealed' in info else info} {also.get(i, '')}")) for i, name, info in cursor.execute(

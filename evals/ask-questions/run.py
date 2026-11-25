@@ -82,6 +82,10 @@ def machine(world, folder, lang):
         with store.connect() as db:
             db.isolation_level = None
             graph.build(db, app.config, NOW.isoformat())
+        for n, (account, minutes, *rest) in enumerate(world.get('after', ()), len(world['messages'])):  # came in after the Graph was built
+            clock.pin(NOW - dt.timedelta(minutes=world.get('read_after', 3)))
+            store.commit_page(account, world.get('state', {}).get(account, {}), [message(world, n, [account, minutes / 1440, *rest])])
+        clock.pin(NOW)
         (Path(folder) / f'{lang}.ready').touch()
     return app
 
@@ -103,11 +107,11 @@ def one(case, world, folder, args):
     app.ask_model = model
     search_ask.limited = lambda now=None: False  # the eval asks more than an owner may in an hour
     started = time.monotonic()
-    found = app.action('search_ask', {'query': case['q'], 'area': case.get('area', 'all')}, owner_dashboard=True)
+    found = app.action('search_ask', {'query': case['q'], 'area': case.get('area', 'all'), 'before': case.get('before')}, owner_dashboard=True)
     took = time.monotonic() - started
     answer = found.get('answer') or ('FAILED' if found.get('error') else 'NO ANSWER')
     read = prompts[1].split('\nQuestion: <<<')[0] if len(prompts) > 1 else ''
-    outside = sorted({m[0] for m in world['messages'] if f'<<<{m[4]}>>>' in read and m[0] not in case['only']}) if 'only' in case and not case.get('beyond') else []
+    outside = sorted({m[0] for m in [*world['messages'], *world.get('after', ())] if f'<<<{m[4]}>>>' in read and m[0] not in case['only']}) if 'only' in case and not case.get('beyond') else []
     missing = [x for x in case.get('needs', ()) if f"<<<{x.split(':', 1)[1]}" not in read]
     narrowed = bool(case.get('whole') and any(s.get('connections') for s in scopes))
     try:

@@ -1,0 +1,49 @@
+{
+ "owner": "Iris Vandal",
+ "accounts": [
+  {"id": "north", "service": "outlook", "email": "iris@northbeam.example", "scope": "work", "boundary": "work:north"},
+  {"id": "home", "service": "gmail", "email": "iris.vandal@homemail.example", "scope": "personal", "boundary": "personal:home"},
+  {"id": "wa", "service": "whatsapp", "email": "Iris’s WhatsApp", "scope": "personal", "boundary": "personal:wa"}
+ ],
+ "owner_emails": [],
+ "read": {},
+ "failing": {},
+ "read_after": 3,
+ "messages": [
+  ["north", 0.4, "Anna Berg <anna.berg@northbeam.example>", "Roadmap", "The roadmap review moved to Thursday at 10:00. Anna"],
+  ["north", 1.2, "Anna Berg <anna.berg@northbeam.example>", "Hiring", "I shortlisted two people for the design role. Anna"],
+  ["north", 2.1, "Iris Vandal <iris@northbeam.example>", "Re: Hiring", "Great, let us speak to both next week. Iris", "Anna Berg <anna.berg@northbeam.example>"],
+  ["north", 3, "Anna Berg <anna.berg@northbeam.example>", "Travel", "The train tickets for Lyon are booked, 148 euros. Anna"],
+  ["north", 3.5, "Iris Vandal <iris@northbeam.example>", "Re: Travel", "Thanks, see you at the station. Iris", "Anna Berg <anna.berg@northbeam.example>"],
+  ["north", 0.9, "Tomas Reyes <tomas@reyes.example>", "An email about the work mailbox", "Your new mailbox came in at 50 GB, the email quota is doubled. Tomas"],
+  ["north", 4, "Tomas Reyes <tomas@reyes.example>", "Order", "Order 5512 arrives on November 13. Tomas"],
+  ["north", 6, "Michał Wójcik <michal@wojcik.example>", "Crates", "The eight crates leave Gdynia on November 16. Michał"],
+  ["home", 0.5, "Anna Lund <anna@lund.example>", "Book club", "Book club is at my place on Friday at 20:00. Anna"],
+  ["home", 5, "Anna Lund <anna@lund.example>", "Recipe", "The soup needs two leeks and a fennel. Anna"],
+  ["wa", 0.3, "Pia Holm", "Pia Holm", "Are you coming to yoga tonight?"],
+  ["home", 2, "Анна Петренко <petrenko@kvitka.example>", "Квіти", "The tulip bulbs ship on November 18. Анна"]
+ ],
+ "after": [
+  ["north", 8, "Anna Olszko-Dębińska <a.olszko@debinska.example>", "Contract", "I signed the contract and need your countersignature before Wednesday. Anna"],
+  ["wa", 6, "Søren Kjær", "Søren Kjær", "The boat is free on Saturday, shall I book it?"],
+  ["home", 12, "Pia Holm <pia@holm.example>", "Photos", "The photos of the weekend are in the album. Pia"]
+ ],
+ "cases": [
+  {"id": "a1", "lang": "en", "q": "can you check Anna's mail", "fact": "Must tell that Anna Olszko-Dębińska signed the contract and needs a countersignature before Wednesday. It may also tell about other Annas, by full name."},
+  {"id": "a2", "lang": "en", "q": "check the mail from Anna Olszko-Dębińska", "fact": "She signed the contract and needs a countersignature before Wednesday."},
+  {"id": "a3", "lang": "en", "q": "what does Olszko Debinska want?", "fact": "She signed the contract and needs a countersignature before Wednesday."},
+  {"id": "a4", "lang": "en", "q": "an email came in 8 minutes ago on my work mailbox", "only": ["north"], "fact": "The mail from Anna Olszko-Dębińska: she signed the contract, needs a countersignature before Wednesday. It must not say it found nothing."},
+  {"id": "a5", "lang": "en", "q": "what email just came in?", "fact": "Anna Olszko-Dębińska (contract signed, countersignature before Wednesday) and/or the photos from Pia."},
+  {"id": "a6", "lang": "nl", "q": "er is daarnet een mail binnengekomen op mijn werkmailbox, wat staat erin?", "only": ["north"], "fact": "Anna Olszko-Dębińska heeft het contract getekend en wil een handtekening voor woensdag."},
+  {"id": "a7", "lang": "en", "q": "what did Søren write just now?", "fact": "The boat is free on Saturday, and he asks whether to book it."},
+  {"id": "a8", "lang": "en", "q": "and what did soren kjaer ask", "fact": "The boat is free on Saturday, whether to book it."},
+  {"id": "a9", "lang": "en", "q": "when do the crates of Michal Wojcik leave?", "fact": "On November 16, from Gdynia."},
+  {"id": "a10", "lang": "uk", "q": "що писала Анна Петренко?", "fact": "Цибулини тюльпанів відправлять 18 листопада."},
+  {"id": "a11", "lang": "en", "q": "did anything come in on my work email in the last two minutes?", "only": ["north"], "fact": "Nothing came in in the last two minutes that is known. It may give the latest, from Anna Olszko-Dębińska."},
+  {"id": "a12", "lang": "en", "q": "an email came in 8 minutes ago on my work mailbox", "before": ["can you check Anna's mail", "Anna Olszko-Dębińska"], "fact": "Anna Olszko-Dębińska signed the contract, needs a countersignature before Wednesday."},
+  {"id": "a13", "lang": "en", "q": "Olszko-Dębińska", "before": ["can you check Anna's mail"], "fact": "She signed the contract and needs a countersignature before Wednesday."},
+  {"id": "a14", "lang": "en", "q": "no, the Anna from the contract", "before": ["can you check Anna's mail"], "fact": "Anna Olszko-Dębińska signed the contract and needs a countersignature before Wednesday."},
+  {"id": "a15", "lang": "en", "q": "what did Anna Berg write about travel?", "ordinary": true, "fact": "The train tickets for Lyon are booked, 148 euros."},
+  {"id": "a16", "lang": "en", "q": "what did Pia send half an hour ago?", "fact": "The photos of the weekend are in the album (12 minutes ago). It may say that was less than half an hour ago."}
+ ]
+}
