@@ -2,7 +2,7 @@
 
 Your proactive AI assistant. It reads your email, chats, calendar and phone, turns what matters into to-dos, prepares the work, and only sends what you approve. Open source, on your own computer or hosted for you.
 
-- **To-dos from everything that comes in:** Gmail, Outlook, Slack, WhatsApp, Telegram, LinkedIn, X, your calendar and phone notifications become one list of to-dos.
+- **To-dos from everything that comes in:** Gmail, Outlook, Slack, WhatsApp, Telegram, LinkedIn, X, your calendar and Android notifications become one list of to-dos.
 - **The work, prepared:** reply drafts, new or edited docs and the lookups behind them are ready when you open a to-do.
 - **Nothing goes out unseen:** a draft is sent only after you've seen and approved it. Paying, booking or submitting waits for your yes.
 - **Promises:** what you promised and what others promised you, tracked until it's kept.
@@ -149,7 +149,7 @@ Read [SECURITY.md](SECURITY.md) and [PREPARATION.md](PREPARATION.md) before you 
 ## Known limitations
 
 - Sources and model judgment are not complete or infallible.
-- Phone notifications can be lost during gaps, Slack can take hours, and browser-read sources (LinkedIn, X) can break when the site changes.
+- Android notifications can be lost during gaps, Slack can take hours, and browser-read sources (LinkedIn, X) can break when the site changes.
 - A successful sync with a limit is not a complete catch-up.
 - Newer OpenClaw releases are tested weekly, not guaranteed.
 

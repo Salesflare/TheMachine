@@ -99,6 +99,8 @@ TODO_SOURCE = {'gmail.message': 'Email', 'ms_graph.message': 'Email', 'outlook.m
 
 
 TODO_SOURCE_OTHER = 'Other'
+# Feedback shows a row by another name than reviews and team learnings read: the source's own, as in Connections
+TODO_SOURCE_SHOWN = {'Phone notifications': 'Android notifications'}
 
 
 def todo_source(kind):
@@ -647,6 +649,7 @@ class ProfileStore:
         current = self.quality(days)
         before = self.quality(days, (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat())
         b = self.behaviour(days)
+        current['by_source'] = {TODO_SOURCE_SHOWN.get(k, k): n for k, n in current['by_source'].items()}
         return {**current, 'previous': {k: before[k] for k in ('hit_rate', 'first_time_rate', 'finished_rate', 'cards')},
                 'sent_as_written': b['sent_as_written'], 'sent_edited': b['sent_edited'], 'trend': self.quality_trend(),
                 'notes': self.note_kind_counts(days), 'enough': QUALITY_ENOUGH}

@@ -14,7 +14,7 @@ const listOpenKept={};const listOpen=id=>{const d=document.getElementById(id);if
 const linkedIn=l=>!!linkedCardId&&l.some(s=>s.id===linkedCardId);
 function listShow(d){if(d?.open&&['waiting-list','older-list','later-list','finished-list'].includes(d.id)){listOpenKept[d.id]=true;render('view')}}
 // Feedback's rows name where the to-dos came from (assistant.py TODO_SOURCE); the ones that need it say a little more
-const SOURCE_TIPS={'Added by you':'Made with New to-do','The Machine itself':'Problems in The Machine, like an error','Phone notifications':'Texts and alerts on your phone','Other':'The source is gone or unknown'};
+const SOURCE_TIPS={'Added by you':'Made with New to-do','The Machine itself':'Problems in The Machine, like an error','Android notifications':'Texts and alerts on your phone','Other':'The source is gone or unknown'};
 // render('view'): only what opening or closing a chat changes (the to-do list, the sidebar, the chat), when the data is
 // the same as at the last whole render; Learning, Connections and the rest stay as they are drawn (a chat's open or
 // close redrew them all, some 40 ms of each).

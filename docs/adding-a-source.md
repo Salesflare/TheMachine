@@ -172,7 +172,7 @@ APP = 'GitHub'                 # "Open in GitHub"; '' for "Open original"; or {'
 
 - **email**: mail. The subject is the title; the sender by name with the address quiet, To and Cc as their own lines. Details only when it adds something the header doesn't say (full addresses behind names, Bcc, a Reply-To elsewhere, the service it was sent through), never a To that is just the address on the line. A body that starts with `From:`/`To:` lines has them moved to the header.
 - **chat**: a conversation. Turns by who said them, the owner's side (and a support team's) on the right, a bot marked as one. A messenger kind (`messenger` in its `machine/kinds.py` row) reads like its app, bubbles with their times. Set `media` in its row, list it in `MEDIA_KINDS` and set `media_type` in metadata, and `media_shown` turns a caption-less "Sent image" into a chip.
-- **notification**: a phone notification or alert. The app, the time, its title and text, once each.
+- **notification**: an Android notification or alert. The app, the time, its title and text, once each.
 - **card**: an item with a state (an issue, a task, a deal, a payment, a doc comment, meeting notes). Its title, where it is, a state, who made it, why it reached the owner, the text rendered.
 
 The rules every view keeps, whatever the source sends:
@@ -183,7 +183,7 @@ The rules every view keeps, whatever the source sends:
 4. People by name where a name exists, and the real author rather than the bot that sent the notification. An address the source sends without a name shows by the name the Graph knows for it, everywhere a sender shows (the viewer, a to-do's source line, the last check's list, a person's Graph timeline); the address only when no name is known. When your `from` is an address, put the name the service gives next to it (`from_name`, `sender_display`, `contact_name` or `customer_name`; `NAME_KEYS`), never an address as that name: `sender_name` in [`machine/store/message_view.py`](../machine/store/message_view.py) reads it. A relay or bot address (Intercom's `operator+…@intercom.io`, a noreply) never shows outside email: the customer by name when the source names one, else the bot or teammate by the name the service gives.
 5. A short title, whole: no `[repo]` prefixes, never cut mid-word.
 6. Long bodies fold behind Show more.
-7. "Open in …" sits left, under the content, for every kind, in the viewer and on its row in Messages. Set `source_url` (https) on every event that has a page of its own; a kind with none (a phone notification, a WhatsApp message) shows no link.
+7. "Open in …" sits left, under the content, for every kind, in the viewer and on its row in Messages. Set `source_url` (https) on every event that has a page of its own; a kind with none (an Android notification, a WhatsApp message) shows no link.
 8. A kind ending in `.transcript` reads as speaker turns at their time of day, never with raw `[0:00:00]` stamps.
 
 A row in Messages follows the same rules (`message_view.list_row`): who it's from by name, its words without ids, stamps or markup, and the account by its Connections name.

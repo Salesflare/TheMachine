@@ -23,7 +23,7 @@ GENERIC_DOMAINS = {'gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 
                    'stripe.com', 'intercom.io', 'example.com'}
 # Words a real install's names or chats can share with the fixture's invented ones without identifying anyone.
 COMMON = {'calendar', 'bank', 'parcel', 'train', 'weather', 'support', 'sales', 'general', 'product', 'family', 'football parents',
-          'direct message', 'intercom', 'stripe', 'github', 'linkedin', 'whatsapp', 'crm', 'phone notifications',
+          'direct message', 'intercom', 'stripe', 'github', 'linkedin', 'whatsapp', 'crm', 'android notifications',
           'salesflare'}  # connector names the app itself ships with
 
 

@@ -30,30 +30,30 @@ for(const [line,shown] of [
  ['Source: your routine From A to B · Thu, Nov 12','From your routine From A to B · en 11/12'],
  ['Source: your Fleet · Thu, Nov 12','From your Fleet · en 11/12'],
  ['Source: Slack · Thu, Nov 12 (+1 more)','Slack · en 11/12 (+1 more)'],
- ['Source: phone notification from WhatsApp · Thu, Nov 12','Phone notification from WhatsApp · en 11/12'],
- ['Source: phone notification · Thu, Nov 12 (+1 more)','Phone notification · en 11/12 (+1 more)'],
+ ['Source: Android notification from WhatsApp · Thu, Nov 12','Android notification from WhatsApp · en 11/12'],
+ ['Source: Android notification · Thu, Nov 12 (+1 more)','Android notification · en 11/12 (+1 more)'],
  ['Source: calendar','Calendar']])assert.equal(say('en',null,line),shown);
 
 // Each language as it was read over (Korean and Russian never inflect a name): who it went to (a person, a company, a
 // channel, a group chat) never reads as who it came from, and the kind never as a place or a sender ("Von WhatsApp an Anna")
 const TO='{} to {} (a message)',FROM='{} from {} (a source)';
-const READ={nl:['WhatsApp aan Anna','WhatsApp van Anna','Telefoonmelding van WhatsApp'],de:['WhatsApp an Anna','WhatsApp von Anna','Handy-Benachrichtigung von WhatsApp'],
- fr:['WhatsApp à Anna','WhatsApp de Anna','Notification mobile de WhatsApp'],es:['WhatsApp a Anna','WhatsApp de Anna','Notificación móvil de WhatsApp'],
- it:['WhatsApp a Anna','WhatsApp da Anna','Notifica sul telefono da WhatsApp'],'pt-BR':['WhatsApp para Anna','WhatsApp de Anna','Notificação de celular de WhatsApp'],
- ru:['WhatsApp, кому: Anna','WhatsApp: Anna','Уведомление на телефоне: WhatsApp'],ja:['WhatsApp（Anna宛）','WhatsApp（Annaから）','スマートフォンの通知（WhatsAppから）'],
- ko:['WhatsApp, 수신자: Anna','WhatsApp: Anna','휴대폰 알림: WhatsApp'],'zh-CN':['发给Anna的WhatsApp','来自Anna的WhatsApp','来自WhatsApp的手机通知']};
+const READ={nl:['WhatsApp aan Anna','WhatsApp van Anna','Android-melding van WhatsApp'],de:['WhatsApp an Anna','WhatsApp von Anna','Android-Benachrichtigung von WhatsApp'],
+ fr:['WhatsApp à Anna','WhatsApp de Anna','Notification Android de WhatsApp'],es:['WhatsApp a Anna','WhatsApp de Anna','Notificación de Android de WhatsApp'],
+ it:['WhatsApp a Anna','WhatsApp da Anna','Notifica Android da WhatsApp'],'pt-BR':['WhatsApp para Anna','WhatsApp de Anna','Notificação do Android de WhatsApp'],
+ ru:['WhatsApp, кому: Anna','WhatsApp: Anna','Уведомление Android: WhatsApp'],ja:['WhatsApp（Anna宛）','WhatsApp（Annaから）','Androidの通知（WhatsAppから）'],
+ ko:['WhatsApp, 수신자: Anna','WhatsApp: Anna','Android 알림: WhatsApp'],'zh-CN':['发给Anna的WhatsApp','来自Anna的WhatsApp','来自WhatsApp的Android通知']};
 for(const [lang,[to,from,phone]] of Object.entries(READ)){const cat=await json(lang+'.json');
  for(const who of ['Anna','Acme','#general','Weekend crew']){
   assert.equal(say(lang,cat,`Source: WhatsApp to ${who} · Thu, Nov 12`),to.replace('Anna',who)+` · ${lang} 11/12`);
   assert.equal(say(lang,cat,`Source: WhatsApp from ${who} · Thu, Nov 12`),from.replace('Anna',who)+` · ${lang} 11/12`)}
- assert.equal(say(lang,cat,'Source: phone notification from WhatsApp'),phone)}
+ assert.equal(say(lang,cat,'Source: Android notification from WhatsApp'),phone)}
 const nl=await json('nl.json');
 assert.equal(say('nl',nl,'Source: WhatsApp to Anna Example · Thu, Nov 12 (+2 more)'),'WhatsApp aan Anna Example · nl 11/12 (+2 meer)');
 assert.equal(say('nl',nl,'Source: email to Anna Example from Acme · Thu, Nov 12'),'E-mail aan Anna Example from Acme · nl 11/12');
 
 // Every language, every kind a line can name (machine/kinds.py), every form: its own words, none left in English
 const kinds=[...new Set(Object.values(JSON.parse(/<script id="source-kinds"[^>]*>([^<]*)</.exec(html)[1]).kinds).map(k=>k.name).filter(Boolean)
- .map(n=>n==='phone'?'phone notification':n))];  // as the line is shown (machine/cards.py source_kind_shown)
+ .map(n=>n==='phone'?'Android notification':n))];  // as the line is shown (machine/cards.py source_kind_shown)
 const up=s=>s[0].toUpperCase()+s.slice(1);
 assert.ok(kinds.length>30);
 for(const name of kinds)assert.ok(up(name) in en||notUi.has(up(name))||name.length<2,`"${up(name)}" is in no catalog: a source line keeps it English (python3 scripts/i18n_extract.py --add)`);

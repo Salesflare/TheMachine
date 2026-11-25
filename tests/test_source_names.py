@@ -75,11 +75,11 @@ class SourceNames(unittest.TestCase):
             self.assertEqual(a.source_line_shown(stored, names), want)
         self.assertNotRegex(a.source_line_shown('Source: Slack from #DM U0ROBIN01 · Thu 22 Oct'), RAW)  # no names known (Telegram's card text)
 
-    def test_a_phone_notification_says_so_where_people_read_it(self):
-        for line, want in (('Source: phone from WhatsApp · Thu 22 Oct (+1 more)', 'Source: phone notification from WhatsApp · Thu 22 Oct (+1 more)'),
-                           ('Source: phone · Thu 22 Oct', 'Source: phone notification · Thu 22 Oct'),
-                           ('Source: phone (+1 more)', 'Source: phone notification (+1 more)'), ('phone', 'phone notification'),
-                           ('phone from Acme Bank · Thu 22 Oct', 'phone notification from Acme Bank · Thu 22 Oct'),
+    def test_an_android_notification_says_so_where_people_read_it(self):
+        for line, want in (('Source: phone from WhatsApp · Thu 22 Oct (+1 more)', 'Source: Android notification from WhatsApp · Thu 22 Oct (+1 more)'),
+                           ('Source: phone · Thu 22 Oct', 'Source: Android notification · Thu 22 Oct'),
+                           ('Source: phone (+1 more)', 'Source: Android notification (+1 more)'), ('phone', 'Android notification'),
+                           ('phone from Acme Bank · Thu 22 Oct', 'Android notification from Acme Bank · Thu 22 Oct'),
                            ('Source: email from phone repairs · Thu 22 Oct', 'Source: email from phone repairs · Thu 22 Oct'),
                            ('Source: phonebook from Sam Lee', 'Source: phonebook from Sam Lee'), (None, None)):
             self.assertEqual(source_kind_shown(line), want)
@@ -95,9 +95,9 @@ class SourceNames(unittest.TestCase):
             source_lines_shown(db, brief)  # what an agent's brief is made of (agent_card)
         self.assertTrue(brief[0]['source_line'].startswith('Source: phone from WhatsApp · '), brief[0]['source_line'])
         shown = self.shown()[card]
-        self.assertTrue(shown['source_line'].startswith('Source: phone notification from WhatsApp · '), shown['source_line'])
+        self.assertTrue(shown['source_line'].startswith('Source: Android notification from WhatsApp · '), shown['source_line'])
         self.assertEqual(shown['source_mark']['app'], 'com.whatsapp')  # and still wears the app's icon
-        self.assertIn('Source: phone notification from WhatsApp · ', a.card(row))  # Telegram
+        self.assertIn('Source: Android notification from WhatsApp · ', a.card(row))  # Telegram
 
     def test_the_dashboard_gets_names_for_slack_whatsapp_and_telegram_cards(self):
         cards = {s: self.card(s) for s in ('D0ROBIN01:1', 'w1', 't1')}

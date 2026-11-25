@@ -52,7 +52,7 @@ ACCOUNTS = [  # the owner's sources, as in a config; ids say what they are, neve
     {'id': 'home-whatsapp', 'service': 'whatsapp', 'transport': 'wacli', 'email': '', 'display_name': 'WhatsApp', 'boundary': 'personal'},
     {'id': 'home-telegram', 'service': 'telegram', 'transport': 'telegram_mirror', 'email': '', 'display_name': 'Telegram chats', 'boundary': 'personal'},
     {'id': 'home-signal', 'service': 'signal', 'transport': 'signal_mirror', 'email': '', 'display_name': 'Signal chats', 'boundary': 'personal'},
-    {'id': 'home-phone', 'service': 'android', 'transport': 'openclaw-feed', 'email': '', 'display_name': 'Phone notifications', 'boundary': 'personal', 'node_id': 'sandbox-phone'},
+    {'id': 'home-phone', 'service': 'android', 'transport': 'openclaw-feed', 'email': '', 'display_name': 'Android notifications', 'boundary': 'personal', 'node_id': 'sandbox-phone'},
 ]
 KIND_ACCOUNT = {  # profile key -> (account, event kind)
     'gmail gmail.message': ('work-gmail', 'gmail.message'), 'android android.notification': ('home-phone', 'android.notification'),

@@ -357,10 +357,10 @@ def source_line_shown(line, names=None):
 
 
 def source_kind_shown(line):
-    """A source line as the dashboard and Telegram write its kind: an Android notification's says "phone notification
-    from WhatsApp", as "phone from WhatsApp" reads like a call. Stored lines, what a model reads and the kind's own name
+    """A source line as the dashboard and Telegram write its kind: "Android notification from WhatsApp", the
+    source's name in Connections, as the stored "phone from WhatsApp" reads like a call. Stored lines, what a model reads and the kind's own name
     (machine/kinds.py) keep "phone"."""
-    return re.sub(r'^((?:Source: )?phone)(?= (?:from|to|·|\(\+)|$)', r'\1 notification', str(line)) if line else line
+    return re.sub(r'^((?:Source: )?)phone(?= (?:from|to|·|\(\+)|$)', r'\1Android notification', str(line)) if line else line
 
 
 # A blocker that waits on the owner (a sign-in in the kept tab) resumes with Continue, not Try again.
