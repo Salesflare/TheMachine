@@ -11,10 +11,12 @@ question about the owner's own mailbox or chat account reads only its messages, 
 import datetime as dt
 import json
 import logging
+import re
 import sqlite3
 
 import embeddings
 import graph
+import help_search
 import locale_prefs
 import timeutil
 from machine.app import ask_connections, ask_memory
@@ -50,6 +52,17 @@ def spread(rows, limit):
         return list(rows)
     step = len(rows) / limit
     return [rows[int(n * step)] for n in range(limit)]
+
+
+def name_words(name):
+    """The whole words of a name, without accents and case."""
+    words = {help_search.fold(w).casefold() for w in re.findall(r'\w+', str(name or ''))}
+    return words if '@' not in str(name or '') and any(len(w) > 1 for w in words) else set()
+
+
+def sender_name(meta):
+    """The name on a message of who sent it."""
+    return search_ask._who({k: meta.get(k) for k in ('sender_display', 'from')})
 
 
 class SearchAskApp:
@@ -297,10 +310,7 @@ class SearchAskApp:
             weighed = [(len(self.search_ask_person_ids(db, r['id'], days, accounts, 50)) if accounts else 0, r['strength'] or 0, n)
                        for n, (r, _, _) in enumerate(people[:PEOPLE])]
         if not people:
-            scope['unknown'] = plan['person']
-            rows = self.search_ask_rows(about or question, area, days, hits, only)
-            scope['none'] = not rows
-            return rows, scope
+            return self.search_ask_unknown(scope, question, about, area, days, hits, only, got and readable, mine, plan)
         weighed.sort(key=lambda w: (w[0] > 0, w[1]), reverse=True)
         row, words, ids = people[weighed[0][2]]
         scope['name'] = row['name'] or graph.handle_shown(row['id'])
@@ -331,6 +341,29 @@ class SearchAskApp:
             rows = self.search_ask_person_rows(row['id'], words, ids, None, area, plan['said_by'], mine, 40, only)
             rows = [r for r in rows if str(r['occurred_at'])[:10] == str(rows[0]['occurred_at'])[:10]][:3] if rows else []
         scope['none'] = none or not rows
+        return rows, scope
+
+    def search_ask_unknown(self, scope, question, about, area, days, hits, only, readable, mine, plan):
+        """(rows, scope) for a question about someone who isn't in the Graph: what the search finds, first what is from
+        someone with that name (scope['named']: their name on each of those). only, readable: the connections it names;
+        with nothing from them found there, those days' or the newest messages there are looked at, and with a subject
+        the rest of the area in view too (search_ask_beyond)."""
+        scope['unknown'] = plan['person'] or ''
+        asked = name_words(scope['unknown'])
+
+        def theirs(rows):
+            return [r for r in rows if asked and not mine(_meta(r)) and asked <= name_words(sender_name(_meta(r)))]
+        rows = self.search_ask_rows(about or question, area, days, hits, only)
+        if only and not theirs(rows):
+            latest = theirs(self.search_ask_days_rows(area, days, only) if days else self.search_ask_newest(area, only, mine, 'person'))
+            scope['newest'] = bool(latest and not days)
+            rows = latest or rows
+            scope['none'] = not rows
+            if about:
+                scope['nomatch'] = about
+                rows = self.search_ask_beyond(scope, rows, readable, area, only, lambda others: theirs(self.search_ask_rows(about, area, days, None, others)))
+        scope['named'] = {r['id']: sender_name(_meta(r)) for r in theirs(rows)}
+        scope.setdefault('none', not rows)
         return rows, scope
 
     @staticmethod
