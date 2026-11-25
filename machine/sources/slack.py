@@ -576,6 +576,28 @@ def slack_read_drop(account_id, channel_id):
         READ_NOW.pop((account_id, channel_id), None)
 
 
+def slack_asked_turn(account, state):
+    """A conversation a run asked for doesn't wait behind another one's read under way: a daily replay pages for many
+    turns, minutes apart, and the run waited through all of them (2026-11-25). That read is set aside as it stands and
+    carries on once no ask is left, found again by its conversation's id."""
+    channels, scan = state['channels'], state.get('scan')
+    asked = any(slack_read_asked(account['id'], c) is not None for c in channels)
+    if scan:
+        if asked and not scan.get('asked') and not state.get('set_aside'):
+            state['set_aside'] = {'channel': channels[state['index']]['id'], 'scan': state.pop('scan')}
+        return
+    if asked or not state.get('set_aside'):
+        return
+    aside = state.pop('set_aside')
+    index = next((i for i, c in enumerate(channels) if c['id'] == aside['channel']), None)
+    if index is None:  # they left it meanwhile
+        return
+    scan = aside['scan']
+    threads = 'known_threads' if 'known_threads' in scan else 'threads'
+    scan[threads] = list(dict.fromkeys(scan[threads] + channels[index].get('threads', [])))  # found by the asked read meanwhile
+    state.update(index=index, scan=scan)
+
+
 def slack_next_due(store, config, account, source, state):
     """Moves state['index'] to the conversation that most needs a read and returns True, or returns False when
     nothing is due. Slack allows about one history read a minute (one every few minutes on a shared workspace),

@@ -119,7 +119,7 @@ def ask_do_now(turn, steps):
     listed = '; '.join(next_actions.label(a) + ': ' + ' '.join(next_actions.preview(a).split())[:400] for a in steps)
     return ('Decide first: does the owner’s message ask for exactly this step? Their message: <<<' + said + '>>>. The step you saved '
             'for their Confirm: ' + listed + '. If their message asks for it (a fix, change or cleanup they asked for, even in passing '
-            'or as a complaint that it is not done yet), their message is the OK: save again with do_now:true and it runs now, without '
+            'or as a complaint that it is not done yet), their message is the OK: save again with do_now:true beside next_actions and it runs now, without '
             'a Confirm; the body says it is being done. If the step goes further than they asked (more changes, other people, sharing '
             'or permissions, publishing) or they only asked a question, save again with do_now:false and it waits for their Confirm.')
 

@@ -259,8 +259,10 @@ class HandledCheckApp:
         if pending:
             account = next((a for a in self.config.get('accounts') or () if a.get('service') == 'slack'), {})
             every = max(slack_limits(account)['floor'], int(self.config.get('slack_read_seconds', slack_limits(account)['read_seconds']))) + 15
+            # How long it waited so far makes each refusal its own: the Gateway ends a turn on the third identical one
+            waited = int(max(0, time.time() - (self.__dict__.get('_handled_waits') or {}).get(key, time.time())))
             return (f"Before this goes to the owner: Slack reads the conversations with {names} first ({', '.join(pending)}), one "
-                    'every few minutes, since it may be done there already. '
+                    f'every few minutes, since it may be done there already ({waited // 60}:{waited % 60:02d} of at most {HOLD_SECONDS // 60} minutes so far). '
                     + ('This call waited for them already: save again as it is (it waits again), ' if wait else
                        f'Sleep {every} with exec, then save again as it is, ')
                     + 'its steps included. Nothing else is yours to do meanwhile; the wait ends by itself.')

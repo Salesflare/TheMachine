@@ -131,6 +131,126 @@ class ReadNow(Base):
         self.assertFalse(slack_source.READ_NOW)
 
 
+class Paged(Fake):
+    """Every history read has another page (a busy conversation's daily replay), unless it only asks for the last day."""
+
+    def __init__(self, now, messages=None):
+        super().__init__(messages or {})
+        self.now = now
+
+    def get(self, method, params=None):
+        page = super().get(method, params)
+        if method == 'conversations.history' and float(params['oldest']) < self.now - DAY and params.get('cursor') != 'p4':
+            cursor = 'p%d' % (int(str(params.get('cursor') or 'p0')[1:]) + 1)
+            page.update(has_more=True, response_metadata={'next_cursor': cursor})
+        return page
+
+
+class Quick(Base):
+    """A run that waits on Slack reads waited through other conversations' daily replays, a page every few minutes, and the
+    asked one's own (five reads for one conversation, 2026-11-25): twelve minutes in, its turn was stopped."""
+
+    def setUp(self):
+        super().setUp()
+        now = self.now = time.time()
+        self.known = [f'{now - 2 * DAY:.6f}', f'{now - 3 * DAY:.6f}']
+        self.store.commit_page('work-slack', {
+            'mode': 'incremental', 'phase': 'scan', 'index': 0, 'after': f'{now - 7 * DAY:.6f}', 'next_discovery': now + DAY,
+            'titles_named': True, 'channels': [
+                {'id': 'C0GENERAL1', 'name': 'general', 'type': 'channel', 'threads': [], 'last_scan': f'{now - 600:.6f}',
+                 'last_activity': now - 3000, 'due': now - 60, 'next_full': now - 60},
+                {'id': 'C0HALVORS1', 'name': 'proj-halvorsen', 'type': 'channel', 'threads': list(self.known),
+                 'last_scan': f'{now - 7200:.6f}', 'due': now + 60, 'next_full': now - 60, 'next_thread_index': 1}]}, [])
+
+    def sync(self, slack, account=SLACK):
+        return machine_app_sync.sync_slack(self.store, {}, account, slack)
+
+    def channel(self, channel_id='C0HALVORS1'):
+        return next(c for c in self.store.checkpoint('work-slack')['channels'] if c['id'] == channel_id)
+
+    def ask(self):
+        return self.app.action('slack_read', {'channel': '#proj-halvorsen'})
+
+    def test_one_read_takes_one_turn_and_leaves_the_replay_and_the_threads_for_its_own(self):
+        for account in (SLACK, {**SLACK, 'fair_incremental': True}):
+            with self.subTest(fair=account.get('fair_incremental')):
+                self.setUp()
+                slack, before = Paged(self.now), self.channel()
+                self.ask()
+                self.sync(slack, account)
+                self.assertEqual([(m, p['channel']) for m, p in slack.calls], [('conversations.history', 'C0HALVORS1')])
+                self.assertEqual(self.ask()['status'], 'read')
+                after = self.channel()
+                self.assertEqual((after['threads'], after['due'], after['next_full'], after['next_thread_index']),
+                                 (self.known, before['due'], before['next_full'], 1))
+                slack_source.READ_NOW.clear()
+
+    def test_a_thread_with_a_new_reply_is_read_with_it_and_one_without_is_not(self):
+        started, quiet = f'{self.now - 8000:.6f}', f'{self.now - 8100:.6f}'
+        slack = Paged(self.now, {'C0HALVORS1': [
+            {'type': 'message', 'ts': quiet, 'user': 'U0LEO0002', 'text': 'Done', 'reply_count': 1, 'latest_reply': f'{self.now - 8050:.6f}'},
+            {'type': 'message', 'ts': started, 'user': 'U0LEO0002', 'text': 'Look', 'reply_count': 2, 'latest_reply': f'{self.now - 30:.6f}'}]})
+        self.ask()
+        self.sync(slack)
+        self.assertEqual(self.ask()['status'], 'reading')  # its thread is still to come
+        self.sync(slack)
+        self.assertEqual([(m, p.get('ts')) for m, p in slack.calls], [('conversations.history', None), ('conversations.replies', started)])
+        self.assertEqual(self.ask()['status'], 'read')
+        self.assertEqual(set(self.channel()['threads']), {*self.known, quiet, started})  # known for its own turns
+
+    def test_a_replay_under_way_is_set_aside_and_carries_on_where_it_was(self):
+        slack = Paged(self.now)
+        self.sync(slack)
+        self.sync(slack)  # general's daily replay, two of its five pages
+        self.ask()
+        self.sync(slack)
+        self.assertEqual([(p['channel'], p.get('cursor')) for _, p in slack.calls],
+                         [('C0GENERAL1', None), ('C0GENERAL1', 'p1'), ('C0HALVORS1', None)])
+        self.assertEqual(self.ask()['status'], 'read')
+        while self.sync(slack)['more']:
+            pass
+        self.assertEqual([p.get('cursor') for _, p in slack.calls if p['channel'] == 'C0GENERAL1'], [None, 'p1', 'p2', 'p3', 'p4'])
+        self.assertGreater(self.channel('C0GENERAL1')['next_full'], self.now)
+        self.assertNotIn('set_aside', self.store.checkpoint('work-slack'))
+
+    def test_the_asked_conversation_s_own_replay_is_set_aside_too_and_its_newest_read_stands(self):
+        state = self.store.checkpoint('work-slack')
+        state['channels'][1]['due'] = self.now - 9 * DAY  # its replay comes first
+        self.store.commit_page('work-slack', state, [])
+        slack = Paged(self.now)
+        self.sync(slack)
+        self.ask()
+        self.sync(slack)
+        newest = self.channel()['last_scan']
+        self.assertEqual(self.ask()['status'], 'read')
+        for _ in range(12):
+            self.sync(slack)
+        self.assertGreaterEqual(float(self.channel()['last_scan']), float(newest))
+        self.assertEqual(sum(p['channel'] == 'C0HALVORS1' and p['oldest'] < f'{self.now - DAY:.6f}' for m, p in slack.calls
+                             if m == 'conversations.history'), 5)  # its five pages, each once
+
+    def test_a_first_import_s_threads_still_wait_for_their_turn(self):
+        state = self.store.checkpoint('work-slack')
+        state['channels'][1]['threads_waiting'] = True
+        self.store.commit_page('work-slack', state, [])
+        self.ask()
+        self.sync(Paged(self.now))
+        self.assertEqual(self.ask()['status'], 'read')
+        self.assertTrue(self.channel()['threads_waiting'])
+
+    def test_a_conversation_they_left_meanwhile_is_let_go(self):
+        slack = Paged(self.now)
+        self.sync(slack)
+        self.ask()
+        self.sync(slack)
+        state = self.store.checkpoint('work-slack')
+        state['channels'] = state['channels'][1:]
+        self.store.commit_page('work-slack', state, [])
+        self.ask()
+        self.sync(slack)
+        self.assertNotIn('set_aside', self.store.checkpoint('work-slack'))
+
+
 class NotConnected(Base):
     accounts = [MAIL]
 

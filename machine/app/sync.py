@@ -21,7 +21,7 @@ from machine.sources.gmail import sync_gmail
 from machine.sources.rows import Skips
 from machine.sources.salesflare import salesflare_progress, sync_salesflare
 from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_plan,
-                                   slack_interval, slack_next_due, slack_order, slack_page_names, slack_prune,
+                                   slack_asked_turn, slack_interval, slack_next_due, slack_order, slack_page_names, slack_prune,
                                    slack_read_asked, slack_limits, slack_read_drop, slack_read_now, slack_read_wait, slack_refused,
                                    slack_set_aside, slack_turn_done, slack_hiccup, READ_NOW_MAX, call_wait, wait_until)
 from machine.sources.signal_chats import sync_signal
@@ -197,6 +197,8 @@ def sync_slack(store, config, account, source=None):
         state.update(mode='incremental', phase='discover')
         store.commit_page(account['id'], state, [], record_sync=False)
         return {'mode': 'incremental', 'events': 0, 'more': False}
+    if state['mode'] == 'incremental':
+        slack_asked_turn(account, state)
     if state['mode'] == 'incremental' and not state.get('scan') and not slack_next_due(store, config, account, source, state):
         return {'mode': 'incremental', 'events': 0, 'more': False}
     channel = state['channels'][state['index']]
@@ -204,7 +206,12 @@ def sync_slack(store, config, account, source=None):
     if not scan:
         # Six-hour overlap catches recent edits; daily retained-window replay catches older
         # edits and thread metadata. No timestamp advances before every page commits.
-        full = not channel.get('last_scan') or time.time() >= channel.get('next_full', 0)
+        owed = not channel.get('last_scan') or time.time() >= channel.get('next_full', 0)
+        # A run waits on this read (slack_read_now): only what is new, so it takes one turn or two. The daily replay
+        # (a page per turn over the whole window) and the known threads' polling stay for the conversation's own turn.
+        asked = state['mode'] == 'incremental' and slack_read_asked(account['id'], channel) is not None
+        quick = bool(asked and channel.get('last_scan') and not state.get('step'))
+        full = owed and not quick
         # The retained window rolls forward; state['after'] (first install) only bounds it.
         retained = max(Decimal(state['after']),
                        Decimal(f'{time.time() - config.get("bootstrap_days", 7) * 86400:.6f}'))
@@ -227,10 +234,16 @@ def sync_slack(store, config, account, source=None):
             scan['step'] = step
             if step == 'recent' and deepen_to:
                 scan['deepen_to'] = deepen_to
-        if channel.get('threads_waiting'):
+        if asked:
+            scan['asked'] = True
+        fair = account.get('fair_incremental')
+        if quick:
+            scan.update(known_threads=list(scan['threads']), thread_start=channel.get('next_thread_index', 0), threads=[],
+                        quick=True, since=channel['last_scan'], owed=bool(owed or scan['threads'] and not fair))
+        elif channel.get('threads_waiting'):
             # Threads left for later on the first pass: read them now over the whole window.
             scan.update(thread_oldest=str(retained), thread_latest=f'{time.time():.6f}')
-        elif account.get('fair_incremental') and channel.get('last_scan') and not step:
+        elif fair and channel.get('last_scan') and not step:
             # One old thread per channel turn, not its entire retained history.
             # Preserve all known threads and rotate durably on completed scans.
             scan['known_threads'] = list(scan['threads'])
@@ -273,7 +286,9 @@ def sync_slack(store, config, account, source=None):
         ts = e['metadata']['message_ts']
         channel['last_activity'] = max(float(channel.get('last_activity') or 0), float(ts))
         if e['metadata']['reply_count'] and ts not in scan['threads']:
-            scan['threads'].append(ts)
+            # A quick read follows only the threads with a reply since the last read
+            if not scan.get('quick') or float(raw.get('latest_reply') or scan['latest']) > float(scan['since']):
+                scan['threads'].append(ts)
             if 'known_threads' in scan and ts not in scan['known_threads']:
                 scan['known_threads'].append(ts)
         return e
@@ -290,6 +305,9 @@ def sync_slack(store, config, account, source=None):
                 # allows about one read a minute, so one busy channel's threads would otherwise
                 # hold up all the others for hours. The next turn of this channel reads them.
                 scan['waiting'], scan['threads'] = scan['threads'], []
+            elif scan.get('quick'):
+                if account.get('fair_incremental'):
+                    scan['threads'] = scan['threads'][:1]
             elif 'known_threads' in scan:
                 known = scan['known_threads']
                 selected = scan['threads'][:1]
@@ -319,19 +337,22 @@ def sync_slack(store, config, account, source=None):
                 channel.pop('deepen')
                 channel['threads'] = list(dict.fromkeys(channel.get('threads', []) + scan['threads'] + scan.get('waiting', [])))
             else:
-                channel.update(last_scan=scan['latest'], threads=scan.get('known_threads', scan['threads'] + scan.get('waiting', [])))
+                # A read set aside for an asked one (slack_asked_turn) ends after a newer read: last_scan stays the newest
+                channel.update(last_scan=max(scan['latest'], channel.get('last_scan') or '0', key=float),
+                               threads=scan.get('known_threads', scan['threads'] + scan.get('waiting', [])))
                 if scan.get('deepen_to'):
                     channel['deepen'] = scan['deepen_to']
             if scan.get('waiting'):
                 channel['threads_waiting'] = True
-            else:
+            elif not scan.get('quick'):
                 channel.pop('threads_waiting', None)
-            if 'known_threads' in scan:
+            if 'known_threads' in scan and not scan.get('quick'):
                 channel['next_thread_index'] = scan['thread_start'] + 1
             channel.pop('error', None)
             channel.pop('refused', None)
             # Thread replies held back on the first pass are read on the very next round.
-            channel['due'] = time.time() + (0 if scan.get('waiting') else slack_interval(config, channel))
+            if not scan.get('owed'):  # a quick read that left the replay or threads: its own turn comes when it did
+                channel['due'] = time.time() + (0 if scan.get('waiting') else slack_interval(config, channel))
             if scan['full']:
                 channel['next_full'] = time.time() + 86400
             slack_turn_done(state)
@@ -342,7 +363,7 @@ def sync_slack(store, config, account, source=None):
     store.commit_page(account['id'], state, events)
     if isinstance(source, Slack):
         remember_slack_names(store, source, events, state.get('channels') or ())
-    more = state['mode'] != 'incremental' or state['index'] != 0 or bool(state.get('scan'))
+    more = state['mode'] != 'incremental' or state['index'] != 0 or bool(state.get('scan') or state.get('set_aside'))
     return {'mode': state['mode'], 'events': len(events), 'more': more, 'skipped': sum(skipped.values())}
 
 

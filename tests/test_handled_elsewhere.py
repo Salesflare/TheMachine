@@ -185,6 +185,10 @@ class HandledElsewhere(unittest.TestCase):
         waited = app.handled_gate(sid, 'job3', self.HANDOFF, wait=0.1)  # Slack's turn doesn't come in time
         self.assertIn('This call waited for them already: save again as it is (it waits again), its steps included', waited)
         self.assertNotIn('Sleep', waited)
+        self.assertIn('(0:00 of at most 15 minutes so far)', waited)
+        app._handled_waits = {k: at - 245 for k, at in app._handled_waits.items()}
+        # Never the same words three times: the Gateway ended a turn on its third identical refusal (2026-11-25)
+        self.assertIn('(4:05 of at most 15 minutes so far)', app.handled_gate(sid, 'job3', self.HANDOFF, wait=0.1))
         reader = threading.Timer(0.1, self.slack_reads)
         reader.start()
         found = app.handled_gate(sid, 'job3', self.HANDOFF, wait=5)  # one call: waited for the read, then names the yes

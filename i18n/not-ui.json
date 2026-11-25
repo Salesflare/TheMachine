@@ -377,6 +377,7 @@
  "kind is {} (true about the world), draft (how a kind of task is done) or voice (how the owner writes on one channel, with channel)",
  "kinds is a list of event kinds",
  "kinds is a list of event kinds, like gmail.message or calendar.event",
+ "label has {} characters, at most {}: “{}”",
  "last contact",
  "last is true when this doc finishes the to-do (nothing to send or share after it)",
  "left out",

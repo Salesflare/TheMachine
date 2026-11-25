@@ -270,7 +270,8 @@ def validate(value, context):
     snapshots {file_id: snapshot, or the reason it couldn't be read}: each doc an edit names, read just now."""
     context = context or {}
     if set(value) - KEYS:
-        raise ValueError('A doc write has op, account_id and title and body (create), or file_id and changes (edit), and last or then')
+        raise ValueError('A doc write has op, account_id and title and body (create), or file_id and changes (edit), and last or then; '
+                         'leave out ' + ', '.join(sorted(map(str, set(value) - KEYS))))
     op = value.get('op')
     if op not in OPS:
         raise ValueError('op is create (a new doc), edit (a doc of this task) or done (a Notion task of this task)')
