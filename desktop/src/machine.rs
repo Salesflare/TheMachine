@@ -12,6 +12,7 @@ use url::Url;
 /// Error codes the box has its own words for (ui/strings.js); anything else is the Machine's own sentence.
 const UNREACHABLE: &str = "unreachable";
 const NOT_OWNER: &str = "notowner";
+pub const OFF: &str = "off";
 /// How many to-dos the box lists.
 const LISTED: usize = 3;
 
@@ -106,16 +107,45 @@ fn made_up() -> Option<ureq::tls::TlsConfig> {
     Some(TlsConfig::builder().root_certs(RootCerts::new_with_certs(&[root])).build())
 }
 
-/// What an answer that isn't a 200 means: it doesn't take this computer as its owner's, or it isn't there (a proxy in
-/// front of it says so).
-fn refused(status: u16) -> String {
-    if (300..500).contains(&status) { NOT_OWNER.into() } else { UNREACHABLE.into() }
+/// What a proxy in front of a Machine answers when that isn't on: it was reached, the Machine wasn't.
+fn off(status: u16) -> bool {
+    (502..=504).contains(&status)
 }
 
+/// What an answer that isn't a 200 means. A hosted Machine's address sends someone who isn't signed in and a Machine that
+/// is off or starting to the same place (`to`); the manifest, which needs no sign-in, is only there while the Machine is.
+/// A sign-in is only taken for gone when the Machine, or the account for one that is on, says so.
+fn refused(status: u16, to: &Value, account: &str, manifest: impl FnOnce() -> Result<(u16, Value), String>) -> String {
+    let says = match status {
+        401 | 403 => NOT_OWNER,
+        300..=399 if elsewhere(to, account) => OFF,
+        300..=399 => match manifest() {
+            Err(_) => UNREACHABLE,
+            Ok((404, _)) => OFF,
+            Ok((status, _)) if off(status) => OFF,
+            Ok(_) => NOT_OWNER,
+        },
+        status if off(status) => OFF,
+        _ => UNREACHABLE,
+    };
+    says.into()
+}
+
+/// A page of the account that isn't its sign-in: the Machine ended, and its export is there.
+fn elsewhere(to: &Value, account: &str) -> bool {
+    let to = to["to"].as_str().and_then(|to| Url::parse(to).ok());
+    to.is_some_and(|to| Url::parse(account).is_ok_and(|account| account.origin() == to.origin()) && to.path() != "/open")
+}
+
+/// Its JSON, or where it sends the app ("to").
 fn read(mut answer: ureq::http::Response<ureq::Body>) -> (u16, Value) {
-    let status = answer.status().as_u16();
+    let status = answer.status();
+    if status.is_redirection() {
+        let to = answer.headers().get("location").and_then(|to| to.to_str().ok());
+        return (status.as_u16(), json!({ "to": to }));
+    }
     let body = answer.body_mut().with_config().limit(32 << 20).read_json().unwrap_or(Value::Null);
-    (status, body)
+    (status.as_u16(), body)
 }
 
 /// Redeems a hosted sign-in (its address has the verifier): the session cookies it answers with.
@@ -164,16 +194,26 @@ impl Machine {
         match (status, session["csrf"].as_str()) {
             (200, Some(token)) => Ok(token.into()),
             (200, None) => Err(NOT_OWNER.into()),
-            _ => Err(refused(status)),
+            _ => Err(self.refused(status, &session)),
         }
+    }
+
+    fn refused(&self, status: u16, body: &Value) -> String {
+        refused(status, body, &crate::signin::account(), || self.get("manifest.webmanifest"))
     }
 
     /// Whether a Machine answers here, and takes this computer as its owner's.
     pub fn check(&self) -> Result<(), String> {
         let (status, body) = self.get("manifest.webmanifest")?;
         if !address::is_machine(status, &body) {
-            return Err("notmachine".into());
+            let off = off(status) || status == 404 && self.cookie.is_some(); // a hosted one's address, without it
+            return Err(if off { OFF } else { "notmachine" }.into());
         }
+        self.takes()
+    }
+
+    /// Whether it takes this computer as its owner's.
+    pub fn takes(&self) -> Result<(), String> {
         self.csrf().map(|_| ())
     }
 
@@ -270,7 +310,7 @@ impl Machine {
         }
         let kind = if plain(kind) { format!("&kind={kind}") } else { String::new() };
         let (status, notice) = self.get(&format!("api/notice?v=2&tag={todo}{kind}"))?;
-        told(status, todo, &notice)
+        told(status, todo, &notice).map_err(|_| self.refused(status, &notice))
     }
 
     /// What the dashboard's list is made of: its status (with a token of an earlier one, what changed since) and, when
@@ -291,7 +331,7 @@ impl Machine {
         match self.get(path)? {
             (200, body) if body.is_object() => Ok(body),
             (200, _) => Err(UNREACHABLE.into()),
-            (status, _) => Err(refused(status)),
+            (status, body) => Err(self.refused(status, &body)),
         }
     }
 }
@@ -314,11 +354,11 @@ fn quick(notice: &Value) -> Vec<Quick> {
 }
 
 /// Gone is what the Machine says is gone. Anything else it doesn't say is asked again.
-fn told(status: u16, todo: &str, notice: &Value) -> Result<Option<crate::speak::Say>, String> {
+fn told(status: u16, todo: &str, notice: &Value) -> Result<Option<crate::speak::Say>, ()> {
     match status {
         200 if notice["gone"] == true => Ok(None),
-        200 => said(todo, notice).map(Some).ok_or_else(|| UNREACHABLE.into()),
-        status => Err(refused(status)),
+        200 => said(todo, notice).map(Some).ok_or(()),
+        _ => Err(()),
     }
 }
 
@@ -430,7 +470,62 @@ mod tests {
 
     #[test]
     fn nothing_in_an_odd_answer() {
-        assert_eq!([302, 401, 403].map(refused), [NOT_OWNER; 3]);
-        assert_eq!([502, 503].map(refused), [UNREACHABLE; 2]);
+        let never = || panic!("nothing else is asked");
+        assert_eq!([401, 403].map(|s| refused(s, &Value::Null, "", never)), [NOT_OWNER; 2]);
+        assert_eq!([502, 503, 504].map(|s| refused(s, &Value::Null, "", never)), [OFF; 3]);
+        assert_eq!([404, 429, 500].map(|s| refused(s, &Value::Null, "", never)), [UNREACHABLE; 3], "neither says who it is for");
+    }
+
+    #[test]
+    fn off_is_not_signed_out() {
+        let account = "https://app.example.com";
+        let sent = |to: &str, manifest: Result<(u16, Value), String>| refused(302, &json!({"to": to}), account, || manifest);
+        let open = "https://app.example.com/open";
+        assert_eq!(sent(open, Ok((404, Value::Null))), OFF, "paused, pausing, provisioning");
+        assert_eq!(sent(open, Ok((502, Value::Null))), OFF, "its server is up, the Machine isn't yet");
+        assert_eq!(sent(open, Err(UNREACHABLE.into())), UNREACHABLE, "the network went in between");
+        assert_eq!(sent(open, Ok((200, json!({"name": "The Machine"})))), NOT_OWNER, "revoked: it is on, and doesn't take this computer");
+        assert_eq!(sent(open, Ok((302, json!({"to": open})))), NOT_OWNER, "no Machine has this address any more");
+        assert_eq!(sent("https://app.example.com/account#export", Ok((200, Value::Null))), OFF, "ended");
+        assert_eq!(sent("https://other.example.com/account", Ok((200, Value::Null))), NOT_OWNER);
+    }
+
+    /// A made-up Machine's address: its answers, by path. It ends with the last one that is asked for.
+    fn answers(all: &'static [(&'static str, &'static str, &'static str)]) -> Machine {
+        use std::io::{Read, Write};
+        let door = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/", door.local_addr().unwrap());
+        std::thread::spawn(move || {
+            for mut one in door.incoming().flatten() {
+                let mut asked = [0; 4096];
+                let n = one.read(&mut asked).unwrap_or(0);
+                let path = String::from_utf8_lossy(&asked[..n]).split(' ').nth(1).unwrap_or_default().to_string();
+                let (_, head, body) = all.iter().find(|(p, ..)| path.starts_with(p)).unwrap_or(&("", "500 No", ""));
+                let _ = write!(one, "HTTP/1.1 {head}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
+            }
+        });
+        Machine { url, cookie: Some("__Host-tm=made-up".into()) }
+    }
+
+    const SENT: &str = "302 Found\r\nLocation: https://app.themachine.computer/open";
+    const MANIFEST: &str = r#"{"name":"The Machine","start_url":"/","icons":[]}"#;
+
+    #[test]
+    fn asked_of_an_address() {
+        let says = |m: &Machine| (m.status(None, "d", false, &[], 0).unwrap_err(), m.check().unwrap_err());
+        let paused = answers(&[("/api/", SENT, ""), ("/manifest.webmanifest", "404 Not Found", "")]);
+        assert_eq!(says(&paused), (OFF.into(), OFF.into()));
+        let starting = answers(&[("/api/", SENT, ""), ("/manifest.webmanifest", "502 Bad Gateway", "")]);
+        assert_eq!(says(&starting), (OFF.into(), OFF.into()));
+        let booting = answers(&[("/", "502 Bad Gateway", "")]);
+        assert_eq!(says(&booting), (OFF.into(), OFF.into()));
+        let revoked = answers(&[("/api/", SENT, ""), ("/manifest.webmanifest", "200 OK", MANIFEST)]);
+        assert_eq!(says(&revoked), (NOT_OWNER.into(), NOT_OWNER.into()));
+        let door = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let nobody = Machine { url: format!("http://{}/", door.local_addr().unwrap()), cookie: None };
+        drop(door);
+        assert_eq!(says(&nobody), (UNREACHABLE.into(), UNREACHABLE.into()));
+        let own = Machine { cookie: None, ..answers(&[("/", "404 Not Found", "")]) };
+        assert_eq!(own.check().unwrap_err(), "notmachine", "something else answers there");
     }
 }

@@ -829,6 +829,23 @@ def _():
     need(until(lambda: not app.box()), 'the box closes')
 
 
+@step('paused and starting: not signed out')
+def _():
+    told, kept = [], saved()
+    for off in (404, 502):
+        machine.off = off
+        reopen()
+        if not app.box():
+            click(*app.center())
+        need(until(lambda: 'off or starting' in says('#state'), 25), says('#state'))
+        need(not says('#signin'), 'no sign-in is asked for')
+        need((saved()['machine'], saved()['cookie']) == (kept['machine'], kept['cookie']), 'what is kept of the sign-in')
+        told.append(says('#state'))
+        machine.off = None
+        need(until(greeted, 40), f'by itself, with the box open: {says("#state")}')
+    return told
+
+
 @step('signed out elsewhere')
 def _():
     machine.refuse = True
@@ -1241,6 +1258,24 @@ def _():
     press(app, '#todos li:nth-child(1) .name')
     carded('aa01')
     need(hosted.cards and all(hosted.cards), f'its page has the session {hosted.cards}')
+
+
+@step('paused over https: its sign-in is kept')
+def _():
+    if not hosted:
+        return 'NOT TESTED: no certificate'
+    kept = saved()['cookie']
+    hosted.off = 404
+    if app.card():
+        key(ESCAPE)
+        need(until(lambda: not app.card()), 'back to the list')
+    need(until(app.box), 'the box is there')
+    need(until(lambda: 'off or starting' in says('#state'), 40), says('#state'))
+    need(not says('#signin') and saved()['cookie'] == kept, 'no sign-in is asked for')
+    told, hosted.off = says('#state'), None
+    need(until(greeted, 40), f'by itself, with the box open: {says("#state")}')
+    need(saved()['cookie'] == kept and kept in hosted.cookies, 'with the same sign-in')
+    return told
 
 
 @step('signed out over https')

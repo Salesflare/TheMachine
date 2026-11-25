@@ -75,7 +75,7 @@
     line.classList.toggle('error', !!s.problem);
     line.classList.toggle('greeting', !!s.machine && !s.problem);
     if (!s.machine || s.problem) {
-      line.textContent = !s.machine ? t.signedOut : fill(s.problem === 'notowner' ? t.notIn : t.cantReach, new URL(s.machine).host);
+      line.textContent = !s.machine ? t.signedOut : fill({notowner: t.notIn, off: t.isOff}[s.problem] || t.cantReach, new URL(s.machine).host);
       return;
     }
     const [plain, named] = known && !count ? t.nothing : t.hello[hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 18 ? 'afternoon' : 'evening'];
@@ -323,7 +323,7 @@
   const say = (text, error) => { $('said').replaceChildren(text); $('said').classList.toggle('error', !!error); };
   // That it can't be reached, or isn't signed in, is the line at the top: once
   async function fail(e) {
-    if (machine && ['unreachable', 'notowner'].includes(e)) {
+    if (machine && ['unreachable', 'notowner', 'off'].includes(e)) {
       say('');
       await native.look().catch(() => {});
       if ((await show()).problem) return;
@@ -578,11 +578,7 @@
   addEventListener('contextmenu', e => { if (!e.target.closest('input,textarea,#answer')) e.preventDefault(); });
   native.onFailed(fail);
   native.onGiven(take);
-  native.onListed(() => native.state().then(s => {
-    head(s);
-    showReady(connected && !notice ? s.waiting : {todos: [], count: 0});
-    buttons();
-  }));
+  native.onListed(() => show().then(buttons));
   native.onOpened(() => { say(fresh ? t.welcome : ''); fresh = false; menu(false); adds(false); cardBack(); snooze = null; if (!shooting) { went.clear(); seenWorking.clear(); mine = []; } load(); });
   signinBy(false);
   load();
