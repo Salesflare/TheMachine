@@ -26,7 +26,7 @@ Le schede senza contenuti sono nascoste.
 - **Lingua e area geografica**: **Area geografica** determina come vengono visualizzati date, orari e numeri (Oct 24 o 24 Oct). **Formato dell’ora** permette di scegliere il formato a 12 ore (2:05 PM) o a 24 ore (14:05). Attività, Telegram, il riepilogo e i messaggi Fleet seguono entrambe le impostazioni. Una Machine ospitata usa inizialmente il fuso orario scelto al momento della registrazione.
 - **Lingua**: English, Nederlands, Français, Deutsch, Español, Italiano, Português (Brasil), 简体中文, 日本語, 한국어 o Русский. Inizialmente viene usata la lingua del browser. La dashboard, la guida, le notifiche, Telegram, il riepilogo settimanale e le attività che la tua Machine scrive passano alla nuova lingua non appena la selezioni. I testi precedenti restano invariati. I tuoi colleghi ricevono le domande Fleet e Fleet di famiglia nella propria lingua, mentre le bozze per altre persone restano nella lingua della conversazione.
 - **Questo dispositivo**: **Installa l’app**, **Notifiche** con **Invia una prova** e **Modalità chiara**, solo per questo browser o telefono. Vedi [Installa l’app e attiva le notifiche](phone-app.md). Su [Omarchy](omarchy.md), c’è anche **Tema Omarchy**.
-- **Input vocale**: come le parole che pronunci vengono trasformate in testo e quale voce usa Talk live. Vedi [Input vocale](voice-input.md) e [Parla dal vivo](talk-live.md).
+- **Input vocale**: come le parole che pronunci vengono trasformate in testo e quale voce usa Talk live. Vedi [Input vocale](voice-input.md) e [Conversazione dal vivo](talk-live.md).
 - **Apri il browser della Machine ↗**: il browser che la tua Machine usa per siti come LinkedIn.
 - **Regole Fleet**: vedi [Regole di condivisione](sharing-rules.md).
 - **Esporta**:

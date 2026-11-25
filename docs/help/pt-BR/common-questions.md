@@ -13,7 +13,7 @@ Toque em **Enviar mais tarde**, ao lado de **Enviar agora**, e escolha um horár
 
 ## Cancelar um e-mail ou uma mensagem enviados
 
-Não dá para cancelar depois que o envio é feito. Nada é enviado sem sua aprovação, então confira em **Revisar e enviar** primeiro. Ainda dá para interromper alguns envios: toque em **Cancelar** em uma mensagem que [será enviada mais tarde](send-later.md); em [Conversa ao vivo](talk-live.md), **Desfazer** aparece por alguns segundos depois que você aprova; e **Parar o envio** interrompe o restante de uma sequência de [follow-ups](follow-ups.md).
+Não dá para cancelar depois que o envio é feito. Nada é enviado sem sua aprovação, então confira em **Revisar e enviar** primeiro. Ainda dá para interromper alguns envios: toque em **Cancelar** em uma mensagem que [será enviada mais tarde](send-later.md); em [Converse ao vivo](talk-live.md), **Desfazer** aparece por alguns segundos depois que você aprova; e **Parar o envio** interrompe o restante de uma sequência de [follow-ups](follow-ups.md).
 
 ## Onde encontrar um rascunho
 

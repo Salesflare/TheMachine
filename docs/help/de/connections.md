@@ -79,6 +79,6 @@ Eine gespeicherte Anmeldung wird nur für die zugehörige Webadresse verwendet: 
 
 ## Prüfungen
 
-Unter **Prüfungen** siehst du, wie deine Machine eingehende Daten ausliest: die letzten Prüfungen und was dabei gefunden wurde. Siehe [Keine neuen Aufgaben](reviews-paused.md).
+Unter **Prüfungen** siehst du, wie deine Machine eingehende Daten ausliest: die letzten Prüfungen und was dabei gefunden wurde. Siehe [Keine neue Aufgabe](reviews-paused.md).
 
 Zu jeder Verbindung gibt es in diesem Abschnitt einen eigenen Artikel. Darin steht, was sie ausliest und was sie senden kann.

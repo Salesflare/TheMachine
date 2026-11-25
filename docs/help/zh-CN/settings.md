@@ -26,7 +26,7 @@ translated: 31820c6221312d35
 - **语言和地区**：**地区**决定日期、时间和数字的显示方式（Oct 24或24 Oct）。**时间格式**可选择12小时制（2:05 PM）或24小时制（14:05）。待办、Telegram、摘要和Fleet消息都会采用这两项设置。托管版Machine会使用你注册时选择的时区。
 - **语言**：English、Nederlands、Français、Deutsch、Español、Italiano、Português (Brasil)、简体中文、日本語、한국어或Русский。默认使用浏览器的语言。更改语言后，控制面板、帮助、通知、Telegram、每周回顾以及你的Machine撰写的待办会立即切换。旧文本保持原样。队友会用自己的语言收到Fleet和Family相关问题，发给其他人的草稿则会保持对话所用的语言。
 - **此设备**：仅适用于当前浏览器或手机的**安装应用**、**通知**（含**发送测试**）和**浅色模式**。请参阅[安装应用并开启通知](phone-app.md)。使用[Omarchy](omarchy.md)时，还会显示**Omarchy主题**。
-- **语音输入**：设置语音转文字的方式，以及实时对话的语音。请参阅[语音输入](voice-input.md)和[实时对话](talk-live.md)。
+- **语音输入**：设置语音转文字的方式，以及实时对话的语音。请参阅[语音输入](voice-input.md)和[实时语音对话](talk-live.md)。
 - **打开Machine的浏览器 ↗**：你的Machine访问LinkedIn等网站时使用的浏览器。
 - **Fleet规则**：请参阅[分享规则](sharing-rules.md)。
 - **导出**：
