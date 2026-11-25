@@ -252,7 +252,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   exclusion purges, connect; `Store` in `assistant.py` subclasses it), `machine/store/events.py` (`EventsStore`:
   committing and reading events, the Android feed, tombstones, sync checkpoints), `machine/store/review.py`
   (`ReviewStore`: claiming signals for a review, the context it reads, keeping its result; how a signal is weighed and
-  shown), `machine/store/cards.py` (`CardsStore`: making and changing to-dos: suggest, update, rename, move, merge,
+  shown; `review_catch_up.py`: what it claims while far behind), `machine/store/cards.py` (`CardsStore`: making and changing to-dos: suggest, update, rename, move, merge,
   the owner's own, their sources), `machine/store/decisions.py` (the `DecisionsStore` mixin: decisions, handoffs,
   feedback, preparing a to-do, sends and merges with their undo), `machine/store/voices.py`, `machine/store/facts.py`
   and `machine/store/promises.py` (the `VoicesStore`, `FactsStore` and `PromisesStore` mixins),

@@ -23,7 +23,7 @@ import next_actions
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
-from machine.store import evidence_moments, first_pass, graph_identifiers, message_view, review_last_look, review_saves, review_wait, review_whys, todo_likely
+from machine.store import evidence_moments, first_pass, graph_identifiers, message_view, review_catch_up, review_last_look, review_saves, review_wait, review_whys, todo_likely
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import UNREADABLE, _address, clamp, encoded, mail_people
 import own_addresses
@@ -761,19 +761,6 @@ class ReviewStore:
                                                  dt.datetime.fromisoformat(now())) if not since else []
                 limit -= len(last_look)
                 counts = {a: db.execute('SELECT count(*) FROM events WHERE account_id=? AND analyzed_version<version AND deferrals<? AND occurred_at>=?', (a, SET_ASIDE_AFTER, since)).fetchone()[0] for a in accounts}
-                quotas = {a: 0 for a in accounts}
-                # One slot per nonempty account, then weighted by remaining backlog.
-                for account in accounts:
-                    if counts[account] and sum(quotas.values()) < limit:
-                        quotas[account] += 1
-                while sum(quotas.values()) < limit:
-                    eligible = [a for a in accounts if quotas[a] < counts[a]]
-                    if not eligible:
-                        break
-                    chosen = max(eligible, key=lambda a: counts[a] / (quotas[a] + 1))
-                    quotas[chosen] += 1
-                rows, selected, account_rows = [], set(), []
-                recovered_from = None
                 # Give unfinished historical claims first chance, rather than replacing
                 # their least recent items with a new batch and forgetting them again.
                 # One query over recent abandoned claims (older pending items are still
@@ -784,36 +771,9 @@ class ReviewStore:
                     WHERE a.status='abandoned' AND coalesce(a.finished_at,a.started_at)>=? AND coalesce(json_extract(j.value,'$.excluded'),0)=0
                       AND e.analyzed_version<e.version AND e.deferrals<? AND e.occurred_at>=? ORDER BY a.started_at,j.key''',
                     ((timeutil.clock() - dt.timedelta(days=7)).isoformat(), SET_ASIDE_AFTER, since)).fetchall()
-                for account in accounts:
-                    quota = quotas[account]
-                    picked = []
-                    for row in interrupted:
-                        if row['account_id'] != account or row['id'] in selected or len(picked) >= quota:
-                            continue
-                        event = dict(row); event.pop('review_id')
-                        picked.append(event); selected.add(row['id'])
-                        recovered_from = recovered_from or row['review_id']
-                    remaining = quota - len(picked)  # a title line (bulk mail) counts BRIEF_WEIGHT
-                    # Alternate oldest backlog and newest/upcoming signals. New arrivals
-                    # cannot indefinitely starve old imports, or vice versa. Signals deferred
-                    # once wait behind fresh ones; set-aside signals are not offered again.
-                    wide = int(limit / BRIEF_WEIGHT)
-                    oldest = [dict(r) for r in db.execute('SELECT * FROM events WHERE account_id=? AND analyzed_version<version AND deferrals<? AND occurred_at>=? ORDER BY deferrals,ingested_at,id LIMIT ?', (account, SET_ASIDE_AFTER, since, wide))]
-                    newest = self.events([account], limit=wide, pending=True, reviewable=True, since=since)
-                    turn = 0
-                    while remaining > 0:
-                        queue = oldest if turn % 2 == 0 else newest
-                        candidate = next((r for r in queue if r['id'] not in selected), None) or next(
-                            (r for r in oldest + newest if r['id'] not in selected), None)
-                        if not candidate:
-                            break
-                        picked.append(candidate); selected.add(candidate['id'])
-                        remaining -= signal_weight(candidate); turn += 1
-                    account_rows.append(picked)
-                while any(account_rows):
-                    for queue in account_rows:
-                        if queue:
-                            rows.append(queue.pop(0))
+                # Far behind: recent messages that may need the owner first, a third for what came in first (review_catch_up.py)
+                rows, recovered_from = ((None if since else review_catch_up.claim(self, db, counts, limit, signal_weight, interrupted, dt.datetime.fromisoformat(now())))
+                                        or self.share_out(db, accounts, counts, limit, since, interrupted))
                 # What it claimed stays the same; it reads the likeliest to bring a to-do first (todo_likely.py), and the
                 # set-aside messages' one more look after them, oldest first, as before
                 rows = self.likely_first(db, rows) + last_look
@@ -829,6 +789,54 @@ class ReviewStore:
             if quick and not db.execute("SELECT 1 FROM milestones WHERE name='first_ahead_started'").fetchone() and self.waiting_since(db, rows[:1]):
                 first = {'waiting_longest': rows[0]['id'], 'first_look': FIRST_LOOK_NOTE}
             return self.review_result(analysis_id, pages, resumed_from=recovered_from, **first)
+
+    def share_out(self, db, accounts, counts, limit, since, interrupted):
+        """A regular review's signals, shared out over the sources by how much waits in each, the oldest and the newest by
+        turns: (rows, the claim the first recovered ones came from). Far behind: review_catch_up.claim instead."""
+        quotas = {a: 0 for a in accounts}
+        # One slot per nonempty account, then weighted by remaining backlog.
+        for account in accounts:
+            if counts[account] and sum(quotas.values()) < limit:
+                quotas[account] += 1
+        while sum(quotas.values()) < limit:
+            eligible = [a for a in accounts if quotas[a] < counts[a]]
+            if not eligible:
+                break
+            chosen = max(eligible, key=lambda a: counts[a] / (quotas[a] + 1))
+            quotas[chosen] += 1
+        rows, selected, account_rows = [], set(), []
+        recovered_from = None
+        for account in accounts:
+            quota = quotas[account]
+            picked = []
+            for row in interrupted:
+                if row['account_id'] != account or row['id'] in selected or len(picked) >= quota:
+                    continue
+                event = dict(row); event.pop('review_id')
+                picked.append(event); selected.add(row['id'])
+                recovered_from = recovered_from or row['review_id']
+            remaining = quota - len(picked)  # a title line (bulk mail) counts BRIEF_WEIGHT
+            # Alternate oldest backlog and newest/upcoming signals. New arrivals
+            # cannot indefinitely starve old imports, or vice versa. Signals deferred
+            # once wait behind fresh ones; set-aside signals are not offered again.
+            wide = int(limit / BRIEF_WEIGHT)
+            oldest = [dict(r) for r in db.execute('SELECT * FROM events WHERE account_id=? AND analyzed_version<version AND deferrals<? AND occurred_at>=? ORDER BY deferrals,ingested_at,id LIMIT ?', (account, SET_ASIDE_AFTER, since, wide))]
+            newest = self.events([account], limit=wide, pending=True, reviewable=True, since=since)
+            turn = 0
+            while remaining > 0:
+                queue = oldest if turn % 2 == 0 else newest
+                candidate = next((r for r in queue if r['id'] not in selected), None) or next(
+                    (r for r in oldest + newest if r['id'] not in selected), None)
+                if not candidate:
+                    break
+                picked.append(candidate); selected.add(candidate['id'])
+                remaining -= signal_weight(candidate); turn += 1
+            account_rows.append(picked)
+        while any(account_rows):
+            for queue in account_rows:
+                if queue:
+                    rows.append(queue.pop(0))
+        return rows, recovered_from
 
     def most_promising(self, db, accounts, since, limit):
         """The quick first look's signals, so its first cards are the useful ones: what most likely brings a to-do

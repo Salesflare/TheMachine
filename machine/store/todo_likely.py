@@ -1,7 +1,7 @@
 """How likely a waiting signal is to bring a to-do, for the order the reviews read them in (2026-11-13). The first look
 reads the most likely first (Store.most_promising), so its first to-do comes from the top of the queue; a regular review
 reads its claimed batch in the same order (Store.begin_analysis). Only the order changes: what a review claims, and
-that every signal gets reviewed, stays as it was.
+that every signal gets reviewed, stays as it was. Far behind, it also orders what is claimed first (review_catch_up.py).
 
 Read on this Machine from what is already there, with no model call: who wrote to whom (need_rank), whether the owner
 answered in the thread since (answered) or is in a live thread with them, a direct question or an ask in the subject or
