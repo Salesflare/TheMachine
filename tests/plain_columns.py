@@ -48,7 +48,7 @@ retention_runs.report review_misses.origin routines.rule routines.anchor routine
 rule_changes.ref secondhand_searches.tab secondhand_seen.item secondhand_seen.how share_threads.verdict share_threads.hand
 share_threads.suggest side_changes.before side_changes.after side_changes.why skill_hints.skill skill_clusters.relation
 skills.origin skills.shared store_fixes.name subs_items.next subs_kept.amount
-subs_kept.currency subs_state.name subs_state.value suggestions.deliver_after suggestions.done_report suggestions.origin
+subs_kept.currency subs_state.name subs_state.value suggestions.deliver_after suggestions.done_report suggestions.origin suggestions.evidence_versions
 suggestions.merge_offer suggestions.area suggestions.completed_from suggestions.closed_from team_asks.asked
 team_records.rid team_blobs.header team_blobs.ct team_blobs.sig team_files.mime team_learning_votes.ref team_learning_votes.vote team_sources.sign
 team_sources.threads team_wants.body thread_snoozes.error todo_moves.reason topic_routes.conv topic_routes.area
