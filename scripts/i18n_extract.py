@@ -536,6 +536,9 @@ def server_strings(root=ROOT):
         if rel in NOT_DASHBOARD or path.name.startswith('test'):
             continue
         tree, found = ast.parse(path.read_text(encoding='utf-8')), []
+        if rel == 'machine/kinds.py':  # a kind's name starts a to-do's source line, capitalized (todos-cards.js sourceText)
+            found += [v.value[:1].upper() + v.value[1:] for node in ast.walk(tree) if isinstance(node, ast.Dict)
+                      for k, v in zip(node.keys, node.values) if getattr(k, 'value', None) == 'name' and len(getattr(v, 'value', None) or '') > 1]  # not X
         names = set(SERVER_TEXT.get(rel, [])) | (set(CONNECTOR_TEXT) if rel.startswith('connectors/') else set())
         for node in tree.body:  # module constants the dashboard shows as they come: their string values
             values = []
