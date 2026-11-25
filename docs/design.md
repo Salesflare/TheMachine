@@ -2,7 +2,8 @@
 
 One design system for the dashboard, the hosted app and the website. Its tokens sit between `design-tokens:start` and
 `design-tokens:end` at the top of the dashboard's stylesheet (`dashboard/base-tokens.css`); the hosted service carries the identical block, and a test there
-keeps the two equal. Change a token in both places at once.
+keeps the two equal. Change a token in both places at once, and set it only there (a language's or theme's own value aside): a second
+plain `:root` value makes the shared one a line that never applies here, and the website still needs it.
 
 The model is the calm, editorial feel of Claude's apps and sites, in our own colors, with our mascot and logo. What
 makes that feel is mostly restraint: warm neutral paper, ink text, one accent used rarely, hairlines instead of shadows,
