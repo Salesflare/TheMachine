@@ -1,134 +1,136 @@
 ---
 title: Personen
 area: graph
-summary: Alle, mit denen du Kontakt hast: ihre Seite, Zusammenfassung und ihr Verlauf sowie wie du Personen hinzufügst, bearbeitest, zusammenführst oder löschst.
+summary: Alle, mit denen du in Kontakt bist: ihre Seite, Zusammenfassung und ihr Verlauf sowie Personen hinzufügen, bearbeiten, zusammenführen oder löschen.
 code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
-translated: 5e808343918f7f47
+translated: 5e671ff84b143e74
 ---
-Alle, mit denen du Kontakt hast, nach Nähe sortiert. Die Informationen stammen aus deinen Nachrichten und Meetings. Newsletter, Belege und andere Mailings fügen niemanden hinzu, bis du antwortest. Sie stehen unter „Ausgeblendete Absender“ unterhalb der Liste. Über „Als Person anzeigen“ kannst du jemanden hinzufügen. Felder, Tags und Import funktionieren in allen drei Listen gleich. Jede Liste hat eigene Filter: siehe [The Graph](graph.md).
+Alle, mit denen du in Kontakt bist, zuerst die engsten, aus deinen Nachrichten und Besprechungen. Newsletter, Belege und andere Mailings fügen niemanden hinzu, bis du antwortest. Sie stehen unter „Verborgene Absender“ unterhalb der Liste: Mit „Als Person anzeigen“ wird jemand zur Liste hinzugefügt. Felder, Tags und Importe funktionieren in allen drei Listen gleich. Jede Liste hat eigene Filter: siehe [The Graph](graph.md).
 
-Ein gemeinsames Postfach (info@, Kundenservice, der Name eines Geschäfts) wird der jeweiligen Organisation zugeordnet, nicht einer Person. Das gilt auch, wenn du an das Postfach schreibst.
+Ein gemeinsames Postfach (info@, Kundenservice, der Name eines Geschäfts) zählt zu der jeweiligen Organisation, nicht als Person. Das gilt auch, nachdem du dorthin geschrieben hast.
 
 ## Die Seite einer Person
 
-Oben stehen Foto, Name, Titel, Organisation und Ort sowie eine Zeile dazu, wie ihr in Kontakt seid („Täglicher Austausch · letzter Kontakt gestern · nächstes Meeting Di., 27. Okt.“). Der letzte Kontakt wird als „gerade eben“, „vor 3 Stunden“, „gestern“ oder „vor 3 Tagen“ angezeigt. Liegt er länger zurück, siehst du ein Datum. Bewege den Mauszeiger darauf, um das genaue Datum zu sehen. Darunter findest du:
+Oben stehen Foto, Name, Titel, Organisation und Ort sowie eine Zeile dazu, wie ihr in Kontakt seid („Täglich im Gespräch · letzter Kontakt gestern · nächstes Treffen Di., 27. Okt.“). Der letzte Kontakt wird als „gerade eben“, „vor 3 Stunden“, „gestern“ oder „vor 3 Tagen“ angezeigt. Bei länger zurückliegendem Kontakt steht dort ein Datum. Bewege den Mauszeiger darüber, um das genaue Datum zu sehen. Darunter findest du:
 
-- **Kontakt**: Telefonnummern und E-Mail-Adressen. Tippe auf eine Nummer oder Adresse, um anzurufen oder zu schreiben, oder **Kopieren**, um sie zu kopieren. Hier steht auch der **Geburtstag** und woher die Angabe stammt (Google-Kontakte, Google Calendar, Facebook, deine Notizen oder von dir): siehe [The Graph](graph.md#birthday).
-- **Mit dir**: welche Rolle die Person für dich hat, ob es sich um einen Arbeits- oder Privatkontakt handelt und ob sie zu deiner Familie oder Fleet gehört. Hier findest du auch **In Fleet ansehen**.
-- **Auch auf**: andere Orte, an denen ihr miteinander kommuniziert. Über **Slack** öffnest du die Person in Slack oder euren neuesten Slack-Thread.
-- **Personen** und **Projekte**, zu denen sie gehört, **Offen zwischen euch** (Versprechen in beide Richtungen, mit **Als erledigt markieren** und **Entfernen**) sowie ihr **Verlauf**.
+- **Kontakt**: Telefonnummern und E-Mail-Adressen. Tippe auf eine Nummer oder Adresse, um anzurufen oder zu schreiben, oder tippe auf **Kopieren**. Auch der **Geburtstag** wird hier angezeigt, zusammen mit der Quelle (Google Kontakte, Google Kalender, Facebook, deine Notizen oder du): siehe [The Graph](graph.md#birthday).
+- **Mit dir**: welche Rolle die Person für dich hat, ob sie ein Arbeits- oder Privatkontakt ist und ob sie zu deiner Familie oder Fleet gehört, mit **In Fleet ansehen**.
+- **Auch auf**: andere Orte, an denen ihr miteinander sprecht. Über **Slack** wird die Person in Slack geöffnet oder der neueste Slack-Thread mit ihr.
+- **Personen** und **Projekte**, zu denen sie gehört, **Offen zwischen euch** (gegenseitige Versprechen, mit **Erledigt markieren** und **Entfernen**) und ihr **Verlauf**.
 
-Adressen und Chats einer Person werden automatisch zusammengeführt, wenn klar ist, dass sie zu derselben Person gehören, zum Beispiel eine geschäftliche E-Mail-Adresse, bei der die private Adresse in CC steht.
+Adressen und Chats einer Person werden automatisch zusammengeführt, wenn klar ist, dass sie zu derselben Person gehören, zum Beispiel eine geschäftliche E-Mail-Adresse mit der persönlichen Adresse in CC. Das gilt auch, wenn jemand, mit dem du chattest, über den Link, den du ihm geschickt hast, einen Anruf bucht und die Firma oder der Nachname übereinstimmt.
 
-Wenn eine Seite die Meldung **Die Seite konnte nicht geladen werden.** zeigt, tippe auf **Erneut versuchen**. Wenn die Meldung weiterhin erscheint, tippe unten auf der Seite auf **Stimmt etwas nicht?**.
+Wenn die Seite **Seite konnte nicht geladen werden.** anzeigt, tippe auf **Erneut versuchen**. Wenn die Meldung weiterhin erscheint, tippe unten auf der Seite auf **Stimmt etwas nicht?**.
 
 ## Zusammenfassung
 
-Oben auf der Seite einer Person stehen ein paar kurze Zeilen: was beschlossen, gefragt, geplant oder versprochen wurde, mit allen Namen. The Machine schreibt die Zusammenfassung neu, wenn es etwas Neues gibt, und zwar nur für Personen, mit denen du wirklich in Kontakt bist. Außerdem prüft sie jede Zeile. Normalerweise passiert das einmal täglich. Wenn sich etwas mit der Person ändert, etwa eine neue Frist oder eine zurückgezogene Anfrage, wird die Zusammenfassung innerhalb weniger Stunden aktualisiert.
+Ein paar kurze Zeilen oben auf der Seite einer Person: was besprochen, gefragt, geplant oder versprochen wurde, mit allen genannten Personen. The Machine schreibt die Zusammenfassung um, wenn es Neuigkeiten gibt, aber nur für Personen, mit denen du wirklich in Kontakt bist. Jede Zeile wird vorher überprüft. Meistens geschieht das einmal am Tag, innerhalb weniger Stunden, wenn sich etwas mit der Person ändert, etwa eine neue Frist oder eine zurückgezogene Anfrage.
 
-Vage Aussagen werden weggelassen. Wenn es nichts Konkretes zu sagen gibt, erscheint keine Zusammenfassung. Jede Zeile führt zur Quelle: Nachrichten von einem Tag werden mit einem gemeinsamen Datum und ihrer Anzahl angezeigt und lassen sich zusammen öffnen.
+Unklare Zeilen werden ausgelassen. Wenn es nichts Konkretes zu sagen gibt, gibt es keine Zusammenfassung. Jede Zeile führt zu ihrer Quelle. Nachrichten vom selben Tag werden mit einem gemeinsamen Datum und ihrer Anzahl zusammengefasst und lassen sich gemeinsam öffnen.
 
-Über **Bearbeiten** kannst du die Zusammenfassung in deinen eigenen Worten formulieren. Wenn es Neuigkeiten gibt, zeigt The Machine eine **Vorgeschlagene Aktualisierung** mit **Übernehmen** und **Meine behalten**. Mit **The Machine schreiben lassen** gibst du die Zusammenfassung an The Machine zurück.
+Mit **Bearbeiten** kannst du die Zusammenfassung in deinen eigenen Worten schreiben. Bei Neuigkeiten zeigt The Machine eine **Vorgeschlagene Aktualisierung** mit **Übernehmen** und **Meine behalten** an. Mit **The Machine schreiben lassen** überlässt du das Schreiben wieder The Machine.
 
-Die Meeting-Vorbereitung nutzt die Zusammenfassung, aber nur die Zeilen aus dem jeweiligen Aufgabenbereich (Arbeit oder Privat). Sie bleibt auf deiner Machine. Dein Team sieht sie nie.
+Bei der Vorbereitung auf Besprechungen wird die Zusammenfassung verwendet, aber nur die Zeilen aus dem Bereich der jeweiligen Aufgabe (Arbeit oder Privat). Sie bleibt auf deiner Machine. Dein Team sieht sie nicht.
 
 ## Verlauf
 
-Jede Personen- und Organisationsseite hat einen Verlauf, sortiert vom Neuesten zum Ältesten: E-Mails, Meetings und ihre Zoom-Zusammenfassungen, Intercom-Unterhaltungen (mit **In Intercom öffnen**), WhatsApp-, Telegram-, Slack-, LinkedIn- und X-Chats, Aufgaben, Versprechen und Projektänderungen. Mit den Filtern oben kannst du jeweils eine Quelle anzeigen. Über **Mehr anzeigen** lädst du ältere Einträge.
+Die Seiten von Personen und Organisationen haben jeweils einen Verlauf, sortiert vom Neuesten zum Ältesten: E-Mails, Besprechungen und ihre Zoom-Zusammenfassungen, Intercom-Unterhaltungen (mit **In Intercom öffnen**), WhatsApp-, Telegram-, Slack-, LinkedIn- und X-Chats, Aufgaben, Versprechen und Projektänderungen. Mit den Chips oben kannst du jeweils eine Quelle anzeigen. Über **Mehr anzeigen** werden ältere Einträge geladen.
 
-Anstehende Meetings stehen ganz oben unter **Demnächst**, beginnend mit dem frühesten. Über **Alle anstehenden zeigen** siehst du auch die übrigen. Bei einem Meeting wird jede teilnehmende Person nur einmal aufgeführt. Für Meetings mit Notizen oder Transkript wird **Notizen** oder **Transkript** angezeigt. Klicke darauf, um sie zu lesen.
+Anstehende Besprechungen stehen ganz oben unter **Demnächst**, die nächste zuerst. Mit **Alle anstehenden zeigen** werden auch die übrigen angezeigt. Bei einer Besprechung siehst du, wer dabei war, jede Person nur einmal. Besprechungen mit Notizen oder Transkript sind mit **Notizen** oder **Transkript** gekennzeichnet. Klicke darauf, um sie zu lesen.
 
-Deine Verläufe gehören dir. Im Team Graph werden nur Inhalte angezeigt, die deine Freigabeeinstellungen erlauben. Über **Team** oberhalb des Verlaufs einer Seite kannst du geteilte Inhalte deiner Teammitglieder anzeigen. Bei jedem Eintrag steht, von wem er stammt. **Meine** zeigt nur deine Inhalte.
+Deine Verläufe gehören dir: Im Graph des Teams wird nur angezeigt, was deine Freigabeeinstellungen erlauben. Über **Team** oberhalb des Verlaufs siehst du auf einer Seite, was Teammitglieder geteilt haben. Bei jedem Eintrag steht, von wem er stammt. Unter **Meine** siehst du nur deine Einträge.
 
 ## Arbeit und Privat
 
-Auf den Tabs **Arbeit** und **Privat** werden Personen nach ihrem Typ sortiert, der auch auf ihrer Seite steht. Deine eigene Auswahl (**Bearbeiten**) hat Vorrang. Andernfalls werden deine Familie und Freunde sowie Personen, die für dich Familie oder Freunde sind (etwa eine Ehefrau oder ein Vater), als privat eingestuft, unabhängig davon, von welcher Adresse aus sie schreiben. Dein Team sieht keine privaten Kontakte.
+Auf den Tabs **Arbeit** und **Privat** werden Personen nach ihrem Typ sortiert, der auf ihrer Seite steht. Deine eigene Auswahl (**Bearbeiten**) hat Vorrang. Ansonsten zählen deine Familie und Freunde sowie Personen, die mit dir verwandt oder befreundet sind (zum Beispiel deine Frau oder dein Vater), als privat, unabhängig davon, von welcher Adresse aus sie schreiben. Dein Team sieht keine privaten Kontakte.
 
 ## Person hinzufügen
 
-Tippe oben in „Personen“ auf **Neue Person** oder auf dem Handy in der oberen Leiste auf **+**. Gib einen Namen und, falls bekannt, eine E-Mail-Adresse und Organisation ein. Wenn es in deinem Graph bereits eine ähnliche Person gibt, zeigt das Formular sie zuerst an. Du kannst dann stattdessen die vorhandene Person öffnen. Über **Hinzufügen** öffnest du die neue Seite.
+Tippe oben in „Personen“ auf **Neue Person** oder auf **+** in der oberen Leiste auf dem Handy. Gib einen Namen sowie, falls bekannt, eine E-Mail-Adresse und Organisation ein. Wenn es in deinem Graph bereits eine ähnliche Person gibt, wird sie zuerst im Formular angezeigt. Du kannst dann stattdessen deren Seite öffnen. Mit **Hinzufügen** wird die neue Seite geöffnet.
 
-Eine Person, die du hinzufügst, bleibt gespeichert, auch wenn es noch keine Nachrichten mit ihr gibt. Ihre erste Nachricht wird ihr zugeordnet.
+Eine hinzugefügte Person bleibt erhalten, auch wenn es noch keine Nachrichten gibt. Die erste Nachricht wird ihr zugeordnet.
 
 ## Person bearbeiten
 
-Über **Bearbeiten** oben auf der Seite kannst du Name, Titel, Organisation, Ort, LinkedIn, Telefonnummern und E-Mail-Adressen ändern sowie festlegen, welche Rolle die Person für dich hat und ob es sich um einen Arbeits- oder Privatkontakt handelt. Das Feld **Notizen** ist für alles, woran du dich erinnern möchtest. Notizen bleiben auch nach dem Zusammenführen erhalten. Mit **Speichern** übernimmst du die Änderungen, mit **Abbrechen** verwirfst du sie.
+Mit **Bearbeiten** oben auf der Seite kannst du Name, Titel, Organisation, Ort, LinkedIn, Telefonnummern und E-Mail-Adressen, die Rolle der Person für dich und die Zuordnung zu Arbeit oder Privat ändern. Das Feld **Notizen** ist für alles, woran du dich erinnern möchtest. Notizen bleiben beim Zusammenführen erhalten. Mit **Speichern** werden die Änderungen übernommen, mit **Abbrechen** verworfen.
 
-Deine Änderungen bleiben erhalten, auch wenn die Angaben erneut nachgeschlagen oder Personen über **Zusammenführen** und **Rückgängig** zusammengeführt oder getrennt werden. Leere ein Feld, um wieder die nachgeschlagene Angabe zu verwenden. Wenn du den Namen leerst, wird der Name aus den Nachrichten wiederhergestellt.
+Deine Änderungen bleiben erhalten, auch wenn die Angaben erneut nachgeschlagen werden sowie nach **Zusammenführen** und **Rückgängig**. Leere ein Feld, um wieder den nachgeschlagenen Wert zu verwenden. Wenn du den Namen leerst, wird der Name aus den Nachrichten wiederhergestellt.
 
-Um das Foto zu ändern, klicke darauf. Du kannst **Bild hochladen**, ein gefundenes Foto auswählen oder **Bild entfernen**. Das Foto bleibt auf deiner Machine.
+Um das Foto zu ändern, klicke darauf: **Bild hochladen**, ein gefundenes Foto auswählen oder **Bild entfernen**. Das Foto bleibt auf deiner Machine.
 
 ## Zwei Personen zusammenführen
 
-Wenn zwei Personen möglicherweise dieselbe sind, fragt ihre Seite, ob es sich um dieselbe Person handelt. In „Personen“ werden sie unter **Gleiche Person?** aufgeführt. Über **Zusammenführen** werden alle ihre Nachrichten, Notizen, Rollen und Projekte zusammengeführt. Mit **Nicht dieselbe** bleiben sie dauerhaft getrennt. Deine Antwort wird kurz beim Personenpaar angezeigt, danach verschwindet es aus der Liste. Die Liste verschwindet, sobald es keine offenen Fragen mehr gibt.
+Wenn zwei Personen vielleicht dieselbe sind, wirst du auf ihrer Seite gefragt, ob es sich um dieselbe Person handelt. In der Personenliste werden sie unter **Gleiche Person?** aufgeführt. Mit **Zusammenführen** werden sie zusammengeführt, einschließlich aller Nachrichten, Notizen, Rollen und Projekte. Mit **Nicht dieselbe** bleiben sie dauerhaft getrennt. Deine Antwort wird kurz bei dem Paar angezeigt. Anschließend verschwindet es aus der Liste. Die Liste wird ausgeblendet, wenn es keine offenen Fragen mehr gibt.
 
-Eine Person mit einer Adresse, die nur einer bekannten Adresse ähnelt, etwa acme-corp.example und acmecorp.example, wird nie als dieselbe Person vorgeschlagen. Nur du kannst ihr eine Rolle zuweisen.
+Eine Person mit einer Adresse, die deiner bekannten Adresse nur ähnelt, zum Beispiel acme-corp.example statt acmecorp.example, wird niemals als dieselbe Person vorgeschlagen. Nur du kannst ihr eine Rolle zuweisen.
 
-Ein gleicher Name allein reicht über verschiedene Domains hinweg nie aus, da sich jeder so nennen kann. Zwei Adressen mit unterschiedlichen Domains werden nur dann zum Zusammenführen vorgeschlagen, wenn es noch einen weiteren Zusammenhang gibt, etwa gemeinsame Kontakte oder ein gemeinsames Projekt. Eine Person, die deinen Namen unter einer fremden Adresse verwendet, wird nie vorgeschlagen. Füge stattdessen deine anderen Adressen unter **Einstellungen** hinzu: [Deine Adressen](settings.md#your-addresses).
+Ein gleicher Name allein reicht bei unterschiedlichen Domains nie aus, da jeder einen Namen eingeben kann. Zwei Adressen mit unterschiedlichen Domains werden nur dann als dieselbe Person vorgeschlagen, wenn es noch eine weitere Verbindung gibt, etwa dieselben Kontakte oder ein gemeinsames Projekt. Eine Person, die deinen Namen unter einer Adresse verwendet, die nicht dir gehört, wird niemals vorgeschlagen. Füge deine weiteren Adressen stattdessen unter **Einstellungen** unter [Deine Adressen](settings.md#your-addresses) hinzu.
 
-Wenn bei unterschiedlichen Domains nur der Vorname übereinstimmt, etwa „Sam“ und „Sam Lee“, werden die Personen nur bei gleicher Telefonnummer oder gleichem LinkedIn-Profil vorgeschlagen.
+Wenn bei unterschiedlichen Domains nur der Vorname übereinstimmt, zum Beispiel „Sam“ und „Sam Lee“, werden sie nur bei gleicher Telefonnummer oder gleichem LinkedIn-Profil vorgeschlagen.
 
-Eine gemeinsame Adresse wie info@ oder eine Mailingliste wird nie mit den Personen zusammengeführt, die darüber schreiben. Ein Arbeitskontakt außerhalb deines Unternehmens und ein privater Chat, bei denen nur der Name übereinstimmt, werden nicht automatisch zusammengeführt. Stattdessen werden sie als Frage angezeigt.
+Wenn nur der Vorname mit einem über einen Chat erstellten Besprechungseintrag übereinstimmt oder die Adresse einer Person gehört, die du bereits kanntest, und nur die Person im Chat sagt, dass die Adresse ihr gehört, wirst du gefragt. The Machine öffnet niemals einen Link, um das herauszufinden.
 
-Mit **Alle zusammenführen** werden alle Paare in der Liste auf einmal zusammengeführt, außer denen, die du mit **Nicht dieselbe** markiert hast. Mit **Rückgängig** kannst du alle sofort wieder trennen.
+Eine gemeinsame Adresse wie info@ oder eine Mailingliste wird niemals mit den Personen zusammengeführt, die darüber schreiben. Ein geschäftlicher Kontakt von außerhalb deines Unternehmens und ein privater Chat, bei denen nur der Name übereinstimmt, werden nicht automatisch zusammengeführt. Sie werden als mögliche Übereinstimmung angezeigt.
 
-Um zwei Personen selbst zusammenzuführen, öffne eine der beiden Seiten. Tippe dann auf **⋯**, **Gleiche Person wie…** und wähle die andere Person aus. Auf der Seite einer zusammengeführten Person steht unter **Zusammengeführt aus**, warum sie zusammengeführt wurde. Über **Rückgängig** kannst du sie wieder trennen.
+Mit **Alle zusammenführen** werden alle Paare in der Liste auf einmal zusammengeführt, außer denen, die du als **Nicht dieselbe** markiert hast. Mit **Rückgängig** kannst du sie direkt danach wieder trennen.
+
+Um zwei Personen selbst zusammenzuführen, öffne eine der beiden Seiten und wähle dann **⋯**, **Gleiche Person wie…** und die andere Person aus. Auf der Seite der zusammengeführten Person steht unter **Zusammengeführt aus**, warum sie zusammengeführt wurde. Über **Rückgängig** kannst du sie wieder trennen.
 
 ## Person endgültig löschen
 
-Öffne auf der Seite der Person das Menü ⋯ und wähle **Endgültig löschen…** und dann **Löschen**. Dadurch werden die Person und alle Informationen gelöscht, die deine Machine über sie kennt: ihr Eintrag, ihre Adressen, nachgeschlagene Angaben, Nachrichten, die nur zwischen euch beiden ausgetauscht wurden, und Notizen über sie.
+Öffne auf der Seite das Menü ⋯ und wähle **Endgültig löschen…**, dann **Löschen**. Die Person und alle Informationen, die deine Machine über sie kennt, werden entfernt: ihr Eintrag, ihre Adressen, nachgeschlagene Details, Nachrichten, die nur zwischen euch beiden ausgetauscht wurden, und Notizen über sie.
 
-Aufgaben, an denen die Person beteiligt ist, bleiben erhalten, aber ihr Name wird entfernt. Die Person wird nicht erneut hinzugefügt, auch nicht durch einen Import oder eine Aufgabe zu Facebook-Geburtstagen mit ihrem Namen oder ihrer Adresse. Diese Aktion lässt sich nicht rückgängig machen.
+Aufgaben, an denen die Person beteiligt ist, bleiben erhalten, aber ihr Name wird entfernt. Sie wird nicht wieder hinzugefügt, auch nicht durch einen Import oder eine Aufgabe für Facebook-Geburtstage mit ihrem Namen oder ihrer Adresse. Diese Aktion kann nicht rückgängig gemacht werden.
 
 ## Unzustellbar
 
-Wenn eine E-Mail an eine Person unzustellbar ist, wird ihre Adresse mit dem Hinweis **Unzustellbar** und dem Datum angezeigt. Eine andere Adresse der Person wird zuerst angezeigt. Neue Entwürfe werden nie an diese Adresse gesendet, wenn eine andere bekannt ist. Ist es die einzige Adresse, weist dich das Versandfenster darauf hin. Du kannst die Nachricht trotzdem senden.
+Wenn eine E-Mail an eine Person unzustellbar ist, wird ihre Adresse mit dem Datum als **Unzustellbar** angezeigt. Eine andere Adresse der Person wird zuerst aufgeführt. Neue Entwürfe werden nie an diese Adresse gesendet, wenn eine andere bekannt ist. Ist es die einzige Adresse, warnt dich der Sendevorgang, du kannst die E-Mail aber trotzdem senden.
 
-Eine E-Mail gilt als unzustellbar, wenn der Mailserver meldet, dass die Adresse nicht existiert, oder wenn innerhalb einer Woche drei vorübergehende Fehler auftreten. Der Hinweis wird entfernt, wenn die Person wieder von dieser Adresse schreibt oder eine E-Mail an sie zugestellt wird.
+Eine E-Mail gilt als unzustellbar, wenn der Mailserver meldet, dass die Adresse nicht existiert, oder wenn es innerhalb einer Woche drei vorübergehende Zustellfehler gibt. Der Hinweis wird entfernt, wenn die Person wieder von dieser Adresse aus schreibt oder eine E-Mail an die Adresse zugestellt wird.
 
 ## Jobtitel und Foto
 
-Bei Personen mit einer geschäftlichen Adresse werden Jobtitel, Foto, LinkedIn-Profil und Stadt nachgeschlagen, wie unter [Organisationsdetails](organization-data.md) beschrieben. Bei einer gehosteten Machine werden dafür nur der Name und die Unternehmensdomain abgefragt. Für ein Foto erhält Gravatar einen Hash der geschäftlichen Adresse, niemals die Adresse selbst. Du kannst die Funktion unter **Einstellungen** im Bereich „Sicherheit“ deaktivieren: **Arbeitskontakte nachschlagen**.
+Bei Personen mit einer Firmenadresse werden Jobtitel, Foto, LinkedIn-Profil und Stadt wie bei [Organisationsdetails](organization-data.md) nachgeschlagen. Bei einer gehosteten Machine werden dafür nur ihr Name und die Domain des Unternehmens verwendet. Für ein Foto erhält Gravatar einen Hash ihrer geschäftlichen Adresse, niemals die Adresse selbst. Du kannst die Funktion unter **Einstellungen** im Bereich „Sicherheit“ mit **Arbeitskontakte nachschlagen** ausschalten.
 
-Wenn du diese Funktion deaktivierst, wird auch die kurze Websuche vor dem ersten Meeting ausgeschaltet (siehe [Bereit für deine Meetings](calendar.md#ready-for-your-meetings)).
+Mit dieser Einstellung wird auch verhindert, dass vor der ersten Besprechung die Website aufgerufen wird und eine Websuche stattfindet, wenn diese eingerichtet ist (siehe [Vorbereitung auf Besprechungen](calendar.md#ready-for-your-meetings)).
 
-Wenn die Angaben gefunden wurden, zeigt die Seite der Person auch ihren Infotext, seit wann sie ihre aktuelle Rolle hat und welche zwei Rollen sie davor hatte. Die Meeting-Vorbereitung nutzt diese Angaben ebenfalls. Der Infotext wird nur verwendet, wenn die Person keine eigene Biografie hat.
+Wenn die Informationen gefunden wurden, zeigt die Seite der Person auch ihren Infotext, an, seit wann sie ihre aktuelle Stelle hat und welche zwei Stellen sie davor hatte. Die Vorbereitung auf Besprechungen berücksichtigt diese Angaben ebenfalls. Der Infotext wird nur verwendet, wenn die Person keine eigene Biografie hat.
 
-Deine Verbindungen werden durch Informationen ergänzt, die bereits verfügbar sind: Jobtitel, Telefonnummer und Zeitzone aus Slack, Biografie und Ort aus X, Überschrift und Foto aus LinkedIn, Jobtitel aus Google-Kontakten und Salesflare sowie das Kontaktfoto aus Salesflare, wenn es dort gespeichert ist. Bewege den Mauszeiger auf die Zeile unter dem Namen, um zu sehen, woher die Information stammt.
+Deine Verbindungen werden durch bereits gefundene Angaben ergänzt: um einen Titel, eine Telefonnummer und Zeitzone aus Slack, eine Biografie und einen Ort aus X, eine Überschrift und ein Foto aus LinkedIn, Jobtitel aus Google Kontakte und Salesflare sowie um das Kontaktfoto aus Salesflare, wenn dort eines hinterlegt ist. Bewege den Mauszeiger über die Zeile unter dem Namen, um die Quelle zu sehen.
 
-Outlook ergänzt Fotos von Kolleginnen und Kollegen in deiner Organisation und deinen Outlook-Kontakten sowie Jobtitel und Unternehmen deiner Kontakte ([Microsoft](microsoft.md#photos-of-colleagues-and-contacts)).
+Outlook ergänzt Fotos von Kollegen in deiner Organisation und deinen Outlook-Kontakten sowie Jobtitel und Unternehmen deiner Kontakte ([Microsoft](microsoft.md#photos-of-colleagues-and-contacts)).
 
-WhatsApp- und Telegram-Fotos werden über deine WhatsApp-Synchronisierung und deine Telegram-Chats-Verbindung übernommen: pro Dienst bis zu 50 am Tag und nur für Personen, die bereits in deinem Graph sind. Niemand wird darüber benachrichtigt. Ein Import von Facebook-Geburtstagen ergänzt beim Speichern das Profilbild einer Person, wenn noch kein Foto vorhanden ist ([Routinen](routines.md)). Alle Informationen bleiben auf deiner Machine.
+Fotos aus WhatsApp und Telegram werden über deine WhatsApp-Synchronisierung und die Verbindung zu deinen Telegram-Chats übernommen: jeweils bis zu 50 pro Tag, nur für Personen, die bereits in deinem Graph sind. Es wird nichts an diese Personen gesendet. Ein Facebook-Geburtstagsimport fügt beim Speichern das Profilbild einer Person hinzu, wenn sie noch kein Foto hat ([Routinen](routines.md)). Alles bleibt auf deiner Machine.
 
-Im [Team Graph](team-graph.md) einer Work Fleet wird eine kleine Kopie eines geschäftlichen Fotos zusammen mit dem geteilten Personeneintrag angezeigt. Fotos aus Google-Kontakten, WhatsApp, Telegram oder Facebook sowie Fotos, die du geändert oder entfernt hast, werden nie geteilt.
+Im [Team Graph](team-graph.md) einer Work Fleet wird eine kleine Kopie des Arbeitsfotos mit dem geteilten Eintrag der Person gespeichert. Fotos aus Google Kontakte, WhatsApp, Telegram oder Facebook sowie Fotos, die du geändert oder entfernt hast, werden niemals geteilt.
 
 ## Über dich
 
-Deine eigenen Adressen und Telefonnummern, einschließlich Aliasse, gehören immer zu dir und nie zu einer Person in deinem Graph. Wenn du nach dir selbst suchst oder eine Person mit einer deiner Adressen hinzufügst, wird **Über dich** geöffnet. Beim Import wird dein eigener Eintrag übersprungen.
+Deine eigenen Adressen und Nummern, auch Aliasse, gehören immer dir und sind niemals Personen in deinem Graph. Wenn du nach dir selbst suchst oder eine Person mit einer deiner Adressen hinzufügst, wird **Über dich** geöffnet. Beim Import wird dein eigener Eintrag übersprungen.
 
-Unter „Über dich“ werden deine Adressen und ihre jeweilige Quelle aufgeführt. Du kannst sie unter **Einstellungen** im Bereich „Konto“ ändern. Um deinen Kontakt an ein Teammitglied oder einen Freund zu senden, wähle **Meinen Kontakt teilen**. Siehe [Einen Kontakt teilen](share-contact.md).
+Unter „Über dich“ werden deine Adressen samt Quelle aufgeführt. Du kannst sie unter **Einstellungen** im Bereich „Konto“ ändern. Um deinen eigenen Kontakt mit einem Teammitglied oder Freund zu teilen, wähle **Meinen Kontakt teilen**. Siehe [Einen Kontakt teilen](share-contact.md).
 
-## Welche Rolle die Person für dich hat
+## Deine Rolle für die Person
 
-Rollen, die deine Machine aus deinen Nachrichten erkennt, stehen auf der Seite der Person unter **Für dich**. Angezeigt werden nur die Wörter, die auf die Rolle hinweisen, etwa ein Titel. Wenn jemand sagt, er sei dein Buchhalter oder Kunde, reicht das nicht aus. Dafür braucht es auch Belege von deiner Seite, etwa deine eigenen Nachrichten oder Meetings mit der Person. Du musst nichts bestätigen. Ist eine Angabe falsch, kannst du sie über **Bearbeiten** auf der Seite der Person oder über **⋯** in der entsprechenden Zeile unter **Letzte Änderungen** korrigieren. The Machine lernt aus deinen Änderungen.
+Rollen, die deine Machine in deinen Nachrichten erkennt, stehen auf der Seite der Person unter **Für dich**, zusammen mit den Wörtern, an denen die Rolle erkennbar ist, zum Beispiel einem Titel. Wenn jemand sagt, dass er dein Buchhalter oder Kunde ist, reicht das nicht aus. Dafür braucht es auch etwas von dir, etwa deine eigenen Nachrichten oder Besprechungen mit der Person. Du musst das nicht bestätigen. Ist etwas falsch, kannst du es mit **Bearbeiten** auf der Seite der Person oder mit **⋯** in der entsprechenden Zeile unter **Letzte Änderungen** korrigieren. The Machine lernt aus deinen Änderungen.
 
 ## Was über eine Person bekannt ist
 
-Fakten über eine Person stehen auf ihrer Seite unter **Bekannt über**. Unter „Lernen“ werden allgemeine Fakten gesammelt. Über **Hinzufügen** kannst du einen weiteren Fakt mit eigenen Worten hinzufügen. Zu jedem Fakt gibt es ein Menü:
+Fakten über die Person stehen auf ihrer Seite unter **Bekannt über**. Unter „Lernen“ stehen die allgemeinen Fakten. Mit **Hinzufügen** kannst du einen weiteren Fakt in deinen eigenen Worten festhalten. Für jeden Fakt gibt es ein Menü:
 
-- Über **Bearbeiten** änderst du den Fakt direkt.
-- Mit **Nicht über diese Person** wird daraus wieder ein allgemeiner Fakt unter **Lernen**, **Fakten**.
-- Über **Entfernen** wird der Fakt überall gelöscht.
+- Mit **Bearbeiten** kannst du den Fakt direkt ändern.
+- Mit **Nicht über diese Person** wird er wieder zu einem allgemeinen Fakt unter **Lernen**, **Fakten**.
+- Mit **Entfernen** wird er überall gelöscht.
 
 ## Letzte Änderungen
 
-Unter **Letzte Änderungen**, eingeklappt direkt über dem Verlauf einer Person, Organisation oder eines Projekts, stehen Informationen, die deine Machine geändert oder neu gelernt hat: eine Rolle, der Arbeitsort, die Beziehung zwischen zwei Personen, ein Fakt oder eine Projektänderung. Bei jeder Zeile stehen Datum und Quelle. Tippe auf die Quelle, um die Nachricht zu lesen.
+Unter **Letzte Änderungen**, direkt oberhalb des Verlaufs einer Person, Organisation oder eines Projekts, stehen Informationen, die deine Machine geändert oder neu erkannt hat: eine Rolle, wo jemand arbeitet, wie zwei Personen miteinander verbunden sind, ein Fakt oder eine Änderung bei einem Projekt. Jede Zeile zeigt das Datum und die Quelle. Tippe auf die Quelle, um die Nachricht zu lesen.
 
-Wenn eine Angabe falsch ist, kannst du sie über **⋯** direkt korrigieren: **Bearbeiten**, **Entfernen**, **Nicht über diese Person** oder **Rückgängig**, um ein Projekt an seinen vorherigen Ort zurückzusetzen. Es werden drei Zeilen angezeigt. Über **Mehr anzeigen** siehst du die übrigen.
+Wenn etwas nicht stimmt, kannst du es über **⋯** in der jeweiligen Zeile direkt korrigieren: mit **Bearbeiten**, **Entfernen**, **Nicht über diese Person** oder **Rückgängig**, um ein Projekt an seinen vorherigen Ort zurückzusetzen. Drei Zeilen werden angezeigt. Über **Mehr anzeigen** siehst du die übrigen.
 
-Bei Personen, deren Angaben deine Machine heute aktualisiert hat, wird in der Liste „Personen“ ein kleiner Punkt angezeigt. Die Zeile **4 Personen heute aktualisiert** oben in der Liste nennt sie. Siehe [The Graph](graph.md).
+Bei Personen, deren Angaben deine Machine heute aktualisiert hat, wird in der Personenliste ein kleiner Punkt angezeigt. Oben in der Liste steht **Heute wurden 4 Personen aktualisiert** und nennt die Personen. Siehe [The Graph](graph.md).
 
 ## Aufgabe zu einer Person
 
-Über **Neue Aufgabe** im Menü **⋯** einer Person, Organisation oder eines Projekts erstellst du eine Aufgabe zu dieser Person, Organisation oder diesem Projekt.
+Mit **Neue Aufgabe** im Menü **⋯** einer Person, Organisation oder eines Projekts kannst du eine Aufgabe zu dieser Person, Organisation oder diesem Projekt erstellen.

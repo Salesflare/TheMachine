@@ -27,8 +27,14 @@ class ModelPacingApp:
 
     def note_usage_limit(self, receipt):
         """A run ended on the sign-in's usage limit: everything the service starts waits until it resets (the time the
-        provider named, else the window's), instead of trying again every few minutes."""
-        if not isinstance(receipt, dict) or receipt.get('error') != 'usage_limited':
+        provider named, else the window's), instead of trying again every few minutes. One that ended rate limited while
+        the plan's usage reads full hit that limit too (2026-11-25, after a start: OpenClaw's message said neither which
+        limit nor when, and a to-do stopped instead of waiting): its receipt says so from here on."""
+        if not isinstance(receipt, dict):
+            return None
+        if receipt.get('error') == 'rate_limited' and self.plan_full():
+            receipt['error'] = 'usage_limited'
+        if receipt.get('error') != 'usage_limited':
             return None
         model = openclaw_model(self.config)
         until = model_budget.limit_until(receipt.get('retry_at'), model_budget.for_model(getattr(self, 'model_usage', None), model))
@@ -39,6 +45,19 @@ class ModelPacingApp:
         self.fallback_health().doubt()  # the fallback didn't carry this run: the usage rules hold until a check passes
         getattr(self, 'model_usage_wake', threading.Event()).set()
         return until
+
+    def plan_full(self):
+        """The main model's plan has a full window, as read again now (at most once a minute: the last reading can be from
+        before the limit, or missing after a start). Never while a working fallback carries the work."""
+        if self.fallback_covers():
+            return False
+        if time.monotonic() - getattr(self, 'plan_read_at', -60) >= 60:
+            self.plan_read_at = time.monotonic()
+            try:
+                self.read_model_usage()
+            except Exception as error:  # noqa: BLE001 - the last reading counts
+                LOG.error('usage reading error=%s', type(error).__name__)
+        return bool(model_budget.full_windows(model_budget.for_model(getattr(self, 'model_usage', None), openclaw_model(self.config))))
 
     def fallback_health(self):
         health = getattr(self, '_fallback_health', None)
@@ -67,9 +86,8 @@ class ModelPacingApp:
         (2026-11-22: reviews ended on the limit every few minutes)."""
         now_s, model = time.time(), openclaw_model(self.config)
         limit = getattr(self, 'usage_limit', None)
-        reached = bool(limit and limit['until'] > now_s and limit.get('provider') in (None, model_budget.provider_of(model))) or any(
-            w.get('used', 0) >= 100 and (w.get('reset') or now_s + 1) > now_s
-            for p in model_budget.for_model(getattr(self, 'model_usage', None), model) or [] for w in p.get('windows') or [])
+        reached = bool(limit and limit['until'] > now_s and limit.get('provider') in (None, model_budget.provider_of(model))) or \
+            model_budget.full_windows(model_budget.for_model(getattr(self, 'model_usage', None), model), now_s)
         return self.fallback_covers() if reached else None
 
     def paced_usage(self):
@@ -108,7 +126,7 @@ class ModelPacingApp:
         if limit and limit['until'] > now_s and limit.get('provider') in (None, model_budget.provider_of(model)):
             return {'window': 'limit', 'until': limit['until'], 'limited': True}
         full = [{'window': '5h' if model_budget.window_kind(w['label']) == 'short' else 'week', 'until': w.get('reset'), 'limited': True}
-                for p in usage or [] for w in p.get('windows') or [] if w.get('used', 0) >= 100 and (w.get('reset') or now_s + 1) > now_s]
+                for w in model_budget.full_windows(usage, now_s)]
         if full:
             return max(full, key=lambda f: f['until'] or 0)
         if owner:
@@ -268,15 +286,21 @@ class ModelPacingApp:
                     break
                 self.stop.wait(1)
 
-    def refresh_model_usage(self):
-        on_claude = claude_plan_route(self.config)
+    def read_model_usage(self):
+        """The plan's usage, read now; its reply, or None (the last reading stays)."""
         reply = usage_status(self.config)
-        if on_claude:  # OpenClaw reads no usage for the Claude CLI route: Claude Code's own reading of the plan
+        if claude_plan_route(self.config):  # OpenClaw reads no usage for the Claude CLI route: Claude Code's own reading of the plan
             reply = with_claude_usage(self.config, reply)
         if reply is None:
-            return
+            return None
         self.model_usage = model_usage(self.config, reply=reply) or getattr(self, 'model_usage', None)
         self.model_usage_reply = reply
+        return reply
+
+    def refresh_model_usage(self):
+        on_claude, reply = claude_plan_route(self.config), self.read_model_usage()
+        if reply is None:
+            return
         try:
             resets = model_resets(self.config, reply) if self.config.get('codex') is not False and not on_claude else None
         except (OSError, ValueError):

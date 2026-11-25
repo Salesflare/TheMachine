@@ -11,6 +11,7 @@ import urllib.parse
 from zoneinfo import ZoneInfo
 
 import calendar_writes
+import google_links
 import graph
 from machine.cards import undated_card
 from machine.sources.exclusions import calendar_title_excluded
@@ -60,7 +61,7 @@ def calendar_event(account, raw, timezone):
     # resource: a room or other thing booked on the invite (Google's flag), never a person
     attendees = [{k: a[k] for k in ('email', 'displayName', 'responseStatus', 'self', 'resource') if k in a}
                  for a in raw.get('attendees', [])]
-    description = html.unescape(re.sub(r'<[^>]+>', ' ', raw.get('description', '')))
+    description = html.unescape(re.sub(r'<[^>]+>', ' ', google_links.keep_links(raw.get('description', ''))))
     body = '\n'.join(filter(None, [description, raw.get('location'),
         'Participants: ' + ', '.join(a.get('email', a.get('displayName', '')) for a in attendees)
         if attendees else '']))
@@ -91,6 +92,8 @@ def calendar_event(account, raw, timezone):
     if raw.get('eventType') == 'birthday':  # a contact's birthday Google puts on the calendar (birthdays.py), or the owner's own
         props = raw.get('birthdayProperties') or {}
         metadata.update(event_type='birthday', birthday={'type': str(props.get('type') or 'birthday')[:20]})
+    elif raw.get('eventType') in ('workingLocation', 'focusTime', 'outOfOffice'):  # no meeting (calendar_clashes.OWN_BLOCKS)
+        metadata['event_type'] = raw['eventType']
     if account.get('calendar_id', 'primary') != 'primary':
         metadata.update(calendar_id=account['calendar_id'], credential_account=account['email'],
                         access='shared_read_only')

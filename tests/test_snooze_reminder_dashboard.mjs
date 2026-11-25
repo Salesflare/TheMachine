@@ -4,9 +4,9 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// After a snooze the dashboard says how the card comes back, as delivery really does it: Telegram when it is on, a
-// notification when some device (this one or another) has them, both when both. With neither it says when the card is
-// back here, and offers Turn on notifications when this browser can have them (iPhone Safari: Add to Home Screen first;
+// After a snooze the dashboard says when the card comes back and how, as delivery really does it: Telegram when it is on, a
+// notification when some device (this one or another) has them, both when both. With neither it is back
+// here then, and it offers Turn on notifications when this browser can have them (iPhone Safari: Add to Home Screen first;
 // blocked: nothing to offer). SHOTS=<folder> saves phone and desktop screenshots.
 const dashboard=await dashboardPage();
 // One clock for the fixture and the page: today at noon (FAKE_NOW=<ISO time> to try another), so a run that crosses
@@ -65,24 +65,24 @@ try{
  // Telegram on, no notifications anywhere: Telegram, nothing to turn on.
  reminders={telegram:true,push:0};
  {const {context,toast}=await snooze({shot:'telegram-desktop'});
-  assert.deepEqual(toast,{text:'Snoozed. I’ll remind you on Telegram.',button:null});await context.close()}
+  assert.deepEqual(toast,{text:'Snoozed until tomorrow 09:00. I’ll remind you on Telegram.',button:null});await context.close()}
  // Notifications on another device only: a notification, even though this browser has none.
  reminders={telegram:false,push:1};
  {const {context,toast}=await snooze({});
-  assert.deepEqual(toast,{text:'Snoozed. I’ll send you a notification.',button:null});await context.close()}
+  assert.deepEqual(toast,{text:'Snoozed until tomorrow 09:00. I’ll send you a notification.',button:null});await context.close()}
  // This browser is subscribed (the server's count not caught up yet): a notification.
  reminders={telegram:false,push:0};
  {const {context,toast}=await snooze({perm:'granted',sub:true,width:390,height:844,ua:'android'});
-  assert.deepEqual(toast,{text:'Snoozed. I’ll send you a notification.',button:null});await context.close()}
+  assert.deepEqual(toast,{text:'Snoozed until tomorrow 09:00. I’ll send you a notification.',button:null});await context.close()}
  // Both, as delivery sends both.
  reminders={telegram:true,push:2};
  {const {context,toast}=await snooze({shot:'both-phone',width:390,height:844,ua:'android'});
-  assert.deepEqual(toast,{text:'Snoozed. I’ll remind you on Telegram and as a notification.',button:null});await context.close()}
+  assert.deepEqual(toast,{text:'Snoozed until tomorrow 09:00. I’ll remind you on Telegram and as a notification.',button:null});await context.close()}
  // Neither: back here tomorrow, and this browser can turn notifications on from the toast.
  reminders={telegram:false,push:0};
  for(const [width,height,ua,name] of [[1440,900,'chrome','neither-desktop'],[390,844,'android','neither-phone']]){
   const {context,page,toast}=await snooze({width,height,ua,shot:name});
-  assert.deepEqual(toast,{text:'Snoozed. It’ll be back here tomorrow at 09:00. Turn on notifications',button:'Turn on notifications'});
+  assert.deepEqual(toast,{text:'Snoozed until tomorrow 09:00. It’ll be back here then. Turn on notifications',button:'Turn on notifications'});
   const before=actions.length;await page.locator('#toast [data-toast-device]').click();
   await page.waitForFunction(()=>document.querySelector('#toast').innerText.includes('Notifications on'));
   assert.deepEqual(await page.evaluate(()=>window.__log),['requestPermission','subscribe']);
@@ -90,13 +90,13 @@ try{
   await context.close()}
  // iPhone Safari outside the installed app can't have notifications yet: Add to Home Screen, which shows the steps.
  {const {context,page,toast}=await snooze({noPush:true,width:390,height:844,ua:'iphone',shot:'neither-iphone'});
-  assert.deepEqual(toast,{text:'Snoozed. It’ll be back here tomorrow at 09:00. Add to Home Screen',button:'Add to Home Screen'});
+  assert.deepEqual(toast,{text:'Snoozed until tomorrow 09:00. It’ll be back here then. Add to Home Screen',button:'Add to Home Screen'});
   await page.locator('#toast [data-toast-device]').click();
   await page.waitForFunction(()=>document.querySelector('#toast').innerText.includes('Add to Home Screen. Open The Machine'));
   await context.close()}
  // Notifications blocked in this browser: only when it's back, nothing to tap.
  {const {context,toast}=await snooze({perm:'denied'});
-  assert.deepEqual(toast,{text:'Snoozed. It’ll be back here tomorrow at 09:00.',button:null});await context.close()}
+  assert.deepEqual(toast,{text:'Snoozed until tomorrow 09:00. It’ll be back here then.',button:null});await context.close()}
  assert.ok(!actions.some(a=>a.action==='decide'&&a.args.choice!=='snooze'));
  assert.deepEqual(errors,[]);
  console.log('snooze reminder dashboard ok');

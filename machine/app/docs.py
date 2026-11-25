@@ -5,9 +5,13 @@ import re
 
 import abilities
 import doc_writes
-from machine.sources.connectors import CONNECTOR_HELPERS, doc_write_files, load_connector
+import google_files
+from machine.sources.connectors import CONNECTOR_HELPERS, doc_write_files, docs_files_offered, load_connector
 from sources import SourceError
 from machine.owner_error import OwnerError
+
+
+MAX_FILE_SIGNINS = 3  # Google sign-ins tried for one linked Sheet or Slides file
 
 
 class DocsApp:
@@ -18,7 +22,8 @@ class DocsApp:
     def doc_text(self, args):
         """A doc's text for a run the owner started (Do it, or a card chat's run), read-only and never kept: the run reads
         it once. Through a Docs connection that can do things (abilities.py), in the to-do's area: a doc of one of the
-        task's own doc events (event_id), or by file_id a doc linked in the task's messages or one doc_find gave this run."""
+        task's own doc events (event_id), or by file_id a doc linked in the task's messages or the owner's chat on it, or one
+        doc_find gave this run. A linked Google Sheet or Slides file too, with `range` for one part of it (google_files.py)."""
         job, run, links, area = self.doc_run(args)
         plugin = load_connector('docs')
         event_id, file_id = args.get('event_id'), str(args.get('file_id') or '')
@@ -34,14 +39,19 @@ class DocsApp:
             file_id = json.loads(row['metadata']).get('file_id')
         elif re.fullmatch(r'[A-Za-z0-9_!.-]{10,300}', file_id):
             found = self.__dict__.setdefault('_docs_found', {}).get(job, {})
+            linked = links.get(file_id)
+            if file_id not in found and linked == '':
+                raise ValueError(self.no_google_docs())
+            if file_id not in found and isinstance(linked, dict):
+                return self.linked_file(file_id, linked, args.get('range'))
             if file_id in found:
                 account = next((a for a in self.config['accounts'] if a['id'] == found[file_id]), None)
-            elif file_id in links:
-                account = next((a for a in self.doc_connections(area) if a['id'] == links[file_id]), None)
+            elif linked:
+                account = next((a for a in self.doc_connections(area) if a['id'] == linked), None)
                 if not account:
                     raise ValueError(self.NO_DOC_CONNECTION)
             else:
-                raise ValueError('Read a doc linked in this task’s messages, or one assistant doc-find gave this run')
+                raise ValueError('Read a doc linked in this task’s messages or the owner’s chat on it, or one assistant doc-find gave this run')
         else:
             raise ValueError('Give the event_id of the doc event, or the file_id of the doc')
         if not account or not file_id or not plugin:
@@ -142,22 +152,72 @@ class DocsApp:
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', job):
             raise ValueError('Give the job_id of this preparation')
         with self.store.connect() as db:
-            run = db.execute("SELECT s.event_ids,s.account_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
+            run = db.execute("SELECT s.id,s.event_ids,s.account_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
                              "WHERE p.job_id=? AND p.status IN ('queued','starting','running','blocked')", (job,)).fetchone()
             if not run:
                 raise OwnerError('Docs are read only for a running preparation of the task the owner started')
             area = doc_writes.area(self.config, json.loads(run['account_ids'] or '[]'))
-            # a doc linked in the task's messages -> the owner's connection that opens it here (Google Docs, or Notion)
+            # a doc linked in the task's messages, or in what the owner wrote in its chat -> their connection that opens it
+            # here (Google Docs, or Notion); a Google Sheet or Slides file -> what it is and the sign-ins that may read it
             links, plugin = {}, load_connector('docs')
             via = {}
             for account in self.doc_connections(area) if plugin else ():
                 via.setdefault(plugin.provider(self.config, account), account)
-            for r in db.execute("SELECT e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id",
-                                (run['event_ids'],)) if plugin else ():
-                for account in (via.get('google'), via.get('notion')):
-                    for file_id in plugin.doc_links_of(account, str(r['body'] or '') + ' ' + str(r['metadata'] or '')) if account else ():
-                        links.setdefault(file_id, account['id'])
+            said = [str(r['body'] or '') + ' ' + str(r['metadata'] or '') for r in db.execute(
+                "SELECT e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id", (run['event_ids'],))] if plugin else []
+            said += [str(r[0] or '') for r in db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND choice='other' AND source IN ('telegram','dashboard') AND feedback LIKE '%://%' "
+                                                         "ORDER BY created_at DESC LIMIT 50", (run['id'],))] if plugin else []
+        for text in said:
+            for account in (via.get('google'), via.get('notion')):
+                for file_id in plugin.doc_links_of(account, text) if account else ():
+                    links.setdefault(file_id, account['id'])
+        files = {}
+        for text in said:  # each on its own: one full of links hides no other's
+            for file_id in plugin.doc_links(text) if not via.get('google') else ():
+                links.setdefault(file_id, '')  # linked, with nothing here that opens it
+            google_files.merge(files, plugin.file_links(text))
+        for file_id, file in files.items():
+            links.setdefault(file_id, {**file, 'accounts': self.file_accounts(area)})
         return job, run, links, area
+
+    def no_google_docs(self):
+        """What a run hears of a linked Google Doc when no Google Docs connection is in the to-do's area."""
+        connect = 'connect Google Docs under Connections, or ' if doc_writes.google_offered({}, self.config) else ''
+        return ('No Google Docs connection in this to-do’s area opens that doc. Read it with another Google sign-in you have for it, or ask the owner '
+                f'to {connect}paste the part that matters in the chat')
+
+    def file_accounts(self, area):
+        """The owner's own Google sign-ins in this area that may read a linked Sheet or Slides file: their Google Docs
+        connections, then their gog Google accounts, as far as each can do things (abilities.py)."""
+        plugin = load_connector('docs')
+        return self.doc_connections(area, 'google') + [
+            a for a in self.config.get('accounts', []) if plugin.gog_google(a) and a.get('actions') is not False
+            and doc_writes.fits(a.get('boundary'), area)]
+
+    def linked_file(self, file_id, linked, asked=None):
+        """A linked Google Sheet's cells or Slides file's text: through the first of these sign-ins that can open it. The
+        owner hears the most useful reason when none can."""
+        if asked is not None and (not isinstance(asked, str) or len(asked) > 200):
+            raise ValueError('Give a tab and cells, or slide numbers, as the range')
+        plugin = load_connector('docs')
+        if not linked['accounts']:
+            raise ValueError(self.NO_DOC_CONNECTION)
+        errors = []
+        for account in linked['accounts'][:MAX_FILE_SIGNINS]:
+            try:
+                return plugin.read_file(self.config, account, file_id, linked['kind'], CONNECTOR_HELPERS, linked['spots'], asked)
+            except SourceError as error:
+                if error.category not in ('docs_files_not_granted', 'docs_no_access', 'docs_gone', 'docs_signin_expired', 'docs_no_signin'):
+                    raise self.doc_read_error(error) from None  # this sign-in opened it, or Google is the one failing
+                errors.append((error, account))
+        error, account = min(errors, key=lambda e: ('docs_no_access', 'docs_gone', 'docs_files_not_granted').index(e[0].category)
+                             if e[0].category in ('docs_no_access', 'docs_gone', 'docs_files_not_granted') else 3)
+        if error.category == 'docs_files_not_granted':
+            if any(docs_files_offered(self.config, a) for _, a in errors):
+                raise ValueError('The Machine can’t read Google Sheets and Slides yet: press Allow Sheets and Slides on Google Docs under '
+                                 'Connections, or paste the part that matters in the chat')
+            raise ValueError('The Machine can’t read Google Sheets and Slides here: open the file and paste the part that matters in the chat')
+        raise self.doc_read_error(error) from None
 
     def doc_connections(self, area, provider=None):
         """The owner's own Docs connections in this area that can do things (abilities.py), Google or Microsoft."""
@@ -168,5 +228,11 @@ class DocsApp:
     def doc_read_error(self, error):
         return ValueError({'docs_not_connected': 'Reading docs is not allowed for this account yet (Connect Google Docs or Microsoft documents)',
                            'docs_file_too_large': 'That file is too large to read here (open it in the browser instead)',
+                           'docs_no_access': 'That file is private to someone else: it is not shared with the Google account connected here. Open it to ask for access, or paste the part that matters in the chat',
+                           'docs_gone': 'That file was deleted, or its link is wrong',
+                           'docs_file_kind': 'That file is not a Google Sheet or Slides file (an Excel or PowerPoint file in Drive). Download it and attach it in the chat',
+                           'docs_drive_kind': 'That Drive file is not a Google Doc, Sheet or Slides file that can be read here (it may be a PDF or a photo). Download it and attach it in the chat',
+                           'docs_range_unknown': 'That part is not in the file: give a tab and cells from the list of tabs, or slide numbers',
+                           'docs_signin_expired': 'Google asks to sign in again (Reconnect under Connections)',
                            'docs_text_unsupported': 'That file has no text to read here (open it in the browser instead)'}.get(
                                error.category, f'The doc could not be read ({error.category})'))

@@ -301,8 +301,26 @@ export function addressesOf(toolName: string, params: any): string[] {
   return [params.url, params.targetUrl, request.url, request.targetUrl].filter(value => typeof value === 'string' && value.trim());
 }
 
-export const BLOCKED_ADDRESS = 'This run only opens an address it read (in a message, a search result or a page) or a plain page ' +
-  'address without a query. Search for it with web_search and open a result, or open the address exactly as it was written.';
+// The way on is one this Machine has: web_search where a search provider is set up, else a search page in the browser
+// (its result links count as read). The same two in preparation_state.py (unread_address).
+export const blockedAddress = (webSearch: boolean) => 'This run only opens an address it read (in a message, a search result or a page) or a plain page ' +
+  `address without a query. Search for it ${webSearch ? 'with web_search' : 'on a search page in the browser'} and open a result, or open the address exactly as it was written.`;
+export const BLOCKED_ADDRESS = blockedAddress(false);
+
+// Whether OpenClaw has a search provider set up, so a run has web_search (it leaves the tool out otherwise): one chosen,
+// or a provider with its key in the config or the environment. Asked only when an address is refused. Not sure: false,
+// since the search page works on every Machine.
+export async function webSearchSetUp(api: any): Promise<boolean> {
+  try {
+    const config = api.runtime?.config?.current?.() ?? api.config ?? {};
+    const search = config.tools?.web?.search ?? {};
+    if (search.enabled === false) return false;
+    if (String(search.provider || '').trim()) return true;
+    const providers = await api.runtime?.webSearch?.listProvidersAsync?.({config}) ?? [];
+    return providers.some((p: any) => p.requiresCredential !== false &&
+      (p.getConfiguredCredentialValue?.(config) || p.envVars?.some((name: string) => process.env[name])));
+  } catch { return false; }
+}
 
 // undefined: the call may open its addresses; else why not (for the agent).
 export function outboundCheck(session: string, toolName: string, params: any, ownerDomains: string[] = []): undefined | string {

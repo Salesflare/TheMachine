@@ -14,7 +14,7 @@ import calendar_writes
 import doc_writes
 import follow_ups
 import linear_writes
-from machine.cards import ACTION_WORKING, PREPARATION_WORKING, thread_return_time
+from machine.cards import ACTION_WORKING, deadline_of, hide_until, PREPARATION_WORKING, wait_return
 from machine.config import LOG
 from machine.delivery.deliver import deliver
 from machine.delivery.push import app_clear_step
@@ -37,20 +37,26 @@ from machine import todo_states
 # A run that saved its result or blocker usually still writes its last reply: it gets this long to end by itself
 # before it is stopped, so its record says how it ended (ok) instead of a stop's lost/aborted.
 PREPARATION_SETTLE_SECONDS = 120
+PREPARATION_SETTLE_REPLACED_SECONDS = 30  # something new already waits for its session
 
 
 def queue_thread_snooze(db, action, job):
-    if action.get('snooze_days') and action.get('thread_id'):
+    """After a reply went out its thread leaves the inbox for a while, never past the to-do's deadline (hide_until)."""
+    if not (action.get('snooze_days') and action.get('thread_id')):
+        return
+    row = db.execute('SELECT due,due_at FROM suggestions WHERE id=?', (job['suggestion_id'],)).fetchone()
+    until = hide_until(action['snooze_days'], *(deadline_of(row, action) if row else ()))
+    if until:
         db.execute("INSERT OR IGNORE INTO thread_snoozes(job_id,account_id,thread_id,until,status,created_at,updated_at) VALUES(?,?,?,?,'queued',?,?)",
-                   (job['id'],action['account_id'],action['thread_id'],thread_return_time(action['snooze_days']),now(),now()))
+                   (job['id'],action['account_id'],action['thread_id'],until,now(),now()))
 
 
 def queue_delegate_wait(db, action, job, result):
     """A task handed to someone: once the message is sent, the card waits for their answer. It
-    closes when they reply (settle_awaiting) and comes back after wait_days if not."""
+    closes when they reply (settle_awaiting) and comes back after wait_days if not, sooner for its deadline (wait_return)."""
     if not action.get('delegate'):
         return
-    row = db.execute('SELECT status FROM suggestions WHERE id=?', (job['suggestion_id'],)).fetchone()
+    row = db.execute('SELECT status,due,due_at FROM suggestions WHERE id=?', (job['suggestion_id'],)).fetchone()
     if not row or row['status'] != 'prepared':
         return
     if action['kind'] == 'slack':
@@ -61,7 +67,7 @@ def queue_delegate_wait(db, action, job, result):
         watch = {'kind': 'gmail.message', 'from': action['to'][0].lower(), 'thread_id': action.get('thread_id'), 'reply_to': job.get('rfc_message_id') or ''}
     watch.update(account_id=action['account_id'], since=now(), delegated=True, name=action.get('to_name') or action['to'][0])
     db.execute("UPDATE suggestions SET awaiting=?,snoozed_until=?,resume_status='prepared',undo_until=NULL WHERE id=?",
-               (encoded(watch), thread_return_time(action['wait_days']), job['suggestion_id']))
+               (encoded(watch), wait_return(action['wait_days'], row['due'], row['due_at']), job['suggestion_id']))
     todo_moves.transition(db, job['suggestion_id'], todo_states.SNOOZED, 'sent_wait_reply')
 
 
@@ -369,20 +375,27 @@ class ActionRunsApp:
             # Its own result or blocker is saved (not replaced, canceled or timed out): the run normally ends by itself
             # seconds later. Read how it ended; stop it only when it is still going after PREPARATION_SETTLE_SECONDS.
             # Also one whose preparation was canceled after its blocker was saved (reason kept: settle_ahead before it kept
-            # the blocker): that run finished by itself too, so it is never stopped and recorded as lost.
-            saved=run['prep_status'] in ('done','blocked') or run['prep_status']=='cancelled' and bool((run['prep_reason'] or '').strip())
+            # the blocker): that run finished by itself too, so it is never stopped and recorded as lost. And one whose
+            # place is taken already (a doc made right after its save, the owner's next message): its row is gone, what
+            # it saved is on the run itself (preparation_state.note_saved).
+            replaced=run['prep_status'] is None
+            saved=bool(run['saved_at']) or run['prep_status'] in ('done','blocked') or run['prep_status']=='cancelled' and bool((run['prep_reason'] or '').strip())
             if saved and run['prep_error'] not in ('completion_unconfirmed','stopped'):  # stopped: the chat's Stop, at once
                 outcome=runner({'action':'status','job_id':run['job_id'],'session_job_id':run['session_job_id']})
                 if outcome.get('status') in preparation_state.TERMINAL:
                     with self.store.connect() as db:
                         db.execute('UPDATE preparation_runs SET status=?,finished_at=? WHERE job_id=? AND finished_at IS NULL',(outcome['status'],now(),run['job_id']))
                     continue
-                settled=dt.datetime.fromisoformat(run['prep_updated'] or run['started_at'])
-                if (dt.datetime.fromisoformat(now())-settled).total_seconds()<PREPARATION_SETTLE_SECONDS:
+                settled=dt.datetime.fromisoformat(run['prep_updated'] or run['saved_at'] or run['started_at'])
+                if (dt.datetime.fromisoformat(now())-settled).total_seconds()<(PREPARATION_SETTLE_REPLACED_SECONDS if replaced else PREPARATION_SETTLE_SECONDS):
                     with self.store.connect() as db:
-                        db.execute('UPDATE preparation_runs SET retry_at=? WHERE job_id=?',((dt.datetime.fromisoformat(now())+dt.timedelta(seconds=10)).isoformat(),run['job_id']))
+                        db.execute('UPDATE preparation_runs SET retry_at=? WHERE job_id=?',((dt.datetime.fromisoformat(now())+dt.timedelta(seconds=5 if replaced else 10)).isoformat(),run['job_id']))
                     continue
             outcome=runner({'action':'stop','job_id':run['job_id'],'session_job_id':run['session_job_id']})
+            if outcome.get('status')=='lost':  # nothing was running any more: how it ended, when the Gateway still knows
+                ended=runner({'action':'status','job_id':run['job_id'],'session_job_id':run['session_job_id']})
+                if ended.get('status') in preparation_state.TERMINAL:
+                    outcome=ended
             with self.store.connect() as db:
                 if outcome.get('status') not in preparation_state.TERMINAL:
                     db.execute('UPDATE preparation_runs SET retry_at=? WHERE job_id=?',((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=1)).isoformat(),run['job_id']))

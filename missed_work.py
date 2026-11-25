@@ -37,6 +37,7 @@ from __future__ import annotations
 import collections
 import datetime as dt
 import json
+import mail_senders
 import math
 import random
 import re
@@ -416,7 +417,7 @@ def views(db, items, own=frozenset()):
                     after = True
                     break
         out[r['id']] = {'channel': channel_of(r['kind']), 'at': str(r['occurred_at'])[:16], 'from': _untrusted(sender, 80) if sender else 'the owner',
-                        'to': _untrusted(m.get('to') or '', 160) if m.get('to') else '', 'subject': _untrusted(r['title'], 160),
+                        'to': _untrusted(to, 160) if (to := mail_senders.to_text(m)) else '', 'subject': _untrusted(r['title'], 160),
                         'text': _untrusted(r['body'], BODY_CHARS, ends=channel_of(r['kind']) != 'email'), 'owner_wrote_after': after}
     return out
 

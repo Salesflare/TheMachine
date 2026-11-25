@@ -5,6 +5,7 @@ import threading
 from unittest.mock import patch
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
+import locale_prefs
 import timeutil
 import machine.app.feedback as machine_app_feedback
 import machine.app.preparation as machine_app_preparation
@@ -32,10 +33,38 @@ class WorkSnooze(unittest.TestCase):
             self.assertEqual(machine_cards.snooze_time('tomorrow',work=True),at(2026,10,12,9))
             self.assertEqual(machine_cards.snooze_time('tomorrow'),at(2026,10,10,9))
             self.assertEqual(machine_cards.snooze_time('2h',work=True),at(2026,10,9,17))
-            self.assertEqual(machine_cards.snooze_choices(True),[['2h','2 hours'],['tomorrow','Monday · 9:00'],['1w','1 week · 9:00']])
-            self.assertEqual(machine_cards.snooze_choices(False)[1],['tomorrow','Tomorrow · 9:00'])
+            self.assertEqual(machine_cards.snooze_choices(True),[['2h','2 hours'],['tomorrow','Monday · 09:00'],['1w','1 week · 09:00']])
+            self.assertEqual(machine_cards.snooze_choices(False)[1],['tomorrow','Tomorrow · 09:00'])
         with patch_everywhere(timeutil,'now',return_value=at(2026,10,10,15)):  # Saturday: a week lands on Saturday
-            self.assertEqual(machine_cards.snooze_choices(True)[-1],['1w','Mon, Oct 19 · 9:00'])
+            self.assertEqual(machine_cards.snooze_choices(True)[-1],['1w','Mon, Oct 19 · 09:00'])
+
+class BeforeItsDue(unittest.TestCase):
+    """snooze_due: the picker's one more time, a moment before a known deadline. Only offered, never forced."""
+    def test_the_morning_of_the_day_before(self):
+        with patch_everywhere(timeutil,'now',return_value=at(2026,10,12,15)):  # Monday
+            self.assertEqual(machine_cards.snooze_due('2026-10-15'),[at(2026,10,14,9),'Before it’s due · Wed 09:00'])
+            self.assertEqual(machine_cards.snooze_due('2026-10-29'),[at(2026,10,28,9),'Before it’s due · Wed, Oct 28 09:00'])
+            # due Monday: for work that is the Friday before, for the rest the Sunday
+            self.assertEqual(machine_cards.snooze_due('2026-10-19',work=True),[at(2026,10,16,9),'Before it’s due · Fri 09:00'])
+            self.assertEqual(machine_cards.snooze_due('2026-10-19')[0],at(2026,10,18,9))
+    def test_every_label_is_on_the_owners_own_clock(self):
+        self.addCleanup(locale_prefs.configure,{})
+        with patch_everywhere(timeutil,'now',return_value=at(2026,10,12,15)):
+            for config,clock in (({'locale':'en-US'},'9:00 AM'),({'locale':'en-GB'},'09:00'),({'locale':'en-GB','clock':'12h'},'9:00 AM')):
+                locale_prefs.configure(config)
+                self.assertEqual(machine_cards.snooze_choices()[1][1],'Tomorrow · '+clock,config)
+                self.assertTrue(machine_cards.snooze_due('2026-10-15')[1].endswith(' '+clock),config)
+
+    def test_none_when_a_quick_choice_is_that_moment_or_none_is_left(self):
+        with patch_everywhere(timeutil,'now',return_value=at(2026,10,12,15)):
+            for due in ('2026-10-14','2026-10-13','2026-10-12','2026-10-01',None,'soon'):  # Tomorrow twice, due today, overdue, none, no day
+                self.assertIsNone(machine_cards.snooze_due(due),due)
+    def test_a_deadline_with_a_time_today_offers_two_hours_before(self):
+        with patch_everywhere(timeutil,'now',return_value=at(2026,10,12,10)):
+            self.assertEqual(machine_cards.snooze_due('2026-10-12',at(2026,10,12,17)),[at(2026,10,12,15),'Before it’s due · 15:00'])
+            self.assertIsNone(machine_cards.snooze_due('2026-10-12',at(2026,10,12,12,15)))  # too close already
+        with patch_everywhere(timeutil,'now',return_value=at(2026,10,12,7)):
+            self.assertEqual(machine_cards.snooze_due('2026-10-12'),[at(2026,10,12,9),'Before it’s due · 09:00'])  # its own morning
 
 class WorkSnoozeDecisions(unittest.TestCase):
     setUp=ux.UX.setUp
@@ -43,9 +72,17 @@ class WorkSnoozeDecisions(unittest.TestCase):
         app=object.__new__(machine_main.App);app.store=self.store
         app.config={'accounts':[{'id':'work','email':'owner@example.com','boundary':'work:Acme'}],'telegram_owner':'1000001'}
         with patch_everywhere(timeutil,'now',return_value=at(2026,10,9,15)):
-            self.assertEqual(app.action('status',{'full':True})['suggestions'][0]['snooze_choices'][1][1],'Monday · 9:00')
+            self.assertEqual(app.action('status',{'full':True})['suggestions'][0]['snooze_choices'][1][1],'Monday · 09:00')
             app.action('decide',{'suggestion_id':self.sid,'choice':'snooze','snooze_option':'tomorrow','decision_id':'telegram:cb','feedback':''})
         self.assertEqual(self.store.snapshot([])['suggestions'][0]['snoozed_until'],at(2026,10,12,9))
+    def test_the_picker_gets_the_moment_before_its_deadline_and_a_later_pick_stands(self):
+        app=object.__new__(machine_main.App);app.store=self.store
+        app.config={'accounts':[{'id':'work','email':'owner@example.com','boundary':'work:Acme'}],'telegram_owner':'1000001'}
+        with self.store.connect() as db:db.execute("UPDATE suggestions SET due='2026-10-15'")
+        with patch_everywhere(timeutil,'now',return_value=at(2026,10,12,15)):
+            self.assertEqual(app.action('status',{'full':True})['suggestions'][0]['snooze_due'],[at(2026,10,14,9),'Before it’s due · Wed 09:00'])
+            app.action('decide',{'suggestion_id':self.sid,'choice':'snooze','snooze_option':'1w','decision_id':'telegram:cb','feedback':''})  # past the deadline: theirs to pick
+            self.assertEqual(self.store.snapshot([])['suggestions'][0]['snoozed_until'],at(2026,10,19,9))
 
 class ClosedToLater(unittest.TestCase):
     """The two moves from closed to Later that todo_states.ALSO allows by name, kept as they were."""

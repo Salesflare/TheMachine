@@ -10,6 +10,7 @@ import uuid
 import fleet_learnings
 import learning_loop
 from machine import owner_name
+from machine.app import start_message
 from machine.config import LOG, WORKSPACE
 from machine.prompts.profile import (import_prompt, orgs_prompt, profile_prompt, PROFILE_ROOM, roles_prompt,
                                      share_history_prompt, skills_find_prompt, voices_prompt)
@@ -107,7 +108,8 @@ class ProfileApp:
                                   profile_prompt(run['run_id'], first['counts'], run.get('room') or PROFILE_ROOM))
             with self.store.connect() as db:
                 db.execute('UPDATE profile_runs SET attempts=attempts+1,updated_at=? WHERE run_id=?', (now(), run['run_id']))
-        result = runner(request).get('status', 'unavailable')
+        receipt = runner(request)
+        result = receipt.get('status', 'unavailable')
         with self.store.connect() as db:
             if result == 'admitted':
                 if run['auto']:
@@ -118,7 +120,7 @@ class ProfileApp:
                 if run.get('kind') in ('roles', 'orgs'):  # done is done: a person left without one was unclear
                     draft = draft or (result == 'ok')
                 status = 'ok' if draft else 'error'
-                error = None if draft else ('no_draft' if result == 'ok' else result)
+                error = None if draft else 'no_draft' if result == 'ok' else receipt['error'] if receipt.get('error') in start_message.REFUSED else result
                 db.execute('UPDATE profile_runs SET status=?,error=?,finished_at=?,updated_at=? WHERE run_id=?', (status, error, now(), now(), run['run_id']))
                 if run.get('kind') == 'skills':
                     self.skills_find_done(run, status)

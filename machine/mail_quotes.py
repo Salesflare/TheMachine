@@ -5,6 +5,8 @@ put a quote in. Used for a mail's text (machine/text.py), the owner's signature 
 from html.parser import HTMLParser
 import re
 
+import google_links
+
 LAYER = 0  # message parsing
 
 TAGS = r'\s*(?:\[[^\]\n]{1,24}\]\s*)*'  # "[EXT] " before a subject
@@ -456,7 +458,7 @@ def _read_html(value, subject='', people=''):
 def mail_html(value, subject='', people=''):
     """An HTML mail as text, as plain_html gives it, with what it has in a quote container marked ">", as a plain mail
     marks it. A forward is whole."""
-    text, _, _, depth = _read_html(value, subject, people)
+    text, _, _, depth = _read_html(google_links.keep_links(value), subject, people)
     out = []
     for n, line in enumerate(text):
         if n and bool(depth[n]) != bool(depth[n - 1]) and depth[n - 1]:

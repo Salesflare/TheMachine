@@ -2,6 +2,7 @@ import { registerAndroidFeed } from './android-feed.ts';
 import { registerReviewRecovery, currentReviewRun } from './review-recovery.ts';
 import { registerHeartbeatFailureGate } from './heartbeat-failure-gate.ts';
 import { registerSecretRedaction } from './secret-redaction.ts';
+import { registerWebSearch } from './web-search.ts';
 import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -211,6 +212,7 @@ export default definePluginEntry({
     registerReviewRecovery(api, call);
     registerHeartbeatFailureGate(api);
     registerSecretRedaction(api);
+    registerWebSearch(api);
     api.registerTool((context: any) => {
       const {key, privateMain, isolatedReview} = signalsReach(context);
       if (context.agentId !== 'main' || context.sandboxed || (!privateMain && !isolatedReview)) return null;

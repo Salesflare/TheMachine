@@ -144,7 +144,7 @@ def relay_of(m, own=()):
     if ' via ' in name.lower() and (f' via {address}' in name.lower() or list_id == f'{local}.{domain}'):
         return address
     # the sender's From kept: the list it came through, from its headers
-    recipients = [a for _, a in graph.addresses(', '.join(str(m.get(k) or '') for k in ('to', 'cc')))]
+    recipients = [a for _, a in graph.addresses([m.get('to'), m.get('cc')])]
     for to in recipients:
         to_local, _, to_domain = to.partition('@')
         if to != address and list_id == f'{to_local}.{to_domain}':

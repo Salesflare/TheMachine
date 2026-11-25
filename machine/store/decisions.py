@@ -12,6 +12,7 @@ import uuid
 import abilities
 import agent_jobs
 import bug_gate
+import calendar_clashes
 import chat_files
 import doc_writes
 import fleet
@@ -33,11 +34,13 @@ from machine.cards import (
     result_ask,
     snooze_time,
     title_kept,
+    undated_card,
 )
 from machine.config import LOG
 from machine.store.cards import return_waiting, source_line
 from machine.text import encoded, first_sentence, no_you
 import next_actions
+import preparation_state
 from machine.store import outcomes
 from machine.store.review import intercom_handled
 import skills
@@ -651,6 +654,30 @@ class DecisionsStore:
             close_by_itself(db, row, decision_id, reason, 'plan', stamp, undo_hours, lapsed=True)
         return {'closed': True}
 
+    def clash_untouched(self, db, suggestion_id):
+        """Whether the owner did nothing on an open calendar clash to-do yet: no decision of theirs (a tap, a chat message,
+        Later), no edited draft, no step approved, not with a coding agent or a teammate. Only then may it close by itself."""
+        row = db.execute('SELECT status FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        if not row or row['status'] not in todo_states.OPEN_NOT_SNOOZED:
+            return False
+        have = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        return not any(table in have and db.execute(f'SELECT 1 FROM {table} WHERE {where} LIMIT 1', (key,)).fetchone() for table, where, key in (
+            ('decisions', "suggestion_id=? AND source!='assistant'", suggestion_id), ('draft_edits', 'suggestion_id=?', suggestion_id),
+            ('action_jobs', 'suggestion_id=?', suggestion_id), ('agent_jobs', 'suggestion_id=?', suggestion_id),
+            ('fleet_out', 'context=?', 'handoff:' + str(suggestion_id))))
+
+    def clash_gone(self, db, suggestion_id, why, undo_hours=24):
+        """An open calendar clash to-do the owner did nothing on (clash_untouched) closes by itself as Not needed, with
+        Undo for a day: its overlap is on another to-do ('moved'), or it was with a block that only frames the day
+        (calendar_clashes.plan). Once: after an Undo it stays."""
+        row, decision_id = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone(), calendar_clashes.GONE + str(suggestion_id)
+        if not row or not self.clash_untouched(db, suggestion_id) or db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
+            return False
+        reason = i18n.t('The same clash is on another to-do') if why == 'moved' else i18n.t('Not a clash after all')
+        close_by_itself(db, row, decision_id, reason, 'plan', now(), undo_hours, lapsed=True)
+        db.execute('UPDATE suggestions SET expires_at=NULL,early=0 WHERE id=?', (suggestion_id,))  # it closed before its moment, so its Done line doesn't name it
+        return True
+
     def queue_preparation(self, db, suggestion_id, decision_id, action_id=None, resume_action=False, keep_retries=False):
         return queue_preparation(db, suggestion_id, decision_id, action_id, resume_action, keep_retries)
 
@@ -1246,7 +1273,7 @@ class DecisionsStore:
                     self.queue_preparation(db,row['id'],action_basis.SNOOZE_RESUMED+now(),resume_action=True)
                 # Exactly one new outbox intent per elapsed snooze. An unknown
                 # previous send must be reconciled, not blindly retried.
-                db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1 WHERE suggestion_id=? AND status IN ('sent','uncertain')",(row['id'],))
+                db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('sent','uncertain')",(row['id'],))
             return_waiting(db)  # those the review left waiting on someone else, when it is time to chase
             self.rewait_handoffs(db)
             return len(rows)
@@ -1413,6 +1440,8 @@ class DecisionsStore:
             reply_lead(db,suggestion_id,next_action)
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
             db.execute("UPDATE preparations SET status='done',updated_at=?,error=NULL,reason=NULL WHERE suggestion_id=?",(now(),suggestion_id))
+            if job_id:
+                preparation_state.note_saved(db,job_id,now())
             if (outcome or {}).get('state')=='snoozed':
                 # "Remind me about this on Tuesday": the same snooze as the Snooze button. The card leaves
                 # Ready for you and comes back (with its notification) then; nothing is notified now.
@@ -1754,7 +1783,8 @@ class DecisionsStore:
             if any(a.get('service','gmail')==connect for a in getattr(self,'accounts',None) or []):
                 raise ValueError(f'connect: {connect} is connected already. Read it through that connection'
                                  +(' (assistant_signals slack_read {channel})' if connect=='slack' else '')+', never the browser.')
-        questions = blocker_questions(questions, strict=True)
+        questions = [{**q, 'question': undated_card(q['question'])[0][0]} for q in blocker_questions(questions, strict=True)]
+        reason = undated_card(reason)[0][0]  # what it asks stays true on later days ("tomorrow" is saved as that day)
         with self.connect() as db:
             job=db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
             if not job or job['job_id']!=job_id or job['status'] not in ('starting','running'):
@@ -1782,6 +1812,7 @@ class DecisionsStore:
             # An empty list says the run asks nothing (ask_blocked); NULL is a blocker from before runs named questions.
             db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,questions=?,move_to=?,use_events=?,connect=?,updated_at=? WHERE suggestion_id=?",
                        (reason,(details or '').strip() or None,encoded(questions),move_to,use_event_ids,connect,now(),suggestion_id))
+            preparation_state.note_saved(db,job_id,now())
             pause_idle_steps(db,suggestion_id)  # nothing runs now: its confirmed step waits for Try again or an answer
             # It moves itself (no tap) when the owner added it without an area and nothing placed it yet (the run found where
             # it belongs), or when the messages it came from are all in that area or it has none, only the Machine's own

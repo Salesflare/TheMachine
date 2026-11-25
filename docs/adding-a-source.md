@@ -119,7 +119,7 @@ Use this common event shape; optional metadata is source-specific. Check parsing
 | `occurred_at` | When it happened, UTC ISO. |
 | `title` | A short line (max 1000 chars): subject, chat name, item title. |
 | `body` | The text (max 40000 chars). Plain text; strip HTML. Omit one-time codes and passwords. |
-| `metadata` | JSON with what reviews need: `source_url` (an https link to open the original, shown as Open), sender, thread or conversation IDs, `from_me` for the owner's own messages. |
+| `metadata` | JSON with what reviews need: `source_url` (an https link to open the original, shown as Open), sender, `to` for who it went to (a header, or a list; `mail_senders.recipients` reads either, so never print the field yourself), `chat_name` for a chat, thread or conversation IDs, `from_me` for the owner's own messages. |
 | `deleted` | `True` when the item was removed at the source. |
 | `reviewed` | Optional. `True` keeps this version as already reviewed: context, never news (a watched page's first read, its baseline). A later version of the item is reviewed as usual. |
 
@@ -225,7 +225,7 @@ python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_
 - [ ] Each kind has its row in `machine/kinds.py`, and no new hand-written list of kinds (`test_kinds.py`).
 - [ ] Message text only in `title`, `body` and metadata, never in ids, lookup keys or the cursor.
 - [ ] Events and cursor committed together; replays don't duplicate.
-- [ ] Failures raise `SourceError` with a content-free label.
+- [ ] Failures raise `SourceError` with a content-free label, readable in the error reports (`test_error_codes.py` says which to add to `error_words.py`).
 - [ ] Fixture tests for parsing, replays, expired cursors and errors.
 - [ ] `SETUP` with what `assistant connect` should ask, plus a supported read-only setup check.
 - [ ] Reading notes in `source-notes/<service>.md` when reviews need to know more than the event says.

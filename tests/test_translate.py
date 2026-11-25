@@ -1,5 +1,7 @@
 """The daily translator (scripts/translate.py): what it finds missing, what it sends, what it checks and writes. The
 model is a stand-in here; no request leaves the test."""
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -175,6 +177,29 @@ class Checks(unittest.TestCase):
         self.assertTrue(T.string_problems('Snooze it', 'Faites-le', 'fr', words), 'a glossary term')
         self.assertTrue(T.string_problems('Done', 'Fait — oui', 'fr', words), 'no em dash')
         self.assertTrue(T.string_problems('Your Machine is ready', 'Le Machine est prêt', 'fr', words), 'The Machine is she')
+
+    def test_a_name_spelled_like_a_term_stays_the_name(self):
+        # the glossary's "signal = シグナル" was read into the app's name too: a right answer ("Signal") was refused and asked
+        # again with the translated word, so each string naming the app needed its own exception
+        words, line, mixed = T.glossary(), 'Read it in Signal', 'Signal sent a signal'
+        for lang in T.languages():
+            with self.subTest(lang):
+                asked = []
+
+                def model(text):
+                    def ask(lang, instruction, payload, cache_key):
+                        asked.append(instruction)
+                        return {'t': {'0': text}}
+                    return ask
+                with contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(T.translate_entries(lang, [line], {line: line}, words, model('X Signal')), {line: 'X Signal'})
+                    self.assertEqual(len(asked), 1)  # a right answer is asked once
+                    lost = words['checked']['signal'][lang][0].lower()
+                    self.assertEqual(T.translate_entries(lang, [line], {line: line}, words, model('X ' + lost)), {})
+                self.assertNotIn('\n- signal = ', asked[0])
+                self.assertIn('\n- signal = ', T.instructions(lang, [line, mixed], 'app strings', words))
+                # the term itself still reads as the glossary has it
+                self.assertTrue([p for p in T.string_problems('A new signal', 'X', lang, words) if p.endswith(T.TERM_PROBLEM)])
 
     def test_what_code_or_a_model_reads_stays_as_written(self):
         # field names, op values and date formats in an instruction for a model: translated, the code can't read them

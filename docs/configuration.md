@@ -87,7 +87,8 @@
 | `memory_rebuild_hours` | `[23, 7]` | A quiet window each night for an OpenClaw memory rebuild that keeps getting cut off; `false` turns it off ([Install](operations.md#install)) |
 | `meeting_prep` | on | A briefing to-do before a meeting with people from outside, while reviews are on; `false` turns it off |
 | `meeting_prep_research` | on | For a first meeting, the organization's own home page and, where a web search provider is set up in OpenClaw (a hosted Machine comes without one), a short web search on the guest's public name and organization (only while Look up work contacts is on); `false` turns it off |
-| `calendar_clashes` | on | A to-do when a work meeting and a personal event overlap; `false` turns it off |
+| `meeting_prep_signin_search` | off | `true`: where no search provider is set up in OpenClaw, that short web search runs on your ChatGPT or Claude sign-in, at most once a day per person or organization and reused for 30 days. Only their public name, organization and website go out; a provider you set up keeps priority. On Claude a result counts only at an address the search returned; on ChatGPT the addresses are those the answer names |
+| `calendar_clashes` | on | A to-do when a work meeting and a personal event overlap, one per event; `false` turns it off |
 | `owner_phones` | `[]` | Your own phone numbers (also per account), as About you in Settings sets them |
 | `message_key_store` | file | `keyring` keeps the message key in your desktop keyring ([below](#the-key-in-your-keyring-linux-desktop)) |
 | `first_profile` | `true` | Without the guided setup, draft how you write into `USER.md` by itself once reviews are on ([Operations](operations.md#your-own-instructions-usermd-and-overlays)) |
@@ -109,7 +110,7 @@
 | `fleet`, `network_urls` | the Network, once paired | A hosted setup's `{"url": ...}` for [The Machine Network](network.md), and more addresses to fail over to |
 | `network_keys`, `learnings_keys` | `network-keys.json`, `learnings-keys.json` next to the database | This Machine's Network keys and its team learnings key |
 | `started_at` | its first activity | When this Machine started (a hosted Machine's signup) |
-| `docs_consent`, `docs_write_consent`, `teams_consent` | unset | A hosted Machine: set by the control plane once its account page offers the Docs, Docs edits or Teams consent (`true`, or the providers, like `["microsoft"]`) |
+| `docs_consent`, `docs_write_consent`, `docs_files_consent`, `teams_consent` | unset | A hosted Machine: set by the control plane once its account page offers the Docs, Docs edits, Sheets and Slides, or Teams consent (`true`, or the providers, like `["microsoft"]`) |
 | `accounts` | `[]` | Sources, below |
 
 ## Accounts

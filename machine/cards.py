@@ -7,11 +7,12 @@ import sqlite3
 
 import i18n
 import locale_prefs
+import mail_senders
 from machine.kinds import SEND
 from machine.sources.android import android_app_shown
 from machine.sources.slack import SLACK_ID
 import next_actions
-from timeutil import WORK_HOURS, hour_minute, in_hours, is_work_day, local_tz, morning_label, next_work_day, now
+from timeutil import WORK_HOURS, hour_minute, in_hours, is_work_day, local_tz, next_work_day, now
 from machine import todo_states
 from machine.owner_error import OwnerError
 from machine import todo_kinds
@@ -131,6 +132,74 @@ def thread_return_time(days):
     return due.astimezone(dt.timezone.utc).isoformat()
 
 
+def deadline_end(due, due_at=None):
+    """When a to-do's deadline passes: at its time (due_at), else the end of its day. None without one."""
+    try:
+        if due_at:
+            at = dt.datetime.fromisoformat(str(due_at))
+            return (at if at.tzinfo else at.replace(tzinfo=local_tz())).astimezone(local_tz())
+        return dt.datetime.combine(dt.date.fromisoformat(str(due)[:10]) + dt.timedelta(days=1), dt.time(), local_tz()) if due else None
+    except ValueError:
+        return None
+
+
+def hide_until(days, due=None, due_at=None):
+    """Until when The Machine itself hides something for `days` (a thread after its reply): thread_return_time, never past
+    a deadline still ahead. Then the morning of the work day before it, else its own morning; None when neither is left
+    (it isn't hidden). What the owner snoozes goes where they say."""
+    usual, end = thread_return_time(days), deadline_end(due, due_at)
+    current = dt.datetime.fromisoformat(now())
+    if not end or end <= current:
+        return usual
+    hour, minute = hour_minute(WORK_HOURS['morning'])
+    day = dt.date.fromisoformat(str(due)[:10]) if due else end.date()
+    before = day - dt.timedelta(days=1)
+    for _ in range(7):
+        if is_work_day(before):
+            break
+        before -= dt.timedelta(days=1)
+    for d in (before, day):
+        morning = dt.datetime.combine(d, dt.time(hour, minute), local_tz())
+        if current < morning < end:
+            return min(usual, morning.astimezone(dt.timezone.utc).isoformat())
+    return None
+
+
+def deadline_of(row, action):
+    """The (due, due_at) a sent message's hiding keeps to: the day it promises the work for (still_owed), else the to-do's
+    own. One that still owes work with its day passed: today's, so it isn't hidden at all."""
+    owed = action.get('still_owed')
+    if owed and owed.get('due'):
+        return owed['due'], None
+    end = owed and deadline_end(row['due'], row['due_at'])
+    if end and end <= dt.datetime.fromisoformat(now()):
+        return dt.datetime.fromisoformat(now()).astimezone(local_tz()).date().isoformat(), None
+    return row['due'], row['due_at']
+
+
+def wait_return(days, due=None, due_at=None):
+    """When a to-do handed to someone in a message comes back without an answer: after `days`, sooner for a deadline still
+    ahead (handoff_checkin)."""
+    usual, end = thread_return_time(days), deadline_end(due, due_at)
+    return min(usual, handoff_checkin(due=due)) if end and end > dt.datetime.fromisoformat(now()) else usual
+
+
+def hiding_shown(row, action):
+    """An action as shown before it is sent: its snooze_days and wait_days as they will really be with the to-do's
+    deadline (hide_until, wait_return), left out when it won't be hidden. Its revision stays: what is sent is the same."""
+    def left(until):
+        return (dt.datetime.fromisoformat(until).astimezone(local_tz()).date() - dt.datetime.fromisoformat(now()).astimezone(local_tz()).date()).days if until else 0
+    shown = dict(action)
+    for key, until in (('snooze_days', lambda d: hide_until(d, *deadline_of(row, action))), ('wait_days', lambda d: wait_return(d, row['due'], row['due_at']))):
+        days, at = action.get(key), action.get(key) and until(action[key])
+        if not days or at == thread_return_time(days):
+            continue
+        shown[key] = left(at)
+        if not shown[key]:
+            del shown[key]
+    return shown
+
+
 def thread_snooze_note(state):
     until = state.get('snooze_until')
     if state.get('snooze_status') in ('queued', 'snoozed') and until:
@@ -177,7 +246,7 @@ def plain(text, limit=240):
 
 
 def snooze_choices(work=False):
-    """The quick snooze options with labels for when each lands; work skips days off."""
+    """The quick snooze options with labels for when each lands, on the owner's clock; work skips days off."""
     local_now = dt.datetime.fromisoformat(now()).astimezone(local_tz())
     tomorrow = (local_now - dt.timedelta(hours=3)).date() + dt.timedelta(days=1)
     choices, seen = [['2h', i18n.t('2 hours')]], set()
@@ -188,8 +257,38 @@ def snooze_choices(work=False):
         seen.add(due)
         moved = work and due.date() != (local_now - dt.timedelta(hours=3)).date() + dt.timedelta(days={'tomorrow': 1, '3d': 3, '1w': 7}[option])
         name = i18n.t('Tomorrow') if due.date() == tomorrow else locale_prefs.weekday_name(due) if moved and (due.date() - tomorrow).days < 6 and locale_prefs.language() != 'en' else due.strftime('%A') if moved and (due.date() - tomorrow).days < 6 else locale_prefs.day_text(due) if moved else i18n.t(plain)
-        choices.append([option, name + ' · ' + morning_label()])
+        choices.append([option, name + ' · ' + locale_prefs.clock_text(due)])
     return choices
+
+
+def snooze_due(due, due_at=None, work=False):
+    """One more time in the snooze picker for a to-do with a deadline: [the moment, its label], a moment before it.
+    The morning of the day before (work: of the last work day before), else the deadline's own morning, else two hours
+    before its time (due_at). None with none left, or when a quick choice lands right there already. Only offered: a
+    snooze the owner picks is never blocked or moved."""
+    try:
+        day = dt.date.fromisoformat(str(due)[:10])
+        at = dt.datetime.fromisoformat(str(due_at)) if due_at else None
+    except ValueError:
+        return None
+    at = at and (at if at.tzinfo else at.replace(tzinfo=local_tz())).astimezone(local_tz())
+    local_now = dt.datetime.fromisoformat(now()).astimezone(local_tz())
+    hour, minute = hour_minute(WORK_HOURS['morning'])
+    morning = lambda d: dt.datetime.combine(d, dt.time(hour, minute), local_tz())
+    before = day - dt.timedelta(days=1)
+    for _ in range(7):
+        if not work or is_work_day(before):
+            break
+        before -= dt.timedelta(days=1)
+    ends = at or morning(day + dt.timedelta(days=1)).replace(hour=0, minute=0)
+    moments = [morning(before), morning(day)] + ([at - dt.timedelta(hours=2)] if at else [])
+    moment = next((m for m in moments if local_now + dt.timedelta(minutes=30) < m < ends), None)
+    taken = {dt.datetime.fromisoformat(snooze_time(option, work=work)) for option in ('tomorrow', '3d', '1w')}
+    if moment is None or moment in taken:
+        return None
+    away = (moment.date() - local_now.date()).days
+    when = ' '.join(([locale_prefs.weekday_name(moment) if away < 7 else locale_prefs.day_text(moment)] if away else []) + [locale_prefs.clock_text(moment)])
+    return [moment.astimezone(dt.timezone.utc).isoformat(), i18n.t('Before it’s due · {}', when)]
 
 
 # The chat's Stop (Store.stop_chat): what the card says after, and a message that is only files (chat_files.py)
@@ -246,6 +345,8 @@ def source_line_shown(line, names=None):
         person = named(dm[1]).strip()
         head = kind if SLACK_ID.search(person) or CHAT_HANDLE.fullmatch(person) or not person else f'{kind} DM with {chat_plain_name(person)}'
     else:
+        if mail_senders.LISTED.match(who):  # older to-dos kept a list as text ("Teams to ['ann@x.example']")
+            who = ', '.join(mail_senders.recipients(who))
         who = group_sender(named(who).strip())
         if kind == 'phone' and re.fullmatch(r'[a-z]\w*(?:\.\w+)+', who):  # an app by its package (older cards): by its name, or none
             who = android_app_shown(who)
@@ -329,6 +430,8 @@ def card(row):
     elif row['status'] == 'prepared' and outcome.get('state') in (None, 'done') and any(
             a.get('kind') in next_actions.WAITING_KINDS for a in row.get('next_actions') or []):
         status = t('Ready to approve. Nothing goes out until you do.')  # prepared, not done: a step still waits for them
+    if row['status'] == 'prepared' and outcome.get('state') in (None, 'done', 'answered', 'needs_you') and not outcome.get('needs_first') and holding_reply(row.get('next_actions') or []):
+        status = needs_owner(row) or status
     if row.get('handled_hint') and row['status'] not in todo_states.CLOSED and outcome.get('state') != 'already_done':
         try:
             hint = json.loads(row['handled_hint'])
@@ -608,10 +711,19 @@ def result_ask(row, db=None):
         return needs
     if outcome.get('owner_step') or row.get('owner_step') or row.get('handoff_still'):
         return ''
-    return needs if (row['needs_owner'] if 'needs_owner' in row else needs_owner(row, db)) else ''
+    return needs if ' '.join((row['needs_owner'] if 'needs_owner' in row else needs_owner(row, db) or '').split()) == needs else ''
 
 
 RESULT_FILE = re.compile(r'memory/assistant/[^\s<>"\)]+')  # a file the run made, linked in its result (Store.suggestion_result)
+
+
+def holding_reply(steps):
+    """The work still to do when all that is ready is a holding reply: every step to approve is a message that only
+    promises it (its still_owed, judged by meaning when it was drafted). '' otherwise, or once one is on its way."""
+    ready = [a for a in steps if a.get('kind') != 'open']
+    if not ready or any(not a.get('still_owed') or (a.get('state') or {}).get('status') in ('queued', 'sending', 'sent', 'uncertain') for a in ready):
+        return ''
+    return ready[0]['still_owed']['what']
 
 
 def needs_owner(row, db=None):
@@ -623,7 +735,8 @@ def needs_owner(row, db=None):
     A run that left something and a need says whether that can be used before they answer (needs_first): when it can't,
     it reads Needs you too, with what it made still on it. A question next to only a file, where the run didn't say, asks.
     A run that only answered, explained or planned (outcome answered) with nothing ready is not Prepared either: the
-    task is still to do, so it reads Needs you, with "Answered. Nothing done yet." as the reason (Do it leads)."""
+    task is still to do, so it reads Needs you, with "Answered. Nothing done yet." as the reason (Do it leads).
+    Nor is one with only a holding reply ready (holding_reply): Needs you, with the work still to do as the reason (Send leads)."""
     if row.get('status') != 'prepared' or row.get('handled_hint') or row.get('preparation_status') == 'blocked':
         return ''
     try:
@@ -633,7 +746,11 @@ def needs_owner(row, db=None):
         steps = row['next_actions'] if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     except (ValueError, TypeError, AttributeError, KeyError):
         return ''
-    if outcome.get('state') == 'answered' and not any(a.get('kind') != 'open' for a in steps):
+    owed = holding_reply(steps) if outcome.get('state') in (None, 'done', 'answered', 'needs_you') and not needs_first(row) else ''
+    if owed:
+        asks = needs if outcome.get('state') == 'needs_you' and needs.endswith('?') else ''
+        needs = ' '.join(filter(None, [i18n.t('Holding reply ready. Still to do: {}', sentence(owed)), asks]))
+    elif outcome.get('state') == 'answered' and not any(a.get('kind') != 'open' for a in steps):
         needs = i18n.t('Answered. Nothing done yet.')
     elif outcome.get('state') != 'needs_you' or not needs:
         return ''
@@ -643,7 +760,7 @@ def needs_owner(row, db=None):
         return ''
     files = row['result_files'] if 'result_files' in row else RESULT_FILE.search(str(row.get('body') or ''))
     skill = row.get('proposed_skill') if 'proposed_skill' in row or db is None else proposed_skill(db, row.get('id'))
-    unsaid = files and outcome.get('state') == 'needs_you' and needs.endswith('?') and needs_first(row) is None
+    unsaid = files and not owed and outcome.get('state') == 'needs_you' and needs.endswith('?') and needs_first(row) is None
     return needs if not skill and (not files or unsaid) else ''
 
 

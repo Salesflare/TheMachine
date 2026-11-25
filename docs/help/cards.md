@@ -96,7 +96,9 @@ It counts only mail to you. Your own replies are read for context and promises, 
 
 A to-do shows its next step, like **Do it** or **Review and send**, with **Snooze** beside it. See [Do it](do-it.md) and [Snooze](snooze.md).
 
-**Ask for changes** says what to change: how to do it, or, once a draft is ready, what to change in it. **Mark done** means it's handled: in sight on a ready one without a draft or one that asks you something, otherwise at the top of **…**. It leaves the list at once, with **Undo** in the message. Swipe the message away, or drag it off with the mouse, to close it sooner. The change stays.
+**Ask for changes** says what to change: how to do it, or, once a draft is ready, what to change in it. Leave it half-typed and it's there when you come back; **Cancel** drops it.
+
+**Mark done** means it's handled: in sight on a ready one without a draft or one that asks you something, otherwise at the top of **…**. It leaves the list at once, with **Undo** in the message. Swipe the message away, or drag it off with the mouse, to close it sooner. The change stays.
 
 To have it done another way, say so in its **Chat**. Its answer names only what changed, like a snooze and until when. If it couldn't change something, like a due date, it says so.
 
@@ -155,6 +157,8 @@ A "Waiting on" to-do links your last message to them, the one you're waiting on:
 ## Make one yourself
 
 **New to-do** (under **Search** on a computer, **+** on a phone, or `N`) adds a to-do for anything. Creating it sends nothing. Without **Work** or **Personal** picked, it goes where it belongs, by who and what it's about. It also finds the email it follows up on, even older mail.
+
+Close it before adding and your text and choices are there the next time; files aren't. **Discard** in the message drops them.
 
 - **Due**: type a day or time, like "tomorrow", "next Fri", "3 Nov", "2pm" or "in 2 hours", in your own language too. The calendar icon has quick picks and **Choose date**.
 - **Repeats**: it comes back on a rhythm. See [Recurring to-dos](recurring.md).

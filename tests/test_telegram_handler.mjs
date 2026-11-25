@@ -22,6 +22,7 @@ for(const line of ["import { readFile } from 'node:fs/promises';","import { home
 source=source.replace("import { sendChangePrompt } from './change-prompt.ts';",'const sendChangePrompt=async()=>"456";');
 source=source.replace("import { registerAndroidFeed } from './android-feed.ts';",'const registerAndroidFeed=()=>{};');
 source=source.replace("import { registerHeartbeatFailureGate } from './heartbeat-failure-gate.ts';",'const registerHeartbeatFailureGate=()=>{};');
+source=source.replace("import { registerWebSearch } from './web-search.ts';",'const registerWebSearch=()=>{};');
 source=source.replace("import { registerSecretRedaction } from './secret-redaction.ts';",'const registerSecretRedaction=()=>{};');
 source=source.replace("import { registerReviewRecovery, currentReviewRun } from './review-recovery.ts';",'const registerReviewRecovery=()=>{};const currentReviewRun=key=>globalThis.fixtureRuns?.[key];');
 source=source.replace("import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';",'const definePluginEntry=v=>v;').replace('export default definePluginEntry','globalThis.fixturePlugin=definePluginEntry');

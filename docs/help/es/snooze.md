@@ -1,28 +1,32 @@
 ---
 title: Posponer
 area: cards
-summary: Haz que una tarea vuelva más tarde, en un día laborable y a la hora que elijas.
+summary: Pospón una tarea para más tarde. En un día laborable, a la hora que elijas.
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
-translated: 9d34f011c74d8119
+translated: df46514238b50289
 ---
 ## Posponer una tarea
 
-Pulsa **Posponer** en una tarea. El menú ofrece varias opciones, como dentro de 2 horas, mañana o dentro de una semana. Si quieres otro momento, elige **Elegir fecha** y **Hora**, y luego **Guardar hora**. ¿La has pospuesto por error? Pulsa **Deshacer** en el mensaje para recuperarla enseguida.
+Pulsa **Posponer** en una tarea. El menú ofrece varias opciones, como dentro de 2 horas, mañana o dentro de una semana. Para elegir otro momento, selecciona **Elegir fecha** y **Hora**, y luego **Guardar hora**. El menú muestra el nombre de la tarea y cuándo vence. Si faltan unos días para la fecha límite, también ofrece una opción anterior, como «Antes de que venza · mié. 9:00». Puedes elegir cualquier hora, incluso después de la fecha límite.
 
-Las tareas pospuestas durante un día o más vuelven a la hora que hayas elegido en «Hora de regreso de las tareas pospuestas», y las tareas de trabajo esperan hasta un día laborable. Configura ambas opciones en [Horario laboral](work-hours.md).
+El mensaje que aparece después indica hasta cuándo se ha pospuesto, por ejemplo: «Pospuesta hasta mañana a las 08:00». ¿La has pospuesto por error? Pulsa **Deshacer** en el mensaje para que la tarea vuelva enseguida.
 
-También puedes decirlo en **Pedir cambios**, por ejemplo: «recuérdame esta tarea el próximo martes».
+Las tareas pospuestas un día o más vuelven a la hora que hayas elegido en «Hora de regreso de las tareas pospuestas», y las tareas de trabajo esperan hasta un día laborable. Configura ambas opciones en [Horario laboral](work-hours.md).
+
+También puedes pedirlo en **Pedir cambios**, por ejemplo: «recuérdame esto el próximo martes».
 
 ## Cuando vuelve
 
-Vuelve como notificación en cada dispositivo donde estén activadas las notificaciones y en Telegram, si lo usas, según lo que permitan **Recordatorios** en [Notificaciones](notifications.md). El mensaje de posponer indica dónde. Si no tienes ninguna de esas opciones, la tarea vuelve al panel y verás **Activar notificaciones** ahí mismo. En iPhone y iPad, descarga la [app para móvil](mobile-app.md) para recibir notificaciones.
+Vuelve como notificación en todos los dispositivos donde estén activadas las notificaciones y, si usas Telegram, también allí, según lo que permitan **Recordatorios** en [Notificaciones](notifications.md). El mensaje indica dónde encontrarla. Si no tienes ninguna de esas opciones, vuelve al panel, donde verás **Activar notificaciones**. En iPhone y iPad, descarga la [app para móvil](mobile-app.md) para recibir notificaciones.
 
-La tarea que The Machine ya había terminado vuelve tal como estaba. The Machine solo vuelve a trabajar en ella si llegó algo nuevo mientras estaba pospuesta.
+Una tarea que The Machine ya haya terminado vuelve tal como estaba. Solo vuelve a trabajar en ella si ha llegado algo nuevo mientras estaba pospuesta.
+
+Para que el mensaje se envíe a una hora concreta, usa [Enviar más tarde](send-later.md).
 
 ## Mientras está pospuesta
 
-La tarea aparece en **Vuelve más tarde** y en su día en el [Calendario](calendar.md). **Dejar de posponer** la devuelve ahora; **Cambiar hora** permite elegir otra hora.
+La tarea aparece en **Vuelve más tarde** y, el día que le corresponda, en el [Calendario](calendar.md). **Dejar de posponer** hace que vuelva ahora; **Cambiar hora** te permite elegir otra hora.
 
 En Outlook, el hilo de correo pasa a una carpeta de elementos pospuestos hasta que vuelva la tarea. Consulta [Microsoft](microsoft.md).

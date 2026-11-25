@@ -73,7 +73,7 @@ try{
   await page.evaluate(()=>supportAccessSet(true));await page.waitForSelector('#settings-support:not([hidden])');
   paired=false;await page.evaluate(()=>supportAccessLoad(true));await page.waitForFunction(()=>document.querySelector('#settings-support').hidden);
   // Not paired: it doesn't ask at all
-  const asked=actions.length;await page.evaluate(()=>{state.fleet=undefined;supportAccessLoad(true)});assert.equal(actions.length,asked);assert.ok(await page.$eval('#settings-support',el=>el.hidden));
+  const asks=()=>actions.filter(a=>a.action==='support_access').length,asked=asks();await page.evaluate(()=>{state.fleet=undefined;supportAccessLoad(true)});assert.equal(asks(),asked);assert.ok(await page.$eval('#settings-support',el=>el.hidden));
   await context.close()}
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}

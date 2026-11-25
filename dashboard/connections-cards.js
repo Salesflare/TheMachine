@@ -264,8 +264,9 @@ const SIGNIN_COPY={intercom:{many:1,label:'Intercom',about:'Reads your conversat
  microsoft_teams:{label:'Microsoft',title:'Microsoft Teams',about:'Your chats and meeting chats. Channels and meeting notes need your admin’s OK. Replies only after you press Send.',
   selfAbout:'Your chats and meeting chats. Replies only after you press Send.'},
  google_docs:{label:'Google',title:'Google Docs',about:'Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.'},
+ google_docs_files:{label:'Google',title:'Google Docs',about:'Reads the Sheets and Slides your to-dos link to. Never changes them.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
- android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
+ codex:{},android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
  stripe:{label:'Stripe',about:'Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.',other:'Or paste a restricted key',how:'A restricted key with Read on Events, Customers and Account.',go:'Paste a key',off:'Sign in with {} isn’t available yet. Paste a restricted key instead.'},
  slack:{label:'Slack',about:'Your DMs and the channels you’re in. Sends only messages you approved, as yourself.',later:'New messages come in first, older ones gradually.',other:'Or use a Maton API key',how:'Connect Slack in Maton, then paste your Maton API key.',go:'Use Maton',off:'Sign in with {} isn’t available yet. Use a Maton API key instead.'}};
 // A work organization that lets only approved apps in: the short link its Microsoft 365 admin approves The Machine with.
@@ -282,7 +283,7 @@ const HOSTED_TILE={google:'#google',microsoft:'#microsoft',microsoft_teams:'#tea
 // GitHub, WhatsApp and the phone have no provider page to come back from: the Machine gets a code, shown right here
 // (GitHub's to type at GitHub, WhatsApp's QR code or pairing code, the OpenClaw app's setup code)
 const GITHUB_DEVICE=/^https:\/\/github\.com\/login\/device[\w/.-]*$/;
-const NO_SCOPE_SIGNIN=['intercom','android','microsoft_docs','microsoft_docs_write','microsoft_teams','codex'];
+const NO_SCOPE_SIGNIN=['intercom','android','microsoft_docs','microsoft_docs_write','microsoft_teams','google_docs_files','codex'];
 const STARTING={github:'Getting a sign-in code from GitHub…',whatsapp:'Getting a code from WhatsApp…',android:'Making a setup code…'};
 const qrImg=s=>html`<img class="connect-qr" src="${safeHref('/_machine/connect-qr?s='+encodeURIComponent(s.provider)+'&c='+encodeURIComponent(s.command)+'&v='+encodeURIComponent(String(s.until||'')))}" alt="QR code">`;
 function phoneBody(s,back){const h=[];
@@ -313,7 +314,7 @@ function hostedSigninGo(s,way){const form=document.createElement('form'),box=$('
  form.method='post';form.action='/_machine/connect';form.hidden=true;add('source',s.provider);
  if(!NO_SCOPE_SIGNIN.includes(s.provider)){add('scope',box.querySelector('input[name="signin-scope"]:checked')?.value||'work');add('boundary','')}
  if(SIGNIN_COPY[s.provider]?.many&&s.another)add('another','1');
- if(['microsoft_docs','microsoft_docs_write','microsoft_teams'].includes(s.provider)&&s.email)add('email',s.email);  // Reconnect on its card: that address
+ if(s.email)add('email',s.email);  // Reconnect on its card: that address
  if(s.provider==='whatsapp'&&way==='code'){add('way','code');add('phone',box.querySelector('input[name="signin-phone"]')?.value||'')}
  if(s.provider==='whatsapp'&&s.account)add('account_id',s.account);  // Link again: the one that is not linked any more
  document.body.append(form);form.submit()}
@@ -342,16 +343,16 @@ function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hos
   if(HOSTED_GOING.includes(connectSignin.state)&&hostedStalled(connectSignin,now)){const at=connectSignin;connectSignin={...at,state:'stalled'};
    try{throw Object.assign(new Error(`${at.provider}: ${at.phase||at.state}`),{name:'ConnectStalled'})}catch(e){errReport(e,'ConnectStalled')}}
   $('#connect-add').dataset.sig='';renderConnectSignin();if(connectSignin.state==='done'&&s.state!=='done')connectionsSettle(()=>{$('#connect-add').dataset.sig='';if(connectSignin?.state==='done')renderConnectSignin()});hostedPoll()},s.state==='checking'?0:2500)}
-// Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
+// Back from the provider (cloud: open_dashboard to=connect): that sign-in's form, following how it goes
 // c_: the command its callback queued; f_: why the provider's answer was refused, which the account keeps for this form
 const ON_DASHBOARD=['github','whatsapp','android','codex'];
 function openSignedInLink(){const m=/^#signed-in=([a-z_]{1,32})(\/again)?$/.exec(location.hash);if(!m)return;
  history.replaceState(null,'',location.pathname+location.search);showTab('health');const s=m[1].split('_');connectionsSettle();
- if(/^(google|microsoft|zoom|stripe|slack|salesforce|intercom|trello|shortcut|notion|google_(meet|docs)|microsoft_(docs(_write)?|teams))$/.test(m[1]))
+ if(Object.keys(SIGNIN_COPY).includes(m[1])&&!ON_DASHBOARD.includes(m[1]))
   toast(t(m[2]?'Reconnected to {}.':'Connected to {}.',s[0]=='microsoft'&&s[1]?(s[1]=='teams'?'Microsoft Teams':'Microsoft OneDrive'):s.slice(0,2).map(w=>w[0].toUpperCase()+w.slice(1)).join(' ')))}
-async function openConnectLinkNow(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|microsoft_teams|google_meet|google_docs|zoom|stripe|slack|intercom|trello|shortcut|notion|github|whatsapp|android|codex|salesforce)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
+async function openConnectLinkNow(){const m=/^#connect=([a-z_]+)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url||!Object.keys(SIGNIN_COPY).includes(m[1]))return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
- const docs=m[1]==='microsoft_docs_write'&&connectList?.sources.find(v=>v.hosted_signin==='microsoft_docs');  // Allow edits: the Docs source, its own consent
+ const src={microsoft_docs_write:'microsoft_docs',google_docs_files:'google_docs'}[m[1]],docs=src&&connectList?.sources.find(v=>v.hosted_signin===src);  // Allow edits, Allow Sheets and Slides: its Docs source
  const x=m[1]==='codex'?connectList?.codex&&codexSource():docs?{...docs,hosted_signin:m[1]}:connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
  connectSignin=signinOf(x,command.startsWith('f_')?'checking':command?ON_DASHBOARD.includes(m[1])?'starting':'connecting':m[2]?'stopped':'intro',command);$('#connect-add').dataset.sig='';renderConnectSignin();hostedPoll();viewTop($('#connect-add'))}
 function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paired=connectList?.paired;
@@ -507,11 +508,12 @@ if(f.step==='deepen')return t(later?'Now the rest of the week: {} of {} active c
 return t('Quiet conversations last: {} of {}',f.done,f.total)}
 // Signing in again and disconnecting: a hosted machine's account page for Google and Microsoft, else here.
 // Docs (connectors/docs.py): its own consent, pressed on the account page (or Add again on a self-hosted Machine)
-// What a Docs connection may write (doc_writes.py): a private new doc by itself, an edit only after the owner's OK; or Allow edits to ask for it
+// What a Docs connection may write (doc_writes.py: a new doc by itself, an edit after the owner's OK) and the linked Sheets and Slides it reads; or the buttons that ask
 const docsWrites=c=>{const line=docsWritesLine(c);return line?html`<p class="muted conn-what conn-writes">${line}</p>`:''};
 const docsWritesLine=c=>{if(c.actions===false)return '';const w=c.docs_writes||[],go=c.docs_write_signin&&!c.shared_by?(state.manage_url?hostedReconnect({...c,hosted_signin:c.docs_write_signin},'Allow edits','browser-link'):html`<button type="button" class="browser-link" data-reconnect="docs" data-account="${c.id}" data-signin-source="${c.docs_write_signin}">Allow edits</button>`):'';
+ const read=c.docs_files?.[1]?'Reads linked Sheets and Slides.':'',ask=c.docs_files_signin?hostedReconnect({...c,hosted_signin:c.docs_files_signin},'Allow Sheets and Slides','browser-link'):'';
  const line=w.includes('edit')?'Creates private docs. Edits docs only after you OK each change.':w.includes('create')?'Creates private docs only you can see until you share them.':go?'Can’t create or edit docs yet.':'';
- return line?html`${t(line)}${go?html` ${go}`:''}`:''};
+ return line||read||ask?html`${line&&t(line)} ${go} ${read&&t(read)} ${ask}`:''};
 const docsConnect=c=>c.service!=='docs'||!/docs_not_connected/.test(c.error||'')?'Reconnect':c.docs_provider==='microsoft'?'Connect Microsoft documents':'Connect Google Docs';
 function reconnectButton(c,label='Reconnect'){return c.hosted_signin&&state.manage_url?hostedReconnect(c,label,'browser-link'):c.account_page?html`<a class="head-link" href="${safeHref(c.account_page)}" target="_blank" rel="noopener">${label} ↗</a>`:c.connect_name?html`<button type="button" class="browser-link" data-reconnect="${c.connect_name}" data-account="${c.id}"${c.signin?html` data-signin-source="${c.signin}"`:''}>${label}</button>`:''}
 // Work (with its company) or Personal: the owner marks each sign-in. Leaving a Work Fleet removes that company's work

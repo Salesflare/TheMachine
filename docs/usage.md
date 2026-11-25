@@ -228,7 +228,7 @@ One setting for when The Machine works with you: on the dashboard under **Settin
 
 - **Work days** (default Monday to Friday): work to-dos (from `work:` sources) wait for a work day, and snoozed work and returning email threads come back on one. Personal to-dos keep their timing.
 - **Messages from / until** (default 08:00 to 23:00): nothing is sent outside these hours, to Telegram or the phone; it waits until they start. Reviews keep running in the background. A range like 20:00 to 04:00 wraps past midnight.
-- **Snoozes land at** (default 08:00): where Tomorrow, 3 days and 1 week land, and when a snoozed email thread comes back.
+- **Snoozes land at** (default 08:00): where Tomorrow, 3 days and 1 week land, and when a snoozed email thread comes back. A thread The Machine puts away after a reply never stays away past the to-do's deadline (or the day the reply promises): it is back the morning of the work day before, else that morning, and with neither left it stays in the inbox.
 - **Evening digest** (`evening_at`, default 15 minutes before the end of the hours): on work days, what got done today and what's open for the next work day, the ways picked in its row under **Notifications**. Only on a day the owner was there (a dashboard visit, or a decision in the dashboard, Telegram, chat or voice), and nothing on a day without a to-do done or a meeting held.
 - **Morning digest** (`digest_at`, default 08:30, at least 5 minutes after **Snoozes land at** so those to-dos are in it; a time set earlier is saved as that) and **time zone** (`timezone`). The installer takes this computer's time zone, and the dashboard offers the device's when it differs.
 
@@ -396,7 +396,7 @@ For developers: a feature adds its own entries with `actionAdd({id, group, label
 **After a send**
 
 - Sends go through the account's Gmail. The to-do then says who it went to and when, and moves to done (Undo or Reopen bring it back).
-- A reply that only promises the work for later ("I'll send the files by Tuesday") keeps the to-do open instead, due that day, with the promise linked to it. The run marks such a draft (`still_owed`), judged by what it means, and the send review says the to-do stays open.
+- A reply that only promises the work for later ("I'll send the files by Tuesday") keeps the to-do open instead, due that day, with the promise linked to it. The run marks such a draft (`still_owed`), judged by what it means, and the send review says the to-do stays open. With nothing else ready, the to-do reads **Needs you**, not **Prepared**: "Holding reply ready. Still to do: …".
 - A handoff instead waits for the reply.
 - A to-do with another send still waiting stays in For you.
 
@@ -404,9 +404,10 @@ For developers: a feature adds its own entries with `actionAdd({id, group, label
 
 - A run interrupted by a crash or outage resumes with its history instead of redoing finished steps.
 - A run that fails, ends without a result, is cut off by a restart or doesn't finish within 35 minutes (it is stopped) is tried once more by itself, a minute later. Then the to-do says **Stuck**, with **Try again**.
+- A run whose start can't go out at all (its message is too long, or its images aren't ones it can read) is **Stuck** right away and isn't tried by itself again. A to-do with a lot of history doesn't get there: what doesn't fit is left out, least needed first, and the run is told where to read it.
 - A to-do stuck because its run failed (not a question, a Stop or a usage limit) gets one fresh try after the Machine updates (a new release or bridge), once per version, at least 15 minutes after it failed, in its same session, one at a time, outside quiet hours and within usage. Only those stuck in the last 7 days, never a confirmed step or a snoozed to-do.
 - A to-do gets at most 2 automatic retries in all. More come only with something new for it: new messages, your words in its chat, **Do it**, or a sign-in or connection it waited on. **Try again** runs it once, without new automatic retries.
-- A restart or an update never redoes a to-do that finished. Each run records why it started (Activity).
+- A restart or an update never redoes a to-do that finished. Each run records why it started and how it ended (Activity). A run that saved its result gets a moment to end by itself, also when something new already waits for it.
 - A to-do that finished keeps its result when its snooze ends. It is prepared again only when something new came in for it while it was snoozed. Unfinished work carries on as before.
 - A confirmed last step whose run stopped (Stuck, a snooze) waits, paused, and carries on with **Try again** or when the snooze ends. Until then the to-do says in one line that it isn't done, why, and when it carries on, instead of the earlier result. That also holds when new work you asked for replaced that step ("not confirmed yet" when it may have gone through).
 
@@ -555,7 +556,7 @@ A Do it result can carry a Slack direct message from your own Slack account (the
 - An unclear outcome stays uncertain and is checked by finding exactly one message from you with that text in the DM. It's never resent.
 - Sending needs a Maton Slack connection that is allowed to post as you.
 
-**Hand-offs:** `delegate:true` (on Slack, or an email to one address) hands the task over. After the send, the to-do is snoozed for `wait_days` (default 3; a weekday at the snooze time, 08:00 by default) with a watch on that person. When they reply (in that DM, or in that email thread or to that email, from any address of theirs; never an out-of-office or someone else in the thread), the to-do closes itself and their reply is reviewed as an answer to the to-do. Without a reply it comes back saying so.
+**Hand-offs:** `delegate:true` (on Slack, or an email to one address) hands the task over. After the send, the to-do is snoozed for `wait_days` (default 3; a weekday at the snooze time, 08:00 by default; sooner for a deadline still ahead) with a watch on that person. When they reply (in that DM, or in that email thread or to that email, from any address of theirs; never an out-of-office or someone else in the thread), the to-do closes itself and their reply is reviewed as an answer to the to-do. Without a reply it comes back saying so.
 
 For a teammate in your Work Fleet, the result is a Fleet handoff instead (`kind:handoff`, the message written to them). Its **Hand off** button opens the [Fleet handoff](fleet.md) form with that message, and nothing goes before you send it there.
 

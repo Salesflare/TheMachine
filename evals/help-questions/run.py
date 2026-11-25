@@ -31,6 +31,14 @@ JUDGE = ("You grade one answer of an app's help chat. Reference is what is true 
          "Then one short line why.\n\nQuestion: {q}\nReference: {fact}\nAnswer: {answer}")
 
 
+def load():
+    """The cases, one per question: an entry that asks the same in several languages (q: {language: question}) is one each."""
+    out = []
+    for c in json.loads((HERE / 'cases.json').read_text(encoding='utf-8'))['cases']:
+        out += [{**c, 'id': f"{c['id']}-{lang}", 'lang': lang, 'q': q} for lang, q in c['q'].items()] if isinstance(c['q'], dict) else [c]
+    return out
+
+
 def ask(text, model, effort, used, limit=3000):
     body = {'model': model, 'input': text, 'reasoning': {'effort': effort}, 'max_output_tokens': limit}
     for attempt in range(6):
@@ -75,6 +83,7 @@ def one(case, args):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--set', choices=('dev', 'held'), required=True)
+    p.add_argument('--lang', help='only the questions in this language')
     p.add_argument('--model')
     p.add_argument('--judge')
     p.add_argument('--effort', default='low')
@@ -82,7 +91,9 @@ def main():
     p.add_argument('--out')
     p.add_argument('--quiet', action='store_true', help='only the totals')
     args = p.parse_args()
-    cases = [c for c in json.loads((HERE / 'cases.json').read_text(encoding='utf-8'))['cases'] if c['set'] == args.set]
+    cases = [c for c in load() if c['set'] == args.set]
+    if args.lang:
+        cases = [c for c in cases if c['lang'] == args.lang]
     with concurrent.futures.ThreadPoolExecutor(args.jobs if args.model else 1) as pool:
         got = list(pool.map(lambda c: one(c, args), cases))
     if not args.quiet:

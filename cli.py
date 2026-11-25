@@ -270,14 +270,15 @@ def cmd_attachment(config, args):
 def cmd_doc(config, args):
     if (args.event is None) == (args.file is None):
         raise SystemExit('Give --event or --file')
-    result = call(config, 'doc_text', {'job_id': args.job, **({'event_id': args.event} if args.event is not None else {'file_id': args.file})})
+    result = call(config, 'doc_text', {'job_id': args.job, **({'event_id': args.event} if args.event is not None else {'file_id': args.file}),
+                                      **({'range': args.range} if args.range else {})})
     if args.json:
         return out_json(result)
     print(f"{result.get('title') or 'Untitled document'}" + (f"  {result['url']}" if result.get('url') else ''))
     print()
     print(result.get('text') or '')
-    if result.get('truncated'):
-        print('\n[cut: the doc is longer]')
+    if result.get('note') or result.get('truncated'):
+        print(f"\n[{result.get('note') or 'cut: the doc is longer'}]")
 
 
 def cmd_doc_find(config, args):
@@ -1093,9 +1094,11 @@ def parser():
     c.add_argument('--save', help='attachment id or name to save')
     c.add_argument('--job', help='the preparation job id: saves under its attachments folder')
     c.add_argument('--open', help='a readable copy of an encrypted attachment saved earlier (with --job)')
-    c = add('doc', "A doc's text (Google Docs or Word), read-only, for a preparation of the task it belongs to", cmd_doc)
+    c = add('doc', "A doc's text (Google Docs or Word), or a linked Google Sheet's cells or Slides file's text, read-only, for a preparation "
+            'of the task it belongs to', cmd_doc)
     c.add_argument('--event', type=int, help="the doc event's id (a comment, mention, suggestion or share)")
-    c.add_argument('--file', help="a doc's file id: one linked in the task's messages, or one doc-find gave this run")
+    c.add_argument('--file', help="a doc's file id: one linked in the task's messages or the owner's chat on it, or one doc-find gave this run")
+    c.add_argument('--range', help="one part of a linked Google Sheet ('Tab!A1:H200') or Slides file ('21-40')")
     c.add_argument('--job', required=True, help='the preparation job id')
     c = add('doc-find', "Find docs and files that match some words, read-only, for a preparation", cmd_doc_find)
     c.add_argument('words', help='the words to look for (a title, a name, a phrase)')

@@ -904,7 +904,7 @@ class Api(unittest.TestCase):
         self.assertTrue(t.ASK_PREFIX.startswith('chat-') and not t.ASK_PREFIX.startswith(t.RELAY_PREFIX))
         self.assertIn('never send', t.ASK_MACHINE_NOTE)
         source = (ROOT / 'machine/app/preparation.py').read_text()
-        self.assertIn("startswith(talk_live.ASK_PREFIX):request['message']+='\\n\\n'+talk_live.RELAY_NOTE+'\\n'+talk_live.ASK_MACHINE_NOTE", source)
+        self.assertIn("startswith(talk_live.ASK_PREFIX):start.add('talk','\\n\\n'+talk_live.RELAY_NOTE+'\\n'+talk_live.ASK_MACHINE_NOTE", source)
         with self.store.connect() as db:   # the owner's request shows in that to-do's chat as theirs
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('chat-voice-1',?,'other',"
                        "'Who is Dana again?','dashboard','2026-10-29T12:39:00Z')", (SID,))
@@ -1333,7 +1333,7 @@ class Api(unittest.TestCase):
         said = [i['text'] for i in items if i['kind'] == 'you']
         self.assertEqual(said, ['And when do they close?'])
         source = (ROOT / 'machine/app/preparation.py').read_text()
-        self.assertIn("startswith(talk_live.RELAY_PREFIX):request['message']+='\\n\\n'+talk_live.RELAY_NOTE", source)
+        self.assertIn("startswith(talk_live.RELAY_PREFIX):start.add('talk','\\n\\n'+talk_live.RELAY_NOTE", source)
 
     def test_a_sign_in_has_no_cost_note(self):
         self.gateway.answers['start'] = {**self.gateway.answers['start'], 'offer_url': '/plugins/openai/realtime/calls', 'via': 'signin'}

@@ -1,28 +1,32 @@
 ---
 title: Mettre en attente
 area: cards
-summary: Faites revenir une tâche plus tard, un jour de travail, à l’heure de votre choix.
+summary: Faites réapparaître une tâche plus tard, un jour ouvré et à l’heure de votre choix.
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
-translated: 9d34f011c74d8119
+translated: df46514238b50289
 ---
 ## Mettre une tâche en attente
 
-Appuyez sur **Mettre en attente** sur une tâche. Le menu propose plusieurs délais, par exemple dans 2 heures, demain ou dans une semaine. Pour choisir un autre moment, sélectionnez **Choisir une date** et **Heure**, puis **Enregistrer l’heure**. Vous l’avez mise en attente par erreur ? Appuyez sur **Annuler** dans le message pour la rétablir immédiatement.
+Appuyez sur **Mettre en attente** sur une tâche. Le menu propose quelques horaires, par exemple dans 2 heures, demain ou dans une semaine. Pour choisir un autre moment, sélectionnez **Choisir une date** et **Heure**, puis **Enregistrer l’heure**. Le menu indique le nom de la tâche et son échéance. Si elle est due dans quelques jours, il propose aussi un moment avant l’échéance, par exemple « Avant l’échéance · mer. 9 h ». Vous pouvez toujours choisir n’importe quel moment, même après l’échéance.
 
-Les tâches mises en attente pour une journée ou plus reviennent à l’heure définie dans « Les mises en attente reviennent à », et les tâches professionnelles attendent un jour de travail. Définissez ces deux options dans [Heures de travail](work-hours.md).
+Un message indique ensuite jusqu’à quand la tâche est en attente, par exemple « En attente jusqu’à demain 8 h ». Vous l’avez mise en attente par erreur ? Appuyez sur **Annuler** dans le message pour réafficher immédiatement la tâche.
 
-Vous pouvez aussi le demander dans **Demander des modifications**, par exemple : « rappelle-moi ça mardi prochain ».
+Les tâches en attente pendant au moins une journée réapparaissent à l’heure définie dans « Les tâches en attente réapparaissent à ». Les tâches professionnelles attendent un jour ouvré. Définissez ces deux options dans [Heures de travail](work-hours.md).
 
-## Quand elle revient
+Vous pouvez aussi le demander dans **Demander des modifications**, par exemple : « Rappelle-moi cette tâche mardi prochain ».
 
-Elle revient sous forme de notification sur chaque appareil où les notifications sont activées, et sur Telegram si vous l’utilisez, selon les réglages de **Rappels** dans [Notifications](notifications.md). Le message de mise en attente vous indique où la retrouver. Si aucune de ces options n’est activée, elle réapparaît sur le tableau de bord, avec **Activer les notifications** juste à côté. Sur iPhone et iPad, installez l’[application mobile](mobile-app.md) pour recevoir des notifications.
+## Quand la tâche réapparaît
 
-Une tâche que The Machine avait déjà terminée revient telle quelle. The Machine ne la reprend que si un nouvel élément est arrivé pendant qu’elle était en attente.
+Elle réapparaît sous forme de notification sur chaque appareil où les notifications sont activées et sur Telegram si vous l’utilisez, selon les options **Rappels** de [Notifications](notifications.md). Le message indique où la retrouver. Si aucune de ces options n’est activée, elle réapparaît sur le tableau de bord, avec **Activer les notifications** juste à côté. Sur iPhone et iPad, téléchargez l’[application mobile](mobile-app.md) pour recevoir des notifications.
 
-## Pendant qu’elle est en attente
+Une tâche que The Machine a déjà terminée réapparaît telle quelle. Elle ne s’en occupe à nouveau que si de nouveaux éléments sont arrivés pendant sa mise en attente.
 
-La tâche apparaît sous **Revient plus tard**, et à la date prévue dans l’[Agenda](calendar.md). **Sortir de l’attente** la fait revenir immédiatement, et **Changer l’heure** permet de choisir un autre moment.
+Pour envoyer le message lui-même à une heure précise, utilisez [Envoyer plus tard](send-later.md).
 
-Dans Outlook, la conversation par e-mail est déplacée dans un dossier « En attente » jusqu’au retour de la tâche. Consultez [Microsoft](microsoft.md).
+## Pendant la mise en attente
+
+La tâche se trouve sous **Revient plus tard** et apparaît à la date prévue dans l’[Agenda](calendar.md). Appuyez sur **Sortir de l’attente** pour la réafficher maintenant, ou sur **Changer l’heure** pour choisir un autre moment.
+
+Dans Outlook, le fil de discussion de l’e-mail est déplacé dans un dossier En attente jusqu’à ce que la tâche réapparaisse. Consultez [Microsoft](microsoft.md).

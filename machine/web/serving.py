@@ -232,7 +232,7 @@ def dashboard_status(status):
         return [{k: v for k, v in row.items() if k not in keys} if isinstance(row, dict) and when(row) else row for row in rows or []]
     status, drop = dict(status), {'analyses': {'owner_session', 'owner_run'}, 'suggestions': {'dedupe_key', 'closed_state'},
                                   'deliveries': {'previous_message_ids', 'notification_message_id', 'last_notified_at',
-                                                 'edit_retry_at', 'edit_failures', 'message_id', 'send_kind', 'reminder'},
+                                                 'edit_retry_at', 'edit_failures', 'message_id', 'send_kind', 'reminder', 'pushed_at'},
                                   'promises': {'note', 'account_id', 'area', 'event_id','created_at', 'updated_at', 'card_status'}}
     for name, keys in drop.items():
         if isinstance(status.get(name), list):

@@ -1,56 +1,56 @@
 ---
 title: Microsoft Outlook et Outlook Calendar
 area: connections
-summary: E-mails et réunions Outlook pour Microsoft 365 et Outlook.com. Un e-mail n’est envoyé qu’après votre approbation.
+summary: Les e-mails et réunions Outlook, pour Microsoft 365 et Outlook.com. Un e-mail n’est envoyé qu’après votre approbation.
 covers: connector:outlook, connector:outlook_calendar
 code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
-translated: c10bf70a327b8ec0
+translated: 7229063d9365735d
 ---
-## Ce qu’elle lit
+## Ce que l’assistante lit
 
-- **Outlook** : tous vos e-mails, ceux des 7 derniers jours lorsque vous vous connectez, puis tous les nouveaux.
+- **Outlook** : tous vos e-mails des 7 derniers jours au moment de la connexion, puis tous les nouveaux.
 - **Outlook Calendar** : vos réunions, en lecture seule.
 
-Les e-mails dans Autres et les newsletters font d’abord l’objet d’un rapide coup d’œil : expéditeur, objet et quelques mots. Si l’un d’eux est important, il est lu en entier et peut devenir une tâche.
+Les e-mails du dossier Autres et les newsletters sont d’abord parcourus rapidement : expéditeur, objet et quelques mots. Si l’un d’eux est important, il est lu en entier et peut devenir une tâche.
 
 ## Ce qu’elle peut envoyer et modifier
 
-- Un e-mail à partir d’une tâche, uniquement après votre approbation. Il est envoyé depuis l’adresse propre à la boîte mail, pas depuis un alias.
+- Un e-mail lié à une tâche, uniquement après votre approbation. Il est envoyé depuis l’adresse propre à la boîte mail, et non depuis un alias.
 - Une réponse est ajoutée à la conversation Outlook de l’e-mail auquel elle répond.
-- Après l’envoi d’une réponse, les messages du fil de discussion sont déplacés dans un dossier En attente d’Outlook pendant quelques jours (3, sauf indication contraire dans la tâche), puis reviennent dans la boîte de réception, ou plus tôt si quelqu’un répond. La vérification vous l’indique avant l’envoi.
+- Après l’envoi d’une réponse, les messages du fil sont déplacés dans un dossier En attente d’Outlook pendant quelques jours (3, sauf indication contraire dans la tâche), puis reviennent dans la boîte de réception, ou plus tôt si quelqu’un répond. Ils ne restent jamais à l’écart au-delà de l’échéance de la tâche. La vérification vous en informe avant l’envoi.
 
 L’agenda n’est jamais modifié.
 
 ## Photos des collègues et des contacts
 
-Microsoft est également invité à lire les profils de base de votre organisation (nom, adresse e-mail et photo), ainsi que vos contacts Outlook. Votre Machine les utilise uniquement pour afficher les photos, les fonctions et les entreprises des personnes déjà présentes dans votre Graph, dans la limite de 200 photos par jour. Si une personne n’a pas de photo, une nouvelle vérification a lieu après 30 jours.
+Microsoft est également invité à lire les profils de base des membres de votre organisation (nom, e-mail et photo) ainsi que vos contacts Outlook. Votre Machine utilise ces informations uniquement pour afficher les photos, les postes et les entreprises des personnes déjà présentes dans votre Graph, dans la limite de 200 photos par jour. Si une personne n’a pas de photo, une nouvelle vérification a lieu après 30 jours.
 
-L’administrateur de votre organisation devra peut-être approuver les photos des collègues. Sans cette approbation, Outlook se connecte quand même, mais sans ces photos. Pour un compte connecté avant cette modification, une tâche s’affiche : appuyez sur **Reconnecter** ou sur **Pas nécessaire** pour la fermer définitivement. Un compte personnel (Outlook.com, Hotmail) n’a pas de collègues : la tâche vous demande donc uniquement les photos de vos contacts.
+L’admin de votre organisation devra peut-être approuver les photos des collègues. Sans cette approbation, Outlook se connecte quand même, mais sans ces photos. Si un compte a été connecté avant cette mise à jour, une tâche apparaît : appuyez sur **Reconnecter**, ou sur **Pas nécessaire** pour la fermer définitivement. Un compte personnel (Outlook.com, Hotmail) n’a pas de collègues. La tâche concerne donc uniquement les photos des contacts.
 
-## Connecter Outlook
+## Connecter le compte
 
 Sur une Machine hébergée :
 
-1. Ouvrez votre page de configuration à l’adresse app.themachine.computer/setup.
-2. Appuyez sur **Connecter Microsoft** et connectez-vous.
-3. Si Microsoft demande l’approbation d’un administrateur, envoyez le lien à votre administrateur Microsoft 365 (**Copier le lien**). Une fois l’approbation donnée, tout le monde dans votre organisation peut se connecter. Si vous êtes l’administrateur, appuyez sur **Je suis l’administrateur : approuver maintenant**.
+1. Ouvrez votre page de configuration sur app.themachine.computer/setup.
+2. Appuyez sur **Connecter Microsoft**, puis connectez-vous.
+3. Si Microsoft demande l’approbation d’un admin, envoyez le lien à l’admin Microsoft 365 de votre organisation (**Copier le lien**). Une fois l’approbation donnée, tout le monde dans votre organisation pourra se connecter. Si vous êtes admin, appuyez sur **Je suis admin : approuver maintenant**.
 
-Vous pouvez aussi accéder au tableau de bord : **Connexions**, **E-mail**, choisissez Outlook, puis appuyez sur **Se connecter avec Microsoft**. Le lien pour l’administrateur se trouve juste sous le bouton.
+Vous pouvez aussi passer par le tableau de bord : **Connexions**, **E-mail**, choisissez Outlook, puis appuyez sur **Se connecter avec Microsoft**. Le lien destiné à l’admin se trouve juste sous le bouton.
 
-Sur votre propre ordinateur, une fois celui-ci [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **E-mail**, choisissez Outlook et appuyez sur **Se connecter avec Microsoft**. Les e-mails et l’agenda sont connectés ensemble. Après la connexion à Microsoft, vous revenez à **Connexions** dans votre tableau de bord.
+Sur votre propre ordinateur, une fois qu’il est [associé à votre compte](friends.md#a-machine-on-your-own-computer), ouvrez **Connexions**, puis **E-mail**, choisissez Outlook et appuyez sur **Se connecter avec Microsoft**. Les e-mails et l’agenda se connectent ensemble. Après l’étape Microsoft, vous revenez dans **Connexions** sur votre tableau de bord.
 
-Pour les équipes informatiques qui utilisent leur propre application Microsoft Entra : ouvrez **Utiliser votre propre app** à cet endroit ou exécutez `assistant connect outlook`.
+Pour les équipes informatiques qui utilisent leur propre app Microsoft Entra : ouvrez **Utiliser votre propre app** à cet endroit, ou lancez `assistant connect outlook`.
 
 ## Supprimer la connexion
 
-- Sur une Machine hébergée : appuyez sur **Déconnecter** à côté du compte sur votre page de configuration. **Déconnecter ↗** dans Connexions vous y mène.
+- Sur une Machine hébergée : appuyez sur **Déconnecter** à côté du compte sur votre page de configuration. Le bouton **Déconnecter ↗** dans Connexions vous y mène.
 - Sur votre propre ordinateur : ouvrez **Connexions**, sélectionnez le compte, puis **Détails** et **Déconnecter**.
 
-## Désinstaller l’application sur Microsoft
+## Désinstaller l’app dans Microsoft
 
-Microsoft ne nous permet pas de révoquer une connexion. Vous devez donc aussi la supprimer ici :
+Microsoft ne nous permet pas de révoquer une connexion. Supprimez aussi l’app dans Microsoft :
 
 - Compte professionnel ou scolaire : myapps.microsoft.com
 - Compte personnel : account.live.com/consent/Manage

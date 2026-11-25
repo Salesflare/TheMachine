@@ -92,7 +92,8 @@ try{
   // an empty list says it in place of its empty state; a list with rows has it above them
   assert.equal((await note.innerText()).replace(/\s+/g,' ').trim(),"Waiting for Olive Park or Ada Stone to share the team's data with you. The team's records show here then.");
   assert.equal(await page.locator('[data-graph-panel="projects"]').getByText('No projects yet.').count(),0);
-  assert.ok(await page.locator('[data-graph-panel="projects"] img.sticker').evaluate(i=>i.complete&&i.naturalWidth>0),'the sticker loads');
+  // the sticker loads: the line is there before its image is
+  await page.waitForFunction(()=>{const i=document.querySelector('[data-graph-panel="projects"] img.sticker');return i&&i.complete&&i.naturalWidth>0},null,{timeout:15000});
   assert.equal(await page.locator('[data-graph-team]').count(),0);
   assert.equal(await page.locator('[data-graph-panel="people"] .team-wait').count(),1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);

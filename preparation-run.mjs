@@ -17,14 +17,14 @@ const runSeconds={preparation:1200, review:1200, profile:900, skills:900, routin
 const scope={scopes:['operator.admin','operator.read','operator.write']};
 const USAGE_LIMIT=/usage limit|(?:reached|hit) (?:your|the) [a-z0-9 -]*limit|limit (?:reached|exceeded)|insufficient_quota|quota exceeded|in cooldown|out of (?:credits|usage)/i;
 // When a usage limit lifts, from the provider's own words: an epoch (Claude: "limit reached|1761500000"), "in 2h 5m" or
-// "try again in 30 minutes", or a clock time "11:12 PM UTC" (the next one). A clock time wins over a rounded span next
-// to it ("Next reset in 3 days, Nov 25 at 8:33 AM UTC": 3 days from now was 7 hours late). Only the time is kept, never the text.
+// "try again in 30 minutes" (ChatGPT: "in ~2580 min"), or a clock time "11:12 PM UTC" (the next one). A clock time wins
+// over a rounded span next to it ("Next reset in 3 days, Nov 25 at 8:33 AM UTC": 3 days from now was 7 hours late). Only the time is kept, never the text.
 function resetAt(text, now=Date.now()){
   const epoch=text.match(/\|(\d{10})\b/);
   if(epoch)return Number(epoch[1]);
   const clock=text.match(/reset(?:[^0-9|]|\d+\s*(?:days?|hours?|hrs?|minutes?|mins?)\b){0,40}?(?:([A-Z][a-z]{2,8}\.? \d{1,2}),?\s+(?:at\s+)?)?(\d{1,2}):(\d{2})\s*(AM|PM)?\s*(UTC|GMT)?/i);
   if(clock)return clockAt(clock, now);
-  const span=text.match(/\b(?:in|after)\s+((?:\d+\s*(?:days?|d|hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)\b[\s,]*(?:and\s+)?)+)/i);
+  const span=text.match(/\b(?:in|after)\s+~?((?:\d+\s*(?:days?|d|hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)\b[\s,]*(?:and\s+)?)+)/i);
   if(span){
     let seconds=0;
     for(const [,n,unit] of span[1].matchAll(/(\d+)\s*([a-z]+)/gi)){
@@ -57,7 +57,9 @@ function failure(result,status){
   }
   if(/LLM idle timeout/i.test(text)){error='model_idle_timeout';phase='model';}
   else if(/before_tool_call|PluginInstanceUnavailable|failurePhase[^a-z]*bridge/i.test(text)){error='bridge_error';phase='bridge';}
-  else if(/rate.?limit|\b429\b/i.test(text)){error='rate_limited';phase='model';}
+  // OpenClaw's own words for a limit hide which one it was ("needs a short break", also for ChatGPT's "The usage limit
+  // has been reached"): the service reads the plan's usage to tell (model_pacing.note_usage_limit).
+  else if(/rate.?limit|\b429\b|needs a short break|asking us to slow down|usage-limit error/i.test(text)){error='rate_limited';phase='model';}
   else if(/ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|connection (?:reset|closed)|network/i.test(text)){error='connection_error';phase='connection';}
   else if(/timeout|timed out/i.test(text)){error='runtime_timeout';}
   else if(/abort|cancel/i.test(text)){error='runtime_aborted';}
@@ -96,6 +98,11 @@ async function release(status){
 // fails this start (error session_archived: the refusal comes before admission, so nothing runs under its key) instead.
 // The Gateway takes a restore (a lifecycle patch) only with the session's current sessionId as expectedSessionId, so a
 // chat reset or replaced in the meantime is never restored by mistake: the runner reads it from the session's row first.
+// A start that can never succeed, named (start_message.REFUSED): the service ends it instead of retrying it.
+const refused=code=>Object.assign(new Error('Start refused: '+code),{refused:code});
+// Why a call is unavailable, from a fixed list (start_message.UNAVAILABLE), for the service log: never the text.
+const why=error=>OFFLINE.test(String(error?.message || ''))?'offline':error?.name==='GatewayClientRequestError'?'refused':
+  error?.unconfirmed?'unconfirmed':/timeout|timed out/i.test(String(error?.message || ''))?'timeout':'other';
 const OFFLINE=/ECONNREFUSED|closed|socket/i, ARCHIVED=/is archived\. Restore it/i;
 const refusedArchived=error=>error?.name==='GatewayClientRequestError' && ARCHIVED.test(error?.message || '');
 async function restore(){
@@ -117,14 +124,17 @@ async function unarchived(call){
 try {
   let result;
   if (request.action==='start') {
-    if (typeof request.message!=='string' || request.message.length>60000) throw new Error('Invalid prompt');  // PROMPT_LIMIT in assistant.py
+    // Refused before any Gateway call, the same on every retry: nothing ran, so this start is over as what it is.
+    // In characters, as PROMPT_LIMIT (machine/app/preparation.py) counts them: an emoji is one, not two.
+    if (typeof request.message!=='string' || !request.message.trim()) throw refused('invalid_request');
+    if (Array.from(request.message).length>60000) throw refused('prompt_too_long');
     // Images the owner added to their chat message (chat_files.py): sent to the model as images. Other files are in
     // the run's attachments folder, named in the message.
     const IMAGE=/^image\/(?:png|jpeg|gif|webp)$/;
     const attachments=Array.isArray(request.attachments)?request.attachments:[];
     if (attachments.length>5 || attachments.some(a=>a?.type!=='image' || !IMAGE.test(a.mimeType||'') || typeof a.fileName!=='string' ||
         a.fileName.length>200 || typeof a.content!=='string' || a.content.length>7*1024*1024 || !/^[A-Za-z0-9+/]*={0,2}$/.test(a.content)) ||
-        attachments.reduce((n,a)=>n+a.content.length,0)>20*1024*1024) throw new Error('Invalid attachments');
+        attachments.reduce((n,a)=>n+a.content.length,0)>20*1024*1024) throw refused('invalid_attachments');
     // Fast (assistant.py chat_turn_fast, chat_model.py): the session's speed, set just before the turn. true for a turn
     // the person waits on in a to-do chat with Fast on; false sets a session that ran fast back to standard, and when
     // that can't be done the turn doesn't start (unavailable: tried again in a minute), so background work never runs
@@ -157,7 +167,7 @@ try {
           /^[a-z0-9-]{1,40}$/.test(request.provider) && /^[a-z0-9._:/-]{1,120}$/i.test(request.model) ? {provider:request.provider, model:request.model}:{}),
       ...(typeof request.thinking==='string' && /^(off|minimal|low|medium|high|xhigh|adaptive|max|ultra)$/.test(request.thinking) ? {thinking:request.thinking}:{}),
     },scope));
-    if (result?.runId!==request.job_id) throw new Error('Unconfirmed admission');
+    if (result?.runId!==request.job_id) throw Object.assign(new Error('Unconfirmed admission'),{unconfirmed:true});
     process.stdout.write(JSON.stringify({run_id:request.job_id,status:'admitted',...(speed?{fast:speed}:{})}));
   } else if (request.action==='stop') {
     // After the normal runtime plus an outage grace period, stop only our exact
@@ -229,8 +239,8 @@ try {
   }
   // offline: the Gateway itself can't be reached (down after a reboot, mid-restart), the same test as chat-history-run.mjs.
   // A start that gets this waits for it to come back without a deadline (assistant.py preparation_run_step).
-  const offline=OFFLINE.test(String(error?.message || ''));
   process.stdout.write(JSON.stringify(ended?{run_id:request.job_id,status:'lost',error:'runtime_lost',error_phase:'runtime'}:
     error?.archived?{run_id:request.job_id,status:'error',error:'session_archived',error_phase:'session'}:
-    {run_id:request.job_id,status:'unavailable',...(offline?{reason:'offline'}:{})}));
+    error?.refused?{run_id:request.job_id,status:'error',error:error.refused,error_phase:'runtime'}:
+    {run_id:request.job_id,status:'unavailable',reason:why(error)}));
 }

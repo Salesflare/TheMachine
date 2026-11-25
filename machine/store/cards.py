@@ -395,14 +395,7 @@ def source_line(rows, db=None):
         # The owner's own message (a "Waiting on" to-do leads with it): who it went to, by the name their messages carry
         m = first['metadata'] if isinstance(first['metadata'], dict) else json.loads(first['metadata'] or '{}')
         when = locale_prefs.day_text(dt.datetime.fromisoformat(first['occurred_at']).astimezone(local_tz()), lang='en')
-        names = {}
-        for r in rows:
-            rm = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
-            shown = re.sub(r'\s*<[^>]+>', '', str(rm.get('from') or '')).strip().strip('"')
-            if _address(rm.get('from')) and shown and '@' not in shown:
-                names[_address(rm.get('from'))] = shown
-        to = _address(m.get('to'))
-        them = (names.get(to) or re.sub(r'\s*<[^>]+>', '', str(m.get('to') or '').split(',')[0]).strip().strip('"') or to) if to else m.get('chat_name')
+        them = message_view.went_to(first['kind'], m, message_view.row_names(rows))
         line = source_kind(first['kind']) + (f' to {them}' if them else '') + f' · {when}'
     else:
         line = source_text(first)
@@ -1186,8 +1179,8 @@ class CardsStore:
             accounts = sorted(set(json.loads(other['account_ids'] or '[]')) | set(json.loads(own['account_ids'] or '[]')))
             words = '\n\n'.join(w for w in (other['owner_words'], own['owner_words']) if w)
             renamed = own['title_suggested'] is not None and other['title_suggested'] is None
-            db.execute('UPDATE suggestions SET event_ids=?,account_ids=?,origin=?,owner_words=?,due=coalesce(?,due),project=coalesce(project,?) WHERE id=?',
-                       (encoded(ids), encoded(accounts), 'owner', words or None, own['due'], own['project'], other['id']))
+            db.execute('UPDATE suggestions SET event_ids=?,account_ids=?,origin=?,owner_words=?,due_at=CASE WHEN ? IS NULL THEN due_at ELSE ? END,due=coalesce(?,due),project=coalesce(project,?) WHERE id=?',
+                       (encoded(ids), encoded(accounts), 'owner', words or None, own['due'], own['due_at'], own['due'], own['project'], other['id']))
             if renamed:
                 db.execute("UPDATE suggestions SET title_suggested=title,title=?,title_source='user' WHERE id=?", (own['title'], other['id']))
             db.execute('INSERT OR IGNORE INTO suggestion_keys(dedupe_key,suggestion_id,created_at) VALUES(?,?,?)', (own['dedupe_key'], other['id'], stamp))

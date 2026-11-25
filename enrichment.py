@@ -1089,7 +1089,7 @@ def photos_step(connect, now, limit=PHOTOS_PER_PASS, fetch=None):
 # Organization logos from their own website: when the lookup brought no logo (or there was no lookup), the icon the
 # site's home page names (apple-touch-icon, icon) or else its /favicon.ico, saved once on this Machine like a photo
 # (person_photos, as logo:<domain>), so the dashboard shows it from here and no logo service learns which
-# organizations the owner deals with. Only the organization's own site is asked. None found: asked again in 30 days.
+# organizations the owner deals with. Asked: the site, and the host it names for its icon. None found: again in 30 days.
 SITE_LOGOS_PER_PASS = 10
 PAGE_BYTES = 512_000
 SITE_BYTES = 2_000_000  # a home page read for its text (site_text)

@@ -37,7 +37,7 @@ from machine.sources.android import android_app_shown, android_text_shown
 from machine.sources.slack import slack_plain
 from machine.store import graph_identifiers
 from machine.text import UNREADABLE, _address, intercom_note
-from mail_senders import relay
+from mail_senders import addresses, chat_named, recipients, relay
 
 VIEWS =('email', 'chat', 'notification', 'card')
 
@@ -214,6 +214,34 @@ def sender_name(kind, m):
         return ((customer if '@' not in customer else '') or (contact if '@' in contact and not relay(contact) else '')
                 or name or (names[0] if names else ''))
     return name or (names[0] if names else '') or address
+
+
+def went_to(kind, m, names=None):
+    """Who the owner's own message went to, by name, for every source: a chat by its own name (the other person's, a
+    group's), a mail by the first person in To, else the people in `to` (three at most, then "+2"). names:
+    {address: name} known from elsewhere; an address only when there is no name, '' when nothing says who."""
+    names, chat, mail = names or {}, chat_named(m), view_of(kind) == 'email'
+    if chat and view_of(kind) == 'chat':
+        return chat
+    said = [names.get(a) or ('' if '@' in n else n) or a for n, a in addresses(m.get('to'))]
+    if mail:
+        first = _address(m.get('to'))
+        return said[0] if said and addresses(m.get('to'))[0][1] == first else names.get(first) or first or chat
+    if not said and view_of(kind) == 'chat':
+        said = [' '.join(p.split()) for p in recipients(m.get('to'))]
+    return ', '.join(said[:3] + ([f'+{len(said) - 3}'] if len(said) > 3 else [])) or chat
+
+
+def row_names(rows):
+    """{address: name} as the senders of these messages give it, beside it or in their From."""
+    names = {}
+    for r in rows:
+        m = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
+        shown = re.sub(r'\s*<[^>]+>', '', str(m.get('from') or '')).strip().strip('"')
+        address = _address(m.get('from')) or _address(m.get('from_email'))
+        if address and shown and '@' not in shown:
+            names[address] = shown
+    return names
 
 
 def named(value, names):

@@ -190,6 +190,24 @@ class Check(unittest.TestCase):
         self.assertEqual(self.look()['state'], 'due')
         self.assertFalse(self.due(600))  # an AI that answered isn't checked again
 
+    def test_a_failed_check_has_a_line_about_the_plan_only_where_the_account_may_be_why(self):
+        status = {'model': MAIN, 'chatgpt': False, 'claude_plan': True, 'plan': None, 'limit_reached': False}
+        with self.assertLogs(a.LOG, 'INFO'):
+            self.checked(StandIn(main=(False, '403 forbidden')))
+        self.assertNotIn('plan', self.look())  # no sign-in known: nothing said
+        self.app.model_status = status
+        self.assertEqual(self.look()['plan'], 'claude')
+        self.assertNotIn('plan_free', self.look())
+        found = {'model': MAIN, 'ok': False, 'error': '403 forbidden'}
+        self.assertEqual(mc.plan_note(found, {**status, 'plan': 'free'}), {'plan': 'claude', 'plan_free': True})
+        self.assertEqual(mc.plan_note(found, {**status, 'chatgpt': True, 'plan': 'Free ($0.00)'}), {'plan': 'chatgpt', 'plan_free': True})
+        for plan in (None, 'go', 'plus', 'self serve business'):  # ChatGPT: only when it says the account is free
+            self.assertEqual(mc.plan_note(found, {**status, 'chatgpt': True, 'claude_plan': False, 'plan': plan}), {}, plan)
+        for error in mc.NOT_REACHED:  # our own trouble
+            self.assertEqual(mc.plan_note({**found, 'error': error}, status), {})
+        for other in ({'plan': 'max'}, {'plan': 'team'}, {'limit_reached': True}, {'model': OTHER}, {'claude_plan': False}):
+            self.assertEqual(mc.plan_note(found, {**status, **other}), {}, other)
+
     def test_a_failed_call_keeps_the_owner_on_the_ai_step_and_a_reconnect_starts_the_first_look_at_once(self):
         with self.assertLogs(a.LOG, 'INFO'):
             self.checked(StandIn(main=(False, 'Claude Code is not signed in. Run claude login.')))

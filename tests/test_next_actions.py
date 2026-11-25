@@ -429,6 +429,57 @@ class ThreadSnoozes(unittest.TestCase):
         with patch_everywhere(timeutil,'now',return_value='2026-10-23T08:00:00+00:00'):  # Friday, across the DST change
             self.assertEqual(machine_cards.thread_return_time(2),'2026-10-26T08:00:00+00:00')
 
+    def test_a_thread_is_never_hidden_past_a_deadline(self):
+        with patch_everywhere(timeutil,'now',return_value='2026-10-12T08:00:00+00:00'):  # Monday 10:00 local
+            usual=machine_cards.thread_return_time(3)
+            for due,until in ((None,usual),('2026-11-30',usual),('2026-10-16',usual),        # Friday: back Thursday anyway
+                              ('2026-10-15','2026-10-14T07:00:00+00:00'),                    # Thursday: the morning before it
+                              ('2026-10-13',  '2026-10-13T07:00:00+00:00'),                  # tomorrow: its own morning
+                              ('2026-10-12',None),                                           # today: nothing left, it stays in the inbox
+                              ('2026-10-01',usual),('soon',usual)):                          # passed, or no day
+                self.assertEqual(machine_cards.hide_until(3,due),until,due)
+            self.assertEqual(machine_cards.hide_until(14,'2026-10-19'),'2026-10-16T07:00:00+00:00')  # due Monday: the work day before
+            self.assertIsNone(machine_cards.hide_until(3,'2026-10-13','2026-10-13T06:00:00+00:00'))  # due tomorrow 8:00, before the morning
+
+    def after_send(self,due,at=None,**extra):
+        self.ready(**self.reply,**extra)
+        with self.store.connect() as db:db.execute('UPDATE suggestions SET due=?,due_at=?',(due,at))
+        with patch_everywhere(timeutil,'now',return_value='2026-10-12T08:00:00+00:00'):
+            shown=self.row()['next_actions'][0].get('snooze_days')
+            self.confirm();self.app().action_step(self.transport())
+        rows=self.snoozes();return shown,rows[0]['until'] if rows else None
+
+    def test_a_sent_reply_comes_back_before_the_to_dos_deadline_and_the_review_says_so(self):
+        self.assertEqual(self.after_send('2026-10-15'),(2,'2026-10-14T07:00:00+00:00'))
+
+    def test_a_sent_reply_due_today_stays_in_the_inbox(self):
+        self.assertEqual(self.after_send('2026-10-12'),(None,None))
+
+    def test_the_day_a_holding_reply_promises_is_the_deadline(self):
+        self.assertEqual(self.after_send('2026-10-12',still_owed={'what':'send the quote','due':'2026-10-15'}),(2,'2026-10-14T07:00:00+00:00'))
+
+    def test_a_holding_reply_for_work_that_is_overdue_stays_in_the_inbox(self):
+        self.assertEqual(self.after_send('2026-10-08',still_owed={'what':'send the quote'}),(None,None))
+
+    def test_a_reply_without_a_deadline_waits_as_usual(self):
+        self.assertEqual(self.after_send(None),(3,'2026-10-15T07:00:00+00:00'))
+
+    def test_a_later_replys_snooze_never_keeps_the_thread_past_the_deadline(self):
+        calls=[]
+        class Gmail:
+            def snooze(self,*_):return 'snoozed'
+            def wake(self,*_):calls.append('wake');return 'returned'
+        self.after_send('2026-10-15')
+        with self.store.connect() as db:
+            db.execute("UPDATE thread_snoozes SET status='snoozed'")
+            db.execute("INSERT INTO thread_snoozes(job_id,account_id,thread_id,until,status,created_at,updated_at) SELECT 'later',account_id,thread_id,'2026-10-19T07:00:00+00:00','snoozed',created_at,updated_at FROM thread_snoozes")
+        with patch_everywhere(timeutil,'now',return_value='2026-10-14T07:05:00+00:00'):self.app().thread_snooze_step(Gmail())
+        self.assertEqual(calls,['wake'])
+        # without a deadline in between, the later one keeps it away as before
+        with self.store.connect() as db:db.execute("UPDATE suggestions SET due=NULL");db.execute("UPDATE thread_snoozes SET status='snoozed'")
+        with patch_everywhere(timeutil,'now',return_value='2026-10-14T07:05:00+00:00'):self.app().thread_snooze_step(Gmail())
+        self.assertEqual((calls,{r['until'] for r in self.snoozes()}),(['wake'],{'2026-10-19T07:00:00+00:00'}))
+
     def test_sent_reply_is_archived_then_returned_and_shown_on_the_card(self):
         self.ready(**self.reply);self.confirm();self.app().action_step(self.transport())
         [row]=self.snoozes();self.assertEqual((row['thread_id'],row['status']),('abc123','queued'))

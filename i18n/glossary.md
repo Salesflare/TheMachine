@@ -5,7 +5,7 @@ every request, so a new term goes here, with a form for every language, in the p
 Every catalog in this folder follows it, and `tests/test_i18n.py` checks that: when an English string uses a term from the **Terms** table, its translation uses one
 of the forms listed for that language (any of the forms after the first are inflections the check also accepts). A
 capitalized term (Ready, Settings) is the name of a status or a screen and only counts capitalized; a lowercase one
-counts in any case. File names (.skill, SKILL.md) don't count.
+counts in any case. File names (.skill, SKILL.md) don't count, nor does a name spelled like a term (Signal, the app).
 
 **Ready** (a to-do's status, its section, its notifications) means prepared and waiting for the owner, never done:
 Dutch *Klaargezet* and *Voor jou klaargezet*, never *Klaar* alone; Spanish and Brazilian Portuguese *Para revisar*, never
@@ -40,7 +40,7 @@ table is in the control plane's glossary (cloud/i18n/glossary.md) for the site a
 | es | feminine | ella, la, su, and feminine agreement (lista, conectada): "tu Machine está lista". Never él. Assistant: una asistente, tu propia asistente. |
 | it | feminine | lei, la, sua, and feminine agreement (pronta, collegata): "la tua Machine è pronta". Never lui. Assistant: un’assistente, la tua assistente. The reader and people of unknown gender get neutral wording: Hai effettuato l’accesso, Ti diamo il benvenuto, Serve il tuo intervento, never Sei entrato, Benvenuto, richiede te. AI is IA, except in product names (Google AI Pro). Work Fleet: Fleet di lavoro; Family Fleet: Fleet di famiglia. |
 | pt-BR | feminine | ela, a, sua, dela, da, na, and feminine agreement (pronta, conectada): "sua Machine está pronta". Never ele, o, do, no. Assistant: uma assistente, sua assistente. The name too: da, na, pela The Machine, never de, em, do, no The Machine. Fleet is masculine (o Fleet, Fleet de Trabalho, Fleet da Família); vaga and Network are feminine (paga por, na Network). Write e-mail with a hyphen; follow-up stays follow-up (Fazer follow-up). |
-| zh-CN | none | No gender: say The Machine again, or 它 when a pronoun can't be left out. Never 他 or 她. Machine stays Machine, never 机器: your Machine is 你的Machine, never 你的The Machine. Assistant: 助手. No space between Chinese and a Latin word or number, “” quotes, one … for an ellipsis, menu paths as “设置”>“通知”. Words: thread or conversation 对话 (never 线程 or 讨论串 outside Slack); plan (ChatGPT, ours) 套餐; deal 商机, won 赢单, lost 丢单; Linear issue and Shortcut story 事项; newsletter 新闻邮件; Activity 动态; For you 待你处理; learning 心得 (never 学习心得); setup code 设置码; payment card 银行卡; Sign out 退出登录; pair 配对; account 账号 (a bank account stays 银行账户); share 分享, with 共享 only for a shared thing named as a noun (共享收件箱, 共享连接, 共享看板); tap or click 点击 (never 点按 or 轻点); Team Graph stays Team Graph (never 团队Graph). |
+| zh-CN | none | No gender: say The Machine again, or 它 when a pronoun can't be left out. Never 他 or 她. Machine stays Machine, never 机器: your Machine is 你的Machine, also where it starts a sentence or does something (Roles your Machine reads: 你的Machine读到的角色), never The Machine or 你的The Machine. Assistant: 助手. No space between Chinese and a Latin word or number, “” quotes, one … for an ellipsis, menu paths as “设置”>“通知”. Words: thread or conversation 对话 (never 线程 or 讨论串 outside Slack); plan (ChatGPT, ours) 套餐; deal 商机, won 赢单, lost 丢单; Linear issue and Shortcut story 事项; newsletter 新闻邮件; Activity 动态; For you 待你处理; learning 心得 (never 学习心得); setup code 设置码; payment card 银行卡; Sign out 退出登录; pair 配对; account 账号 (a bank account stays 银行账户); share 分享, with 共享 only for a shared thing named as a noun (共享收件箱, 共享连接, 共享看板); tap or click 点击 (never 点按 or 轻点); Team Graph stays Team Graph (never 团队Graph). |
 | ja | none | No gender or pronoun: say The Machine again or leave the subject out. Assistant: アシスタント. |
 | ko | none | No gender or pronoun: say The Machine again or leave the subject out. Assistant: 어시스턴트. |
 | ru | feminine | она, её, and feminine agreement (готова, подключена, сама), after машина: "The Machine прочитала почту. Она ...". Never он or его for it. Speaking for itself: "Я застряла". Assistant: ассистентка, ваша ассистентка. An owner's or someone else's Machine is Machine, never The Machine (ваша Machine, Machine коллеги); several are Machine too (ваши Machine), never Machines or машины. Fleet and Graph are masculine: ваш Fleet, рабочий Fleet, семейный Fleet, этот Fleet. A person in a placeholder takes both forms: {} подтвердил(а). |
@@ -54,7 +54,8 @@ Product and brand names stay exactly as they are in every language, and the chec
 
 The Machine, Machine (an owner's own Machine: "your Machine"), The Machine Network, Network, Graph, Fleet, Telegram,
 Gmail, Google, Outlook, Microsoft, Slack, WhatsApp, LinkedIn, Intercom, Zoom, Stripe, GitHub, Salesflare, OpenClaw,
-ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailscale, GPT-6.2 Sol.
+ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailscale, GPT-6.2 Sol, Sheets, Slides,
+Signal (the app; a signal is a term below).
 
 ## Terms
 
@@ -96,44 +97,9 @@ English strings the check skips, with why:
 - `when is "now", "digest" or a date/time like 2026-10-12 or 2026-10-12T09:00` is read by the model, which takes digest as a literal value.
 - `Zoom in` is the browser viewer's zoom button, not the Zoom app.
 - `Zoom out` is the browser viewer's zoom button, not the Zoom app.
-- `Signal chats` names the Signal app, not a signal.
-- `Signal` names the Signal app, not a signal.
-- `Signal message sent.` names the Signal app, not a signal.
-- `Signal message sent at {}.` names the Signal app, not a signal.
 - `Settings file` is a configuration file, not the Settings screen.
-- `Signal unlinked this Machine` names the Signal app, not a signal.
-- `Update The Machine for Signal` names the Signal app, not a signal.
-- `In Signal on your phone: Settings, Linked devices, Link new device. Then scan this code:` names the Signal app, not a signal.
-- `Signal unlinked this Machine. Link it again to keep reading.` names the Signal app, not a signal.
-- `Signal no longer accepts this Machine’s Signal client. Update The Machine.` names the Signal app, not a signal.
-- `Signal gives a new linked device no older messages, so this reads from when you linked it.` names the Signal app, not a signal.
-- `Send this Signal message?` names the Signal app, not a signal.
-- `Sent to {} on Signal` names the Signal app, not a signal.
 - `kind is fact (true about the world), draft (how a kind of task is done) or voice (how the owner writes on one channel, with channel)` names a tool's literal values, which stay in English.
 - `when is "now", "digest" or a date/time like 2026-10-12 or 2026-10-12T09:00` names a tool's literal values, which stay in English.
-- `the Signal message` names the Signal app, not a signal.
-- `Signal message sent` names the Signal app, not a signal.
-- `Signal message sent.` names the Signal app, not a signal.
-- `Signal message sent at {}.` names the Signal app, not a signal.
-- `Signal can’t be read right now, so I can’t find the chat. Put the message in the body and say in one line that they can send it on Signal themselves.` names the Signal app, not a signal.
-- `Your Signal chats, as a linked device.` names the Signal app, not a signal.
-- `Signal needs Java {} or later on this computer` names the Signal app, not a signal.
-- `Unsupported Signal fields; plain text only, no media` names the Signal app, not a signal.
-- `Use one of the owner’s Signal accounts` names the Signal app, not a signal.
-- `Provide the concrete Signal message, at most {} characters` names the Signal app, not a signal.
-- `Signal button labels must say Send, such as Send reply` names the Signal app, not a signal.
-- `Only an owner-approved Signal message can use the Signal transport` names the Signal app, not a signal.
-- `I couldn’t reach Signal on this computer. Nothing was sent; tap Send again.` names the Signal app, not a signal.
-- `Signal no longer accepts this Machine’s Signal client. Nothing was sent.` names the Signal app, not a signal.
-- `Signal is unlinked, or linked to another account. Nothing was sent.` names the Signal app, not a signal.
-- `I couldn’t find that Signal chat. Nothing was sent.` names the Signal app, not a signal.
-- `Signal was not linked{}` names the Signal app, not a signal.
-- `Could not start the Signal link ({})` names the Signal app, not a signal.
-- `Signal, any mailbox, any calendar` names the Signal app, not a signal.
-- `WhatsApp, Telegram, Signal and other chats now look like the app they came from.` names the Signal app, not a signal.
-- `Connect Signal chats, any mailbox over IMAP, and calendars from iCloud, Proton, Exchange or any CalDAV server.` names the Signal app, not a signal.
-- `Signal message sent at {}.` names the Signal app, not a signal.
-- `Signal message sent.` names the Signal app, not a signal.
 
 ## Buttons and calls to action
 

@@ -226,6 +226,26 @@ class NotesRulesAndOutcome(Base):
         row = dict(self.store.snapshot(self.app.config['accounts'])['suggestions'][0])
         self.assertTrue(a.card(row).endswith('Finished. Mark it done if it looks right.'))
 
+    def test_needs_that_is_too_long_is_named_in_the_refusal(self):
+        # A run that had given outcome:'needs_you' was told to say whether the job is finished, over a needs of more than
+        # 200 characters: it sent the same needs three times and ended with nothing saved (2026-11-25).
+        long = 'Can you upload ' + 'the next missing document, ' * 8 + 'or say where it is?'
+        self.assertGreater(len(long), 200)
+        for outcome in ('needs_you', 'already_done'):  # already_done too: dropped, what is left would read as done
+            with self.assertRaises(ValueError) as refused:
+                self.save(outcome=outcome, needs=long)
+            self.assertIn(f'needs is {len(long)} characters and the limit is 200', str(refused.exception))
+            self.assertNotIn('Say whether', str(refused.exception))
+        with self.store.connect() as db:  # nothing was saved meanwhile
+            self.assertEqual(db.execute('SELECT status FROM preparations').fetchone()[0], 'running')
+        self.assertEqual(self.save(outcome='needs_you', needs='x' * 200)['status'], 'prepared')
+        with self.store.connect() as db:
+            self.assertEqual(json.loads(db.execute('SELECT outcome FROM suggestions').fetchone()[0])['needs'], 'x' * 200)
+
+    def test_the_run_is_told_how_long_needs_may_be(self):
+        prompt = a.preparation_prompt({'job_id': 'j' * 16, 'suggestion_id': self.sid})
+        self.assertIn('needs and waiting_on are each at most 200 characters', prompt)
+
     def test_an_answer_is_not_a_finished_task(self):
         # The owner asked what Do it would do: the answer is ready, the task itself isn't, so Do it leads again.
         self.store.decide(self.sid, 'other', 'What exactly would you do when I tap Do it?', 'q1', 'dashboard')

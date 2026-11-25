@@ -36,7 +36,10 @@ It checks whether you're actually using the dashboard, not just whether it's ope
 
 - Using it (in front, and you clicked, typed or scrolled in the last 10 minutes): nothing buzzes. Telegram arrives silently. Opening or reloading it alone doesn't count.
 - Away (in the background, closed, or idle for 10 minutes): a push goes a minute after you left, unless you came back and saw it.
-- Still unseen 15 minutes later, and it can't wait: one email for it, at most one an hour. What you already handled is left out, and each to-do is in it once, as it stands now. Most days the morning summary is the only email.
+- Nothing reached you 15 minutes later, and it can't wait: one email for it, at most one an hour. What you saw or handled is left out, and each to-do is in it once, as it stands now. Most days the morning summary is the only email.
+- Reached means a notification showed on your phone or browser, or Telegram took the message. A phone that's off, offline or has notifications turned off doesn't count, and neither does Telegram while the dashboard is in use. Shown only on a computer, what's urgent or due today is still emailed: you may be out.
+- No phone app, browser notifications or Telegram? The email comes for everything above.
+- Telegram can't be reached: the push goes anyway, once, and Telegram is tried again by itself.
 - A teammate hands you a to-do and your Machine has no phone or Telegram to reach you: one email with its title and a link, 15 minutes later if still unseen. **Email** for **Results and questions** turns it off.
 - Outside your work hours: nothing. The morning digest has it.
 - A new work to-do on a day off waits for your next work day's digest time. The to-do shows when it will reach you, like Notification Mon 2 Nov · 08:30.

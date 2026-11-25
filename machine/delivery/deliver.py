@@ -79,6 +79,7 @@ def reconcile_uncertain(store, config, grace_minutes=30):
                 if notice:
                     db.execute("UPDATE deliveries SET status='sent',notification_message_id=?,error=NULL,reminder=0,updated_at=? WHERE suggestion_id=? AND status='uncertain'",
                                (str(max(ids)),now(),row['suggestion_id']))
+                    notify.reached(db, row['suggestion_id'], 'telegram')
                     LOG.info('delivery suggestion=%s reconciled=notice_sent',row['suggestion_id'])
                     continue
                 previous = json.loads(row['previous_message_ids'])
@@ -86,11 +87,13 @@ def reconcile_uncertain(store, config, grace_minutes=30):
                     previous.append(row['message_id'])
                 db.execute("UPDATE deliveries SET status='sent',message_id=?,previous_message_ids=?,error=NULL,needs_edit=1,updated_at=? "
                            "WHERE suggestion_id=? AND status='uncertain'", (str(max(ids)), encoded(previous), now(), row['suggestion_id']))
+                notify.reached(db, row['suggestion_id'], 'telegram')
                 LOG.info('delivery suggestion=%s reconciled=sent', row['suggestion_id'])
             elif current - attempted >= dt.timedelta(minutes=grace_minutes):
                 if row['suggestion_status'] in todo_states.OPEN_NOT_SNOOZED:
-                    # Not in the chat: it was never delivered. An earlier card exists, so this is a reminder.
-                    db.execute("UPDATE deliveries SET status='queued',reminder=?,error=NULL,updated_at=? WHERE suggestion_id=? AND status='uncertain'",
+                    # Not in the chat: it was never delivered. An earlier card exists, so this is a reminder. Its push
+                    # went: the error stays, so it is known as a retry (deliver_one).
+                    db.execute("UPDATE deliveries SET status='queued',reminder=?,error=CASE WHEN pushed_at IS NULL THEN NULL ELSE error END,updated_at=? WHERE suggestion_id=? AND status='uncertain'",
                                (1 if row['message_id'] else 0, now(), row['suggestion_id']))
                     LOG.info('delivery suggestion=%s reconciled=requeued', row['suggestion_id'])
                 else:
@@ -160,6 +163,21 @@ def shown_rows(db, query):
     return query.replace('p.status preparation_status', agent_jobs.shown_preparation(db, card='s.id') + ' preparation_status', 1)
 
 
+def deliver_mail(store, config, row, status, telegram_id, silenced):
+    """The email for a to-do's notification, held before its push goes (hold_mail), or left out: its Telegram message
+    arrived (telegram_id; one that arrived without a buzz because a dashboard was open, `silenced`, doesn't count:
+    nobody may be at it). A Telegram message that failed (status) holds one too, once."""
+    if status == 'sent' and telegram_id and not telegram_id.startswith('web-') and not silenced:
+        with store.connect() as db:
+            notify.reached(db, row['id'], 'telegram')
+        return
+    work = any(a['id'] in json.loads(row.get('account_ids') or '[]') and str(a.get('boundary') or '').startswith('work:') for a in config.get('accounts', []))
+    ready = (row['_result_notice'] or first_result(row)) and row['status'] == 'prepared'
+    lead = row.get('_lead', 'Ready')
+    title = (i18n.t(lead + ': {}', row['title']) if lead else row['title']) if ready else i18n.t('Reminder: {}', row['title']) if shown_as_reminder(row) and not row['_result_notice'] else row['title']
+    hold_mail(store, config, notify.kind_of(row), title, 'suggestion:' + row['id'], work, why=row['_why'], once=status != 'sent' or bool(row['_pushed']))
+
+
 def deliver_one(store, config, edit_cards=True):
     # One existing OpenClaw bot, never a second getUpdates consumer.
     store.wake_snoozed()
@@ -199,10 +217,13 @@ def deliver_one(store, config, edit_cards=True):
                    ((timeutil.clock() - dt.timedelta(minutes=3)).isoformat(),))
         retry_cutoff = (timeutil.clock() - dt.timedelta(minutes=1)).isoformat()
         store.settle_awaiting(db)
-        rows = db.execute(shown_rows(db, "SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,d.last_notified_at,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+f" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN {todo_states.sql(todo_states.TAKEN_ON)} AND s.handled_hint IS NULL AND coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','waiting'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1"),(retry_cutoff,now())).fetchall()
+        rows = db.execute(shown_rows(db, "SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,d.last_notified_at,d.pushed_at,d.error delivery_error,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+f" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN {todo_states.sql(todo_states.TAKEN_ON)} AND s.handled_hint IS NULL AND coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','waiting'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1"),(retry_cutoff,now())).fetchall()
         if not rows:
             return
         row = dict(rows[0])
+        # Its push went already, with a Telegram message that failed: queued with that error it is tried again, and only
+        # Telegram is. A new notification about the to-do clears the error.
+        row['_pushed'] = row['pushed_at'] if row['delivery_error'] else None
         row['_first'] = not row['message_id']  # never delivered before: its notification is no reminder (push.first_result)
         if row['reminder'] and unseen_ping(db, row):
             # A rerun's newer result while the earlier notification is still unseen: the card is edited, no new ping
@@ -236,18 +257,21 @@ def deliver_one(store, config, edit_cards=True):
         # quiet the same way: it waits in the list and the morning summary.
         row['_quiet']=bool(db.execute("SELECT 1 FROM follow_up_cards WHERE suggestion_id=? AND state='open'",(row['id'],)).fetchone()) or \
             todo_kinds.quiet(db,row['id'])
+        window=(row['id'],(dt.datetime.fromisoformat(now())-dt.timedelta(minutes=3)).isoformat())
         row['_silent']=row['_quiet'] or bool(db.execute("SELECT 1 FROM deliveries WHERE suggestion_id!=? AND last_notified_at>? "
-            "AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards WHERE state='open')",
-            (row['id'],(dt.datetime.fromisoformat(now())-dt.timedelta(minutes=3)).isoformat())).fetchone())
+            "AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards WHERE state='open')",window).fetchone())
+        # The phone buzzed for one whose Telegram message failed: this one's push is silent, its Telegram message isn't
+        row['_push_silent']=row['_silent'] or bool(db.execute('SELECT 1 FROM deliveries WHERE suggestion_id!=? AND pushed_at>?',window).fetchone())
         # Calm (notify.calm_reason): only what can't wait buzzes. The rest arrives quietly (the dashboard, a silent
         # Telegram card) and waits for the morning summary: no push, no waiting email. A quiet one is no ping: it
         # doesn't stamp last_notified_at, so it never silences a real one nor counts as an unseen ping.
         local=timeutil.clock(local_tz())
-        row['_calm']=notify.calm_reason(db,why_now(row,local.date().isoformat()),is_work_day(local),local.date().isoformat())
+        row['_why']=why_now(row,local.date().isoformat())
+        row['_calm']=notify.calm_reason(db,row['_why'],is_work_day(local),local.date().isoformat())
         if row['_calm']:
             row['_silent']=True
-        db.execute("UPDATE deliveries SET status='sending',send_kind=?,updated_at=? WHERE suggestion_id=?", ('notice' if row['_result_notice'] else 'card',now(), row['id']))
-    status, message_id, error = 'uncertain', None, None
+        db.execute("UPDATE deliveries SET status='sending',send_kind=?,pushed_at=?,updated_at=? WHERE suggestion_id=?", ('notice' if row['_result_notice'] else 'card',row['_pushed'],now(), row['id']))
+    status, message_id, error, silenced = 'uncertain', None, None, False
     try:
         with store.connect() as db:
             current = db.execute('SELECT status,snoozed_until FROM suggestions WHERE id=?',(row['id'],)).fetchone()
@@ -257,7 +281,7 @@ def deliver_one(store, config, edit_cards=True):
         with store.connect() as db:
             on_telegram = notify.allowed(db, notify.kind_of(row), 'telegram')
         if notify.active():
-            row['_silent'] = True  # the owner is at the dashboard: Telegram arrives without a buzz, and no push goes
+            row['_silent'] = row['_push_silent'] = silenced = True  # the owner is at the dashboard: Telegram arrives without a buzz, and no push goes
         # Off for this kind in Settings, Notifications: a local receipt, as when Telegram is off (the dashboard has it).
         receipt = telegram(config,row,'send') if on_telegram else {'messageId': 'web-' + uuid.uuid4().hex[:12]}
         message_id = receipt.get('messageId') or receipt.get('message_id')
@@ -269,8 +293,12 @@ def deliver_one(store, config, edit_cards=True):
         status, error = 'queued', str(failure)
     except (subprocess.TimeoutExpired, ValueError):
         error = 'delivery_outcome_unknown'
+    push = not row['_quiet'] and not row['_calm'] and not row['_pushed']
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')
+        # Kept before the push goes, with the failure it belongs to: however often Telegram is tried, it goes once
+        pushed = None if status == 'sent' else now() if push and notify.allowed(db, notify.kind_of(row), 'push') else row['_pushed']
+        db.execute('UPDATE deliveries SET pushed_at=? WHERE suggestion_id=?', (pushed, row['id']))
         if row['_result_notice']:
             current=db.execute(shown_rows(db, EDIT_ROWS).replace('WHERE d.needs_edit=1 AND','WHERE')+' AND s.id=?',(row['id'],)).fetchone()
             newer_result=bool(current and (current['body']!=row['body'] or current['preparation_reason']!=row['preparation_reason']
@@ -299,18 +327,15 @@ def deliver_one(store, config, edit_cards=True):
                     # The result/new request arrived during its receipt send. Keep
                     # its distinct notification intent instead of losing it here.
                     db.execute("UPDATE deliveries SET status='queued',reminder=1,error=NULL WHERE suggestion_id=?",(row['id'],))
-    # Optional phone delivery must never delay committing a known Telegram receipt. A batch buzzes once (_silent),
-    # but every card of it reaches the phone, as it reaches Telegram.
-    if status == 'sent' and not row['_quiet'] and not row['_calm']:
-        try:push_notify(store, config, row)
-        except Exception as failure:LOG.warning('push error=%s', type(failure).__name__)
-        try:
-            work = any(a['id'] in json.loads(row.get('account_ids') or '[]') and str(a.get('boundary') or '').startswith('work:') for a in config.get('accounts', []))
-            ready = (row['_result_notice'] or first_result(row)) and row['status'] == 'prepared'
-            lead = row.get('_lead', 'Ready')
-            title = (i18n.t(lead + ': {}', row['title']) if lead else row['title']) if ready else i18n.t('Reminder: {}', row['title']) if shown_as_reminder(row) and not row['_result_notice'] else row['title']
-            hold_mail(store, config, notify.kind_of(row), title, 'suggestion:' + row['id'], work)
+    # Optional phone delivery must never delay committing a known Telegram receipt, nor wait for one: a Telegram message
+    # that failed, or whose outcome isn't known, leaves the push as it is. A batch buzzes once (_silent), but every card
+    # of it reaches the phone, as it reaches Telegram.
+    if not row['_quiet'] and not row['_calm']:
+        try:deliver_mail(store, config, row, status, str(message_id or ''), silenced)
         except Exception as failure:LOG.warning('mail hold error=%s', type(failure).__name__)
+        try:
+            if push:push_notify(store, config, {**row, '_silent': row['_push_silent']})
+        except Exception as failure:LOG.warning('push error=%s', type(failure).__name__)
     quiet = ' quiet=' + row['_calm'] if row['_calm'] else ''  # why no push or email went (notify.calm_reason)
     if row['_result_notice']:
         LOG.info('delivery suggestion=%s notice=1 status=%s error=%s%s',row['id'],status,error,quiet)

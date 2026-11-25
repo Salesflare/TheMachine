@@ -111,6 +111,7 @@ The dashboard opens from the device and then refreshes. Until the first real dat
 - **Typing.** A chat message being typed is kept per to-do (`chat-drafts`, encrypted, saved a moment after typing stops and on leaving the page), so a reload or a lost connection never loses it; sending it clears it.
 - **Unsent messages.** What the owner typed into a message and didn't send is kept as one record (`kept`, encrypted, `dashboard/todos-kept.js`): a new email, any draft in the send dialog (the subject, From, recipients and Ask for changes with it) and a follow-up edited in its review.
   - Only the difference from the draft is kept, saved on each change, for 30 days after the last one and at most 40. Nothing of it goes to the Machine, a log, the address or the cloud. `localStorage` holds only the flag `kept`, so the part loads at once on the next start.
+  - The boxes that ask for a line are in the same record (`data-keep` in the markup, `dashboard/todos-kept-box.js`, its own part): New to-do with its chips, Ask for changes and Answer on a to-do, in its chat and in Go through, the follow-ups' Ask for changes, and an Ask to review's note, edits and comment. A key names the question or the review, so text never moves to another one. The last typed counts, and a box nobody typed in follows. Cancel and Discard drop it, Undo brings it back.
   - Each entry names its message (the to-do, the kind and its place, or the new email's address) and the draft's revision it was typed on. On another revision the Machine's draft shows and the typed text waits beside it. Tabs read before they write under a Web Lock and tell each other, so different text in two tabs stays as two versions.
   - It never sends. Where a draft would go out without opening it (Go through, the follow-ups' Send), one with typed text opens its editor instead.
   - It ends on Discard, when it is sent or saved as a new revision, and when the status shows the message went out from elsewhere. Where nothing can be sealed (a frame, plain http), it lasts while the page is open.
@@ -135,7 +136,8 @@ dashboard in use, the kinds turned off, hidden text.
   Without the robot the app asks the person (`browser` in the answer), and says when none is here (`none=`).
 - **Nothing lost.** Its next look names what it got (`got=`); until then it gets it again, and says it once. Not named
   in 90 seconds, or the robot went quiet before: that computer's browser gets the push after all. Without notifications on in that browser it waits 15 minutes for the
-  robot (its box was open, something was full screen). Phones and other computers get theirs either way.
+  robot (its box was open, something was full screen). Phones and other computers get theirs either way. What it names
+  was shown on a computer: its waiting email goes, except for what's urgent or due today (`notify.reached`).
 
 
 ## Reviews
@@ -287,7 +289,8 @@ same open promise stored twice from before is kept once. Nothing shows up on Tel
   the owner's real work for later with `still_owed` (`{what, due}`), judged by meaning when it writes the draft. After
   the send, `settle_sent` keeps that to-do open (`promises.keep_owed`) instead of Done: due the promised day, nothing
   drafted left on it, and a promise of yours recorded as already carded on it, so the review that reads the sent reply
-  finds it. A reply that does the work closes the to-do as before.
+  finds it. A reply that does the work closes the to-do as before. Until it is sent, a to-do with only such a reply
+  ready reads Needs you with the work still to do (`cards.holding_reply`, in `needs_owner`), never Prepared.
 - **Where you see them:** the To-dos page has a **Promises** list (You promised, Promised to you) with Done and Drop
   for open ones. Every promise link (that list, the Calendar, Open between you on a person, organization or project
   page) opens the promise's own page (`#promise/<id>`, read from `GET /api/promise?id=`): its state, the message it

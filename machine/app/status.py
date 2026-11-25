@@ -18,7 +18,7 @@ import graph
 from machine.app.first_look import FIRST_LOOK_FEW
 from machine.app.setup_card import phone_app_nudge, setup_card
 from machine.browser import browser_link
-from machine.cards import snooze_choices
+from machine.cards import snooze_choices, snooze_due
 from machine.chat import chat_draft
 from machine.config import LOG, WORKSPACE
 from machine.delivery.push import reminder_channels, reviews_start_by_themselves
@@ -26,7 +26,7 @@ from machine import action_basis, names as display_names
 from machine import stamps
 from machine.store.views import STATUS_NARROW, STATUS_QUIET, SYNC_TABLES, status_tables
 from machine.timing import aside
-from machine.sources.connectors import (connector_says, docs_offered, docs_provider, docs_unset, docs_write_offered,
+from machine.sources.connectors import (connector_says, docs_files_offered, docs_offered, docs_provider, docs_unset, docs_write_offered,
                                         reconnect_help, SIGNIN_ONLY)
 from machine.text import clamp
 import message_seal
@@ -424,6 +424,8 @@ class StatusApp:
                 connector['signin'] = fleet.SIGNIN_OF['docs']  # self-hosted: Connect Microsoft documents signs in through the control plane
             if kind and 'edit' not in (connector.get('docs_writes') or ()) and not account.get('shared') and docs_write_offered(self.config, kind):
                 connector['docs_write_signin'] = 'microsoft_docs_write'  # Allow edits: Files.ReadWrite.All, its own consent
+            if kind == 'google' and len(connector.get('docs_files') or ()) < 2 and docs_files_offered(self.config, account):
+                connector['docs_files_signin'] = 'google_docs_files'  # Allow Sheets and Slides: its own consent, only when pressed
             if connector.get('service') == 'teams' and not manage and 'connect_name' in connector:
                 connector['signin'] = fleet.SIGNIN_OF['teams']  # self-hosted: Reconnect is Teams' own Microsoft consent, through the control plane
             if connector.get('service') in SIGNIN_ONLY and not manage and 'connect_name' in connector:
@@ -499,7 +501,11 @@ class StatusApp:
         result['team_learnings'] = self.learnings_view()
         result['security'] = self.security_view()
         for suggestion in result.get('suggestions', []):
-            suggestion['snooze_choices'] = snooze_choices(self.is_work(suggestion.get('account_ids')))
+            work = self.is_work(suggestion.get('account_ids'))
+            suggestion['snooze_choices'] = snooze_choices(work)
+            before = suggestion.get('due') and suggestion.get('status') not in todo_states.CLOSED and snooze_due(suggestion['due'], suggestion.get('due_at'), work)
+            if before:
+                suggestion['snooze_due'] = before
         if getattr(self, 'agents', None):
             try:
                 with self.store.connect() as db:

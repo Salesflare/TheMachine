@@ -279,6 +279,9 @@ class StoreCore:
                 db.execute('ALTER TABLE deliveries ADD COLUMN notification_message_id TEXT')
             if 'send_kind' not in delivery_columns:
                 db.execute("ALTER TABLE deliveries ADD COLUMN send_kind TEXT NOT NULL DEFAULT 'card'")
+            # When the push went for a notification whose Telegram message failed (machine/delivery/deliver.py)
+            if 'pushed_at' not in delivery_columns:
+                db.execute('ALTER TABLE deliveries ADD COLUMN pushed_at TEXT')
             checkpoint_columns = {r['name'] for r in db.execute('PRAGMA table_info(checkpoints)')}
             if 'last_sync_signals' not in checkpoint_columns:
                 db.execute('ALTER TABLE checkpoints ADD COLUMN last_sync_signals INTEGER')

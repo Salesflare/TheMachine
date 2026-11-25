@@ -134,6 +134,13 @@ def allowed_this_week(reset, now_s):
     return min(WEEK_CAP, days * 100 / 7)
 
 
+def full_windows(usage, now_s=None):
+    """The usage windows read as fully used that haven't reset yet."""
+    now_s = time.time() if now_s is None else now_s
+    return [w for p in usage or [] for w in p.get('windows') or []
+            if w.get('used', 0) >= 100 and (w.get('reset') or now_s + 1) > now_s]
+
+
 def limit_until(retry_at, usage, now_s=None):
     """Until when a usage limit a run hit holds: the reset the provider named, else the latest reset of a full window
     (or of any window when none reads full yet), else LIMIT_WAIT from now."""

@@ -86,7 +86,7 @@ async function quickRun(id,action){const run=QUICK_RUN[action],s=state.suggestio
  if(!s||closed(s)||s.status==='snoozed'){chatGo(id);return}
  const done=await decideOrWait(id,[{choice:run[0],feedback:'',...(run[1]?{snooze_option:run[1]}:{})}],run[0]);await refresh();if(done?.waiting)return;
  if(run[0]==='complete'){toast(t('Marked done'),false,id);return}
- toast(t('Snoozed.')+' '+remindBack(done?.snoozed_until).line);const b=make('button',{type:'button','data-quick-undo':id},t('Undo'));$('#toast').append(' ',b);clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),15000)}
+ toast(remindBack(done?.snoozed_until).line);const b=make('button',{type:'button','data-quick-undo':id},t('Undo'));$('#toast').append(' ',b);clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),15000)}
 // Undo of that snooze: back where it was (Unsnooze). Its own attribute: the Snooze dialog's toast has its own Undo
 $('#toast').addEventListener('click',async e=>{const b=e.target.closest('[data-quick-undo]');if(!b)return;b.disabled=true;
  try{await decidePost(b.dataset.quickUndo,{choice:'accept',feedback:'',decision_id:crypto.randomUUID()});await refresh();toast(t('Unsnoozed it'))}catch(err){errCaught(err);toast(err.message,true)}});

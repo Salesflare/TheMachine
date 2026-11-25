@@ -45,6 +45,7 @@ LAZY = {
     'kept': ('todos-kept.css', 'todos-kept.js'),
     'docwrite': ('todos-send-doc.js',),
     'sendlater': ('todos-send-later.js',),
+    'keptbox': ('todos-kept-box.js',),
     'signin': ('connections-signin-dialog.js',),
     'logins': ('connections-logins.css', 'connections-logins.js'),
     'loginimport': ('connections-login-import.css', 'connections-login-import.js'),
@@ -105,6 +106,7 @@ LAZY_WITH = {
     'emailframe': ('msgview',),  # emailOpen waits for it
     'fleet': ('settings', 'connections'),  # fleetView waits for Settings', connectAdd for Connections'
     'kept': ('compose', 'followups'),  # only while their dialogs are open
+    'keptbox': ('kept', 'newtodo'),  # waits for Kept; New to-do's chips only for its own box
 }
 LAZY_RUN = re.compile(r'/\*@lazy\*/\n.*?(?:/\*@eager\*/\n|\Z)', re.S)
 FENCE = re.compile(r'/\*@(?:lazy|eager)\*/\n')

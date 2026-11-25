@@ -377,6 +377,15 @@ class Preparation(unittest.TestCase):
         view=self.view(self.sid)
         self.assertEqual((view['preparation_status'],view['preparation_questions']),('queued',[]))
 
+    def test_a_question_that_says_tomorrow_names_the_day(self):
+        self.accept();self.app.preparation_step(lambda r:{'status':'admitted'})
+        with patch_everywhere(timeutil,'now',return_value='2026-10-16T09:00:00+00:00'):
+            self.app.action('preparation_blocked',{'suggestion_id':self.sid,'job_id':self.job()['job_id'],'reason':'They want an answer before tomorrow.',
+                                                   'questions':[{'question':'Can you make it tomorrow?','options':['Yes','No']}]})
+        view=self.view(self.sid)
+        self.assertEqual(view['preparation_reason'],'They want an answer before Sat, Oct 17.')
+        self.assertEqual(view['preparation_questions'],[{'question':'Can you make it Sat, Oct 17?','options':['Yes','No']}])
+
     def test_a_run_whose_blocker_was_saved_then_canceled_is_asked_how_it_ended_not_stopped(self):
         sid,job=self.ahead_blocked()
         with self.store.connect() as db:  # as settle_ahead left it before
@@ -487,9 +496,9 @@ class Preparation(unittest.TestCase):
         self.assertNotIn("security, permission, OAuth or credential changes",prompt)
 
     def test_longest_prompt_fits_the_runner_limit(self):
-        # The runner refuses longer prompts, and the service can only see that as "OpenClaw unavailable" (2026-10-13).
+        # The runner refuses longer prompts (2026-10-13).
         self.accept();job=dict(self.job(),next_step='x'*2000)
-        limit=int(__import__('re').search(r'message\.length>(\d+)',(machine_config.ROOT/'preparation-run.mjs').read_text())[1])
+        limit=int(__import__('re').search(r'message\)\.length>(\d+)',(machine_config.ROOT/'preparation-run.mjs').read_text())[1])
         self.assertLess(len(machine_app_preparation.preparation_prompt(job,'- '+'f'*3000+'\n…')),limit-2000)
         self.assertLess(len(machine_app_preparation.preparation_prompt({**job,'ahead':True},'- '+'f'*3000+'\n…',None,'- '+'e'*4500)),limit-2000)
         # The plugin's contextFile shortens anything longer, so the rules must fit whole.
@@ -573,7 +582,7 @@ class Preparation(unittest.TestCase):
         self.assertEqual(self.job()['status'],'running')  # not past a deadline counted from before the outage
 
     def test_a_start_that_fails_otherwise_keeps_its_deadline(self):
-        # Unavailable without offline (a timeout, a refused prompt): not proof the Gateway is down, so the deadline holds
+        # Unavailable without offline (a timeout, a refusal by the Gateway): not proof the Gateway is down, so the deadline holds
         self.accept()
         self.app.preparation_step(lambda r:{'status':'unavailable'})
         with self.store.connect() as db:db.execute("UPDATE preparations SET started_at='2000-01-01T00:00:00+00:00',retry_at=NULL")
@@ -856,7 +865,8 @@ class Preparation(unittest.TestCase):
         self.assertEqual([c['action'] for c in calls],['stop']);self.assertEqual(self.job()['status'],'blocked')  # not confirmed yet
         with self.store.connect() as db:db.execute('UPDATE preparation_runs SET retry_at=NULL')
         calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'lost' if r['action']=='stop' else 'admitted'})
-        self.assertEqual([c['action'] for c in calls],['stop']);self.assertEqual(self.job()['status'],'queued')  # after a pause
+        # nothing ran any more: asked once how it ended, then tried again after a pause
+        self.assertEqual([c['action'] for c in calls],['stop','status']);self.assertEqual(self.job()['status'],'queued')
         with self.store.connect() as db:db.execute('UPDATE preparations SET retry_at=NULL')
         calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
         self.assertEqual([c['action'] for c in calls],['start']);self.assertNotEqual(self.job()['job_id'],first)

@@ -108,10 +108,25 @@ assert.equal(r.result.silent_end,undefined);
     ['Claude AI usage limit reached|'+(t0+3600),v=>v===t0+3600],
     ['You have hit your limit, try again in 2h 30m',v=>Math.abs(v-(t0+9000))<5],
     ['Provider openai is in cooldown',v=>v===undefined],
+    // ChatGPT's own words over HTTP, as OpenClaw 2026.11.2 passes them on
+    ['\u26a0\ufe0f You have hit your ChatGPT usage limit (plus plan). Try again in ~2580 min.',v=>Math.abs(v-(t0+2580*60))<5],
+    ['\u26a0\ufe0f You have hit your ChatGPT usage limit (plus plan). Try again in ~2580 min.; Retry-After: 154800 seconds',v=>Math.abs(v-(t0+2580*60))<5],
   ]){
     r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:text}]);
     assert.equal(r.result.error,'usage_limited');assert.equal(r.result.error_phase,'model');
     assert.ok(check(r.result.retry_at),text);assert.ok(!JSON.stringify(r.result).includes('private'));
+  }
+}
+// What OpenClaw 2026.11.2 says instead of the limit itself (2026-11-25: unclassified, and a to-do stopped): its rewritten
+// rate limit (ChatGPT's "Codex error: The usage limit has been reached" over its WebSocket, or a 429 without plan or
+// reset), all sign-ins resting, a limit the Codex account doesn't report. Which limit it was is the service's to read.
+for(const text of ['\u26a0\ufe0f The AI service needs a short break. Please try again in a few minutes.',
+    '\u26a0\ufe0f The AI service needs a short break. Please try again in ~60 min.',
+    'openai is asking us to slow down. Please wait a moment before trying again.',
+    'Codex rejected the request with a usage-limit error, but its current account usage does not report an exhausted limit. Retry the request.']){
+  for(const kind of ['review','preparation','profile','skills','routine']){
+    r=await run({kind,job_id:id,action:'status'},[{status:'error',error:text},{ok:true}]);
+    assert.deepEqual(r.result,{run_id:id,status:'error',error:'rate_limited',error_phase:'model'});
   }
 }
 // Background work can name a cheaper model; anything malformed is dropped.
@@ -162,6 +177,21 @@ r=await run({kind:'preparation',job_id:id,action:'stop'},[{ok:true,status:'no-ac
 assert.equal(r.result.status,'lost');assert.equal(r.calls[0].args.key,'agent:main:assistant-review-preparation-'+id);assert.equal(r.calls[0].args.runId,id);
 await assert.rejects(()=>run({kind:'other',job_id:id,action:'stop'},[]));
 console.log('Exact-run recovery, wait-only timeout, cancellation proof and admission idempotency passed.');
+// A start that can never succeed is over as what it is, before any Gateway call (2026-11-24: one too long was retried as
+// "unavailable" until the deadline). Characters, as the service counts them: an emoji is one.
+for(const kind of ['preparation','review','profile','skills','routine']){
+  r=await run({kind,job_id:id,action:'start',message:'x'.repeat(60001)},[]);
+  assert.deepEqual([r.result,r.calls],[{run_id:id,status:'error',error:'prompt_too_long',error_phase:'runtime'},[]]);
+  for(const message of ['\u{1F600}'.repeat(60000),'x'.repeat(60000)]){
+    r=await run({kind,job_id:id,action:'start',message},[{runId:id}]);assert.equal(r.result.status,'admitted');
+  }
+  for(const message of [undefined,' ']){
+    r=await run({kind,job_id:id,action:'start',message},[]);
+    assert.deepEqual([r.result,r.calls],[{run_id:id,status:'error',error:'invalid_request',error_phase:'runtime'},[]]);
+  }
+}
+r=await run({kind:'preparation',job_id:id,action:'start',message:'Work',attachments:[{type:'image',mimeType:'text/html',fileName:'a',content:''}]},[]);
+assert.deepEqual([r.result,r.calls],[{run_id:id,status:'error',error:'invalid_attachments',error_phase:'runtime'},[]]);
 // Fast (chat_model.py): the session's speed is set right before a to-do chat's turn; OpenClaw sends each provider's own
 // fast option. Back to standard for the next turn of a session that ran fast: when that fails, nothing starts, so
 // background work never runs fast. A failed "fast" leaves the turn at standard speed.
@@ -182,14 +212,14 @@ console.log('Exact-run recovery, wait-only timeout, cancellation proof and admis
   assert.deepEqual(r.calls.map(c=>c.method),['agent']);
 }
 // A start that can't reach the Gateway at all (down after a reboot) says so: the service waits for it without a
-// deadline (2026-11-02). A timeout or refusal is not proof it is down and says nothing more.
+// deadline (2026-11-02). A timeout or refusal is not proof it is down: it says only its fixed code, for the log.
 for(const down of [new Error('connect ECONNREFUSED 127.0.0.1:18789'),new Error('gateway closed (1006): ')]){
   r=await run({kind:'preparation',job_id:id,action:'start',message:'Work'},[down]);
   assert.deepEqual(r.result,{run_id:id,status:'unavailable',reason:'offline'});
 }
-for(const other of [new Error('gateway timeout after 15000ms'),refusal]){
+for(const [other,why] of [[new Error('gateway timeout after 15000ms'),'timeout'],[refusal,'refused'],[new Error('private words'),'other']]){
   r=await run({kind:'preparation',job_id:id,action:'start',message:'Work'},[other,{status:'pending'},new Error('later')]);
-  assert.equal(r.result.status,'unavailable');assert.equal(r.result.reason,undefined);
+  assert.equal(r.result.status,'unavailable');assert.equal(r.result.reason,why);assert.ok(!JSON.stringify(r.result).includes('private'));
 }
 // A to-do's chat left alone past OpenClaw's retention is archived, and the Gateway refuses new work in it. A new signal
 // reopening the to-do weeks later restores the chat and starts the turn, instead of being refused every minute while the
@@ -218,7 +248,7 @@ for(const other of [new Error('gateway timeout after 15000ms'),refusal]){
     assert.deepEqual(r.result,{run_id:id,status:'unavailable',reason:'offline'});
   }
   r=await run(msg,[archived(),row,{ok:true},new Error('gateway timeout after 20000ms')]);  // may have been admitted: keeps its key
-  assert.deepEqual(r.result,{run_id:id,status:'unavailable'});
+  assert.deepEqual(r.result,{run_id:id,status:'unavailable',reason:'timeout'});
   r=await run(msg,[Object.assign(new Error('archived'),{name:'GatewayClientRequestError'})]);  // other text: no restore
   assert.deepEqual(r.calls.map(c=>c.method),['agent']);assert.equal(r.result.status,'unavailable');
 }

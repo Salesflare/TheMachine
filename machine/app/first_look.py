@@ -185,7 +185,8 @@ class FirstLookApp:
             found = model_check.last(db) or {}
             failed = found.get('model') == main_model() and found.get('ok') is False
             return {**out, 'state': 'waiting', 'why': 'model_check',
-                    **({'error': found.get('error') or '', 'checked_at': found.get('at')} if failed else {})}
+                    **({'error': found.get('error') or '', 'checked_at': found.get('at'),
+                        **model_check.plan_note(found, getattr(self, 'model_status', None))} if failed else {})}
         if not quick_done and sources:
             recent = db.execute(f'SELECT count(*) FROM events WHERE analyzed_version<version AND deferrals<? AND occurred_at>=? AND account_id IN ({marks})',
                                 (SET_ASIDE_AFTER, (current - dt.timedelta(hours=QUICK_LOOK_HOURS)).isoformat(), *sources)).fetchone()[0]

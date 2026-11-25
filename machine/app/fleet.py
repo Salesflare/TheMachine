@@ -168,27 +168,31 @@ class FleetApp:
         return push or mail or (telegram_on(self.config) and self.notify_on('result', 'telegram'))
 
     def fleet_notify(self, rows):
-        """Questions waiting for the owner: a phone notification, an email if still unanswered and unseen later, and a
-        Telegram message with quick buttons when Telegram is on. A teammate's handoff gets an email only when neither a
-        phone nor Telegram reaches the owner, one of its own (hold_handoff). Returns the Telegram message id, which binds those
-        buttons to these questions."""
-        fleet_push(self.store, self.config, rows)
-        pings = None
+        """Questions waiting for the owner: a phone notification, a Telegram message with quick buttons when Telegram is
+        on, and an email if neither reached them (notify.reached) and it is still unanswered and unseen later. A
+        teammate's handoff gets an email only when neither a phone nor Telegram reaches the owner, one of its own
+        (hold_handoff). Returns the Telegram message id, which binds those buttons to these questions."""
+        pings, tag = None, 'fleet-' + rows[0]['id']  # what arrived together goes as one notification (fleet.push_payload)
         for row in rows:
             try:
                 if row['kind'] != 'handoff':
-                    hold_mail(self.store, self.config, 'result', fleet.asks_line(row), 'fleet:' + row['id'], True)
+                    hold_mail(self.store, self.config, 'result', fleet.asks_line(row), 'fleet:' + row['id'], True, tag=tag)
                     continue
                 pings = self.fleet_pings() if pings is None else pings
                 if not pings:  # a teammate's handoff and nothing else reaches the owner: its own email
                     hold_handoff(self.store, self.config, row)
             except Exception as error:  # noqa: BLE001 - the notification goes on without its email
                 LOG.warning('fleet mail hold error=%s', type(error).__name__)
+        fleet_push(self.store, self.config, rows)
         if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
         result = fleet_telegram(self.config, fleet.telegram_message(rows, dashboard_link(self.config)))
         message_id = str(result.get('messageId') or '')
-        return message_id if re.fullmatch(r'\d+', message_id) else None
+        if not re.fullmatch(r'\d+', message_id):
+            return None
+        with self.store.connect() as db:
+            notify.reached(db, tag, 'telegram')
+        return message_id
 
     def fleet_pings(self):
         """A Fleet question reaches the owner on their phone or in Telegram: an app to push to with push on for

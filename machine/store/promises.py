@@ -312,8 +312,8 @@ def keep_owed(db, row, action, job_id, stamp, digest_at='08:30'):
         said = locale_prefs.day_text(dt.datetime.fromisoformat(stamp).astimezone(local_tz()))
         body = i18n.t('Replied to {} on {}. The work is still to do.', who, said)[:700]
     # The draft went out: what it followed (based_on) goes with it, the work left is the to-do's own
-    db.execute("UPDATE suggestions SET due=?,body=?,based_on=NULL,next_action=NULL,outcome=NULL,handled_hint=NULL,early=0,snoozed_until=NULL,"
-               'resume_status=NULL,undo_until=NULL,deliver_after=NULL,feedback_until=NULL WHERE id=?', (due, body, row['id']))
+    db.execute("UPDATE suggestions SET due_at=CASE WHEN due=? THEN due_at END,due=?,body=?,based_on=NULL,next_action=NULL,outcome=NULL,handled_hint=NULL,early=0,snoozed_until=NULL,"
+               'resume_status=NULL,undo_until=NULL,deliver_after=NULL,feedback_until=NULL WHERE id=?', (due, due, body, row['id']))
     todo_moves.transition(db, row['id'], todo_states.PENDING, 'still_owed', at=stamp)
     db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                (OWED_PREFIX + job_id, row['id'], 'update', '', 'assistant', stamp))
@@ -507,7 +507,7 @@ class PromisesStore:
         ids = json.loads(card['event_ids'] or '[]')
         if event_id is not None and event_id not in ids:
             ids = [event_id] + ids
-        db.execute('UPDATE suggestions SET due=?,event_ids=? WHERE id=?', (due, encoded(ids), card['id']))
+        db.execute('UPDATE suggestions SET due_at=CASE WHEN due=? THEN due_at END,due=?,event_ids=? WHERE id=?', (due, due, encoded(ids), card['id']))
         old_body, new_body = (promise_text(promise_who_named(db, {**row, 'due': d}))[1][:700] for d in (row['due'], due))
         if card['body'] == old_body:  # still the line it was made with: "Promised on ... for <the old date>"
             db.execute('UPDATE suggestions SET body=? WHERE id=?', (new_body, card['id']))
@@ -750,7 +750,7 @@ class PromisesStore:
                 m = json.loads(row['metadata'])
                 if 'SENT' not in m.get('labels', []) and not row['mine']:
                     sender = _address(m.get('from'))
-                    to = [x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', m.get('to') or '')]
+                    to = [x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', mail_senders.to_text(m))]
                     automated = AUTOMATED_LABELS & set(m.get('labels', []))
                     if not sender or sender in own or robot.match(sender) or automated or not own & set(to) or len(to) > 2:
                         continue
@@ -759,7 +759,7 @@ class PromisesStore:
                         continue
                     found['asked'].append((row, sender))
                 elif row['mine']:
-                    to = [x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', m.get('to') or '')]
+                    to = [x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', mail_senders.to_text(m))]
                     people = [x for x in to if x not in own and not robot.match(x)]
                     # Not outreach: in a thread the other person started, or to someone who had
                     # written to the owner before the owner started this thread.

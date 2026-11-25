@@ -1,120 +1,137 @@
 ---
 title: Kalender
 area: calendar
-summary: Die kommende Woche auf einen Blick: Termine, fällige Aufgaben, zurückgestellte Aufgaben und Versprechen.
+summary: Die kommende Woche an einem Ort: Meetings, fällige Aufgaben, zurückgestellte Aufgaben und Versprechen.
 covers: tab:calendar
 code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py, trip_notes.py, event_notes.py, bookings.py
 order: 1
-translated: 9f38e3718f3e8639
+translated: 9b7475608bb04e5c
 ---
 ## Was angezeigt wird
 
 Deine Tage ab heute mit:
 
-- Terminen aus den Kalendern, die du verbunden hast,
-- an diesem Tag fälligen Aufgaben und zurückgestellten Aufgaben an dem Tag, an dem sie wieder angezeigt werden,
+- Meetings aus den Kalendern, die du verbunden hast,
+- Aufgaben, die an diesem Tag fällig sind, und zurückgestellten Aufgaben an dem Tag, an dem sie wieder anstehen,
 - Nachfragen zu übergebener Arbeit,
 - Versprechen mit einem Datum,
-- [Reisen und Veranstaltungen](calendar.md#trips-and-events) aus deinen Buchungs- und Ticketmails.
+- [Reisen und Veranstaltungen](calendar.md#trips-and-events) aus Buchungs- und Ticketmails.
 
-Ein Termin in zwei Kalendern wird nur einmal angezeigt. Ein Kalender, den jemand mit dir geteilt hat, zeigt die Termine der Person dezent mit ihrem Vornamen an. Daraus entstehen nie Aufgaben. Ganztägige und mehrtägige Termine werden an jedem Tag, den sie umfassen, als ganztägig angezeigt. In der Agenda steht eine Reise an jedem ihrer Tage ganz oben. In Woche und Monat wird sie als ein Balken über ihre Tage angezeigt, zum Beispiel „Reise nach Lissabon“.
+Ein Meeting, das in zwei Kalendern steht, wird nur einmal angezeigt. Ein Kalender, den jemand mit dir geteilt hat, zeigt die Termine der Person ausgegraut und mit ihrem Vornamen an. Daraus entstehen nie Aufgaben. Ganztägige und mehrtägige Termine werden an jedem betreffenden Tag als ganztägig angezeigt. In der Agenda steht eine Reise an jedem ihrer Tage ganz oben. In Woche und Monat wird sie als durchgehender Balken über ihre Tage angezeigt, zum Beispiel „Reise nach Lissabon“.
 
-Ein gemeinsamer Plan ist ein Versprechen, gekennzeichnet mit „Mit“ und dem Namen der anderen Person. Ein Versprechen zu einem Termin an diesem Tag mit derselben Person steht in der Zeile des Termins.
+Ein gemeinsamer Plan ist ein Versprechen, das mit „Mit“ und dem Namen der anderen Person gekennzeichnet ist. Ein Versprechen zu einem Meeting an diesem Tag mit derselben Person steht in der Zeile des Meetings.
 
-**Überfällig** steht ganz oben. Bei einem Termin mit einer offenen Aufgabe wird deren Status angezeigt: **Vorbereitung bereit**, **Wird vorbereitet** oder **Aufgabe**. Eine Aufgabe, die offenbar erledigt ist (du hast bereits geantwortet oder ihr Durchlauf hat ergeben, dass sie erledigt ist), wird nicht als **Fällig** angezeigt.
+**Überfällig** steht ganz oben. Bei einem Meeting mit einer offenen Aufgabe wird deren Status angezeigt: **Vorbereitung bereit**, **Wird vorbereitet** oder **Aufgabe**. Eine Aufgabe, die erledigt aussieht, weil du bereits geantwortet hast oder ihre Ausführung sie als erledigt erkannt hat, wird nicht als **Fällig** angezeigt.
 
 ## Agenda, Woche oder Monat
 
-- **Agenda** zeigt jeden Tag einzeln an. Scrolle nach unten zu späteren Tagen oder nach oben (oder wähle **Frühere Tage anzeigen**) zu früheren Tagen. Die Agenda reicht bis eine Woche vor dem Verbinden deines Kalenders zurück. Oben steht, ab welchem Tag sie beginnt. Sobald der [Verlauf](history.md) geladen ist, reicht sie etwa ein Jahr zurück.
-- **Woche** zeigt eine Ansicht von Montag bis Sonntag. Auf dem Handy werden drei Tage angezeigt.
-- **Monat** zeigt den ganzen Monat. Auf einem Computer werden bis zu drei Einträge pro Tag angezeigt. Auf dem Handy siehst du Punkte. Tippe auf einen Tag, um seine Einträge anzusehen.
+- **Agenda** listet die einzelnen Tage auf. Scrolle nach unten zu späteren Tagen oder nach oben beziehungsweise über **Frühere Tage anzeigen** zu früheren Tagen. Die Ansicht reicht bis eine Woche vor dem Verbinden deines Kalenders zurück. Oben steht, ab welchem Tag sie beginnt. Sobald dein [Verlauf](history.md) geladen ist, reicht sie etwa ein Jahr zurück.
+- **Woche** zeigt eine Übersicht von Montag bis Sonntag. Auf dem Handy werden drei Tage angezeigt.
+- **Monat** zeigt den ganzen Monat. Auf dem Computer werden pro Tag bis zu drei Einträge angezeigt. Auf dem Handy siehst du Punkte. Tippe auf einen Tag, um seine Einträge aufzurufen.
 
-Mit **Heute**, ‹ und › oben wechselst du zwischen Wochen oder Monaten. Deine Auswahl wird auf diesem Gerät gespeichert.
+Mit **Heute**, ‹ und › oben wechselst du zwischen Wochen oder Monaten. Die ausgewählte Ansicht wird auf diesem Gerät gespeichert.
 
-In der Wochenansicht stehen Termine zur selben Uhrzeit nebeneinander, sodass jeder lesbar bleibt. Weitere Termine werden als **+N** angezeigt. Tippe darauf, um den Tag in der Agenda zu öffnen.
+In der Wochenübersicht stehen Termine zur selben Zeit nebeneinander, bleiben aber lesbar. Die übrigen werden als **+N** angezeigt. Tippe darauf, um den Tag in der Agenda zu öffnen.
 
 ## Etwas öffnen
 
-Klicke auf eine Zeile, um den Chat zur Aufgabe, das Versprechen, die Reise oder Veranstaltung oder den Termin zu öffnen. Bei einem Termin, den du hier nicht ändern kannst, etwa weil er jemand anderem gehört oder Gäste hat, werden die Details angezeigt: wann, wo und wer. Personen, die dein Graph kennt, sowie die Organisationen und Projekte des Termins sind mit ihren Seiten verlinkt. **In Google Kalender öffnen** (oder **In Outlook öffnen**) darunter öffnet den Termin dort. Das Ansehen ändert nichts.
+Klicke auf eine Zeile, um den Chat zur Aufgabe, das Versprechen, die Reise oder Veranstaltung oder das Meeting zu öffnen. Bei einem Meeting, das du hier nicht ändern kannst, etwa dem Termin einer anderen Person oder einem Meeting mit Gästen, werden die Details angezeigt: wann, wo und wer. Personen, die dein Graph kennt, sowie die Organisationen und Projekte, zu denen das Meeting gehört, sind mit ihren Seiten verlinkt. Über **In Google Calendar öffnen** (oder **In Outlook öffnen**) darunter öffnest du den Termin dort. Beim Ansehen wird nichts geändert.
 
-Ein für einen Termin gebuchter Besprechungsraum wird unter dem Ort angezeigt, nie als Person oder in deinem Graph.
+Ein für ein Meeting gebuchter Besprechungsraum wird unter „Wo“ angezeigt, nie als Person oder in deinem Graph.
 
-Ein Link zu einem Termin wird mit dem jeweiligen Dienst angezeigt, etwa Zoom, Google Meet oder Teams, oder als **Videoanruf**. Öffne den Termin, um teilzunehmen.
+Ein Meeting-Link wird mit dem jeweiligen Dienst angezeigt, zum Beispiel Zoom, Google Meet oder Teams, oder als **Videoanruf**. Öffne das Meeting, um teilzunehmen.
 
 ## Reisen und Veranstaltungen
 
-Wenn eine Flug-, Hotel-, Ferienhaus-, Zug-, Bus-, Fähr-, Mietwagen-, Taxi- oder Flughafenparkplatzbuchung in deinen Mails eingeht, fügt deine Machine sie einer Reise hinzu. Buchungen für dieselbe Reise werden zu einer Reise zusammengefasst, egal in welchem deiner Postfächer sie eingehen: der Zug zum Flughafen, die Flüge, das Auto, die Unterkunft und die Rückreise. Buchungen werden zusammengefügt, wenn sich ihre Tage überschneiden oder eine direkt auf die andere folgt.
+Wenn eine Flug-, Hotel-, Ferienhaus-, Zug-, Bus-, Fähr-, Mietwagen-, Taxi- oder Flughafenparkplatzbuchung in deinen Mails eingeht, fügt deine Machine sie einer Reise hinzu. Buchungen für dieselbe Reise werden einer Reise zugeordnet, unabhängig davon, aus welchem deiner Postfächer sie stammen: die Fahrt zum Flughafen, Flüge, Mietwagen, Unterkunft und Rückreise. Buchungen werden zusammengeführt, wenn sich ihre Tage überschneiden oder eine dort endet, wo die nächste beginnt.
 
-Die Reise wird als ein Balken über ihre Tage angezeigt. Öffne sie, um die einzelnen Buchungen in zeitlicher Reihenfolge mit Uhrzeit, Adresse, Buchungscode und Sitzplatz zu sehen.
+Die Reise wird über ihre Tage als ein Balken angezeigt. Öffne ihn, um alle Buchungen in zeitlicher Reihenfolge mit Uhrzeiten, Adresse, Buchungscode und Sitzplatz zu sehen.
 
-Tickets für ein Konzert, ein Spiel, ein Festival oder eine Konferenz ergeben eine Veranstaltung mit Ort, Buchungscode, Sitzplatz und Anzahl der Tickets. Eine zweite Bestellung für dieselbe Veranstaltung wird derselben Veranstaltung hinzugefügt. Eine Veranstaltung, die über dein Arbeitskonto gebucht wurde, ist geschäftlich, andernfalls privat. Tickets für etwas, das während einer Reise stattfindet, werden stattdessen der Reise hinzugefügt.
+Tickets für ein Konzert, ein Spiel, ein Festival oder eine Konferenz ergeben jeweils eine Veranstaltung mit Ort, Buchungscode, Sitzplatz und Anzahl der Tickets. Eine weitere Bestellung für dieselbe Veranstaltung wird hinzugefügt. Eine Veranstaltung, die über dein geschäftliches Postfach gebucht wurde, ist „Arbeit“, andernfalls „Privat“. Tickets für etwas, das während einer Reise stattfindet, werden stattdessen der Reise hinzugefügt.
 
-Bei einer bevorstehenden Reise zeigt deine Machine, was noch fehlt, zum Beispiel **Keine Unterkunft für 2 Nächte gebucht** oder dass keine Fahrt vom Flughafen zum Hotel gebucht ist. Diese Zeilen sind dezent dargestellt und mit **Keine Buchung** gekennzeichnet. Bei einer Reise ganz ohne Unterkunft werden keine Angaben zu Übernachtungen angezeigt.
+Bei einer bevorstehenden Reise weist deine Machine auf fehlende Buchungen hin, zum Beispiel **Für 2 Nächte keine Unterkunft gebucht** oder auf eine fehlende Fahrt vom Flughafen zum Hotel. Diese Zeilen werden ausgegraut und mit **Keine Buchung** gekennzeichnet. Bei einer Reise ganz ohne Unterkunft gibt es keinen Hinweis zu Nächten.
 
-- In jeder Zeile steht, von wem die Buchung stammt, zum Beispiel **Von Example Tickets**. Klicke darauf, um die Mail zu öffnen.
-- Wenn aus der Mail eine Aufgabe entstanden ist, etwa die Tickets zu bezahlen, wird sie über **Aufgabe öffnen** angezeigt.
-- Bei einer geänderten Buchung wird die Zeile aktualisiert. Eine stornierte Buchung wird entfernt. Wenn alle Buchungen storniert sind, wird auch die Reise oder Veranstaltung entfernt.
-- Eine Buchung für jemand anderen, etwa der Flug einer Kollegin, den sie dir weitergeleitet hat, wird nicht zu deinen Reisen hinzugefügt.
+- In jeder Zeile steht, woher die Buchung stammt, zum Beispiel **Von Example Tickets**. Öffne die Zeile, um die Mail aufzurufen.
+- Wenn aus der Mail eine Aufgabe entstanden ist, zum Beispiel die Tickets zu bezahlen, wird sie über **Aufgabe öffnen** angezeigt.
+- Eine geänderte Buchung aktualisiert ihre Zeile. Eine stornierte Buchung wird entfernt. Wenn alle Buchungen storniert sind, wird auch die Reise oder Veranstaltung entfernt.
+- Eine Buchung für jemand anderen, zum Beispiel der Flug einer Kollegin, der an dich weitergeleitet wurde, erscheint nicht bei deinen Reisen.
 
-Die meisten Bestätigungen enthalten Details in einem Format, das deine Machine ohne KI lesen kann. Bei Bestätigungen, die das nicht tun, etwa weitergeleiteten Mails oder von kleinen Buchungsseiten, liest dein [Modell](model.md) die Mail im Hintergrund, ein paar auf einmal. Wenn du dich deinem Nutzungslimit näherst, wartet es. Buchungsmails aus dem Jahr des [Verlaufs](history.md), den deine Machine speichert, werden im Hintergrund gelesen, sobald der Verlauf geladen ist.
+Die meisten Bestätigungen enthalten ihre Details in einem Format, das deine Machine ohne KI auslesen kann. Bei Bestätigungen, die das nicht tun, zum Beispiel weitergeleiteten Mails oder von einer kleinen Buchungsseite, liest dein [Modell](model.md) die Mail im Hintergrund. Es verarbeitet jeweils einige Mails und wartet, wenn du dich deinem Nutzungslimit näherst. Buchungsmails aus dem Jahr deines [Verlaufs](history.md), das deine Machine speichert, werden im Hintergrund gelesen, sobald der Verlauf geladen ist.
 
-## Besprechungsnotizen und Transkript
+## Meeting-Notizen und Transkript
 
-Die Details eines Termins bestehen aus zwei Teilen. **Notizen** sind die Zusammenfassung: Entscheidungen und Aufgaben. Das **Transkript** enthält Wort für Wort, was gesagt wurde. Es ist zunächst eingeklappt und zeigt an, wie lange es ist. Mit **Anzeigen** wird es geöffnet.
+Die Details eines Meetings bestehen aus zwei Teilen. **Notizen** sind die Zusammenfassung mit Entscheidungen und Aufgaben. Das **Transkript** enthält Wort für Wort, was gesagt wurde. Es ist zunächst eingeklappt und zeigt an, wie lange es ist. Über **Anzeigen** öffnest du es.
 
 Wenn die Inhalte nicht geladen werden, versucht es etwa eine halbe Minute lang automatisch erneut. Tippe danach auf **Erneut versuchen**.
 
-Für beide gibt es eigene Optionen zum **Notizen hinzufügen** und **Transkript hinzufügen**, außerdem **Datei hochladen** für Markdown- oder Textdateien sowie **Bearbeiten** und **Entfernen** (zweimal tippen). Was du einem Teil hinzufügst, bleibt dort. Bei einem Termin, den du ändern kannst, öffnet **Notizen** unter dem Formular die Notizen.
+Für Notizen und Transkript gibt es jeweils **Notizen hinzufügen** oder **Transkript hinzufügen**, **Datei hochladen** für eine Markdown- oder Textdatei, **Bearbeiten** und **Entfernen** (zweimal tippen). Was du zu einem Teil hinzufügst, bleibt dort. Bei einem Meeting, das du ändern kannst, öffnet **Notizen** unter dem Formular die Notizen.
 
-Wenn [Zoom](zoom.md), [Google Meet](google-meet.md) oder [Granola](granola.md) verbunden ist, werden dessen Notizen unter „Notizen“ und das Transkript unter „Transkript“ angezeigt, gekennzeichnet mit **Von Zoom**, **Von Google Meet** oder **Von Granola**. Sie ersetzen nie etwas, das du hinzugefügt hast. Wenn beides vorhanden ist, wird beides angezeigt.
+Wenn [Zoom](zoom.md), [Google Meet](google-meet.md) oder [Granola](granola.md) verbunden ist, werden die Notizen unter „Notizen“ und das Transkript unter „Transkript“ angezeigt. Sie sind mit **Von Zoom**, **Von Google Meet** oder **Von Granola** gekennzeichnet. Sie ersetzen nie Inhalte, die du hinzugefügt hast. Wenn beides vorhanden ist, wird beides angezeigt.
 
-Notizen können auch im Kalendereintrag des Termins selbst stehen, nachdem er begonnen hat, oder per Mail von Zoom oder Gemini eingehen. Nach dem Termin erstellt The Machine daraus nur bei klaren nächsten Schritten Aufgaben. Wenn dieselben Notizen auf zwei Wegen eingehen, entsteht eine Aufgabe mit dem Termin als Quelle: „Quelle: Notizen aus“ dem Termin.
+Notizen können auch im Kalendereintrag des Meetings selbst enthalten sein, nachdem es begonnen hat, oder per Mail von Zoom oder Gemini eingehen. Nach dem Meeting erstellt The Machine daraus nur dann Aufgaben, wenn sich daraus klare nächste Schritte ergeben. Wenn dieselben Notizen auf zwei Wegen eingehen, entsteht nur eine Aufgabe. Als Quelle steht das Meeting dort mit dem Hinweis „Quelle: Notizen von“ dem Meeting.
 
-Bei einem Termin mit Transkript, aber ohne Notizen, gibt es die Option **Notizen erstellen**. The Machine erstellt anhand des Transkripts eine kurze Zusammenfassung, Entscheidungen und Aufgaben samt Zuständigkeiten in der Sprache des Termins.
+Bei einem Meeting mit Transkript, aber ohne Notizen, gibt es **Notizen erstellen**. The Machine erstellt sie aus dem Transkript: eine kurze Zusammenfassung, Entscheidungen und Aufgaben mit den jeweils zuständigen Personen, und zwar in der Sprache des Meetings.
 
-Dabei wird **Notizen werden geschrieben…** angezeigt. Der Vorgang läuft weiter, wenn du den Termin schließt. Bei einem langen Transkript dauert es ein paar Minuten und verwendet dein eigenes Modell. Die Notizen sind mit **Von The Machine geschrieben** gekennzeichnet und ersetzen nie Notizen, die du hinzugefügt hast.
+Die Anzeige **Notizen werden geschrieben…** erscheint. Der Vorgang läuft weiter, wenn du das Meeting schließt. Bei einem langen Meeting dauert es mit deinem eigenen Modell einige Minuten. Die Notizen sind mit **Von The Machine geschrieben** gekennzeichnet und ersetzen nie Notizen, die du hinzugefügt hast.
 
-The Machine kann die Notizen auch hinzufügen. Bitte sie in einer Aufgabe darum, zum Beispiel „Füge dieses Transkript dem heutigen Team-Meeting hinzu“. Ein Transkript wird unter „Transkript“ und eine Zusammenfassung unter „Notizen“ abgelegt. Bei einem Termin mit solchen Inhalten wird im Kalender **Notizen** oder **Transkript** angezeigt.
+The Machine kann die Notizen auch hinzufügen. Bitte sie in einer Aufgabe darum, zum Beispiel mit „Füge das Transkript zum heutigen Board-Meeting hinzu“. Ein Transkript wird unter „Transkript“ und eine Zusammenfassung unter „Notizen“ abgelegt. Bei einem Meeting mit Notizen oder Transkript wird im Kalender **Notizen** oder **Transkript** angezeigt.
 
-The Machine liest beides, um Nachfassaufgaben für den Termin zu finden. Sie sind geschäftlich oder privat, je nachdem, wie der Termin eingestuft ist, und werden nur dann mit deinem Team geteilt, wenn auch der Termin geteilt wird.
+The Machine liest beides aus, um Nachfassaufgaben zum Meeting zu erstellen. Sie sind wie das Meeting „Arbeit“ oder „Privat“ und werden nur dann mit deinem Team geteilt, wenn auch das Meeting geteilt wird.
 
-Ein Termin wird überall mit diesen Details geöffnet, egal wo du ihn findest: in einer Timeline, in einer Nachrichtensuche oder als Quelle einer Aufgabe. Über **Ursprüngliche Einladung** unten wird die Einladung so angezeigt, wie sie eingegangen ist.
+Ein Meeting wird überall mit denselben Details geöffnet, egal wo du es findest: auf einer Zeitleiste, in einer Nachrichtensuche oder als Quelle einer Aufgabe. Über **Ursprüngliche Einladung** unten wird die Einladung so angezeigt, wie sie eingegangen ist.
 
 ## Termin hinzufügen oder ändern
 
-Deinen eigenen Google-Kalender kannst du hier ändern. Outlook und andere Kalender lassen sich nur ansehen. Über **Neuer Termin** wird ein Termin hinzugefügt (auf dem Handy findest du die Option unter **+** in der oberen Leiste): Wähle den Kalender, einen Titel und eine Uhrzeit aus. Klicke auf einen Termin ohne Gäste in diesem Kalender, um ihn zu ändern oder über **Löschen** zu entfernen (zweimal tippen).
+Du kannst deinen eigenen Google-Kalender hier ändern. Outlook und andere Kalender werden nur angezeigt. Über **Neuer Termin** fügst du einen Termin hinzu (auf dem Handy über **+** in der oberen Leiste): Wähle den Kalender, einen Titel und die Uhrzeit aus. Klicke auf einen Termin ohne Gäste in diesem Kalender, um ihn zu ändern oder über **Löschen** zu entfernen (zweimal tippen).
 
-**Ort** schlägt beim Tippen Orte vor: zuerst Orte, die du schon verwendet hast, und deine Organisationen, dann Adressen von [OpenStreetMap](https://www.openstreetmap.org), einem kostenlosen Kartendienst. Zur Suche werden nur die Wörter gesendet, die du eingibst. Wähle einen Vorschlag aus oder behalte deinen eigenen Text.
+Unter **Wo** werden während der Eingabe Orte vorgeschlagen: zuerst bereits verwendete Orte und deine Organisationen, danach Adressen von [OpenStreetMap](https://www.openstreetmap.org), einer kostenlosen Karte. Zum Nachschlagen werden nur die Wörter gesendet, die du eingibst. Wähle einen Vorschlag aus oder behalte deinen eigenen Text.
 
-Mit **Einladen** kannst du Personen aus deinem Graph oder beliebige E-Mail-Adressen hinzufügen. Die Option gibt es nur in deinem eigenen Kalender. Die eingeladenen Personen werden über der Schaltfläche aufgelistet. Die Schaltfläche zeigt ihre Anzahl an: **Hinzufügen und 2 einladen**. Google versendet die Einladungen erst, wenn du darauf tippst. Ohne Gäste wird niemand eingeladen oder über Änderungen benachrichtigt.
+Über **Einladen** fügst du Personen aus deinem Graph oder eine beliebige E-Mail-Adresse hinzu. Diese Option gibt es nur für deinen eigenen Kalender. Über dem Button stehen die eingeladenen Personen. Auf dem Button wird ihre Anzahl angezeigt, zum Beispiel **Hinzufügen und 2 einladen**. Google verschickt die Einladungen erst, wenn du darauf tippst. Ohne Gäste wird niemand eingeladen und niemand erhält eine Aktualisierung.
 
-Eine Aufgabe kann ebenfalls eine Änderung vorschlagen, etwa eine Abholung, die du hinzufügen kannst. Es wird genau angezeigt, was sich ändert. Erst wenn du **Hinzufügen**, **Speichern** oder **Löschen** auswählst, wird die Änderung vorgenommen.
+Auch eine Aufgabe kann eine Änderung vorschlagen, zum Beispiel einen Abholtermin. Es wird genau angezeigt, was sich ändert. Die Änderung wird nur übernommen, wenn du auf **Hinzufügen**, **Speichern** oder **Löschen** tippst.
 
-Noch keine Termine? Wenn du keinen Kalender verbunden hast, öffnet **Kalender verbinden** die Verbindungen. Verbinde [Google Calendar](google-calendar.md), [Outlook-Kalender](microsoft.md) oder [einen anderen Kalender](other-calendars.md).
+Noch keine Meetings? Wenn du keinen Kalender verbunden hast, öffnet **Kalender verbinden** die Verbindungen. Verbinde [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) oder [einen anderen Kalender](other-calendars.md).
 
-## Konflikte mit deinem anderen Kalender
+## Überschneidungen mit deinem anderen Kalender
 
-Wenn sich ein geschäftlicher Termin mit etwas in deinem privaten Kalender überschneidet oder umgekehrt, erstellt The Machine eine Aufgabe zum neueren der beiden Einträge. The Machine kann einen kurzen Text verfassen, um den Termin zu verschieben, oder vorschlagen, ihn abzusagen. Nichts wird gesendet, bevor du es bestätigst.
+Wenn sich ein geschäftliches Meeting mit einem Termin in deinem persönlichen Kalender überschneidet oder umgekehrt, erstellt The Machine eine Aufgabe zum neueren der beiden Termine. Sie kann einen kurzen Text verfassen, um den Termin zu verschieben, oder vorschlagen, ihn abzusagen. Nichts wird verschickt, bevor du es bestätigst.
 
-Ganztägige, freie und vorläufige Termine zählen nie. Jeder Konflikt wird nur einmal angezeigt. Eine geschäftliche Aufgabe weist nur auf einen Konflikt hin, damit dein Team den privaten Termin nie sieht. Nur du siehst, womit sich der Termin überschneidet.
+Überschneidet sich ein Termin mit mehreren anderen, gibt es dafür eine Aufgabe. Solange sie offen ist, werden weitere Überschneidungen hinzugefügt. Sobald sie erledigt oder verworfen wurde, wird sie nur dann wieder erstellt, wenn später ein Meeting neu erstellt oder geändert wird.
 
-## Bereit für deine Termine
+Ganztägige, freie und vorläufige Termine werden nie berücksichtigt. Jede Überschneidung wird nur einmal angezeigt. Auch der Arbeitsort, die Fokuszeit und die Abwesenheitsnotiz von Google werden nicht berücksichtigt. Dasselbe gilt für einen von dir erstellten Block mit anderen Meetings, zum Beispiel einen Bürotag. Nur die darin enthaltenen Meetings können sich überschneiden. Ein Block ohne andere Personen und Meetings, zum Beispiel ein Flug, kann sich dagegen mit einem Termin überschneiden, an dem andere Personen beteiligt sind.
 
-Vor einem Termin mit Personen außerhalb deines Unternehmens erstellt The Machine eine Aufgabe: **Vorbereiten auf** den Termin. Sie enthält ein kurzes Briefing:
+Eine geschäftliche Aufgabe weist nur auf einen Konflikt hin, damit dein Team den persönlichen Termin nie sieht. Nur du siehst, womit sich der Termin überschneidet: zuerst die beiden ersten, dann die Anzahl der weiteren Termine. Eine Aufgabe, mit der du nichts gemacht hast, wird automatisch geschlossen, wenn der Konflikt zu einer anderen Aufgabe gehört oder sich herausstellt, dass es gar keinen gab.
 
-- **Wer:** Wer die Personen sind, basierend auf deinem Graph, mit Informationen zu ihrem Hintergrund, sofern vorhanden.
-- **Organisation:** Was ihr Unternehmen macht, das für den Termin wichtig ist.
-- **Bisher:** Was ihr besprochen, gefragt und angeboten habt und wo es steht. Diese Nachrichten sind nach dem Termin die Quellen der Aufgabe.
-- **Offene Versprechen:** Was du oder die anderen noch erledigen müsst, basierend auf den Versprechen auf deiner Machine.
-- **Offene Fragen:** Was noch unbeantwortet ist.
-- **Entscheiden oder mitbringen:** Was geklärt oder mitgebracht werden muss und was den anderen wahrscheinlich wichtig ist.
+## Für deine Meetings vorbereitet
 
-Das Briefing erscheint am Morgen eines Arbeitstags: am Tag des Termins, wenn er nachmittags stattfindet, sonst am vorherigen Arbeitstag. Es ist nur zum Lesen da: Tippe auf **Erledigt**, wenn du es gelesen hast. Ein Versprechen oder eine Frage darin, um die du dich kümmern musst, erhält eine eigene Aufgabe.
+Vor einem Meeting mit Personen außerhalb deines Unternehmens erstellt The Machine eine Aufgabe: **Vorbereitung für** das Meeting. Sie enthält eine kurze Übersicht:
 
-Das Briefing basiert auf den Informationen, die bereits auf deiner Machine stehen. Bei einem ersten Termin mit einer Person in einem Unternehmen führt The Machine außerdem eine kurze Websuche nach dem Namen der Person und des Unternehmens durch. Neben den gefundenen Informationen wird ein Link angezeigt. Bei der Suche werden nur der öffentliche Name der Person, der Unternehmensname und die Website verwendet, nie deine Nachrichten. Ein Suchergebnis wird 30 Tage lang wiederverwendet. Wenn **Arbeitskontakte nachschlagen** deaktiviert ist (Einstellungen, Sicherheit), wird nicht gesucht.
+- **Wer:** wer die Personen sind, basierend auf deinem Graph, sowie Informationen zu ihrem Hintergrund, sofern bekannt.
+- **Organisation:** was ihr Unternehmen macht, für wen und zu welchem Preis, sofern das für das Meeting wichtig ist.
+- **Bisher:** was besprochen, gefragt und angeboten wurde und wo die Dinge stehen. Diese Nachrichten werden nach dem Meeting als Quellen der Aufgabe angezeigt.
+- **Früher vereinbart:**, **Seitdem geändert:** und **Noch offen:** was aus früheren Meetings mit denselben Personen hervorging. Bei jedem Punkt ist das Meeting oder die Nachricht als Quelle angegeben.
+- **Offene Versprechen:** was du oder die anderen noch zu tun haben, basierend auf den Versprechen auf deiner Machine.
+- **Offene Fragen:** was noch unbeantwortet ist.
+- **Entscheiden oder mitbringen:** was geklärt oder mitgebracht werden sollte und was den anderen vermutlich wichtig ist.
 
-Wenn es keinen nützlichen Verlauf gibt, wird keine Aufgabe erstellt. Wiederkehrende, interne, private und abgesagte Termine erhalten keine. Wird ein Termin verschoben, bleibt die eine Aufgabe bestehen und zeigt die neue Uhrzeit. Eine verworfene Aufgabe wird nicht erneut angezeigt. Die Aufgabe zu einem abgesagten Termin wird automatisch geschlossen.
+Die Aufgabe erscheint am Morgen eines Werktags: am Tag des Meetings selbst, wenn es am Nachmittag stattfindet, andernfalls am Werktag davor. Sie dient nur zum Lesen. Sobald du sie gelesen hast, markierst du sie als **Erledigt**. Ein Versprechen oder eine Frage darin, aus dem oder der sich eine Aufgabe ergibt, bekommt eine eigene Aufgabe.
 
-Wenn eine Aktualisierung den Inhalt eines Briefings ändert, werden offene Briefings für bevorstehende Termine einmal neu erstellt. Titel, Quellen und Position in deiner Liste bleiben gleich. Ein von dir geändertes, zurückgestelltes oder geschlossenes Briefing bleibt unverändert. Dasselbe gilt für ein Briefing zu einem Termin, der in den nächsten Minuten beginnt.
+Frühere Meetings werden berücksichtigt, wenn an beiden eine externe Person teilgenommen hat, unabhängig davon, wie das Meeting hieß und welche Adresse die Person verwendet hat. Die Übersicht basiert auf den Notizen, die deine Machine hat: deine eigenen, die aus deiner Meeting-App oder die, die dir per Mail geschickt wurden. Wenn es keine gibt, verwendet sie das Transkript oder die Notizen im Kalendereintrag. Neuere Inhalte werden stärker gewichtet. Ein Punkt, der später geklärt wurde, wird nicht mehr als offen angezeigt.
 
-Die Details des Termins zeigen die zugehörige Aufgabe unter **Aufgabe**, sodass du sie mit einem Tippen im Chat öffnen kannst.
+Auch Notizen und Nachrichten aus dem [Verlauf](history.md) werden berücksichtigt. So enthält die Übersicht auch Meetings von vor deinem Einstieg.
+
+Eine geschäftliche Übersicht liest keine persönlichen Notizen und nichts von der Machine einer anderen Person. Der Text bleibt bei dir: Bei einer Übergabe wird er nicht mitgenommen und kann nicht zur Prüfung weitergeleitet werden. Wenn keine Notizen vorhanden sind, fehlen diese Zeilen.
+
+Die Übersicht verwendet, was bereits auf deiner Machine ist. Bei einem ersten Meeting mit einer Person aus einem Unternehmen wird außerdem die Startseite der Unternehmenswebsite gelesen.
+
+Wenn die Websuche auf deiner Machine eingerichtet ist, wird außerdem kurz nach dem Namen der Person und ihrem Unternehmen gesucht. Eine gehostete Machine hat diese Funktion nicht. Auf deinem eigenen Computer kannst du sie in OpenClaw einrichten. Die Suchergebnisse werden mit einem Link angezeigt. Für die Suche werden nur der öffentliche Name der Person, der Firmenname und die Website verwendet, nie deine Nachrichten. Suchergebnisse werden 30 Tage lang wiederverwendet.
+
+So kann es für ein erstes Meeting, das du zugesagt hast, schon vor dem ersten Gespräch eine Übersicht geben: was das Unternehmen macht, was das für dich bedeutet und, sofern bekannt, wer die Person ist. Wenn nur ein Vorname bekannt ist, werden Suchergebnisse nur dann übernommen, wenn sie eindeutig auf eine Person verweisen. Wenn **Arbeitskontakte nachschlagen** deaktiviert ist (Einstellungen, Sicherheit), wird nichts nachgeschlagen.
+
+Für ein wiederkehrendes Meeting wird nur dann eine neue Übersicht erstellt, wenn es seit dem letzten Mal etwas Neues gibt: eine Nachricht, Notizen oder ein Versprechen. Sie nennt die Neuigkeiten, nicht den Inhalt der letzten Übersicht. Sie erscheint nach Ende des vorherigen Meetings, höchstens für zwei wiederkehrende Meetings am Tag.
+
+Wenn es nichts Nützliches zu sagen gibt, wird keine Aufgabe erstellt. Für interne, private und abgesagte Meetings gibt es keine. Wird ein Meeting verschoben, bleibt die Aufgabe erhalten und zeigt die neue Uhrzeit. Eine verworfene Aufgabe erscheint nicht erneut. Die Aufgabe für ein abgesagtes Meeting wird automatisch geschlossen.
+
+Wenn eine Aktualisierung den Inhalt einer Übersicht ändert, werden offene Übersichten für noch bevorstehende Meetings einmal in der neuen Form erstellt. Titel, Quellen und Position in deiner Liste bleiben gleich. Eine von dir geänderte, zurückgestellte oder geschlossene Übersicht bleibt unverändert. Dasselbe gilt für eine Übersicht zu einem Meeting, das in den nächsten Minuten beginnt.
+
+Die Details des Meetings zeigen die zugehörige Aufgabe unter **Aufgabe**, einen Fingertipp vom Chat entfernt.

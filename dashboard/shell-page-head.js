@@ -93,6 +93,7 @@ if(choice==='accept'&&!changing.has(id)&&atOnceOK(id)&&state.suggestions.find(s=
 let saved;try{const args={choice,feedback,decision_id:prefix+crypto.randomUUID()};saved=OUTBOX_CHOICES.includes(choice)?await decideOrWait(id,[args],choice):await decidePost(id,args)}
 catch(err){refresh().catch(()=>{});throw err}  // the card may be stale: redraw it
 // Offline: it waits on the device, so the editor closes
+if(choice!=='undo')self.keptBoxGone?.('ask|'+id);
 if(saved?.waiting){changing.delete(id);dismissing.delete(id);focusKept(render);return}
 // Its new status shows with the toast, theirs from here on (early, Store._decide); the full status follows
 changing.delete(id);const s=/^(pe|ac|pr|in|sn)/.test(saved?.status)&&state.suggestions.find(x=>x.id===id);if(s)s.status=saved.status,s.early=0;

@@ -1,11 +1,11 @@
 ---
 title: Send later
 area: cards
-summary: Approve a message now and pick when it goes. If they write first, it waits for you again.
+summary: Press Send later next to Send now to schedule an email or message. You approve it now and pick when it goes. If they write first, it waits for you again.
 covers: send-later
 code: machine/store/send_later.py, machine/app/send_later.py, dashboard/todos-send-later.js
 order: 13
-keywords: schedule, scheduled, send at a time, delay, tomorrow morning, unsend, take back
+keywords: schedule, scheduled, schedule an email, send at a time, delay, tomorrow morning, unsend, take back
 ---
 ## Schedule a message
 

@@ -6,8 +6,11 @@ const FIRST_LOOK_WAIT={model:'It starts once your main model can run: sign in fo
 // A first look whose tries keep failing (first_look.failing / first_dig.failing: tries in a row that failed, from the
 // third on, as FIRST_LOOK_TRIES) says so in one line instead of "tries again shortly" or "Reading on"
 const FL_KEEPS_FAILING=3,flFailing=f=>(+f?.failing|0)>=FL_KEEPS_FAILING;
-const flWait=fl=>fl?.why==='retry'&&flFailing(fl)?t('The last tries did not finish. Still trying.'):aiFailed(fl)&&!setupStep()?t(AI_FAILED):t(FIRST_LOOK_WAIT[fl?.why]||'');
+const flWait=fl=>fl?.why==='retry'&&flFailing(fl)?t('The last tries did not finish. Still trying.'):aiFailed(fl)&&!setupStep()?aiFailedText(fl):t(FIRST_LOOK_WAIT[fl?.why]||'');
 const AI_FAILED='Your AI didn’t answer a short test. Sign in again or use another AI.',aiFailed=fl=>fl?.why=='model_check'&&'error'in fl;
+// With a line about the plan (model_check.plan_note); in the phone app only what Claude needs
+const AI_PLAN={chatgpt:['','This ChatGPT account is on the free plan. The Machine works best with a paid plan.'],claude:['This needs a paid Claude plan.','This Claude account is on the free plan. This needs a paid Claude plan.']};
+const aiFailedText=fl=>[AI_FAILED,fl.plan==='chatgpt'&&DEV.phoneApp?'':AI_PLAN[fl.plan]?.[fl.plan_free?1:0]].filter(Boolean).map(x=>t(x)).join(' ');
 const flDetail=i=>i.detail?make('details',{class:'fl-detail'},make('summary',{},t('Details')),make('p',{translate:'no'},i.detail)):'';
 const firstLookDays=(fl,run)=>{const hours=run?run.window_hours:fl?.quick&&fl.hours;return hours?Math.max(1,Math.round(hours/24)):fl?.days||7};
 function reviewLiveRows(live){const rows=[];const name=id=>{const c=(state.connectors||[]).find(c=>c.id===id);return c?(c.display_name||c.email||id):id};

@@ -26,7 +26,9 @@ when a to-do needs it (find, read_text), and the writes below. Without Brings in
 synced, and refresh only checks what it may do. Microsoft finds files of any kind in the owner's OneDrive, and reads the
 text of Word, PDF and plain text files; what it finds is never a doc to edit (doc_write_files). Google, without drive.readonly (a restricted scope), works with two
 narrow ones instead: documents.readonly reads a Google Doc by its id (a link in a to-do's messages, or one found), and
-drive.file makes a new doc and finds, syncs and reads the docs this app made. Gmail's and gog's scopes never change.
+drive.file makes a new doc and finds, syncs and reads the docs this app made. A linked Google Sheet or Slides file is read
+by its id too (google_files.py), with spreadsheets.readonly and presentations.readonly from Allow Sheets and Slides, or
+with a wider scope the owner's gog sign-in already holds. Gmail's and gog's scopes never change.
 
 Writes, each only after the owner's OK on exactly that: drive.replies.create through Replier, for an approved doc_reply
 (next_actions.py), and a new doc or a pinned edit through Writer, for an approved doc_write (doc_writes.py). Writing docs
@@ -45,6 +47,8 @@ import urllib.request
 import zipfile
 from xml.etree import ElementTree
 from xml.parsers import expat
+
+import google_links
 
 KINDS = {'docs.comment': 'Doc comment', 'docs.mention': 'Doc mention', 'docs.suggestion': 'Suggested edit',
          'docs.shared': 'Shared doc'}
@@ -74,7 +78,6 @@ MS_SCOPE = 'Files.Read.All'
 DOCS_READ_SCOPE = 'https://www.googleapis.com/auth/documents.readonly'  # a Google Doc's text by its id (not restricted)
 DOCS_SCOPE = 'https://www.googleapis.com/auth/documents'  # a Google Doc by its id, and an owner-approved edit to it (not restricted)
 GOOGLE_DOCS = 'google_docs'  # Google Docs with its own sign-in and broker (google_docs_broker): documents and drive.file only
-DOC_LINK = re.compile(r'https://docs\.google\.com/document/d/([A-Za-z0-9_-]{20,100})')
 MAX_FOUND = 10
 FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'  # Google: only files this app created (a new doc)
 WRITE_KEY = 'themachine_write'  # a new Google Doc's appProperties key: the write's token, to find it again
@@ -270,8 +273,12 @@ class Google:
         try:
             doc = self.call('docs.documents.get', {'documentId': file_id}, scope=self.docs_scope())
         except self.helpers.SourceError as error:
-            if error.status in (400, 404):
-                raise self.helpers.SourceError('docs_text_unsupported', error.status) from None
+            category = {400: 'docs_text_unsupported', 404: 'docs_gone', 410: 'docs_gone'}.get(error.status)
+            if error.status == 403 and error.category != 'docs_not_connected':
+                reason = str(getattr(error, 'reason', None) or '')
+                category = None if reason in ('SERVICE_DISABLED', 'accessNotConfigured') or 'SCOPE' in reason else 'docs_no_access'
+            if category:
+                raise self.helpers.SourceError(category, error.status) from None
             raise
         import doc_writes  # noqa: PLC0415
         text = '\n'.join(p['text'] for p in doc_writes.google_paragraphs(doc))
@@ -761,7 +768,7 @@ def sync(store, config, account, helpers):
     more = kept.pop('more', False)
     caught_up_at = kept.pop('caught_up_at', now.isoformat())
     state.update(kept, provider=kind, coverage_complete=not more, replies=replies_on(config, account, helpers),
-                 writes=sorted(writes_on(config, account, helpers)),
+                 writes=sorted(writes_on(config, account, helpers)), files=reads_files(config, account, helpers),
                  coverage=('Word and OneDrive' if kind == 'microsoft' else 'Google Docs') + (' catching up.' if more else ' caught up.'))
     if not more:
         state['since'] = caught_up_at
@@ -801,6 +808,55 @@ def read_text(config, account, file_id, helpers):
             'truncated': len(text) > MAX_TEXT}
 
 
+def file_links(text):
+    """The Google Sheets and Slides files linked in a text: {file id: {kind, spots}} (google_files.links), and the Drive
+    links that don't say what they are (kind any)."""
+    import google_files  # noqa: PLC0415
+    return {**{f: {'kind': google_links.ANY, 'spots': []} for f in google_links.ids(text, google_links.ANY)}, **google_files.links(text)}
+
+
+def reads_files(config, account, helpers):
+    """The linked Google files this sign-in reads besides Docs (google_files.reads: sheets, slides), sorted. Google only,
+    never one a Fleet shares; unknown means none."""
+    import google_files  # noqa: PLC0415
+    if account.get('shared') or not (gog_google(account) or account.get('service') == 'docs' and provider(config, account) == 'google'):
+        return []
+    try:
+        return google_files.reads((GogGoogle if gog_google(account) else Google)(config, account, helpers).granted())
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def read_file(config, account, file_id, kind, helpers, spots=(), asked=None):
+    """A linked Google Sheet's cells or Slides file's text, read once for a run the owner started, through this Google
+    sign-in (Google Docs' own, or the owner's gog one) with a scope it already holds."""
+    import google_files  # noqa: PLC0415
+    source = (GogGoogle if gog_google(account) else Google)(config, account, helpers)
+    if kind == google_links.ANY:
+        return any_file(source, config, account, file_id, helpers, asked)
+    scope = google_files.scope_for(kind, source.granted())
+    if not scope:
+        raise helpers.SourceError('docs_files_not_granted')
+    return google_files.Reader(source, kind, scope).read(file_id, spots, asked)
+
+
+def any_file(source, config, account, file_id, helpers, asked):
+    """A linked Drive file that may be a Doc, a Sheet or Slides: read as the first of these it is, of the kinds this
+    sign-in may read."""
+    import google_files  # noqa: PLC0415
+    for kind in (google_links.DOC, google_links.SHEETS, google_links.SLIDES):
+        scope = kind != google_links.DOC and google_files.scope_for(kind, source.granted())
+        try:
+            if kind == google_links.DOC and not gog_google(account):
+                return read_text(config, account, file_id, helpers)
+            if scope:
+                return google_files.Reader(source, kind, scope).read(file_id, (), asked)
+        except helpers.SourceError as error:
+            if error.category not in ('docs_text_unsupported', 'docs_file_kind', 'docs_gone'):
+                raise
+    raise helpers.SourceError('docs_drive_kind')
+
+
 def find(config, account, words, helpers):
     """Docs of this connection that match the words (at most MAX_FOUND), for a run the owner started: read-only."""
     if notion(account):
@@ -812,8 +868,8 @@ def find(config, account, words, helpers):
 
 
 def doc_links(text):
-    """The Google Doc ids linked in a text (docs.google.com/document/d/<id>), in order, once each."""
-    return list(dict.fromkeys(DOC_LINK.findall(str(text or ''))))
+    """The Google Doc ids linked in a text, in order, once each, in any form of the link (google_links.py)."""
+    return google_links.ids(text, google_links.DOC)
 
 
 def doc_links_of(account, text):
@@ -827,7 +883,8 @@ def refresh(store, config, account, helpers):
     kept on its checkpoint for its card, without counting as a sync."""
     state = dict(store.checkpoint(account['id']) or {})
     state.update(provider=provider(config, account), replies=replies_on(config, account, helpers),
-                 writes=sorted(writes_on(config, account, helpers)), coverage='Action-only: nothing synced.')
+                 writes=sorted(writes_on(config, account, helpers)), files=reads_files(config, account, helpers),
+                 coverage='Action-only: nothing synced.')
     store.commit_page(account['id'], state, [], record_sync=False)
 
 
@@ -872,26 +929,29 @@ def gog_google(account):
 class GogGoogle:
     """Google Docs and Drive calls with the owner's gog sign-in (`gog api call`), like the calendar and Gmail writes:
     reads with --readonly, a write only with --allow-write, and only the scope it is given."""
-    VERSIONS = {'drive': 'v3', 'docs': 'v1'}
+    VERSIONS = {'drive': 'v3', 'docs': 'v1', 'sheets': 'v4', 'slides': 'v1'}
 
     def __init__(self, config, account, helpers):
         self.config, self.account, self.helpers = config, account, helpers
         self.signin = account
 
+    def granted(self):
+        """The scopes this sign-in has (asked once; unknown: none)."""
+        if not hasattr(self, '_granted'):
+            import next_actions  # noqa: PLC0415
+            try:
+                self._granted = set(next_actions.granted_scopes(self.config, self.helpers.credential, self.account))
+            except Exception:  # noqa: BLE001
+                self._granted = set()
+        return self._granted
+
     def drive_scope(self):
         """The Drive scope this sign-in already has for docs: drive, else drive.file. Every call uses it (gog's sign-in
         may not hold drive.readonly), never a scope it doesn't have."""
-        if not hasattr(self, '_scope'):
-            import next_actions  # noqa: PLC0415
-            try:
-                granted = next_actions.granted_scopes(self.config, self.helpers.credential, self.account)
-            except Exception:  # noqa: BLE001
-                granted = set()
-            self._scope = REPLY_SCOPE if REPLY_SCOPE in granted else FILE_SCOPE
-        return self._scope
+        return REPLY_SCOPE if REPLY_SCOPE in self.granted() else FILE_SCOPE
 
     def call(self, method, params, scope=READ_SCOPE, body=None, write=False, **_):
-        scope = self.drive_scope() if scope in (READ_SCOPE, REPLY_SCOPE, FILE_SCOPE) else scope
+        scope = self.drive_scope() if scope in (READ_SCOPE, REPLY_SCOPE, FILE_SCOPE) and not method.startswith(('sheets.', 'slides.')) else scope
         import os  # noqa: PLC0415
         import subprocess  # noqa: PLC0415
         import tempfile  # noqa: PLC0415

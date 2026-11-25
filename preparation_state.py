@@ -27,7 +27,8 @@ REVIEW_REASONS = {'mcp_runtime_limit','context_overflow','model_unavailable','au
 # waited on. A bare Try again runs once, as asked, without new automatic retries. After that the to-do waits, stuck.
 AUTO_RETRIES = 2
 AUTO_RETRY_BACKOFF = (60, 900)
-FAILED_BEFORE = ('ai_run_failed', 'ai_run_timed_out', 'run_ended_without_preparation', 'completion_unconfirmed', 'ai_run_interrupted')
+FAILED_BEFORE = ('ai_run_failed', 'ai_run_timed_out', 'run_ended_without_preparation', 'completion_unconfirmed', 'ai_run_interrupted',
+                 'prompt_too_long', 'invalid_attachments', 'invalid_request')
 
 
 def retry_left(job):
@@ -70,6 +71,8 @@ def initialize(db):
     if 'basis' not in run_columns:  # what allowed the run's steps (machine/action_basis.py); the ones before it say so
         db.execute('ALTER TABLE preparation_runs ADD COLUMN basis TEXT')
         db.execute('UPDATE preparation_runs SET basis=?', (action_basis.BEFORE,))
+    if 'saved_at' not in run_columns:
+        db.execute('ALTER TABLE preparation_runs ADD COLUMN saved_at TEXT')
     db.execute('UPDATE preparations SET session_job_id=job_id WHERE session_job_id IS NULL')
     # Preserve pre-upgrade runtime custody. Closed historical rows aren't proof of a live run.
     for job in db.execute('''SELECT * FROM preparations p WHERE status IN ('starting','running')
@@ -82,17 +85,18 @@ def initialize(db):
 START_KEEP_DAYS = 2
 
 
-def same_start(db, request, stamp):
+def same_start(db, request, stamp, usable=lambda kept: True):
     """The start to send for this run id. Its id is the Gateway's idempotency key, and an earlier start under it may have
     reached the Gateway: OpenClaw (2026.11.2) refuses the same key with other content for good ("Pending input
     idempotency key conflicts with the accepted input"), and a retry builds its message again (newer agent work, files),
-    so every retry under one id sends exactly the first one it built. Kept until the run is admitted or over."""
+    so every retry under one id sends exactly the first one it built. Kept until the run is admitted or over. A kept one
+    that is not `usable` (it can't have reached the Gateway) is replaced."""
     db.execute('DELETE FROM gateway_starts WHERE created_at<?',
                ((datetime.datetime.fromisoformat(stamp) - datetime.timedelta(days=START_KEEP_DAYS)).isoformat(),))
     row = db.execute('SELECT request FROM gateway_starts WHERE job_id=?', (request['job_id'],)).fetchone()
     if row:
         kept = json.loads(row[0])
-        if kept.get('kind') == request.get('kind') and kept.get('session_job_id') == request.get('session_job_id'):
+        if kept.get('kind') == request.get('kind') and kept.get('session_job_id') == request.get('session_job_id') and usable(kept):
             return kept
     db.execute('INSERT OR REPLACE INTO gateway_starts(job_id,request,created_at) VALUES(?,?,?)',
                (request['job_id'], json.dumps(request, ensure_ascii=False), stamp))
@@ -104,10 +108,17 @@ def start_settled(db, job_id):
 
 
 # A page address a to-do prepared ahead didn't read and that could carry what it read (the plugin's outbound-urls.ts
-# says which: unread_address). Opening it would hand that to the site's owner with nobody asked; SECURITY.md.
+# says which: unread_address). Opening it would hand that to the site's owner with nobody asked; SECURITY.md. The way on
+# is one this Machine has: web_search where a search provider is set up, else a search page (its result links count as read).
 UNREAD_ADDRESS = ('A to-do prepared ahead only opens an address it read (in a message, a search result or a page) or a '
-                  'plain page address without a query. Search for it with web_search and open a result, or open the '
-                  'address exactly as it was written.')
+                  'plain page address without a query. Search for it {} and open a result, or open the address exactly '
+                  'as it was written.')
+
+
+def unread_address(web_search):
+    return UNREAD_ADDRESS.format('with web_search' if web_search else 'on a search page in the browser')
+
+
 OWNER_ASKED = ('todo', 'telegram', 'voice', 'chat', 'doit')  # action_basis kinds: the owner's own tap or words
 
 
@@ -118,6 +129,12 @@ def prepared_ahead(db, run):
     kind = basis.get('kind')
     # Work carried on after the owner's snooze is judged by the card's early flag alone, as before its basis was kept
     return (kind == 'ahead' and not basis.get('resumed')) or (bool(run['early']) and kind not in OWNER_ASKED)
+
+
+def note_saved(db, job_id, stamp):
+    """The run saved its result or blocker and ends by itself now. Kept on the run: its preparation's row moves on to
+    the next one, sometimes in the same second (action_runs.stop_stale_runs)."""
+    db.execute('UPDATE preparation_runs SET saved_at=? WHERE job_id=?', (stamp, job_id))
 
 
 def tool_intent(db, args, stamp):
@@ -132,7 +149,7 @@ def tool_intent(db, args, stamp):
     if earlier and not run['history_read'] and not args.get('read_only') and not finishing(args):
         return {'active': False, 'reason': 'Read preparation_history first, then reconcile completed or uncertain steps before continuing. Do not repeat the whole task.'}
     if args.get('unread_address') and prepared_ahead(db, run):
-        return {'active': True, 'refused': UNREAD_ADDRESS}
+        return {'active': True, 'refused': unread_address(args.get('web_search') is True)}
     db.execute('INSERT OR IGNORE INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)',
                (args['job_id'], args['call_id'], args['tool'], json.dumps(args.get('params',{}),ensure_ascii=False), stamp))
     note_basis(db, run, args)
