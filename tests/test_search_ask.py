@@ -519,7 +519,7 @@ class OwnConnections(unittest.TestCase):
             graph.build(db, self.app.config, tg.at(0))
 
     def about(self, question, area=None, **plan):
-        self.plan = {'question': True, 'person': None, 'said_by': 'both', 'from': None, 'to': None, 'about': '', 'connections': [], **plan}
+        self.plan = {'question': True, 'person': None, 'said_by': 'both', 'from': None, 'to': None, 'about': '', 'where': 'there', 'connections': [], **plan}
         before = len(self.prompts)
         self.ask(question, area)
         return self.prompts[-1] if len(self.prompts) > before else ''
@@ -578,7 +578,7 @@ class OwnConnections(unittest.TestCase):
         self.assertIn('Your energy invoice is ready.', prompt)
         self.assertNotIn('Your book is ready', prompt)
         prompt = self.about('does my home mail say anything on skiing?', connections=[3], about='skiing')
-        self.assertIn('Answer from those about “skiing”', prompt)
+        self.assertIn('If they look for a subject (“skiing”)', prompt)
         prompt = self.about('what did Kim write to my birch mailbox?', connections=[2], person='Kim', said_by='person')
         self.assertIn('The workshop can be', prompt)
         self.assertNotIn('The pilot moves', prompt)
@@ -588,6 +588,59 @@ class OwnConnections(unittest.TestCase):
         prompt = self.about('what came in on sam@home.example on Thursday?', connections=[3], **{'from': '2026-10-15', 'to': '2026-10-15'})
         self.assertIn('Your book is ready', prompt)
         self.assertNotIn('energy invoice', prompt)
+
+    def test_what_is_new_or_how_it_is_doing_is_no_subject(self):
+        """The first turn may call "any news" or how it is doing a subject, which no message there says."""
+        for question, about in (('any news in my home mail?', 'news'), ('is my home mail up to date?', 'sync status')):
+            prompt = self.about(question, connections=[3], about=about)
+            self.assertIn('If they ask what is new or came in: tell the newest', prompt)
+            self.assertIn('tell what is certain below', prompt)
+            self.assertIn('Your book is ready', prompt)
+        self.assertNotIn('If they look for a subject', self.about('is there an invoice in my home mail?', connections=[3], about='invoice'))
+
+    def test_a_connection_the_messages_are_about_is_no_place(self):
+        """The first turn says which it is (where), and without it no pick counts."""
+        prompt = self.about('who is moving the pilot off sam@home.example?', where=None, connections=[3], about='pilot')
+        self.assertIn('The pilot moves', prompt)
+        self.assertNotIn('They ask about the mailbox', prompt)
+        self.assertEqual(search_ask.parse_plan('{"where": null, "connections": [1, "Gmail"]}')['connections'], [])
+        self.assertEqual(search_ask.parse_plan('{"where": "my Gmail", "connections": [1]}')['connections'], [1])
+        self.assertEqual(search_ask.parse_plan('{"where": "the mailbox sam@nowhere.example", "connections": []}')['connections'], ['sam@nowhere.example'])
+
+    def test_a_subject_nothing_there_matches_is_looked_for_in_the_rest_of_the_area(self):
+        prompt = self.about('what does my birch mail say about the pilot?', connections=[2], about='pilot')
+        self.assertRegex(prompt, r'gmail \(elsewhere: Gmail sam@acme\.example\) from [^\n]+\n<<<[^\n]*[Pp]ilot')
+        self.assertIn('say that you found nothing about it there, then, if one marked elsewhere is about it', prompt)
+        self.assertLess(prompt.index('The board pack needs'), prompt.index('(elsewhere: '))  # what is there first
+        prompt = self.about('what did Kim write to my birch mail about the pilot?', connections=[2], person='Kim', said_by='person', about='pilot')
+        self.assertIn('(elsewhere: Gmail sam@acme.example) from Kim Vale', prompt)
+        prompt = self.about('what did Kim write to my home mail about the pilot?', connections=[3], person='Kim', said_by='person', about='pilot')
+        self.assertIn('Nothing from Kim Vale is in there', prompt)
+        self.assertIn('(elsewhere: Gmail sam@acme.example) from Kim Vale', prompt)
+        # found there: nothing from elsewhere; no subject either
+        self.assertNotIn('elsewhere', self.about('what does my birch mail say about the workshop?', connections=[2], about='workshop'))
+        self.assertNotIn('elsewhere', self.about('what is new in my birch mail?', connections=[2]))
+
+    def test_the_rest_of_the_area_never_leaves_it(self):
+        self.assertIn('(elsewhere: ', self.about('what does my birch mail say about the book?', connections=[2], about='book'))
+        prompt = self.about('what does my birch mail say about the book?', 'work', connections=[2], about='book')
+        self.assertNotIn('Your book is ready', prompt)
+        self.assertNotIn('elsewhere', prompt)
+        with mock.patch.object(self.app, 'search_ask_keep', lambda rows, area: [r for r in rows if area != 'work' or r['account_id'] != 'work']):  # a personal thread
+            self.assertNotIn('elsewhere', self.about('what does my birch mail say about the pilot?', 'work', connections=[2], about='pilot'))
+
+    def test_a_place_that_can_not_be_read_is_not_looked_for_elsewhere(self):
+        for question, plan in (('the pilot on sam@nowhere.example?', {'connections': ['sam@nowhere.example']}),  # not connected
+                               ('the pilot on sam@birch.example and sam@nowhere.example?', {'connections': [2, 'sam@nowhere.example']}),
+                               ('the pilot on sam@days.example?', {'connections': ['sam@days.example']})):  # a calendar only
+            self.assertNotIn('(elsewhere: ', self.about(question, about='pilot', **plan))
+        self.assertNotIn('(elsewhere: ', self.about('the pilot on sam@home.example?', 'work', connections=['sam@home.example'], about='pilot'))  # Personal
+        with self.store.connect() as db:
+            db.execute("UPDATE checkpoints SET error='imap_auth_failed',failures=40,last_success=? WHERE account_id='home'", (tg.at(4),))
+            db.commit()
+        prompt = self.about('what does my home mail say about the pilot?', connections=[3], about='pilot')
+        self.assertIn('anything newer is not known', prompt)
+        self.assertNotIn('(elsewhere: ', prompt)
 
     def test_not_connected(self):
         for address, plan in (('sam.old@post.example', {'person': 'sam.old@post.example'}), ('sam@nowhere.example', {'connections': ['sam@nowhere.example']})):
