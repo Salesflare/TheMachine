@@ -126,6 +126,27 @@ class InstallerTest(unittest.TestCase):
                 self.assertEqual(installer.quiet_openclaw(facts, stamp), [])  # on again by the owner: theirs
                 self.assertEqual(calls, [])
 
+    def test_skill_workshop_of_a_newer_openclaw_is_set_in_its_plugin_once_where_unset(self):
+        # 2026.11.10 refuses skills.workshop: the setting is the plugin's, and an update moves the old one there itself.
+        calls = []
+        def run(command, **kwargs):
+            calls.append(command[1:])
+            refused = command[1:3] == ['config', 'set'] and command[3] == installer.WORKSHOP
+            return subprocess.CompletedProcess(command, int(refused), '{"jobs": []}', 'Unrecognized key: "workshop"' if refused else '')
+        facts = {'openclaw': 'openclaw', 'openclaw_version': '2026.11.10'}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say'):
+            config, stamp = Path(tmp) / 'openclaw.json', Path(tmp) / 'data' / 'openclaw-quiet.json'
+            config.write_text('{}')
+            with mock.patch.dict(os.environ, {'OPENCLAW_CONFIG_PATH': str(config)}):
+                self.assertIn(installer.WORKSHOP, installer.quiet_openclaw(facts, stamp))
+                self.assertIn(['config', 'set', 'plugins.entries.skill-workshop.config.autonomous.mode', '"off"', '--strict-json'], calls)
+                calls.clear()
+                self.assertEqual(installer.quiet_openclaw(facts, stamp), [])  # set back by the owner: theirs
+                stamp.unlink()  # set there by the owner, or moved there by the update: theirs too
+                config.write_text(json.dumps({'plugins': {'entries': {'skill-workshop': {'config': {'autonomous': {'mode': 'propose'}}}}}}))
+                self.assertNotIn(installer.WORKSHOP, installer.quiet_openclaw(facts, stamp))
+                self.assertFalse(any('workshop' in part for call in calls for part in call))
+
     def test_telegram_link_previews_go_off_once_telegram_is_set_up_and_only_where_unset(self):
         # Telegram's servers open the first link of a message for its preview: a link a model was talked into writing
         # (to-do text, an assistant reply) would reach that site with no tap. Off once Telegram is there.
