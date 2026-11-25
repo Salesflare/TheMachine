@@ -395,14 +395,7 @@ def source_line(rows, db=None):
         # The owner's own message (a "Waiting on" to-do leads with it): who it went to, by the name their messages carry
         m = first['metadata'] if isinstance(first['metadata'], dict) else json.loads(first['metadata'] or '{}')
         when = locale_prefs.day_text(dt.datetime.fromisoformat(first['occurred_at']).astimezone(local_tz()), lang='en')
-        names = {}
-        for r in rows:
-            rm = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
-            shown = re.sub(r'\s*<[^>]+>', '', str(rm.get('from') or '')).strip().strip('"')
-            if _address(rm.get('from')) and shown and '@' not in shown:
-                names[_address(rm.get('from'))] = shown
-        to = _address(m.get('to'))
-        them = (names.get(to) or re.sub(r'\s*<[^>]+>', '', str(m.get('to') or '').split(',')[0]).strip().strip('"') or to) if to else m.get('chat_name')
+        them = message_view.went_to(first['kind'], m, message_view.row_names(rows))
         line = source_kind(first['kind']) + (f' to {them}' if them else '') + f' · {when}'
     else:
         line = source_text(first)

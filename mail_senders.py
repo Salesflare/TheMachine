@@ -1,12 +1,14 @@
 """Who sent a mail, for the Graph (graph.py): an address that is a system's, never a person (bulk, relay), mail a
 program sent (automated), the unsubscribes a mail app sends, a mailing's sender (mass_mail, unless the owner's word or
-work is on them: owner_kept), and the addresses in a header. graph.py imports these names, so graph.bulk and
+work is on them: owner_kept), who a message went to (recipients, to_people) and the addresses in a header. graph.py imports these names, so graph.bulk and
 graph.relay still work."""
 import email.utils
 import functools
 import json
 import re
 import sqlite3
+
+from machine.kinds import CHAT, KINDS
 
 AUTOMATED_PRECEDENCE = frozenset({'bulk', 'junk', 'list'})  # automated: mail a program sent
 
@@ -16,10 +18,62 @@ BULK = re.compile(r'(?:^|[._+-])(?:no[._-]?reply|do[._-]?not[._-]?reply|notifica
                   r'|^(?:gemini|meet|calendar|drive|docs|forms|workspace)[\w.+-]*@google\.com$', re.I)  # Gemini's notes, Meet, Drive shares
 
 
+LISTED = re.compile(r'\s*\[\s*(?:[\'"{]|\]\s*$)')  # a list kept as text, never a name in brackets ("[Team] Ops <ops@x>")
+LISTED_PART = re.compile(r"""'((?:[^'\\]|\\.)*)'?|"((?:[^"\\]|\\.)*)"?""")
+
+
+def recipients(value):
+    """Who a message's `to` (or cc, from) names, each as written ("Sam Lee <sam@x.example>", an address, a name), however
+    its source keeps it: a header (one entry, as it is), a list (Teams), people ({name, email}), or such a list kept as
+    text, JSON or Python's, cut short or not. Every place that prints or parses the field reads it here, so nobody ever
+    sees brackets or quotes (tests/test_recipients.py)."""
+    if isinstance(value, dict):
+        name, address = ' '.join(str(value.get('name') or '').split()), str(value.get('email') or value.get('address') or '').strip()
+        return [f'{name} <{address}>' if name and address else name or address] if name or address else []
+    if isinstance(value, (list, tuple)):
+        return [one for part in value for one in recipients(part)]
+    text = str(value or '')
+    if LISTED.match(text):
+        try:
+            found = json.loads(text)
+        except (ValueError, RecursionError):
+            found = [single or double for single, double in LISTED_PART.findall(text)]
+        return [one for part in found if isinstance(part, (str, dict)) for one in recipients(part)] if isinstance(found, list) else []
+    return [text] if text.strip() else []
+
+
+# A chat nobody named, as its source calls it ("Teams chat", "WhatsApp group", "X conversation"): not a name to show
+UNNAMED_CHAT = re.compile('(?:' + '|'.join(sorted({re.escape(k['via']) for k in KINDS.values() if k['family'] == CHAT and k['via']})) +
+                          ') (?:chat|group|conversation)')
+BARE_ADDRESS = re.compile(r'<?[^\s<>@]+@[^\s<>@]+>?')
+
+
+def chat_named(m):
+    """A chat's own name (the other person's in a 1:1, a group's), or '' when nobody named it. m: the message's metadata."""
+    name = ' '.join(str(m.get('chat_name') or '').split())
+    return '' if UNNAMED_CHAT.fullmatch(name) else name
+
+
+def to_people(m):
+    """Who a message went to (recipients of its `to`), for a person or a model to read. A Teams chat keeps its members'
+    addresses there, whoever wrote: the sender is left out, and the other person in a 1:1 has the name the chat has."""
+    people = recipients(m.get('to'))
+    if m.get('chat_kind'):
+        if not m.get('from_me') and (sender := str(m.get('from_email') or '').strip().lower()):
+            people = [p for p in people if p.strip().lower() != sender]
+        name = chat_named(m)
+        if m['chat_kind'] == 'oneOnOne' and len(people) == 1 and BARE_ADDRESS.fullmatch(people[0].strip()) and name and '@' not in name:
+            people = [f'{name} <{people[0].strip().strip("<>")}>']
+    return people
+
+
+def to_text(m):
+    """to_people on one line."""
+    return ', '.join(to_people(m))
+
+
 def addresses(value):
-    if isinstance(value, list):
-        value = ', '.join(map(str, value))
-    return list(_addresses(str(value or '')))
+    return list(_addresses(', '.join(recipients(value))))
 
 
 @functools.lru_cache(maxsize=32768)
@@ -36,7 +90,7 @@ def header_address(value):
     """The address a header names, the first of several, read as the Graph reads it (addresses): never one
     written in the name or a comment beside it ('"ann@x.com via Docs" <share@y.com>' is share@y.com), which its sender
     chooses. A header no parser takes: the last address in <> outside a quoted name, else the first thing like one."""
-    text = ', '.join(map(str, value)) if isinstance(value, list) else str(value or '')
+    text = ', '.join(recipients(value))
     first = next((a for _, a in addresses(text)), '')
     if first and first in text.lower() and not re.search(r'[\s<>",;()\[\]]', first):  # "A @ B" is a name, not a@b
         return first

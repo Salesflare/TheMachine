@@ -66,6 +66,8 @@ ALWAYS = {
     'test_css_tokens.py',
     # every raise of a translated message
     'test_owner_error.py',
+    # every Python line that prints who a message went to
+    'test_recipients.py',
     # every test and helper that drives a browser gets it from tests/browser.mjs
     'test_browser_guard.mjs',
 }

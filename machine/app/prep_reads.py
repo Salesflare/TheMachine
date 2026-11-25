@@ -17,6 +17,7 @@ import json
 import threading
 import time
 
+from mail_senders import recipients, to_people
 from machine.store.review import local_when
 from machine.text import clamp
 
@@ -33,13 +34,8 @@ ALREADY_READ = ('Already read above in this run, so left out here: work from the
                 'in front of you, read those ids again with again:true.')
 
 
-def _who(value):
-    if isinstance(value, list):
-        return ', '.join(_who(v) for v in value[:4]) + (f' and {len(value) - 4} more' if len(value) > 4 else '')
-    if isinstance(value, dict):
-        name, address = value.get('name') or '', value.get('email') or value.get('address') or ''
-        return f'{name} <{address}>' if name and address else str(name or address)
-    return str(value or '')
+def _who(people):
+    return ', '.join(people[:4]) + (f' and {len(people) - 4} more' if len(people) > 4 else '')
 
 
 def source_line(row, threads=None):
@@ -55,9 +51,9 @@ def source_line(row, threads=None):
     parts = [f"event {row['id']} ({row['kind']}, " + (f'{when} local time)' if when else f"{str(row['occurred_at'])[:16]} UTC)")]
     parts.append(f"on {row['account_id']}")
     if meta.get('from'):
-        parts.append('from ' + clamp(_who(meta['from']), 160))
-    if meta.get('to'):
-        parts.append('to ' + clamp(_who(meta['to']), 200))
+        parts.append('from ' + clamp(_who(recipients(meta['from'])), 160))
+    if to := to_people(meta):
+        parts.append('to ' + clamp(_who(to), 200))
     if row['title']:
         parts.append('"' + clamp(' '.join(str(row['title']).split()), 140) + '"')
     thread = meta.get('thread_id') or meta.get('conversation_id') or meta.get('chat_id') or meta.get('channel_id')

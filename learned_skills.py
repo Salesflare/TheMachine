@@ -42,6 +42,7 @@ import re
 import secrets
 import urllib.parse
 
+import mail_senders
 import skills
 import team_learnings as tl
 import timeutil
@@ -199,7 +200,7 @@ def people_on(db, suggestion_id):
         except (ValueError, TypeError):
             continue
         for field in ('from', 'to', 'cc'):
-            for one in str(meta.get(field) or '').split(','):
+            for one in ','.join(mail_senders.recipients(meta.get(field))).split(','):
                 found = PERSON.match(one)
                 if found and any(c.isalpha() for c in found.group(1)):
                     name = ' '.join(found.group(1).split())

@@ -32,6 +32,7 @@ import uuid
 
 import activity_log
 import fleet
+import mail_senders
 import next_actions
 import task_invites
 from fleet_requests import card_reason
@@ -305,7 +306,7 @@ class HandoffMail:
             m = json.loads(r['metadata'] or '{}')
             if record.get('rfc') and str(m.get('message-id') or '').strip() == record['rfc'].strip():
                 return r
-            if not record.get('rfc') and record['to'] in str(m.get('to') or '').lower() and record['title'] in str(r['title'] or ''):
+            if not record.get('rfc') and record['to'] in ', '.join(mail_senders.recipients(m.get('to'))).lower() and record['title'] in str(r['title'] or ''):
                 return r
         return None
 

@@ -119,7 +119,7 @@ Use this common event shape; optional metadata is source-specific. Check parsing
 | `occurred_at` | When it happened, UTC ISO. |
 | `title` | A short line (max 1000 chars): subject, chat name, item title. |
 | `body` | The text (max 40000 chars). Plain text; strip HTML. Omit one-time codes and passwords. |
-| `metadata` | JSON with what reviews need: `source_url` (an https link to open the original, shown as Open), sender, thread or conversation IDs, `from_me` for the owner's own messages. |
+| `metadata` | JSON with what reviews need: `source_url` (an https link to open the original, shown as Open), sender, `to` for who it went to (a header, or a list; `mail_senders.recipients` reads either, so never print the field yourself), `chat_name` for a chat, thread or conversation IDs, `from_me` for the owner's own messages. |
 | `deleted` | `True` when the item was removed at the source. |
 | `reviewed` | Optional. `True` keeps this version as already reviewed: context, never news (a watched page's first read, its baseline). A later version of the item is reviewed as usual. |
 

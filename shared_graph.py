@@ -1064,8 +1064,8 @@ def _message(e):
     """One message of a shared thread: mail as it is; a meeting with its organizer and who was invited; notes with their host."""
     m = e['metadata']
     sender = m.get('from') or (m.get('organizer') or {}).get('email') or m.get('host_email') or ''
-    to = m.get('to') or ', '.join(str(a.get('email') or '') for a in m.get('attendees') or [] if isinstance(a, dict) and a.get('email'))
-    return {'at': e['occurred_at'], 'from': str(sender)[:200], 'to': str(to)[:500], 'cc': str(m.get('cc') or '')[:500], 'body': str(e['body'] or '')[:MAX_BODY]}
+    to = graph.mail_senders.to_text(m) or ', '.join(str(a.get('email') or '') for a in m.get('attendees') or [] if isinstance(a, dict) and a.get('email'))
+    return {'at': e['occurred_at'], 'from': str(sender)[:200], 'to': to[:500], 'cc': ', '.join(graph.mail_senders.recipients(m.get('cc')))[:500], 'body': str(e['body'] or '')[:MAX_BODY]}
 
 
 def owner_pick(info):
@@ -1124,7 +1124,7 @@ def unjudged(db, scope, limit, skip=(), first=None, again=()):
             taken.add(thread)
             earlier[thread] = []
             found.append({'event_id': e['id'], 'subject': str(e['title'] or '')[:200], 'with': _who(e['metadata'], scope), 'at': e['occurred_at'],
-                          'from': str(e['metadata'].get('from') or '')[:200], 'to': str(e['metadata'].get('to') or '')[:300],
+                          'from': str(e['metadata'].get('from') or '')[:200], 'to': graph.mail_senders.to_text(e['metadata'])[:300],
                           'text': (e['id'], 1500), 'earlier': earlier[thread]})
     quoted = [x for item in found for x in (item, *item['earlier'])]
     bodies = _bodies(db, [x['text'][0] for x in quoted])

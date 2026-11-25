@@ -4,7 +4,6 @@ like App's mixins. Moved out of assistant.py as is."""
 import collections
 import copy
 import datetime as dt
-import email.utils
 import json
 import re
 import sqlite3
@@ -17,6 +16,7 @@ import fleet_learnings
 import graph
 import learning_loop
 import locale_prefs
+import mail_senders
 import memory_use
 from machine import stamps
 from machine.store.graph_history import live
@@ -216,7 +216,7 @@ class ProfileStore:
                     'date': recap_day(row['occurred_at'], True),
                     'text': clamp(text, 900 if row['kind'] == 'gmail.message' else 300)}
             if row['kind'] == 'gmail.message':
-                item.update(to=clamp(str(m.get('to') or ''), 160), subject=clamp(row['title'] or '', 120))
+                item.update(to=clamp(mail_senders.to_text(m), 160), subject=clamp(row['title'] or '', 120))
             elif m.get('chat_name') or m.get('channel_name'):
                 item['chat'] = clamp(str(m.get('chat_name') or m.get('channel_name')), 80)
             items.append(item)
@@ -230,9 +230,9 @@ class ProfileStore:
             for (metadata,) in db.execute("SELECT metadata FROM events WHERE kind='gmail.message' AND deleted=0 AND history=0 AND occurred_at>=?", (since,)):
                 m = json.loads(metadata)
                 if 'SENT' in m.get('labels', []):
-                    written |= {a.lower() for _, a in email.utils.getaddresses([str(m.get(f) or '') for f in ('to', 'cc')]) if a}
+                    written |= {a for _, a in mail_senders.addresses([m.get(f) for f in ('to', 'cc')])}
                 else:
-                    counts.update({a.lower() for _, a in email.utils.getaddresses([str(m.get('from') or '')]) if a})
+                    counts.update({a for _, a in mail_senders.addresses(m.get('from'))})
         own = {str(a.get('email', '')).lower() for a in self.accounts}
         return [{'sender': a, 'emails': n} for a, n in counts.most_common() if a not in written and a not in own][:limit]
 

@@ -15,7 +15,7 @@ import sqlite3
 import unicodedata
 
 import google_links
-from mail_senders import header_address as _address  # noqa: F401 (imported from here)
+from mail_senders import header_address as _address, recipients  # noqa: F401 (imported from here)
 import message_seal
 import portable
 from machine.mail_quotes import FORWARD_SUBJECT, PREFIX, REPLY_HEADER, mail_html, quoted, sent_on  # noqa: F401 - REPLY_HEADER: importable from here
@@ -80,7 +80,7 @@ def mail_people(meta):
     meta = meta or {}
     if not (meta.get('to') or meta.get('cc')):
         return ''
-    return ' '.join(str(meta.get(k) or '') for k in ('from', 'to', 'cc', 'reply-to')).casefold().strip()
+    return ' '.join(', '.join(recipients(meta.get(k))) for k in ('from', 'to', 'cc', 'reply-to')).casefold().strip()
 
 
 def split_quoted_history(text, subject='', people=''):
