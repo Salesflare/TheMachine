@@ -54,7 +54,8 @@ link never opens an app on your computer (`tests/test_browser_guard.mjs` checks 
 it expects, never a fixed time: the call the page makes (`waitForAction`, `callAfter` in `tests/page-calls.mjs`) or
 what the page shows (a locator's `waitFor`, `page.waitForFunction`), or, before measuring where things are, for the
 page to settle (`quiet`). `tests/test_fixed_waits.py` counts the
-`page.waitForTimeout` calls left per file, and the counts only come down.
+`page.waitForTimeout` calls left per file, and the counts only come down. It also fails on code in a trailing
+`//` comment, which takes the rest of its line with it.
 
 CI runs the suite on every pull request with the minimum supported Python, Node and OpenClaw. A weekly run adds a
 newer combination (the latest OpenClaw) and macOS and Windows.

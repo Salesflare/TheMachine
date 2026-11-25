@@ -6,7 +6,12 @@ waitFor, page.waitForFunction, settled), or the page settling before a measureme
 The files that have fixed waits today are in WAITS, with their count, which only comes down: when a wait goes, lower
 its count (`python3 tests/test_fixed_waits.py --counts` prints them). A new file has none. A wait that only steadies
 a screenshot belongs in the test's shot helper, behind the variable that asks for pictures. A check that something does
-not happen (no tooltip, no post, it stays) needs a time: it keeps its wait, longer than what it waits out."""
+not happen (no tooltip, no post, it stays) needs a time: it keeps its wait, longer than what it waits out.
+
+And a guard on code in a trailing // comment of a .mjs test (SwallowedCode). Many lines hold several statements, and a
+comment put in the middle of one takes the rest of the line with it: assertions stood in a comment and nothing said so.
+Something like a statement there (an assertion, await, const, an arrow, a semicolon at its end) fails: the code goes on a
+line of its own. It is here since this file already runs on every change (scripts/test_select.py ALWAYS)."""
 import pathlib
 import re
 import sys
@@ -15,6 +20,8 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SKIP_DIRS = {'node_modules', '.git', '.venv', '__pycache__'}
 FIXED_WAIT = re.compile(r'\bwaitForTimeout\s*\(')
+COMMENT = re.compile(r'(?<![:\'"`/\\])//(?!/)(.*)$')  # not a URL's, nor one that opens a string
+CODE = re.compile(r'assert\w*[.(]|await |;\s*$|\bconst |=>|\)\);')
 
 # The fixed waits each test file has today: these only come down.
 WAITS = {
@@ -224,6 +231,16 @@ def fixed_waits():
     return out
 
 
+def swallowed(text):
+    """[(line number, the comment)] for each line with code before a // comment and something like code in it."""
+    out = []
+    for n, line in enumerate(text.split('\n'), 1):
+        m = COMMENT.search(line)
+        if m and line[:m.start()].strip() and CODE.search(m[1]):
+            out.append((n, m[0]))
+    return out
+
+
 class FixedWaits(unittest.TestCase):
     def test_fixed_waits_only_come_down(self):
         found = fixed_waits()
@@ -238,6 +255,26 @@ class FixedWaits(unittest.TestCase):
     def test_the_guard_counts_fixed_waits(self):
         self.assertEqual(len(FIXED_WAIT.findall("await page.waitForTimeout(100);await p.waitForTimeout (5);")), 2)
         self.assertEqual(FIXED_WAIT.findall("page.waitForFunction(()=>ok);page.waitForTimeoutish"), [])
+
+
+class SwallowedCode(unittest.TestCase):
+    def test_no_code_in_a_trailing_comment(self):
+        checked = [p for p in sorted((ROOT / 'tests').rglob('*.mjs')) if not SKIP_DIRS & set(p.relative_to(ROOT).parts)]
+        self.assertGreater(len(checked), 200, 'the .mjs files in tests/')
+        found = [f'{p.relative_to(ROOT).as_posix()}:{n}: {comment}' for p in checked
+                 for n, comment in swallowed(p.read_text(encoding='utf-8'))]
+        self.assertEqual(found, [], 'code in a trailing // comment never runs: put it on a line of its own')
+
+    def test_the_guard_finds_the_lines_it_is_for(self):
+        for line in (  # the three it found, as they were
+            "  await page.locator('body').press('c');await page.waitForTimeout(200);  // a check that nothing opensassert.ok(!(await dialog.isVisible()),'C is not New to-do any more');",
+            "  assert.match(await page.locator('.proj-facts').textContent(),/Value €12,000/);assert.equal(await page.locator('.proj-org').textContent(),'paperkite.example');  // the logo's initial isn't part of the textassert.match(await page.locator('.proj-facts').textContent(),/Wants SSO/);",
+            "  const more=async c=>(await c.locator('.more-menu button:not([data-mm-back])').evaluateAll(n=>n.map(x=>x.dataset.full||x.textContent)))  // Hand off…'s sheet names a teammate's choice A teammate; its whole name is data-full.map(x=>x.trim());",
+        ):
+            self.assertEqual(len(swallowed(line)), 1, line)
+        for line in ("assert.equal(a,1);  // the one kept", "// assert.equal(a,1);", "await page.goto('http://127.0.0.1:80/');await ready(page);",
+                     "const url='//cdn.example/x.js';"):
+            self.assertEqual(swallowed(line), [], line)
 
 
 if __name__ == '__main__':
