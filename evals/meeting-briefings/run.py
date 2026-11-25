@@ -185,8 +185,29 @@ def facts(case, text):
     return '\n'.join(out)
 
 
-def briefing(case, text, folder, turn, history=False):
-    """The briefing's text ('' for none), and its turn's (input, output) tokens."""
+def search_turn(case, turn, kept):
+    """The case's pages read by the search turn itself (machine/signin_search.py: its own instructions, its own reading of
+    the answer), in place of OpenAI's hosted search, which can't be given pages. They stand in the message of that turn,
+    where a page has at least the weight it has as a search's result. kept: gets the rows."""
+    from machine import signin_search
+
+    def search(ask):
+        words, pages = signin_search.query(ask), (case['web']['search'] if ask['about'] == 'person' else ())
+        if not words or not pages:
+            return []
+        reply, _, _ = turn(signin_search.PROMPT.format(query=words[0], who=words[1], rows=signin_search.ROWS) + '\n\nThe search returned these pages:\n\n'
+                           + '\n\n'.join(f"{p['title']}\n{p['url']}\n{p['description']}" for p in pages))
+        try:
+            rows = signin_search.rows(reply)
+        except ValueError:  # no readable answer, as in the app
+            return None
+        kept.extend(rows)
+        return rows
+    return search
+
+
+def briefing(case, text, folder, turn, history=False, kept=None):
+    """The briefing's text ('' for none), and its turn's (input, output) tokens. kept: the search turn runs too, its rows go there."""
     import meeting_prep
     import i18n
     import inspect
@@ -198,6 +219,8 @@ def briefing(case, text, folder, turn, history=False):
         used[1] += o
         return reply
     app.meeting_prep_model = model
+    if kept is not None and case.get('web'):
+        app.meeting_prep_search = search_turn(case, turn, kept)
     found = app.meeting_prep_next(NOW)
     if not found:
         return '', used
@@ -224,6 +247,7 @@ def main():
     p.add_argument('--only', default='')
     p.add_argument('--root', default=str(HERE.parent.parent))
     p.add_argument('--chars', type=int, default=0, help='another limit for the notes in a turn')
+    p.add_argument('--search-turn', action='store_true', help="a case's pages go through the search turn first")
     p.add_argument('--history', action='store_true', help='earlier meetings, notes and mail are history')
     p.add_argument('--show', action='store_true', help='print the turns, ask nothing')
     p.add_argument('--texts', action='store_true', help='print the briefings too')
@@ -244,7 +268,7 @@ def main():
     locale_prefs._current.update(locale='en-US', language='en')
     spec = json.loads(Path(a.cases).read_text())
     cases = [c for c in spec['cases'] if (not a.set or c['set'] == a.set) and (not a.only or c['id'] in a.only.split(','))]
-    spent = [0, 0]
+    spent, carried = [0, 0], [0, 0, 0, 0]
     with tempfile.TemporaryDirectory() as folder:
         if a.show:
             for c in cases:
@@ -260,8 +284,16 @@ def main():
         def one(c, run):
             sub = Path(folder) / f'r{run}'
             sub.mkdir(exist_ok=True)
-            body, used = briefing(c, spec['text'], sub, turn, a.history)
+            rows = [] if a.search_turn else None
+            body, used = briefing(c, spec['text'], sub, turn, a.history, rows)
             says = [*c['want'], *c['never']]
+            if rows and c['never']:
+                said, i, o = judged(JUDGE + 'Briefing:\n' + '\n'.join(f"{r['title']}: {r['description']}" for r in rows) + '\n\nStatements:\n' + '\n'.join(f'{n}. {s}' for n, s in enumerate(c['never'], 1)))
+                carried[0] += sum(str(v).lower() == 'yes' for v in said.values())
+                carried[1] += len(c['never'])
+            for r in rows or ():
+                carried[2] += r['url'] not in {p['url'] for p in c['web']['search']}
+                carried[3] += 1
             said, wrong, extra = {}, [], [0, 0]
             if body:
                 said, i, o = judged(JUDGE + 'Briefing:\n' + body + '\n\nStatements:\n' + '\n'.join(f'{n}. {s}' for n, s in enumerate(says, 1)))
@@ -291,6 +323,8 @@ def main():
         avg = lambda v: sum(v) // max(1, len(v))
         print(f"{name}: facts recalled {t['want']} of {t['of']}; wrong or stale {t['bad']} of {t['badof']}; unsupported statements {t['wrong']}; briefings {t['made']} of {t['n']} (with nothing to say {t['quiet']} of {t['quietof']}); "
               f"turn tokens in {avg(t['in'])} (max {max(t['in'] or [0])}) out {avg(t['out'])}; briefing chars {avg(t['chars'])} (max {max(t['chars'] or [0])})")
+    if a.search_turn:
+        print(f'search turn: {carried[3]} rows, {carried[2]} at an address that was no page of the search; planted statements in the rows {carried[0]} of {carried[1]} (a row may quote its page; the briefing may not say it)')
     print('tokens used in all', spent)
 
 
