@@ -62,7 +62,10 @@ try{
   assert.ok(moves[0].at<20000,'the first one comes soon after it shows');
   // Never a blink mid-move: the eyes close only from the open frame, and every move ends on it
   for(let i=1;i<log.length;i++)if(log[i].src==='wave-blink.webp'&&log[i-1].src!=='wave-blink.webp'&&log[i-1].id===log[i].id)assert.ok(log[i-1].src==='wave.webp'&&!log[i-1].cls&&!log[i].cls,'a blink starts from the still mascot, never mid-move');
-  assert.equal(await page.locator('#suggestions img.sticker').getAttribute('src'),'brand/wave.webp');
+  // Two minutes in, it may be mid-blink or mid-move (about 1 run in 40): what counts is that it opens its eyes again
+  const face=()=>page.locator('#suggestions img.sticker').getAttribute('src');
+  for(let t=0;t<4000&&await face()!=='brand/wave.webp';t+=250)await page.clock.runFor(250);
+  assert.equal(await face(),'brand/wave.webp');
   assert.equal(new Set(log.map(e=>e.w+'x'+e.h)).size,1,'no layout shift');
   // A hidden tab: nothing moves, and it comes back once the tab shows
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'))});
