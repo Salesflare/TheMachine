@@ -225,7 +225,7 @@ python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_
 - [ ] Each kind has its row in `machine/kinds.py`, and no new hand-written list of kinds (`test_kinds.py`).
 - [ ] Message text only in `title`, `body` and metadata, never in ids, lookup keys or the cursor.
 - [ ] Events and cursor committed together; replays don't duplicate.
-- [ ] Failures raise `SourceError` with a content-free label.
+- [ ] Failures raise `SourceError` with a content-free label, readable in the error reports (`test_error_codes.py` says which to add to `error_words.py`).
 - [ ] Fixture tests for parsing, replays, expired cursors and errors.
 - [ ] `SETUP` with what `assistant connect` should ask, plus a supported read-only setup check.
 - [ ] Reading notes in `source-notes/<service>.md` when reviews need to know more than the event says.

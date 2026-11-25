@@ -7,7 +7,7 @@ import unittest
 
 import error_feed as ef
 
-CHECKSUM = '164f366c4584e818b920a20787a9e51d1e172db49ba6813c26a59948020e9494'
+CHECKSUM = '0821e196f6be08389265a7e1260c02ed08902939766ecfed1c4526137f401d0d'
 
 
 def checksum(feed):

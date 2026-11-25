@@ -56,6 +56,8 @@ ALWAYS = {
     'test_knowledge_export.py', 'test_i18n.py', 'test_help.py',
     # every config key, command and source the code has, against the reference docs
     'test_docs_match_code.py',
+    # every fixed error code, against what an error report may say
+    'test_error_codes.py',
     # every write to the deliveries table has a label on Connections, Checks
     'test_delivery_labels.py',
     # every write of a to-do's status goes through todo_moves.transition()

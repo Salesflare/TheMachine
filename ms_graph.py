@@ -290,7 +290,7 @@ def credential_path(config, account):
     name = account.get('credential') or credential_name(account.get('email', ''))
     path = (config.get('credentials') or {}).get(name)
     if not path:
-        raise GraphError('outlook:not_signed_in_run_assistant_connect_outlook')
+        raise GraphError('outlook:not_signed_in')
     return Path(path).expanduser()
 
 
@@ -302,7 +302,7 @@ def _saved(path):
     try:
         return json.loads(path.read_text())
     except (OSError, ValueError):
-        raise GraphError('outlook:not_signed_in_run_assistant_connect_outlook') from None
+        raise GraphError('outlook:not_signed_in') from None
 
 
 def save_signin(path, refresh_token, scopes):
@@ -353,7 +353,7 @@ def _direct(config, account, scope):
         except urllib.error.HTTPError as error:
             code = _error_code(error)
             if code in ('invalid_grant', 'interaction_required'):
-                raise GraphError('outlook:microsoft_signin_expired_run_assistant_connect_outlook', error.code, retry_after=3600) from None
+                raise GraphError('outlook:microsoft_signin_expired', error.code, retry_after=3600) from None
             raise GraphError('microsoft_signin', error.code) from None
         except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
             raise GraphError('microsoft_signin_unreachable') from None

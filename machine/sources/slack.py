@@ -298,11 +298,9 @@ class Slack:
             raise SourceError('invalid_json') from None
         if not isinstance(data, dict) or not data.get('ok'):
             label = data.get('error') if isinstance(data, dict) else None
-            known = {'ratelimited', 'invalid_cursor', 'thread_not_found', 'channel_not_found', 'user_not_found', 'user_not_visible',
-                     'not_in_channel', 'missing_scope', 'invalid_auth', 'token_revoked', 'token_expired'} | SLACK_ACCOUNT_LABELS | SLACK_HICCUP_LABELS
             if label == 'ratelimited' and method in self.limited_reads:
                 self.read_went(True)
-            raise SourceError('slack_' + (label if label in known else 'invalid_response') + ':' + method,
+            raise SourceError('slack_' + (label if label in SLACK_LABELS else 'invalid_response') + ':' + method,
                               retry_after=60 if label == 'ratelimited' else None)
         if method in self.limited_reads:
             self.read_went(False)
@@ -376,6 +374,9 @@ SLACK_ACCOUNT_LABELS = {'account_inactive', 'not_authed', 'no_permission', 'org_
                         'team_access_not_granted', 'two_factor_setup_required', 'enterprise_is_restricted', 'accesslimited'}
 # Slack's own trouble, answered as a label instead of a 5xx: the same read is tried again, like a 5xx or a timeout.
 SLACK_HICCUP_LABELS = {'internal_error', 'fatal_error', 'service_unavailable', 'request_timeout'}
+# Every label a failed read may say; any other answer is invalid_response
+SLACK_LABELS = {'ratelimited', 'invalid_cursor', 'thread_not_found', 'channel_not_found', 'user_not_found', 'user_not_visible',
+                'not_in_channel', 'missing_scope', 'invalid_auth', 'token_revoked', 'token_expired'} | SLACK_ACCOUNT_LABELS | SLACK_HICCUP_LABELS
 # One conversation: the owner left it or was removed (channel_not_found, not_in_channel), the sign-in has no scope for
 # its kind (missing_scope: Slack's history scopes are per kind of conversation), a label not named above
 # (invalid_response: the account was checked just before, see Slack.profile), or a page that says there is more without
