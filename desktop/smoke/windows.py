@@ -223,13 +223,30 @@ def _():
     return first.replace('\n', ' | ')
 
 
+def follows(text, before):
+    """Asked, and what went with it."""
+    press(app, '#text')
+    write(text)
+    key(ENTER)
+    need(until(lambda: machine.actions and machine.actions[-1][0] == 'search_ask' and machine.actions[-1][1]['query'] == text), str(machine.actions[-2:]))
+    need(machine.actions[-1][1].get('before', []) == before, str(machine.actions[-1]))
+    need(until(lambda: says('#answer-to') == text and '12:30' in says('#answer-text')), says('#answer'))
+
+
 @step('ask')
 def _():
     press(app, '#kind-ask')
     write('When is lunch with Nora?')
     key(ENTER)
     need(until(lambda: '12:30' in says('#answer')), says('#answer'))
-    need(machine.actions[-1][0] == 'search_ask', str(machine.actions))
+    need(machine.actions[-1][:2] == ('search_ask', {'query': 'When is lunch with Nora?'}), str(machine.actions))
+    follows('And with Sam?', ['When is lunch with Nora?'])
+    follows('Where?', ['When is lunch with Nora?', 'And with Sam?'])
+    follows('Who else?', ['When is lunch with Nora?', 'And with Sam?', 'Where?'])
+    follows('Since when?', ['And with Sam?', 'Where?', 'Who else?'])
+    press(app, '#kind-todo')
+    press(app, '#kind-ask')
+    follows('When is lunch with Nora?', [])  # started again
     need(says('#answer-to') == 'When is lunch with Nora?' and not page('box.html', 'document.getElementById("text").value'), says('#answer'))
 
 
@@ -324,13 +341,22 @@ def _():
     need(not app.box(), 'and no box opens')
 
 
+def icon_menu():
+    """The menu of its icon, there before a key goes to it. A click may only find the arrow's own list closing."""
+    for _ in range(3):
+        click(*tray(app), right=True)
+        if until(lambda: user.FindWindowW('#32768', None), 3):
+            return time.sleep(0.3)
+    need(False, 'its menu opens')
+
+
 @step('hide and show in the icon menu')
 def _():
-    click(*tray(app), right=True)
+    icon_menu()
     png('tray-menu-hide')
     key(0x28), key(ENTER)
     need(until(hidden), 'Hide')
-    click(*tray(app), right=True)
+    icon_menu()
     png('tray-menu-show')
     key(0x28), key(ENTER)
     need(until(back), 'Show robot')
@@ -734,7 +760,7 @@ def _():
     need(until(greeted, 25), says('#state'))
 
 
-@step('paused and starting: not signed out')
+@step('paused and starting, not signed out')
 def _():
     told, kept = [], saved()
     for off in (404, 502):
@@ -766,6 +792,8 @@ def _():
 
 @step('sign out')
 def _():
+    press(app, '#kind-ask')
+    follows('When is lunch with Nora?', [])
     press(app, '#more')
     press(app, '#menu-signout')
     time.sleep(1)
@@ -788,7 +816,13 @@ def _():
     need(machine.cookies and saved()['cookie'] in machine.cookies, 'with its session')
     need(until(lambda: not scheme()), 'its links are taken back')
     subprocess.run(['taskkill', '/f', '/im', 'msedge.exe'], capture_output=True)
-    return says('#state') + ' | ' + says('#said')
+    told = says('#state') + ' | ' + says('#said')
+    if not app.box():
+        click(*app.center())
+    follows('When is lunch with Nora?', [])  # nothing asked before it was signed out
+    press(app, '#kind-todo')
+    need(until(lambda: not says('#answer')), 'the list again')
+    return told
 
 
 # What it opens on the dashboard: in the installed app, or else in the browser
@@ -1602,7 +1636,7 @@ def _():
     need(hosted.cards and all(hosted.cards), f'its page has the session {hosted.cards}')
 
 
-@step('paused over https: its sign-in is kept')
+@step('paused over https, its sign-in is kept')
 def _():
     if not hosted:
         return 'NOT TESTED: no certificate'

@@ -24,7 +24,8 @@ started elsewhere. Do it is off meanwhile, and the row has the buttons of its ne
 word for its state under it, which follows while the box is open. The count stays the dashboard's: one it has outside For
 you stands under its own "Just added" line. Next time the box opens it is a row like any other. If it isn't taken, its
 text and files come back to the box. The dashboard has no Undo for adding, so there is none here. A question
-takes the list's place, with its answer under it.
+takes the list's place, with its answer under it. While an answer is there, the next question goes with the last three
+you asked, so it can go on from them; To-do, signing out and quitting start afresh. They are kept nowhere on this computer.
 
 **Screenshots.** **+**, **Take a screenshot**: you pick an area or a window with the system's own tool while the robot and
 its box are away, and see it in the box before you add the to-do. Remove it there and it goes from your Machine too.

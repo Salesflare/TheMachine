@@ -891,8 +891,8 @@ async fn todo_undo(app: AppHandle, todo: String, act: String) -> Result<Value, S
 }
 
 #[tauri::command]
-async fn ask(app: AppHandle, text: String) -> Result<Value, String> {
-    with_machine(&app, move |m| m.ask(&text)).await
+async fn ask(app: AppHandle, text: String, before: Vec<String>) -> Result<Value, String> {
+    with_machine(&app, move |m| m.ask(&text, &before)).await
 }
 
 /// Whether its Machine's dashboard has a page for one to-do: asked once.

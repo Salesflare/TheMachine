@@ -43,6 +43,7 @@
     $('signin').hidden = connected || notice;
     $('compose').hidden = !connected || notice;
     if (!connected || notice) $('answer').hidden = true;
+    if (!connected) asked = []; // of who was signed in
     if (was && !machine) { $('text').value = ''; files = []; draft = ''; mine = []; went.clear(); seenWorking.clear(); $('live').textContent = ''; showFiles(); } // signed out
     showReady(connected && !notice ? s.waiting : {todos: [], count: 0});
     if (was && !connected) signinBy(byAddress);
@@ -83,6 +84,7 @@
     if (line.scrollWidth > line.clientWidth) line.textContent = plain;
   }
   // A row that was decided says so a while, in its place
+  let asked = []; // what was asked and answered, while the answer is there: the next question goes on from it
   let rows = [], shown = {todos: [], count: 0}, mine = []; // mine: what was just added here, the newest first
   const went = new Map(), quick = new Map(), seenWorking = new Set();
   function showReady(waiting) {
@@ -337,6 +339,7 @@
   document.querySelectorAll('[name=kind]').forEach(r => r.addEventListener('change', () => {
     kind = r.value;
     $('answer').hidden = true;
+    asked = [];
     say('');
     ready();
     native.state().then(s => showReady(s.waiting));
@@ -355,7 +358,8 @@
       } else {
         $('text').value = '';
         answer(text, t.thinking, true);
-        const a = await native.ask(text);
+        const a = await native.ask(text, asked.slice(-3));
+        if (connected && kind === 'ask') asked = [...asked, text].slice(-3);
         answer(text, a.answer || (a.off ? t.askOff : a.error ? t.errors.failed : t.noAnswer));
       }
     } catch (x) {

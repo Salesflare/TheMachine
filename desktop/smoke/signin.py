@@ -66,6 +66,8 @@ def dashboard(seconds=20):
 def sign_in(loopback):
     account.loopback = loopback
     del account.links[:], account.asked[:]
+    if not on.ours():  # a browser of before may still come in front
+        on.back_to_it(app)
     tap('#go')
     need(until(lambda: account.links, 60), 'the account opens in the browser')
 
@@ -174,11 +176,12 @@ def _():
 def _():
     start(signed_in=True)
     need(dashboard(), text())
-    was = saved()
+    kept = lambda: {k: v for k, v in saved().items() if k != 'window'}  # its place is kept as another comes in front
+    was = kept()
     on.other()
     ended = subprocess.run([str(copy)], env=app.env, timeout=20).returncode
     need(until(on.ours, 8), 'the one that runs comes forward')
-    need(ended == 0 and pids() == app.pids() and saved() == was, f'{ended} {pids()} {saved()}')
+    need(ended == 0 and pids() == app.pids() and kept() == was, f'{ended} {pids()} {saved()}')
     start()
     sign_in(False)
     its = handler()
