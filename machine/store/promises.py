@@ -750,7 +750,7 @@ class PromisesStore:
                 m = json.loads(row['metadata'])
                 if 'SENT' not in m.get('labels', []) and not row['mine']:
                     sender = _address(m.get('from'))
-                    to = [x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', m.get('to') or '')]
+                    to = [x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', mail_senders.to_text(m))]
                     automated = AUTOMATED_LABELS & set(m.get('labels', []))
                     if not sender or sender in own or robot.match(sender) or automated or not own & set(to) or len(to) > 2:
                         continue
@@ -759,7 +759,7 @@ class PromisesStore:
                         continue
                     found['asked'].append((row, sender))
                 elif row['mine']:
-                    to = [x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', m.get('to') or '')]
+                    to = [x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', mail_senders.to_text(m))]
                     people = [x for x in to if x not in own and not robot.match(x)]
                     # Not outreach: in a thread the other person started, or to someone who had
                     # written to the owner before the owner started this thread.

@@ -6,7 +6,6 @@ import collections
 import contextlib
 import datetime as dt
 import difflib
-import email.utils
 import hashlib
 import json
 from pathlib import Path
@@ -21,7 +20,7 @@ from machine.config import LOG
 from machine.kinds import CHAT, KINDS
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.slack import slack_ids_named
-from machine.store import outcomes
+from machine.store import message_view, outcomes
 from machine.store.conversation import one_to_one
 from machine.store.evidence_moments import Moments, conversation_of
 from machine.text import clamp, encoded, unquoted, without_forward
@@ -401,7 +400,7 @@ class VoicesStore:
                     if sum(gist == other or (len(gist) > 60 and len(other) > 60 and similar(gist, other)) for other in copies) >= 1:
                         continue  # one copy of a template says all it can
                     m = json.loads(row['metadata'] or '{}')
-                    partner = (','.join(sorted(a.lower() for _, a in email.utils.getaddresses([str(m.get('to') or '')]) if a)) if kind == 'gmail.message'
+                    partner = (','.join(sorted(a for _, a in addresses(m.get('to')))) if kind == 'gmail.message'
                                else conversation_of(kind, m)) or ''
                     if per[partner] >= VOICE_STUDY_PER:
                         continue
@@ -413,9 +412,9 @@ class VoicesStore:
                     item = {'channel': channel, 'date': row['occurred_at'][:10],
                             'text': clamp(slack_ids_named(db, text) if kind == 'slack.message' else text, 700 if kind == 'gmail.message' else 250)}
                     if kind == 'gmail.message':
-                        to = [(n, a) for n, a in email.utils.getaddresses([str(m.get(f) or '') for f in ('to', 'cc')]) if a and a.lower() not in own]
+                        to = [(n, a) for n, a in addresses([m.get(f) for f in ('to', 'cc')]) if a not in own]
                         item['to'] = clamp(', '.join(n or a.split('@')[0] for n, a in to[:3]), 120)
-                        item['same_domain'] = bool(to) and all(a.lower().rsplit('@', 1)[-1] in {o.rsplit('@', 1)[-1] for o in own} for _, a in to)
+                        item['same_domain'] = bool(to) and all(a.rsplit('@', 1)[-1] in {o.rsplit('@', 1)[-1] for o in own} for _, a in to)
                     elif m.get('chat_name') or m.get('channel_name'):
                         item['chat'] = clamp(slack_ids_named(db, str(m.get('chat_name') or m.get('channel_name'))), 60)  # "DM Sam Lee", never the id
                     if roles:
@@ -558,7 +557,7 @@ class VoicesStore:
             mine = [e for e in events if e['kind'] == kind]
             meta = lambda e: e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')
             conversations = {c for c in (conversation_of(kind, meta(e)) for e in mine) if c}
-            people = {a.lower() for e in mine for _, a in email.utils.getaddresses([str(meta(e).get(f) or '') for f in ('from', 'to', 'cc')]) if a}
+            people = {a for e in mine for _, a in addresses([meta(e).get(f) for f in ('from', 'to', 'cc')])}
             people -= {str(a.get('email', '')).lower() for a in self.accounts}
             accounts = {e.get('account_id') for e in mine if e.get('account_id')}
             if not accounts:
@@ -583,11 +582,11 @@ class VoicesStore:
             if len(text.split()) < 2 or PROFILE_SKIP.match(text) or sent.wrote(row, unquoted(row['body'])):
                 continue
             m = json.loads(row['metadata'] or '{}')
-            to = {a.lower() for _, a in email.utils.getaddresses([str(m.get(f) or '') for f in ('to', 'cc')]) if a}
+            to = {a for _, a in addresses([m.get(f) for f in ('to', 'cc')])}
             rank = 0 if conversation_of(kind, m) in conversations else 1 if to & people else 2 if row['account_id'] in accounts else 3
-            names = [n or a.split('@')[0] for n, a in email.utils.getaddresses([str(m.get('to') or '')]) if a][:2]
+            names = [n or a.split('@')[0] for n, a in addresses(m.get('to'))][:2] if kind == 'gmail.message' else []
             picked.append((rank, len(picked), {'channel': EVENT_CHANNELS[kind], 'where': ('this conversation' if rank == 0 else
-                           'to ' + ', '.join(names) if names else str(m.get('chat_name') or m.get('channel_name') or '')[:60]),
+                           'to ' + ', '.join(names) if names else str(m.get('channel_name') or message_view.went_to(kind, m))[:60]),
                            'text': clamp(text, 500 if kind == 'gmail.message' else 300)}))
         picked.sort(key=lambda p: (p[0], p[1]))
         return [p[2] for p in picked[:limit]]

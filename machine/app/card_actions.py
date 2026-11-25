@@ -2,7 +2,6 @@
 approval, refreshing its card, files in its chat, and importing a task link, with the helpers only they use. Moved
 out of assistant.App's action as is. A mixin of assistant.App (APP_MIXINS)."""
 import datetime as dt
-import email.utils
 import json
 import re
 import uuid
@@ -18,6 +17,7 @@ import follow_ups
 import graph
 import i18n
 import lookalike
+import mail_senders
 from machine.browser import FINAL_STEPS
 from machine.cards import asked_snooze_time, owner_snooze_until, undated_card
 from machine.chat import CHAT_FILES_ONLY, unseen_draft
@@ -165,7 +165,7 @@ def replied_to(rows):
             continue
         if not isinstance(m, dict) or not m.get('message-id'):
             continue
-        get = lambda field: [a.strip().lower() for _, a in email.utils.getaddresses([str(m.get(field) or '')]) if '@' in a]
+        get = lambda field: [a for _, a in mail_senders.addresses(m.get(field))]
         home = {'account_id': row['account_id'] if 'account_id' in has else None, 'id': row['source_id'] if 'source_id' in has else None,
                 'thread_id': m.get('thread_id')}
         found = out.setdefault(str(m['message-id']).strip(), {'to': get('to') + get('cc'), 'from': (get('from') or [''])[0],
@@ -191,8 +191,7 @@ def thread_recipients(rows, own):
             continue
         fields = ['reply-to', 'to', 'cc'] if metadata.get('reply-to') else ['from', 'to', 'cc']
         for field in fields:
-            for _, address in email.utils.getaddresses([str(metadata.get(field) or '')]):
-                address = address.strip().lower()
+            for _, address in mail_senders.addresses(metadata.get(field)):
                 if (re.fullmatch(r'[^\s<>@,;]+@[^\s<>@,;]+\.[^\s<>@,;]+', address) and len(address) <= 254
                         and address not in own and address not in seen and not NOT_A_PERSON.match(address)):
                     seen.append(address)

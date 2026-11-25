@@ -938,7 +938,7 @@ class ReviewStore:
         if 'SENT' in labels:
             return 3
         sender = _address(m.get('from'))
-        to = {x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', str(m.get('to') or ''))}
+        to = {x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', mail_senders.to_text(m))}
         if not sender or sender in own or ROBOT_SENDER.match(sender) or labels & AUTOMATED_LABELS:
             return 3
         if own and (not own & to or len(to) > 2):

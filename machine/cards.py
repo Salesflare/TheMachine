@@ -7,6 +7,7 @@ import sqlite3
 
 import i18n
 import locale_prefs
+import mail_senders
 from machine.kinds import SEND
 from machine.sources.android import android_app_shown
 from machine.sources.slack import SLACK_ID
@@ -344,6 +345,8 @@ def source_line_shown(line, names=None):
         person = named(dm[1]).strip()
         head = kind if SLACK_ID.search(person) or CHAT_HANDLE.fullmatch(person) or not person else f'{kind} DM with {chat_plain_name(person)}'
     else:
+        if mail_senders.LISTED.match(who):  # older to-dos kept a list as text ("Teams to ['ann@x.example']")
+            who = ', '.join(mail_senders.recipients(who))
         who = group_sender(named(who).strip())
         if kind == 'phone' and re.fullmatch(r'[a-z]\w*(?:\.\w+)+', who):  # an app by its package (older cards): by its name, or none
             who = android_app_shown(who)

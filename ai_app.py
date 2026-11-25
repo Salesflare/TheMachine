@@ -683,7 +683,7 @@ class AiApp:
         if m.get('security_code_omitted') or ai_access.SECURITY_CODE.search(title + ' ' + body):
             body = '[One-time security code omitted]'
         sender = m.get('sender_display') or m.get('from') or ''
-        to = m.get('to') if isinstance(m.get('to'), list) else [m.get('to')] if m.get('to') else []
+        to = graph.mail_senders.to_people(m)
         channel = CHANNEL_KINDS[r['kind']]
         item = {'id': r['id'], 'channel': channel, 'at': r['occurred_at'], 'from': mark(str(sender)[:200], channel),
                 'subject': mark(title[:300], channel), 'text': mark(body[:size] + ('…' if len(body) > size else ''), channel),

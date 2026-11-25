@@ -23,6 +23,7 @@ import graph
 import lookalike
 import learning_loop
 import locale_prefs
+import mail_senders
 from machine.browser import (
     browser_link,
     browser_view_link,
@@ -298,15 +299,35 @@ def source_lines_shown(db, cards):
     for c in cards:
         if re.match(r'Source: signal\b', str(c.get('source_line') or '')):
             c['source_line'] = None
+    unlisted(db, cards)
     lines = [c.get('source_line') for c in cards if c.get('source_line')]
     names = slack_people_names(db, {m[1] for line in lines for m in SLACK_ID.finditer(str(line))})
-    people = address_names(db, {a for line in lines if (m := SOURCE_WHO.match(str(line))) for a in message_view.bare_addresses(m[1])})
     for c in cards:
         if c.get('source_line'):
-            line = source_line_shown(c['source_line'], names)
-            m = people and SOURCE_WHO.match(str(line))
-            name = m and people.get(m[1].strip().strip('<>').lower())
-            c['source_line'] = line[:m.start(1)] + name + line[m.end(1):] if name else line
+            c['source_line'] = source_line_shown(c['source_line'], names)
+    who = {n: m for n, c in enumerate(cards) if (m := SOURCE_WHO.match(str(c.get('source_line') or '')))}
+    people = address_names(db, {a for m in who.values() for a in message_view.bare_addresses(m[1])})
+    for n, c in enumerate(cards):
+        if people and (m := who.get(n)):  # one sender, or everyone a message went to
+            said = ', '.join(people.get(w.strip('<>').lower(), w) for w in m[1].strip().split(', '))
+            c['source_line'] = m.string[:m.start(1)] + said + m.string[m.end(1):]
+
+
+def unlisted(db, cards):
+    """A source line stored while a list of recipients was written as text ("Teams to ['ann@x.example']") says who the
+    message went to as a new one does (message_view.went_to), read from the message it names."""
+    for c in cards:
+        found = SOURCE_WHO.match(str(c['source_line'])) if '[' in str(c.get('source_line') or '') else None
+        if not found or not mail_senders.LISTED.match(found[1]):
+            continue
+        ids = [i for i in json.loads(c.get('event_ids') or '[]') if isinstance(i, int)]
+        rows = [dict(r) for r in db.execute('SELECT id,kind,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(ids),))]
+        address = _address(mail_senders.recipients(found[1]))
+        own = next((r for r in sorted(rows, key=lambda r: ids.index(r['id'])) if own_message(r)
+                    and _address(json.loads(r['metadata']).get('to')) == address), None) if address else None
+        who = own and message_view.went_to(own['kind'], json.loads(own['metadata']), message_view.row_names(rows))
+        if who:
+            c['source_line'] = c['source_line'][:found.start(1)] + who + c['source_line'][found.end(1):]
 
 
 def source_marks(db, cards):
@@ -514,9 +535,9 @@ class ViewsStore(ConversationStore):
                 shows = re.search(r'(?m)^Shows: (.+)$', said[1]) if len(said) > 1 else None
                 photo['alt'] = shows[1][:300] if shows else ''
             media = {} if photo else message_view.media_shown(r['kind'], m, body)  # a photo not kept, a video: its chip
-            result.append(message_view.shape(r['kind'], {'kind': source_kind(r['kind']), 'from': str(who)[:300], 'to': str(m.get('to') or '')[:500],
-                           'cc': str(m.get('cc') or '')[:500], 'title': r['title'][:500], 'occurred_at': r['occurred_at'],
-                           **{key: str(m[head])[:500] for key, head in (('reply_to', 'reply-to'), ('bcc', 'bcc'), ('sender', 'sender'))
+            result.append(message_view.shape(r['kind'], {'kind': source_kind(r['kind']), 'from': str(who)[:300], 'to': mail_senders.to_text(m)[:500],
+                           'cc': ', '.join(mail_senders.recipients(m.get('cc')))[:500], 'title': r['title'][:500], 'occurred_at': r['occurred_at'],
+                           **{key: ', '.join(mail_senders.recipients(m[head]))[:500] for key, head in (('reply_to', 'reply-to'), ('bcc', 'bcc'), ('sender', 'sender'))
                               if m.get(head) and message_view.view_of(r['kind']) == 'email'},
                            'body': body[:20000], 'clipped': len(body) > 20000 or bool(m.get('truncated')),
                            **({'details': details[:4000]} if details else {}),
@@ -527,7 +548,7 @@ class ViewsStore(ConversationStore):
         mail = [o for o in result if o.get('view') == 'email']
         rest = [o for o in result if o.get('view') != 'email']
         # outside email a sender is only a name: a chat's, its turns' and a payment's by the graph's name for the address
-        said = [o.get('from') for o in rest] + [o.get('chat') for o in rest] + [t.get('from') for o in rest for t in o.get('turns') or ()]
+        said = [o.get(k) for o in rest for k in ('from', 'to', 'chat')] + [t.get('from') for o in rest for t in o.get('turns') or ()]
         bare = message_view.bare_addresses(*(o.get(k) for o in mail for k in ('from', 'to', 'cc', 'bcc', 'reply_to')), *said)
         if bare:  # people by the name the graph knows for them, the address only when none is known
             with self.connect() as db:
@@ -536,6 +557,7 @@ class ViewsStore(ConversationStore):
                 for key in ('from', 'to', 'cc', 'bcc', 'reply_to'):
                     o[key] = message_view.named(o.get(key), names)
             for o in rest:
+                o['to'] = message_view.named(o.get('to'), names)
                 for key in ('from', 'chat'):
                     if o.get(key):
                         o[key] = message_view.name_only(o[key], names)

@@ -7,6 +7,7 @@ import sqlite3
 import time
 
 import graph
+import mail_senders
 import own_addresses
 from machine.config import LOG
 from machine.sources.exclusions import excluded_by_rules, routine_rules
@@ -120,8 +121,8 @@ class ConversationApp:
             sender = str(m.get('from') or '')
             mine = own_message(event, own=own)
             body, cut = shown_body(event['body'])
-            out.append({'kind': 'email', 'from': ('You' if mine else sender)[:300], 'to': str(m.get('to') or '')[:500],
-                        'cc': str(m.get('cc') or '')[:500], 'title': event['title'][:500], 'occurred_at': event['occurred_at'],
+            out.append({'kind': 'email', 'from': ('You' if mine else sender)[:300], 'to': mail_senders.to_text(m)[:500],
+                        'cc': ', '.join(mail_senders.recipients(m.get('cc')))[:500], 'title': event['title'][:500], 'occurred_at': event['occurred_at'],
                         'body': body[:20000], 'clipped': cut or len(body) > 20000, 'url': m.get('source_url'),
                         'event_id': None, 'live': True, 'attachments': []})
         return sorted(out, key=lambda o: o['occurred_at'])[-BEFORE_MAX:]
