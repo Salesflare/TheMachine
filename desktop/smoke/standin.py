@@ -153,6 +153,7 @@ class Machine(http.server.ThreadingHTTPServer):
         self.named, self.odd = [], None  # the to-dos whose words it asked; the status that answers it instead
         self.todos, self.name = list(TODOS), 'Sam'
         self.refuse = False
+        self.off = None  # its address answers, it doesn't: its manifest's status (404 paused, 502 starting); all else is sent to the account
         self.loopback = False  # its account sends the browser back to the app's own port
         self.compact = False  # its dashboard has the page of one to-do
         self.no = None  # why it doesn't take a decision
@@ -198,6 +199,8 @@ class Page(http.server.BaseHTTPRequestHandler):
             cookie = '__Host-machine=' + secrets.token_urlsafe(24)
             m.cookies.add(cookie)
             return self.answer(b'', 302, Location='/', Set_Cookie=cookie + '; Path=/; Secure; HttpOnly')
+        if m.off:
+            return self.answer({}, m.off) if u.path == '/manifest.webmanifest' else self.answer(b'', 302, Location=(m.account or m.at) + '/open')
         if u.path == '/manifest.webmanifest':
             return self.answer(MANIFEST, kind='application/manifest+json')
         if u.path == '/icon.png':
@@ -216,7 +219,7 @@ class Page(http.server.BaseHTTPRequestHandler):
         if u.path == '/seen':
             m.seen.append(q)
             return self.answer({})
-        if m.refuse:
+        if m.refuse and not (m.away and u.path == '/'):
             return self.answer({'error': 'Sign in'}, 403)
         if u.path == '/api/session':
             return self.answer({'csrf': 'made-up', **({'compact': 1} if m.compact else {})})

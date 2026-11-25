@@ -42,6 +42,8 @@ pub enum View {
     /// The Machine's address is another one now.
     Moved,
     Offline,
+    /// Its address answers, the Machine doesn't: it is off or starting.
+    Off,
 }
 
 #[derive(Debug, PartialEq)]
@@ -280,8 +282,33 @@ fn navigation(app: &AppHandle, url: &Url) -> bool {
         Goes::Moved => View::Moved,
         Goes::No => return false,
     };
-    later(app, move |app| view(app, to));
+    match to {
+        View::SignedOut => sent_away(app),
+        to => later(app, move |app| view(app, to)),
+    }
     false
+}
+
+/// The page was sent to sign in: so it is when its sign-in is gone, and when the Machine is off.
+fn sent_away(app: &AppHandle) {
+    let (app, load) = (app.clone(), app.state::<Shared>().dash.lock().unwrap().loads);
+    std::thread::spawn(move || {
+        let Some(machine) = app.state::<Shared>().machine() else { return };
+        let to = away(machine.takes().err().as_deref());
+        later(&app, move |app| {
+            if app.state::<Shared>().dash.lock().unwrap().loads == load {
+                view(app, to);
+            }
+        });
+    });
+}
+
+fn away(why: Option<&str>) -> View {
+    match why {
+        Some(crate::machine::OFF) => View::Off,
+        Some("unreachable") => View::Offline,
+        _ => View::SignedOut,
+    }
 }
 
 fn loaded(app: &AppHandle, url: &Url) {
@@ -380,15 +407,18 @@ fn look(app: &AppHandle, machine: &Machine, load: u64) {
     let (app, machine) = (app.clone(), machine.clone());
     std::thread::spawn(move || {
         let reached = machine.check();
-        if matches!(reached.as_ref().map_err(String::as_str), Err("unreachable" | "notmachine")) {
-            std::thread::sleep(Duration::from_millis(1500)); // the page its service worker keeps comes first
-            later(&app, move |app| unreached(app, load));
-        }
+        let to = match reached.as_ref().map_err(String::as_str) {
+            Err("unreachable" | "notmachine") => View::Offline,
+            Err(crate::machine::OFF) => View::Off,
+            _ => return,
+        };
+        std::thread::sleep(Duration::from_millis(1500)); // the page its service worker keeps comes first
+        later(&app, move |app| unreached(app, load, to));
     });
 }
 
 /// Nothing answered: the page that is there is the dashboard's own kept one, or it is none of the Machine's.
-fn unreached(app: &AppHandle, load: u64) {
+fn unreached(app: &AppHandle, load: u64, to: View) {
     let Some(window) = window(app) else { return };
     let (this, there) = {
         let shared = app.state::<Shared>();
@@ -396,12 +426,12 @@ fn unreached(app: &AppHandle, load: u64) {
         (dash.loads == load, matches!(dash.at, At::Machine(_, true)))
     };
     if this && !there {
-        return view(app, View::Offline); // no page that could be asked
+        return view(app, to); // no page that could be asked
     }
     let ends = move |app: &AppHandle, kept: bool| {
         let this = app.state::<Shared>().dash.lock().unwrap().loads == load;
         if this && !kept {
-            view(app, View::Offline);
+            view(app, to);
         }
     };
     let (here, told) = (app.clone(), std::sync::Arc::new(AtomicBool::new(false)));
@@ -449,14 +479,16 @@ pub fn now(app: &AppHandle) -> View {
 /// Try again.
 pub fn retry(app: &AppHandle) {
     let shared = app.state::<Shared>();
-    if let (Some(window), Some(machine), true) = (window(app), shared.machine(), now(app) == View::Offline) {
+    if let (Some(window), Some(machine), true) = (window(app), shared.machine(), matches!(now(app), View::Offline | View::Off | View::SignedOut | View::Moved)) {
         load(app, &window, &machine);
     }
 }
 
-/// The app's own look (main.rs) got an answer: the Machine is there again.
-pub fn answered(app: &AppHandle) {
-    if now(app) == View::Offline {
+/// The app's own look (main.rs) got an answer: the Machine is there again. `again`: the one before didn't, so it takes a
+/// sign-in again that it didn't.
+pub fn answered(app: &AppHandle, again: bool) {
+    let at = now(app);
+    if matches!(at, View::Offline | View::Off) || again && matches!(at, View::SignedOut | View::Moved) {
         later(app, retry);
     }
 }

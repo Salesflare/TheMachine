@@ -3,7 +3,7 @@
   'use strict';
   const {core: {invoke}, event: {listen}} = window.__TAURI__;
   const t = window.MachineText, $ = id => document.getElementById(id);
-  let view = '', byAddress = false, busy = false;
+  let view = '', byAddress = false, busy = false, why = false;
   const words = e => t.errors[e] || (typeof e === 'string' && e) || t.errors.failed;
   const fill = (text, v) => text.replace('{}', () => v);
 
@@ -14,9 +14,10 @@
     if (!same) { byAddress = false; $('error').textContent = ''; }
     $('panel').hidden = view === 'blank';
     if (view === 'blank') return;
-    const host = s.machine ? new URL(s.machine).host : '', off = view === 'offline';
-    $('title').textContent = off ? fill(t.offline, host) : t.robot;
-    $('line').textContent = off ? t.offlineHint : view === 'signedout' && host ? fill(t.signedOutOf, host) : view === 'moved' ? t.moved : t.signInWindow;
+    const host = s.machine ? new URL(s.machine).host : '', off = view === 'off' || view === 'offline';
+    why = view === 'off' && s.hosted;
+    $('title').textContent = off ? fill(t[view], host) : t.robot;
+    $('line').textContent = off ? t[view + 'Hint'] : view === 'signedout' && host ? fill(t.signedOutOf, host) : view === 'moved' ? t.moved : t.signInWindow;
     $('go').textContent = off ? t.retry : t.signIn;
     by(byAddress);
   }
@@ -30,17 +31,17 @@
     byAddress = address;
     $('go').hidden = address;
     $('by-address').hidden = !address;
-    $('other').hidden = view === 'offline';
-    $('other').textContent = address ? t.account : t.own;
+    $('other').hidden = !why && (view === 'off' || view === 'offline');
+    $('other').textContent = why ? t.offWhy : address ? t.account : t.own;
     (address ? $('address') : $('go')).focus();
   }
   $('address').placeholder = t.address;
   $('address').setAttribute('aria-label', t.address);
   $('connect').textContent = t.connect;
-  $('other').addEventListener('click', () => { $('error').textContent = ''; by(!byAddress); });
+  $('other').addEventListener('click', () => { $('error').textContent = ''; if (why) return invoke('app_account').catch(e => { $('error').textContent = words(e); }); by(!byAddress); });
   $('go').addEventListener('click', async () => {
     $('error').textContent = '';
-    if (view === 'offline') return invoke('app_retry');
+    if (view === 'off' || view === 'offline') return invoke('app_retry');
     try { await invoke('sign_in'); $('line').textContent = t.waitingBrowser; waiting(true); } catch (e) { $('error').textContent = words(e); }
   });
   $('by-address').addEventListener('submit', async e => {

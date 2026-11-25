@@ -204,7 +204,8 @@ fn look(app: &AppHandle) -> Result<(), String> {
     if shared.machine().is_none_or(|m| m.url != machine.url) {
         return Ok(()); // signed out meanwhile
     }
-    *shared.problem.lock().unwrap() = found.as_ref().err().cloned();
+    let problem = found.as_ref().err().cloned();
+    let was = std::mem::replace(&mut *shared.problem.lock().unwrap(), problem.clone());
     match &found {
         Ok((notices, meeting)) => {
             let _ = app.emit_to("robot", "news", ());
@@ -216,7 +217,10 @@ fn look(app: &AppHandle) -> Result<(), String> {
         }
     }
     if found.is_ok() {
-        dash::answered(app);
+        dash::answered(app, was.is_some());
+    }
+    if was != problem {
+        let _ = app.emit_to("box", "listed", ());
     }
     if found.is_ok() && !shared.alone.lock().unwrap().as_ref().is_some_and(|(url, _)| *url == machine.url) {
         if let Some(alone) = machine.alone() {
@@ -680,7 +684,10 @@ fn box_close(app: AppHandle) {
 }
 
 fn signed_in(app: &AppHandle, machine: Machine) -> Result<(), String> {
-    machine.check()?;
+    match machine.check() {
+        Err(off) if off == machine::OFF && machine.cookie.is_some() => {} // the account signed it in: kept until it is on
+        checked => checked?,
+    }
     let shared = app.state::<Shared>();
     {
         let mut saved = shared.saved.lock().unwrap();
@@ -783,16 +790,24 @@ fn says_so(app: &AppHandle) {
 struct AppState {
     view: dash::View,
     machine: Option<String>,
+    hosted: bool,
 }
 
 #[tauri::command]
 fn app_state(app: AppHandle) -> AppState {
-    AppState { view: dash::now(&app), machine: app.state::<Shared>().machine().map(|m| m.url) }
+    let machine = app.state::<Shared>().machine();
+    AppState { view: dash::now(&app), hosted: machine.as_ref().is_some_and(|m| m.cookie.is_some()), machine: machine.map(|m| m.url) }
 }
 
 #[tauri::command]
 fn app_retry(app: AppHandle) {
     later(&app, dash::retry);
+}
+
+/// Why a hosted Machine is off.
+#[tauri::command]
+fn app_account(app: AppHandle) -> Result<(), String> {
+    app.opener().open_url(format!("{}/open", signin::account()), None::<&str>).map_err(|_| "browser".to_string())
 }
 
 #[tauri::command]
@@ -1168,7 +1183,7 @@ fn main() {
             robot_state, robot_grab, robot_drag, robot_drop, robot_click, robot_menu, robot_take, robot_list, robot_given, box_given, box_state, box_look, box_fit, box_draft, box_close,
             connect, sign_in, add_todo, add_file, remove_file, take_screenshot, todo_quick, todo_decide, todo_undo, ask, open_dashboard, menu_item,
             card_open, card_place, card_close, set_speaks, bubble_state, bubble_fit, bubble_hold, bubble_open, bubble_join, bubble_done,
-            robot_notify, app_state, app_retry, settings::settings_state, settings::settings_set, settings::settings_fit, updates::update_apply
+            robot_notify, app_state, app_retry, app_account, settings::settings_state, settings::settings_set, settings::settings_fit, updates::update_apply
         ])
         .on_window_event(|window, event| {
             let app = window.app_handle();

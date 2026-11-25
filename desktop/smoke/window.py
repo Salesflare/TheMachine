@@ -703,6 +703,38 @@ def _():
     return q
 
 
+@step('paused and starting: not signed out')
+def _():
+    kept = lambda: (saved()['machine'], saved()['cookie'])
+    was, told = kept(), []
+    for off in (404, 502):
+        machine.off = off
+        hit('reload')
+        need(until(lambda: 'off or starting' in text(), 40), f'{off}: {text()}')
+        need('Signed out' not in text() and 'Sign in' not in text(), text())
+        told.append(text())
+        png(f'off-{off}')
+        tap('#go')
+        time.sleep(4)
+        need('off or starting' in text(), f'still off: {text()}')
+        need(kept() == was, 'what is kept of the sign-in')
+        machine.off = None
+        need(until(dashboard, 50), f'by itself, once it is on: {text()}')
+    no_browser()
+    return told
+
+
+@step('a sign-in that ended, and is taken again')
+def _():
+    machine.away, machine.refuse = elsewhere.at + '/open', True
+    hit('reload')
+    need(until(lambda: 'Signed out' in text(), 10), text())
+    time.sleep(35)  # a look of the robot's own
+    need('Signed out' in text(), text())
+    machine.away, machine.refuse = None, False
+    need(until(dashboard, 50), text())
+
+
 def reachable():
     global machine
     machine = Machine(PORT)

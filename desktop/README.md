@@ -99,7 +99,10 @@ same page as in a browser, signed in as the robot is, with no second sign-in and
   front. A click opens the to-do. They turn on when you turn the robot off (macOS asks you then), unless you turned them off
   before. With the robot there are none, so nothing comes twice. The number on its Dock icon (Mac) or taskbar button (Windows)
   is For you's.
-- **Not reachable, signed out or moved to another address**: the window says so and how to go on.
+- **Not reachable, off or starting, signed out, or moved to another address**: the window says so and how to go on. A Machine
+  that is off (a hosted one that is paused, or still starting) is not signed out: your sign-in stays on this computer, and
+  the box and the window are back by themselves within half a minute of it being on. A hosted Machine's window has a link to
+  your account, which says why it is off.
 
 The robot is away while the window is in front. At login only the robot comes, no window.
 
