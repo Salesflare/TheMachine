@@ -51,6 +51,13 @@ from machine.kinds import SEND_NOW
 SENDING_FINISH = ('Send', 'Reply', 'Post', 'Invite', 'Share')
 
 
+NEEDS_MAX = 200  # needs is the to-do's status line, not its list
+# Says what is wrong with needs, never "say whether the job is finished": a run told that had already said so, and sent
+# the same text again until it gave up with nothing saved.
+NEEDS_TOO_LONG = ("Not saved: outcome:'{}' is fine, but needs is {} characters and the limit is " + str(NEEDS_MAX) + '. Say it shorter (several missing '
+                  'things named together, the list in the body) and save again with the rest unchanged')
+
+
 NOT_A_PERSON = re.compile(r'(?i)^(?:no-?reply|do-?not-?reply|mailer-daemon|postmaster|notifications?|bounces?)[@+.-]')
 
 
@@ -324,7 +331,8 @@ class CardActionsApp:
             # Every result says plainly whether the job is finished.
             needs=' '.join(str(args.get('needs') or '').split())
             if args.get('outcome')=='done':outcome={'state':'done'}
-            elif args.get('outcome')=='needs_you' and 3<=len(needs)<=200:
+            elif args.get('outcome')=='needs_you' and len(needs)>=3:
+                if len(needs)>NEEDS_MAX:raise ValueError(NEEDS_TOO_LONG.format('needs_you',len(needs)))
                 outcome={'state':'needs_you','needs':needs,**({'owner_step':True} if args.get('owner_step') is True else {})}
                 # Whether what it made can be used before they answer (machine/cards.py needs_first)
                 if isinstance(args.get('needs_first'),bool) and not outcome.get('owner_step'):outcome['needs_first']=args['needs_first']
@@ -338,8 +346,9 @@ class CardActionsApp:
                 waiting=' '.join(str(args.get('waiting_on') or '').split())
                 if not 3<=len(waiting)<=200:raise ValueError("outcome:'waiting' needs waiting_on: the step still open and who it waits on, 3 to 200 characters")
                 outcome={'state':'waiting','waiting_on':waiting}
-            elif args.get('outcome')=='already_done' and 3<=len(' '.join(str(args.get('needs') or '').split()))<=200:
-                outcome={'state':'needs_you','needs':' '.join(str(args['needs']).split())}  # something is still left for the owner: open, not done
+            elif args.get('outcome')=='already_done' and len(needs)>=3:
+                if len(needs)>NEEDS_MAX:raise ValueError(NEEDS_TOO_LONG.format('already_done',len(needs)))  # dropped, it would read as done
+                outcome={'state':'needs_you','needs':needs}  # something is still left for the owner: open, not done
             elif args.get('outcome')=='already_done':
                 if any(a['kind']!='open' for a in next_actions.actions(action)):
                     raise ValueError("outcome:'already_done' means there is nothing left to approve: leave next_actions empty")
