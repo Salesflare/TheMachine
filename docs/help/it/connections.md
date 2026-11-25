@@ -79,6 +79,6 @@ Un accesso salvato viene usato solo per il suo indirizzo web: lo stesso sito, `h
 
 ## Controlli
 
-**Controlli** mostra come la tua Machine esamina i dati in arrivo: i controlli recenti e quello che ha rilevato in ciascuno. Vedi [Nessuna nuova attività](reviews-paused.md).
+**Controlli** mostra come la tua Machine esamina i dati in arrivo: i controlli recenti e quello che ha rilevato in ciascuno. Vedi [Niente attività nuove](reviews-paused.md).
 
 Ogni connessione ha un articolo dedicato in questa sezione, con i dati che legge e ciò che può inviare.

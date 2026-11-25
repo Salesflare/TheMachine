@@ -13,7 +13,7 @@ Premi **Invia più tardi**, accanto a **Invia ora**, e scegli un orario. L’ema
 
 ## Annullare un’email o un messaggio inviato
 
-Non è possibile una volta inviato. Nulla viene inviato senza la tua conferma, quindi controllalo prima in **Rivedi e invia**. In alcuni casi puoi ancora fermare l’invio: premi **Annulla** su un invio [programmato](send-later.md), oppure, in [Parla dal vivo](talk-live.md), puoi premere **Annulla** per qualche secondo dopo aver confermato. **Interrompi l’invio** blocca gli altri messaggi di una serie di [email di follow-up](follow-ups.md).
+Non è possibile una volta inviato. Nulla viene inviato senza la tua conferma, quindi controllalo prima in **Rivedi e invia**. In alcuni casi puoi ancora fermare l’invio: premi **Annulla** su un invio [programmato](send-later.md), oppure, in [Conversazione dal vivo](talk-live.md), puoi premere **Annulla** per qualche secondo dopo aver confermato. **Interrompi l’invio** blocca gli altri messaggi di una serie di [email di follow-up](follow-ups.md).
 
 ## Dove trovare una bozza
 

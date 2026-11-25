@@ -79,6 +79,6 @@ Un inicio de sesión guardado solo se usa en su propia dirección web: el mismo 
 
 ## Revisiones
 
-**Revisiones** muestra cómo lee tu Machine lo que recibe: las revisiones recientes y lo que encontró cada una. Consulta [No hay tareas nuevas](reviews-paused.md).
+**Revisiones** muestra cómo lee tu Machine lo que recibe: las revisiones recientes y lo que encontró cada una. Consulta [Sin tareas nuevas](reviews-paused.md).
 
 Cada conexión tiene su propio artículo en esta sección, donde se explica qué lee y qué puede enviar.
