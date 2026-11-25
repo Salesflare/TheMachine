@@ -44,6 +44,7 @@ from machine.cards import (
     looks_done_at,
     needs_owner,
     SOURCE_DM,
+    source_kind_shown,
     source_line_shown,
     SOURCE_RAW,
 )
@@ -811,6 +812,7 @@ class ViewsStore(ConversationStore):
                         suggestion['weight'] = weight
                 except (sqlite3.Error, ValueError, TypeError):
                     pass
+                suggestion['source_line'] = source_kind_shown(suggestion.get('source_line'))  # last: its icon and lookalike read the stored word
                 if suggestion['status'] in gap_note.OPEN_STATUSES and suggestion.get('people'):
                     try:  # one short line on what isn't known about them, only where it helps (gap_note.card_gap)
                         gap = gap_note.card_gap(gap_note.for_card(db, json.loads(suggestion['event_ids'] or '[]'),

@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import tempfile
 import unittest
+from machine.cards import source_kind_shown  # noqa: E402
+from machine.store.views import source_lines_shown  # noqa: E402
 from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('source_names_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
@@ -72,6 +74,30 @@ class SourceNames(unittest.TestCase):
         for stored, want in cases.items():
             self.assertEqual(a.source_line_shown(stored, names), want)
         self.assertNotRegex(a.source_line_shown('Source: Slack from #DM U0ROBIN01 · Thu 22 Oct'), RAW)  # no names known (Telegram's card text)
+
+    def test_a_phone_notification_says_so_where_people_read_it(self):
+        for line, want in (('Source: phone from WhatsApp · Thu 22 Oct (+1 more)', 'Source: phone notification from WhatsApp · Thu 22 Oct (+1 more)'),
+                           ('Source: phone · Thu 22 Oct', 'Source: phone notification · Thu 22 Oct'),
+                           ('Source: phone (+1 more)', 'Source: phone notification (+1 more)'), ('phone', 'phone notification'),
+                           ('phone from Acme Bank · Thu 22 Oct', 'phone notification from Acme Bank · Thu 22 Oct'),
+                           ('Source: email from phone repairs · Thu 22 Oct', 'Source: email from phone repairs · Thu 22 Oct'),
+                           ('Source: phonebook from Sam Lee', 'Source: phonebook from Sam Lee'), (None, None)):
+            self.assertEqual(source_kind_shown(line), want)
+            self.assertEqual(source_kind_shown(want), want)  # once
+        self.store.commit_page('phone', {}, [event('phone', 'p1', 'android.notification', {'package_name': 'com.whatsapp', 'app_name': 'WhatsApp'})])
+        with self.store.connect() as db:
+            self.ids['p1'] = db.execute("SELECT id FROM events WHERE source_id='p1'").fetchone()[0]
+        card = self.card('p1')
+        with self.store.connect() as db:
+            row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (card,)).fetchone())
+            self.assertTrue(row['source_line'].startswith('Source: phone from WhatsApp · '), row['source_line'])  # stored as before
+            brief = [dict(row)]
+            source_lines_shown(db, brief)  # what an agent's brief is made of (agent_card)
+        self.assertTrue(brief[0]['source_line'].startswith('Source: phone from WhatsApp · '), brief[0]['source_line'])
+        shown = self.shown()[card]
+        self.assertTrue(shown['source_line'].startswith('Source: phone notification from WhatsApp · '), shown['source_line'])
+        self.assertEqual(shown['source_mark']['app'], 'com.whatsapp')  # and still wears the app's icon
+        self.assertIn('Source: phone notification from WhatsApp · ', a.card(row))  # Telegram
 
     def test_the_dashboard_gets_names_for_slack_whatsapp_and_telegram_cards(self):
         cards = {s: self.card(s) for s in ('D0ROBIN01:1', 'w1', 't1')}

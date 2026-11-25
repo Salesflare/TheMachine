@@ -19,7 +19,7 @@ import locale_prefs
 import memory_use
 from machine.actions import TALK_ACTIONS
 from machine.app.recall import recall
-from machine.cards import todo_state
+from machine.cards import source_kind_shown, todo_state
 from machine.chat import chat_name, chat_person
 from machine.config import LOG, ROOT
 from machine.delivery.push import talk_about, TALK_KINDS
@@ -538,7 +538,7 @@ class TalkApp:
                 r = rows[0]
                 return {'id': rid, 'kind': 'message', 'title': clamp(' '.join(str(r['title'] or '').split()), 200), 'what': source_text(r),
                         'text': clamp(str(r['body'] or ''), 1500),
-                        'card': {'kind': 'message', 'title': clamp(' '.join(str(r['title'] or '').split()), 200), 'line': source_text(r), 'event': r['id']}}
+                        'card': {'kind': 'message', 'title': clamp(' '.join(str(r['title'] or '').split()), 200), 'line': source_kind_shown(source_text(r)), 'event': r['id']}}
             return {'error': 'That message or meeting is not there anymore.'}
         if rid.startswith('promise:') and rid[8:].isdigit():
             try:

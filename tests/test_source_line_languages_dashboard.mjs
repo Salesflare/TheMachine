@@ -30,6 +30,8 @@ for(const [line,shown] of [
  ['Source: your routine From A to B · Thu, Nov 12','From your routine From A to B · en 11/12'],
  ['Source: your Fleet · Thu, Nov 12','From your Fleet · en 11/12'],
  ['Source: Slack · Thu, Nov 12 (+1 more)','Slack · en 11/12 (+1 more)'],
+ ['Source: phone notification from WhatsApp · Thu, Nov 12','Phone notification from WhatsApp · en 11/12'],
+ ['Source: phone notification · Thu, Nov 12 (+1 more)','Phone notification · en 11/12 (+1 more)'],
  ['Source: calendar','Calendar']])assert.equal(say('en',null,line),shown);
 
 // Other word orders too, with the words said here: the catalogs get theirs from the daily translation
@@ -38,8 +40,11 @@ assert.equal(say('nl',{...nl,[TO]:'{} aan {}'},'Source: WhatsApp to Anna Example
 assert.equal(say('nl',{...nl,[TO]:'{} aan {}'},'Source: email to Anna Example from Acme · Thu, Nov 12'),'E-mail aan Anna Example from Acme · nl 11/12');
 assert.equal(say('ko',{...ko,[TO]:'{1}에게 보낸 {0}'},'Source: WhatsApp to Anna Example · Thu, Nov 12'),'Anna Example에게 보낸 WhatsApp · ko 11/12');
 
+assert.equal(say('nl',{...nl,'Phone notification':'Telefoonmelding'},'Source: phone notification from WhatsApp · Thu, Nov 12'),'Telefoonmelding van WhatsApp · nl 11/12');
+
 // Every language, every kind a line can name (machine/kinds.py), every form: its own words, none left in English
-const kinds=[...new Set(Object.values(JSON.parse(/<script id="source-kinds"[^>]*>([^<]*)</.exec(html)[1]).kinds).map(k=>k.name).filter(Boolean))];
+const kinds=[...new Set(Object.values(JSON.parse(/<script id="source-kinds"[^>]*>([^<]*)</.exec(html)[1]).kinds).map(k=>k.name).filter(Boolean)
+ .map(n=>n==='phone'?'phone notification':n))];  // as the line is shown (machine/cards.py source_kind_shown)
 const up=s=>s[0].toUpperCase()+s.slice(1);
 assert.ok(kinds.length>30);
 for(const name of kinds)assert.ok(up(name) in en||notUi.has(up(name))||name.length<2,`"${up(name)}" is in no catalog: a source line keeps it English (python3 scripts/i18n_extract.py --add)`);
