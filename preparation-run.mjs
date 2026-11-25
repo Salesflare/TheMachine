@@ -17,14 +17,14 @@ const runSeconds={preparation:1200, review:1200, profile:900, skills:900, routin
 const scope={scopes:['operator.admin','operator.read','operator.write']};
 const USAGE_LIMIT=/usage limit|(?:reached|hit) (?:your|the) [a-z0-9 -]*limit|limit (?:reached|exceeded)|insufficient_quota|quota exceeded|in cooldown|out of (?:credits|usage)/i;
 // When a usage limit lifts, from the provider's own words: an epoch (Claude: "limit reached|1761500000"), "in 2h 5m" or
-// "try again in 30 minutes", or a clock time "11:12 PM UTC" (the next one). A clock time wins over a rounded span next
-// to it ("Next reset in 3 days, Nov 25 at 8:33 AM UTC": 3 days from now was 7 hours late). Only the time is kept, never the text.
+// "try again in 30 minutes" (ChatGPT: "in ~2580 min"), or a clock time "11:12 PM UTC" (the next one). A clock time wins
+// over a rounded span next to it ("Next reset in 3 days, Nov 25 at 8:33 AM UTC": 3 days from now was 7 hours late). Only the time is kept, never the text.
 function resetAt(text, now=Date.now()){
   const epoch=text.match(/\|(\d{10})\b/);
   if(epoch)return Number(epoch[1]);
   const clock=text.match(/reset(?:[^0-9|]|\d+\s*(?:days?|hours?|hrs?|minutes?|mins?)\b){0,40}?(?:([A-Z][a-z]{2,8}\.? \d{1,2}),?\s+(?:at\s+)?)?(\d{1,2}):(\d{2})\s*(AM|PM)?\s*(UTC|GMT)?/i);
   if(clock)return clockAt(clock, now);
-  const span=text.match(/\b(?:in|after)\s+((?:\d+\s*(?:days?|d|hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)\b[\s,]*(?:and\s+)?)+)/i);
+  const span=text.match(/\b(?:in|after)\s+~?((?:\d+\s*(?:days?|d|hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)\b[\s,]*(?:and\s+)?)+)/i);
   if(span){
     let seconds=0;
     for(const [,n,unit] of span[1].matchAll(/(\d+)\s*([a-z]+)/gi)){
@@ -57,7 +57,9 @@ function failure(result,status){
   }
   if(/LLM idle timeout/i.test(text)){error='model_idle_timeout';phase='model';}
   else if(/before_tool_call|PluginInstanceUnavailable|failurePhase[^a-z]*bridge/i.test(text)){error='bridge_error';phase='bridge';}
-  else if(/rate.?limit|\b429\b/i.test(text)){error='rate_limited';phase='model';}
+  // OpenClaw's own words for a limit hide which one it was ("needs a short break", also for ChatGPT's "The usage limit
+  // has been reached"): the service reads the plan's usage to tell (model_pacing.note_usage_limit).
+  else if(/rate.?limit|\b429\b|needs a short break|asking us to slow down|usage-limit error/i.test(text)){error='rate_limited';phase='model';}
   else if(/ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|connection (?:reset|closed)|network/i.test(text)){error='connection_error';phase='connection';}
   else if(/timeout|timed out/i.test(text)){error='runtime_timeout';}
   else if(/abort|cancel/i.test(text)){error='runtime_aborted';}

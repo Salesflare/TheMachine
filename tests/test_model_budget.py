@@ -2,6 +2,7 @@
 the 5-hour and weekly budget, waiting out a usage limit until it resets, the first look going first, and background work
 never on the costliest model. 2026-10-25: a new owner's onboarding spent their 5-hour ChatGPT window in 11 minutes and
 then retried every few minutes. No Gateway, no model call, nothing is sent."""
+import datetime as dt
 import importlib.util
 import json
 import tempfile
@@ -10,8 +11,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import error_feed
 import model_budget as b
 import models
+from machine.app import model_pacing
 from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('budget_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
@@ -188,6 +191,63 @@ class Checks(unittest.TestCase):
             row = dict(db.execute('SELECT status,error,auto_retries,retry_at FROM preparations WHERE suggestion_id=?', (sid,)).fetchone())
         self.assertEqual((row['status'], row['error'], row['auto_retries']), ('queued', 'usage_limited', 0))
         self.assertGreater(row['retry_at'], a.now())
+
+    def rate_limited_run(self, status):
+        """A to-do's run that ends rate limited right after a start (no usage read yet), with `status` as the Gateway's
+        usage reading: its preparation row, and how often the usage was read."""
+        path = Path(self.temp.name) / 'openclaw.json'
+        path.write_text(json.dumps({'agents': {'defaults': {'model': 'openai/gpt-6.2-sol'}}}))
+        self.app.config['openclaw_config'] = str(path)
+        sid = self.store.suggest('task', 'Reply to Sam', 'I can draft it.', [1])['id']
+        self.store.decide(sid, 'accept', '', 'click', 'dashboard')
+        read = []
+        def gateway(command, input=None, **_):
+            receipt = {'status': 'admitted'} if json.loads(input)['action'] == 'start' else {'status': 'error', 'error': 'rate_limited', 'error_phase': 'model'}
+            return type('R', (), {'returncode': 0, 'stdout': json.dumps(receipt)})()
+        with patch.object(model_pacing, 'usage_status', lambda config: read.append(1) or status), patch.object(a.subprocess, 'run', side_effect=gateway):
+            self.app.preparation_step(self.app.preparation_gateway)
+            self.app.preparation_step(self.app.preparation_gateway)
+        with self.store.connect() as db:
+            row = dict(db.execute('SELECT status,error,auto_retries,retry_at FROM preparations WHERE suggestion_id=?', (sid,)).fetchone())
+            error_feed.ensure(db)
+            row['reported'] = [tuple(r) for r in db.execute("SELECT kind,message FROM error_feed WHERE source='job'")]
+        return row, len(read)
+
+    def usage_reply(self, week, reset):
+        return {'providers': [{'provider': 'openai', 'displayName': 'ChatGPT', 'windows': [
+            {'label': '5h', 'usedPercent': 39, 'resetAt': (reset - DAY) * 1000}, {'label': 'Week', 'usedPercent': week, 'resetAt': reset * 1000}]}]}
+
+    def test_a_rate_limited_run_with_the_plan_full_waits_for_its_reset_also_right_after_a_start(self):
+        reset = int(time.time()) + 2 * DAY
+        row, read = self.rate_limited_run(self.usage_reply(100, reset))
+        self.assertEqual((row['status'], row['error'], row['auto_retries']), ('queued', 'usage_limited', 0))
+        self.assertEqual(row['retry_at'], dt.datetime.fromtimestamp(reset, dt.timezone.utc).isoformat())
+        self.assertEqual((read, row['reported']), (1, []))
+        self.assertEqual(self.app.model_pause(), {'window': 'limit', 'until': reset, 'name': 'ChatGPT'})
+
+    def retried(self, status):
+        row, _ = self.rate_limited_run(status)
+        self.assertEqual((row['status'], row['error'], row['auto_retries']), ('queued', 'ai_run_failed', 1))
+        self.assertEqual(row['reported'], [('rate_limited', 'model retry')])
+        self.assertIsNone(getattr(self.app, 'usage_limit', None))
+
+    def test_a_rate_limited_run_with_room_in_the_plan_is_tried_again_as_before(self):
+        self.retried(self.usage_reply(60, int(time.time()) + 2 * DAY))
+
+    def test_a_rate_limited_run_without_a_usage_reading_is_tried_again_as_before(self):
+        self.retried(None)
+
+    def test_the_plan_is_read_at_most_once_a_minute_and_not_while_a_fallback_carries_the_work(self):
+        read, reset = [], int(time.time()) + 2 * DAY
+        with patch.object(model_pacing, 'usage_status', lambda config: read.append(1) or self.usage_reply(100, reset)):
+            for _ in range(3):
+                self.app.note_usage_limit({'status': 'error', 'error': 'rate_limited'})
+            self.assertEqual(len(read), 1)
+            self.app.usage_limit = None
+            with patch.object(self.app, 'fallback_covers', lambda: 'other/model'):
+                receipt = {'status': 'error', 'error': 'rate_limited'}
+                self.assertIsNone(self.app.note_usage_limit(receipt))
+        self.assertEqual((receipt['error'], self.app.usage_limit), ('rate_limited', None))
 
     def test_drafts_prepared_ahead_go_one_per_tick_after_the_first(self):
         made = [self.app.action('suggest', {'dedupe_key': f'k{n}', 'title': f'Reply {n}', 'body': 'I can draft it.', 'event_ids': [1],

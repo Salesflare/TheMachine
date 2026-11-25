@@ -108,10 +108,25 @@ assert.equal(r.result.silent_end,undefined);
     ['Claude AI usage limit reached|'+(t0+3600),v=>v===t0+3600],
     ['You have hit your limit, try again in 2h 30m',v=>Math.abs(v-(t0+9000))<5],
     ['Provider openai is in cooldown',v=>v===undefined],
+    // ChatGPT's own words over HTTP, as OpenClaw 2026.11.2 passes them on
+    ['\u26a0\ufe0f You have hit your ChatGPT usage limit (plus plan). Try again in ~2580 min.',v=>Math.abs(v-(t0+2580*60))<5],
+    ['\u26a0\ufe0f You have hit your ChatGPT usage limit (plus plan). Try again in ~2580 min.; Retry-After: 154800 seconds',v=>Math.abs(v-(t0+2580*60))<5],
   ]){
     r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:text}]);
     assert.equal(r.result.error,'usage_limited');assert.equal(r.result.error_phase,'model');
     assert.ok(check(r.result.retry_at),text);assert.ok(!JSON.stringify(r.result).includes('private'));
+  }
+}
+// What OpenClaw 2026.11.2 says instead of the limit itself (2026-11-25: unclassified, and a to-do stopped): its rewritten
+// rate limit (ChatGPT's "Codex error: The usage limit has been reached" over its WebSocket, or a 429 without plan or
+// reset), all sign-ins resting, a limit the Codex account doesn't report. Which limit it was is the service's to read.
+for(const text of ['\u26a0\ufe0f The AI service needs a short break. Please try again in a few minutes.',
+    '\u26a0\ufe0f The AI service needs a short break. Please try again in ~60 min.',
+    'openai is asking us to slow down. Please wait a moment before trying again.',
+    'Codex rejected the request with a usage-limit error, but its current account usage does not report an exhausted limit. Retry the request.']){
+  for(const kind of ['review','preparation','profile','skills','routine']){
+    r=await run({kind,job_id:id,action:'status'},[{status:'error',error:text},{ok:true}]);
+    assert.deepEqual(r.result,{run_id:id,status:'error',error:'rate_limited',error_phase:'model'});
   }
 }
 // Background work can name a cheaper model; anything malformed is dropped.
