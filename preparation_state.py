@@ -71,6 +71,8 @@ def initialize(db):
     if 'basis' not in run_columns:  # what allowed the run's steps (machine/action_basis.py); the ones before it say so
         db.execute('ALTER TABLE preparation_runs ADD COLUMN basis TEXT')
         db.execute('UPDATE preparation_runs SET basis=?', (action_basis.BEFORE,))
+    if 'saved_at' not in run_columns:
+        db.execute('ALTER TABLE preparation_runs ADD COLUMN saved_at TEXT')
     db.execute('UPDATE preparations SET session_job_id=job_id WHERE session_job_id IS NULL')
     # Preserve pre-upgrade runtime custody. Closed historical rows aren't proof of a live run.
     for job in db.execute('''SELECT * FROM preparations p WHERE status IN ('starting','running')
@@ -127,6 +129,12 @@ def prepared_ahead(db, run):
     kind = basis.get('kind')
     # Work carried on after the owner's snooze is judged by the card's early flag alone, as before its basis was kept
     return (kind == 'ahead' and not basis.get('resumed')) or (bool(run['early']) and kind not in OWNER_ASKED)
+
+
+def note_saved(db, job_id, stamp):
+    """The run saved its result or blocker and ends by itself now. Kept on the run: its preparation's row moves on to
+    the next one, sometimes in the same second (action_runs.stop_stale_runs)."""
+    db.execute('UPDATE preparation_runs SET saved_at=? WHERE job_id=?', (stamp, job_id))
 
 
 def tool_intent(db, args, stamp):

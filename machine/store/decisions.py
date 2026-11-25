@@ -39,6 +39,7 @@ from machine.config import LOG
 from machine.store.cards import return_waiting, source_line
 from machine.text import encoded, first_sentence, no_you
 import next_actions
+import preparation_state
 from machine.store import outcomes
 from machine.store.review import intercom_handled
 import skills
@@ -1414,6 +1415,8 @@ class DecisionsStore:
             reply_lead(db,suggestion_id,next_action)
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
             db.execute("UPDATE preparations SET status='done',updated_at=?,error=NULL,reason=NULL WHERE suggestion_id=?",(now(),suggestion_id))
+            if job_id:
+                preparation_state.note_saved(db,job_id,now())
             if (outcome or {}).get('state')=='snoozed':
                 # "Remind me about this on Tuesday": the same snooze as the Snooze button. The card leaves
                 # Ready for you and comes back (with its notification) then; nothing is notified now.
@@ -1784,6 +1787,7 @@ class DecisionsStore:
             # An empty list says the run asks nothing (ask_blocked); NULL is a blocker from before runs named questions.
             db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,questions=?,move_to=?,use_events=?,connect=?,updated_at=? WHERE suggestion_id=?",
                        (reason,(details or '').strip() or None,encoded(questions),move_to,use_event_ids,connect,now(),suggestion_id))
+            preparation_state.note_saved(db,job_id,now())
             pause_idle_steps(db,suggestion_id)  # nothing runs now: its confirmed step waits for Try again or an answer
             # It moves itself (no tap) when the owner added it without an area and nothing placed it yet (the run found where
             # it belongs), or when the messages it came from are all in that area or it has none, only the Machine's own
