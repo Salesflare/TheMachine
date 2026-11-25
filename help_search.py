@@ -113,9 +113,14 @@ PASSAGE_CHARS = 600
 MIX = 0.5          # English: how far a word's rarity goes to that of its group: a rare synonym says no more than a common one
 
 
+# letters that have no accent to take off, as people without them on their keyboard type them
+LETTERS = {'ł': 'l', 'Ł': 'L', 'ø': 'o', 'Ø': 'O', 'đ': 'd', 'Đ': 'D', 'ð': 'd', 'Ð': 'D', 'ħ': 'h', 'Ħ': 'H', 'ı': 'i', 'ß': 'ss',
+           'æ': 'ae', 'Æ': 'Ae', 'œ': 'oe', 'Œ': 'Oe', 'þ': 'th', 'Þ': 'Th'}
+
+
 def fold(w):
-    """Without accents: people type "configuracion" too."""
-    return ''.join(c for c in unicodedata.normalize('NFKD', w) if not unicodedata.combining(c)) if not w.isascii() else w
+    """Without accents: people type "configuracion" too, and "Soren" for Søren."""
+    return ''.join(LETTERS.get(c, c) for c in unicodedata.normalize('NFKD', w) if not unicodedata.combining(c)) if not w.isascii() else w
 
 
 def stem(w):

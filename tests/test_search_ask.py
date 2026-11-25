@@ -658,7 +658,7 @@ class OwnConnections(unittest.TestCase):
             db.execute("UPDATE checkpoints SET error='imap_auth_failed',failures=40,last_success=? WHERE account_id='home'", (tg.at(4),))
             db.commit()
         prompt = self.about('anything new in sam@home.example?', person='sam@home.example')
-        self.assertIn('“Needs your help”, last read in full', prompt)
+        self.assertIn('“Needs your help”, last read ', prompt)
         self.assertIn('anything newer is not known', prompt)
         self.assertNotIn('imap_auth_failed', prompt)
 
@@ -716,6 +716,102 @@ class OwnConnections(unittest.TestCase):
             db.execute("UPDATE checkpoints SET error='imap_auth_failed',failures=40,last_success=? WHERE account_id='home'", (tg.at(4),))
             db.commit()
         self.assertNotIn('sauna is booked', self.about('what did Zoe write to my home mail about the sauna?', connections=[3], person='Zoe', about='sauna'))
+
+
+class JustCameIn(unittest.TestCase):
+    """What came in since the Graph was last built, unreviewed and without embeddings (report s_5d1e83a07c2f4b91)."""
+    add, graph, about = tg.Graph.add, OwnConnections.graph, OwnConnections.about
+
+    def ask(self, question, area=None, **args):
+        return self.app.action('search_ask', {'query': question, 'area': area, **args}, owner_dashboard=True)
+
+    def setUp(self):
+        OwnConnections.setUp(self)
+        self.add(work_mail(2, 'Anna Berg <anna@berg.example>', 'Roadmap', 'The roadmap review is on Thursday.'),
+                 work_mail(3, 'Anna Berg <anna@berg.example>', 'Hiring', 'Two people are shortlisted.'),
+                 work_mail(4, 'Michał Wójcik <michal@wojcik.example>', 'Crates', 'The crates leave on Monday.'),
+                 work_mail(4, 'Анна Петренко <petrenko@kvitka.example>', 'Bulbs', 'The bulbs ship soon.'))
+        self.graph()
+        self.add(self.new(8, 'Anna Olszko-Dębińska <a.olszko@debinska.example>', 'Contract', 'I need your countersignature before Wednesday.'))
+
+    def new(self, minutes, sender, title, body, account='birch'):
+        e = {**work_mail(0, sender, title, body), 'account_id': account}
+        e['occurred_at'] = (tg.NOW - tg.dt.timedelta(minutes=minutes)).isoformat()
+        return e
+
+    def test_a_new_sender_by_name_however_it_is_typed(self):
+        for name in ('Anna Olszko-Dębińska', 'olszko debinska', 'Debinska', 'a.olszko@debinska.example'):
+            prompt = self.about(f'what does {name} want?', where=None, person=name)
+            self.assertIn('need your countersignature', prompt, name)
+            self.assertNotIn('found nothing from or with', prompt)
+
+    def test_someone_else_with_the_name_who_wrote_just_now(self):
+        prompt = self.about("check Anna's mail", where=None, person='Anna', said_by='person')
+        for text in ('need your countersignature', 'The roadmap review', 'More than one person has the name', 'first what Anna Olszko-Dębińska wrote'):
+            self.assertIn(text, prompt)
+        self.assertNotIn('not in doubt', prompt)
+        # by full name, with a suggested question's person, for what the owner wrote or of other days: only the one asked
+        self.assertNotIn('countersignature', self.about('mail from Anna Berg', where=None, person='Anna Berg'))
+        self.assertNotIn('countersignature', self.about('what did I tell Anna?', where=None, person='Anna', said_by='owner'))
+        self.assertNotIn('countersignature', self.about('what did Anna write on Tuesday?', where=None, person='Anna', **{'from': '2026-10-13', 'to': '2026-10-14'}))
+        self.assertNotIn('countersignature', self.about('anything from Anna in my work mail?', person='Anna', connections=[1]))  # only there
+        self.assertNotIn('countersignature', self.about("check Anna's mail", 'personal', where=None, person='Anna'))
+
+    def test_one_the_graph_knows(self):
+        self.add(self.new(3, 'A. Berg <anna@berg.example>', 'Train', 'The train is late.'), self.new(2, 'Anna Berg <who@else.example>', 'Odd', 'Another address.'))
+        prompt = self.about('what did Anna Berg just write?', where=None, person='Anna Berg', ago=30)
+        self.assertIn('The train is late.', prompt)
+        self.assertIn('first what Anna Berg (who@else.example) wrote', prompt)  # an address the Graph does not have for them is never theirs
+        self.assertNotIn('The roadmap review', prompt)
+
+    def test_names_in_any_alphabet(self):
+        self.assertIn('The crates leave', self.about('what did Michal Wojcik say?', where=None, person='Michal Wojcik'))
+        self.assertIn('are all of the ones from or with Анна Петренко', self.about('що писала Анна Петренко?', where=None, person='Анна Петренко'))
+        self.assertEqual(app_ask.name_words('Łukasz Ørsted-Weiß'), {'lukasz', 'orsted', 'weiss'})
+
+    def test_minutes_ago(self):
+        self.add(self.new(55, 'Dana Roe <dana@birch.example>', 'Email', 'An email about the email.'), self.new(2, 'Kim Vale <kim@initech.example>', 'Home', 'Elsewhere.', 'home'))
+        prompt = self.about('an email came in 8 minutes ago on my birch mailbox', connections=[2], ago=8, about='email')  # whatever words it has
+        self.assertIn('need your countersignature', prompt)
+        self.assertIn('(8 minutes ago)', prompt)
+        self.assertRegex(prompt, r'Today is Friday 2026-10-16, now \d\d:\d\d')
+        for other in ('about the email', 'Elsewhere', 'The board pack'):
+            self.assertNotIn(other, prompt)
+        self.assertIn('Elsewhere.', self.about('what just came in?', where=None, ago=30))  # anywhere in view
+        prompt = self.about('anything in my birch mail the last minute?', connections=[2], ago=1)
+        self.assertRegex(prompt, 'nothing since .* is known. Say that first')
+        self.assertIn('need your countersignature', prompt)
+
+    def test_the_moment_is_checked(self):
+        read = lambda ago: search_ask.parse_plan(json.dumps({'question': True, 'ago': ago, 'from': '2026-10-16', 'to': '2026-10-16'}))
+        self.assertEqual((read(8)['ago'], read(8)['start']), (8, None))
+        self.assertEqual(read(10 ** 5)['ago'], search_ask.AGO)
+        for bad in (None, True, -3, 0, 'soon', float('inf')):
+            self.assertEqual(read(bad)['ago'], 0)
+            self.assertTrue(read(bad)['start'])
+
+    def test_the_question_before(self):
+        self.plan = {'question': True, 'person': 'Anna Olszko', 'said_by': 'person', 'about': ''}
+        self.ask('Olszko', before=["check Anna's mail", 5, ' '])
+        self.assertIn("Before, oldest first: <<<check Anna's mail>>>.", self.plans[-1])
+        self.assertIn("What they asked before it: <<<check Anna's mail>>>", self.prompts[-1])
+        self.assertIn('need your countersignature', self.prompts[-1])
+        plans = len(self.plans)
+        self.assertEqual(self.ask('Olszko'), {'none': True})  # one word alone still only searches
+        self.assertEqual(len(self.plans), plans)
+        self.ask('what did Anna say?')
+        self.assertNotIn('Before, oldest first', self.plans[-1])
+        self.assertEqual(search_ask.earlier(['a b', 'c', 'd', '<<<e>>>']), ('c', 'd', '<<<e>>>'))
+        self.assertIn('<<<e>>>.', search_ask.plan_prompt('x', search_ask.dt.date(2026, 10, 16), before=('<<<e>>>',)))
+
+    def test_a_read_that_did_not_get_to_the_end_is_never_called_whole(self):
+        for state in ({'mode': 'incremental', 'page_token': 'x'}, {'mode': 'bootstrap'}, {'mode': 'incremental', 'waiting': {'m1': {'tries': 2}}}, {'coverage_complete': False}):
+            self.store.commit_page('birch', state, [])
+            prompt = self.about('is my birch mail up to date?', connections=[2])
+            self.assertIn('did not get to the end', prompt, state)
+            self.assertNotIn('in full', prompt)
+        self.store.commit_page('birch', {'mode': 'incremental', 'history_id': '5'}, [])
+        self.assertNotIn('did not get to the end', self.about('is my birch mail up to date?', connections=[2]))
 
 
 if __name__ == '__main__':

@@ -8,9 +8,10 @@ or name it gives back has to be in the question as typed. Only the owner's own c
 with them from a Fleet.
 
 What messages can't tell goes to the answer as facts: how the connection is doing in Connections' own words (health, the
-same as connectorHealth in dashboard/connections-shared.js), when it was last read in full, or that it isn't connected.
-Never an error code or an id."""
+same as connectorHealth in dashboard/connections-shared.js), when it was last read and
+whether that read got to the end, or that it isn't connected. Never an error code or an id."""
 import datetime as dt
+import json
 import re
 
 import abilities
@@ -35,6 +36,7 @@ STOPS = {'telegram_logged_out': lambda t: t('Logged out of Telegram'), 'telegram
          'signal_outdated': lambda t: t('Update The Machine for Signal')}
 FLAKY_FAILURES, FLAKY_HOURS = 6, 3
 UNREAD = 'so anything newer is not known'
+CATCHING_UP = 'that read did not get to the end yet, so some messages of the last hours or days can be missing here'
 
 
 def _clean(text):
@@ -74,6 +76,17 @@ def by_address(db, config, address):
                 if any(own_addresses.clean(e.get('address')) == address and not e.get('other_server') for e in entries)}
         found = [a for a in accounts if a.get('id') in also]
     return found
+
+
+def unfinished(state):
+    """Whether the last read of a connection left messages for the next one: a first or second import, more pages, or
+    messages the service failed to give (its checkpoint's state). A read that ends is still only up to its own time."""
+    try:
+        state = json.loads(state or '{}') if not isinstance(state, dict) else state
+    except ValueError:
+        return False
+    return bool(state.get('page_token') or state.get('catchup') or state.get('waiting') or state.get('coverage_complete') is False
+                or state.get('mode') in ('bootstrap', 'resync'))
 
 
 def _known(config, words):
@@ -204,11 +217,12 @@ def facts(app, db, got, area, lang, tz):
     for view in app.store.connector_views(db, [by_id[i] for i in got['ids'] if i in by_id]):
         account = by_id[view['id']]
         words, meaning = health(view, account, t, tz)
-        readable = readable and bool(view.get('last_success')) and UNREAD not in meaning
-        read = f', last read in full {search_ask.local_at(view["last_success"], tz)}' if view.get('last_success') else ''
+        behind = bool(view.get('last_success')) and unfinished(view.get('state'))
+        readable = readable and bool(view.get('last_success')) and UNREAD not in meaning and not behind
+        read = f', last read {search_ask.local_at(view["last_success"], tz)}' if view.get('last_success') else ''
         side = {'work': t('Work'), 'personal': t('Personal')}.get(graph.account_side(account))
-        told.append((not meaning, f'{got["names"][got["ids"].index(view["id"])]}{f" ({side})" if side else ""} is connected, on the page “{page}” it says “{words}”{read}'
-                     + (f': {meaning}.' if meaning else '.')))
+        told.append((not meaning and not behind, f'{got["names"][got["ids"].index(view["id"])]}{f" ({side})" if side else ""} is connected, on the page “{page}” it says “{words}”{read}'
+                     + (f' ({CATCHING_UP})' if behind else '') + (f': {meaning}.' if meaning else '.')))
     told.sort(key=lambda x: x[0])  # what doesn't read well first
     out += [line for _, line in told[:TOLD]]
     for address in got['missing']:
