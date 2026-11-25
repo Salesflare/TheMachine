@@ -29,7 +29,7 @@ Pendant l’attente, le haut du tableau de bord indique jusqu’à quand, par ex
 
 Rien n’est perdu : les messages reçus sont vérifiés dès que possible. Après une longue attente, les messages récents de personnes passent en premier, et chaque vérification traite aussi une partie des plus anciens.
 
-En attendant d’avoir rattrapé son retard, votre assistante crée les nouvelles tâches sans brouillon, pour que votre forfait serve d’abord à traiter vos messages. Les brouillons arrivent ensuite, et les tâches urgentes n’attendent pas. Appuyez sur **Faire** pour en obtenir une tout de suite.
+Tant que le retard n’est pas rattrapé, les nouvelles tâches arrivent sans brouillon, pour que votre forfait serve d’abord à traiter vos messages. Les brouillons arrivent ensuite, et les tâches urgentes n’attendent pas. Appuyez sur **Faire** pour en obtenir une tout de suite.
 
 ## La nuit
 
