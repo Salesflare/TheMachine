@@ -309,7 +309,8 @@ Broker-token rotations replace only the exact login that made the request, never
   under the selected provider's name, all reported windows still pace (waiting on the wrong quota is safer than none).
   These changes add no permissions or approval tiers. Error messages use a finite technical vocabulary (the words
   Python, browsers, SQLite and HTTP write errors in, the services a source names, and codes made only of those, like
-  `salesflare_invalid_json`), with unfamiliar words removed. An HTTP status goes as words (`salesflare: HTTP
+  `salesflare_invalid_json`) and the other fixed codes in the source, each only as a whole (`imap_no_inbox`), with
+  unfamiliar words removed. An HTTP status goes as words (`salesflare: HTTP
   unauthorized`, `HTTP rate limited`), since the control plane takes no 3-digit numbers. They live in
   `error_words.py`, and the control plane keeps the same lists, or it blanks those messages.
 
