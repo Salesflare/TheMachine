@@ -47,14 +47,14 @@ const SRC_MON=(()=>{const m={};for(const row of ['jan feb mar apr may jun jul au
  'gen feb mar apr mag giu lug ago set ott nov dic','jan fev mar abr mai jun jul ago set out nov dez'])row.split(' ').forEach((w,i)=>{m[w]=i});return m})();
 const sourceDay=d=>{const m=/^[\p{L}.]+,?\s+(?:([\p{L}]+)\.?\s+(\d{1,2})|(\d{1,2})\.?\s+(?:de\s+)?([\p{L}]+)\.?)$/u.exec(d);if(!m)return d;const mon=SRC_MON[(m[1]||m[4]).toLowerCase()];if(mon==null)return d;
  const now=new Date(),at=new Date(now.getFullYear(),mon,+(m[2]||m[3]),12);if(at-now>864e5*31)at.setFullYear(at.getFullYear()-1);return localeDate(at,DL,{weekday:'short',day:'numeric',month:'short'})};
-const sourceText=v=>{let s=String(v||'').replace(/^Source:\s*/i,''),more='';
- s=s.replace(/ \(\+(\d+) more\)$/,(_,n)=>{more=' '+t('(+{} more) (a source)',n);return ''});
- const i=s.lastIndexOf(' · '),head=i<0?s:s.slice(0,i),day=i<0?'':' · '+sourceDay(s.slice(i+3)),rt=/^your routine (.+)$/.exec(head),m=!rt&&/^(.+?) from (.+)$/.exec(head),dm=/^Slack DM with (.+)$/.exec(head);
- const up=x=>x?x[0].toUpperCase()+x.slice(1):x,what=rt?t('From your routine {}',rt[1]):head==='your Fleet'?t('From your Fleet'):dm?t('Slack DM with {} (a source)',dm[1]):m?t('{} from {} (a source)',t(up(m[1])),m[2]):t(up(head));return up(what)+day+more};
+// A line's parts: what and who, its day, how many more
+const sourceParts=v=>/^(?:Source:\s*)?(.*?)(?: · ((?:(?! · ).)*?))?(?: \(\+(\d+) more\))?$/is.exec(v||'');
+const sourceText=v=>{const [,head,day,more]=sourceParts(v),rt=/^your routine (.+)$/.exec(head),m=/^(.+?) (from|to) (.+)$/.exec(head),dm=/^Slack DM with (.+)$/.exec(head);
+ const up=x=>x?x[0].toUpperCase()+x.slice(1):x;return up(rt?t('From your routine {}',rt[1]):head==='your Fleet'?t('From your Fleet'):dm?t('Slack DM with {} (a source)',dm[1]):m?m[2]==='to'?t('{} to {} (a message)',t(up(m[1])),m[3]):t('{} from {} (a source)',t(up(m[1])),m[3]):t(up(head)))+(day?' · '+sourceDay(day):'')+(more?' '+t('(+{} more) (a source)',more):'')};
 // A routine's to-do (its draft, routines_app.py): "From your routine Check what shipped", the name a link to that routine on
 // the Routines page (#routines/<id>, routines-page.js openRoutineLink) while it is there. Its draft is the to-do's own text,
 // so there is no original to read.
-const routineSource=s=>{const r=s.routine,v=String(s.source_line||''),i=v.lastIndexOf(' · '),day=i<0?'':sourceDay(v.slice(i+3).replace(/ \(\+\d+ more\)$/,''));
+const routineSource=s=>{const r=s.routine,day=sourceDay(sourceParts(s.source_line)[2]||'');
  const name=r.live?html`<a class="rt-link" href="#routines/${r.id}" translate="no">${r.name}</a>`:html`<span translate="no">${r.name}</span>`;
  return html`<p class="source"><span class="src">${htmlT('From your routine {}',name)}${day?html` · <span class="src-date">${day}</span>`:''}</span></p>`};
 // the date never splits over two lines
