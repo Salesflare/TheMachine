@@ -74,12 +74,12 @@ def plural_forms(lang):
 def glossary(text=None):
     """(names, {english: {code: forms}}, {code: gender rule}, tone, {english: {code: [checked forms]}}, exceptions) from
     glossary.md: every table with a column per language, the Names list, the gender table, the Tone paragraph, the
-    Terms table that tests/test_i18n.py checks and its Exceptions."""
+    Terms table that tests/test_i18n.py checks, its Exceptions and what the placeholders of a key hold (means)."""
     text = text if text is not None else GLOSSARY.read_text(encoding='utf-8')
     names_part = text.split('## Names', 1)[1].split('##', 1)[0]
     names_line = ' '.join(line for line in names_part.splitlines()[3:] if line.strip())
     names = [n for n in (re.sub(r'\s*\(.*?\)', '', n).strip() for n in re.sub(r'\(.*?\)', '', names_line).rstrip('.').split(',')) if n]
-    terms, gender, checked = {}, {}, {}
+    terms, gender, checked, means = {}, {}, {}, {}
     button_rule, buttons = '', {}
     for section in re.split(r'\n## ', text)[1:]:
         heading, _, body = section.partition('\n')
@@ -87,6 +87,9 @@ def glossary(text=None):
         if heading.startswith('Buttons') and 'Buttons:' in body:  # the rule (without its notes on the table), | Language | Rule |
             button_rule = ' '.join(body.split('Buttons:', 1)[1].split('\n\n', 1)[0].split()).split(' The table gives', 1)[0]
             buttons = {row[0]: row[1] for row in rows[2:] if len(row) > 1}
+            continue
+        if heading.startswith('What the placeholders'):  # | Key | Meaning |
+            means = {row[0].strip('`'): row[1] for row in rows[2:] if len(row) > 1}
             continue
         if len(rows) < 3:
             continue
@@ -105,7 +108,7 @@ def glossary(text=None):
     plurals = ' '.join(text.split('Plurals:', 1)[1].split('\n\n', 1)[0].split()) if 'Plurals:' in text else ''
     exceptions = set(re.findall(r'^- `(.+?)`', text.split('## Exceptions', 1)[1].split('##', 1)[0], re.M)) if '## Exceptions' in text else set()
     return {'names': names, 'terms': terms, 'gender': gender, 'tone': ' '.join(p for p in (tone, plurals) if p),
-            'checked': checked, 'exceptions': exceptions, 'button_rule': button_rule, 'buttons': buttons}
+            'checked': checked, 'exceptions': exceptions, 'means': means, 'button_rule': button_rule, 'buttons': buttons}
 
 
 def term_in(term, english, names):
@@ -217,6 +220,7 @@ def ask(lang, instruction, payload, cache_key):
 # ---------------------------------------------------------------------------------------------- checks
 
 TERM_PROBLEM = ' (a glossary term)'
+KIND_FIRST = ('{} to {} (a message)', '{} from {} (a source)')  # a to-do's source line: "WhatsApp to Anna", never "From {} to {}"
 # What code or a model reads in an instruction for one ("op is create, update or delete", "due must be YYYY-MM-DD",
 # "A refund needs due: ..."): translated, the model writes a field or value the code doesn't know.
 DATE_FORMAT = re.compile(r'(?<![\w-])(?:YYYY|YY|MM|DD|HH|hh|mm|ss)(?:[-/:.T]?(?:YYYY|YY|MM|DD|HH|hh|mm|ss))+(?![\w-])')
@@ -309,6 +313,8 @@ def string_problems(key, text, lang, words):
         out.append('keep every placeholder ({}, or {0} {1} to reorder) exactly as many times as in the English')
     if '—' in text:
         out.append(no_em_dash(text))
+    if key in KIND_FIRST and (m := HOLE.search(text)) and m[0] in ('{}', '{0}') and text[:m.start()].strip():
+        out.append(f'the first placeholder is the kind of message ("WhatsApp"), not a person: no word before it, so not {text!r}')
     out += literal_problems(key, text)
     out += [f'keep the name "{n}"' for n in words['names'] if re.search(r'(?<![\w-])' + re.escape(n) + r'(?![\w-])', key) and n not in text]
     if key not in words['exceptions']:
@@ -360,9 +366,11 @@ def catalog_stale(lang, en=None, cat=None):
     return sorted(set(cat) - set(en))
 
 
-def source(key, value):
-    """What the model reads for one entry: the English, and the key as a note when it says more ("Close (a closeness)",
-    "{} tickets (to an event)" for a plural entry)."""
+def source(key, value, means=None):
+    """What the model reads for one entry: the English, and as a note what glossary.md says its placeholders hold (means),
+    else the key when it says more ("Close (a closeness)", "{} tickets (to an event)" for a plural entry)."""
+    if key in (means or {}):
+        return {'english': value, 'meaning': means[key]}
     shown = value.get('other') if isinstance(value, dict) else value
     return {'english': value, 'meaning': key} if shown != key else {'english': value}
 
@@ -376,7 +384,7 @@ def translate_entries(lang, keys, en, words=None, ask=ask):
     done = {}
 
     def batch(chunk, notes=None):
-        items = {str(i): source(k, en[k]) for i, k in enumerate(chunk)}
+        items = {str(i): source(k, en[k], words.get('means')) for i, k in enumerate(chunk)}
         payload = ('Return one JSON object {"t": {"<id>": <translation>}} with every id. Translate each "english" on '
                    'its own; "meaning", when there, says what it is and is not translated. A plain "english" string '
                    'becomes a string, also when it holds a count. An "english" object of count forms (one, other) becomes an object with exactly '

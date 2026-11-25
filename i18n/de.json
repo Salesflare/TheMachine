@@ -4252,7 +4252,7 @@
  "Personal, sensitive and automated mail still never goes, and anyone can keep a thread private.": "Private, sensible und automatische E-Mails werden trotzdem nie geteilt, und jeder kann einen Thread privat halten.",
  "Phone": "Telefon",
  "Phone disconnected": "Handy getrennt",
- "Phone notification": "Handybenachrichtigung",
+ "Phone notification": "Handy-Benachrichtigung",
  "Phone notifications": "Handy-Benachrichtigungen",
  "Phone notifications are turned on in the dashboard app": "Handy-Benachrichtigungen werden in der Dashboard-App eingeschaltet",
  "Phone notifications unavailable": "Handy-Benachrichtigungen nicht verfügbar",
@@ -8698,7 +8698,7 @@
  },
  "{} to decide": "{} zu entscheiden",
  "{} to {}": "{} bis {}",
- "{} to {} (a message)": "Von {} an {}",
+ "{} to {} (a message)": "{} an {}",
  "{} to-dos": {
   "one": "{} Aufgabe",
   "other": "{} Aufgaben"

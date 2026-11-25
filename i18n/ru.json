@@ -2864,7 +2864,7 @@
  "Linear issue": "Задача в Linear",
  "Linear mention": "Упоминание в Linear",
  "Linear review request": "Запрос на проверку в Linear",
- "Linear triage": "Триаж в Linear",
+ "Linear triage": "Разбор в Linear",
  "Link": "Ссылка",
  "Link (Ctrl K)": "Ссылка (Ctrl K)",
  "Link a person": "Связать с человеком",
@@ -9100,7 +9100,7 @@
  },
  "{} to decide": "Решить: {}",
  "{} to {}": "{}–{}",
- "{} to {} (a message)": "От {} к {}",
+ "{} to {} (a message)": "{}, кому: {}",
  "{} to-dos": {
   "few": "{} задачи",
   "many": "{} задач",

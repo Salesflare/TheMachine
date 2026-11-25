@@ -34,13 +34,22 @@ for(const [line,shown] of [
  ['Source: phone notification · Thu, Nov 12 (+1 more)','Phone notification · en 11/12 (+1 more)'],
  ['Source: calendar','Calendar']])assert.equal(say('en',null,line),shown);
 
-// Other word orders too, with the words said here: the catalogs get theirs from the daily translation
-const nl=await json('nl.json'),ko=await json('ko.json'),TO='{} to {} (a message)';
-assert.equal(say('nl',{...nl,[TO]:'{} aan {}'},'Source: WhatsApp to Anna Example · Thu, Nov 12 (+2 more)'),'WhatsApp aan Anna Example · nl 11/12 (+2 meer)');
-assert.equal(say('nl',{...nl,[TO]:'{} aan {}'},'Source: email to Anna Example from Acme · Thu, Nov 12'),'E-mail aan Anna Example from Acme · nl 11/12');
-assert.equal(say('ko',{...ko,[TO]:'{1}에게 보낸 {0}'},'Source: WhatsApp to Anna Example · Thu, Nov 12'),'Anna Example에게 보낸 WhatsApp · ko 11/12');
-
-assert.equal(say('nl',{...nl,'Phone notification':'Telefoonmelding'},'Source: phone notification from WhatsApp · Thu, Nov 12'),'Telefoonmelding van WhatsApp · nl 11/12');
+// Each language as it was read over (Korean and Russian never inflect a name): who it went to (a person, a company, a
+// channel, a group chat) never reads as who it came from, and the kind never as a place or a sender ("Von WhatsApp an Anna")
+const TO='{} to {} (a message)',FROM='{} from {} (a source)';
+const READ={nl:['WhatsApp aan Anna','WhatsApp van Anna','Telefoonmelding van WhatsApp'],de:['WhatsApp an Anna','WhatsApp von Anna','Handy-Benachrichtigung von WhatsApp'],
+ fr:['WhatsApp à Anna','WhatsApp de Anna','Notification mobile de WhatsApp'],es:['WhatsApp a Anna','WhatsApp de Anna','Notificación móvil de WhatsApp'],
+ it:['WhatsApp a Anna','WhatsApp da Anna','Notifica sul telefono da WhatsApp'],'pt-BR':['WhatsApp para Anna','WhatsApp de Anna','Notificação de celular de WhatsApp'],
+ ru:['WhatsApp, кому: Anna','WhatsApp: Anna','Уведомление на телефоне: WhatsApp'],ja:['WhatsApp（Anna宛）','WhatsApp（Annaから）','スマートフォンの通知（WhatsAppから）'],
+ ko:['WhatsApp, 수신자: Anna','WhatsApp: Anna','휴대폰 알림: WhatsApp'],'zh-CN':['发给Anna的WhatsApp','来自Anna的WhatsApp','来自WhatsApp的手机通知']};
+for(const [lang,[to,from,phone]] of Object.entries(READ)){const cat=await json(lang+'.json');
+ for(const who of ['Anna','Acme','#general','Weekend crew']){
+  assert.equal(say(lang,cat,`Source: WhatsApp to ${who} · Thu, Nov 12`),to.replace('Anna',who)+` · ${lang} 11/12`);
+  assert.equal(say(lang,cat,`Source: WhatsApp from ${who} · Thu, Nov 12`),from.replace('Anna',who)+` · ${lang} 11/12`)}
+ assert.equal(say(lang,cat,'Source: phone notification from WhatsApp'),phone)}
+const nl=await json('nl.json');
+assert.equal(say('nl',nl,'Source: WhatsApp to Anna Example · Thu, Nov 12 (+2 more)'),'WhatsApp aan Anna Example · nl 11/12 (+2 meer)');
+assert.equal(say('nl',nl,'Source: email to Anna Example from Acme · Thu, Nov 12'),'E-mail aan Anna Example from Acme · nl 11/12');
 
 // Every language, every kind a line can name (machine/kinds.py), every form: its own words, none left in English
 const kinds=[...new Set(Object.values(JSON.parse(/<script id="source-kinds"[^>]*>([^<]*)</.exec(html)[1]).kinds).map(k=>k.name).filter(Boolean)
@@ -50,6 +59,7 @@ assert.ok(kinds.length>30);
 for(const name of kinds)assert.ok(up(name) in en||notUi.has(up(name))||name.length<2,`"${up(name)}" is in no catalog: a source line keeps it English (python3 scripts/i18n_extract.py --add)`);
 for(const lang of langs){
  const own=await json(lang+'.json'),cat={...own};
+ if(own[TO])assert.notEqual(own[TO],own[FROM],`${lang}: "to" reads as "from"`);
  for(const key of [TO,...kinds.map(up)])if(key in en)cat[key]??=key===TO?'⟦{1}⟧ ⟦{0}⟧':`⟦${key}⟧`;  // not translated yet
  const fill=(key,...a)=>{let i=0;return cat[key].replace(/\{(\d*)\}/g,(_,d)=>a[d===''?i++:+d])};
  for(const name of kinds){const kind=cat[up(name)]??up(name);
