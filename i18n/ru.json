@@ -8426,7 +8426,7 @@
   "other": "{} от людей"
  },
  "{} from your history to review": "{} из истории на проверку",
- "{} from {} (a source)": "{} из {}",
+ "{} from {} (a source)": "{}: {}",
  "{} from {} moved to {}.": "{} перемещено из {} в {}.",
  "{} from {}: bought about every {} days, last on {} for {}.": "{} от {}: покупка примерно раз в {} дн., последняя {} за {}.",
  "{} from {}: bought about every {} weeks, last on {} for {}.": "{} от {}: покупка примерно раз в {} нед., последняя {} за {}.",
