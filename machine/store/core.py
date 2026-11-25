@@ -584,6 +584,10 @@ class StoreCore:
             # judgment. The card offers Mark done and help around it (Plan it), never Do it.
             if 'owner_step' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN owner_step INTEGER NOT NULL DEFAULT 0')
+            # The version of each evidence message the to-do last took in ({event id: events.version}, cards.taken_in):
+            # a message edited since is news for the review's same key (cards.edited_news). Empty on older to-dos.
+            if 'evidence_versions' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
+                db.execute('ALTER TABLE suggestions ADD COLUMN evidence_versions TEXT')
             # Notes saved before a meeting's Notes and Transcript were apart: a transcript among them becomes the meeting's
             # Transcript, once (what each row was is kept in meeting_moves)
             moved = self.move_meeting_transcripts(db)

@@ -197,6 +197,28 @@ def kept_based_on(card, body):
     return card['based_on'] if card['body'] == body[:5000] else None
 
 
+def taken_in(db, card_id):
+    """Note the version of each of the to-do's evidence messages now: what it was built from (edited_news)."""
+    ids = json.loads(db.execute('SELECT event_ids FROM suggestions WHERE id=?', (card_id,)).fetchone()[0] or '[]')
+    versions = {str(r['id']): r['version'] for r in db.execute(
+        'SELECT id,version FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids)} if ids else {}
+    db.execute('UPDATE suggestions SET evidence_versions=? WHERE id=?', (encoded(versions), card_id))
+
+
+def edited_news(db, card, title, body, event_ids):
+    """The review's word on a to-do it already has, from the same key and the same evidence, is news only when a message
+    was edited after the to-do took it in (the event's version went up: events.commit_page) and the to-do now reads
+    otherwise (a corrected amount or date). A true repeat (nothing edited, or the same text again) stays a duplicate.
+    Text is compared on the opened row: the stored text is sealed under message protection, never equal in SQL. A to-do
+    from before versions were noted has none: as before, a repeat."""
+    seen = json.loads(card['evidence_versions'] or '{}')
+    if not seen:
+        return False
+    edited = any(r['version'] > seen.get(str(r['id']), r['version']) for r in db.execute(
+        'SELECT id,version FROM events WHERE id IN (' + ','.join('?' * len(event_ids)) + ')', event_ids))
+    return edited and (body[:5000] != card['body'] or title[:300] not in (card['title'], card['title_suggested']))
+
+
 def wait_until(due, digest_at='08:30', current=None, due_at=None):
     """When a to-do that waits on someone else comes back by itself so the owner can chase them: the morning before its
     deadline, or the deadline's own morning when that one is too soon (less than three hours away). A deadline later
@@ -554,7 +576,8 @@ class CardsStore:
                 org = todo_org.card_org(db, org)
             existing = db.execute('SELECT * FROM suggestions WHERE dedupe_key=? OR id=(SELECT suggestion_id FROM suggestion_keys WHERE dedupe_key=?)',
                                   (dedupe_key, dedupe_key)).fetchone()
-            if existing and (not match or set(event_ids) <= set(json.loads(existing['event_ids'] or '[]'))):
+            if existing and (not match or set(event_ids) <= set(json.loads(existing['event_ids'] or '[]'))
+                             and not edited_news(db, existing, title, body, event_ids)):
                 return {'id': existing['id'], 'status': existing['status'], 'duplicate': True}
             rows = db.execute('SELECT id,account_id,kind,occurred_at,ingested_at,metadata FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchall()
             if {r['id'] for r in rows} != set(event_ids):
@@ -622,6 +645,7 @@ class CardsStore:
             if target:
                 saved = self.update_card(db, target, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen,
                                          waiting_on=waiting_on, hold=hold)
+                taken_in(db, target['id'])
                 # The review places it; the owner's own choice stands. Personal only from who is on it (own_life_evidence)
                 # is no judgment of the matter: the review's word on a company replaces it.
                 by_people = company_said and target['area'] == todo_areas.PERSONAL and own_life_evidence(db, json.loads(target['event_ids'] or '[]'))
@@ -661,6 +685,7 @@ class CardsStore:
                        (suggestion_id, dedupe_key[:240], title[:300], body[:5000], encoded(event_ids),
                         encoded(placed or sorted({r['account_id'] for r in rows})), now(), deliver_after, source_line(sorted([dict(r) for r in rows],key=lambda r:event_ids.index(r['id'])), db), int(urgent), due,
                         int(bool(owner_step))))
+            taken_in(db, suggestion_id)
             if expiry:
                 db.execute('UPDATE suggestions SET expires_at=?,expires_what=? WHERE id=?', (*expiry, suggestion_id))
             if org is not None:
