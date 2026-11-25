@@ -138,7 +138,8 @@ try{
   await newEmail(p);await p.fill('#send-subject','Mine');await p.keyboard.press('Escape');await shut(p);await stored(p,2);
   scope=B2;await p.goto(base);await ready(p);await stored(p,0);assert.equal(await p.locator('.kept-row').count(),0);scope=A1;await p.goto(base);await ready(p);assert.equal(await p.locator('.kept-row').count(),0,'another owner’s start wiped it');
   await newEmail(p);await p.fill('#send-subject','Mine');await p.keyboard.press('Escape');await shut(p);await stored(p,1);
-  await p.evaluate(()=>localCache.wipe());assert.equal(await p.evaluate(()=>localStorage.kept??null),null);await p.goto(base);await ready(p);await stored(p,0);
+  // Typing still on its way to the disk when everything is wiped leaves no mark behind either (two writes: the second starts after the wipe)
+  await p.evaluate(async()=>{for(const n of [1,2])ktWrite('x|email|'+n,()=>({k:'x|email|'+n,id:'x',rev:'',at:Date.now(),v:{b:'Hi'},o:[]}));await localCache.wipe();await ktRun});assert.equal(await p.evaluate(()=>localStorage.kept??null),null);await p.goto(base);await ready(p);await stored(p,0);
   await c.close()}
 
  // 11. Two tabs with the same draft: an untouched one follows, one typed in keeps both, and Discard in one leaves the other's

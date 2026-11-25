@@ -18,8 +18,8 @@ const ktChan=localCache.on&&self.BroadcastChannel?new BroadcastChannel('kept'):n
 // Read again before each write, one tab at a time, so two tabs never drop each other's
 async function ktSync(write){const hit=await localCache.read('kept'),n=ktQueue.length;
  ktList=(write?ktQueue.splice(0,n):ktQueue).reduce(ktSet,Array.isArray(hit?.value)?hit.value.filter(e=>e?.k&&Date.now()-e.at<KT_AGE):ktList);
- if(write&&n){await localCache.put('kept',ktList);ktChan?.postMessage(0)}
- try{ktList.length?localStorage.kept=1:localStorage.removeItem('kept')}catch{}}
+ const held=write&&n?await localCache.put('kept',ktList):hit||!ktList.length;if(write&&n)ktChan?.postMessage(0);
+ if(held)try{ktList.length?localStorage.kept=1:localStorage.removeItem('kept')}catch{}}
 function ktWrite(k,fn){ktList=ktSet(ktList,[k,fn]);if(!localCache.on)return;ktQueue.push([k,fn]);
  ktRun=ktRun.then(()=>ktQueue.length&&(navigator.locks?navigator.locks.request('kept',()=>ktSync(true)):ktSync(true))).catch(()=>{})}
 const ktReady=ktSync().then(()=>{ktIn=true;if(!ktList.length)return;ktDraw();ktLive(100);
