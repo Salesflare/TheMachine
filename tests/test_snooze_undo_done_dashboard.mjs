@@ -57,7 +57,7 @@ try{
   assert.deepEqual(decides,[]);
   // Mark done, the Machine slow: the to-do leaves and "Marked done · Undo" shows before the save is back
   doneDelay=1500;
-  const t0=Date.now();await page.locator(`#task-${B} [data-choice="complete"]`).evaluate(b=>b.click());
+  const t0=Date.now();await page.locator(`#task-${B} [data-choice="complete"]`).first().evaluate(b=>b.click());
   assert.ok(!await shown(page,B),'the to-do left at once');
   assert.equal(await toast(page),'Marked done Undo');assert.ok(Date.now()-t0<1000,'before the save landed');
   // Undo right away: it waits for the save, then undoes, and the to-do is back
@@ -66,7 +66,7 @@ try{
   assert.deepEqual(decides.map(([id,c])=>[id,c]),[[B,'complete'],[B,'undo']]);
   assert.ok(await shown(page,B),'the to-do is back after Undo');
   // A refused save: the to-do comes back as it was, with the error
-  doneDelay=300;refuse=true;await page.locator(`#task-${C} [data-choice="complete"]`).evaluate(b=>b.click());
+  doneDelay=300;refuse=true;await page.locator(`#task-${C} [data-choice="complete"]`).first().evaluate(b=>b.click());
   assert.ok(!await shown(page,C));
   await page.waitForFunction(()=>document.querySelector('#toast.error')?.textContent.includes('Mark done only an open item'),null,{timeout:10000});
   await page.waitForFunction(id=>{const n=document.querySelector('#suggestions article#task-'+id);return n&&n.getClientRects().length>0},C);

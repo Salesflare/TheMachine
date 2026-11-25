@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Card buttons: the next step, Snooze, Ask for changes (on a decision and on a ready draft) (Mark done tops its …), and a quiet … with
+// Card buttons: the next step, Snooze, Ask for changes (on a decision and on a ready draft), Mark done (on a phone atop the …), and a quiet … with
 // Hand off…, Repeat… and Not needed last. A draft's button says it opens the preview ("Review and send to …"), and Not needed is
 // one compact choice that hides the card's buttons until it is confirmed or canceled.
 const dashboard=await dashboardPage();
@@ -41,20 +41,21 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-p1').waitFor();
-  const shown=id=>page.locator(`#task-${id} .actions>:is(button,a.open,.more-actions):not([hidden])`).evaluateAll(n=>n.map(x=>x.tagName==='DETAILS'?'More':x.textContent.trim()));
+  const shown=id=>page.locator(`#task-${id} .actions>:is(button,a.open,.more-actions):not([hidden])`).evaluateAll(n=>n.filter(x=>getComputedStyle(x).display!=='none').map(x=>x.tagName==='DETAILS'?'More':x.textContent.trim()));
   const menu=id=>page.locator(`#task-${id} .more-menu>button`).evaluateAll(n=>n.filter(x=>getComputedStyle(x).display!=='none').map(x=>x.textContent.trim()));  // Snooze waits there while it fits in the row
-  // A decision: Do it, Ask for changes and Snooze; Mark done tops the … (done already, by hand), then Hand off, Repeat and
+  const row=width>600?['Mark done']:[],top=width>600?[]:['Mark done'];
+  // A decision: Do it, Ask for changes and Snooze; Mark done (done already, by hand) ends the row, on a phone it tops the …; then Hand off, Repeat and
   // Not needed, never above the buttons
-  assert.deepEqual(await shown('p1'),['Do it','Ask for changes','Snooze','More']);
-  assert.deepEqual(await menu('p1'),['Mark done','Hand off','Repeat…','Not needed']);
-  {await page.locator('#task-p1 .more-actions>summary').click();await page.locator('#task-p1 .more-menu [data-choice="complete"]').click();
+  assert.deepEqual(await shown('p1'),['Do it','Ask for changes','Snooze',...row,'More']);
+  assert.deepEqual(await menu('p1'),[...top,'Hand off','Repeat…','Not needed']);
+  {if(width<600)await page.locator('#task-p1 .more-actions>summary').click();await page.locator('#task-p1 [data-choice="complete"]:visible').click();
    for(let i=0;i<80&&!posts.some(p=>p.action==='decide'&&p.suggestion_id==='p1'&&p.choice==='complete');i++)await page.waitForTimeout(50);
-   assert.ok(posts.some(p=>p.action==='decide'&&p.suggestion_id==='p1'&&p.choice==='complete'),'Mark done from the … closes the decision');posts.length=0;
+   assert.ok(posts.some(p=>p.action==='decide'&&p.suggestion_id==='p1'&&p.choice==='complete'),'Mark done closes the decision');posts.length=0;
    await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-p1').waitFor()}
   assert.equal(await page.getByText('Hand off to a teammate').count(),0);
   // A ready draft: the button says it opens the preview first
-  assert.deepEqual(await shown('r1'),['Review and send to Noor','Ask for changes','Snooze','More']);
-  assert.deepEqual(await menu('r1'),['Mark done','Hand off','Repeat…','Not needed']);  // with a draft, Mark done tops the …
+  assert.deepEqual(await shown('r1'),['Review and send to Noor','Ask for changes','Snooze',...row,'More']);
+  assert.deepEqual(await menu('r1'),[...top,'Hand off','Repeat…','Not needed']);
   // A step only the owner can do: Mark done leads, Plan it (the help around it) is under …; never Do it
   assert.deepEqual(await shown('v1'),['Mark done','Snooze','More']);
   assert.deepEqual(await menu('v1'),['Plan it','Repeat…','Not needed']);

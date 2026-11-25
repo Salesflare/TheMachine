@@ -38,10 +38,10 @@ try{
  const menu=(page,id)=>page.locator(`#task-${id} .more-menu>button`).evaluateAll(n=>n.filter(x=>getComputedStyle(x).display!=='none').map(x=>x.textContent.trim()));
  for(const scheme of ['light','dark'])for(const width of [1440,390]){
   language='en';const {context,page}=await open(width,scheme);
-  const line=width>600?0:1;  // on a phone the lead has a row of its own
-  assert.deepEqual(await row(page,'p1'),['Do it@0',`Ask for changes@${line}`,`Snooze@${line}`,`More@${line}`]);
-  assert.deepEqual(await row(page,'p2'),['Prepare@0',`Ask for changes@${line}`,`Snooze@${line}`,`More@${line}`]);
-  assert.deepEqual(await row(page,'r1'),['Review and send to Noor@0',`Ask for changes@${line}`,`Snooze@${line}`,`More@${line}`]);
+  const line=width>600?0:1,done=width>600?['Mark done@0']:[];  // on a phone the lead has a row of its own, and Mark done tops the …
+  assert.deepEqual(await row(page,'p1'),['Do it@0',`Ask for changes@${line}`,`Snooze@${line}`,...done,`More@${line}`]);
+  assert.deepEqual(await row(page,'p2'),['Prepare@0',`Ask for changes@${line}`,`Snooze@${line}`,...done,`More@${line}`]);
+  assert.deepEqual(await row(page,'r1'),['Review and send to Noor@0',`Ask for changes@${line}`,`Snooze@${line}`,...done,`More@${line}`]);
   assert.ok(!(await row(page,'v1')).some(x=>x.startsWith('Ask for changes')),'a step only the owner can do keeps Ask for changes out of sight');
   assert.ok(!(await menu(page,'p1')).includes('Snooze'),'Snooze is not in the … while it fits in the row');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -69,8 +69,10 @@ try{
   assert.equal(await page.locator('#snooze-dialog').evaluate(d=>d.open),true);
   await page.keyboard.press('Escape');
   await page.setViewportSize({width:1440,height:900});
-  for(let i=0;i<40&&(await row(page,'p1')).length!==4;i++)await page.waitForTimeout(50);
-  assert.deepEqual(await row(page,'p1'),['Faire@0','Demander des modifications@0','Mettre en attente@0','More@0']);
+  for(let i=0;i<40&&(await row(page,'p1')).length<4;i++)await page.waitForTimeout(50);
+  // Marquer comme fait is at its end where this computer's font leaves it room, else it tops the …
+  const wide=await row(page,'p1'),done='Marquer comme fait';assert.equal(wide.includes(done+'@0'),!(await menu(page,'p1')).includes(done));
+  assert.deepEqual(wide.filter(x=>x!==done+'@0'),['Faire@0','Demander des modifications@0','Mettre en attente@0','More@0']);
   assert.ok(!(await menu(page,'p1')).includes('Mettre en attente'));
   await context.close();
  }

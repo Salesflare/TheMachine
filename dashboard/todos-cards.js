@@ -353,11 +353,14 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-skil
 const copyLead=(s,smart)=>!needsAsk(s)&&!s.proposed_skill&&s.status==='prepared'&&!smart.some(a=>a.kind!=='open')&&/\bdraft/i.test(s.body||'')&&(s.result_files||[]).some(f=>!/\.pdf$/i.test(f.name));
 const COPY_WHY='This can’t be sent from here. Copy it to send it yourself.';
 // The button row: the action that fits this to-do (its prepared send, Do it, Answer, Mark done, Check in now), Ask for
-// changes when there is a draft or result to review, Snooze, and Mark done on a ready one without a draft (with one,
-// it tops the …); then a quiet … with Hand off… (a teammate, a connected coding agent and Ask to review on one small sheet), Repeat… and Not
-// needed last. A decision has Ask for changes in sight beside its lead (Do it, Prepare). The title, project and area change in place
-// (a tap on the title; the project and area under Details). On a phone the … opens as a bottom sheet. Mark done not in
-// sight tops the …; Ask for changes not in sight stays hidden for the keys and the chat.
+// changes when there is a draft or result to review, Snooze, and Mark done on a ready one without a draft; then a quiet
+// … with Hand off… (a teammate, a connected coding agent and Ask to review on one small sheet), Repeat… and Not
+// needed last. Mark done that isn't in sight that way (on a decision, a draft, a pick, behind another lead) is a plain
+// button at the row's end on a wider screen, where the whole row fits one line, and tops the … everywhere else (a phone, a
+// narrow card, long labels): one of the two at any width, never both. On a run that stopped to ask, and while a teammate has the
+// to-do, it only tops the …. A decision has Ask for changes in sight beside its lead (Do it, Prepare). The title, project
+// and area change in place (a tap on the title; the project and area under Details). On a phone the … opens as a bottom
+// sheet. Ask for changes not in sight stays hidden for the keys and the chat.
 // A lead is k=>html``, k mapping its class (and tag): ID keeps it, mmClass makes it a plain … item (no primary; a button goes ghost).
 const shStopped=s=>!!s.secondhand?.blocked&&!closed(s);
 const ID=c=>c,mmClass=(c,tag)=>[...c.split(' ').filter(x=>x&&x!=='primary'),...(tag==='button'&&!/\bghost\b/.test(c)?['ghost']:[])].join(' '),mmPlain=f=>f(mmClass);
@@ -401,7 +404,7 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const leads=head.map(x=>k=>btn(x,'',k));leads[ask&&outOf(s).needs_first?'push':'unshift'](...smartButtons);
  // a primary leads over a plain link (Open in Maps)
  const first=leads.findIndex(f=>/^<\w+[^>]* class="[^"]*\bprimary\b/.test(String(f(ID))));if(first>0)leads.unshift(...leads.splice(first,1));
- let others=rest;if(!leads.length){const plain=x=>!handing(x)&&x[0]!=='reject',i=[rest.findIndex(x=>plain(x)&&order.includes(x[0])),rest.findIndex(plain)].find(j=>j>=0)??-1;if(i>=0){leads.push(k=>btn(rest[i],'',k));others=rest.filter((_,j)=>j!==i)}}
+ let others=rest;if(!leads.length){const can=rest.filter(x=>!handing(x)&&x[0]!=='reject'),x=can.find(x=>order.includes(x[0]))||can[0];if(x){leads.push(k=>btn(x,'',k));others=rest.filter(y=>y!==x)}}
  // Hand off…: who or what can take it, on one small sheet; a single one is a plain item with its whole name
  const agentName=c=>agentTools().find(t=>'agent:'+t.id===c)?.name;
  const hand=[...others.filter(x=>x[0]==='takeback').map(x=>btn(x)),...others.filter(handing).map(x=>{const full=x[0]==='handoff'?t(x[1]):x[1];return [btn([x[0],x[0]==='handoff'?t('A teammate'):agentName(x[0])||x[1]],html` data-full="${full}"`),btn([x[0],full])]}),...(String(reviewMore(s))?[reviewMore(s)]:[])];
@@ -409,43 +412,41 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const sub=hand.length>1?html`<div class="mm-sub" role="group" aria-label="${t('Hand off')}" hidden><p class="mm-head"><button type="button" class="mm-back" data-mm-back aria-label="${t('Back')}">‹</button><span>${t('Hand off')}</span></p>${hand.map(h=>Array.isArray(h)?h[0]:h)}</div>`:'';
  const repeat=closed(s)||s.repeats?'':html`<button type="button" class="ghost" data-repeat="${s.id}">${t('Repeat…')}</button>`;
  // In sight: Ask for changes on a decision, a draft or a result (each right after the lead), Snooze, and Mark
- // done on a ready one without a draft
+ // done on a ready one without a draft (with one, at the row's end: tail)
  const draft=smart.some(a=>DRAFT_KINDS.includes(a.kind)),ready=s.status==='prepared'&&!answered&&!ask&&!mine&&!withTeammate(s);
- // with a draft, Mark done tops the … so the row stays one line
- const doneTop=ready&&draft&&!made;
  const review=s.status==='prepared'||(s.status==='pending'&&!mine)||!!agentAsk(s);
- const shown=x=>/^send-/.test(x[0])||x[0]==='snooze'&&!made||x[0]==='change'&&review||x[0]==='complete'&&(ready&&!doneTop||ask&&!askBlocked(s)||!!ownFix(s)||shStopped(s));
+ const shown=x=>/^send-/.test(x[0])||x[0]==='snooze'&&!made||x[0]==='change'&&review||x[0]==='complete'&&(ready&&(!draft||made)||ask&&!askBlocked(s)||!!ownFix(s)||shStopped(s));
  const plain=others.filter(x=>!handing(x)&&x[0]!=='reject'&&x[0]!=='takeback');
- const items=html`${[...plain.filter(x=>x[0]==='complete'&&(doneTop||!shown(x))).map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&x[0]!=='change'&&x[0]!=='complete').map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
+ // Mark done not in sight (also one behind another lead): twice, at the row's end and atop the …, one of them shown (the CSS and actionsSize)
+ const isDone=f=>/choice="complete"/.test(f?.(ID)),tail=!isDone(leads[0])&&all.find(x=>x[0]==='complete'&&(isPrimary(x[0])||!shown(x))),both=tail&&!ask&&!withTeammate(s);
+ const items=html`${[tail&&btn(tail,both?html` data-row-fold-menu="d"`:'',mmClass),...leads.slice(1).filter(f=>!isDone(f)).map(mmPlain),...plain.filter(x=>!shown(x)&&x[0]!=='change'&&x[0]!=='complete').map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
  // Snooze folds into the … when its line runs out of room (a long label, a narrow phone), so the … never sits alone on a line: actionsSize below
  // on a phone: the lead on its own row, the rest on one (a long Use … lead too)
  const two=(leads[0]?1:0)+plain.filter(shown).length>2||useAsk(s);
  const fold=String(items)&&plain.find(x=>x[0]==='snooze'&&shown(x));
- const row=html`${plain.filter(shown).sort((a,b)=>made?(a[0]==='complete'?-1:b[0]==='complete'?1:0):(b[0]==='change')-(a[0]==='change')).map(x=>btn(x,fold&&x===fold?html` data-row-fold`:''))}`;
- const hiddenBtns=html`${plain.filter(x=>!shown(x)&&x[0]==='change').map(x=>btn(x,html` hidden`))}`;
  const menu=String(items)?html`<details class="more-actions"><summary aria-label="${t('More actions')}" title="${t('More actions')}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${t('More actions')}">${fold?btn(fold,html` data-row-fold-menu`):''}${items}${sub}</div></details>`:'';
- return html`<div class="actions${two?html` two-rows`:''}">${leads[0]?leads[0](ID):''}${row}${menu}${hiddenBtns}</div>${copy&&!skill?html`<p class="copy-why">${COPY_WHY}</p>`:''}`}
+ return html`<div class="actions${two?html` two-rows`:''}">${leads[0]?leads[0](ID):''}${plain.filter(shown).sort((a,b)=>made?(a[0]==='complete'?-1:b[0]==='complete'?1:0):(b[0]==='change')-(a[0]==='change')).map(x=>btn(x,x===fold?html` data-row-fold`:''))}${both?btn(tail,html` data-row-fold="d"`,mmClass):''}${menu}${plain.filter(x=>!shown(x)&&x[0]==='change').map(x=>btn(x,html` hidden`))}</div>${copy&&!skill?html`<p class="copy-why">${COPY_WHY}</p>`:''}`}
 // A line that runs out of room (a long label in another language, a narrow card) hands its Snooze to the … (it tops the
 // menu there) instead of wrapping onto another line (under a lead, the second line; without one, the only one); Ask for changes stays in sight. Measured per row, always
 // with Snooze in it (no paint in between), so a row folds only when it really doesn't fit and never flips back and forth.
-const actionsWrap=a=>{const f=a.querySelector(':scope>[data-row-fold]'),m=a.querySelector(':scope>.more-actions'),p=a.children[a.classList.contains('two-rows')?1:0];return !!(f&&m&&p)&&p!==m&&m.getBoundingClientRect().top>p.getBoundingClientRect().top+1};
+// A Mark done at its end goes first (tight): it shows only where the whole row is one line, the lead's too.
+const actionsWrap=a=>a.querySelector(':scope>.more-actions')?.getBoundingClientRect().top>a.children[a.matches('.two-rows.tight')?1:0].getBoundingClientRect().top+1;
 // Many rows at once: every row unfolded, then all measured (one layout), then the ones that wrap folded. Row by row,
 // each measure came after the row before's change: a whole layout per to-do on a first load.
-function actionsSize(rows){for(const a of rows)a.classList.remove('folded');for(const a of rows.filter(actionsWrap))a.classList.add('folded')}
+function actionsSize(rows){for(const a of rows)a.classList.remove('folded','tight');for(const c of ['tight','folded'])for(const a of rows.filter(actionsWrap))a.classList.add(c)}
 // A width it was fitted at already (a list put back as it was, a chat's open and close) or none (out of the page) needs no
 // measuring: only a new width does.
 const actionsFit=new ResizeObserver(rows=>{const now=[];for(const {target:a,contentRect:r} of rows)if(r.width&&a._fitW!==r.width){a._fitW=r.width;now.push(a)}actionsSize(now)});
-// A row drawn anew is fitted before it is painted, and again when its width, its labels (a translation) or the font change
-const actionsAll=()=>{const rows=[];for(const f of document.querySelectorAll('.card .actions>[data-row-fold]')){const a=f.parentElement;if(a.dataset.fit==null){a.dataset.fit='';actionsFit.observe(a)}rows.push(a)}actionsSize(rows)};
+// A row drawn anew is fitted before it is painted, and again when its width, its labels (a translation) or the font change (all).
 // A change in the page measures only the rows it touched and the ones drawn anew, not every row on it (a chat that streams
 // in, a time that ticks or a list put back re-measured them all, a forced layout each)
 const actionsTouched=new Set();let actionsQueued=0;
-const actionsSome=()=>{actionsQueued=0;const rows=[...actionsTouched];actionsTouched.clear();
- for(const f of document.querySelectorAll('.card .actions:not([data-fit])>[data-row-fold]'))rows.push(f.parentElement);
+const actionsSome=all=>{actionsQueued=0;const rows=[...actionsTouched];actionsTouched.clear();
+ for(const f of document.querySelectorAll(`.card .actions${all===true?'':':not([data-fit])'}>[data-row-fold]`))rows.push(f.parentElement);
  const now=[];for(const a of new Set(rows)){if(!a.isConnected||!a.querySelector(':scope>[data-row-fold]'))continue;if(a.dataset.fit==null){a.dataset.fit='';actionsFit.observe(a)}now.push(a)}actionsSize(now)};
 // (once a frame at most, still before it is painted: a streaming chat changes the page many times a second)
 new MutationObserver(records=>{for(const m of records){const n=m.target.nodeType===1?m.target:m.target.parentElement,a=n?.closest('.card .actions[data-fit]');if(a)actionsTouched.add(a)}
- if(!actionsQueued)actionsQueued=requestAnimationFrame(actionsSome)}).observe(document.body,{childList:true,subtree:true,characterData:true});document.fonts?.ready.then(actionsAll);
+ if(!actionsQueued)actionsQueued=requestAnimationFrame(actionsSome)}).observe(document.body,{childList:true,subtree:true,characterData:true});document.fonts?.ready.then(()=>actionsSome(true));
 // A folding text (data-clamp, its Show more data-more with the same key) shows Show more and the fade over its last line
 // only when some of it is really cut off. Measured once drawn, before it is painted, and again when its width or the font
 // changes and after Show more or Show less: where its text ends against the bottom of its box, so a text that fills its

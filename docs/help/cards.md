@@ -98,7 +98,7 @@ A to-do shows its next step, like **Do it** or **Review and send**, with **Snooz
 
 **Ask for changes** says what to change: how to do it, or, once a draft is ready, what to change in it. Leave it half-typed and it's there when you come back; **Cancel** drops it.
 
-**Mark done** means it's handled: in sight on a ready one without a draft or one that asks you something, otherwise at the top of **…**. It leaves the list at once, with **Undo** in the message. Swipe the message away, or drag it off with the mouse, to close it sooner. The change stays.
+**Mark done** means it's handled. On a computer it sits with the other buttons when they fit on one line. On a phone it's in sight on a ready one without a draft or one that asks you something, otherwise at the top of **…**. It leaves the list at once, with **Undo** in the message. Swipe the message away, or drag it off with the mouse, to close it sooner. The change stays.
 
 To have it done another way, say so in its **Chat**. Its answer names only what changed, like a snooze and until when. If it couldn't change something, like a due date, it says so.
 

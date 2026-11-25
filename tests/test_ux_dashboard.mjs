@@ -9,7 +9,7 @@ const {chromium}=await import('./browser.mjs');
 import {forceReplyPayload} from '../openclaw-plugin/change-prompt.ts';
 // The Send preview's header rows as 'From: …' lines.
 // A card's rarer buttons wait under More: open it first when the button isn't in the row.
-const tap=async(card,name)=>{const b=card.getByRole('button',{name,exact:true,includeHidden:true}).first();if(await b.evaluate(x=>x.hidden)){await b.evaluate(x=>x.click());return}  // a choice kept out of sight (the palette, D, the chat click it)
+const tap=async(card,name)=>{const all=card.getByRole('button',{name,exact:true,includeHidden:true});let b=all.first();if(!await b.isVisible()&&await b.evaluate(x=>x.dataset.rowFold!=null))b=all.nth(1);if(await b.evaluate(x=>x.hidden)){await b.evaluate(x=>x.click());return}  // a choice kept out of sight (the palette, D, the chat click it)
  if(!await b.isVisible())await card.locator('.more-actions>summary').click();await b.click()};
 const sendHead=page=>page.evaluate(()=>[...document.querySelectorAll('#send-head>div')].map(d=>d.children[0].textContent+': '+d.children[1].textContent).join('\n'));
 const payload=forceReplyPayload('sendMessage',{chat_id:'1000001',text:'Change'},'123','1000001');
