@@ -12,6 +12,7 @@ import uuid
 import abilities
 import agent_jobs
 import bug_gate
+import calendar_clashes
 import chat_files
 import doc_writes
 import fleet
@@ -652,6 +653,30 @@ class DecisionsStore:
                 return {'skipped': 'a send of this to-do is under way'}
             close_by_itself(db, row, decision_id, reason, 'plan', stamp, undo_hours, lapsed=True)
         return {'closed': True}
+
+    def clash_untouched(self, db, suggestion_id):
+        """Whether the owner did nothing on an open calendar clash to-do yet: no decision of theirs (a tap, a chat message,
+        Later), no edited draft, no step approved, not with a coding agent or a teammate. Only then may it close by itself."""
+        row = db.execute('SELECT status FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        if not row or row['status'] not in todo_states.OPEN_NOT_SNOOZED:
+            return False
+        have = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        return not any(table in have and db.execute(f'SELECT 1 FROM {table} WHERE {where} LIMIT 1', (key,)).fetchone() for table, where, key in (
+            ('decisions', "suggestion_id=? AND source!='assistant'", suggestion_id), ('draft_edits', 'suggestion_id=?', suggestion_id),
+            ('action_jobs', 'suggestion_id=?', suggestion_id), ('agent_jobs', 'suggestion_id=?', suggestion_id),
+            ('fleet_out', 'context=?', 'handoff:' + str(suggestion_id))))
+
+    def clash_gone(self, db, suggestion_id, why, undo_hours=24):
+        """An open calendar clash to-do the owner did nothing on (clash_untouched) closes by itself as Not needed, with
+        Undo for a day: its overlap is on another to-do ('moved'), or it was with a block that only frames the day
+        (calendar_clashes.plan). Once: after an Undo it stays."""
+        row, decision_id = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone(), calendar_clashes.GONE + str(suggestion_id)
+        if not row or not self.clash_untouched(db, suggestion_id) or db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
+            return False
+        reason = i18n.t('The same clash is on another to-do') if why == 'moved' else i18n.t('Not a clash after all')
+        close_by_itself(db, row, decision_id, reason, 'plan', now(), undo_hours, lapsed=True)
+        db.execute('UPDATE suggestions SET expires_at=NULL,early=0 WHERE id=?', (suggestion_id,))  # it closed before its moment, so its Done line doesn't name it
+        return True
 
     def queue_preparation(self, db, suggestion_id, decision_id, action_id=None, resume_action=False, keep_retries=False):
         return queue_preparation(db, suggestion_id, decision_id, action_id, resume_action, keep_retries)

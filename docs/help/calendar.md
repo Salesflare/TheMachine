@@ -95,7 +95,11 @@ No meetings yet? Without a calendar, **Connect your calendar** opens Connections
 
 When a work meeting overlaps something in your personal calendar, or the other way around, The Machine makes one to-do about the newer of the two. It can draft a short note to move it, or offer to decline. Nothing goes out until you approve it.
 
-All-day, free and tentative events never count, and each clash comes up once. A Work to-do only says there is a conflict, so your team never sees the personal event. Only you see what it clashes with.
+An event that overlaps several is one to-do, about that event. A new overlap joins it while it's open. Once it's done or dismissed, only a meeting made or changed later brings it back.
+
+All-day, free and tentative events never count, and each clash comes up once. Google's working location, focus time and out of office don't count either. Neither does a block of your own that holds other meetings, like an office day: only the meetings in it can clash. A block with nobody else on it and no meetings in it, like a flight, still clashes with an event that has others on it.
+
+A Work to-do only says there is a conflict, so your team never sees the personal event. Only you see what it clashes with: the first two, then how many more. A to-do you did nothing on closes by itself when its clash is on another to-do or wasn't one after all.
 
 ## Ready for your meetings
 

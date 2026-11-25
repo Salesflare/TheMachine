@@ -184,8 +184,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `calendar_busy.py`: what takes the owner's time (one rule for free/busy and clashes), and which times aren't known;
     no table.
   - `calendar_clashes.py` with `machine/app/calendar_clashes.py` (`CalendarClashesApp`): a work meeting overlapping a
-    personal event, found by plain code and raised once as a to-do that names only its own side; the owner's dashboard
-    reads the other side at view time (`annotate`), so no Fleet sees it.
+    personal event, found by plain code (`pairs`), one to-do per event (`grouped`) that names only its own side, raised
+    once; later overlaps join it (`plan`). A block that only frames the day never clashes (`mark_frames`). The owner's
+    dashboard reads the other side at view time (`annotate`), so no Fleet sees it.
   - `bookings.py` and `trip_notes.py` with `machine/app/trips.py` (`TripsApp`): booking mail without structured data
     read by one small background call for a few mails at a time, so it lands on its trip too.
   - `meeting_prep.py` with `machine/app/meeting_prep.py` (`MeetingPrepApp`): before a meeting with people
