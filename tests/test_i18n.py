@@ -18,6 +18,7 @@ import machine.store.cards as machine_store_cards
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 import i18n_extract  # noqa: E402
+from translate import term_in  # noqa: E402
 
 LANGS = [code for code in locale_prefs.LANGUAGES if code != 'en']
 HOLE = re.compile(r'\{\d*\}')
@@ -44,13 +45,6 @@ def glossary():
         terms[row[0]] = {head[i]: [f.strip() for f in row[i].split(',')] for i in range(1, len(head))}
     exceptions = set(re.findall(r'^- `(.+?)`', text.split('## Exceptions', 1)[1].split('##', 1)[0], re.M)) if '## Exceptions' in text else set()
     return [n for n in names if n], terms, exceptions
-
-
-def term_in(term, english):
-    """'to-do' in 'Find a to-do' and 'To-dos', not in 'to-door'; 'snooze' in 'Snoozed'; a capitalized term (a status or
-    screen name: Ready) only capitalized; never in a file name (.skill, SKILL.md)."""
-    flags = 0 if term[0].isupper() else re.I
-    return re.search(r'(?<![\w.-])' + re.escape(term) + r'(?:s|es|d|ed|ing)?(?![\w-]|\.md)', english, flags) is not None
 
 
 class CatalogTest(unittest.TestCase):
@@ -90,6 +84,12 @@ class CatalogTest(unittest.TestCase):
         names, terms, exceptions = glossary()
         self.assertIn('Graph', names)
         self.assertIn('to-do', terms)
+        self.assertIn('Signal', names)  # the app, beside the term signal
+        for term, english, counts in (('to-do', 'Find a to-do', True), ('to-do', 'To-dos', True), ('to-do', 'to-door', False),
+                                      ('snooze', 'Snoozed', True), ('Ready', 'ready', False), ('skill', 'SKILL.md', False),
+                                      ('signal', 'a signal', True), ('signal', 'Signals you set', True),
+                                      ('signal', 'Signal sent you two signals', True), ('signal', 'Read it in Signal', False)):
+            self.assertEqual(term_in(term, english, names), counts, english)
         en, problems = load('en.json'), []
         for lang in LANGS:
             cat = load(f'{lang}.json')
@@ -101,7 +101,7 @@ class CatalogTest(unittest.TestCase):
                     if re.search(r'(?<![\w-])' + re.escape(name) + r'(?![\w-])', key) and name not in text:
                         problems.append(f'{lang}: keep {name!r} in {key!r} -> {text!r}')
                 for term, by_lang in terms.items():
-                    if term_in(term, key) and not any(f.lower() in text.lower() for f in by_lang[lang]):
+                    if term_in(term, key, names) and not any(f.lower() in text.lower() for f in by_lang[lang]):
                         problems.append(f'{lang}: {term!r} reads {by_lang[lang][0]!r} in {key!r} -> {text!r}')
         self.assertEqual(problems, [], '\n'.join(problems[:40]))
         self.assertTrue(en)

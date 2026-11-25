@@ -108,8 +108,13 @@ def glossary(text=None):
             'checked': checked, 'exceptions': exceptions, 'button_rule': button_rule, 'buttons': buttons}
 
 
-def term_in(term, english):
-    """tests/test_i18n.py's rule: a capitalized term counts capitalized only, an inflection counts, a file name doesn't."""
+def term_in(term, english, names):
+    """Does english use the glossary term? A capitalized term counts capitalized only, an inflection counts ("Snoozed",
+    "To-dos"), a file name doesn't (.skill, SKILL.md), and a name spelled like the term (Signal, the app) is that name as
+    it is written, not the term. tests/test_i18n.py asks this too."""
+    for name in names:
+        if name != term and name.lower() == term.lower():
+            english = re.sub(r'(?<![\w-])' + re.escape(name) + r'(?![\w-])', ' ', english)
     flags = 0 if term[0].isupper() else re.I
     return re.search(r'(?<![\w.-])' + re.escape(term) + r'(?:s|es|d|ed|ing)?(?![\w-]|\.md)', english, flags) is not None
 
@@ -140,8 +145,10 @@ def language_name(lang):
 def instructions(lang, texts, what, words=None):
     words = words or glossary()
     blob = ' '.join(texts).lower()
+    named = {n.lower() for n in words['names']}  # "signal = señal" goes along only with texts that mean a signal, not the app Signal
     used = [(en, row[lang]) for en, row in words['terms'].items()
-            if lang in row and re.search(r'(?<![\w-])' + re.escape(en.lower().split(' (')[0]), blob)]
+            if lang in row and re.search(r'(?<![\w-])' + re.escape(en.lower().split(' (')[0]), blob)
+            and (en in words['names'] or en.lower() not in named or any(term_in(en, t, words['names']) for t in texts))]
     name = language_name(lang)
     lines = [
         f'You translate {what} for The Machine, an AI assistant product, from English into {name} ({lang}).',
@@ -306,7 +313,7 @@ def string_problems(key, text, lang, words):
     out += [f'keep the name "{n}"' for n in words['names'] if re.search(r'(?<![\w-])' + re.escape(n) + r'(?![\w-])', key) and n not in text]
     if key not in words['exceptions']:
         out += [f'"{term}" must read one of: {", ".join(forms[lang])}' + TERM_PROBLEM for term, forms in words['checked'].items()
-                if lang in forms and term_in(term, key) and not any(f.lower() in text.lower() for f in forms[lang])]
+                if lang in forms and term_in(term, key, words['names']) and not any(f.lower() in text.lower() for f in forms[lang])]
     pattern = wrong_gender().get(lang)
     if pattern and re.search(pattern, text):
         out.append(f'The Machine is never masculine here: {words["gender"].get(lang, "")}')
