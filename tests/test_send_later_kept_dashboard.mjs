@@ -71,14 +71,14 @@ try{
   assert.deepEqual(sends().map(x=>x[0]),['compose_email','confirm_action']);assert.ok(sends()[1][1].later);
   assert.doesNotMatch(await p.locator('#toast').innerText(),/Kept/);
   await p.goto(base);await p.reload();await ready(p);await p.evaluate(async()=>{await ktReady;ktBack();await fetch('/api/session')});
-  assert.equal(await p.locator('.kept-row,#send-dialog[open]').count(),0);assert.equal(await p.evaluate(id=>!!state.suggestions.find(s=>s.id===id).send_later,N),true);
+  await p.waitForFunction(id=>state.suggestions?.find(s=>s.id===id)?.send_later,N);assert.equal(await p.locator('.kept-row,#send-dialog[open]').count(),0);
 
   // One kept first (Esc), brought back, then scheduled: the row goes
   reset();await compose(p);await p.keyboard.press('Escape');await shut(p);await kept(p,1);await p.goto(base);await p.locator('.kept-row',{hasText:'Unsent email to Robin'}).waitFor();
   await p.locator('.kept-row [data-kept-go]').click();await p.waitForFunction(()=>document.querySelector('#send-subject').value==='The room');
   await later(p);await shut(p);await kept(p,0);await p.locator('.kept-row').waitFor({state:'detached'});
   // It couldn't be scheduled: it waits in its to-do, and isn't an unsent email beside it
-  reset();await compose(p);fail='confirm_action';await later(p);await shut(p);await said(p,'Not sent. The email waits in a to-do.');await kept(p,0);assert.equal(await p.locator('.kept-row').count(),0);
+  reset();await compose(p);fail='confirm_action';await later(p);await shut(p);await said(p,'Not sent. The email waits in a to-do.');await kept(p,0);await p.locator('.kept-row').waitFor({state:'detached'});
   // It couldn't be saved: the composer stays open with what was typed, kept
   reset();await compose(p);fail='compose_email';await later(p);await p.locator('#send-error',{hasText:'It can’t be scheduled now.'}).waitFor();assert.match(await p.locator('#send-rich-body').innerText(),/free on Friday/);
   await kept(p,1);await p.locator('#send-cancel').click();await shut(p);await kept(p,0);
@@ -88,6 +88,7 @@ try{
   await type(p,' PS see you.');await kept(p,1);await fits(p,['Send now','Send later','Ask for changes','Discard'],'edited',width<500?[2,2]:[4]);await shot(p,'12-edited');
   await later(p);await shut(p);await said(p,'Sends ');await kept(p,0);
   assert.deepEqual(sends().map(x=>x[0]),['revise_draft','confirm_action']);assert.match(sends()[0][1].body,/PS see you/);assert.equal(sends()[1][1].revision,rev('f'));
+  await p.waitForFunction(id=>state.suggestions.find(s=>s.id===id).send_later,E);  // the status that schedules it is in
   assert.equal(await p.locator('.kept-mark').count(),0,'nothing kept on a scheduled to-do');
   // Canceled: the draft is the edited one, without a mark
   await p.evaluate(id=>lazyRun('sendlater',()=>laterAct('send-cancel',id)),E);await said(p,'Canceled.');await p.waitForFunction(id=>state.suggestions.find(s=>s.id===id).status==='prepared',E);
