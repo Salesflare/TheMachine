@@ -13,6 +13,7 @@ Open **Connections**. Each source says how it's doing:
 - **Reconnecting automatically**: a short hiccup. It retries by itself.
 - **Waiting for first sync**: just connected. Give it a few minutes.
 - **Reads again at** 07:00: X and LinkedIn only read during the day. Nothing to do.
+- **Not set up yet**: nobody signed in to it here yet. Press **Connect**. It starts within a minute after.
 - **Needs your help**: open **Details**. It says what went wrong and what to do.
 - **Phone disconnected**: your Android phone isn't reaching your Machine. Open the OpenClaw app on it.
 
@@ -24,6 +25,7 @@ The number on **Connections** only counts sources that need your help.
 
 - "Sign in to Google again" (or Microsoft): one **Reconnect** brings back all of that account's sources, like Gmail and Calendar.
 - "needs you to sign in again": press **Reconnect** and sign in.
+- "needs a program that isn't on this computer": run the command on its card in a terminal on that computer. It says what to install, or finds a program that moved.
 - Microsoft still setting up access: it tries again by itself.
 - Slack: press **Reconnect**. Connected with a Maton key? Check the key and the Slack connection in Maton.
 - Android: open the OpenClaw app on the phone and allow it notification access.

@@ -40,6 +40,8 @@ class Source:
             raise SourceError('github_path_not_allowed')
         try:
             done = subprocess.run([self.config.get('gh', 'gh'), 'api', '--method', 'GET', path], capture_output=True, text=True, timeout=60)
+        except (FileNotFoundError, NotADirectoryError, PermissionError):  # no gh here: not a network error
+            raise SourceError('github:not_installed') from None
         except (OSError, subprocess.TimeoutExpired) as error:
             raise SourceError('network:' + type(error).__name__ + ':github_read') from None
         if done.returncode:

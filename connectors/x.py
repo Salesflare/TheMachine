@@ -82,8 +82,8 @@ class Source:
                                   env=browser_env(account))
         except subprocess.TimeoutExpired:  # the reader never finished: the browser, not X (its requests end by themselves)
             raise SourceError('x_browser_stalled', retry_after=900) from None
-        except OSError as error:
-            raise SourceError('x_reader_missing:' + type(error).__name__) from None
+        except OSError:
+            raise SourceError('x:not_installed') from None
         if done.returncode:
             err = done.stderr.lower()
             if 'busy' in err:

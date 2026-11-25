@@ -34,6 +34,9 @@ OPEN = {
     ('connectors/rss.py', 'READ_ERRORS.get(error.category, error.category)'): ('rss_address', 'rss_redirects', 'network:read:rss_read'),
     ('google_api.py', "method.split('.')[0]"): API,
     ('sources.py', 'api'): ('gmail', 'calendar'),  # what gog_read is asked for as a source
+    ('sources.py', 'api + NOT_SET_UP'): ('gmail:not_set_up', 'calendar:not_set_up'),
+    ('sources.py', 'api + NOT_INSTALLED'): ('gmail:not_installed', 'calendar:not_installed'),
+    ('machine/app/sync.py', "account.get('service', 'gmail') + NOT_SET_UP"): (),  # shown on its card, never reported (Store.failed)
     ('sources.py', "api + ':google_signin_expired_run_gog_auth_add'"): ('gmail:google_signin_expired_run_gog_auth_add', 'calendar:google_signin_expired_run_gog_auth_add'),
     ('ics_feed.py', "error.category.replace('caldav', 'ics')"): CARRIED,
     ('machine/sources/calendar.py', "str(raw['unreadable'])"): ('outlook_invalid_event', 'calendar_invalid_event'),

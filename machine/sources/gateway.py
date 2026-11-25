@@ -13,7 +13,7 @@ from machine.config import LOG
 from machine.faults import code_version, fault_event
 import next_actions
 import parked_fixes
-from sources import SourceError
+from sources import NO_PROGRAM, SourceError
 from timeutil import local_tz, now
 
 
@@ -58,6 +58,8 @@ class GatewayJournal:
         args += ['--after-cursor', cursor] if cursor else ['--since', since]
         try:
             result = subprocess.run(args, capture_output=True, text=True, timeout=120)
+        except NO_PROGRAM:
+            raise SourceError('gateway:not_installed') from None
         except (OSError, subprocess.TimeoutExpired) as error:
             raise SourceError('journal_unavailable:' + type(error).__name__) from None
         if result.returncode:

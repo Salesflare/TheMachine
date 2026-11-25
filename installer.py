@@ -252,6 +252,7 @@ def check_prerequisites():
         found = onboarding.portable.tailscale() if name == 'tailscale' else shutil.which(name)
         facts[name] = found
         say(f'  {"ok   " if found else "skip "} {name}{"" if found else ": " + hint}')
+    facts['gh'] = shutil.which('gh')  # only for the GitHub connection: never asked for here
     facts['service'] = service.available()
     fresh = not Paths().config.exists()
     if fresh and not facts['tailscale'] and not (os.environ.get(ENV['tailscale_owner']) and os.environ.get(ENV['dashboard_host'])):
@@ -585,10 +586,9 @@ def refresh_install_paths(config, facts, paths):
             config[key] = facts[key]
     if facts.get('openclaw_package_dir'):
         config['openclaw_package_dir'] = str(facts['openclaw_package_dir'])
-    if facts.get('gog') and config.get('gog') in (None, 'gog'):
-        config['gog'] = facts['gog']
-    if facts.get('wacli') and config.get('wacli') in (None, 'wacli'):
-        config['wacli'] = facts['wacli']
+    for key in ('gog', 'wacli'):  # one that moved since is found again
+        if facts.get(key) and (config.get(key) in (None, key) or not onboarding.tool(config, key)):
+            config[key] = facts[key]
     return config
 
 
@@ -658,9 +658,15 @@ def quote_unit(path):
     return f'"{text}"' if re.search(r'\s', text) else text
 
 
+# The service's PATH isn't the login shell's: where the programs it runs are now, and where one added later would be
+# (Homebrew on Linux, Go's and a person's own folder).
+SERVICE_PROGRAMS = ('node', 'openclaw', 'gog', 'wacli', 'gh')
+
+
 def unit_path(facts):
-    bins = [str(Path(p).parent) for p in (facts.get('node'), facts.get('openclaw'), facts.get('gog'), facts.get('wacli')) if p]
-    return ':'.join(dict.fromkeys(bins + ['%h/.local/bin', '/usr/local/bin', '/usr/bin', '/bin']))
+    bins = [str(Path(facts[p]).parent) for p in SERVICE_PROGRAMS if facts.get(p)]
+    return ':'.join(dict.fromkeys(bins + ['%h/.local/bin', '/usr/local/bin', '/usr/bin', '/bin', '%h/bin', '%h/go/bin',
+                                          '/home/linuxbrew/.linuxbrew/bin']))
 
 
 def unit_text(config, facts, config_path=None):
@@ -695,10 +701,10 @@ WantedBy=default.target
 
 
 def service_path(facts):
-    bins = [str(Path(p).parent) for p in (facts.get('node'), facts.get('openclaw'), facts.get('gog'), facts.get('wacli')) if p]
+    bins = [str(Path(facts[p]).parent) for p in SERVICE_PROGRAMS if facts.get(p)]
     home = str(Paths().home)
     return ':'.join(dict.fromkeys(bins + [home + '/.local/bin', '/opt/homebrew/bin', '/usr/local/bin', '/usr/bin', '/bin',
-                                          '/usr/sbin', '/sbin']))
+                                          '/usr/sbin', '/sbin', home + '/bin', home + '/go/bin']))
 
 
 def agent_text(config, facts, config_path=None, paths=None):

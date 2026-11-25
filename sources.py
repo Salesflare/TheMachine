@@ -75,6 +75,13 @@ def outage_backoff(error, delay, failures, poll):
     return min(delay * 2 ** min(failures or 0, 10), max(delay, poll)) if SHORT_OUTAGE.fullmatch(str(error)) else delay
 
 
+# A source that can't be read before the owner does something here, whatever the service: NOT_SET_UP (never signed in, no
+# key saved yet; expected on a new install until they do) and NOT_INSTALLED (the program that reads it isn't on this
+# computer, or not where the service looks). A label is '<service>:not_set_up'.
+NOT_SET_UP, NOT_INSTALLED = ':not_set_up', ':not_installed'
+NO_PROGRAM = (FileNotFoundError, NotADirectoryError, PermissionError)  # what running a program that isn't there raises
+
+
 class SourceError(Exception):
     """Only redacted, structured error labels are allowed in logs/checkpoints. `route` is the endpoint that failed with its
     ids masked (/accounts/{id}/feed), logged next to the category so support can tell which request it was."""
@@ -244,7 +251,10 @@ def gog_env(config):
 
 def gog_call(config, account, api, version, method, params, scope):
     """One `gog api call`: a new gog process."""
-    env = gog_env(config)
+    try:
+        env = gog_env(config)
+    except (FileNotFoundError, KeyError):  # no keyring password: nobody signed in to Google with gog here yet
+        raise SourceError(api + NOT_SET_UP) from None
     params = json.dumps(params, ensure_ascii=False, sort_keys=True, separators=(',', ':'))  # as assistant.encoded
     command = [config['gog'], 'api', 'call', api, version, method, '--params', params,
                '--scope', scope, '--account', account['email'], '--client', account['client'],
@@ -253,6 +263,8 @@ def gog_call(config, account, api, version, method, params, scope):
         result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=60)
     except subprocess.TimeoutExpired:
         raise SourceError('timeout') from None
+    except NO_PROGRAM:
+        raise SourceError(api + NOT_INSTALLED) from None
     if result.returncode:
         if re.search(r'invalid_grant|expired or revoked', result.stderr):
             # The stored Google sign-in is gone; retrying every cycle can't help until the owner runs

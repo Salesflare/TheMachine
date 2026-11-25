@@ -27,7 +27,7 @@ from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_
 from machine.sources.signal_chats import sync_signal
 from machine.sources.telegram import sync_telegram
 from machine.sources.whatsapp import sync_whatsapp, WhatsApp
-from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, outage_backoff, rate_limited, SourceError, transient, upstream_busy
+from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, NOT_SET_UP, outage_backoff, rate_limited, SourceError, transient, upstream_busy
 from timeutil import now
 import whatsapp_images
 from machine.owner_error import OwnerError
@@ -50,6 +50,7 @@ SYNC_LOCKS, SYNC_LOCKS_LOCK = {}, threading.Lock()
 
 
 QUICK_RETRY_SECONDS = 15
+NOT_SET_UP_RETRY = 30  # seconds: an account nobody signed in to yet is read again then (nothing is contacted)
 
 
 QUICK_RETRY_MAX = 60  # a Retry-After longer than this waits in the checkpoint instead
@@ -663,6 +664,25 @@ class SyncApp:
             if self.stop.wait(ABILITY_CHECK_SECONDS):
                 break
 
+    def not_set_up(self, account):
+        """For a read that failed on a file that isn't there: a SourceError that says so when that is because the owner hasn't
+        signed in or saved a key yet (never a raw FileNotFoundError on its card), else None."""
+        import onboarding  # noqa: PLC0415
+        try:
+            why = onboarding.missing(self.config, account)
+        except Exception:  # noqa: BLE001 - what went wrong stays the error
+            return None
+        return SourceError(account.get('service', 'gmail') + NOT_SET_UP) if why else None
+
+    def read_account(self, account, source):
+        try:
+            return self.sync_retrying(account, source)
+        except FileNotFoundError:
+            waiting = self.not_set_up(account)
+            if waiting:
+                raise waiting from None
+            raise
+
     def slack_source(self, account):
         """The one Slack client of a connection: its collector and its history (machine/app/history.py) share it, so
         they share its pacing too (Slack allows about one history read a minute)."""
@@ -694,7 +714,7 @@ class SyncApp:
                         break
                 delay = account.get('poll_seconds', self.config.get('poll_seconds', 300))
                 try:
-                    result = self.sync_retrying(account, source)
+                    result = self.read_account(account, source)
                     LOG.info('sync account=%s mode=%s read=%d filtered=%d skipped=%d', account['id'], result['mode'], result['events'], result.get('filtered', 0), result.get('skipped', 0))
                     if result.get('waiting'):  # Outlook messages Graph failed to serve: read again next round, never dropped
                         LOG.info('sync account=%s waiting=%d since=%s', account['id'], result['waiting'], result.get('waiting_since'))
@@ -709,18 +729,24 @@ class SyncApp:
                 except SourceError as error:
                     if self.stop.is_set():
                         break
-                    delay = outage_backoff(error, error.retry_after or delay, row['failures'] if row else 0, delay)
-                    if local_android_feed:
-                        # The local queue is read again with a growing wait while the bridge stays down, not every
-                        # poll (feed_backoff). Phone fallback attempts keep their own durable cap.
-                        delay = feed_backoff(account, row['failures'] if row else 0)
-                    error.retry_after = delay
-                    self.store.failed(account['id'], error, report)
-                    LOG.warning('sync account=%s error=%s%s', account['id'], error, error_route(error))
-                    # Enter the checkpoint wait directly so renewed sign-ins are watched.
-                    # Ordinary failures and rate limits retain their normal backoff.
-                    if re.search(SIGNIN_ERROR, str(error)):
-                        continue
+                    if str(error).endswith(NOT_SET_UP):  # looked at again soon, to read once it is; said on its card the first time
+                        delay = NOT_SET_UP_RETRY
+                        if not row or row['error'] != str(error):
+                            self.store.failed(account['id'], error, report)
+                            LOG.info('sync account=%s waits: not set up yet', account['id'])
+                    else:
+                        delay = outage_backoff(error, error.retry_after or delay, row['failures'] if row else 0, delay)
+                        if local_android_feed:
+                            # The local queue is read again with a growing wait while the bridge stays down, not every
+                            # poll (feed_backoff). Phone fallback attempts keep their own durable cap.
+                            delay = feed_backoff(account, row['failures'] if row else 0)
+                        error.retry_after = delay
+                        self.store.failed(account['id'], error, report)
+                        LOG.warning('sync account=%s error=%s%s', account['id'], error, error_route(error))
+                        # Enter the checkpoint wait directly so renewed sign-ins are watched.
+                        # Ordinary failures and rate limits retain their normal backoff.
+                        if re.search(SIGNIN_ERROR, str(error)):
+                            continue
                 except sqlite3.OperationalError as error:
                     if not db_busy(error):
                         safe = SourceError(type(error).__name__, retry_after=delay)

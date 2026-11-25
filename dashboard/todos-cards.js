@@ -69,10 +69,12 @@ const busy=/:HTTP_(5\d\d|429)$/.exec(v);if(busy){const k=Object.keys(SERVICE_NAM
  return busy[1]==='429'?t('{} asked to slow down',who):t('{} had a problem on its side',who)}
 if(/signed_out$/.test(what))return name?'Signed out of '+name:'Signed out';
 if(TELEGRAM_STOP[v])return TELEGRAM_STOP[v];
+if(/:not_set_up$/.test(v))return 'Not set up yet';
+if(/:not_installed$/.test(v))return t('{} needs a program that isn’t on this computer',name);
 if(v==='docs_not_connected')return 'Reading docs needs its own OK';
 if(v==='docs_no_signin')return 'Sign in with Microsoft for this address';
-if(v==='google_meet_not_connected'||v==='google_meet_signin_expired')return 'Connect Google Meet again';
-if(v==='teams_not_connected'||v==='teams_signin_expired'||v==='teams_not_granted')return 'Connect Microsoft Teams again';
+if(/^google_meet_(not_connected|signin_expired)$/.test(v))return 'Connect Google Meet again';
+if(/^teams_(not_connected|signin_expired|not_granted)$/.test(v))return 'Connect Microsoft Teams again';
 if(v==='teams_work_only')return 'Teams needs a work or school account';
 if(/google_signin_expired/.test(what))return name?t('Google sign-in for {} expired',name):t('Google sign-in for this account expired');
 if(/microsoft_signin_pending|microsoft_broker_busy/.test(v))return 'Microsoft is still setting up access; it retries by itself';
@@ -91,13 +93,11 @@ if(/^imap_password_missing/.test(v))return 'No saved password for this mailbox';
 if(/browser_busy$/.test(what))return 'The browser was busy with another read';
 if(/browser_unreachable$/.test(what))return 'The browser stopped answering; it restarts by itself';
 if(/browser_stalled$/.test(what))return 'The browser didn’t answer; it retries by itself';
-if(/timeout$/.test(what))return t('{} was slow to answer',name||t('The source'));
+if(/timeout$|^request_timeout:/.test(what))return t('{} was slow to answer',name||t('The source'));
 if(/rate_?limit/.test(what))return t('{} asked to slow down',name||t('The source'));
 if(/read_failed$|query_un/.test(what))return name?t('Couldn’t read {}',name):t('Couldn’t read the source');
-if(/^HTTP_5/.test(what))return t('{} had a problem on its side',name||t('The source'));
 // Slack's own trouble said as a label (slack_internal_error:users.info): the same as its 5xx
-if(/^(?:internal_error|fatal_error|service_unavailable)(?::|$)/.test(what))return t('{} had a problem on its side',name||t('The source'));
-if(/^request_timeout(?::|$)/.test(what))return t('{} was slow to answer',name||t('The source'));
+if(/^(HTTP_5|(internal_error|fatal_error|service_unavailable)(:|$))/.test(what))return t('{} had a problem on its side',name||t('The source'));
 const words=v.replace(/[_:]+/g,' ').trim();return words[0].toUpperCase()+words.slice(1)}
 // The tools underneath (gog, wacli, msgraph-cli, the OpenClaw feed) are never a name on screen: one of their keys from
 // data reads as nothing, and the line says the source instead (the same list as machine/names.py INTERNAL)

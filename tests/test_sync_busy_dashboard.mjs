@@ -17,4 +17,14 @@ assert.ok(!/side|slow down/.test(syncError('google_meet_http:HTTP_403')),'a perm
 // Slack says its own trouble as a label, with the method after it
 assert.equal(syncError('slack_internal_error:users.info'),'Slack had a problem on its side');
 assert.equal(syncError('slack_request_timeout:conversations.history'),'Slack was slow to answer');
+// Not signed in yet, or its program isn't here: in words, never a label or an exception's name
+assert.equal(syncError('gmail:not_set_up'),'Not set up yet');
+assert.equal(syncError('google_meet:not_set_up'),'Not set up yet');
+for(const [k,name] of [['gmail','Gmail'],['calendar',SERVICE_NAMES.calendar],['github','GitHub'],['whatsapp','WhatsApp'],['docs',SERVICE_NAMES.docs],['android',SERVICE_NAMES.android],['x','X'],['linkedin','LinkedIn'],['gateway',SERVICE_NAMES.gateway]]){
+ assert.ok(name,k);assert.equal(syncError(k+':not_installed'),name+' needs a program that isn’t on this computer')}
+const health=html.slice(html.indexOf('function connectorHealth('),html.indexOf('function connectorTone('));
+const connectorHealth=new Function('t','syncError','TELEGRAM_STOP','service',health+';return connectorHealth')(t,syncError,{},v=>v);
+assert.deepEqual(connectorHealth({error:'gmail:not_set_up'}),{tone:'orange',text:'Not set up yet'});
+assert.deepEqual(connectorHealth({error:'gmail:not_installed'}),{tone:'orange',text:'Needs your help'});
+assert.equal(connectorHealth({error:'gmail:HTTP_500'}).text,'Reconnecting automatically');
 console.log('sync busy ok');

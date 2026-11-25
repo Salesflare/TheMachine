@@ -29,7 +29,7 @@ NAME_CHARS = 60    # of each one's name there
 TOLD = 4           # connections whose state goes to the answer: more than that, only what doesn't read well
 ADDRESS = re.compile(r'[^\s<>"\'(),;:]+@[^\s<>"\'(),;:]+\.[^\s<>"\'(),;:.?!]+')
 MESSAGE_SERVICES = frozenset(own_addresses.MAIL_SERVICES) | {KINDS[k]['service'] for k in graph.MESSAGE_KINDS if KINDS.get(k, {}).get('service')}
-HELP = re.compile(r'(auth|unauthor|forbidden|permission|invalid_grant|signin_expired|HTTP_40[13])')
+HELP = re.compile(r'(auth|unauthor|forbidden|permission|invalid_grant|signin_expired|not_installed|HTTP_40[13])')
 # what a chat app's own stop says (dashboard/todos-cards.js TELEGRAM_STOP)
 STOPS = {'telegram_logged_out': lambda t: t('Logged out of Telegram'), 'telegram_app_blocked': lambda t: t('Telegram stopped accepting the app ID'),
          'signal_unlinked': lambda t: t('Signal unlinked this Machine'), 'whatsapp_unlinked': lambda t: t('WhatsApp unlinked this Machine'),
@@ -183,6 +183,8 @@ def health(view, account, t, tz):
         return f'{t("Signed out of")} {short}', fix
     if error in STOPS:
         return STOPS[error](t), fix
+    if error.endswith(':not_set_up'):
+        return t('Not set up yet'), fix
     if error and HELP.search(error):
         return t('Needs your help'), fix
     if error:

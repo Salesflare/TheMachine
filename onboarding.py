@@ -37,6 +37,7 @@ import signal_setup, wacli_release, whatsapp_setup  # noqa: E401 - Signal's and 
 from machine import services as service_registry
 from machine.sources import calendar_setup, groups, imap_setup, teams_setup
 from machine.dashboard_link import dashboard_address
+from sources import NOT_INSTALLED, NOT_SET_UP
 
 ROOT = Path(__file__).resolve().parent
 UNIT_NAME = service.UNIT_NAME
@@ -467,6 +468,16 @@ def tool(config, name):
     return shutil.which(path) or (path if Path(path).is_file() else None)
 
 
+def settle(config, name):
+    """Where a program is now, kept in the config for the service: its PATH isn't the terminal's, and a program that moved
+    since (another package manager, a new version) is found again."""
+    known = tool(config, name)
+    found = known or tool({}, name)
+    if found and (not known or config.get(name) in (None, name)):
+        config[name] = found
+    return found
+
+
 # ---------------------------------------------------------------- Telegram
 
 def telegram_id(value):
@@ -846,7 +857,7 @@ def missing(config, account):
     for name in names:
         path = config.get('credentials', {}).get(name)
         if not path or not Path(path).expanduser().exists():
-            return f'no {name} credential yet'
+            return 'not signed in to Google yet' if name == 'gog-password' else f'no {name} credential yet'
         variable = account.get('credential_variable') if name == account.get('credential') else None
         if variable and variable not in env_names(path):
             return f'{variable} is not in {Path(path).name}'
@@ -856,7 +867,36 @@ def missing(config, account):
     return ''
 
 
+# What reads a source on this computer, in words for a terminal, when it isn't where the service looks (sources.NOT_INSTALLED)
+PROGRAMS = {'gog': 'gog (gogcli)', 'gh': 'GitHub’s gh', 'wacli': 'wacli'}
+
+
+def program_of(service_name):
+    """Which of PROGRAMS reads a source, or '' (Node.js, or a reader that comes with the app)."""
+    google = service_name == 'docs' or service_name in service_registry.of(signin='google')
+    transports = (service_registry.SERVICES.get(service_name) or {}).get('transports') or ()
+    return 'gog' if google else next((p for p in PROGRAMS if p in transports), '')
+
+
+def fix_command(config, account, error):
+    """The terminal command that fixes a source's NOT_SET_UP or NOT_INSTALLED error, or ''."""
+    if str(error or '').endswith(NOT_INSTALLED):
+        service_name = account.get('service', 'gmail')
+        if service_name == 'docs':  # it reads with the Gmail connection's program and sign-in
+            return 'assistant connect gmail'
+        return 'assistant connect ' + connect_name(account, config) if program_of(service_name) \
+            else shlex.quote(str(Path(__file__).resolve().parent / 'install.sh'))  # finds Node.js and the rest again
+    return 'assistant connect ' + connect_name(account, config) if str(error or '').endswith(NOT_SET_UP) else ''
+
+
 def hint(error):
+    name, _, code = str(error or '').rpartition(':')
+    if ':' + code == NOT_SET_UP:
+        return 'not signed in or no key yet; run: assistant connect'
+    if ':' + code == NOT_INSTALLED:
+        program = program_of(name)
+        return f'{PROGRAMS.get(program, "the program that reads it, or Node.js,")} is not where the service looks: install it if it is missing, then ' + (
+            f'run: assistant connect {"gmail" if name == "docs" else name}' if program else 'run ./install.sh again')
     return next((text for prefix, text in HINTS if str(error or '').startswith(prefix)), '')
 
 
@@ -1129,10 +1169,9 @@ def headless():
 
 
 def step_google(config, account, ui):
-    gog = tool(config, 'gog')
+    gog = settle(config, 'gog')
     if not gog:
         raise SetupError('Google sign-in is not installed on this computer', 'install gog (gogcli), then run: assistant connect ' + account.get('service', 'gmail'))
-    config['gog'] = config.get('gog') if config.get('gog') not in (None, 'gog') else gog
     known = gog_accounts(gog)
     own = account.get('email') if account.get('email') not in (None, '', PLACEHOLDERS['email']) else ''
     used = {str(a.get('email', '')).lower() for a in siblings(config, account.get('service', 'gmail')) if a['id'] != account['id']}
@@ -1443,7 +1482,7 @@ def step_salesflare(config, account, ui):
 
 def step_whatsapp(config, account, ui):
     import timeutil
-    wacli = tool(config, 'wacli') or install_wacli(config, ui)
+    wacli = settle(config, 'wacli') or install_wacli(config, ui)
     if not wacli:
         raise SetupError('WhatsApp is not installed on this Machine',
                          '' if getattr(ui, 'web', False) else 'install wacli (https://wacli.sh), then run: assistant connect whatsapp')
@@ -1949,7 +1988,7 @@ def follow(command, ui, seen, wait=CODE_WAIT, env=None, ends=None):
 def gh_signin(config, ui):
     """GitHub on the dashboard: gh signed in on this Machine already, or GitHub's own device sign-in, its code shown on
     the dashboard to enter at github.com/login/device (gh auth login --web, which keeps the token in gh's own store)."""
-    gh = tool(config, 'gh')
+    gh = settle(config, 'gh')
     if not gh:
         raise SetupError('GitHub’s gh tool is not on this Machine', 'install it from https://cli.github.com, then add GitHub here again')
     if run([gh, 'auth', 'status', '--hostname', 'github.com'], timeout=20).returncode == 0:
@@ -1973,11 +2012,14 @@ def step_plugin(config, account, ui):
     setup = setup_of(account.get('service', 'gmail'))
     if account.get('service') == 'github' and getattr(ui, 'web', False):
         gh_signin(config, ui)  # instead of gh auth login in a terminal
+    elif account.get('service') == 'github':
+        settle(config, 'gh')
     if setup.get('note') and not setup.get('maton'):
         explain(ui, setup['note'])
     for key, prompt, *rest in setup.get('ask', []):
         command = (setup.get('detect') or {}).get(key)
-        detected = run(command, timeout=20).stdout.strip() if command and shutil.which(command[0]) else ''
+        program = command and tool(config, command[0])
+        detected = run([program, *command[1:]], timeout=20).stdout.strip() if program else ''
         default = account.get(key) or detected or (rest[0].format(**account) if rest else '')
         account[key] = ui.ask(prompt, default)
         if not account[key]:

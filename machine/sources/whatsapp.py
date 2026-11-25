@@ -16,7 +16,7 @@ import graph
 from machine.sources.connectors import load_connector
 from machine.sources.rows import Skips
 from machine.text import encoded
-from sources import SourceError
+from sources import NO_PROGRAM, SourceError
 from timeutil import local_tz, now
 import whatsapp_images
 from machine.owner_error import OwnerError
@@ -37,6 +37,8 @@ class WhatsApp:
             result = subprocess.run(args, env=env, capture_output=True, text=True, timeout=20)
         except subprocess.TimeoutExpired:
             raise SourceError('whatsapp_read_timeout') from None
+        except NO_PROGRAM:
+            raise SourceError('whatsapp:not_installed') from None
         except OSError:
             raise SourceError('whatsapp_source_unavailable') from None
         if result.returncode:
@@ -88,6 +90,8 @@ class WhatsApp:
             data = json.loads(result.stdout) if result.returncode == 0 else None
         except subprocess.TimeoutExpired:
             raise SourceError('whatsapp_read_timeout') from None
+        except NO_PROGRAM:
+            raise SourceError('whatsapp:not_installed') from None
         except (OSError, ValueError):
             raise SourceError('whatsapp_source_unavailable') from None
         if not isinstance(data, dict) or data.get('success') is not True or not isinstance(data.get('data'), dict):
