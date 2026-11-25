@@ -87,8 +87,10 @@ try{
   await page.locator('#snooze-save').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
   assert.equal(last()[0],'confirm_action');assert.equal(last()[1].later,'2027-03-28T07:00:00.000Z');assert.equal(last()[1].revision,draft.revision);
   await toast(page,'Sends ');
-  // Canceled from the to-do: the draft is back
-  await page.locator('#later-head').evaluate(h=>h.click());
+  // Canceled from the to-do: the draft is back. The status that schedules it draws the list's line anew (one more in it):
+  // a click on the line as it was before would be lost
+  await page.waitForFunction(id=>state.suggestions.find(s=>s.id===id).send_later,MAIL);
+  await page.evaluate(()=>document.querySelector('#later-head').click());
   const act=(id,c)=>page.locator(`#task-${id} [data-choice="${c}"]`).first().evaluate(b=>b.click());
   await act(MAIL,'send-cancel');await toast(page,'Canceled. The draft waits in the to-do.');
   assert.deepEqual(last(),['send_later_cancel',{suggestion_id:MAIL}]);
