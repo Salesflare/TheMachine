@@ -19,7 +19,7 @@
     quick: todo => invoke('todo_quick', {todo}),
     decide: (todo, act, until) => invoke('todo_decide', {todo, act, until: until ?? null}),
     undo: (todo, act) => invoke('todo_undo', {todo, act}),
-    ask: text => invoke('ask', {text}),
+    ask: (text, before) => invoke('ask', {text, before}),
     openDashboard: todo => invoke('open_dashboard', {todo: todo ?? null}),
     cardOpen: todo => invoke('card_open', {todo}),
     cardPlace: (top, height) => invoke('card_place', {top, height}),

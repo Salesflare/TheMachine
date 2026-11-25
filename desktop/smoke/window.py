@@ -483,6 +483,9 @@ def _():
         at = at or (SM_WIDE - 250, 148)  # the newest one's title: what is in there may not say where it is
     need(at, f'on the screen; {on.kept()}')
     click(*at)
+    if at[1] == 148 and not until(ours, 8):  # one of Windows' own was the newest there: it is gone now
+        on.center()
+        click(*at)
     need(until(ours, 8), f'it comes to the front: {on.in_front()}')
     need(until(lambda: todo in (page('app', 'location.hash') or ''), 8), page('app', 'location.hash'))
     need(until(lambda: not on.kept(), 8), f'and it is gone: {on.kept()}')
@@ -703,7 +706,7 @@ def _():
     return q
 
 
-@step('paused and starting: not signed out')
+@step('paused and starting, not signed out')
 def _():
     kept = lambda: (saved()['machine'], saved()['cookie'])
     was, told = kept(), []

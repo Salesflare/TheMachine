@@ -15,6 +15,8 @@ const NOT_OWNER: &str = "notowner";
 pub const OFF: &str = "off";
 /// How many to-dos the box lists.
 const LISTED: usize = 3;
+/// How many of the questions before it a question goes with (search_ask.py's BEFORE).
+const ASKED: usize = 3;
 
 /// A Machine's address, and a hosted one's session.
 #[derive(Clone)]
@@ -298,8 +300,9 @@ impl Machine {
         self.get("api/session").is_ok_and(|(status, session)| status == 200 && session["compact"] == 1)
     }
 
-    pub fn ask(&self, text: &str) -> Result<Value, String> {
-        self.action("search_ask", json!({"query": text}), false, 120)
+    /// `before`: what was asked just before it in the box, oldest first. An older Machine ignores it.
+    pub fn ask(&self, text: &str, before: &[String]) -> Result<Value, String> {
+        self.action("search_ask", question(text, before), false, 120)
     }
 
     /// What this to-do's notification says now, and its buttons, as the phone app asks it. None: it no longer waits.
@@ -334,6 +337,11 @@ impl Machine {
             (status, body) => Err(self.refused(status, &body)),
         }
     }
+}
+
+fn question(text: &str, before: &[String]) -> Value {
+    let last = &before[before.len().saturating_sub(ASKED)..];
+    if last.is_empty() { json!({"query": text}) } else { json!({"query": text, "before": last}) }
 }
 
 /// The name in a Content-Disposition, as a Machine writes it: filename*=UTF-8''<percent-encoded>, or filename="...".
@@ -474,6 +482,14 @@ mod tests {
         assert_eq!([401, 403].map(|s| refused(s, &Value::Null, "", never)), [NOT_OWNER; 2]);
         assert_eq!([502, 503, 504].map(|s| refused(s, &Value::Null, "", never)), [OFF; 3]);
         assert_eq!([404, 429, 500].map(|s| refused(s, &Value::Null, "", never)), [UNREACHABLE; 3], "neither says who it is for");
+    }
+
+    #[test]
+    fn a_question_and_those_before_it() {
+        let asked = |n: usize| (1..=n).map(|i| format!("q{i}")).collect::<Vec<_>>();
+        assert_eq!(question("Nora?", &[]), json!({"query": "Nora?"}), "the first: as an older app asks it");
+        assert_eq!(question("Nora?", &asked(1)), json!({"query": "Nora?", "before": ["q1"]}));
+        assert_eq!(question("Nora?", &asked(5)), json!({"query": "Nora?", "before": ["q3", "q4", "q5"]}), "the last three, oldest first");
     }
 
     #[test]

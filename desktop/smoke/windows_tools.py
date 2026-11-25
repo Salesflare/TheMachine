@@ -283,7 +283,7 @@ def page(name, script, wait=10):
             n = struct.unpack('>H', f.read(2))[0] if n == 126 else struct.unpack('>Q', f.read(8))[0] if n == 127 else n
             told = json.loads(f.read(n))
             if told.get('id') == 1:
-                return told['result']['result'].get('value')
+                return told.get('result', {}).get('result', {}).get('value')  # none: its page is being replaced
 
 
 def says(selector, name='box.html'):
