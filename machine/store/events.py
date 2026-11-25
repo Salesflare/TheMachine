@@ -36,7 +36,7 @@ from machine import kinds as event_kinds
 from machine.text import encoded, same_text
 import meeting_notes
 import message_seal
-from sources import transient
+from sources import NOT_SET_UP, transient
 from timeutil import local_tz, now
 import verified_sender
 from machine.owner_error import OwnerError
@@ -410,8 +410,13 @@ class EventsStore:
         """A failed sync, kept for the connection's card. The error reports get `service` (the account's service, as
         sync_report_service names it), never the account's id: an id carries the company or person it is for
         (acme-gmail). An owner's own connector ('own:<service>') goes as sync:own:<service> with its error's label only
-        (error_feed.own_message). Without a service nothing is reported: the card still says what went wrong."""
+        (error_feed.own_message). Without a service nothing is reported: the card still says what went wrong.
+        A source that isn't set up yet didn't fail: its card says so, and nothing is counted or reported."""
         with self.connect() as db:
+            if str(error).endswith(NOT_SET_UP):
+                db.execute('INSERT INTO checkpoints(account_id,state,error,error_at) VALUES(?,?,?,?) ON CONFLICT(account_id) DO UPDATE SET '
+                           'error=excluded.error,error_at=excluded.error_at,failures=0,retry_at=NULL', (account, '{}', str(error), now()))
+                return
             retry_at = (dt.datetime.fromisoformat(now()) + dt.timedelta(seconds=error.retry_after)).isoformat() if error.retry_after else None
             self.record_sync_activity(db, account, 'failed', error=str(error), retry_at=retry_at)
             try:  # the error reports: the source's service and the error type, never the account (error_feed.py)

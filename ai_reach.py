@@ -16,7 +16,8 @@ passes the bytes on, so TLS ends here, with this Machine's own certificate.
    RETRY_MAX, or the CA's Retry-After when that is longer. Key and certificate stay next to the database (0600) and
    never leave the Machine; renewed with RENEW_DAYS left; gone on Unpair (drop).
 
-Needs the `cryptography` package; without it Settings, Apps says so and nothing here starts."""
+Needs the `cryptography` package, also as old as a supported system's own (Ubuntu 24.04 has 41: ends); without it
+Settings, Apps says so and nothing here starts."""
 from __future__ import annotations
 
 import base64
@@ -40,6 +41,7 @@ from pathlib import Path
 import ai_access
 import onboarding
 import timeutil
+from machine.faults import loop_failed
 
 try:
     from cryptography import x509
@@ -56,6 +58,7 @@ LOG = logging.getLogger('personal-assistant')
 CLOUD = 'https://app.themachine.computer'          # where mcp-wait and mcp-stream are
 WAIT = 25                                          # seconds one mcp-wait may hold
 STREAM_FIRST = 10                                  # seconds to open a stream once it is announced
+ROUND_MAX = 1800                                   # seconds at most before a failed round is tried again
 IDLE = 60                                          # seconds a connection may sit between requests
 REQUESTS = 100                                     # requests per connection
 HEAD_MAX = 16384                                   # bytes of request line and headers
@@ -139,13 +142,19 @@ def names_of(cert):
         return []
 
 
+def ends(cert):
+    """When the certificate ends, with its time zone. cryptography before 42 only has not_valid_after: UTC without one."""
+    found = getattr(cert, 'not_valid_after_utc', None)
+    return found or cert.not_valid_after.replace(tzinfo=dt.timezone.utc)
+
+
 def needs_cert(config, host, now=None):
     """No certificate yet, one for another name, or RENEW_DAYS or fewer left."""
     cert, _ = load_cert(config)
     if cert is None or host not in names_of(cert):
         return True
     now = now or timeutil.clock()
-    return cert.not_valid_after_utc - now <= dt.timedelta(days=RENEW_DAYS)
+    return ends(cert) - now <= dt.timedelta(days=RENEW_DAYS)
 
 
 def keep_cert(config, key, chain_pem):
@@ -680,7 +689,7 @@ class Reach:
     def __init__(self, config, app, base=CLOUD, ca=CA, wait=None):
         self.config, self.app, self.base, self.ca = config, app, base, ca
         self.challenges, self.state, self.failures, self.next_try = {}, 'getting', 0, 0.0
-        self.wait = wait
+        self.wait, self.away = wait, 0
         self.cert_lock, self.ctx, self.ctx_for = threading.Lock(), None, None
         # The ids being dialed now: the next mcp-wait can list one again before its stream is attached, and a second
         # dial for it only gets "gone" (logged as "stream not opened").
@@ -751,26 +760,38 @@ class Reach:
                 pass
 
     def run(self, stop):
-        """Until stop, or the account refuses the token. Waits a minute while there is no name yet."""
-        away = 0
+        """Until stop, or the account refuses the token. A round that fails in a way nobody expected never ends the
+        loop (the address would stay dead until a restart, with Settings still saying it's ready or on its way): it is
+        logged, Settings says the address isn't ready, and the next round comes after a pause (within the hour)."""
+        failed = 0
         while not stop.is_set():
-            host, token = self.host(), self.app.token()
-            if not host or not token:
-                stop.wait(60)
-                continue
-            self.certify(host)
             try:
-                found = _request(f'{self.base}/api/fleet/mcp-wait?wait={WAIT}', token, WAIT + 15)
-                away = 0
+                self.round(stop)
+                failed = 0
             except Refused:
                 LOG.warning('mcp reach stopped: the account refused this Machine')
                 self.state = 'refused'
                 return
-            except (OSError, ValueError) as error:
-                away = min(away + 1, 6)
-                LOG.info('mcp wait away error=%s', type(error).__name__)
-                stop.wait(5 * 2 ** away)
-                continue
-            for conn_id in (found.get('conns') or [])[:20]:
-                if isinstance(conn_id, str) and re.fullmatch(r'[0-9a-f]{16,64}', conn_id) and self.claim(conn_id):
-                    threading.Thread(target=self.connection, args=(conn_id, host, token), name='mcp-conn', daemon=True).start()
+            except Exception as error:  # noqa: BLE001 - reported (FaultLog), and tried again
+                loop_failed(LOG, 'mcp reach', error)
+                self.state, failed = 'failed', failed + 1
+                stop.wait(min(60 * 2 ** (failed - 1), ROUND_MAX))
+
+    def round(self, stop):
+        """One wait for connections. Waits a minute while there is no name yet, and longer each time the account is away."""
+        host, token = self.host(), self.app.token()
+        if not host or not token:
+            stop.wait(60)
+            return
+        self.certify(host)
+        try:
+            found = _request(f'{self.base}/api/fleet/mcp-wait?wait={WAIT}', token, WAIT + 15)
+            self.away = 0
+        except (OSError, ValueError) as error:
+            self.away = min(self.away + 1, 6)
+            LOG.info('mcp wait away error=%s', type(error).__name__)
+            stop.wait(5 * 2 ** self.away)
+            return
+        for conn_id in (found.get('conns') or [])[:20]:
+            if isinstance(conn_id, str) and re.fullmatch(r'[0-9a-f]{16,64}', conn_id) and self.claim(conn_id):
+                threading.Thread(target=self.connection, args=(conn_id, host, token), name='mcp-conn', daemon=True).start()

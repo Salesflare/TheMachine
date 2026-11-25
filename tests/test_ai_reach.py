@@ -329,6 +329,44 @@ class Certificate(Base):
         self.assertFalse(any((self.dir / n).exists() for n in (ai_reach.KEY_FILE, ai_reach.CERT_FILE, ai_reach.ACCOUNT_FILE)))
         self.assertTrue(ai_reach.needs_cert(self.config, HOST))
 
+    def test_a_cryptography_before_42_has_no_zoned_end_date(self):
+        """Ubuntu 24.04 ships cryptography 41, whose certificates only have not_valid_after, UTC without a zone."""
+        now = dt.datetime.now(dt.timezone.utc)
+
+        class Old:  # nothing but what 41 has
+            not_valid_after = (now + dt.timedelta(days=40)).replace(tzinfo=None)
+        with patch.object(ai_reach, 'load_cert', lambda config: (Old(), b'')), patch.object(ai_reach, 'names_of', lambda cert: [HOST]):
+            self.assertFalse(ai_reach.needs_cert(self.config, HOST, now + dt.timedelta(days=9)))
+            self.assertTrue(ai_reach.needs_cert(self.config, HOST, now + dt.timedelta(days=11)))
+            loop = ai_reach.Reach(self.config, None)
+            loop.certify(HOST)
+            self.assertEqual(loop.state, 'ready')
+
+    def test_a_round_that_fails_is_reported_and_tried_again(self):
+        """The loop once ended for good there, and Settings went on showing the address as ready."""
+        side = type('Side', (), {'name': lambda s: 'pat', 'token': lambda s: 'fd_x'})()
+        loop, stop, waits, seen = ai_reach.Reach(self.config, side), threading.Event(), [], []
+        loop.state = 'ready'
+
+        def wait(seconds):
+            waits.append(seconds)
+            seen.append(loop.state)
+        stop.wait = wait
+        answers = [AttributeError('no such attribute')] * 7 + [None, ai_reach.Refused('401')]
+
+        def certify(host):
+            error = answers.pop(0)
+            if error:
+                raise error
+            loop.state = 'ready'
+        with patch.object(loop, 'certify', certify), patch.object(ai_reach, '_request', return_value={}), \
+                self.assertLogs('personal-assistant', 'ERROR') as logged:
+            loop.run(stop)
+        self.assertEqual(waits, [60, 120, 240, 480, 960, 1800, 1800])  # within the hour, as Settings says
+        self.assertEqual(set(seen), {'failed'})
+        self.assertIn('mcp reach error=AttributeError', logged.output[0])
+        self.assertEqual((answers, loop.state), ([], 'refused'))  # it went on after them
+
     def test_a_hello_for_another_name_gets_no_certificate(self):
         mine, theirs = socket.socketpair()
         asked = []

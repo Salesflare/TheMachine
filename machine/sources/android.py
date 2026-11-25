@@ -11,7 +11,7 @@ from machine.config import ROOT
 from machine.model_usage import node_bin, node_env
 from machine.sources.rows import Skips
 from machine.text import encoded
-from sources import SourceError
+from sources import NO_PROGRAM, SourceError
 from timeutil import now
 
 
@@ -113,6 +113,8 @@ class Android:
                                      self.account['node_id']], env=node_env(self.config), capture_output=True, text=True, timeout=25)
         except subprocess.TimeoutExpired:
             raise SourceError('android_timeout', retry_after=600) from None
+        except NO_PROGRAM:  # Node.js moved or went since the install
+            raise SourceError('android:not_installed', retry_after=600) from None
         if result.returncode:
             # The helper emits only an allowlisted class, never protocol contents.
             label = result.stderr.strip()

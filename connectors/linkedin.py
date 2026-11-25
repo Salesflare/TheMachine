@@ -69,8 +69,8 @@ class Source:
                                     env=browser_env(self.account))
         except subprocess.TimeoutExpired:  # the reader never finished: the browser, not LinkedIn (its requests end by themselves)
             raise SourceError('linkedin_browser_stalled', retry_after=900) from None
-        except OSError as error:
-            raise SourceError('linkedin_reader_missing:' + type(error).__name__) from None
+        except OSError:
+            raise SourceError('linkedin:not_installed') from None
         if result.returncode:
             err = result.stderr.lower()
             if 'busy' in err:

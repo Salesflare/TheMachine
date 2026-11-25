@@ -956,7 +956,10 @@ class GogGoogle:
         import subprocess  # noqa: PLC0415
         import tempfile  # noqa: PLC0415
         api = method.split('.', 1)[0]
-        env = {**os.environ, 'GOG_KEYRING_BACKEND': 'file', 'GOG_KEYRING_PASSWORD': self.helpers.credential(self.config, 'gog-password')}
+        try:
+            env = {**os.environ, 'GOG_KEYRING_BACKEND': 'file', 'GOG_KEYRING_PASSWORD': self.helpers.credential(self.config, 'gog-password')}
+        except (FileNotFoundError, KeyError):
+            raise self.helpers.SourceError('docs:not_set_up') from None
         env.pop('DBUS_SESSION_BUS_ADDRESS', None)
         with tempfile.NamedTemporaryFile('w', suffix='.json') as file:
             file.write(json.dumps(body if body is not None else {}, ensure_ascii=False))
@@ -969,6 +972,8 @@ class GogGoogle:
                 result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=60)
             except subprocess.TimeoutExpired:
                 raise self.helpers.SourceError('docs_timeout') from None
+            except (FileNotFoundError, NotADirectoryError, PermissionError):
+                raise self.helpers.SourceError('docs:not_installed') from None
         if result.returncode:
             said = (result.stderr or '') + '\n' + (result.stdout or '').replace('\\"', '"')
             found = re.search(r'"code":\s*(\d{3})\b', said) or re.search(r'\b(4\d\d|5\d\d)\b', result.stderr or '')

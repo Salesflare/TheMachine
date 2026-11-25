@@ -3544,6 +3544,7 @@
  "Not sent: {} bounced.": "Not sent: {} bounced.",
  "Not sent: {} wrote first.": "Not sent: {} wrote first.",
  "Not set": "Not set",
+ "Not set up yet": "Not set up yet",
  "Not shared any more. Teammates' Machines delete what it shared.": "Not shared any more. Teammates' Machines delete what it shared.",
  "Not shared now.": "Not shared now.",
  "Not shared with that Machine.": "Not shared with that Machine.",
@@ -8392,6 +8393,7 @@
   "other": "{} need a look"
  },
  "{} need you to pick who gets them: send them on their own.": "{} need you to pick who gets them: send them on their own.",
+ "{} needs a program that isn’t on this computer": "{} needs a program that isn’t on this computer",
  "{} needs you to sign in again.": "{} needs you to sign in again.",
  "{} new": "{} new",
  "{} new (a message)": "{} new",

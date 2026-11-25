@@ -32,7 +32,7 @@ from machine.text import clamp
 import message_seal
 import notify
 from models import main_model, model_ready
-from sources import gog_signin_command
+from sources import gog_signin_command, NOT_INSTALLED, NOT_SET_UP
 from timeutil import now
 from machine import todo_states
 
@@ -434,6 +434,9 @@ class StatusApp:
                 continue  # a hosted machine: no terminal there, its account page signs in again
             if 'google_signin_expired' in (connector.get('error') or '') and connector['id'] in by_id:
                 connector['sign_in_command'] = gog_signin_command(self.config, by_id[connector['id']])
+            elif (connector.get('error') or '').endswith((NOT_SET_UP, NOT_INSTALLED)) and connector['id'] in by_id:
+                import onboarding
+                connector['sign_in_command'] = onboarding.fix_command(self.config, by_id[connector['id']], connector['error'])
             elif 'microsoft_signin_expired' in (connector.get('error') or '') and by_id.get(connector['id'], {}).get('transport') == 'graph':
                 import onboarding
                 connector['sign_in_command'] = 'assistant connect ' + onboarding.connect_name(by_id[connector['id']], self.config)
