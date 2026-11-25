@@ -338,8 +338,7 @@ mod tests {
     fn its_port_goes_with_it() {
         let p = start(|_| true).unwrap();
         assert!(p.lasts());
-        assert_eq!(p.port.is_some(), cfg!(feature = "sandbox"));
-        assert_eq!(p.address().contains("&p="), p.port.is_some());
+        assert!(p.address().ends_with(&format!("&p={}", p.port.unwrap())));
         let over = p.over.clone();
         drop(p);
         assert!(over.load(Ordering::Relaxed));
