@@ -229,6 +229,47 @@ class Quick(Base):
         self.assertEqual(sum(p['channel'] == 'C0HALVORS1' and p['oldest'] < f'{self.now - DAY:.6f}' for m, p in slack.calls
                              if m == 'conversations.history'), 5)  # its five pages, each once
 
+    def test_the_asked_conversation_s_first_read_is_never_set_aside(self):
+        """No quick read comes before it: set aside, it started over in full, and then the old one carried on too."""
+        for first in ({'last_scan': None}, {}):
+            with self.subTest(first=first):
+                self.setUp()
+                state = self.store.checkpoint('work-slack')
+                state['channels'][1].update(due=self.now - 9 * DAY, threads=[], **first)
+                if not first:
+                    state['step'] = 'deepen'
+                self.store.commit_page('work-slack', state, [])
+                slack = Paged(self.now)
+                if not first:  # a first import's step, under way for this conversation
+                    state['channels'][1]['deepen'] = f'{self.now - DAY:.6f}'
+                    state.update(index=1, scan={'oldest': f'{self.now - 7 * DAY:.6f}', 'latest': f'{self.now - DAY:.6f}', 'phase': 'history', 'thread_index': 0,
+                                                'threads': [], 'full': True, 'step': 'deepen'})
+                    self.store.commit_page('work-slack', state, [])
+                self.sync(slack)
+                self.ask()
+                self.sync(slack)
+                self.assertNotIn('set_aside', self.store.checkpoint('work-slack'))
+                for _ in range(8):
+                    self.sync(slack)
+                pages = [p.get('cursor') for m, p in slack.calls if p['channel'] == 'C0HALVORS1' and m == 'conversations.history' and float(p['oldest']) < self.now - DAY]
+                self.assertEqual(pages[:5], [None, 'p1', 'p2', 'p3', 'p4'])
+                self.assertEqual(pages.count('p4'), 1)  # its pages once
+                slack_source.READ_NOW.clear()
+
+    def test_the_asked_conversation_s_own_set_aside_first_read_carries_on_where_it_was(self):
+        state = self.store.checkpoint('work-slack')
+        state['channels'][1].update(due=self.now - 9 * DAY, threads=[], last_scan=None)
+        self.store.commit_page('work-slack', state, [])
+        slack = Paged(self.now)
+        self.sync(slack)  # its first page
+        self.app.action('slack_read', {'channel': '#general'})
+        self.sync(slack)  # general's quick read first
+        self.ask()
+        for _ in range(8):
+            self.sync(slack)
+        self.assertEqual([p.get('cursor') for m, p in slack.calls if p['channel'] == 'C0HALVORS1' and float(p['oldest']) < self.now - DAY],
+                         [None, 'p1', 'p2', 'p3', 'p4'])
+
     def test_a_first_import_s_threads_still_wait_for_their_turn(self):
         state = self.store.checkpoint('work-slack')
         state['channels'][1]['threads_waiting'] = True

@@ -164,9 +164,11 @@ class CallShapes(unittest.TestCase):
             self.take({**handoff, 'body': 'x' * 1001})
 
     def test_a_label_takes_names_handles_and_amounts(self):
-        for text in ('Send to José', 'Send @sam a reply', 'Send the €120 invoice', 'Send Sam & Ana', 'Send #3'):
-            self.assertEqual(self.take({'kind': 'linkedin', 'account_id': 'work-linkedin', 'conversation_id': 'c1', 'body': 'x', 'label': text})['label'], text)
-        for text in ('Send\nnow', 'Send <b>', '1 reply', 'Send [x](y)', 'Send a.com', '€120'):
+        # An @ or # is left out: a Telegram text with the label in it would make it a mention or a tag
+        for text, saved in (('Send to José', ''), ('Send the €120 invoice', ''), ("Send Sam & Ana's $50", ''), ('Send @sam a reply', 'Send sam a reply'),
+                            ('Send #3', 'Send 3'), ('Send to #offers', 'Send to offers'), ('Send $USD', 'Send USD'), ('Send @', 'Send')):
+            self.assertEqual(self.take({'kind': 'linkedin', 'account_id': 'work-linkedin', 'conversation_id': 'c1', 'body': 'x', 'label': text})['label'], saved or text)
+        for text in ('@Do #it', 'Send\nnow', 'Send <b>', '1 reply', 'Send [x](y)', 'Send a.com', '€120'):
             with self.assertRaisesRegex(ValueError, 'short specific'):
                 self.take({'kind': 'linkedin', 'account_id': 'work-linkedin', 'conversation_id': 'c1', 'body': 'x', 'label': text})
 

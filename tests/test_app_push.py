@@ -317,6 +317,11 @@ class AppPush(unittest.TestCase):
                                                                status='prepared', outcome=json.dumps({'state': 'answered'})))
         # (an answer only, nothing done yet: Needs you, as on the card; machine/cards.py needs_owner)
         self.assertEqual((found['title'], found['body']), ('Needs you: Assess the Swiss tax review', 'The review found no tax due.'))
+        # a final step's label reads as written
+        claim = json.dumps({'kind': 'finish', 'label': "Submit R&D's $50 claim", 'instructions': 'Press Submit.', 'preview': 'Claim', 'revision': 'r2'})
+        shown = machine_delivery_push.app_notice(self.store, self.config, self.card('Claim the trip', status='prepared', next_action=claim,
+                                                                        outcome=json.dumps({'state': 'needs_you'})))['body']
+        self.assertTrue(shown.startswith("Submit R&D's $50 claim"), shown)
         # other states keep their word in front, and Text in notifications off still says only "Ready"
         self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, self.card('Draft the memo', status='accepted'))['title'], 'Preparing: Draft the memo')
         with self.store.connect() as db:

@@ -571,8 +571,16 @@ def linkedin_reply(value, threads):
     return {**value, 'conversation_id': found[0]} if len(found) == 1 else value
 
 
-LABEL_WORDS = r"[^\W\d_](?:[^\W_]|[ ,’'&@#€$£\-/])+"  # what a button's label may hold: a name's accents, an @handle, an amount too
+LABEL_WORDS = r"[^\W\d_](?:[^\W_]|[ ,’'&€$£\-/])+"  # what a button's label may hold: a name's accents, an amount too
 LABEL_MAX = 28
+LABEL_TAGS = re.compile(r'[@#]|\$(?=[^\W\d_])')
+
+
+def label_text(value):
+    """A label without what a chat app makes a mention or a tag of (@sam, #offers, $USD): it goes out in Telegram texts too."""
+    return re.sub(' {2,}', ' ', LABEL_TAGS.sub('', value)).strip(' ') if LABEL_TAGS.search(value) else value
+
+
 # How a follow-up's label (kind:prepare) starts: another Do it turn drafts, checks, researches or applies a change.
 FOLLOW_UP_VERBS = ('Draft', 'Prepare', 'Investigate', 'Check', 'Compare', 'Research', 'Apply', 'Fix', 'Update', 'Implement', 'Test',
                    'Set up', 'Configure')
@@ -594,11 +602,13 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         raise OwnerError('Next action must be an email draft, local preparation or original-page link')
     if value.get('kind') == 'handoff' and value.get('label') and isinstance(value['label'], str) and not value['label'].startswith('Hand off'):
         # Its button always says Hand off: a run's own words for it (the owner's language) are replaced, never refused
-        name = ' '.join(['Hand off to', *str(value.get('to_name') or '').split()[:1]])
+        name = label_text(' '.join(['Hand off to', *str(value.get('to_name') or '').split()[:1]]))
         value = {**value, 'label': name if value.get('to_name') and len(name) <= LABEL_MAX and re.fullmatch(LABEL_WORDS, name) else 'Hand off'}
     beside = sorted({'do_now', 'send_now'} & set(value))
     if beside:  # a doc edit with do_now in the step came back three times over, since the refusal named neither (2026-11-13)
         raise ValueError(f"{' and '.join(beside)} goes beside next_actions in the save, not inside a step")
+    if isinstance(value.get('label'), str):
+        value = {**value, 'label': label_text(value['label'])}
     if isinstance(value.get('label'), str) and len(value['label']) > LABEL_MAX:
         raise ValueError(f"label has {len(value['label'])} characters, at most {LABEL_MAX}: “{value['label'][:80]}”")
     if value.get('label') is not None and (not isinstance(value['label'],str) or not value['label']

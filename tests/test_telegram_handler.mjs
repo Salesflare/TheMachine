@@ -126,16 +126,20 @@ item.status='prepared';item.next_action={kind:'merge',label:'Merge fix',revision
 await handler(ctx('back'));{const labels=edits.pop().buttons.flat().map(b=>b.text);assert.ok(labels.includes('Undo merge'));assert.ok(!labels.includes('Merge fix'));}
 await handler(ctx('unmerge'));{const c=choices.pop();assert.equal(c.suggestion_id,id);assert.match(c.approval_id,/^telegram:/);}
 item.next_action.state.undo_until=new Date(Date.now()-1000).toISOString();await handler(ctx('back'));assert.ok(!edits.pop().buttons.flat().some(b=>b.text==='Undo merge'));
+// A label in a message's own text goes through OpenClaw's Markdown: it reads as written, & escaped, nothing made of the rest
+{const chunk=(await readdir(coreDist)).filter(name=>/^text-chunk-limit-.*\.mjs$/.test(name));
+ for(const name of chunk){const alias=(await readFile(join(coreDist,name),'utf8')).match(/\bmarkdownToTelegramHtml as (\w+)\b/)?.[1];
+  if(alias)assert.equal((await import(join(coreDist,name)))[alias]("Not done yet: Submit R&D's $50 claim."),"Not done yet: Submit R&amp;D's $50 claim.")}}
 // The last step of a prepared task: the review shows what goes out; Confirm runs only that step.
-item.status='prepared';item.next_action={kind:'finish',label:'Submit claim',revision:'abcdef123456',instructions:'Press Submit on the filled-in claim.',preview:'42.50 EUR, Travel, 16 Oct',url:'https://expenses.example.com/claims/7'};
-await handler(ctx('back'));assert.equal(edits.pop().buttons.flat()[0].text,'Submit claim');
+item.status='prepared';item.next_action={kind:'finish',label:'Submit R&D\'s $50 claim',revision:'abcdef123456',instructions:'Press Submit on the filled-in claim.',preview:'42.50 EUR, Travel, 16 Oct',url:'https://expenses.example.com/claims/7'};
+await handler(ctx('back'));assert.equal(edits.pop().buttons.flat()[0].text,'Submit R&D\'s $50 claim');
 {const before=choices.length;await handler(ctx('next_abcdef123456'));assert.equal(choices.length,before);
  await handler(ctx('send_abcdef123456'));const r=edits.pop();
- assert.equal(r.text,'Submit claim?\n\n42.50 EUR, Travel, 16 Oct\n\nhttps://expenses.example.com/claims/7\n\nConfirm does only this last step, checks that it went through and reports back.');
+ assert.equal(r.text,'Submit R&D\'s $50 claim?\n\n42.50 EUR, Travel, 16 Oct\n\nhttps://expenses.example.com/claims/7\n\nConfirm does only this last step, checks that it went through and reports back.');
  assert.deepEqual(r.buttons.map(row=>row.map(b=>b.text)),[['Confirm','Edit','Cancel'],['Open page']]);assert.equal(choices.length,before);
  assert.match(r.buttons[0][1].url,/#send=[a-f0-9]{16}&revision=abcdef123456&edit=1$/);
  await handler(ctx('confirm_abcdef123456'));assert.equal(choices.pop().revision,'abcdef123456');
- assert.ok(!edits.pop().buttons.flat().some(b=>b.text==='Submit claim'));}
+ assert.ok(!edits.pop().buttons.flat().some(b=>b.text===item.next_action.label));}
 // A step that posts a message shows its exact text and who gets it; Edit opens it in the dashboard editor.
 {const step=item.next_action;item.next_action={...step,state:undefined,label:'Submit inbox reply',preview:'Reply in conversation 7.',to_name:'Sam Example',message:'Hi Sam,\n\nFixed now.'};
  await handler(ctx('back'));edits.pop();await handler(ctx('send_abcdef123456'));const r=edits.pop();
@@ -152,10 +156,10 @@ await handler(ctx('back'));assert.equal(edits.pop().buttons.flat()[0].text,'Subm
  item.next_action={...item.next_action,body:'Here it is.'};await handler(ctx('back'));edits.pop();await handler(ctx('send_abcdef123456'));
  assert.equal(edits.pop().text,'Send this WhatsApp message?\nTo: Sam Example\nAttachments: receipt.pdf (21 KB)\n\nHere it is.');item.next_action=step;}
 item.next_action.state={status:'done'};
-{const before=choices.length;await handler(ctx('back'));assert.ok(!edits.pop().buttons.flat().some(b=>b.text==='Submit claim'));
+{const before=choices.length;await handler(ctx('back'));assert.ok(!edits.pop().buttons.flat().some(b=>b.text===item.next_action.label));
  await handler(ctx('confirm_abcdef123456'));assert.equal(choices.length,before);edits.pop();}
 item.next_action.state={status:'needs_input'};
-await handler(ctx('back'));assert.ok(edits.pop().buttons.flat().some(b=>b.text==='Submit claim'));
+await handler(ctx('back'));assert.ok(edits.pop().buttons.flat().some(b=>b.text===item.next_action.label));
 item.status='pending';await handler(ctx('back'));assert.deepEqual(edits.pop().buttons.map(row=>row.map(b=>b.text)),[['Do it','Mark done','Snooze'],['Ask for changes','Not needed']]);
 delete item.next_action;
 item.status='pending';await handler(ctx('reject'));assert.equal(choices.length,0);assert.deepEqual(edits.pop().buttons.flat().map(b=>b.text),['Not relevant','Wrong facts','Other reason…','No reason','Cancel']);

@@ -22,7 +22,7 @@ from machine.sources.rows import Skips
 from machine.sources.salesflare import salesflare_progress, sync_salesflare
 from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_plan,
                                    slack_asked_turn, slack_interval, slack_next_due, slack_order, slack_page_names, slack_prune,
-                                   slack_read_asked, slack_limits, slack_read_drop, slack_read_now, slack_read_wait, slack_refused,
+                                   slack_evidence_threads, slack_read_asked, slack_read_threads, slack_thread_read, slack_limits, slack_read_drop, slack_read_now, slack_read_wait, slack_refused,
                                    slack_set_aside, slack_turn_done, slack_hiccup, READ_NOW_MAX, call_wait, wait_until)
 from machine.sources.signal_chats import sync_signal
 from machine.sources.telegram import sync_telegram
@@ -235,7 +235,10 @@ def sync_slack(store, config, account, source=None):
             if step == 'recent' and deepen_to:
                 scan['deepen_to'] = deepen_to
         if asked:
-            scan['asked'] = True
+            # The threads its to-do comes from are read along: an answer there is on no page of the conversation
+            named = slack_read_threads(account['id'], channel['id'])
+            scan.update(asked=True, asked_threads={ts: str(max(retained, Decimal(t['oldest']))) for ts, t in named.items()
+                                                   if not t['bare'] or owed})
         fair = account.get('fair_incremental')
         if quick:
             scan.update(known_threads=list(scan['threads']), thread_start=channel.get('next_thread_index', 0), threads=[],
@@ -255,7 +258,9 @@ def sync_slack(store, config, account, source=None):
               'inclusive': 'true', 'limit': slack_limits(account)['page']}
     if scan['phase'] == 'threads':
         params['ts'] = scan['threads'][scan['thread_index']]
-        if scan.get('thread_oldest'):
+        if params['ts'] in scan.get('asked_threads', ()):
+            params['oldest'] = scan['asked_threads'][params['ts']]  # what came after the to-do's own message in it
+        elif scan.get('thread_oldest'):
             params.update(oldest=scan['thread_oldest'],latest=scan['thread_latest'])
     if scan.get('cursor'):
         params['cursor'] = scan['cursor']
@@ -285,12 +290,16 @@ def sync_slack(store, config, account, source=None):
         e = slack_event(account, channel, raw, names)
         ts = e['metadata']['message_ts']
         channel['last_activity'] = max(float(channel.get('last_activity') or 0), float(ts))
-        if e['metadata']['reply_count'] and ts not in scan['threads']:
+        replied = float(raw.get('latest_reply') or scan['latest']) if e['metadata']['reply_count'] else 0
+        if scan['phase'] == 'history' and ts in scan.get('asked_threads', ()) and replied <= float(scan['asked_threads'][ts]):
+            scan['asked_threads'].pop(ts)  # the page shows it has no reply after the to-do's own message
+            slack_thread_read(channel, ts, scan['latest'])
+        if replied and ts not in scan['threads']:
             # A quick read follows only the threads with a reply since the last read
-            if not scan.get('quick') or float(raw.get('latest_reply') or scan['latest']) > float(scan['since']):
+            if not scan.get('quick') or replied > float(scan['since']):
                 scan['threads'].append(ts)
-            if 'known_threads' in scan and ts not in scan['known_threads']:
-                scan['known_threads'].append(ts)
+        if replied and 'known_threads' in scan and ts not in scan['known_threads']:
+            scan['known_threads'].append(ts)
         return e
     events = [e for e, _ in skipped.every(page.get('messages', []), one) if e]
     cursor = page.get('response_metadata', {}).get('next_cursor')
@@ -305,9 +314,11 @@ def sync_slack(store, config, account, source=None):
                 # allows about one read a minute, so one busy channel's threads would otherwise
                 # hold up all the others for hours. The next turn of this channel reads them.
                 scan['waiting'], scan['threads'] = scan['threads'], []
-            elif scan.get('quick'):
-                if account.get('fair_incremental'):
-                    scan['threads'] = scan['threads'][:1]
+            elif scan.get('asked'):
+                # Its to-do's own threads first, then those the page shows a new reply in (one, when fair)
+                own = list(scan.get('asked_threads', ()))
+                others = [ts for ts in scan['threads'] if ts not in own]
+                scan['threads'] = own + (others[:1] if scan.get('quick') and account.get('fair_incremental') else others)
             elif 'known_threads' in scan:
                 known = scan['known_threads']
                 selected = scan['threads'][:1]
@@ -324,6 +335,8 @@ def sync_slack(store, config, account, source=None):
                     selected = scan['threads']
                 scan['threads'] = selected
         else:
+            if params['ts'] in scan.get('asked_threads', ()):
+                slack_thread_read(channel, params['ts'], scan['latest'])
             if gone_thread:
                 scan['threads'].pop(scan['thread_index'])
             else:
@@ -460,6 +473,13 @@ class SyncApp:
             runs.pop(job_id)
         return runs
 
+    def run_threads(self, job_id):
+        """The Slack threads a run's to-do comes from (slack_evidence_threads): its reads of their conversations have them."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT s.event_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE p.job_id=?',
+                             (str(job_id),)).fetchone() if job_id else None
+            return slack_evidence_threads(db, json.loads(row[0] or '[]')) if row else {}
+
     def slack_reads_waiting(self, job_id):
         """([names], when first asked) of the conversations this run asked for that Slack hasn't read since. One Slack
         refused (cannot_read) is no wait: the run says plainly it couldn't read it."""
@@ -585,7 +605,7 @@ class SyncApp:
                         'note': 'Slack refused this conversation to their sign-in (they may have left it). Say so plainly '
                                 'and ask for what you need from it.'}
             last = float(channel.get('last_scan') or 0)
-            asked = slack_read_now(account['id'], channel['id'])
+            asked = slack_read_now(account['id'], channel['id'], self.run_threads(args.get('job_id')).get((account['id'], channel['id'])))
             if last >= asked:  # its read started after the ask: a message from a minute before it is in
                 slack_read_drop(account['id'], channel['id'])
                 with self.store.connect() as db:

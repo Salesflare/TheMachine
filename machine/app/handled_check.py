@@ -27,7 +27,7 @@ from machine.app.follow_ups import activity_who
 from machine.app.promise_checks import activity_since, newest_since
 from machine.config import LOG
 from machine.sources.calendar import company_domains
-from machine.sources.slack import slack_limits, slack_read_asked, slack_read_drop, slack_read_now, wait_until
+from machine.sources.slack import slack_evidence_threads, slack_threads_fresh, slack_limits, slack_read_asked, slack_read_drop, slack_read_now, wait_until
 from models import background_model, openclaw_model
 from timeutil import now
 from machine import model_reply, todo_states
@@ -166,10 +166,12 @@ class HandledCheckApp:
         return {a['id']: (self.store.checkpoint(a['id']) or {}).get('channels') or [] for a in self.config.get('accounts') or ()
                 if a.get('service') == 'slack'}
 
-    def handled_reads(self, key, conversations):
+    def handled_reads(self, key, conversations, threads=None):
         """Has Slack read these conversations since `key` (a promise, a run) first asked? Asks for the ones that rest
         (slack_read_now: they go first) and returns their names; empty when all are read, or once HOLD_SECONDS passed.
-        A direct message needs no read: its news is checked every few minutes (slack_next_due)."""
+        threads: the ones the to-do comes from, per conversation (slack_evidence_threads), read with it: an answer there
+        shows nowhere else. A direct message needs no read otherwise: its news is checked every few minutes
+        (slack_next_due)."""
         waits = self.__dict__.setdefault('_handled_waits', {})
         stamp = time.time()
         for old in [k for k, at in waits.items() if stamp - at > 4 * HOLD_SECONDS]:
@@ -180,13 +182,16 @@ class HandledCheckApp:
         pending = []
         for account_id, channel_id, _ in conversations:
             channel = next((c for c in (self.store.checkpoint(account_id) or {}).get('channels') or () if c.get('id') == channel_id), None)
-            if not channel or channel.get('error') or channel.get('type') == 'dm':
+            if not channel or channel.get('error'):
                 continue
-            if float(channel.get('last_scan') or 0) >= (first if first is not None else stamp) - FRESH_SECONDS:
+            own, since = (threads or {}).get((account_id, channel_id)), (first if first is not None else stamp) - FRESH_SECONDS
+            if channel.get('type') == 'dm' and slack_threads_fresh({}, own, since):
+                continue
+            if float(channel.get('last_scan') or 0) >= since and slack_threads_fresh(channel, own, since):
                 continue
             if slack_read_asked(account_id, channel) is None:
                 slack_read_drop(account_id, channel_id)  # an earlier ask that was read already: ask anew
-            slack_read_now(account_id, channel_id)
+            slack_read_now(account_id, channel_id, own)
             wakes = self.__dict__.get('collector_wakes') or {}
             if account_id in (self.__dict__.get('collector_resting') or ()) and account_id in wakes:
                 wakes[account_id].set()
@@ -201,8 +206,15 @@ class HandledCheckApp:
         channels = self.slack_channels()
         if not channels:
             return []
-        conversations = shared_conversations(db, self.handled_people(db, event_ids, text, actions), channels)
-        return self.handled_reads(key, conversations) if conversations else []
+        threads = slack_evidence_threads(db, event_ids)
+        listed = {(a, c['id']) for a, found in channels.items() for c in found}
+        people = self.handled_people(db, event_ids, text, actions)
+        # Its own conversations first (an answer in its thread is there), then those with its people
+        own = [(a, c, 0) for (a, c), named in threads.items() if people and (a, c) in listed and not slack_threads_fresh({}, named, 1)]
+        own = own[:CONVERSATIONS - 1]
+        others = [x for x in shared_conversations(db, people, channels) if x[:2] not in [o[:2] for o in own]]
+        conversations = (own + others)[:CONVERSATIONS]
+        return self.handled_reads(key, conversations, threads) if conversations else []
 
     def handled_since(self, db, event_ids, people):
         """What came after a to-do's evidence with its people (activity_since), and in the Slack conversations it
