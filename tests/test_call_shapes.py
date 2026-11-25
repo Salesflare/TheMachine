@@ -150,10 +150,10 @@ class CallShapes(unittest.TestCase):
     def test_the_limits_they_say_are_the_ones_checked(self):
         rules = (ROOT / 'PREPARATION.md').read_text()
         self.assertIn(f'A label has at most {n.step_labels.MAX} characters', rules)
-        long = {'kind': 'prepare', 'label': 'Draft ' + 'x' * n.LABEL_MAX, 'instructions': 'x'}
-        with self.assertRaisesRegex(ValueError, f'label has {n.LABEL_MAX + 6} characters, at most {n.LABEL_MAX}: “Draft'):
+        long = {'kind': 'prepare', 'label': 'Draft ' + 'x' * n.step_labels.MAX, 'instructions': 'x'}
+        with self.assertRaisesRegex(ValueError, f'label has {n.step_labels.MAX + 6} characters, at most {n.step_labels.MAX}: “Draft'):
             n.validate(long, CONFIG, [])
-        self.take({**long, 'label': long['label'][:n.LABEL_MAX]})
+        self.take({**long, 'label': long['label'][:n.step_labels.MAX]})
         for verb in re.search(r'starts with what the click does: ([\w, ]+)…', rules)[1].split(', '):
             self.assertIn(verb, n.FINISH_VERBS)
         self.assertIn(f'at most {doc_writes.MAX_THEN} characters', text_of('machine/sources/connectors.py'))
