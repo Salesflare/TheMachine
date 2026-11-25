@@ -74,7 +74,7 @@ def plural_forms(lang):
 def glossary(text=None):
     """(names, {english: {code: forms}}, {code: gender rule}, tone, {english: {code: [checked forms]}}, exceptions) from
     glossary.md: every table with a column per language, the Names list, the gender table, the Tone paragraph, the
-    Terms table that tests/test_i18n.py checks, its Exceptions and what the placeholders of a key hold (means)."""
+    Terms table that tests/test_i18n.py checks, its Exceptions and what a key means (means)."""
     text = text if text is not None else GLOSSARY.read_text(encoding='utf-8')
     names_part = text.split('## Names', 1)[1].split('##', 1)[0]
     names_line = ' '.join(line for line in names_part.splitlines()[3:] if line.strip())
@@ -88,7 +88,7 @@ def glossary(text=None):
             button_rule = ' '.join(body.split('Buttons:', 1)[1].split('\n\n', 1)[0].split()).split(' The table gives', 1)[0]
             buttons = {row[0]: row[1] for row in rows[2:] if len(row) > 1}
             continue
-        if heading.startswith('What the placeholders'):  # | Key | Meaning |
+        if heading.startswith('What a key means'):  # | Key | Meaning |
             means = {row[0].strip('`'): row[1] for row in rows[2:] if len(row) > 1}
             continue
         if len(rows) < 3:
@@ -367,7 +367,7 @@ def catalog_stale(lang, en=None, cat=None):
 
 
 def source(key, value, means=None):
-    """What the model reads for one entry: the English, and as a note what glossary.md says its placeholders hold (means),
+    """What the model reads for one entry: the English, and as a note what glossary.md says it means (means),
     else the key when it says more ("Close (a closeness)", "{} tickets (to an event)" for a plural entry)."""
     if key in (means or {}):
         return {'english': value, 'meaning': means[key]}

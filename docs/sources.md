@@ -141,7 +141,7 @@ Each sync first checks that the key still belongs to you. When Salesflare doesn'
 
 ### Android
 
-The plugin peeks OpenClaw's event queue for notifications from your phone node, with periodic direct reads to catch gaps. That queue holds 20 events, so once more than 10 wait, the oldest phone notifications the plugin has saved leave it; other events stay. Repeated updates merge into one episode; one-time codes are omitted. Not a complete history.
+The plugin peeks OpenClaw's event queue for notifications from your phone node, with periodic direct reads to catch gaps. That queue holds 20 events, so once more than 10 wait, the oldest Android notifications the plugin has saved leave it; other events stay. Repeated updates merge into one episode; one-time codes are omitted. Not a complete history.
 
 ### WhatsApp
 

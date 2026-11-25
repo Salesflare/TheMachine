@@ -147,7 +147,7 @@
    "service": "android",
    "transport": "openclaw-feed",
    "email": "",
-   "display_name": "Phone notifications",
+   "display_name": "Android notifications",
    "boundary": "personal",
    "node_id": "sandbox-phone"
   }

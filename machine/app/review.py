@@ -168,7 +168,7 @@ def review_steps(db, run, agent_db=None, limit=8):
 
 KIND_WORDS = {'gmail.message': ('email', 'emails'), 'calendar.event': ('meeting', 'meetings'), 'slack.message': ('Slack message', 'Slack messages'), 'teams.message': ('Teams message', 'Teams messages'),
               'whatsapp.message': ('WhatsApp message', 'WhatsApp messages'), 'telegram.message': ('Telegram message', 'Telegram messages'), 'signal.message': ('Signal message', 'Signal messages'), 'linkedin.message': ('LinkedIn message', 'LinkedIn messages'),
-              'android.notification': ('phone notification', 'phone notifications'), 'x.message': ('X message', 'X messages')}
+              'android.notification': ('Android notification', 'Android notifications'), 'x.message': ('X message', 'X messages')}
 
 
 # Room the review prompt keeps for the blocks added after it (drafts to learn from, condensing, teammates).

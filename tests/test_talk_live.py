@@ -897,7 +897,7 @@ class Api(unittest.TestCase):
             note = db.execute("SELECT id FROM events WHERE source_id='note'").fetchone()[0]
         record = tool('open_record', id='event:%d' % note)
         self.assertTrue(record['what'].startswith('phone from Weather · '), record)  # the voice's words, as before
-        self.assertTrue(record['card']['line'].startswith('phone notification from Weather · '), record)  # the transcript's
+        self.assertTrue(record['card']['line'].startswith('Android notification from Weather · '), record)  # the transcript's
         record = tool('open_record', id=meeting['id'])
         self.assertEqual((record['kind'], record['title'], record['with']), ('meeting', 'Pilot review with Dana', ['dana@client.example']))
         self.assertNotIn('Agenda', json.dumps(record))   # what the Calendar shows, not the invite's private notes

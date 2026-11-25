@@ -164,7 +164,7 @@ class Checks(unittest.TestCase):
     def test_what_the_placeholders_hold_goes_with_the_key_in_any_language(self):
         # "{} to {}" (the kind of message, who it went to) was once filled as "Von {} an {}": from its first one to its second
         words, to, en = T.glossary(), '{} to {} (a message)', T.load('en')
-        self.assertEqual(sorted(words['means']), sorted(T.KIND_FIRST))
+        self.assertLessEqual(set(T.KIND_FIRST), set(words['means']))
         for key in words['means']:
             self.assertIn(key, en)
         sent = T.source(to, en[to], words['means'])

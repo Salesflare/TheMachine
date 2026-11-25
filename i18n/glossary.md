@@ -101,15 +101,17 @@ English strings the check skips, with why:
 - `kind is fact (true about the world), draft (how a kind of task is done) or voice (how the owner writes on one channel, with channel)` names a tool's literal values, which stay in English.
 - `when is "now", "digest" or a date/time like 2026-10-12 or 2026-10-12T09:00` names a tool's literal values, which stay in English.
 
-## What the placeholders hold
+## What a key means
 
-For a key whose placeholders could be read two ways. `scripts/translate.py` sends the row as the key's meaning, in every
+For a key that could be read two ways. `scripts/translate.py` sends the row as the key's meaning, in every
 language, a new one too, and refuses a word before the kind when the kind comes first ("Von {} an {}").
 
 | Key | Meaning |
 |---|---|
 | `{} to {} (a message)` | Where a to-do came from: a message the owner sent. The first placeholder is the kind of message (WhatsApp, Email, Slack, Linear issue), never a person or a place. The second is who it went to: a person, a company, a channel or a group chat, its name as written, so nothing around it may need inflecting it or may fit a person only. "WhatsApp to Anna", "Email to Acme", "Slack to #general": a WhatsApp message addressed to Anna. Never "from {} to {}" and never as if the kind sends something. It must read clearly different from "{} from {}". |
-| `{} from {} (a source)` | Where a to-do came from: a message the owner got. The first placeholder is the kind of message (WhatsApp, Email, Phone notification, notes), never a person or a place. The second is who sent it, or where it was said: a person, a company, an app, a channel or a meeting, its name as written, so nothing around it may need inflecting it or may fit a person only. "WhatsApp from Anna", "Phone notification from WhatsApp", "Slack from #general". |
+| `{} from {} (a source)` | Where a to-do came from: a message the owner got. The first placeholder is the kind of message (WhatsApp, Email, Android notification, notes), never a person or a place. The second is who sent it, or where it was said: a person, a company, an app, a channel or a meeting, its name as written, so nothing around it may need inflecting it or may fit a person only. "WhatsApp from Anna", "Android notification from WhatsApp", "Slack from #general". |
+| `Android notification` | One notification an app on the owner's Android phone showed, which The Machine reads, as the first placeholder of "{} from {}" ("Android notification from WhatsApp"). The singular of "Android notifications". |
+| `Phone notifications` | The notifications The Machine itself sends to the owner's phone (a setting, on or off). Never the ones other apps show on it: those are "Android notifications". |
 
 ## Buttons and calls to action
 

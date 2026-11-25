@@ -124,7 +124,9 @@ class HitRate(Base):
             self.card(key, kind, 'complete')
         rows = {k: v['worth_it'] for k, v in self.store.quality()['by_source'].items()}
         self.assertEqual(rows, {'Email': 2, 'Added by you': 1, 'Phone notifications': 1, 'The Machine itself': 2, 'Intercom': 1,
-                                'LinkedIn': 1, 'Meeting notes': 1, 'RSS feed': 1, 'Other': 1})
+                                'LinkedIn': 1, 'Meeting notes': 1, 'RSS feed': 1, 'Other': 1})  # what reviews and learnings read
+        shown = {k: v['worth_it'] for k, v in self.store.quality_report()['by_source'].items()}
+        self.assertEqual(shown, {('Android notifications' if k == 'Phone notifications' else k): n for k, n in rows.items()})  # Feedback
         en = a.json.loads((Path(a.__file__).parent / 'i18n' / 'en.json').read_text())
         for kind in [*a.TODO_SOURCE, 'rss.item', 'zoom.summary', 'docs.comment', 'none']:
             label = a.todo_source(kind)

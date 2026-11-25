@@ -149,7 +149,7 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
 `agent:main:assistant-review-signals-<run>`, with message delivery off.
 
 - **Automated signals wait for a batch.** Each review pays a large fixed start, so newsletters, notifications,
-  receipts, marketing, no-reply senders, other apps' phone notifications, Slack bots, payment events and failed CI
+  receipts, marketing, no-reply senders, other apps' Android notifications, Slack bots, payment events and failed CI
   runs don't start one on their own: they join the next review, and start one only after `batch_wait_minutes` (45),
   so their to-dos are there within the hour. No model decides this (`machine/store/review_wait.py`): List-Unsubscribe,
   List-Id, Precedence and Auto-Submitted headers, Gmail's categories, the sender's address and the Graph's mailings.
