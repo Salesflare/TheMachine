@@ -23,7 +23,7 @@ import fleet_reviews
 import i18n
 import meeting_prep
 from machine import names as display_names
-from machine.browser import run_tab
+from machine.browser import preparation_steps, run_tab
 from machine.cards import CHAT_HANDLE, blocker_questions
 from machine.delivery.push import NOTICE_DECISION
 from machine.chat import (
@@ -47,6 +47,7 @@ from machine.chat import (
     chat_person,
     chat_reply,
     chat_result_files,
+    chat_run_steps,
     chat_final_step,
     CHAT_STEP_FAILED,
     CHAT_STEP_HOW,
@@ -110,7 +111,8 @@ class CardChatApp:
         # ("Sending to Sam…" became "Sent to Sam"), the whole chat comes back even if the conversation didn't.
         digest = hashlib.sha256(json.dumps([owner, results], sort_keys=True, default=str).encode()).hexdigest()[:16]
         gateway_cursor, _, seen = (cursor or '').rpartition('|') if cursor and '|' in cursor else (cursor, '', None)
-        if seen is not None and seen != digest:
+        own_steps = bool(seen) and seen.endswith('+')  # this run's own steps are in the chat already (said in the cursor)
+        if seen is not None and seen.rstrip('+') != digest:
             gateway_cursor = None
         active = bool(job) and job['status'] in ('queued', 'starting', 'running')
         # The to-do's title as it is now, on every read (also an unchanged one): a rename the run saved shows in the
@@ -119,6 +121,12 @@ class CardChatApp:
                   'title': card['title'], 'title_suggested': card['title_suggested']}
         if not job or fix_only:  # fix_only: Do it ran a computer-log fix (Store.machine_fix), no AI session to read
             return {**result, 'items': chat_items([], owner, results), 'cursor': None}
+        # The run's latest journaled step, for a run whose own steps don't reach the chat (Claude Code). Read before the
+        # conversation: a run whose steps do reach it has written the step there by then, so it never shows as well.
+        step = None
+        if job['status'] in ('starting', 'running'):
+            with self.store.connect() as db:
+                step = (preparation_steps(db, job['job_id'], 1) or [None])[-1]
         found = self.card_chat_gateway({'session_key': 'agent:main:assistant-review-preparation-' + (job['session_job_id'] or job['job_id']),
                                         'cursor': gateway_cursor, 'limit': CHAT_HISTORY_LIMIT})
         if not isinstance(found, dict) or found.get('error') or not isinstance(found.get('messages', []), list):
@@ -135,8 +143,11 @@ class CardChatApp:
         # text is the answer until the run ends, so its chat shows Working… instead.
         result['live'] = ({'text': chat_text(flight.get('text'), chars=8000)}
                           if flight and active and not self.chat_run_notes(own, found.get('messages')) else None)
-        result['cursor'] = found['deltaCursor'] + '|' + digest if isinstance(found.get('deltaCursor'), str) else None
-        if found.get('kind') == 'delta' and gateway_cursor:
+        unchanged = found.get('kind') == 'delta' and bool(gateway_cursor)
+        own_steps = own_steps if unchanged else active and chat_run_steps(found.get('messages'), job['job_id'])
+        result['step'] = None if own_steps else step
+        result['cursor'] = found['deltaCursor'] + '|' + digest + '+' * own_steps if isinstance(found.get('deltaCursor'), str) else None
+        if unchanged:
             return {**result, 'unchanged': True}
         return {**result, 'items': chat_items(found.get('messages'), owner, results), 'more': bool(found.get('hasMore'))}
 

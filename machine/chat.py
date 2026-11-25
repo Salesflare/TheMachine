@@ -465,6 +465,17 @@ def chat_unglued(text, questions):
     return ('\n'.join(kept), asked) if asked else (text, [])
 
 
+def chat_run_steps(messages, run):
+    """Whether this run's own steps reach its chat while it works (its tool calls are in the session's messages, which
+    chat_items folds into "Checked N things"): OpenClaw's own runtime writes each down as the run goes, whatever the
+    model or sign-in. Claude Code's are not in there. Told by the messages, never by the provider; one without a run ID
+    counts."""
+    messages = [m for m in messages if isinstance(m, dict)] if isinstance(messages, list) else []
+    return any(key in (run, '') and m.get('role') == 'assistant' and isinstance(m.get('content'), list)
+               and any(isinstance(p, dict) and p.get('type') == 'toolCall' for p in m['content'])
+               for m, key in zip(messages, chat_run_keys(messages)))
+
+
 def chat_items(messages, owner, results=None):
     """The conversation, strictly by time: the owner's own notes and taps and the card's source messages (`owner`,
     from the service), each run's saved results (`results`, by job ID, from the service: what it said and the drafts

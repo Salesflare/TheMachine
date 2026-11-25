@@ -301,10 +301,10 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
  // A result with files: its links under the last reply
  if(p.links&&!drafts.length&&s?.status==='prepared'&&!p.copy)out.push(html`<div class="chat-links">${p.links}</div>`);
  if(s)out.push(outboxChat(s));
- // While the run goes: its latest step, as on its card (api/progress, shell-toast.js), above the dots or the reply
- // as it streams; once it's done those steps fold into the run's own line above. A step of an earlier run never shows.
- const run=s&&['starting','running'].includes(chat.status);if(s&&!run)steps.delete(s.id);
- if(chat.active)out.push(html`<div class="chat-msg machine chat-live">${run?html`<ul class="steps" data-steps="${s.id}">${stepItems(steps.get(s.id))}</ul>`:''}${chat.live?.text?html`<div class="bubble" translate="no">${chatMarkdown(chat.live.text)}</div>`:raw('<div class="bubble typing" role="status" aria-label="Working"><i></i><i></i><i></i></div>')}</div>`);
+ // While the run goes: the dots, or the reply as it streams. Its own steps come in its "Checked N things" above. A run
+ // that shows none (Claude Code) has its latest step here, as on its card (chat.step, machine/app/card_chat.py), and
+ // then nothing above the message box (chatStatus): its status is said once.
+ if(chat.active)out.push(html`<div class="chat-msg machine chat-live">${chat.step?html`<ul class="steps">${stepItems([chat.step])}</ul>`:''}${chat.live?.text?html`<div class="bubble" translate="no">${chatMarkdown(chat.live.text)}</div>`:raw(`<div class="bubble typing" ${chat.step?'aria-hidden="true"':'role="status" aria-label="Working"'}><i></i><i></i><i></i></div>`)}</div>`);
  // The run's side of the chat couldn't be read (the Gateway was slow or away) and nothing of it was loaded before:
  // said once the run is over, never as an aside under the typing dots; the next ask (a few seconds) tries again.
  if(chat.unavailable&&!chat.active)out.push(html`<p class="chat-note">I couldn’t load my replies just now. Trying again…</p>`);
@@ -326,7 +326,7 @@ const SEND=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentC
 const DOTS=html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>`;
 const chatUntil=v=>{const d=new Date(v),days=(d-Date.now())/864e5;return (chatDayOf(v)==='Today'?'today':days<6&&days>-1?localeDate(d,DL,{weekday:'short'}):localeDate(d,DL,{weekday:'short',day:'numeric',month:'short'}))+' '+chatHM(v)};
 // One small line over the message box: where the card stands, with its one way back (Unsnooze, Reopen) as a text button
-function chatStatus(s,p=chatParts(s)){const text=chat?.active?'Working on it…':s.send_later?laterLine(s):s.status==='snoozed'?(s.snoozed_until?(s.handoff_wait?checkinLabel(s):'Snoozed until '+chatUntil(s.snoozed_until)):'Snoozed')
+function chatStatus(s,p=chatParts(s)){const text=chat?.active?chat.step?'':'Working on it…':s.send_later?laterLine(s):s.status==='snoozed'?(s.snoozed_until?(s.handoff_wait?checkinLabel(s):'Snoozed until '+chatUntil(s.snoozed_until)):'Snoozed')
   :closed(s)?(s.status==='completed'&&!lapsed(s)?'Done':'Not needed'):looksDone(s)?'Looks done':waitsAfterOwner(s)?p.status:stillWaiting(s)?stillWaiting(s):s.preparation_status==='working'||waitAhead(s)?cardState(s):s.preparation_status==='blocked'&&s.preparation_error==='stopped'?'':s.preparation_status==='blocked'?p.status||cardState(s):['queued','starting','running'].includes(s.preparation_status)||TODO.PREPARING.includes(s.status)&&s.preparation_status!=='handed'?'Preparing':'';
  return text?html`<span>${text}</span>${p.back&&!chat?.active?html`<span aria-hidden="true">·</span>${p.back}`:''}`:''}
 function chatView(s,groups){const p=chatParts(s);
