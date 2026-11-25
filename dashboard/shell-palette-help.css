@@ -183,7 +183,8 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 .card .actions:not(.result-actions)>.more-actions{flex:0 0 auto;margin-left:auto}
 .card .more-actions>summary{min-width:44px;padding:7px 10px;background:var(--tile);border-color:transparent}.card .more-actions>summary:hover,.card .more-actions[open]>summary{background:var(--tile-hover)}  /* the … is filled subtle in both themes */
 .card .more-actions>summary::after{content:none}
-.card .actions.folded>[data-row-fold],.card .actions:not(.folded) .more-menu>[data-row-fold-menu]{display:none!important}  /* Snooze moves into the … when the row is full (todos-cards.js actionsSize); important like [hidden] below */
+.card .actions.folded>[data-row-fold],.card .actions:not(.folded) .more-menu>[data-row-fold-menu=""],.card .actions.tight>[data-row-fold=d]{display:none!important}  /* Snooze, and before it Mark done (d), moves into the … when the row is full (todos-cards.js actionsSize); important like [hidden] below */
+@media not (max-width:560px){.card .actions:not(.tight) .more-menu>[data-row-fold-menu=d]{display:none!important}}  /* on a phone Mark done (d) is always in the … */
 :is(.card,.rt) .more-actions>summary svg{width:20px;height:20px}
 .card .actions .more-menu>a.open{display:block;margin:0;padding:6px 12px;border-radius:8px;color:var(--text);font-size:.92rem;line-height:1.35;font-weight:500;text-decoration:none;white-space:nowrap}.card .actions .more-menu>a.open:hover{background:var(--tile)}
 .card .more-menu .mm-sub{display:flex;flex-direction:column;gap:1px}.card .more-menu .mm-sub[hidden]{display:none}
@@ -192,6 +193,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 .card .more-menu .mm-head>span{flex:1}.card .actions .more-menu .mm-back{flex:none;width:auto;min-width:32px;padding:2px 8px;font-size:1.15rem;line-height:1;color:var(--muted)}
 .card .more-menu>.mm-sep{width:100%;margin:3px 0;border:0;border-top:1px solid var(--border)}.card .more-menu>.mm-sep:first-child{display:none}
 @media(max-width:560px){
+  .card .actions>[data-row-fold=d]{display:none!important}
   .card .actions:not(.result-actions)>.more-actions{flex:0 0 48px;min-width:48px}
   .card .actions:not(.result-actions)>:is(button,a.open):first-child:nth-last-child(2){flex:1 1 auto}
   .card .more-actions[open]>summary::before{content:'';position:fixed;inset:0;z-index:90;width:auto;height:auto;margin:0;border:0;border-radius:0;transform:none;background:#0009;cursor:default}

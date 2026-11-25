@@ -55,7 +55,7 @@ try{
   // focus stays on its ⋯ through that redraw too.
   const check=async(name,sel,row,open,change,back)=>{
    await openMenu(page,sel);
-   await page.locator(sel).locator('button').nth(1).focus();
+   await page.locator(sel).locator('button:not([data-row-fold-menu])').nth(1).focus();
    const before=await look(page,sel);assert.ok(before.open&&before.focus,`${name} ${tag}: the menu is open with focus on an item`);
    await poll(page);await open?.();
    const kept=await look(page,sel);if(JSON.stringify(kept)!==JSON.stringify(before))lost.push(`${name} ${tag}: a poll closed or moved it ${JSON.stringify([before,kept])}`);

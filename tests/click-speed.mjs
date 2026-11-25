@@ -82,7 +82,7 @@ export const CLICKS=[
   ready:ids=>`()=>{const b=document.querySelector('#task-${ids.doit} .actions button[data-choice=accept]');const t=document.querySelector('#toast');return !b||!b.getClientRects().length||(t&&t.classList.contains('show'))}`},
  {name:'Done',prep:async(p,ids)=>{
    ids.done=await p.evaluate(id=>[...document.querySelectorAll('#suggestions article.card')].find(c=>c.getClientRects().length&&c.querySelector('button[data-choice=complete]')&&c.id.slice(5)!==id)?.id.slice(5),ids.doit);
-   const b=p.locator(`#task-${ids.done} button[data-choice=complete]`).first();if(!await b.isVisible()){const m=p.locator(`#task-${ids.done} .more-actions summary`).first();await m.scrollIntoViewIfNeeded();await p.waitForTimeout(400);await m.click()}await b.waitFor({state:'visible'})},
+   const b=p.locator(`#task-${ids.done} button[data-choice=complete]:visible`).first();if(!await b.isVisible()){const m=p.locator(`#task-${ids.done} .more-actions summary`).first();await m.scrollIntoViewIfNeeded();await p.waitForTimeout(400);await m.click()}await b.waitFor({state:'visible'})},
   target:(p,ids)=>p.locator(`#task-${ids.done} button[data-choice=complete]:visible`).first(),
   ready:ids=>`()=>{const c=document.querySelector('#suggestions article#task-${ids.done}');return !c||!c.getClientRects().length}`},
  {name:'Snooze',prep:async(p,ids)=>{ids.snooze=await p.evaluate(`${shown('#suggestions article.card .actions button[data-choice=snooze]')}?.dataset.id`)},
