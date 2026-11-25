@@ -35,7 +35,7 @@ Other pages are fine meanwhile: the bar stays at the bottom, and **Talk** brings
 
 Ask for something, like "write a reply saying Thursday works", and The Machine passes it to the to-do's chat as if you typed it. The chat follows its usual rules.
 
-The chat can also look things up, like a store's opening hours. It shows **Working on it…** and you can keep talking. When the answer is ready, The Machine tells you, and where it found it.
+The chat can also look things up, like a store's opening hours. It shows that it's working and you can keep talking. When the answer is ready, The Machine tells you, and where it found it.
 
 To send a draft, say so. The Machine reads it out (who it goes to, the subject and the text) and asks, like "Send this reply to Sam by email?". It works with your phone in your pocket. Say a clear yes, like "yes, send it", and that draft goes.
 

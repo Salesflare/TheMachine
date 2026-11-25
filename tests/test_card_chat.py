@@ -493,6 +493,45 @@ class CardChat(unittest.TestCase):
         self.assertEqual(down['items'][1]['text'], 'Make it shorter')
         self.assertEqual(logged.output, [f'WARNING:personal-assistant:card chat history unavailable suggestion={self.sid} active=True reason=timeout'])
 
+    def test_the_live_step_shows_only_for_a_run_whose_own_steps_do_not_reach_the_chat(self):
+        self.store.decide(self.sid, 'other', 'Make it shorter', 'chat-1', 'dashboard')
+        job = self.job()
+        ms = machine_chat.chat_ms(timeutil.now()) + 1000
+        call = lambda run: row('assistant', [{'type': 'toolCall', 'name': 'exec', 'arguments': {'title': 'Find the invoice'}}], run, ms)
+        imported = {'role': 'assistant', 'provider': 'claude-cli', 'stopReason': 'tool_use', 'timestamp': ms,
+                    'content': [{'type': 'toolcall', 'name': 'exec', 'arguments': {}}], '__openclaw': {'importedFrom': 'claude-cli', 'id': 'i1'}}
+
+        def chat(messages, cursor=None, **found):
+            with self.gateway({'messages': messages, 'deltaCursor': 'c', **found}):
+                return self.app.card_chat(self.sid, cursor)
+        with self.store.connect() as db:
+            db.execute("INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,'1','exec','{}',?)", (job['job_id'], timeutil.now()))
+        self.assertIsNone(chat([])['step'])  # queued: nothing runs yet
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='running' WHERE job_id=?", (job['job_id'],))
+        # Nothing of this run in the conversation: its journaled step, also next to an earlier run's steps or Claude Code's
+        for messages in ([], [call('an-earlier-run')], [imported]):
+            self.assertEqual(chat(messages)['step']['title'], 'Working on it')
+        # Its own steps are there (any model on OpenClaw's own runtime): no live step, also on the reads that bring nothing new
+        shown = chat([call(job['job_id'])])
+        self.assertIsNone(shown['step'])
+        self.assertEqual(shown['items'][-1]['kind'], 'steps')
+        for _ in range(2):
+            shown = chat([], shown['cursor'], kind='delta')
+            self.assertTrue(shown['unchanged'])
+            self.assertIsNone(shown['step'])
+        # Without them an unchanged read still brings the step, as it moves
+        bare = chat([])
+        with self.store.connect() as db:
+            db.execute("INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,'2','web_search','{}',?)", (job['job_id'], timeutil.now()))
+        moved = chat([], bare['cursor'], kind='delta')
+        self.assertEqual((moved['unchanged'], moved['step']['title']), (True, 'Searching the web'))
+        # A step the chat has no line for (its fold stays empty) is this run's own step all the same
+        self.assertIsNone(chat([row('assistant', [{'type': 'toolCall', 'name': 'view_image', 'arguments': {}}], job['job_id'], ms)])['step'])
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='prepared' WHERE job_id=?", (job['job_id'],))
+        self.assertIsNone(chat([])['step'])
+
     def test_claude_code_shows_working_while_it_writes_and_on_stop_drops_its_notes(self):
         # Claude Code's live text holds every note it wrote before a tool call, and only the run's end tells the answer
         # apart: its chat shows Working… (OpenAI's final channel streams, test above), and Stop keeps no partial text
