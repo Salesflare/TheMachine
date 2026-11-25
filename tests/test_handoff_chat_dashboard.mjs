@@ -115,7 +115,8 @@ try{
   assert.equal(await w.locator('button',{hasText:/^Do it$/}).count(),0);
   // Still with Pat, not handed back: Check in now leads with Snooze, Take it back and Hand off to someone else under …
   const visible=async c=>(await c.locator('.actions > button:not([hidden])').allTextContents()).map(x=>x.trim());
-  const more=async c=>(await c.locator('.more-menu button:not([data-mm-back])').evaluateAll(n=>n.map(x=>x.dataset.full||x.textContent)))  // Hand off…'s sheet names a teammate's choice A teammate; its whole name is data-full.map(x=>x.trim());
+  // Hand off…'s sheet names a teammate's choice A teammate; its whole name is data-full
+  const more=async c=>(await c.locator('.more-menu button:not([data-mm-back])').evaluateAll(n=>n.map(x=>x.dataset.full||x.textContent))).map(x=>x.trim());
   assert.deepEqual(await visible(w),['Check in now','Snooze']);
   {const m=await more(w);assert.ok(m.includes('Take it back')&&m.includes('Hand off to someone else'),m.join('|'))}
   const b=page.locator('#task-'+back.id);

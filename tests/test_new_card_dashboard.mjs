@@ -119,7 +119,8 @@ try{
   assert.match(await fresh.locator('.actions').textContent(),/Do it/);
   // N opens it (the row shows N), not while typing; C no longer does; Esc closes; "new" in Search (the palette) opens it too
   assert.equal(await page.locator('#side-new kbd').textContent(),'N');assert.equal(await page.locator('#side-new').getAttribute('title'),'New to-do (N)');
-  await page.locator('body').press('c');await page.waitForTimeout(200);  // a check that nothing opensassert.ok(!(await dialog.isVisible()),'C is not New to-do any more');
+  await page.locator('body').press('c');await page.waitForTimeout(200);  // a check that nothing opens
+  assert.ok(!(await dialog.isVisible()),'C is not New to-do any more');
   await page.locator('body').press('n');await dialog.waitFor();await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
   await page.evaluate(()=>{const i=document.createElement('input');i.id='t-field';document.body.append(i)});
   await page.locator('#t-field').press('n');assert.ok(!(await dialog.isVisible()),'N in a field types an n');assert.equal(await page.locator('#t-field').inputValue(),'n');
