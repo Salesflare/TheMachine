@@ -149,7 +149,7 @@ class CallShapes(unittest.TestCase):
 
     def test_the_limits_they_say_are_the_ones_checked(self):
         rules = (ROOT / 'PREPARATION.md').read_text()
-        self.assertIn(f'A label has at most {n.LABEL_MAX} characters', rules)
+        self.assertIn(f'A label has at most {n.step_labels.MAX} characters', rules)
         long = {'kind': 'prepare', 'label': 'Draft ' + 'x' * n.LABEL_MAX, 'instructions': 'x'}
         with self.assertRaisesRegex(ValueError, f'label has {n.LABEL_MAX + 6} characters, at most {n.LABEL_MAX}: “Draft'):
             n.validate(long, CONFIG, [])
