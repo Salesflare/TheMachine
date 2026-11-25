@@ -1,133 +1,137 @@
 ---
 title: Agenda
 area: calendar
-summary: La semaine à venir en un seul endroit : réunions, tâches à échéance, tâches en attente et promesses.
+summary: Votre semaine à venir en un seul endroit : réunions, tâches à échéance, tâches en attente et promesses.
 covers: tab:calendar
 code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py, trip_notes.py, event_notes.py, bookings.py
 order: 1
-translated: f3f41306aad03084
+translated: 9b7475608bb04e5c
 ---
 ## Ce qui s’affiche
 
 Vos journées à partir d’aujourd’hui, avec :
 
-- les réunions des agendas que vous avez connectés,
-- les tâches à échéance ce jour-là et les tâches en attente le jour où elles réapparaissent,
+- les réunions de vos agendas connectés,
+- les tâches à échéance ce jour-là et les tâches en attente qui reviennent ce jour-là,
 - les suivis sur le travail que vous avez transféré,
-- les promesses datées,
-- les [voyages et événements](calendar.md#trips-and-events) tirés des e-mails de réservation et de billetterie.
+- les promesses avec une date,
+- les [voyages et événements](calendar.md#trips-and-events) issus des e-mails de réservation et de billets.
 
-Une réunion présente dans deux agendas ne s’affiche qu’une fois. Un agenda qu’on a partagé avec vous affiche les événements de son propriétaire en grisé, avec son prénom. Ces événements ne créent jamais de tâche. Les événements sur toute la journée ou sur plusieurs jours s’affichent comme des événements sur toute la journée, pour chacun des jours concernés. Dans Agenda, un voyage apparaît en premier pour chacun de ses jours. Dans les vues Semaine et Mois, il apparaît sous forme d’une seule bande sur ces jours, par exemple « Voyage à Lisbonne ».
+Une réunion présente dans deux agendas ne s’affiche qu’une fois. Un agenda partagé avec vous affiche les événements de son propriétaire en grisé, avec son prénom. Ils ne génèrent jamais de tâche. Les événements sur une journée entière ou sur plusieurs jours s’affichent comme événements sur la journée entière, chaque jour concerné. Dans Agenda, un voyage apparaît en premier chaque jour où il a lieu. Dans les vues Semaine et Mois, il apparaît sous forme d’une bande sur les jours concernés, par exemple « Voyage à Lisbonne ».
 
-Un projet élaboré à deux correspond à une seule promesse, indiquée par « Avec » et le nom de l’autre personne. Une promesse concernant une réunion prévue ce jour-là avec cette même personne apparaît sur la ligne de la réunion.
+Un projet commun compte comme une seule promesse, indiquée par « Avec » et le nom de l’autre personne. Une promesse liée à une réunion prévue ce jour-là avec cette même personne s’affiche sur la ligne de la réunion.
 
-**En retard** apparaît en premier. Une réunion associée à une tâche ouverte affiche son état : **Préparation prête**, **En préparation** ou **Tâche**. Une tâche qui semble terminée, parce que vous avez déjà répondu ou que son exécution l’a trouvée terminée, ne s’affiche pas comme **Échéance**.
+**En retard** s’affiche en premier. Une réunion avec une tâche ouverte indique son état : **Préparation prête**, **En préparation** ou **Tâche**. Une tâche qui semble terminée (vous y avez déjà répondu ou son exécution l’a trouvée terminée) ne s’affiche pas comme **Échéance**.
 
 ## Agenda, semaine ou mois
 
-- **Agenda** affiche chaque jour. Faites défiler vers le bas pour voir les jours suivants, ou vers le haut, ou sélectionnez **Afficher les jours précédents**, pour voir les jours précédents. L’affichage remonte jusqu’à une semaine avant la connexion de votre agenda, et une ligne en haut indique à partir de quel jour. Une fois votre [historique](history.md) chargé, il remonte jusqu’à environ un an.
-- **Semaine** affiche une grille du lundi au dimanche. Sur téléphone, trois jours s’affichent.
-- **Mois** affiche le mois entier. Sur ordinateur, jusqu’à trois éléments s’affichent par jour. Sur téléphone, des points s’affichent. Touchez-en un pour afficher la liste du jour.
+- **Agenda** affiche chaque jour. Faites défiler vers le bas pour voir les jours suivants, ou vers le haut, ou sélectionnez **Afficher les jours précédents**, pour voir les jours précédents. La vue remonte à la semaine précédant la connexion de votre agenda, et une ligne en haut indique à partir de quel jour. Une fois votre [historique](history.md) ajouté, elle remonte à environ un an.
+- **Semaine** affiche une grille du lundi au dimanche. Sur téléphone, elle affiche trois jours.
+- **Mois** affiche le mois entier. Sur ordinateur, jusqu’à trois éléments s’affichent par jour. Sur téléphone, des points s’affichent. Touchez un jour pour afficher la liste de ses éléments.
 
-**Aujourd’hui**, ‹ et › en haut permettent de parcourir les semaines ou les mois. La vue choisie est mémorisée sur cet appareil.
+**Aujourd’hui**, ‹ et › en haut de l’écran permettent de parcourir les semaines ou les mois. La vue choisie est mémorisée sur cet appareil.
 
-Dans la grille de la semaine, les événements qui ont lieu en même temps s’affichent côte à côte et restent lisibles. Les autres apparaissent sous la forme **+N**. Sélectionnez cette indication pour ouvrir le jour dans l’agenda.
+Dans la grille de la semaine, les événements qui ont lieu en même temps s’affichent côte à côte, tout en restant lisibles. Les autres sont indiqués par **+N**. Sélectionnez cette indication pour ouvrir ce jour dans l’agenda.
 
 ## Ouvrir un élément
 
-Cliquez sur une ligne pour ouvrir le chat de sa tâche, la promesse, le voyage ou l’événement, ou la réunion. Pour une réunion que vous ne pouvez pas modifier ici, par exemple celle de quelqu’un d’autre ou une réunion avec des invités, les détails s’affichent : quand, où et avec qui. Les personnes connues de votre Graph, ainsi que les organisations et les projets associés à la réunion, sont des liens vers leurs pages. **Ouvrir dans Google Agenda** ou **Ouvrir dans Outlook** ouvre la réunion dans le service correspondant. La consultation n’apporte aucune modification.
+Cliquez sur une ligne pour ouvrir le chat de la tâche, la promesse, le voyage ou l’événement, ou la réunion. Une réunion que vous ne pouvez pas modifier ici, par exemple celle d’une autre personne ou une réunion avec des invités, affiche ses détails : date et heure, lieu et participants. Les personnes connues de votre Graph, ainsi que les organisations et projets associés à la réunion, renvoient vers leur page. **Ouvrir dans Google Agenda** (ou **Ouvrir dans Outlook**) sous ces éléments permet de l’ouvrir dans l’application correspondante. La consultation ne modifie rien.
 
 Une salle réservée pour une réunion s’affiche sous le lieu, jamais comme une personne ni dans votre Graph.
 
-Un lien de réunion s’affiche avec le nom de son service, comme Zoom, Google Meet ou Teams, ou sous la forme **Appel vidéo**. Ouvrez la réunion pour la rejoindre.
+Un lien de réunion affiche le nom du service correspondant, comme Zoom, Google Meet ou Teams, ou **Appel vidéo**. Ouvrez la réunion pour la rejoindre.
 
 ## Voyages et événements
 
-Quand un e-mail de réservation de vol, d’hôtel, de location de vacances, de train, de bus, de ferry, de voiture de location, de taxi ou de parking d’aéroport arrive, votre Machine l’ajoute à un voyage. Les réservations d’un même trajet sont regroupées dans un seul voyage, quelle que soit la boîte mail concernée : le train jusqu’à l’aéroport, les vols, la voiture, l’hébergement et le trajet retour. Les réservations sont regroupées si leurs dates se chevauchent ou si l’une commence là où l’autre se termine.
+Quand une réservation de vol, d’hôtel, de location de vacances, de train, de bus, de ferry, de voiture de location, de taxi ou de parking à l’aéroport arrive dans vos e-mails, votre Machine l’ajoute à un voyage. Les réservations d’un même trajet sont regroupées dans un voyage, quelle que soit votre boîte mail : le train jusqu’à l’aéroport, les vols, la voiture, le logement et le trajet retour. Les réservations sont regroupées lorsque leurs dates se chevauchent ou que l’une commence le jour où l’autre se termine.
 
-Le voyage s’affiche sous forme d’une seule bande sur les jours concernés. Ouvrez-le pour voir chaque réservation par ordre chronologique, avec ses horaires, son adresse, son code de réservation et votre place.
+Le voyage s’affiche sous forme d’une bande sur les jours concernés. Ouvrez-le pour afficher chaque réservation dans l’ordre chronologique, avec ses horaires, son adresse, son code de réservation et votre place.
 
-Les billets de concert, de match, de festival ou de conférence créent un événement par manifestation, avec son lieu, le code de réservation, la place et le nombre de billets. Une deuxième commande pour le même événement est ajoutée au même événement. Un événement réservé depuis votre boîte mail professionnelle est marqué Travail, sinon il est marqué Personnel. Les billets pour un événement qui a lieu pendant un voyage sont ajoutés au voyage.
+Les billets de concert, de match, de festival ou de conférence créent un événement, un par événement, avec son lieu, le code de réservation, votre place et le nombre de billets. Une deuxième commande pour le même événement est ajoutée au même événement. Un événement réservé depuis votre boîte mail professionnelle est classé dans Work, sinon dans Personal. Les billets pour un événement qui a lieu pendant un voyage sont ajoutés au voyage.
 
-Pour un voyage à venir, votre Machine indique ce qui manque, par exemple **Aucun hébergement réservé pour 2 nuits**, ou l’absence de réservation entre l’aéroport et l’hôtel. Ces lignes sont grisées et portent la mention **Aucune réservation**. Si le voyage ne comprend aucun hébergement, rien ne s’affiche à propos des nuits.
+Pour un voyage à venir, votre Machine indique ce qui manque, par exemple **Aucun hébergement réservé pour 2 nuits**, ou l’absence de réservation entre l’aéroport et votre hôtel. Ces lignes sont grisées et portent la mention **Aucune réservation**. Un voyage sans aucun hébergement n’indique rien au sujet des nuits.
 
-- Chaque ligne indique l’expéditeur de la réservation, par exemple **Depuis Example Tickets**, et ouvre l’e-mail correspondant.
-- Si l’e-mail a créé une tâche, par exemple pour payer les billets, **Ouvrir la tâche** l’affiche.
-- Une réservation modifiée met à jour sa ligne, et une réservation annulée est supprimée. Si toutes les réservations sont annulées, le voyage ou l’événement est également supprimé.
-- Une réservation pour quelqu’un d’autre, par exemple le vol d’un collègue que l’on vous a transféré, n’apparaît pas dans vos voyages.
+- Chaque ligne indique l’origine de la réservation, par exemple **Depuis Example Tickets**, et ouvre l’e-mail correspondant.
+- Si une tâche provient de l’e-mail, par exemple pour payer les billets, **Ouvrir la tâche** l’affiche.
+- Une réservation modifiée met à jour sa ligne, et une réservation annulée disparaît. Lorsque toutes les réservations sont annulées, le voyage ou l’événement disparaît également.
+- Une réservation au nom d’une autre personne, par exemple le vol d’un collègue que cette personne vous a transféré, n’apparaît pas dans vos voyages.
 
-La plupart des confirmations contiennent leurs détails dans un format que votre Machine peut lire sans IA. Pour celles qui n’en contiennent pas, comme un e-mail transféré ou une réservation sur un petit site, votre [modèle](model.md) lit l’e-mail en arrière-plan, quelques messages à la fois, et attend lorsque vous approchez de votre limite d’utilisation. Les e-mails de réservation de l’année conservée dans l’[historique](history.md) de votre Machine sont également lus en arrière-plan, une fois l’historique chargé.
+La plupart des confirmations contiennent leurs détails dans un format que votre Machine peut lire sans IA. Pour les autres, par exemple un e-mail transféré ou une réservation provenant d’un petit site, votre [modèle](model.md) lit l’e-mail en arrière-plan, quelques-uns à la fois, et attend si vous approchez de votre limite d’utilisation. Les e-mails de réservation de l’année conservée dans l’[historique](history.md) de votre Machine sont lus en arrière-plan une fois cet historique ajouté.
 
 ## Notes et transcription de réunion
 
-Les détails d’une réunion comportent deux parties. **Notes** est le résumé : décisions et actions à suivre. **Transcription** reprend les paroles mot pour mot. Elle est d’abord repliée, avec sa durée. **Afficher** permet de l’ouvrir.
+Les détails d’une réunion comprennent deux parties. **Notes** est le résumé : décisions et actions à effectuer. **Transcription** reprend mot pour mot les propos échangés. Elle est d’abord repliée et indique sa durée. **Afficher** permet de l’ouvrir.
 
-Si les éléments ne se chargent pas, une nouvelle tentative est lancée automatiquement pendant environ une demi-minute. Après cela, touchez **Réessayer**.
+Si les éléments ne se chargent pas, la tentative est relancée automatiquement pendant environ une demi-minute. Passé ce délai, sélectionnez **Réessayer**.
 
-Les notes et la transcription ont chacune leurs propres commandes **Ajouter des notes** ou **Ajouter une transcription**, **Importer un fichier** au format Markdown ou texte, **Modifier** et **Retirer** (touchez deux fois). Le contenu ajouté à l’une reste dans celle-ci. Pour une réunion que vous pouvez modifier, **Notes** sous son formulaire permet de les ouvrir.
+Chaque partie dispose de ses propres options **Ajouter des notes** ou **Ajouter une transcription**, **Importer un fichier** Markdown ou texte, **Modifier** et **Retirer** (sélectionnez deux fois). Le contenu de l’une reste dans cette partie. Pour une réunion modifiable, **Notes** sous le formulaire permet de les ouvrir.
 
-Lorsque [Zoom](zoom.md), [Google Meet](google-meet.md) ou [Granola](granola.md) est connecté, ses notes s’affichent dans Notes et sa transcription dans Transcription, avec la mention **De Zoom**, **De Google Meet** ou **Depuis Granola**. Elles ne remplacent jamais ce que vous avez ajouté : si les deux sont présentes, les deux s’affichent.
+Si [Zoom](zoom.md), [Google Meet](google-meet.md) ou [Granola](granola.md) est connecté, ses notes s’affichent dans Notes et sa transcription dans Transcription, avec la mention **De Zoom**, **De Google Meet** ou **Depuis Granola**. Elles ne remplacent jamais les éléments que vous avez ajoutés : si les deux sont présents, les deux s’affichent.
 
-Les notes peuvent aussi être ajoutées à l’événement de la réunion dans l’agenda, une fois celle-ci commencée, ou envoyées par e-mail par Zoom ou Gemini. Une fois la réunion terminée, The Machine en crée des tâches uniquement pour les prochaines étapes clairement établies. Si les mêmes notes arrivent par deux moyens, elles ne créent qu’une seule tâche, dont la source est la réunion : « Source : notes de » la réunion.
+Les notes peuvent aussi figurer dans l’événement correspondant de l’agenda, après le début de la réunion, ou arriver par e-mail depuis Zoom ou Gemini. Après la réunion, The Machine en tire des tâches uniquement si les prochaines étapes sont claires. Si les mêmes notes arrivent de deux façons, elles ne créent qu’une seule tâche, dont la réunion est la source : « Source : notes de » la réunion.
 
-Une réunion avec transcription, mais sans notes, affiche **Générer les notes**. The Machine les rédige à partir de la transcription : un résumé court, les décisions et les actions à suivre, avec les personnes chargées de les réaliser, dans la langue de la réunion.
+Une réunion avec une transcription mais sans notes propose **Générer les notes**. The Machine les rédige à partir de la transcription : un bref résumé, les décisions et les actions à effectuer, dans la langue de la réunion.
 
-La mention **Rédaction des notes…** s’affiche. La rédaction continue même si vous fermez la réunion. Une longue transcription peut prendre quelques minutes et utilise votre propre modèle. Les notes portent la mention **Rédigé par The Machine** et ne remplacent jamais celles que vous avez ajoutées.
+Le message **Rédaction des notes…** s’affiche, et la rédaction continue même si vous fermez la réunion. Une réunion longue peut nécessiter quelques minutes et utilise votre propre modèle. Les notes portent la mention **Rédigé par The Machine** et ne remplacent jamais celles que vous avez ajoutées.
 
-The Machine peut aussi les ajouter. Demandez-le dans une tâche, par exemple : « ajoute cette transcription au point d’équipe d’aujourd’hui ». Une transcription est ajoutée dans Transcription, un résumé dans Notes. Dans l’agenda, une réunion qui en contient affiche **Notes** ou **Transcription**.
+The Machine peut aussi les ajouter. Demandez-le dans une tâche, par exemple « ajoute cette transcription à la réunion d’équipe d’aujourd’hui ». Une transcription est ajoutée dans Transcript, un résumé dans Notes. Dans l’agenda, une réunion qui contient l’un de ces éléments indique **Notes** ou **Transcription**.
 
-The Machine lit les deux pour préparer le suivi de la réunion. Les tâches sont marquées Travail ou Personnel comme la réunion et ne sont envoyées à votre équipe que si la réunion l’est aussi.
+The Machine lit les deux pour trouver les suites à donner à la réunion. Elles sont classées Work ou Personal comme la réunion et ne sont transmises à votre équipe que si la réunion l’est aussi.
 
-Les détails d’une réunion sont accessibles partout où vous la trouvez : sur une chronologie, dans les résultats d’une recherche de messages ou comme source d’une tâche. **Invitation d’origine**, en bas, affiche l’invitation telle qu’elle a été reçue.
+Une réunion s’ouvre avec ces détails où que vous la trouviez : dans un fil chronologique, dans les résultats d’une recherche de messages ou comme source d’une tâche. **Invitation d’origine** en bas de page affiche l’invitation telle qu’elle a été reçue.
 
 ## Ajouter ou modifier un événement
 
-Vous pouvez modifier votre propre agenda Google ici. Outlook et les autres agendas sont en lecture seule. **Nouvel événement** permet d’en ajouter un (sur téléphone, cette option se trouve sous **+** dans la barre supérieure) : choisissez l’agenda, un titre et un horaire. Cliquez sur un événement sans invités dans cet agenda pour le modifier ou le **Supprimer** (touchez deux fois).
+Vous pouvez modifier votre agenda Google depuis cette page. Outlook et les autres agendas sont en lecture seule. **Nouvel événement** permet d’en ajouter un (sur téléphone, sélectionnez **+** dans la barre supérieure) : choisissez l’agenda, un titre et un horaire. Cliquez sur un événement sans invités dans cet agenda pour le modifier ou le **Supprimer** (sélectionnez deux fois).
 
-**Lieu** suggère des endroits au fil de votre saisie : ceux que vous avez déjà utilisés et vos organisations d’abord, puis des adresses d’[OpenStreetMap](https://www.openstreetmap.org), une carte gratuite. Seuls les mots que vous saisissez sont envoyés pour effectuer la recherche. Choisissez un lieu ou gardez votre propre texte.
+**Lieu** suggère des endroits au fur et à mesure de votre saisie : d’abord ceux que vous avez déjà utilisés et vos organisations, puis des adresses d’[OpenStreetMap](https://www.openstreetmap.org), une carte gratuite. Seuls les mots que vous saisissez sont envoyés pour effectuer la recherche. Sélectionnez une suggestion ou gardez votre propre texte.
 
-**Inviter** permet d’ajouter des personnes de votre Graph ou n’importe quelle adresse e-mail. Cette option n’est disponible que dans votre propre agenda. Les personnes invitées sont indiquées au-dessus du bouton, qui précise leur nombre : **Ajouter et inviter 2**. Google envoie les invitations lorsque vous touchez le bouton, pas avant. Sans invités, personne ne reçoit d’invitation ni de mise à jour.
+**Inviter** permet d’ajouter des personnes de votre Graph ou n’importe quelle adresse e-mail. Cette option est disponible uniquement dans votre propre agenda. Les personnes qui recevront une invitation sont indiquées au-dessus du bouton, qui précise leur nombre : **Ajouter et inviter 2**. Google envoie les invitations lorsque vous sélectionnez le bouton, pas avant. Sans invités, personne ne reçoit d’invitation ni de mise à jour.
 
-Une tâche peut aussi proposer une modification, par exemple l’ajout d’un lieu de prise en charge. Les changements sont indiqués en détail. Ils ne sont appliqués que si vous sélectionnez **Ajouter**, **Enregistrer** ou **Supprimer**.
+Une tâche peut aussi proposer une modification, par exemple l’ajout d’une prise en charge. Les changements sont indiqués précisément. Seules les options **Ajouter**, **Enregistrer** ou **Supprimer** permettent de les appliquer.
 
-Vous n’avez pas encore de réunions ? Si vous n’avez pas d’agenda, **Connecter votre agenda** ouvre Connexions : connectez [Google Agenda](google-calendar.md), [Outlook Agenda](microsoft.md) ou [un autre agenda](other-calendars.md).
+Vous n’avez pas encore de réunion ? Sans agenda connecté, **Connecter votre agenda** ouvre Connexions. Vous pourrez connecter [Google Agenda](google-calendar.md), le [Calendrier Outlook](microsoft.md) ou [un autre agenda](other-calendars.md).
 
-## Chevauchements avec votre autre agenda
+## Conflits avec votre autre agenda
 
-Lorsqu’une réunion professionnelle chevauche un événement de votre agenda personnel, ou l’inverse, The Machine crée une tâche à propos de l’événement le plus récent. Elle peut rédiger un court message pour le déplacer ou proposer de le décliner. Rien n’est envoyé tant que vous ne l’avez pas approuvé.
+Quand une réunion professionnelle chevauche un événement de votre agenda personnel, ou inversement, The Machine crée une tâche au sujet de l’événement le plus récent. Elle peut rédiger un bref message pour le déplacer, ou proposer de le refuser. Rien n’est envoyé sans votre approbation.
 
-Les événements sur toute la journée, indiqués comme libres ou provisoires ne sont jamais pris en compte, et chaque chevauchement n’est signalé qu’une fois. Une tâche Travail indique simplement qu’il y a un conflit. Votre équipe ne voit donc jamais l’événement personnel. Vous seule voyez avec quel événement il entre en conflit.
+Un événement qui chevauche plusieurs autres événements ne crée qu’une seule tâche, à son sujet. Tout nouveau chevauchement s’y ajoute tant que la tâche est ouverte. Une fois la tâche terminée ou écartée, seul un événement créé ou modifié par la suite peut la faire réapparaître.
+
+Les événements sur une journée entière, marqués comme libres ou provisoires ne sont jamais pris en compte, et chaque conflit n’est signalé qu’une fois. Les lieux de travail, plages de concentration et absences du bureau définis dans Google ne sont pas pris en compte non plus. Il en va de même pour un bloc que vous avez créé et qui contient d’autres réunions, par exemple une journée au bureau : seules les réunions qu’il contient peuvent entrer en conflit. Un bloc sans autre participant et sans réunion, comme un vol, entre toutefois en conflit avec un événement auquel d’autres personnes participent.
+
+Une tâche Work indique seulement qu’il y a un conflit. Votre équipe ne voit donc jamais l’événement personnel. Vous seul voyez les événements concernés : les deux premiers, puis le nombre d’autres événements. Une tâche à laquelle vous n’avez pas donné suite se ferme automatiquement si le conflit concerne une autre tâche ou n’en était finalement pas un.
 
 ## Préparer vos réunions
 
-Avant une réunion avec des personnes extérieures à votre entreprise, The Machine crée une tâche : **Préparer** la réunion. Il s’agit d’un bref compte rendu préparatoire :
+Avant une réunion avec des personnes extérieures à votre entreprise, The Machine crée une tâche : **Préparer la réunion**. Elle contient un bref récapitulatif :
 
-- **Qui :** leur identité, d’après votre Graph, avec des éléments de leur parcours quand ces informations sont connues.
-- **Organisation :** l’activité de leur entreprise, ses clients et ses tarifs, si ces informations sont utiles pour la réunion.
-- **Jusqu’ici :** les sujets abordés, les questions posées et les offres faites, ainsi que l’état d’avancement. Après la réunion, ces messages apparaissent comme sources de la tâche.
-- **Déjà convenu :**, **Modifié depuis :** et **Encore à faire :** les éléments issus des réunions précédentes avec les mêmes personnes. Chaque ligne indique la réunion ou le message dont elle provient.
+- **Qui :** leur identité d’après votre Graph, ainsi que des éléments de leur parcours, si ces informations sont connues.
+- **Organisation :** l’activité de leur entreprise, ses clients et ses tarifs, si c’est pertinent pour la réunion.
+- **Jusqu’ici :** vos échanges, questions et propositions, ainsi que leur état d’avancement. Après la réunion, ces messages figurent parmi les sources de la tâche.
+- **Déjà convenu :**, **Modifié depuis :** et **Encore à faire :** les éléments issus des réunions précédentes avec les mêmes personnes, chaque ligne indiquant la réunion ou le message dont elle provient.
 - **Promesses en attente :** ce que vous ou ces personnes devez encore faire, d’après les promesses enregistrées sur votre Machine.
-- **Questions en suspens :** les questions qui restent sans réponse.
-- **À décider ou à apporter :** les points à régler ou les éléments à apporter, ainsi que ce qui les intéressera probablement.
+- **Questions en suspens :** les questions qui n’ont pas encore reçu de réponse.
+- **À décider ou à apporter :** les points à régler ou les éléments à apporter, ainsi que les sujets qui les intéresseront probablement.
 
-La tâche arrive le matin d’un jour ouvré : le jour même si la réunion a lieu l’après-midi, sinon le jour ouvré précédent. Elle est uniquement destinée à être consultée. Sélectionnez **Fait** une fois que vous l’avez lue. Toute promesse ou question qui nécessite une action fait l’objet de sa propre tâche.
+Elle arrive le matin d’un jour ouvré : le jour même si la réunion a lieu l’après-midi, sinon le jour ouvré précédent. Elle est uniquement destinée à être consultée. Sélectionnez **Fait** une fois que vous l’avez lue. Une promesse ou une question qui nécessite une action dispose de sa propre tâche.
 
-Les réunions précédentes sont prises en compte si elles réunissaient une personne extérieure et l’un des mêmes participants, quel que soit leur intitulé ou l’adresse utilisée. The Machine lit les notes disponibles sur votre Machine : les vôtres, celles de votre application de réunion ou celles reçues par e-mail. À défaut, elle lit la transcription ou les notes de l’événement dans l’agenda. Les notes les plus récentes comptent davantage, et un point réglé depuis n’est pas présenté comme étant toujours en suspens.
+Les réunions précédentes sont prises en compte si une personne extérieure participe aux deux, quel que soit leur intitulé ou l’adresse utilisée. La Machine lit les notes disponibles : les vôtres, celles de votre application de réunion ou celles qu’elle vous a envoyées par e-mail. À défaut, elle utilise la transcription ou les notes de l’événement dans l’agenda. Les notes les plus récentes comptent davantage, et un point réglé depuis n’est plus indiqué comme étant en suspens.
 
-Les notes et les messages de l’[Historique](history.md) sont également pris en compte. Le compte rendu préparatoire peut ainsi intégrer les réunions antérieures à votre arrivée.
+Les notes et les messages de l’[Historique](history.md) sont également pris en compte. Le récapitulatif peut donc mentionner des réunions antérieures à votre arrivée.
 
-Un compte rendu préparatoire professionnel ne consulte aucune note personnelle ni aucun contenu provenant de la Machine d’une autre personne. Il reste privé : un transfert ne l’emporte jamais et il ne peut pas être envoyé pour examen. Sans notes, ces lignes n’apparaissent pas.
+Un récapitulatif professionnel ne consulte aucune note personnelle ni aucun contenu provenant de la Machine d’une autre personne. Il reste privé : un transfert ne l’emporte pas avec lui et il ne peut pas être envoyé pour vérification. Sans notes, les sections concernées ne s’affichent pas.
 
-The Machine s’appuie sur les informations déjà présentes sur votre Machine. Pour une première réunion avec une personne travaillant dans une entreprise, elle consulte également la page d’accueil du site de cette entreprise.
+Le récapitulatif s’appuie sur les informations déjà présentes sur votre Machine. Pour une première réunion avec une personne d’une entreprise, il consulte également la page d’accueil du site Web de cette entreprise.
 
-Si la recherche sur le Web est configurée sur votre Machine, elle effectue aussi une brève recherche sur le nom de la personne et son entreprise. Une Machine hébergée n’inclut pas cette fonctionnalité. Sur votre propre ordinateur, vous pouvez la configurer dans OpenClaw. Les résultats sont accompagnés d’un lien. Seuls le nom public de la personne, le nom de l’entreprise et son site Web sont transmis à la recherche, jamais vos messages. Les résultats sont réutilisés pendant 30 jours.
+Si la recherche sur le Web est configurée sur votre Machine, une recherche rapide est aussi effectuée sur le nom de la personne et son entreprise. Une Machine hébergée n’en dispose pas. Sur votre propre ordinateur, vous pouvez la configurer dans OpenClaw. Les résultats sont accompagnés d’un lien. Seuls le nom public de la personne, le nom de l’entreprise et son site Web sont transmis à la recherche, jamais vos messages. Les résultats sont réutilisés pendant 30 jours.
 
-Ainsi, une première réunion que vous avez acceptée peut avoir son compte rendu préparatoire avant même que vous ayez échangé un mot : l’activité de l’entreprise, ce que cela signifie pour vous et, si l’information est connue, l’identité de la personne. Si vous ne connaissez que son prénom, les résultats de recherche ne sont conservés que s’ils désignent une seule personne. Lorsque **Rechercher les contacts pro** est désactivé dans Paramètres, Sécurité, aucune recherche n’est effectuée.
+Une première réunion que vous avez acceptée peut ainsi avoir son récapitulatif avant même que vous ayez échangé un mot : l’activité de l’entreprise, ce que cela signifie pour vous et, si l’information est connue, l’identité des personnes. Si seul un prénom est disponible, les résultats de recherche ne sont conservés que s’ils désignent une seule personne. Si **Rechercher les contacts pro** est désactivé dans Paramètres, sous Sécurité, aucune recherche n’est effectuée.
 
-Une réunion récurrente ne donne lieu à un nouveau compte rendu que s’il s’est passé quelque chose depuis la dernière fois : un message, des notes ou une promesse. Il indique les nouveautés, pas le contenu du compte rendu précédent. Il arrive une fois la réunion précédente terminée, avec un maximum de deux réunions récurrentes par jour.
+Une réunion récurrente ne reçoit un récapitulatif que s’il y a du nouveau depuis la dernière occurrence : un message, des notes ou une promesse. Le récapitulatif indique les nouveautés, pas le contenu du précédent. Il arrive une fois la réunion précédente terminée, pour deux réunions récurrentes par jour au maximum.
 
-S’il n’y a rien d’utile à signaler, aucune tâche n’est créée. Les réunions internes, personnelles ou déclinées n’en génèrent pas. Si une réunion est déplacée, sa tâche est conservée à la nouvelle heure. Une tâche écartée ne réapparaît pas, et celle d’une réunion annulée se ferme automatiquement.
+S’il n’y a rien d’utile à signaler, aucune tâche n’est créée. Les réunions internes, personnelles ou refusées n’en génèrent pas. Si une réunion est déplacée, sa tâche est conservée à la nouvelle date. Une tâche écartée ne réapparaît pas et celle d’une réunion annulée se ferme automatiquement.
 
-Lorsqu’une mise à jour modifie le contenu d’un compte rendu préparatoire, les comptes rendus des réunions à venir sont rédigés une nouvelle fois, sous leur nouvelle forme. Leur titre, leurs sources et leur place dans votre liste ne changent pas. Un compte rendu que vous avez modifié, mis en attente ou fermé reste tel quel, tout comme celui d’une réunion qui commence dans les prochaines minutes.
+Si une mise à jour modifie le contenu d’un récapitulatif, les récapitulatifs déjà créés pour les réunions à venir sont rédigés à nouveau, une seule fois, dans leur nouvelle version. Leur titre, leurs sources et leur place dans votre liste restent inchangés. Un récapitulatif que vous avez modifié, mis en attente ou fermé reste tel quel. Il en va de même pour celui d’une réunion qui commence dans les prochaines minutes.
 
-Les détails de la réunion affichent sa tâche sous **Tâche**. Touchez-la pour ouvrir son chat.
+Dans les détails d’une réunion, sa tâche apparaît sous **Tâche**. Touchez-la pour ouvrir son chat.

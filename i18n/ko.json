@@ -3412,6 +3412,7 @@
   "other": "새 메시지 {}개를 살펴보고 있어요…"
  },
  "Not a Work Fleet of yours": "내 업무 Fleet이 아니에요",
+ "Not a clash after all": "결국 충돌이 아니에요",
  "Not a file of this job": "이 작업의 파일이 아니에요",
  "Not a kind The Machine keeps": "The Machine이 관리하는 유형이 아니에요",
  "Not a list": "목록이 아니에요",
@@ -4082,6 +4083,7 @@
  "Overdue for {}: {}, due {}": "{}의 마감 지남: {}, 마감일 {}",
  "Overlaps a work meeting at {}. Move it or decline?": "{}에 업무 회의와 겹쳐요. 일정을 옮기거나 거절할까요?",
  "Overlaps your personal calendar at {}. Move it or decline?": "{}에 개인 캘린더 일정과 겹쳐요. 일정을 옮기거나 거절할까요?",
+ "Overlaps your work calendar at {}. Move it or decline?": "내 업무 캘린더의 {}와 겹쳐요. 옮기거나 거절할까요?",
  "Overnight": "밤사이",
  "Overslept a little. Last look at {}.": "조금 늦잠 잤어요. 마지막 확인: {}.",
  "Owner": "소유자",
@@ -6183,6 +6185,7 @@
  "The runtime reported a failure; its original explanation was not retained.": "런타임에서 오류가 보고됐지만 원래 설명은 보존되지 않았어요.",
  "The runtime reported an error.": "런타임에서 오류가 보고됐어요.",
  "The same as another promise": "다른 약속과 같음",
+ "The same clash is on another to-do": "같은 충돌이 다른 할 일에도 있어요",
  "The saved diff is no longer available": "저장된 diff를 더 이상 사용할 수 없어요",
  "The screen is not reachable": "화면에 연결할 수 없어요",
  "The screenshot": "스크린샷",
