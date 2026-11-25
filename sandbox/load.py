@@ -185,6 +185,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
             load_learned(db, base)
             load_fields(db, base)
             load_trips(db, base)
+            load_briefing(db, base)
             load_skills(db, states, fixture, base)
             # The owner's first view after setup (Store.greeting): the hello by name, leading with who waits longest
             assistant.Store.greeting_on(db, base.isoformat())
@@ -693,6 +694,26 @@ def load_skills(db, states, fixture, base):
                    (skill_id, skills.slug_of(s['name']), s['name'], s['description'], s['body'], status, origin,
                     skills.digest(s['name'], s['description'], s['body']), author, fleet_id,
                     fixture['network']['work']['team'][0]['member_id'] if author else None, note, at, at))
+
+
+def load_briefing(db, base):
+    """Tomorrow's first meeting with someone, and its briefing as a web search leaves it (meeting_prep.py)."""
+    import i18n
+    import meeting_prep
+    ids = insert_events(db, [{'key': 'briefing:call', 'account_id': 'work-calendar', 'kind': 'calendar.event', 'minutes_ago': -1500, 'title': 'Intro call with Aldermoss',
+                              'body': 'Video call with Thea Marchetti.',
+                              'metadata': {'attendees': ['alex@lumenlabs.example', 'thea@aldermoss.example'], 'organizer': 'alex@lumenlabs.example', 'start_minutes_ago': -1500,
+                                           'duration_minutes': 30, 'status': 'confirmed', 'source_url': 'https://calendar.example/event/aldermoss-intro'}}], base)
+    event, made, key, card_id = ids['briefing:call'], stamp(50, base), meeting_prep.KEY_PREFIX + 'sandbox', 'b21ef1a2b3c4d5e6'
+    start = dt.datetime.fromisoformat(db.execute('SELECT occurred_at FROM events WHERE id=?', (event,)).fetchone()[0])
+    body = meeting_prep.body_text({'who': 'Thea Marchetti, head of support at Aldermoss', 'background': 'Ran support at a parcel carrier before that.',
+                                   'company': 'Rents cargo bikes to shops in six cities, from €79 a month.',
+                                   'bring': 'How reminders would work on their shared support inbox.'}, i18n.t,
+                                  {'background': ['https://people.example/thea-marchetti'], 'company': ['https://aldermoss.example/']})
+    db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,source_line) VALUES(?,?,?,?,?,?,'pending',?,?)",
+               (card_id, key, 'Prepare for the Aldermoss intro call', body, json.dumps([event]), json.dumps(['work-calendar']), made, 'Source: your calendar'))
+    db.execute('INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,?,?)', (card_id, 'sent', made))
+    meeting_prep.keep(db, {'key': key, 'id': event, 'start': start}, 'made', card_id, made, body, searches=2)
 
 
 def send_later_card(db, card, card_id, at, base):

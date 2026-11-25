@@ -664,7 +664,7 @@
     ["email:nina.k@saltmarshmedia.example", "email:nina@saltmarshmedia.example", "Similar name, both at saltmarshmedia.example", 1.1468]
   ]},
   "graph_state": {"columns": ["id", "built_at", "signals"], "rows": [
-    [1, "2026-03-10T09:30:00+00:00", 423]
+    [1, "2026-03-10T09:30:00+00:00", 424]
   ]},
   "graph_unnamed": {"columns": ["key", "event_ids", "people", "titles", "size", "last_at"], "rows": [
 
