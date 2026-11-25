@@ -10,7 +10,7 @@ let kind='finish', finishStatus='needs_input', reply=null;
 const receipt={name:'payment-receipt.pdf',size:21213,sha256:'c'.repeat(64),type:'application/pdf'};
 const fullDiff='diff --git a/graph.py b/graph.py\n'+('context line\n'.repeat(6000))+'LAST REVIEWED CHANGE\n';
 const action=()=>reply?{kind:'finish',state:{status:'needs_input'},label:'Confirm receipt reply',revision,instructions:'Open the conversation, type the message, press Send.',preview:'Reply in the support inbox with the payment receipt.',url:'https://inbox.example.invalid/conversation/7',to_name:'Sam Example',message:'Hi Sam,\n\nHere is the payment receipt.\n\nAlex',...(reply==='file'?{attachments:[receipt]}:{})}:
-  kind==='finish'?{kind,state:{status:finishStatus},label:'Submit expense claim',revision,instructions:'Submit E42 for EUR 42.50 only.',preview:'Expense E42 · EUR 42.50 · 16 Oct 2026.',url:'https://expenses.example.invalid/claim/E42'}:
+  kind==='finish'?{kind,state:{status:finishStatus},label:'Submit R&D\'s $50 claim',revision,instructions:'Submit E42 for EUR 42.50 only.',preview:'Expense E42 · EUR 42.50 · 16 Oct 2026.',url:'https://expenses.example.invalid/claim/E42'}:
   {kind,label:'Merge fix',revision,summary:'Handle missing keys in the graph.',stat:'graph.py | 2 +-',diff:fullDiff.slice(0,60000)+'\n… preview shortened; download the complete diff.',diff_clipped:true,base:'a'.repeat(40),head:'b'.repeat(40),files:['graph.py'],plugin:false};
 const state=()=>({suggestions:[{id:sid,title:'Offline review fixture',body:'Ready to review.',status:'prepared',event_ids:[1],next_action:action(),next_actions:[action()],outcome:{kind:'needs_you',needs:'Confirm'},scope:'work',created_at:new Date().toISOString()}],connectors:[],suggestion_counts:{prepared:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]});
 const calls=[], errors=[];
@@ -38,6 +38,10 @@ try{
   await page.locator('#send-dialog').waitFor({state:'visible'});
   assert.ok((await page.locator('#send-preview').textContent()).includes(kind==='finish'?'EUR 42.50':'preview shortened'));
   assert.equal(await page.locator('#send-confirm').textContent(),kind==='finish'?'Confirm':'Merge now');
+  // A label shows as written everywhere it is: the button, the draft's head, the dialog's title
+  if(kind==='finish'){const label='Submit R&D\'s $50 claim';assert.equal(await page.locator('#send-title').textContent(),label+'?');
+   assert.equal(await page.locator('#task-'+sid+' [data-smart]').first().textContent(),label);assert.ok((await page.locator('#task-'+sid+' .draft .dm').first().textContent()).startsWith(label));
+   assert.ok((await page.evaluate(id=>draftBox(state.suggestions.find(s=>s.id===id),state.suggestions.find(s=>s.id===id).next_actions[0],'').s,sid)).includes('Submit R&amp;D&#39;s $50 claim'))}
   if(kind==='merge'){const link=page.locator('#send-preview .full-diff');assert.equal(await link.textContent(),'Download complete diff');const url=await link.getAttribute('href');assert.equal(await page.evaluate(async u=>(await fetch(u)).text(),url),fullDiff);}
   for(const width of [320,390,768]){
    await page.setViewportSize({width,height:844});

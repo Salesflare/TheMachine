@@ -703,7 +703,7 @@ class Requests(unittest.TestCase):
         self.assertEqual(next_actions.preview(action), 'Hand off to Kim Doe through The Machine\n\n' + self.HANDOFF_TEXT.replace('[Report](https://tracker.example/1)', 'Report (https://tracker.example/1)'))  # plain text on their side
         # The button always says Hand off, whatever the run called it (its own words, another language): never refused for it
         for said, name, shown in (('Send to Kim', 'Kim Doe', 'Hand off to Kim'), ('Draag over aan Kim', 'Kim Doe', 'Hand off to Kim'),
-                                  ('Übergeben an Kim', 'Kim Doe', 'Hand off to Kim'), ('Передать', 'Зоя', 'Hand off'),
+                                  ('Übergeben an Kim', 'Kim Doe', 'Hand off to Kim'), ('Передать', 'Зоя', 'Hand off to Зоя'),
                                   ('Hand off the report', 'Kim Doe', 'Hand off the report')):
             with self.subTest(said=said):
                 kept = next_actions.validate({'kind': 'handoff', 'label': said, 'to_email': 'kim@acme.example', 'to_name': name, 'body': 'Take it'},

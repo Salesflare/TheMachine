@@ -21,6 +21,7 @@ from machine.store import todo_moves  # noqa: E402
 import datetime as dt
 import graph
 import machine.main as machine_main
+from machine.app import sync as app_sync
 import timeutil
 
 SLACK = {'id': 'work-slack', 'service': 'slack', 'transport': 'maton', 'user_id': 'U0RILEY001', 'slack_host': 'studio.slack.com',
@@ -177,6 +178,76 @@ class HandledElsewhere(unittest.TestCase):
             lines = [i['text'] for i in app.card_chat_service(db, sid)[0] if i['kind'] == 'event']
         self.assertIn('Closed by itself: Sam already said yes in the group chat on Monday.', lines)
 
+    def test_an_answer_in_the_source_s_own_old_thread_is_read_before_the_save(self):
+        """The to-do comes from a three-day-old thread and the owner answered in it after the conversation's last read: no
+        page of the conversation shows that, only the thread's own read."""
+        stamp = time.time()
+        self.clock.stop()
+        self.clock = patch_everywhere(timeutil, 'now', side_effect=lambda: dt.datetime.now(dt.timezone.utc).isoformat())
+        self.clock.start()
+        root, ask, answer, busy, other = (f'{stamp - hours * 3600:.6f}' for hours in (72, 70, 2, 5, 1))
+
+        def raw(user, at, text, **more):
+            return {'type': 'message', 'ts': at, 'user': user, 'text': text, **more}
+        first = raw('U0SAM00001', root, 'Support planning', reply_count=2, latest_reply=answer)
+        asked = raw('U0ANA00001', ask, 'Can you ask Sam to cover chat?', thread_ts=root)
+        answered = raw('U0RILEY001', answer, 'Asked Sam, he covers it.', thread_ts=root)
+        newer = raw('U0LEE00001', busy, 'Lunch', reply_count=1, latest_reply=other)
+        noise = raw('U0LEE00001', other, 'Pizza', thread_ts=busy)
+        for account in (SLACK, {**SLACK, 'fair_incremental': True}):
+            for source, channel in ((ask, TRIO), (root, TRIO), (ask, {**TRIO, 'type': 'channel', 'name': 'support'})):
+                with self.subTest(fair='fair_incremental' in account, root=source == root, type=channel['type']):
+                    slack_source.READ_NOW.clear()
+                    calls = []
+
+                    class Slack:
+                        def profile(self):
+                            pass
+
+                        def get(self, method, params=None):
+                            calls.append((method, params.get('channel'), params.get('ts'), params.get('oldest')))
+                            found = {root: [first, asked, answered], busy: [newer, noise]}.get(params.get('ts'), [newer]) if params['channel'] == channel['id'] else []
+                            return {'ok': True, 'messages': [m for m in found if m['ts'] in (params.get('ts'),) or m['ts'] >= params['oldest']],
+                                    'has_more': False, 'response_metadata': {'next_cursor': ''}}
+                    state = self.state(stamp - 4 * 3600)
+                    state['channels'][1] = {**state['channels'][1], **channel, 'threads': [root]}
+                    with self.store.connect() as db:
+                        db.execute("DELETE FROM events WHERE json_extract(metadata,'$.channel_id')=?", (channel['id'],))
+                    self.store.commit_page('work-slack', state, [slack_source.slack_event(SLACK, channel, m) for m in
+                                                                 ({**first, 'reply_count': 1, 'latest_reply': ask}, asked)])
+                    with self.store.connect() as db:
+                        graph.build(db, {'accounts': [SLACK]}, timeutil.now())
+                        event = db.execute('SELECT id FROM events WHERE source_id=?', (f"{channel['id']}:{source}",)).fetchone()[0]
+                    app = self.app()
+                    app.config['accounts'] = [account]
+                    key = f"{source}{channel['type']}{len(account)}"
+                    sid = self.store.suggest('work:cover-' + key, 'Inform Sam about covering support chat ' + key, 'Ana is off.', [event])['id']
+                    self.assertIn(channel['name'], app.handled_gate(sid, 'job' + key, self.HANDOFF))
+                    for _ in range(12):
+                        if not app_sync.sync_slack(self.store, {}, account, Slack())['more']:
+                            break
+                    self.assertIn(('conversations.replies', channel['id'], root, source), calls)
+                    found = app.handled_gate(sid, 'job' + key, self.HANDOFF)
+                    with self.store.connect() as db:
+                        said = db.execute('SELECT id FROM events WHERE source_id=?', (f"{channel['id']}:{answer}",)).fetchone()[0]
+                    self.assertIn(f'event {said}:', found or '')
+                    kept = next(c for c in self.store.checkpoint('work-slack')['channels'] if c['id'] == channel['id'])
+                    self.assertIn(root, kept['threads'])
+
+    def test_a_run_s_own_slack_read_has_its_to_do_s_thread_too(self):
+        """slack_read in the run of a to-do from that thread; another to-do's run reads only what is new."""
+        reply = {'type': 'message', 'ts': ts('2026-11-06T11:30:00+00:00'), 'user': 'U0LEE00001', 'text': 'Well?', 'thread_ts': ts('2026-11-06T11:00:00+00:00')}
+        self.commit([slack_source.slack_event(SLACK, OTHER, reply)])
+        app = self.app()
+        for event, named in ((self.event('U0LEE00001', OTHER, latest=True), {reply['thread_ts']}), (self.ask, set())):
+            sid, job = self.store.suggest(f'work:thread-{event}', f'Answer Lee {event}', 'They asked.', [event])['id'], f'job{event}'.ljust(32, '0')
+            with self.store.connect() as db:
+                db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,'d',?,'running',?,?)",
+                           (sid, job, MONDAY, MONDAY))
+            slack_source.READ_NOW.clear()
+            self.assertEqual(app.action('slack_read', {'channel': OTHER['id'], 'job_id': job})['status'], 'reading')
+            self.assertEqual(set(slack_source.slack_read_threads('work-slack', OTHER['id'])), named)
+
     def test_with_the_plugin_s_wait_the_save_waits_for_slack_itself(self):
         """A run that slept with exec and saved again resent its whole session each time: the save waits here instead."""
         self.addCleanup(setattr, slack_source, 'WAIT_STEP', slack_source.WAIT_STEP)
@@ -185,6 +256,10 @@ class HandledElsewhere(unittest.TestCase):
         waited = app.handled_gate(sid, 'job3', self.HANDOFF, wait=0.1)  # Slack's turn doesn't come in time
         self.assertIn('This call waited for them already: save again as it is (it waits again), its steps included', waited)
         self.assertNotIn('Sleep', waited)
+        self.assertIn('(0:00 of at most 15 minutes so far)', waited)
+        app._handled_waits = {k: at - 245 for k, at in app._handled_waits.items()}
+        # Never the same words three times: the Gateway ended a turn on its third identical refusal (2026-11-25)
+        self.assertIn('(4:05 of at most 15 minutes so far)', app.handled_gate(sid, 'job3', self.HANDOFF, wait=0.1))
         reader = threading.Timer(0.1, self.slack_reads)
         reader.start()
         found = app.handled_gate(sid, 'job3', self.HANDOFF, wait=5)  # one call: waited for the read, then names the yes

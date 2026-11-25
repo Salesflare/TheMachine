@@ -550,15 +550,57 @@ def slack_rest(config, channel):
 # be found, and a run went looking in the browser instead (2026-11-09). In memory only: after a restart the run asks
 # again. An ask counts until the conversation's next read starts after it, or for READ_NOW_MAX at most.
 READ_NOW, READ_NOW_LOCK, READ_NOW_MAX = {}, threading.Lock(), 1800
+# The threads those runs' to-dos come from, read along (slack_evidence_threads): {(account id, channel id): {thread ts: …}}.
+READ_THREADS, READ_THREADS_EACH = {}, 2
 
 
-def slack_read_now(account_id, channel_id):
-    """Ask for this conversation's next read to come first; returns when it was asked (an earlier ask stands)."""
+def slack_read_now(account_id, channel_id, threads=None):
+    """Ask for this conversation's next read to come first, with these threads of it; returns when it was asked (an
+    earlier ask stands, unless it had not named one of these threads: its read may have started without them)."""
     with READ_NOW_LOCK:
         key = (account_id, channel_id)
         if key in READ_NOW and time.time() - READ_NOW[key] > READ_NOW_MAX:
             READ_NOW.pop(key)
+        if key not in READ_NOW:
+            READ_THREADS.pop(key, None)
+        named = READ_THREADS.setdefault(key, {})
+        if any(ts not in named for ts in threads or ()):
+            READ_NOW.pop(key, None)
+            named.update({ts: t for ts, t in threads.items() if ts not in named})
         return READ_NOW.setdefault(key, time.time())
+
+
+def slack_read_threads(account_id, channel_id):
+    with READ_NOW_LOCK:
+        return dict(READ_THREADS.get((account_id, channel_id)) or {})
+
+
+def slack_evidence_threads(db, event_ids):
+    """{(account id, channel id): {thread ts: {'oldest', 'bare'}}}: the threads a to-do's own Slack messages are in, the
+    newest few of each conversation. An answer there shows in no conversation read: only the thread's own read has it
+    (its parent may be days old). oldest: the evidence's message, what matters came after it; bare: no reply known yet."""
+    found = {}
+    ids = [i for i in event_ids or () if isinstance(i, int)]
+    for row in db.execute("SELECT account_id,metadata FROM events WHERE kind='slack.message' AND deleted=0 AND id IN "
+                          f"({','.join('?' * len(ids))}) ORDER BY occurred_at DESC", ids) if ids else ():
+        m = json.loads(row['metadata'] or '{}')
+        ts, thread = str(m.get('message_ts') or ''), str(m.get('thread_ts') or m.get('message_ts') or '')
+        if ts and m.get('channel_id'):
+            found.setdefault((row['account_id'], m['channel_id']), {}).setdefault(
+                thread, {'oldest': ts, 'bare': thread == ts and not m.get('reply_count')})
+    return {key: dict(sorted(threads.items(), key=lambda t: t[1]['bare'])[:READ_THREADS_EACH]) for key, threads in found.items()}
+
+
+def slack_threads_fresh(channel, threads, since):
+    """Were these threads (slack_evidence_threads) read since then too? One with no reply known is read with the replay."""
+    read = channel.get('threads_read') or {}
+    return all(t['bare'] or float(read.get(ts) or 0) >= since for ts, t in (threads or {}).items())
+
+
+def slack_thread_read(channel, ts, at):
+    """This thread's replies are read up to `at`; kept while an ask may count on it."""
+    read = {k: v for k, v in (channel.get('threads_read') or {}).items() if time.time() - float(v) < READ_NOW_MAX}
+    channel['threads_read'] = {**read, ts: at}
 
 
 def slack_read_asked(account_id, channel):
@@ -567,6 +609,7 @@ def slack_read_asked(account_id, channel):
         at = READ_NOW.get((account_id, channel.get('id')))
         if at is not None and time.time() - at > READ_NOW_MAX:
             READ_NOW.pop((account_id, channel.get('id')))
+            READ_THREADS.pop((account_id, channel.get('id')), None)
             at = None
     return at if at is not None and float(channel.get('last_scan') or 0) < at else None
 
@@ -574,6 +617,35 @@ def slack_read_asked(account_id, channel):
 def slack_read_drop(account_id, channel_id):
     with READ_NOW_LOCK:
         READ_NOW.pop((account_id, channel_id), None)
+        READ_THREADS.pop((account_id, channel_id), None)
+
+
+def slack_asked_turn(account, state):
+    """A conversation a run asked for doesn't wait behind another one's read under way: a daily replay pages for many
+    turns, minutes apart, and the run waited through all of them (2026-11-25). That read is set aside as it stands and
+    carries on once no ask is left, found again by its conversation's id. The asked conversation's own first read never
+    is: there is no quick read before it, so it would only start over."""
+    channels, scan = state['channels'], state.get('scan')
+    asked = [c for c in channels if slack_read_asked(account['id'], c) is not None]
+
+    def own_first(channel, scan):
+        return channel in asked and bool(not channel.get('last_scan') or scan.get('step'))
+    if scan:
+        channel = channels[state['index']]
+        if asked and not scan.get('asked') and not state.get('set_aside') and not own_first(channel, scan):
+            state['set_aside'] = {'channel': channel['id'], 'scan': state.pop('scan')}
+        return
+    aside = state.get('set_aside')
+    index = next((i for i, c in enumerate(channels) if c['id'] == aside['channel']), None) if aside else None
+    if not aside or asked and not (index is not None and own_first(channels[index], aside['scan'])):
+        return
+    state.pop('set_aside')
+    if index is None:  # they left it meanwhile
+        return
+    scan = aside['scan']
+    threads = 'known_threads' if 'known_threads' in scan else 'threads'
+    scan[threads] = list(dict.fromkeys(scan[threads] + channels[index].get('threads', [])))  # found by the asked read meanwhile
+    state.update(index=index, scan=scan)
 
 
 def slack_next_due(store, config, account, source, state):

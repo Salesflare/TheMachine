@@ -36,7 +36,7 @@ import timeutil
 import unicodedata
 from urllib.parse import urlsplit
 from machine.owner_error import OwnerError
-from machine import draft_marks, new_post
+from machine import draft_marks, new_post, step_labels
 from machine.kinds import SEND, TEXT_ONLY, TO_PERSON
 
 SEND_SCOPES = {'https://www.googleapis.com/auth/gmail.send',
@@ -571,7 +571,6 @@ def linkedin_reply(value, threads):
     return {**value, 'conversation_id': found[0]} if len(found) == 1 else value
 
 
-LABEL_WORDS = r'[A-Za-z][A-Za-z0-9 ,’\-/]+'  # what a button's label may hold
 # How a follow-up's label (kind:prepare) starts: another Do it turn drafts, checks, researches or applies a change.
 FOLLOW_UP_VERBS = ('Draft', 'Prepare', 'Investigate', 'Check', 'Compare', 'Research', 'Apply', 'Fix', 'Update', 'Implement', 'Test',
                    'Set up', 'Configure')
@@ -593,11 +592,15 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         raise OwnerError('Next action must be an email draft, local preparation or original-page link')
     if value.get('kind') == 'handoff' and value.get('label') and isinstance(value['label'], str) and not value['label'].startswith('Hand off'):
         # Its button always says Hand off: a run's own words for it (the owner's language) are replaced, never refused
-        name = ' '.join(['Hand off to', *str(value.get('to_name') or '').split()[:1]])
-        value = {**value, 'label': name if value.get('to_name') and len(name) <= 28 and re.fullmatch(LABEL_WORDS, name) else 'Hand off'}
-    if value.get('label') is not None and (not isinstance(value['label'],str) or not 1<=len(value['label'])<=28
-            or not re.fullmatch(LABEL_WORDS, value['label'])
-            or value['label'].lower() in ('done','mark done','dismiss','reject','snooze','change','prepare','continue','do it','yes')):
+        value = {**value, 'label': step_labels.handoff_label(value.get('to_name'))}
+    beside = sorted({'do_now', 'send_now'} & set(value))
+    if beside:  # a doc edit with do_now in the step came back three times over, since the refusal named neither (2026-11-13)
+        raise ValueError(f"{' and '.join(beside)} goes beside next_actions in the save, not inside a step")
+    if isinstance(value.get('label'), str):
+        value = {**value, 'label': step_labels.label_text(value['label'])}
+    if isinstance(value.get('label'), str) and len(value['label']) > step_labels.MAX:
+        raise ValueError(f"label has {len(value['label'])} characters, at most {step_labels.MAX}: “{value['label'][:80]}”")
+    if value.get('label') is not None and not step_labels.usable(value['label']):
         raise OwnerError('Use a short specific action label, not a generic or owner-status button')
     for field in ('body', 'message', 'preview'):  # the paragraph breaks the card shows are the ones that go out
         if isinstance(value.get(field), str):
