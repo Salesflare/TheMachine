@@ -50,6 +50,19 @@ class CssTokens(unittest.TestCase):
         self.assertTrue(files)
         self.check(files)
 
+    def test_a_shared_token_is_set_once(self):
+        # the design-tokens block is the website's too. A later plain :root set --mono again, so the block's own line
+        # never applied here and went as dead css (#1980); the website reads it from there
+        block = re.compile(r'/\* design-tokens:start.*?/\* design-tokens:end \*/', re.S)
+        css = '\n'.join(p.read_text(encoding='utf-8') for p in dashboard_parts.files(ROOT) if p.suffix == '.css')
+        shared, = block.findall(css)
+        names = lambda text: {m[1] for m in DEFINED[0].finditer(text)}
+        root = lambda text: [m[1] for m in re.finditer(r'(?<![^\s};/]):root\s*\{([^{}]*)\}', COMMENT.sub('', text))]
+        tokens = {n for body in root(shared) for n in names(body)}
+        self.assertLessEqual({'--serif', '--sans', '--mono', '--c-bg'}, tokens)
+        again = {n for body in root(block.sub('', css)) for n in names(body)} & tokens
+        self.assertEqual(again, set(), 'set these in the design-tokens block only (and in static/app.css of the website)')
+
     def test_what_counts_as_defined(self):
         defined = {'a.css': ':root{--css:1}/* --comment:1 */', 'b.js': 'el.style.setProperty("--set",v);set(\'--helper\',1);'
                    'const v={\'--key\':fg};html`<i style="--inline:${n}">`;', 'c.js': 'const gone=1'}
