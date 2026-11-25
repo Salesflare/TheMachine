@@ -17,6 +17,7 @@ from machine.config import LOG
 from machine.delivery.push import first_result, hold_mail, push_notify, push_reach, push_send, reply_waits, result_lead, shown_as_reminder
 from machine.delivery.telegram import DeliveryNotSent, telegram
 from machine.text import encoded
+from machine.store import ahead_hold
 import notify
 import still_needed
 from timeutil import in_hours, is_work_day, local_tz, now
@@ -225,8 +226,9 @@ def deliver_one(store, config, edit_cards=True):
         # Telegram is. A new notification about the to-do clears the error.
         row['_pushed'] = row['pushed_at'] if row['delivery_error'] else None
         row['_first'] = not row['message_id']  # never delivered before: its notification is no reminder (push.first_result)
-        if row['reminder'] and unseen_ping(db, row):
-            # A rerun's newer result while the earlier notification is still unseen: the card is edited, no new ping
+        if row['reminder'] and (unseen_ping(db, row) or ahead_hold.quiet(db, row)):
+            # A rerun's newer result while the earlier notification is still unseen, or a draft that waited (ahead_hold.py):
+            # the card is edited, no new ping
             db.execute("UPDATE deliveries SET status='sent',reminder=0,error=NULL,needs_edit=1,updated_at=? WHERE suggestion_id=?", (now(), row['id']))
             LOG.info('delivery suggestion=%s quiet=unseen', row['id'])
             return True

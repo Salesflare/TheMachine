@@ -127,10 +127,11 @@ class ReviewSavesApp:
             with self.store.connect() as db:
                 self.store.based_on_check(db, args['based_on'])
         handoff_to = self.handoff_target(args.get('handoff_to'), personal)  # checked before anything is saved
+        ahead = (args.get('prepare_ahead') is True and self.config.get('prepare_ahead', True) is not False
+                 and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)), args.get('urgent') is True, args.get('due')))
         saved = self.store.suggest(args['dedupe_key'], title, body, args['event_ids'], args.get('when') or 'digest',
                                    self.config.get('digest_at', '08:30'),work=work,urgent=args.get('urgent') is True,due=args.get('due'),
-                                   ahead=args.get('prepare_ahead') is True and self.config.get('prepare_ahead', True) is not False
-                                   and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)), args.get('urgent') is True, args.get('due')),
+                                   ahead=ahead,hold=ahead and self.ahead_waits(args),
                                    awaiting=args.get('awaiting_event_id'),project=args.get('project'),card_id=args.get('card_id'),
                                    separate=args.get('separate') is True,reopen=args.get('reopen') is True,match=True,
                                    owner_step=(args['owner_step'] is True) if 'owner_step' in args else None,

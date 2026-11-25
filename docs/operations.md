@@ -263,7 +263,7 @@ Hosted Machines install only signed releases, and self-hosted installs should to
 | One source | Remove its account from `config.json`, restart the service; retain its data/checkpoint |
 | Recurring reviews | `review_worker.enabled: false`, restart |
 | Proactive notifications | `delivery_enabled: false`, restart; inspect retained queued sends before enabling again |
-| Prepare ahead | `prepare_ahead: false`, restart |
+| Prepare ahead | `prepare_ahead: false`, restart. While reviews are far behind, drafts ahead wait by themselves: the log says `draft ahead started why=` (`caught up`, `waited`, `pressing`, `opened`), `drafts ahead let go why=caught_up` and `draft ahead dropped why=` |
 | Entire service | `systemctl --user stop personal-assistant.service` (disable too only if it must stay off at boot) |
 | Bridge | `openclaw plugins disable personal-assistant-bridge`; existing runs may still need reconciliation |
 

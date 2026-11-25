@@ -3,7 +3,7 @@ title: No new to-dos
 area: troubleshooting
 summary: Checks are off, waiting, or stopped on your model's usage limit. How to tell and what to do.
 covers:
-code: dashboard.html, assistant.py, machine/app/review.py, machine/night_pause.py, model_budget.py
+code: dashboard.html, assistant.py, machine/app/review.py, machine/night_pause.py, model_budget.py, machine/app/ahead_hold.py
 order: 3
 ---
 To-dos come from checks: your Machine looks at what came in within about 15 minutes.
@@ -27,6 +27,8 @@ To keep room for your own chats, checks pause at about 65% of your AI plan's 5-h
 While checks wait, the top of the dashboard says until when, like "Checks wait until 07:15 to save your ChatGPT week." **Check now** starts one anyway. **Settings**, **Model** shows your limits.
 
 Nothing is lost: what came in is checked once it can. After a long wait, recent messages from people go first, and part of each check works through the oldest.
+
+Until it has caught up, new to-dos come in without a draft, so your plan goes to your messages first. The drafts follow later, and urgent ones don't wait for it. Press **Do it** to get one now.
 
 ## At night
 

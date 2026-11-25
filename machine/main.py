@@ -34,6 +34,7 @@ from machine.app.export import ExportApp
 from machine.app.family_questions import FamilyQuestionsApp
 from machine.app.feedback import FeedbackApp
 from machine.app.first_look import FirstLookApp
+from machine.app.ahead_hold import AheadHoldApp
 from machine.app.first_pass import FirstPassApp
 from machine.app.fleet import FleetApp
 from machine.app.follow_ups import FollowUpsApp
@@ -131,7 +132,7 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
 APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, PreparationApp, RecapApp, ReviewApp, TalkApp)
-APP_MIXINS += (FirstPassApp,)
+APP_MIXINS += (FirstPassApp, AheadHoldApp)
 APP_MIXINS += (ServeApp,)
 APP_MIXINS += (NewCardsApp,)
 APP_MIXINS += (MailApp,)

@@ -205,6 +205,16 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   waiting is claimed within about N / 40 new reviews, whatever keeps coming in. An unfinished claim still resumes
   first. Plain code, no model call; previews and the first look keep their own order
   (`machine/store/review_catch_up.py`).
+- **Behind, drafts ahead wait.** While the same backlog waits and the AI sign-in reports usage windows, a draft ahead a
+  regular review asks for with a to-do is kept as a row in `ahead_holds` instead of starting. The to-do is saved and sent
+  as any without a draft ahead, and takes its place in the day's prepared-ahead room. Caught up means one whole review's
+  worth or less (a lower line than the one it starts at): then every row may start, newest first. A row starts anyway
+  after 15 hours (three 5-hour windows, oldest first), and at once when its to-do turns pressing or is opened. The others
+  start one at a time, all only while nothing holds drafts ahead (the gate of `preparation_step`) and a run can start.
+  A row whose to-do looks done waits for the answer and takes no room meanwhile. A row whose to-do closed, was snoozed, merged, handed off or worked on
+  is dropped. Never held: pressing to-dos, a new Machine's first look, first draft and first day, the owner's own to-dos,
+  anything the owner asks for, and what the service makes itself (promises, follow-ups, birthdays, calendar clashes). The
+  rows are the only state (`machine/store/ahead_hold.py`, `machine/app/ahead_hold.py`).
 - **Handed on.** A to-do's preparation starts from what its review found: the job message lists the to-do as saved
   and each message it came from with who wrote it, to whom, the subject, the thread and the time (never the text), and
   asks the run to look up only what is still missing. Within one run, a message it already read whole comes back from

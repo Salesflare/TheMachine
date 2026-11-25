@@ -902,6 +902,8 @@ class PreparationApp:
 
     def preparation_worker(self):
         while not self.stop.wait(5):
+            try:self.ahead_hold_step()
+            except Exception as error:loop_failed(LOG,'drafts ahead',error)
             try:self.preparation_step()
             except Exception as error:loop_failed(LOG,'preparation',error)
             try:self.release_finished_browser_lease()

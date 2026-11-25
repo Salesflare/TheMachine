@@ -50,10 +50,18 @@ def scan(db, counts, current):
     return found
 
 
-def behind(counts, rows, weigh):
-    """Whether what waits fills more than BEHIND_RUNS reviews: each by what it takes of one (a newsletter's title line a
+def behind(counts, rows, weigh, runs=BEHIND_RUNS):
+    """Whether what waits fills more than `runs` reviews: each by what it takes of one (a newsletter's title line a
     quarter of a message), the ones not looked at by the least one can take."""
-    return sum(map(weigh, rows)) + (sum(counts.values()) - len(rows)) * LIGHTEST > BEHIND_RUNS * RUN_SIGNAL_BUDGET
+    return sum(map(weigh, rows)) + (sum(counts.values()) - len(rows)) * LIGHTEST > runs * RUN_SIGNAL_BUDGET
+
+
+def waits(db, accounts, weigh, current, runs=BEHIND_RUNS):
+    """The same question outside a claim: whether more than `runs` whole reviews' worth waits now (ahead_hold). A count
+    per account; signals are only looked at when the count alone doesn't say no."""
+    counts = {a: db.execute('SELECT count(*) FROM events WHERE account_id=? AND analyzed_version<version AND deferrals<?', (a, SET_ASIDE_AFTER)).fetchone()[0]
+              for a in accounts}
+    return sum(counts.values()) > runs * RUN_SIGNAL_BUDGET and behind(counts, scan(db, counts, current), weigh, runs)
 
 
 def conversation_of(row, m):

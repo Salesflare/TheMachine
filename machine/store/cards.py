@@ -31,7 +31,7 @@ from machine.text import _address, body_after_title, clamp, encoded
 from timeutil import local_tz, now
 import todo_areas
 from machine import todo_states
-from machine.store import todo_moves
+from machine.store import ahead_hold, todo_moves
 from machine.owner_error import OwnerError
 
 
@@ -506,7 +506,7 @@ class CardsStore:
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
                 card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None,
-                company=None, personal=False, waiting_on=None, org=None, quiet=False):
+                company=None, personal=False, waiting_on=None, org=None, quiet=False, hold=False):
         """A new card, or with match (the review) the existing card about the same matter brought up to date:
         card_id names the card the reviewer judged to be the same matter, separate says it is a different one.
         waiting_on: the review's word that the owner did their part of that open card and the next step is someone
@@ -522,14 +522,15 @@ class CardsStore:
         Personal from the start (todo_areas.personal_accounts), never a Work Fleet's.
         org: the review's word on which organization the matter is about (graph.card_org: its node id, domain or name;
         '' for none). Only the matter decides it, never who is on it; None leaves it as it was (not said).
-        quiet: a new card is not sent by itself (delivery not_sent); a ping about it already went (the team brief's summary)."""
+        quiet: a new card is not sent by itself (delivery not_sent); a ping about it already went (the team brief's summary).
+        hold: with ahead, its draft waits until reviews have caught up (ahead_hold.py); the card itself goes as any other."""
         if _db is None:
             with self.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 return self.suggest(dedupe_key, title, body, event_ids, when, digest_at, work, urgent, due, ahead, awaiting, project,
                                     card_id, separate, reopen, match, _db=db, suggestion_id=suggestion_id, owner_step=owner_step,
                                     expires_at=expires_at, expires_what=expires_what, company=company, personal=personal, waiting_on=waiting_on,
-                                    org=org, quiet=quiet)
+                                    org=org, quiet=quiet, hold=hold)
         if not dedupe_key or not title or not body or not event_ids:
             raise ValueError('Evidence, title, body and stable dedupe_key are required')
         if waiting_on is not None:
@@ -620,7 +621,7 @@ class CardsStore:
                                  'what the other person owes the owner is a promise (direction theirs), not a to-do.')
             if target:
                 saved = self.update_card(db, target, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen,
-                                         waiting_on=waiting_on)
+                                         waiting_on=waiting_on, hold=hold)
                 # The review places it; the owner's own choice stands. Personal only from who is on it (own_life_evidence)
                 # is no judgment of the matter: the review's word on a company replaces it.
                 by_people = company_said and target['area'] == todo_areas.PERSONAL and own_life_evidence(db, json.loads(target['event_ids'] or '[]'))
@@ -653,6 +654,8 @@ class CardsStore:
             if preview:
                 wanted = ahead and first_look_running(db)
                 ahead, deliver_after = False, None
+            held = bool(ahead and hold and not pressing(urgent, due))
+            ahead = ahead and not held
             suggestion_id = suggestion_id or uuid.uuid4().hex[:16]
             db.execute('INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at,deliver_after,source_line,urgent,due,owner_step) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
                        (suggestion_id, dedupe_key[:240], title[:300], body[:5000], encoded(event_ids),
@@ -668,6 +671,8 @@ class CardsStore:
                        (suggestion_id, 'previewed' if preview else 'not_sent' if quiet else 'queued', now()))
             if preview and wanted:
                 db.execute('INSERT OR IGNORE INTO first_look_ahead(suggestion_id,created_at) VALUES(?,?)', (suggestion_id, now()))
+            if held:
+                ahead_hold.keep(db, suggestion_id, now())
             if watch:
                 db.execute('UPDATE suggestions SET awaiting=? WHERE id=?', (encoded(watch), suggestion_id))
             if project:
@@ -718,7 +723,7 @@ class CardsStore:
                 'note': 'The existing card was updated and now waits under Waiting on others. It comes back as a to-do when a new '
                         'message on it arrives, or at returns_at so the owner can chase them.'}
 
-    def update_card(self, db, card, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen, waiting_on=None):
+    def update_card(self, db, card, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen, waiting_on=None, hold=False):
         """A new signal about a matter that already has a card. An open card gets the new evidence, title and body,
         and one that was snoozed or waiting for a reply comes back. A done or dismissed card only reopens when the
         reviewer says the matter needs the owner again (reopen) and a message from someone else arrived after it was
@@ -775,6 +780,12 @@ class CardsStore:
             if ahead and first_look_running(db):
                 db.execute('INSERT OR IGNORE INTO first_look_ahead(suggestion_id,created_at) VALUES(?,?)', (card['id'], stamp))
             ahead, deliver_after = False, None
+        # Its first draft waits while reviews are far behind (ahead_hold.py); one with a run or a draft already never does
+        held = bool(ahead and hold and not own and card['status'] in (todo_states.PENDING, todo_states.SNOOZED, *todo_states.CLOSED)
+                    and not pressing(urgent or card['urgent'], due or card['due']) and ahead_hold.may_wait(db, sid))
+        if held:
+            ahead = False
+            ahead_hold.keep(db, sid, stamp)
         waiting = card['status'] == 'snoozed'
         # New work on the matter: back to Outstanding as a fresh suggestion, or prepared ahead again.
         status = 'accepted' if ahead else 'pending' if waiting or closed or card['status'] in todo_states.WAITING_ON_OWNER else card['status']
@@ -831,13 +842,20 @@ class CardsStore:
                 if row['status'] != 'pending' or touched or not room or (row['created_at'] or '') < since:
                     continue
                 decision_id = 'ahead:' + uuid.uuid4().hex
-                db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
-                           (decision_id, sid, 'prepare_ahead', '', 'assistant', now()))
-                db.execute('UPDATE suggestions SET early=1 WHERE id=?', (sid,))
-                todo_moves.transition(db, sid, todo_states.ACCEPTED, 'prepare_ahead')
-                self.queue_preparation(db, sid, decision_id)
+                self.start_ahead(db, sid, decision_id)
                 started += 1
         return started
+
+    def start_ahead(self, db, sid, decision_id, told=False):
+        """A to-do still waiting on the owner gets its draft ahead now: the decision, its state and the run's place. told:
+        the message already sent about it is edited to match."""
+        db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                   (decision_id, sid, 'prepare_ahead', '', 'assistant', now()))
+        db.execute('UPDATE suggestions SET early=1 WHERE id=?', (sid,))
+        todo_moves.transition(db, sid, todo_states.ACCEPTED, 'prepare_ahead')
+        self.queue_preparation(db, sid, decision_id)
+        if told:
+            db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (sid,))
 
     def based_on_check(self, db, event_id):
         """Refuses a based_on that isn't a live message from someone else, before anything is saved."""
@@ -1205,12 +1223,16 @@ class CardsStore:
     def ahead_room(self, per_day, urgent=False, due=None):
         """Room to prepare one more to-do ahead today. The last AHEAD_HELD of per_day are held for pressing work
         (urgent, or due within PRESSING_DAYS), so a busy morning of routine drafts doesn't leave none for it."""
-        since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=1)).isoformat()
-        cap = per_day if pressing(urgent, due) else per_day - min(AHEAD_HELD, per_day // 3)
         with self.connect() as db:
-            # Automated follow-ups count apart (follow_ups.PER_DAY): they never use up the room for other to-dos
-            return db.execute("SELECT count(*) FROM decisions WHERE choice='prepare_ahead' AND created_at>=? "
-                              'AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards)', (since,)).fetchone()[0] < cap
+            # Drafts that wait (ahead_hold.py) have their place already: a long catch-up never promises more than a day's
+            return self.ahead_started_room(db, per_day if pressing(urgent, due) else per_day - min(AHEAD_HELD, per_day // 3), ahead_hold.kept(db))
+
+    def ahead_started_room(self, db, cap, taken=0):
+        """Whether fewer than cap drafts ahead were started in 24 hours."""
+        since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=1)).isoformat()
+        # Automated follow-ups count apart (follow_ups.PER_DAY): they never use up the room for other to-dos
+        return db.execute("SELECT count(*) FROM decisions WHERE choice='prepare_ahead' AND created_at>=? "
+                          'AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards)', (since,)).fetchone()[0] + taken < cap
 
     def settle_ahead(self, db):
         return settle_ahead(db)
