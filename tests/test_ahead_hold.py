@@ -283,7 +283,7 @@ class Released(Fake):
                 waited[saved['id']] = hour
             self.assertLessEqual(len(self.held()), 7)
             self.assertTrue(all(hour - since <= ahead_hold.HOLD_HOURS + 1 for since in waited.values()), waited)
-        self.assertGreaterEqual(made, 5 * 5)  # they keep coming, all five days
+        self.assertGreaterEqual(made, 5 * 4)  # fewer a day than without a hold, all five days
 
     def test_pressing_work_all_day_does_not_starve_those_that_wait(self):
         sids = self.hold(2)
@@ -296,6 +296,93 @@ class Released(Fake):
         for sid in sids:
             self.assertEqual(self.step(), [sid])
             self.done()
+
+    def test_the_wait_covers_the_catch_ups_it_is_for(self):
+        self.hold(1)
+        for hours in (5.5, 10.5, 14.9):  # the second and the third 5-hour window of a catch-up
+            self.at(hours)
+            self.assertEqual(self.step(), [])
+
+    def test_a_week_of_ones_that_look_done_take_no_room_and_keep_no_line(self):
+        made = []
+        for day in range(7):
+            self.at(24 * day)
+            self.behind()
+            made += [self.save(f'd{day}-{n}')['id'] for n in range(2)]
+            with self.store.connect() as db:
+                db.execute("UPDATE suggestions SET handled_hint='x'")
+            self.assertEqual(self.step(), [])
+        self.assertEqual(self.held(), made)  # an answer of not done yet still gets each its draft
+        with self.store.connect() as db:
+            self.assertEqual((ahead_hold.kept(db), ahead_hold.under_way(db)), (0, False))
+        self.assertTrue(self.store.ahead_room(1))
+        self.waits(200)  # under the line it starts at: nothing that waits keeps the lower one
+        self.assertEqual(self.save('now')['status'], 'accepted')
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET handled_hint=NULL WHERE id=?", (made[0],))
+        self.done()
+        self.assertEqual(self.step(), [made[0]])
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='completed'")
+        self.step()
+        self.assertEqual(self.held(), [])
+
+    def test_one_that_never_starts_holds_no_other(self):
+        sids = self.hold(3)
+        self.waits(0)
+        self.assertEqual(self.step(), [sids[2]])  # its own old run won't stop: it stays queued
+        self.at(0.5)
+        self.assertEqual(self.step(), [])
+        self.at(1.5)
+        self.assertEqual(self.step(), [sids[1]])
+        with self.store.connect() as db:  # tried again tomorrow
+            db.execute('UPDATE preparations SET retry_at=?', ((self.clock + dt.timedelta(days=1)).isoformat(),))
+        self.assertEqual(self.step(), [sids[0]])
+        self.done()
+        self.behind()
+        self.save('z')
+        self.app.config['prepare_ahead_per_day'] = 0  # no drafts ahead any more: none waits for room that never comes
+        self.assertEqual((self.step(), self.held()), ([], []))
+
+    def test_several_opened_at_once_start_as_many_as_can_run(self):
+        sids = self.hold(6)
+        for sid in sids:
+            self.store.note_activity('opened', sid)
+        self.assertEqual(self.step(), sids[:3])  # preparation_concurrency
+        self.assertEqual(self.step(), [])
+        self.done()
+        self.assertEqual(self.step(), sids[3:])
+
+    def test_it_starts_exactly_when_a_queued_draft_ahead_would(self):
+        memory = {'window': 'memory', 'until': time.time() + 3600, 'limited': False}
+        half = [{'provider': 'openai', 'windows': [{'label': 'Week', 'used': 50, 'reset': time.time() + 5 * 86400}]}]
+        limit = {'until': time.time() + 3600, 'provider': None}
+        states = {'room': ({'model_usage': usage()}, True), '5-hour window': ({'model_usage': usage(short=65)}, False), 'just under': ({'model_usage': usage(short=64)}, True),
+                  'week cap': ({'model_usage': usage(week=90)}, False), "day's share": ({'model_usage': half}, False),
+                  'window full': ({'model_usage': usage(short=100)}, False), 'limit': ({'usage_limit': limit}, False),
+                  'fallback at the limit': ({'usage_limit': limit, 'model_usage': usage(short=100), 'fallback_covers': lambda: 'other/model'}, True),
+                  'fallback': ({'model_usage': usage(short=70), 'fallback_covers': lambda: 'other/model'}, True),
+                  'memory rebuild': ({'memory_rebuild_hold': lambda: memory}, False),
+                  'night': ({'night_hold': lambda db, current=None: dt.datetime.now(dt.timezone.utc)}, True),
+                  'nothing read': ({'model_usage': None}, True)}
+        for n, (name, (state, goes)) in enumerate(states.items()):
+            with self.subTest(name):
+                with self.store.connect() as db:
+                    db.execute("DELETE FROM decisions WHERE choice='prepare_ahead'")
+                    db.execute('DELETE FROM ahead_holds')
+                    db.execute("UPDATE preparation_runs SET finished_at='2026-11-24T00:00:00+00:00'")
+                self.done()
+                self.app.model_usage, self.app.usage_limit, self.app.pacing = usage(), None, None
+                self.behind()
+                waits = self.save(f'waits{n}')['id']
+                self.store.note_activity('opened', waits)
+                with patch.multiple(self.app, create=True, **state):
+                    self.app.ahead_behind_at = time.monotonic()
+                    self.assertEqual(self.app.ahead_hold_step(), [waits] if goes else [])
+                    if not goes:
+                        waits = self.store.suggest(f'queued{n}', 'Answer Bo', 'B', [2], separate=True, ahead=True)['id']
+                    self.app.preparation_step(lambda r: {'status': 'admitted'})
+                    self.assertEqual(self.q('SELECT status FROM preparations WHERE suggestion_id=?', waits), [('running' if goes else 'queued',)])
 
     def test_a_pause_holds_the_start_and_leaves_none_behind(self):
         sids = self.hold(1)

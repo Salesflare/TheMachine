@@ -209,8 +209,9 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   regular review asks for with a to-do is kept as a row in `ahead_holds` instead of starting. The to-do is saved and sent
   as any without a draft ahead, and takes its place in the day's prepared-ahead room. Caught up means one whole review's
   worth or less (a lower line than the one it starts at): then every row may start, newest first. A row starts anyway
-  after 6 hours (oldest first), and at once when its to-do turns pressing or is opened. One starts at a time, never while
-  the usage budget or a limit holds drafts ahead. A row whose to-do closed, was snoozed, merged, handed off or worked on
+  after 15 hours (three 5-hour windows, oldest first), and at once when its to-do turns pressing or is opened. The others
+  start one at a time, all only while nothing holds drafts ahead (the gate of `preparation_step`) and a run can start.
+  A row whose to-do looks done waits for the answer and takes no room meanwhile. A row whose to-do closed, was snoozed, merged, handed off or worked on
   is dropped. Never held: pressing to-dos, a new Machine's first look, first draft and first day, the owner's own to-dos,
   anything the owner asks for, and what the service makes itself (promises, follow-ups, birthdays, calendar clashes). The
   rows are the only state (`machine/store/ahead_hold.py`, `machine/app/ahead_hold.py`).

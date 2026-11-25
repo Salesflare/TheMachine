@@ -6,10 +6,12 @@ review would have started it (App.ahead_hold_step). No other state: a restart ca
 - Behind: review_catch_up's own definition, more than two whole reviews' worth. Once a draft waits, the Machine counts
   as behind until what waits fits EASE_RUNS review, so a backlog around the line doesn't hold and let go by turns.
 - Ends, whichever comes first: the to-do turns pressing or its moment comes near, the owner opens it, the Machine is
-  caught up (every row is let go then, and a newer backlog doesn't take that back), or HOLD_HOURS passed. A draft the
-  owner uses is mostly used within hours of its to-do, and a to-do that closes without it mostly closes as soon: past
-  HOLD_HOURS a longer hold saves little and only makes the rest later. So a Machine that is always behind still gets
-  every draft, and a pause of the reviews leaves none behind.
+  caught up (every row is let go then, and a newer backlog doesn't take that back), or HOLD_HOURS passed. So a Machine
+  that is always behind still gets every draft, later, and a pause of the reviews leaves none behind.
+- HOLD_HOURS: three 5-hour windows, what reading a backlog of about 1,000 signals takes on a small plan. Shorter, the
+  drafts start again in the middle of the catch-up they wait for. Most drafts that go unused belong to to-dos closed
+  within a few hours, so a longer wait avoids few more; what it costs is that more of the used ones aren't ready yet
+  when the owner gets to them (opened or Do it: made then).
 - Dropped, never made: its to-do was closed (for good: not while Undo still brings it back), snoozed, merged or handed
   off, or is worked on already (Do it, a chat, a coding agent).
 - One that ever had a run is never held (may_wait)."""
@@ -18,9 +20,10 @@ import datetime as dt
 from machine import todo_states
 from machine.night_pause import NEW_INSTALL_HOURS
 
-HOLD_HOURS = 6       # at most this long, about one 5-hour window of an AI plan
+HOLD_HOURS = 15      # at most this long: three 5-hour windows of an AI plan
 EASE_RUNS = 1        # once drafts wait: caught up when what waits fits this many whole reviews
 SOON_DAYS = 2        # a to-do that closes by itself within this many days doesn't wait (as PRESSING_DAYS for a due date)
+TURN_MINUTES = 60    # a draft ahead queued or under way longer than this no longer holds the next one back
 DECISION = 'ahead-held:'  # its prepare_ahead decision's id: its result comes quietly (quiet), its to-do was sent already
 
 
@@ -28,14 +31,24 @@ def ensure(db):
     db.execute('CREATE TABLE IF NOT EXISTS ahead_holds(suggestion_id TEXT PRIMARY KEY,created_at TEXT NOT NULL,released_at TEXT)')
 
 
+# The rows that can start: those of a to-do that looks done (handled_hint) wait for the owner's answer, and one closed
+# with Undo still open for that. Neither takes room in the day nor counts as waiting for the Machine to catch up.
+WAITING = ("FROM ahead_holds h JOIN suggestions s ON s.id=h.suggestion_id "
+           f"WHERE s.status IN {todo_states.sql((todo_states.PENDING,))} AND s.handled_hint IS NULL")
+
+
+def empty(db):
+    return not db.execute('SELECT 1 FROM ahead_holds LIMIT 1').fetchone()
+
+
 def kept(db):
     """How many drafts wait: each took its place in the day's prepared-ahead room when its to-do was saved."""
-    return db.execute('SELECT count(*) FROM ahead_holds').fetchone()[0]
+    return db.execute('SELECT count(*) ' + WAITING).fetchone()[0]
 
 
 def under_way(db):
     """Whether drafts wait for the Machine to catch up (none let go yet): the lower line counts then."""
-    return bool(db.execute('SELECT 1 FROM ahead_holds WHERE released_at IS NULL LIMIT 1').fetchone())
+    return bool(db.execute('SELECT 1 ' + WAITING + ' AND h.released_at IS NULL LIMIT 1').fetchone())
 
 
 def may_wait(db, suggestion_id):
@@ -112,8 +125,7 @@ def ready(db, current, pressing):
     first, caught_up, waited = [], [], []
     longest = (current - dt.timedelta(hours=HOLD_HOURS)).isoformat()
     opens = _table(db, 'activity_seen')
-    for r in db.execute('SELECT h.*,s.urgent,s.due,s.expires_at FROM ahead_holds h JOIN suggestions s ON s.id=h.suggestion_id '
-                        f"WHERE s.status IN {todo_states.sql((todo_states.PENDING,))} AND s.handled_hint IS NULL ORDER BY h.created_at,h.rowid").fetchall():
+    for r in db.execute('SELECT h.*,s.urgent,s.due,s.expires_at ' + WAITING + ' ORDER BY h.created_at,h.rowid').fetchall():
         sid = r['suggestion_id']
         if pressing(r['urgent'], r['due']) or r['expires_at'] and soon(r['expires_at'], current):
             first.append((sid, 'pressing'))
@@ -126,11 +138,17 @@ def ready(db, current, pressing):
     return first + caught_up[::-1] + waited
 
 
-def one_going(db):
-    """A draft ahead is already starting or under way: the next one waits its turn (automated follow-ups go apart)."""
-    return bool(db.execute("SELECT 1 FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE s.early=1 "
-                           f"AND s.status IN {todo_states.sql(todo_states.PREPARING)} AND p.status IN ('queued','starting','running') "
-                           'AND s.id NOT IN (SELECT suggestion_id FROM follow_up_cards) LIMIT 1').fetchone())
+def slots(db, current, concurrency):
+    """(whether a run can start now, whether a draft ahead is starting or under way): the next one waits its turn, so a
+    draft never only shows as waiting. One queued for over TURN_MINUTES (its own old run won't stop, it tries again
+    later) holds back no other, nor does an automated follow-up, which goes after them."""
+    recent = (current - dt.timedelta(minutes=TURN_MINUTES)).isoformat()
+    runs = db.execute('SELECT p.status,p.created_at,s.early,s.id IN (SELECT suggestion_id FROM follow_up_cards) follow_up '
+                      'FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id '
+                      f"WHERE p.status IN ('starting','running') OR p.status='queued' AND s.status IN {todo_states.sql(todo_states.PREPARING)} "
+                      'AND p.created_at>? AND (p.retry_at IS NULL OR p.retry_at<=?)', (recent, current.isoformat())).fetchall()
+    return (sum(r['status'] != 'queued' or not r['follow_up'] for r in runs) < concurrency,
+            any(r['early'] and not r['follow_up'] and r['created_at'] > recent for r in runs))
 
 
 def quiet(db, row):

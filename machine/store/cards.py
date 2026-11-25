@@ -846,15 +846,16 @@ class CardsStore:
                 started += 1
         return started
 
-    def start_ahead(self, db, sid, decision_id):
-        """A to-do still waiting on the owner gets its draft ahead now: the decision, its state, the run's place and the
-        message already sent about it."""
+    def start_ahead(self, db, sid, decision_id, told=False):
+        """A to-do still waiting on the owner gets its draft ahead now: the decision, its state and the run's place. told:
+        the message already sent about it is edited to match."""
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                    (decision_id, sid, 'prepare_ahead', '', 'assistant', now()))
         db.execute('UPDATE suggestions SET early=1 WHERE id=?', (sid,))
         todo_moves.transition(db, sid, todo_states.ACCEPTED, 'prepare_ahead')
         self.queue_preparation(db, sid, decision_id)
-        db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (sid,))
+        if told:
+            db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (sid,))
 
     def based_on_check(self, db, event_id):
         """Refuses a based_on that isn't a live message from someone else, before anything is saved."""
