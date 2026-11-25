@@ -7,8 +7,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import calendar_busy
 import calendar_clashes
 import locale_prefs
+from machine import todo_states
 import timeutil
 from seams import patch_everywhere  # noqa: E402
 import graph
@@ -174,6 +176,229 @@ class Clashes(unittest.TestCase):
         self.assertEqual(len(self.raise_now()), calendar_clashes.PER_DAY)
         self.assertEqual(self.raise_now(), [])
         self.assertEqual(len(self.raise_now('2026-11-10T08:30:00+00:00')), 2)  # the next day, the rest
+
+    # One event that overlaps several is one to-do
+
+    def clash(self, card):
+        view = [dict(card)]
+        with self.store.connect() as db:
+            calendar_clashes.annotate(db, view)
+        found = view[0].get('clash')
+        return [c['title'] for c in [found, *found.get('more', [])]] if found else []
+
+    def open_cards(self):
+        return [c for c in self.cards() if c['status'] in todo_states.OPEN]
+
+    def outing(self, **meta):
+        """A personal event with others on it, 08:30-11:50."""
+        return event('pcal', 'outing', 'Outing', '08:30', '11:50', updated='2026-11-05T00:00:00Z',
+                     attendees=[{'email': 'kim@home.example', 'responseStatus': 'accepted'}], **meta)
+
+    def office(self, day='2026-11-10', **meta):
+        return event('wcal', 'office_' + day, 'Desk', f'{day}T09:00:00+00:00', f'{day}T18:00:00+00:00', attendees=[], recurring_event_id='office', **meta)
+
+    def test_an_event_that_overlaps_several_is_one_to_do_about_it(self):
+        self.add(event('pcal', 'p1', 'School play', '09:00', '12:00'),
+                 event('wcal', 'w1', 'Board call', '08:30', '09:15', updated='2026-11-08T10:00:00Z'),
+                 event('wcal', 'w2', 'Planning', '10:00', '11:00', updated='2026-11-08T11:00:00Z'))
+        self.assertEqual(len(self.raise_now()), 1)
+        card = self.cards()[0]
+        self.assertEqual((card['title'], card['area']), ('Calendar clash: School play', 'personal'))
+        self.assertEqual(self.clash(card), ['Board call', 'Planning'])
+        self.assertNotIn('Planning', json.dumps(card))
+        self.assertEqual(self.raise_now('2026-11-09T09:00:00+00:00'), [])
+        self.assertEqual(len(self.cards()), 1)
+
+    def test_an_event_entering_the_window_is_judged_with_what_starts_after_its_end(self):
+        self.add(event('pcal', 'p1', 'School play', '09:00', '12:00'),
+                 event('wcal', 'w1', 'Board call', '09:00', '09:30'), event('wcal', 'w2', 'Planning', '10:00', '11:00'))
+        self.assertEqual(self.raise_now('2026-10-27T08:59:00+00:00'), [])  # nothing in it yet
+        made = self.raise_now('2026-10-27T09:15:00+00:00')  # 14 days before: the play and the first are in, the second not yet
+        self.assertEqual(len(made), 1)
+        self.assertEqual((self.cards()[0]['title'], self.clash(self.cards()[0])), ('Calendar clash: School play', ['Board call', 'Planning']))
+        self.assertEqual(self.raise_now('2026-10-27T10:30:00+00:00'), [])
+
+    def test_the_same_overlap_is_not_two_to_dos_half_an_hour_apart(self):
+        """The whole case: a personal event on three calendars over an office day and the stand-up in it."""
+        self.add(self.outing(ical_uid='outing@example'), {**self.outing(ical_uid='outing@example'), 'account_id': 'pcal2'},
+                 self.office(), event('wcal', 'standup', 'Stand up', '09:30', '09:45', recurring_event_id='standup'))
+        for minute in ('08:40', '09:10', '09:40', '10:10'):
+            self.raise_now(f'2026-10-27T{minute}:00+00:00')
+        cards = self.cards()
+        self.assertEqual(len(cards), 1)
+        self.assertEqual(self.clash(cards[0]), ['Stand up'])
+        self.assertEqual(cards[0]['body'], 'Overlaps a work meeting at 9:30 AM. Move it or decline?')
+
+    def test_two_copies_without_a_uid_are_one_event(self):
+        self.add(event('wcal', 'w1', 'Planning', '13:00', '14:00'), event('pcal', 'p1', 'Family lunch', '13:00', '14:30'),
+                 event('pcal2', 'p1', 'Family lunch', '13:00', '14:30'))
+        self.assertEqual(len(self.raise_now()), 1)
+        self.assertEqual(len(self.clash(self.cards()[0])), 1)
+
+    # A block that only frames the day
+
+    def test_a_block_that_holds_meetings_is_no_clash_by_itself(self):
+        self.add(self.outing(), self.office(), event('wcal', 'w1', 'Review', '15:00', '16:00'))
+        self.assertEqual(self.raise_now(), [])
+
+    def test_an_office_day_without_a_meeting_is_one_by_its_other_days(self):
+        self.add(self.outing(), self.office())
+        self.assertEqual(len(self.found()), 1)  # no way to know yet
+        for day in ('2026-11-12', '2026-11-17'):
+            self.add(self.office(day), event('wcal', 'w' + day, 'Review', f'{day}T10:00:00+00:00', f'{day}T11:00:00+00:00'))
+        self.assertEqual(self.found(), [])
+
+    def test_a_commitment_alone_still_clashes(self):
+        self.add(event('pcal', 'p1', 'Dentist', '10:00', '11:00'), event('wcal', 'w1', 'Review', '10:30', '11:30'))
+        self.assertEqual(len(self.found()), 1)
+
+    def test_a_work_block_that_is_no_frame_still_clashes_with_an_event_with_others(self):
+        hidden = {'attendees': [{'email': 'robin@acme.example', 'self': True, 'responseStatus': 'accepted'}], 'organizer': {'email': 'sam@acme.example'}}
+        for title, end, meta, inside in (('Train', '18:00', {}, False),  # nothing in it: a commitment of its own
+                                         ('Training day', '18:00', hidden, True),  # an invite whose other guests don't show
+                                         ('Trip', '2026-11-13T18:00:00+00:00', {}, True)):  # days long
+            with self.subTest(title):
+                self.setUp()
+                self.add(self.outing(), event('wcal', 'w2', title, '08:00', end, **{'attendees': [], **meta}))
+                if inside:
+                    self.add(event('wcal', 'w1', 'Review', '13:00', '14:00'))
+                self.assertEqual([{g['about']['title'], *(o['title'] for o in g['others'])} for g in self.found()], [{title, 'Outing'}])
+
+    def test_working_location_focus_time_and_out_of_office_never_clash(self):
+        raw = {'id': 'x', 'summary': 'Block', 'start': {'dateTime': '2026-11-10T09:00:00Z'}, 'end': {'dateTime': '2026-11-10T12:00:00Z'}}
+        self.add(self.outing())
+        for kind in ('workingLocation', 'focusTime', 'outOfOffice', 'default'):
+            kept = machine_sources_calendar.calendar_event(ACCOUNTS[0], {**raw, 'eventType': kind}, 'UTC')
+            self.assertEqual(kept['metadata'].get('event_type'), None if kind == 'default' else kind)
+            self.assertEqual(calendar_busy.blocks(kept['metadata']), kind != 'workingLocation')
+            self.add(kept)
+            self.assertEqual(len(self.found()), int(kind == 'default'), kind)
+
+    def test_the_kind_google_says_is_kept_beside_without_a_new_version(self):
+        raw = {'id': 'x', 'summary': 'Block', 'start': {'dateTime': '2026-11-10T09:00:00Z'}, 'end': {'dateTime': '2026-11-10T12:00:00Z'}}
+        self.add(machine_sources_calendar.calendar_event(ACCOUNTS[0], raw, 'UTC'))
+        self.add(machine_sources_calendar.calendar_event(ACCOUNTS[0], {**raw, 'eventType': 'focusTime'}, 'UTC'))
+        with self.store.connect() as db:
+            row = db.execute("SELECT version,metadata FROM events WHERE source_id='x'").fetchone()
+        self.assertEqual((row['version'], json.loads(row['metadata'])['event_type']), (1, 'focusTime'))
+
+    # What it says
+
+    def test_it_says_when_the_overlap_begins_and_calls_a_meeting_only_a_meeting(self):
+        self.add(self.outing(), event('wcal', 'w1', 'Train', '10:00', '13:00', attendees=[]))
+        self.raise_now()
+        self.assertEqual(self.cards()[0]['body'], 'Overlaps your work calendar at 10:00 AM. Move it or decline?')
+
+    # Later overlaps
+
+    def meeting(self, source='w1', start='10:00', end='11:00', **meta):
+        return event('wcal', source, 'Meeting ' + source, start, end, **meta)
+
+    def test_a_later_overlap_joins_the_open_to_do(self):
+        self.add(self.outing(), self.meeting())
+        self.raise_now()
+        self.add(self.meeting('w2', '11:00', '12:00', updated='2026-11-09T09:00:00Z', created='2026-11-09T09:00:00Z'))
+        self.assertEqual(self.raise_now('2026-11-09T10:00:00+00:00'), [])
+        self.assertEqual(len(self.cards()), 1)
+        self.assertEqual(self.clash(self.cards()[0]), ['Meeting w1', 'Meeting w2'])
+        with self.store.connect() as db:
+            self.assertEqual(calendar_clashes.raised_today(db, '2026-11-09T09:30:00+00:00'), 0)  # no new to-do
+
+    def test_a_to_do_about_the_other_event_gives_way_to_one_about_the_shared_event(self):
+        for touched in (False, True):
+            with self.subTest(touched=touched):
+                self.setUp()
+                self.add(self.outing(), self.meeting(updated='2026-11-08T00:00:00Z'))
+                first = self.raise_now()[0]
+                self.assertEqual(self.cards()[0]['title'], 'Calendar clash: Meeting w1')
+                if touched:
+                    with self.store.connect() as db:
+                        db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d',?,'other','Ask for Friday','dashboard',?)", (first, NOW))
+                self.add(self.meeting('w2', '11:00', '12:00', updated='2026-11-09T09:00:00Z'))
+                made = self.raise_now('2026-11-09T10:00:00+00:00')
+                self.assertEqual(len(made), 1)
+                cards = {c['id']: c for c in self.cards()}
+                if touched:  # theirs: it stays, and the new one is about what came in
+                    self.assertEqual((cards[first]['status'], cards[made[0]]['title']), ('pending', 'Calendar clash: Meeting w2'))
+                    continue
+                self.assertEqual((cards[first]['status'], bool(cards[first]['expired_at'])), ('completed', True))
+                self.assertEqual(cards[made[0]]['title'], 'Calendar clash: Outing')
+                self.assertEqual(self.clash(cards[made[0]]), ['Meeting w1', 'Meeting w2'])
+                self.assertEqual(self.raise_now('2026-11-09T11:00:00+00:00'), [])
+
+    def test_after_a_closed_to_do_only_a_really_new_overlap_comes_up(self):
+        for status, choice in (('completed', 'complete'), ('rejected', 'reject')):
+            with self.subTest(status=status):
+                self.setUp()
+                self.add(self.outing(), self.meeting())
+                first = self.raise_now()[0]
+                with self.store.connect() as db:
+                    db.execute('UPDATE suggestions SET status=? WHERE id=?', (status, first))
+                self.add(self.meeting('w2', '11:00', '12:00', recurring_event_id='weekly'))  # made long before
+                self.assertEqual(self.raise_now('2026-11-09T10:00:00+00:00'), [])
+                self.add(self.meeting('w2', '11:15', '12:00', recurring_event_id='weekly', updated='2026-11-09T10:30:00Z'))
+                self.assertEqual(self.raise_now('2026-11-09T11:00:00+00:00'), [])  # told once
+                self.add(self.meeting('w3', '11:00', '12:00', created='2026-11-09T11:30:00Z', updated='2026-11-09T11:30:00Z'))
+                made = self.raise_now('2026-11-09T12:00:00+00:00')
+                self.assertEqual([c['title'] for c in self.cards() if c['id'] in made], ['Calendar clash: Meeting w3'])
+
+    def test_another_occurrence_of_a_dismissed_one_still_clashes_with_something_else(self):
+        self.add(self.outing(), self.meeting('s_10', recurring_event_id='standup'))
+        self.raise_now()
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='rejected'")
+        self.add(event('wcal', 's_17', 'Meeting s', '2026-11-17T10:00:00+00:00', '2026-11-17T11:00:00+00:00', recurring_event_id='standup'),
+                 event('pcal', 'p9', 'Vet', '2026-11-17T10:00:00+00:00', '2026-11-17T12:00:00+00:00'))
+        self.assertEqual(len(self.raise_now('2026-11-09T09:00:00+00:00')), 1)
+
+    # To-dos from before: two about the same overlap
+
+    def legacy(self, *pairs):
+        """To-dos as they were raised before, one per pair: [(about, its side, other)] by source id."""
+        with self.store.connect() as db:
+            calendar_clashes.ensure(db)
+            ids = {r['source_id']: r['id'] for r in db.execute("SELECT id,source_id FROM events WHERE account_id!='pcal2'")}
+        made = []
+        for about, side, other in pairs:
+            with patch_everywhere(timeutil, 'now', lambda: NOW):
+                with self.store.connect() as db:
+                    rows = {r['id']: r for r in db.execute('SELECT * FROM events')}
+                    key = calendar_clashes.clash_key(*({**dict(rows[ids[s]]), 'meta': json.loads(rows[ids[s]]['metadata'])} for s in (about, other)))
+                    saved = self.store.suggest(key, 'Calendar clash: ' + about, 'Overlaps.', [ids[about]], _db=db)
+                    db.execute('INSERT INTO calendar_clashes VALUES(?,?,?,?,?,?,?)', (key, saved['id'], ids[about], ids[other], side, NOW, NOW))
+                    made.append(saved['id'])
+        return made
+
+    def test_the_redundant_one_of_two_open_to_dos_closes_by_itself(self):
+        self.add(self.outing(), self.office(), event('wcal', 'standup', 'Stand up', '09:30', '09:45', recurring_event_id='standup'))
+        frame, real = self.legacy(('outing', 'personal', 'office_2026-11-10'), ('standup', 'work', 'outing'))
+        self.assertEqual(self.raise_now('2026-11-09T09:00:00+00:00'), [])
+        cards = {c['id']: c for c in self.cards()}
+        self.assertEqual((cards[frame]['status'], cards[real]['status']), ('completed', 'pending'))
+        self.assertEqual((bool(cards[frame]['expired_at']), cards[frame]['expires_at']), (True, None))  # Not needed, not theirs
+        self.assertTrue(cards[frame]['undo_until'])
+        self.assertEqual(self.clash(cards[real]), ['Outing'])
+        with patch_everywhere(timeutil, 'now', lambda: '2026-11-09T09:10:00+00:00'):
+            self.store.decide(frame, 'undo', '', 'undo1', 'dashboard')  # theirs now: it stays
+        self.raise_now('2026-11-09T09:30:00+00:00')
+        self.assertEqual([c['id'] for c in self.open_cards()], [frame])  # theirs is about the event both share
+        self.assertEqual(self.clash(self.open_cards()[0]), ['Desk', 'Stand up'])
+
+    def test_two_open_ones_about_the_same_real_overlap_become_one(self):
+        self.add(self.outing(), self.meeting('w1', '09:00', '09:30'), self.meeting('w2'))
+        one, two = self.legacy(('outing', 'personal', 'w1'), ('w2', 'work', 'outing'))
+        self.raise_now('2026-11-09T09:00:00+00:00')
+        self.assertEqual([c['id'] for c in self.open_cards()], [one])
+        self.assertEqual(self.clash(self.open_cards()[0]), ['Meeting w1', 'Meeting w2'])
+
+    def test_one_the_owner_acted_on_is_never_closed(self):
+        self.add(self.outing(), self.office(), self.meeting('standup', '09:30', '09:45'))
+        frame, real = self.legacy(('outing', 'personal', 'office_2026-11-10'), ('standup', 'work', 'outing'))
+        with self.store.connect() as db:
+            for n, sid in enumerate((frame, real)):
+                db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,'other','Later this week','dashboard',?)", (f'd{n}', sid, NOW))
+        self.assertEqual(self.raise_now('2026-11-09T09:00:00+00:00'), [])
+        self.assertEqual({c['id'] for c in self.open_cards()}, {frame, real})
 
     def test_a_free_event_from_google_or_outlook_is_kept_as_free(self):
         raw = {'id': 'x', 'summary': 'Focus', 'start': {'dateTime': '2026-11-10T10:00:00Z'}, 'end': {'dateTime': '2026-11-10T11:00:00Z'},

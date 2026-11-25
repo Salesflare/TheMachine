@@ -31,8 +31,11 @@ def moment(value):
 
 
 def blocks(metadata):
-    """Whether an event takes its time: Busy in its calendar. A timed event does unless it is marked Free; an all-day
-    one only when its calendar says Busy ('opaque'), since birthdays, holidays and the like are Free by default."""
+    """Whether an event takes its time: Busy in its calendar. A timed event does unless it is marked Free or only says
+    where they work from (Google's working location); an all-day one only when its calendar says Busy ('opaque'), since
+    birthdays, holidays and the like are Free by default."""
+    if metadata.get('event_type') == 'workingLocation':
+        return False
     shown = metadata.get('transparency')
     return shown == 'opaque' if metadata.get('all_day') else shown != 'transparent'
 

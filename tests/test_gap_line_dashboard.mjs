@@ -7,6 +7,7 @@ const {chromium}=await import('./browser.mjs');
 // What we don't know (gap_note.py): a to-do about someone shows one quiet line when the last word with them is old or
 // was the owner's own with no reply, and the channels they may have answered on that aren't synced. The service sends
 // `gap` only when it helps; a to-do without it, a snoozed or done one, or one waiting on a handoff shows no line.
+// A calendar clash (calendar_clashes.py) shows the other side in the same lines: two, then how many more.
 // Also in Dutch. SHOTS=<folder> saves screenshots at 1440x900 and 390x844.
 const dashboard=await dashboardPage();
 const cats={};for(const l of ['en','nl'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
@@ -19,6 +20,11 @@ const cards=[
  {id:'g3',title:'Answer Noor about the invoice',body:'Noor asked for a copy.',status:'pending',scope:'work',created_at:now,event_ids:[3],people:[{id:'email:noor@x.example',name:'Noor'}]},
  {id:'g4',title:'Check in with Jo',body:'Jo is back next week.',status:'snoozed',snoozed_until:new Date(Date.now()+864e5).toISOString(),scope:'work',created_at:now,event_ids:[4],
   gap:{name:'Jo',days:30,channel:'Slack',wrote_last:false,unsynced:[]}},
+ {id:'c1',title:'Calendar clash: Outing',body:'Overlaps a work meeting at 9:30 AM. Move it or decline?',status:'pending',scope:'personal',created_at:now,event_ids:[6],
+  clash:{title:'Stand up',start:'2026-11-10T09:30:00+00:00',end:'2026-11-10T09:45:00+00:00',side:'work'}},
+ {id:'c2',title:'Calendar clash: School play',body:'Overlaps a work meeting at 9:30 AM. Move it or decline?',status:'pending',scope:'personal',created_at:now,event_ids:[7],
+  clash:{title:'Stand up',start:'2026-11-10T09:30:00+00:00',end:'2026-11-10T09:45:00+00:00',side:'work',
+   more:['Planning','Review','Call'].map((title,i)=>({title,start:`2026-11-10T1${i}:00:00+00:00`,end:`2026-11-10T1${i}:30:00+00:00`,side:'work'}))}},
  {id:'g5',title:'Thank Sam for the intro',body:'Sent.',status:'completed',scope:'work',created_at:now,event_ids:[5],gap:{name:'Sam',days:20,channel:'email',wrote_last:false,unsynced:[]}}];
 let language='en';const asked=[];
 const server=createServer((req,res)=>{
@@ -55,6 +61,9 @@ try{
   const fits=await page.locator('#task-g2 .gap-line').evaluate(n=>n.scrollWidth<=n.clientWidth+1&&n.getBoundingClientRect().right<=n.closest('.card').getBoundingClientRect().right+1);
   assert.ok(fits,'the line wraps inside the to-do at '+width);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no sideways scroll at '+width);
+  assert.deepEqual(await line(page,'c1'),['Clashes with Stand up (09:30–09:45)']);
+  assert.deepEqual(await line(page,'c2'),['Clashes with Stand up (09:30–09:45)','Clashes with Planning (10:00–10:30)','+2 more']);
+  if(shots)await page.locator('#task-c2').screenshot({path:`${shots}/clash-line-${width}x${height}.png`});
   if(shots)await page.locator('#task-g2').screenshot({path:`${shots}/gap-line-${width}x${height}.png`});
   if(shots)await page.screenshot({path:`${shots}/gap-page-${width}x${height}.png`});
   await context.close();

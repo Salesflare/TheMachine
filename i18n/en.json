@@ -3467,6 +3467,7 @@
   "other": "Nosing through {} new messages…"
  },
  "Not a Work Fleet of yours": "Not a Work Fleet of yours",
+ "Not a clash after all": "Not a clash after all",
  "Not a file of this job": "Not a file of this job",
  "Not a kind The Machine keeps": "Not a kind The Machine keeps",
  "Not a list": "Not a list",
@@ -4143,6 +4144,7 @@
  "Overdue for {}: {}, due {}": "Overdue for {}: {}, due {}",
  "Overlaps a work meeting at {}. Move it or decline?": "Overlaps a work meeting at {}. Move it or decline?",
  "Overlaps your personal calendar at {}. Move it or decline?": "Overlaps your personal calendar at {}. Move it or decline?",
+ "Overlaps your work calendar at {}. Move it or decline?": "Overlaps your work calendar at {}. Move it or decline?",
  "Overnight": "Overnight",
  "Overslept a little. Last look at {}.": "Overslept a little. Last look at {}.",
  "Owner": "Owner",
@@ -6265,6 +6267,7 @@
  "The runtime reported a failure; its original explanation was not retained.": "The runtime reported a failure; its original explanation was not retained.",
  "The runtime reported an error.": "The runtime reported an error.",
  "The same as another promise": "The same as another promise",
+ "The same clash is on another to-do": "The same clash is on another to-do",
  "The saved diff is no longer available": "The saved diff is no longer available",
  "The screen is not reachable": "The screen is not reachable",
  "The screenshot": "The screenshot",
