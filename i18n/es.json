@@ -3467,6 +3467,7 @@
   "other": "Husmeando {} mensajes nuevos…"
  },
  "Not a Work Fleet of yours": "No es uno de tus Fleets de Trabajo",
+ "Not a clash after all": "Al final no hay conflicto",
  "Not a file of this job": "No es un archivo de este trabajo",
  "Not a kind The Machine keeps": "No es un tipo que The Machine conserve",
  "Not a list": "No es una lista",
@@ -4143,6 +4144,7 @@
  "Overdue for {}: {}, due {}": "Atrasado para {}: {}, vence el {}",
  "Overlaps a work meeting at {}. Move it or decline?": "Se solapa con una reunión de trabajo a las {}. ¿Moverlo o rechazarlo?",
  "Overlaps your personal calendar at {}. Move it or decline?": "Se solapa con tu calendario personal a las {}. ¿Moverlo o rechazarlo?",
+ "Overlaps your work calendar at {}. Move it or decline?": "Se solapa con tu calendario de trabajo a las {}. ¿Lo mueves o lo rechazas?",
  "Overnight": "Durante la noche",
  "Overslept a little. Last look at {}.": "Se me pegaron las sábanas. Última mirada a las {}.",
  "Owner": "Propietario",
@@ -6265,6 +6267,7 @@
  "The runtime reported a failure; its original explanation was not retained.": "El entorno de ejecución informó de un fallo; no se conservó su explicación original.",
  "The runtime reported an error.": "El entorno de ejecución informó de un error.",
  "The same as another promise": "Igual que otra promesa",
+ "The same clash is on another to-do": "El mismo conflicto aparece en otra tarea",
  "The saved diff is no longer available": "El diff guardado ya no está disponible",
  "The screen is not reachable": "No se puede acceder a la pantalla",
  "The screenshot": "La captura de pantalla",
