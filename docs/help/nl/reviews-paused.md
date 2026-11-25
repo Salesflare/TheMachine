@@ -29,7 +29,7 @@ Terwijl checks wachten, staat bovenaan het dashboard tot wanneer, bijvoorbeeld: 
 
 Er gaat niets verloren: wat er is binnengekomen, wordt gecontroleerd zodra dat kan. Na lang wachten krijgen recente berichten van mensen voorrang, en een deel van elke check werkt de oudste berichten af.
 
-Tot alles is bijgewerkt, komen nieuwe to-do's binnen zonder concept, zodat je AI-budget eerst naar je berichten gaat. De concepten volgen later en urgente berichten wachten niet. Druk op **Doe het** om er nu een te krijgen.
+Tot alles is ingehaald, komen nieuwe to-do's binnen zonder concept, zodat je AI-abonnement eerst naar je berichten gaat. De concepten volgen later en urgente to-do's wachten niet. Druk op **Doe het** om er nu een te krijgen.
 
 ## 's Nachts
 

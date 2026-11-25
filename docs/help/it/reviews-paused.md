@@ -29,7 +29,7 @@ Mentre i controlli sono in attesa, in cima alla dashboard compare fino a quando,
 
 Non perdi nulla: i messaggi arrivati vengono controllati appena possibile. Dopo una lunga attesa, vengono prima i messaggi recenti delle persone, mentre ogni controllo ne esamina anche alcuni tra i più vecchi.
 
-Finché non si sono messi in pari, le nuove attività arrivano senza una bozza, così il tuo piano viene usato prima per controllare i messaggi. Le bozze arrivano in seguito, ma quelle urgenti non aspettano. Premi **Fallo** per averne una subito.
+Finché i controlli non hanno recuperato il ritardo, le nuove attività arrivano senza una bozza, così il tuo piano viene usato prima per controllare i messaggi. Le bozze arrivano in seguito; le attività urgenti non aspettano. Premi **Fallo** per averne una subito.
 
 ## Di notte
 
