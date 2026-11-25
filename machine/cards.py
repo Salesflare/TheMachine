@@ -356,6 +356,13 @@ def source_line_shown(line, names=None):
     return (prefix or '') + head + (f' · {when}' if when else '') + (more or '')
 
 
+def source_kind_shown(line):
+    """A source line as the dashboard and Telegram write its kind: an Android notification's says "phone notification
+    from WhatsApp", as "phone from WhatsApp" reads like a call. Stored lines, what a model reads and the kind's own name
+    (machine/kinds.py) keep "phone"."""
+    return re.sub(r'^((?:Source: )?phone)(?= (?:from|to|·|\(\+)|$)', r'\1 notification', str(line)) if line else line
+
+
 # A blocker that waits on the owner (a sign-in in the kept tab) resumes with Continue, not Try again.
 HANDOFF = re.compile(r"(?i)\b(?:sign(?:ed)?[ -]?in|log(?:ged)?[ -]?in|signed out|2fa|two-factor|authenticator|passkey|tap continue)\b")
 
@@ -493,7 +500,7 @@ def card(row):
             due = t('Due {}', locale_prefs.day_text(dt.date.fromisoformat(row['due'])))
         except ValueError:
             pass
-    source = ' · '.join(x for x in (due, source_line_shown(row.get('source_line')), tag) if x)
+    source = ' · '.join(x for x in (due, source_kind_shown(source_line_shown(row.get('source_line'))), tag) if x)
     source = ('\n\n' + source) if source else ''
     body = row.get('step_stopped') or row['body']  # a confirmed step that didn't go through: never the earlier "ready" text
     return ('**' + title + '**\n\n' + body + source + ('\n\n' + status if status else '')).strip()

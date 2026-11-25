@@ -890,6 +890,14 @@ class Api(unittest.TestCase):
         self.assertEqual(tool('calendar', day=(today + dt.timedelta(days=1)).date().isoformat())['meetings'], [])
         self.assertEqual(tool('calendar', day=(today - dt.timedelta(days=1)).date().isoformat(), days=3)['count'], 1)
         self.assertIn('error', tool('calendar', day='tomorrow'))
+        self.store.commit_page('cal', {}, [{'account_id': 'cal', 'source_id': 'note', 'kind': 'android.notification', 'occurred_at': today.isoformat(),
+                                            'title': 'Rain expected', 'body': 'From 16:00', 'deleted': False,
+                                            'metadata': {'package_name': 'com.acme.weather', 'app_name': 'Weather'}}])
+        with self.store.connect() as db:
+            note = db.execute("SELECT id FROM events WHERE source_id='note'").fetchone()[0]
+        record = tool('open_record', id='event:%d' % note)
+        self.assertTrue(record['what'].startswith('phone from Weather · '), record)  # the voice's words, as before
+        self.assertTrue(record['card']['line'].startswith('phone notification from Weather · '), record)  # the transcript's
         record = tool('open_record', id=meeting['id'])
         self.assertEqual((record['kind'], record['title'], record['with']), ('meeting', 'Pilot review with Dana', ['dana@client.example']))
         self.assertNotIn('Agenda', json.dumps(record))   # what the Calendar shows, not the invite's private notes
