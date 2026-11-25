@@ -4191,7 +4191,7 @@
  "Personal, sensitive and automated mail still never goes, and anyone can keep a thread private.": "개인 메일, 민감한 메일, 자동 발송 메일은 여전히 절대 공유되지 않으며, 누구나 메일 스레드를 비공개로 유지할 수 있어요.",
  "Phone": "전화",
  "Phone disconnected": "휴대폰 연결 끊김",
- "Phone notification": "휴대전화 알림",
+ "Phone notification": "휴대폰 알림",
  "Phone notifications": "휴대폰 알림",
  "Phone notifications are turned on in the dashboard app": "휴대폰 알림은 대시보드 앱에서 켜요",
  "Phone notifications unavailable": "휴대폰 알림을 사용할 수 없어요",
@@ -8497,7 +8497,7 @@
  },
  "{} to decide": "{}개 결정 필요",
  "{} to {}": "{}~{}",
- "{} to {} (a message)": "{}에서 {}로",
+ "{} to {} (a message)": "{}, 수신자: {}",
  "{} to-dos": {
   "other": "할 일 {}개"
  },

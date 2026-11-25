@@ -3661,7 +3661,7 @@
  "Notion didn’t answer": "Notionから応答がありませんでした",
  "Notion didn’t say who you are in that workspace": "Notionでこのワークスペースのユーザー情報を確認できませんでした",
  "Notion mention": "Notionのメンション",
- "Notion page changed": "Notionのページが変更されました",
+ "Notion page changed": "Notionページの変更",
  "Notion task": "Notionのタスク",
  "Notion token": "Notionトークン",
  "Nov": "11月",
@@ -8497,7 +8497,7 @@
  },
  "{} to decide": "{} 判断待ち",
  "{} to {}": "{}〜{}",
- "{} to {} (a message)": "{}から{}へ",
+ "{} to {} (a message)": "{}（{}宛）",
  "{} to-dos": {
   "other": "{}件のToDo"
  },

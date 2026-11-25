@@ -161,6 +161,27 @@ class Checks(unittest.TestCase):
         self.assertNotIn('Lancer votre Machine', nl)  # only its own language's row
         self.assertIn('开通你的Machine', T.instructions('zh-CN', ['Get it'], 'app strings', words))
 
+    def test_what_the_placeholders_hold_goes_with_the_key_in_any_language(self):
+        # "{} to {}" (the kind of message, who it went to) was once filled as "Von {} an {}": from its first one to its second
+        words, to, en = T.glossary(), '{} to {} (a message)', T.load('en')
+        self.assertEqual(sorted(words['means']), sorted(T.KIND_FIRST))
+        for key in words['means']:
+            self.assertIn(key, en)
+        sent = T.source(to, en[to], words['means'])
+        self.assertEqual(sent['english'], '{} to {}')
+        self.assertIn('kind of message', sent['meaning'])
+        payloads = []
+        T.translate_entries('sv', [to], en, words, lambda lang, how, payload, cache: payloads.append(payload) or {'t': {'0': '{} till {}'}})
+        self.assertIn(json.dumps(words['means'][to], ensure_ascii=False), payloads[0])  # a language no catalog has yet
+        for lang, wrong in (('de', 'Von {} an {}'), ('fr', 'De {} à {}'), ('ru', 'От {0} к {1}'), ('sv', 'Från {} till {}')):
+            self.assertTrue(T.string_problems(to, wrong, lang, words), wrong)
+        for lang, right in (('de', '{} an {}'), ('ja', '{}（{}宛）'), ('zh-CN', '发给{1}的{0}')):
+            self.assertEqual(T.string_problems(to, right, lang, words), [], right)
+        for lang in T.languages():
+            cat = T.load(lang)
+            for key in T.KIND_FIRST:
+                self.assertEqual(T.entry_problems(key, cat[key], lang, words, en[key]) if key in cat else [], [], lang)
+
     def test_an_answer_is_checked_like_the_catalog_test_does(self):
         words = T.glossary()
         self.assertEqual(T.string_problems('Open {}', 'Ouvrir {}', 'fr', words), [])

@@ -3161,7 +3161,7 @@
  "Never suggest {}": "绝不建议{}",
  "New": "新增",
  "New Google Docs in your Drive, with your Google sign-in.": "使用你的Google账号登录后，新建的Google Docs文档会保存在你的Drive中。",
- "New Notion page": "新建Notion页面",
+ "New Notion page": "新Notion页面",
  "New access token": "新访问令牌",
  "New and still changing.": "刚推出，仍在不断变化。",
  "New best: {}! Back to sleep now.": "新纪录：{}！现在继续休息了。",
@@ -3661,7 +3661,7 @@
  "Notion didn’t answer": "Notion无响应",
  "Notion didn’t say who you are in that workspace": "Notion未说明你在该工作区中的身份",
  "Notion mention": "Notion提及",
- "Notion page changed": "Notion页面已更改",
+ "Notion page changed": "Notion页面更改",
  "Notion task": "Notion任务",
  "Notion token": "Notion令牌",
  "Nov": "11月",
@@ -8497,7 +8497,7 @@
  },
  "{} to decide": "{}待决定",
  "{} to {}": "{}到{}",
- "{} to {} (a message)": "{}发给{}",
+ "{} to {} (a message)": "发给{1}的{0}",
  "{} to-dos": {
   "other": "{}项待办"
  },
