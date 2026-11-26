@@ -3,7 +3,8 @@ name: Desktop prototype
 # A Windows, a Mac and a Linux build of the desktop prototype (desktop/README.md), to try it: unsigned, kept 14 days as this run's
 # artifact, never a release. Each is then used on this computer's own desktop (desktop/smoke/), with its screenshots. Only
 # when desktop/ changes, or by hand. One job for each, standard runners, no secrets.
-# The prototype's own branch also gets a Mac build that is signed and notarized, so it opens on another Mac as it is.
+# The prototype's own branch also gets a Mac build that is signed and notarized, so it opens on another Mac as it is, and a
+# Windows installer signed with Azure Artifact Signing.
 on:
   pull_request:
     paths: ['desktop/**', '.github/workflows/desktop.yml']
@@ -11,6 +12,11 @@ on:
     branches: [desktop-bubble]
     paths: ['desktop/**', '.github/workflows/desktop.yml']
   workflow_dispatch:
+    inputs:
+      windows-only:
+        description: Only the Windows build and its signing, no Mac runner
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -86,7 +92,7 @@ jobs:
           retention-days: 14
 
   mac:
-    if: github.head_ref != 'desktop-bubble' # its push has it
+    if: github.head_ref != 'desktop-bubble' && !inputs.windows-only # its push has it
     runs-on: macos-26
     timeout-minutes: 80
     outputs:
@@ -310,13 +316,14 @@ jobs:
           retention-days: 14
 
   # The installer for people, signed by Azure Artifact Signing with what GitHub says this job is: no key or password is kept.
-  # Off until the environment has the variable ARTIFACT_SIGNING_PROFILE: till then it isn't signed, so for nobody yet
+  # Its own environment, windows-signing, holds only IDs (ARTIFACT_SIGNING_*), opens only on the prototype's branch and main,
+  # and Azure trusts only that environment of this repository, for signing with that one profile. Off without a profile.
   windows-sign:
     needs: windows
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     timeout-minutes: 20
-    environment: mac-signing
+    environment: windows-signing
     permissions:
       contents: read
       id-token: write
@@ -339,6 +346,8 @@ jobs:
         if: vars.ARTIFACT_SIGNING_PROFILE != ''
         env:
           PROFILE: ${{ vars.ARTIFACT_SIGNING_PROFILE }}
+          ACCOUNT: ${{ vars.ARTIFACT_SIGNING_ACCOUNT }}
+          ENDPOINT: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
           PACKAGE: 35375a4bc4e1102da729fc3d8d9925f774c3baae6b8b7ff6398d948ca9ab0d8a
         run: |
           set -euo pipefail
@@ -347,7 +356,7 @@ jobs:
           curl -sSfL -o "$at/client.zip" https://api.nuget.org/v3-flatcontainer/microsoft.artifactsigning.client/1.0.151/microsoft.artifactsigning.client.1.0.151.nupkg
           echo "$PACKAGE *$at/client.zip" | sha256sum -c -
           unzip -q "$at/client.zip" -d "$at/client"
-          jq -n --arg profile "$PROFILE" '{Endpoint: "https://weu.codesigning.azure.net/", CodeSigningAccountName: "themachine-signing", CertificateProfileName: $profile}' > "$at/metadata.json"
+          jq -n --arg profile "$PROFILE" --arg account "$ACCOUNT" --arg endpoint "$ENDPOINT" '{Endpoint: $endpoint, CodeSigningAccountName: $account, CertificateProfileName: $profile}' > "$at/metadata.json"
           echo "SIGN_DLIB=$(cygpath -w "$at/client/bin/x64/Azure.CodeSigning.Dlib.dll")" >> "$GITHUB_ENV"
           echo "SIGN_METADATA=$(cygpath -w "$at/metadata.json")" >> "$GITHUB_ENV"
       - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
@@ -369,7 +378,13 @@ jobs:
           mv target/release/bundle/nsis/*-setup.exe out/the-machine-desktop-setup.exe
           echo "sha=$(sha256sum out/the-machine-desktop-setup.exe | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           sha256sum out/*
-          if [ -n "${SIGN_DLIB:-}" ]; then powershell -NoProfile -Command "if ((Get-AuthenticodeSignature out/the-machine-desktop-setup.exe).Status -ne 'Valid') { exit 1 }"; fi
+      - name: Signed by Salesflare BV
+        if: vars.ARTIFACT_SIGNING_PROFILE != ''
+        run: | # the installer, and the program as it comes out of it
+          7z x -y -o"$RUNNER_TEMP/unpacked" out/the-machine-desktop-setup.exe > /dev/null
+          program=$(find "$RUNNER_TEMP/unpacked" -iname the-machine-desktop.exe | head -1)
+          [ -n "$program" ]
+          powershell -NoProfile -ExecutionPolicy Bypass -File windows/verify.ps1 out/the-machine-desktop-setup.exe "$(cygpath -w "$program")"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: the-machine-desktop-windows

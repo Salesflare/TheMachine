@@ -220,8 +220,11 @@ day, fetches it and waits: **Settings** has **Restart to update**. Elsewhere, wh
   Put them at that address. Nothing is there yet.
 
 Windows: `windows/installer.json` and `windows/hooks.nsh` make the installer, `windows/sign.ps1` signs the program, the
-installer and the uninstaller with Azure Artifact Signing once the environment has a profile for it (`ARTIFACT_SIGNING_PROFILE`).
-GitHub's own word of which job asks opens it: no key or password is kept.
+installer and the uninstaller with Azure Artifact Signing, and `windows/verify.ps1` checks the installer and the program in it are
+signed by Salesflare BV with a timestamp. The `windows-signing` environment, open only to this branch and main, holds IDs only
+(`ARTIFACT_SIGNING_CLIENT_ID`, `_TENANT_ID`, `_SUBSCRIPTION_ID`, `_ENDPOINT`, `_ACCOUNT`, `_PROFILE`); without a profile
+nothing is signed. GitHub's own word that the job runs in that environment opens it: no key or password is kept, and Azure
+lets it sign with that one profile and do nothing else. A run by hand can skip the Mac with **windows-only**.
 
 ## When it hangs
 
