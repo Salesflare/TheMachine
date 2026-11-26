@@ -18,7 +18,9 @@ from mac_tools import FOLDER_ID, ID, LIBRARY, PORT, STORE, App, click, finish, f
 from standin import Machine
 
 FOLDER = LIBRARY / 'Application Support' / FOLDER_ID
-CHAIN, WORD = str(out.parent / 'made-up.keychain-db'), 'made-up'
+# Where a person's keychains are: the App Sandbox lets the Mac App Store's build use only those. One elsewhere is none to it,
+# and macOS then wants to make a login keychain, which the sandbox denies: WebKit keeps no key, the pages none of theirs.
+CHAIN, WORD = str(pathlib.Path.home() / 'Library' / 'Keychains' / 'the-machine-made-up.keychain-db'), 'made-up'
 ITEM = f'com.apple.WebKit.WebCrypto.master+{ID}'
 SEARCHED = [x.strip().strip('"') for x in run('security', 'list-keychains', '-d', 'user').stdout.splitlines()]
 DEFAULT = run('security', 'default-keychain', '-d', 'user').stdout.strip().strip('"')

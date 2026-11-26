@@ -52,6 +52,9 @@ fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri
         let saves = app.clone();
         window.on_download(move |_, event| crate::files::download(&saves, event))
     };
+    #[cfg(all(target_os = "macos", feature = "store"))]
+    let window = crate::mac::panel(label, || window.build())?;
+    #[cfg(not(all(target_os = "macos", feature = "store")))]
     let window = window.build()?;
     #[cfg(target_os = "linux")]
     {

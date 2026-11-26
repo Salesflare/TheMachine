@@ -102,10 +102,77 @@ pub fn unprepare(window: &WebviewWindow) {
     }
 }
 
+/// What a window of the app's own becomes: the box and its to-do take the keys, the robot and its bubble don't.
+fn kind(label: &str) -> &'static AnyClass {
+    if matches!(label, "box" | "card") { Panel::class() } else { Robot::class() }
+}
+
+/// AppKit's own way to make a window.
+#[cfg(feature = "store")]
+type Init = unsafe extern "C-unwind" fn(*mut AnyObject, Sel, NSRect, NSWindowStyleMask, usize, objc2::runtime::Bool) -> *mut AnyObject;
+
+/// What AppKit made windows with, before `panel`.
+#[cfg(feature = "store")]
+static INIT: std::sync::OnceLock<Init> = std::sync::OnceLock::new();
+
+#[cfg(feature = "store")]
+thread_local! {
+    /// What the next window Tauri makes is (`panel`).
+    static NEXT: std::cell::Cell<Option<&'static AnyClass>> = const { std::cell::Cell::new(None) };
+}
+
+/// The Mac App Store's build: one of the app's own windows (`make`, Tauri's) is a panel from the moment it is made, the
+/// only moment the window system hears that a click on it leaves the program in front where it is. The other builds tell it
+/// later, with a private method (`prepare`), which the store's may not use (App Review; desktop.yml checks its program).
+#[cfg(feature = "store")]
+pub fn panel<T>(label: &str, make: impl FnOnce() -> T) -> T {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    if MainThreadMarker::new().is_none() {
+        return make(); // Tauri makes it on the main thread: `prepare` does what it can
+    }
+    ONCE.call_once(|| {
+        let Some(method) = NSWindow::class().instance_method(sel!(initWithContentRect:styleMask:backing:defer:)) else { return };
+        // SAFETY: AppKit's method takes and answers these, as `made` does, which calls it as it was for any other window.
+        unsafe {
+            let _ = INIT.set(std::mem::transmute::<objc2::runtime::Imp, Init>(method.implementation()));
+            let _ = method.set_implementation(std::mem::transmute::<Init, objc2::runtime::Imp>(made));
+        }
+    });
+    NEXT.set(Some(kind(label)));
+    let window = make();
+    NEXT.set(None);
+    window
+}
+
+/// A window is made: Tauri's next one (`panel`) as a panel that doesn't bring the program to the front. Any other as it was.
+#[cfg(feature = "store")]
+unsafe extern "C-unwind" fn made(this: *mut AnyObject, cmd: Sel, frame: NSRect, style: NSWindowStyleMask, backing: usize, defer: objc2::runtime::Bool) -> *mut AnyObject {
+    let Some(&init) = INIT.get() else { return std::ptr::null_mut() }; // never: it is set first
+    // SAFETY: a window that is being made, of the class it was made of. A panel holds nothing more than the window Tauri
+    // makes, as is compared; so all of Tauri's is there, as with `prepare`. And `unprepare` gives it Tauri's class back
+    // before it goes.
+    unsafe {
+        let Some(was) = this.as_ref().map(AnyObject::class) else { return init(this, cmd, frame, style, backing, defer) };
+        match NEXT.take() {
+            Some(class) if was.name() == c"TaoWindow" && class.instance_size() <= was.instance_size() => {
+                let _ = WAS.set(was);
+                AnyObject::set_class(&*this, class);
+                let style = style | NSWindowStyleMask::NonactivatingPanel;
+                // NSPanel's own, if it has one: it comes back here, now as any other, for NSWindow's
+                let theirs = class.instance_method(cmd).map_or(init, |m| std::mem::transmute::<objc2::runtime::Imp, Init>(m.implementation()));
+                theirs(this, cmd, frame, style, backing, defer)
+            }
+            next => {
+                NEXT.set(next);
+                init(this, cmd, frame, style, backing, defer)
+            }
+        }
+    }
+}
+
 pub fn prepare(window: &WebviewWindow) {
     let Some(ns) = native(window) else { return };
-    let keys = matches!(window.label(), "box" | "card");
-    let class = if keys { Panel::class() } else { Robot::class() };
+    let class = kind(window.label());
     if class.instance_size() == NSWindow::class().instance_size() {
         #[cfg(feature = "store")]
         if let Some(was) = Some((&*ns as &AnyObject).class()).filter(|c| *c != Panel::class() && *c != Robot::class()) {
@@ -117,7 +184,7 @@ pub fn prepare(window: &WebviewWindow) {
         unsafe { AnyObject::set_class(&ns, class) };
         ns.setStyleMask(ns.styleMask() | NSWindowStyleMask::NonactivatingPanel);
         // The window system only hears of that when a window is made so: else a click still brings the program to the front.
-        // Not in the Mac App Store's build, which uses no private method (App Review; desktop.yml checks its program).
+        // Not in the Mac App Store's build, where it is a panel as it is made (`panel`): it uses no private method.
         #[cfg(not(feature = "store"))]
         {
             let prevents = sel!(_setPreventsActivation:);

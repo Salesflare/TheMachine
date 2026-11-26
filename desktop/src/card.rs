@@ -100,8 +100,6 @@ pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .additional_browser_args(&windows::browser())
         .initialization_script(ESCAPE)
         .initialization_script(crate::dash::NO_SPEECH)
-        .initialization_script(crate::dash::NO_BUY)
-        .initialization_script(crate::dash::DOWNLOADS)
         .on_navigation(move |url| {
             if url.as_str() == BACK {
                 say(&here, "back");
@@ -137,6 +135,10 @@ pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
                 show(app);
             });
         });
+    #[cfg(feature = "store")]
+    {
+        window = window.initialization_script(crate::dash::NO_BUY).initialization_script(crate::dash::DOWNLOADS);
+    }
     if let Some(under) = app.get_webview_window("box").filter(|_| !app.state::<Shared>().layer) {
         #[cfg(windows)]
         {
@@ -148,6 +150,9 @@ pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         }
         let _ = under;
     }
+    #[cfg(all(target_os = "macos", feature = "store"))]
+    let window = crate::mac::panel("card", || window.build())?;
+    #[cfg(not(all(target_os = "macos", feature = "store")))]
     let window = window.build()?;
     #[cfg(target_os = "linux")]
     windows::linux::prepare(app, &window, "card")?;
