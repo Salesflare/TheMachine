@@ -8,9 +8,12 @@ const DOC_LABEL={create:'Review and create',edit:'Review changes',done:'Mark don
 const docWhere=a=>a.provider==='microsoft'?'Word':a.provider==='notion'?'Notion':a.file_kind==='sheets'?'Google Sheets':a.file_kind?'Google Slides':'Google Docs';
 // A Sheet or Slides file's edit draws in its lazy part (todos-filewrite.js), once that's in
 const docBusy=a=>a?.file_kind?'Writing the file…':'Writing the doc…';
-const fileW=(a,x,sent)=>lazyIn('filewrite')?fileWrite(a,x,sent):(lazyRun('filewrite',render),'');
+// (one function per shape: the html and the plain text never share a return, so text never carries markup)
+const fileWait=()=>(lazyRun('filewrite',render),'');
+const fileWHtml=a=>lazyIn('filewrite')?fileWriteHtml(a):fileWait();
+const fileWText=a=>lazyIn('filewrite')?fileWriteText(a):fileWait();
 const docHead=(a,done)=>done?t(DOC_DID[a.op]||DOC_DID.edit,docWhere(a)):a.op==='create'?t(a.provider==='notion'?'New page in {}':DOC_DO.create,docWhere(a)):t(DOC_DO[a.op]||DOC_DO.edit,a.doc_title||'',docWhere(a));
-const docDoneText=(a,sent)=>a.file_kind?fileW(a,2,sent):a.op==='create'?(a.provider==='notion'?sentNote(sent,'Page created.','Page created at {}.'):sentNote(sent,'Doc created.','Doc created at {}.'))
+const docDoneText=(a,sent)=>a.file_kind?sentNote(sent,'Changes saved in the file.','Changes saved in the file at {}.'):a.op==='create'?(a.provider==='notion'?sentNote(sent,'Page created.','Page created at {}.'):sentNote(sent,'Doc created.','Doc created at {}.'))
  :a.op==='done'?sentNote(sent,'Marked done in Notion.','Marked done in Notion at {}.'):sentNote(sent,'Changes saved in the doc.','Changes saved in the doc at {}.');
 // New text as the doc gets it: "# " to "### " lines are headings, the rest paragraphs (doc_writes.lines). Google Docs
 // (g) also gets "- " lines as bullets and **bold**, *italic*, [text](link) as marks (doc_writes.google_lines, MARKS).
@@ -30,9 +33,9 @@ const docChange=(c,n,total,g)=>html`${total>1?html`<div class="dw-n">${t('Change
 const docSame=x=>String(x||'').trim().replace(/\s+/g,' ').toLowerCase();
 const docBody=a=>{const ls=String(a.body||'').split('\n').filter(l=>l.trim()),m=ls.length?docH.exec(ls[0].trim()):null;
  return m&&docSame(m[2])===docSame(a.title)?ls.slice(1).join('\n'):String(a.body||'')};
-const docWriteHtml=a=>a.file_kind?fileW(a):a.op==='done'?html`<p class="dw-p">${t('Mark “{}” done in {}',a.doc_title||'',docWhere(a))}</p>`:a.op==='create'?html`<p class="dw-p dw-h1">${a.title}</p>${docLines(docBody(a),0,a.provider==='google')}`:html`${(a.changes||[]).map((c,i,all)=>html`<div class="dw-ch">${docChange(c,i+1,all.length,a.provider==='google')}</div>`)}`;
+const docWriteHtml=a=>a.file_kind?fileWHtml(a):a.op==='done'?html`<p class="dw-p">${t('Mark “{}” done in {}',a.doc_title||'',docWhere(a))}</p>`:a.op==='create'?html`<p class="dw-p dw-h1">${a.title}</p>${docLines(docBody(a),0,a.provider==='google')}`:html`${(a.changes||[]).map((c,i,all)=>html`<div class="dw-ch">${docChange(c,i+1,all.length,a.provider==='google')}</div>`)}`;
 // Plain text of the same, for chat and copy (doc_writes.preview).
-const docWriteText=a=>a.file_kind?fileW(a,1):a.op==='done'?t('Mark “{}” done in {}',a.doc_title||'',docWhere(a)):a.op==='create'?a.title+'\n\n'+docBody(a):(a.changes||[]).map(c=>'format' in c?t(c.how,c.link)+': '+c.format:'find' in c?t('Before')+': '+c.before+'\n'+t('After')+': '+c.after:'after' in c?t('Add after “{}”',c.before)+'\n'+c.insert:t('Add at the end')+'\n'+c.append).join('\n\n');
+const docWriteText=a=>a.file_kind?fileWText(a):a.op==='done'?t('Mark “{}” done in {}',a.doc_title||'',docWhere(a)):a.op==='create'?a.title+'\n\n'+docBody(a):(a.changes||[]).map(c=>'format' in c?t(c.how,c.link)+': '+c.format:'find' in c?t('Before')+': '+c.before+'\n'+t('After')+': '+c.after:'after' in c?t('Add after “{}”',c.before)+'\n'+c.insert:t('Add at the end')+'\n'+c.append).join('\n\n');
 function docWriteBox(s,a){const st=a.state||s.action_status,done=st?.status==='sent',url=a.url||(done?st?.url:''),key='draft-'+s.id+'-'+a.revision,open=expandedBodies.has(key);
  const size=a.op==='create'?String(a.body||'').split('\n').length:(a.changes||[]).length*4,fold=size>16,open_=t(a.provider==='notion'?'Open the page':a.file_kind?'Open the file':'Open the doc');
  return html`<div class="draft doc-write${done?' sent':''}${fold&&!open?' clamp':''}" data-clamp="${key}" role="group" aria-label="${t(a.op==='create'?'New doc':'Doc changes')}"><div class="dm">${viaIco(actionVia(a))}<span>${docHead(a,done)}${!done&&safeURL(url)?html` · <a href="${safeHref(safeURL(url))}" target="_blank" rel="noreferrer">${open_}</a>`:''}</span></div><div class="db dw">${docWriteHtml(a)}</div></div>${fold?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
