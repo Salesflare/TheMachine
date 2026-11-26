@@ -237,7 +237,7 @@ mod system {
     use objc2::rc::{Allocated, Retained};
     use objc2::runtime::{AnyClass, AnyObject, AnyProtocol, ClassBuilder, NSObject, Sel};
     use objc2::{class, msg_send, sel, ClassType};
-    use objc2_foundation::{NSArray, NSBundle, NSData, NSDictionary, NSError, NSNumber, NSRect, NSString};
+    use objc2_foundation::{ns_string, NSArray, NSBundle, NSData, NSDictionary, NSError, NSNumber, NSRect, NSString};
     use std::cell::RefCell;
     use std::sync::mpsc::{channel, Sender};
     use std::sync::Mutex;
@@ -245,6 +245,16 @@ mod system {
 
     #[link(name = "ScreenCaptureKit", kind = "framework")]
     extern "C" {}
+
+    extern "C" {
+        /// Foundation's: a line in the system's log (Console), where what went wrong with the picker is told.
+        fn NSLog(format: &NSString, ...);
+    }
+
+    fn say(what: &str) {
+        // SAFETY: a format with one object, and that object.
+        unsafe { NSLog(ns_string!("The Machine: screenshot: %@"), &*NSString::from_str(what)) }
+    }
 
     /// How long a person may take.
     const WAIT: Duration = Duration::from_secs(180);
@@ -260,8 +270,8 @@ mod system {
         const ENCODING_REF: Encoding = Encoding::Pointer(&Encoding::Struct("CGImage", &[]));
     }
 
-    /// Where the answer goes: a picture, or nothing when the person picked nothing.
-    static TOLD: Mutex<Option<Sender<Option<Vec<u8>>>>> = Mutex::new(None);
+    /// Where the answer goes: a picture, nothing when the person picked nothing, or Err when what was picked can't be taken.
+    static TOLD: Mutex<Option<Sender<Result<Option<Vec<u8>>, ()>>>> = Mutex::new(None);
 
     thread_local! {
         /// What hears the picker, while it is there (the main thread).
@@ -276,7 +286,7 @@ mod system {
         true
     }
 
-    fn tell(answer: Option<Vec<u8>>) {
+    fn tell(answer: Result<Option<Vec<u8>>, ()>) {
         if let Some(to) = TOLD.lock().unwrap().take() {
             let _ = to.send(answer);
         }
@@ -286,10 +296,10 @@ mod system {
         let (to, told) = channel();
         *TOLD.lock().unwrap() = Some(to);
         on_main(sel!(present));
-        let answer = told.recv_timeout(WAIT).ok().flatten();
+        let answer = told.recv_timeout(WAIT).unwrap_or(Ok(None));
         on_main(sel!(stop));
         TOLD.lock().unwrap().take();
-        Ok(answer)
+        answer.map_err(|()| std::io::Error::other("not taken"))
     }
 
     fn on_main(what: Sel) {
@@ -324,7 +334,7 @@ mod system {
     }
 
     extern "C-unwind" fn present(class: &AnyClass, _: Sel) {
-        let Some(picker) = picker() else { return tell(None) };
+        let Some(picker) = picker() else { return tell(Err(())) };
         // SAFETY: a new object of this class; the picker's configuration has these properties.
         unsafe {
             let hears: Retained<AnyObject> = msg_send![class, new];
@@ -352,11 +362,12 @@ mod system {
     }
 
     extern "C-unwind" fn cancelled(_: &AnyObject, _: Sel, _: &AnyObject, _: *mut AnyObject) {
-        tell(None);
+        tell(Ok(None));
     }
 
-    extern "C-unwind" fn failed(_: &AnyObject, _: Sel, _: &NSError) {
-        tell(None);
+    extern "C-unwind" fn failed(_: &AnyObject, _: Sel, error: &NSError) {
+        say(&format!("the picker: {}", error.localizedDescription()));
+        tell(Err(()));
     }
 
     /// What was picked, as large as it is on its screen, without the pointer.
@@ -369,7 +380,15 @@ mod system {
             let () = msg_send![&configuration, setWidth: (rect.size.width * f64::from(scale)).round().max(1.0) as usize];
             let () = msg_send![&configuration, setHeight: (rect.size.height * f64::from(scale)).round().max(1.0) as usize];
             let () = msg_send![&configuration, setShowsCursor: false];
-            let done = RcBlock::new(|image: *mut CGImage, _: *mut NSError| tell(png(image)));
+            let done = RcBlock::new(move |image: *mut CGImage, error: *mut NSError| {
+                let taken = png(image);
+                if taken.is_none() {
+                    // The error ScreenCaptureKit gives with no picture, or none.
+                    let error = error.as_ref().map(|e| e.localizedDescription().to_string()).unwrap_or_default();
+                    say(&format!("{} at {}x{}: {error}", if image.is_null() { "not taken" } else { "no PNG" }, rect.size.width, rect.size.height));
+                }
+                tell(taken.map(Some).ok_or(()));
+            });
             let () = msg_send![class!(SCScreenshotManager), captureImageWithFilter: filter, configuration: &*configuration, completionHandler: &*done];
         }
     }
