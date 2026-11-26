@@ -73,6 +73,13 @@ try{
   assert.equal(await box.locator('a').getAttribute('href'),edit.url);
   assert.equal(await page.locator(`#task-${newId} .draft.doc-write a`).count(),0,'a javascript: link is not a link');
   if(shots)await task.screenshot({path:`${shots}/edit-todo-${name}.png`});
+  // New text for Google Docs shows as the doc gets it: "- " lines as bullets, **bold**, *italic*, a link with its address;
+  // Word keeps the characters as they are (doc_writes.google_lines)
+  const preview=await page.evaluate(()=>[['google'],['microsoft']].map(([provider])=>{const d=document.createElement('div');
+   setHTML(d,docWriteHtml({op:'edit',provider,changes:[{after:'A',before:'A',insert:'- Send the **draft**\nSee [the site](https://example.com) *now*'}]}));
+   return [d.querySelector('b')?.textContent,d.querySelector('i')?.textContent,d.querySelector('u')?.textContent,[...d.querySelectorAll('.dw-p')].map(p=>p.textContent).join('|')]}));
+  assert.deepEqual(preview[0],['draft','now','the site','• Send the draft|See the site (https://example.com) now']);
+  assert.deepEqual(preview[1],[undefined,undefined,undefined,'- Send the **draft**|See [the site](https://example.com) *now*']);
   // Review changes: the dialog shows the whole change again; nothing is written before Save
   await task.locator(`[data-smart="${edit.revision}"]`).click();
   await page.locator('#send-dialog').waitFor({state:'visible'});

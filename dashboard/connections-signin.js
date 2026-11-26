@@ -9,7 +9,7 @@ async function taskSigninPoll(){if(taskSigninBusy||document.hidden)return;const 
  finally{taskSigninBusy=false}}
 setInterval(taskSigninPoll,5000);
 async function signinClosed(){if(!(state?.suggestions||[]).some(signinWaiting))return;
- try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'browser_login_check',args:{}})});
+ try{const r=await sharePost('browser_login_check',{});
   if(r.resumed?.length){toast('Signed in. Carrying on with it.');await refresh();return}}catch{}
  taskSigninPoll()}
 const signinPost=sharePost;
@@ -44,4 +44,4 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-task
 // View in browser: shown only while the task's page is open in the Machine's browser (browser_open); the click brings it
 // to the front there (reopened when it closed since the card was drawn, never a dead tab), and its viewer
 // opens in a new tab (the link itself). From Telegram the dashboard opens with #browser-for=<task> and goes on to the viewer.
-async function browserShow(id){return request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'browser_show',args:{suggestion_id:id}})})}
+async function browserShow(id){return sharePost('browser_show',{suggestion_id:id})}

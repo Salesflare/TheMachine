@@ -82,7 +82,7 @@ const chatWait=()=>chatFails?Math.min(60000,4000*2**(chatFails-1)):chat?.active?
 const chatSaves=new Map();
 const chatWithSaves=(id,items)=>{const add=[...chatSaves].filter(([m,sid])=>sid===id&&!items?.includes(m)).map(([m])=>m);return add.length?[...(items||[]),...add]:items};
 async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
- if(!document.hidden&&!$('#inbox').hidden)try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_chat',args:{suggestion_id:id,...(chat?.cursor&&chat.items?{cursor:chat.cursor}:{})}})});
+ if(!document.hidden&&!$('#inbox').hidden)try{const r=await sharePost('card_chat',{suggestion_id:id,...(chat?.cursor&&chat.items?{cursor:chat.cursor}:{})});
   if(id!==chatId)return;chatFails=0;const was=chat?.active,first=!chat;
   // A read that failed while the chat was already on screen changes nothing but whether the run still goes: what was
   // shown stays (with the live answer), quietly, and the next ask catches up
@@ -170,8 +170,8 @@ $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  if(e.target.closest('.chat-menu-list button'))setTimeout(()=>$('#chat-menu')?.removeAttribute('open'));
  const scope=e.target.closest('.chat-side [data-scope]');if(scope){e.stopPropagation();scopeSet(scope.dataset.scope);return}
  const lg=e.target.closest('[data-learned-go],[data-learned-edit]');if(lg?.dataset.learnedNode){e.stopPropagation();recordFactShow(lg.dataset.learnedNode,Number(lg.dataset.learnedEdit)||null);return}if(lg){e.stopPropagation();const v=lg.dataset.learnedGo;lazyRun('learning',()=>lg.dataset.learnedEdit?learnedShow(Number(lg.dataset.learnedEdit),'fact',true):learnedShow(Number(v)||null,lg.dataset.what));return}
- const fu=e.target.closest('[data-fixed-undo]');if(fu){e.stopPropagation();fu.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'learning_undo',args:{id:Number(fu.dataset.fixedUndo)}})});toast(window.t('Undone.'));if(chat)chat.cursor=null;await chatPoll();refresh()}catch(err){errCaught(err);fu.disabled=false;toast(err.message,true)}return}
- const lu=e.target.closest('[data-learned-undo]');if(lu){e.stopPropagation();lu.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'forget_fact',args:{id:Number(lu.dataset.learnedUndo),undo:true}})});toast('Removed from what I’ve learned.');if(chat)chat.cursor=null;await chatPoll();refresh()}catch(err){errCaught(err);lu.disabled=false;toast(err.message,true)}return}
+ const fu=e.target.closest('[data-fixed-undo]');if(fu){e.stopPropagation();fu.disabled=true;try{await sharePost('learning_undo',{id:Number(fu.dataset.fixedUndo)});toast(window.t('Undone.'));if(chat)chat.cursor=null;await chatPoll();refresh()}catch(err){errCaught(err);fu.disabled=false;toast(err.message,true)}return}
+ const lu=e.target.closest('[data-learned-undo]');if(lu){e.stopPropagation();lu.disabled=true;try{await sharePost('forget_fact',{id:Number(lu.dataset.learnedUndo),undo:true});toast('Removed from what I’ve learned.');if(chat)chat.cursor=null;await chatPoll();refresh()}catch(err){errCaught(err);lu.disabled=false;toast(err.message,true)}return}
  const rc=e.target.closest('[data-recipe-edit],[data-recipe-undo]');if(rc){e.stopPropagation();lazyRun('recipe',()=>recipeAct(rc));return}
  const un=e.target.closest('[data-unclamp]');if(un){e.stopPropagation();const k=un.dataset.unclamp;chatOpenSet.has(k)?chatOpenSet.delete(k):chatOpenSet.add(k);paintChat();return}
  const b=e.target.closest('button');const input=$('#chat-input');
@@ -179,8 +179,8 @@ $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  if(b&&b.dataset.chatSay!=null&&input){e.stopPropagation();input.value=b.dataset.chatSay;chatGrow(input);input.focus();return}
  if(e.target.closest('[data-chat-attach]')){e.stopPropagation();$('#chat-file')?.click();return}
  const rm=e.target.closest('[data-att-remove]');if(rm){e.stopPropagation();const f=chatPending.find(x=>x.key===rm.dataset.attRemove);chatPending=chatPending.filter(x=>x!==f);
-  if(f?.id)request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_file_remove',args:{suggestion_id:f.sid,id:f.id}})}).catch(()=>{});chatFileError('');chatTray();input?.focus();return}
+  if(f?.id)sharePost('chat_file_remove',{suggestion_id:f.sid,id:f.id}).catch(()=>{});chatFileError('');chatTray();input?.focus();return}
  if(b?.hasAttribute('data-chat-stop')){e.stopPropagation();const s=chatOpen();if(!s)return;b.disabled=true;
-  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_stop',args:{suggestion_id:s.id}})});
+  try{await sharePost('chat_stop',{suggestion_id:s.id});
    if(chat)chat={...chat,active:false,live:null,cursor:null};await refresh();paintChat();chatPoll()}catch(err){errCaught(err);toast(err.message,true);b.disabled=false}return}
  if(!b?.hasAttribute('data-chat-send'))return;e.stopPropagation();chatSubmit()},true);

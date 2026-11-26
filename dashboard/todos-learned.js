@@ -110,7 +110,7 @@ const listShown={};const clipHTML=(id,rows,empty,n=3)=>{const k=listShown[id]||n
 const clipRows=(items,draw)=>({items,draw});
 const clipNodes=(id,rows,empty,n=3)=>{const k=listShown[id]||n,shown=rows.draw?rows.items.slice(0,k).map(rows.draw):rows.slice(0,k);rows=rows.items||rows;return rows.length?[...shown,...rows.length>k?[make('button',{type:'button',class:'quiet more-rows','data-more':id,'data-shown':k},`Show ${Math.min(10,rows.length-k)} more`)]:[]]:empty()};
 document.addEventListener('click',e=>{const b=e.target.closest('[data-more]');if(!b)return;listShown[b.dataset.more]=(Number(b.dataset.shown)||listShown[b.dataset.more]||3)+10;render()});
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-promise]');if(!b)return;b.disabled=true;const m=b.closest('details');if(m)m.open=false;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'promise_close',args:{id:Number(b.dataset.promise),status:b.dataset.close}})});toast(b.dataset.close==='kept'?t('Marked done.'):t('Closed: not happening.'));refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-promise]');if(!b)return;b.disabled=true;const m=b.closest('details');if(m)m.open=false;try{await sharePost('promise_close',{id:Number(b.dataset.promise),status:b.dataset.close});toast(b.dataset.close==='kept'?t('Marked done.'):t('Closed: not happening.'));refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 // Do it (the owner's promise) or Nudge (theirs) in a promise's ⋯: its to-do now, prepared (a nudge: a short follow-up
 // to send), or the one it has already. Do it, and either on a promise that is a to-do already ("Open its to-do"), open
 // that to-do's chat. A new Nudge stays on the list, so the owner goes on through their promises: a toast says it is on its
@@ -120,7 +120,7 @@ const promiseAsking=new Set();
 function promiseToast(text,card){toast(text);if(!card)return;const el=$('#toast');el.append(' ',make('button',{type:'button','data-toast-open':card},t('Open to-do')));el.dataset.about=card;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),8000)}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-promise-todo]');if(!b)return;const id=Number(b.dataset.promiseTodo),stay=b.hasAttribute('data-promise-stay');
  if(promiseAsking.has(id))return;promiseAsking.add(id);b.disabled=true;const m=b.closest('details');if(m)m.open=false;
- try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'promise_todo',args:{id}})});
+ try{const r=await sharePost('promise_todo',{id});
   if(stay){await refresh();promiseToast(r.existing?t('It’s a to-do already.'):t('Drafting a nudge for you to send.'),r.card)}
   else{if(!r.existing)toast(t('Preparing it as a to-do.'));await refresh();if(r.card)chatGo(r.card)}}
  catch(err){errCaught(err);toast(err.message,true)}finally{promiseAsking.delete(id);b.disabled=false;document.querySelectorAll(`[data-promise-todo="${id}"]`).forEach(x=>x.disabled=false)}});
@@ -139,7 +139,7 @@ $('#suggestions').addEventListener('toggle',e=>{const d=e.target;if(d.open&&(d.i
 const scopeLegacy=(()=>{try{const v=localStorage.getItem('scope-filter');return ['work','personal'].includes(v)?v:null}catch{return null}})();
 let scopeFilter=scopeLegacy||'all',scopeSynced,scopeSaving=0,scopeMigrated=false;
 function scopeSave(v){scopeSaving++;
- return request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_locale',args:{todo_scope:v}})})
+ return sharePost('set_locale',{todo_scope:v})
   .then(l=>{if(l&&'todo_scope' in l){state.locale=l;scopeSynced=l.todo_scope}try{localStorage.removeItem('scope-filter')}catch{}})
   .catch(()=>{try{localStorage.setItem('scope-filter',v)}catch{}}).finally(()=>{scopeSaving--})}
 function scopeSync(l){if(!l||!('todo_scope' in l)||scopeSaving)return;const v=l.todo_scope;
@@ -170,7 +170,7 @@ const digestEntry=()=>{const f=scopeFilter,day=new Date().toDateString(),hide=t(
  else for(const a of f==='all'?['work','personal']:[f]){done+=Number(row.counts?.[a]?.done)||0;open+=Number(row.counts?.[a]?.open)||0}
  return html`<p class="ad-entry"><button type="button" data-area-digest="${row.kind}"><span class="ad-name"><b>${digestName(row.kind,row.at)}</b><span class="ad-count">${digestCounted(done,open)}</span></span>›</button><button type="button" class="ad-x" data-digest-hide aria-label="${hide}" title="${hide}">×</button></p>`};
 async function digestSetAside(said){const drawn=()=>'digest_row' in state;digestHiding=true;if(drawn())render();let ok=false;
- try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'digest_row_hide',args:{}})});ok=true;if(said)toast(t('Hidden until the next digest.'))}
+ try{await sharePost('digest_row_hide',{});ok=true;if(said)toast(t('Hidden until the next digest.'))}
  catch(err){errCaught(err);if(said)toast(err.message,true)}
  digestHiding=false;if(ok)state.digest_row=null;else if(drawn())render()}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-area-digest]');

@@ -102,4 +102,4 @@ const graphPeople=(...a)=>lazyIn('graph')?people(...a):lazyPart('graph').then(()
 // Graph: People (closest, gone quiet, new), Projects and Organizations.
 const GRAPH_PANES=['people','projects','orgs'];
 const graphPaneOk=p=>GRAPH_PANES.includes(p);
-const graphPost=(action,args)=>(fuKept=null,request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})}).then(r=>(pagerDrop('gsearch'),r)));  // an edit: the board's follow-ups are asked again, and a search asks the Machine again (a merged pair showed twice there)
+const graphPost=(action,args)=>(fuKept=null,sharePost(action,args).then(r=>(pagerDrop('gsearch'),r)));  // an edit: the board's follow-ups are asked again, and a search asks the Machine again (a merged pair showed twice there)

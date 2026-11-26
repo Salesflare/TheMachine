@@ -64,7 +64,7 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-voice-edit
 addEventListener('hashchange',()=>requestAnimationFrame(voiceEditShow));
 // Skills' own panel loads when first needed (settings-skills.js); a to-do card's skill hint and Create skill use these.
 let skillsKey='',skillEditing=null,skillSharing=null;
-const skillAct=async(action,args)=>{const v=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});if(v&&v.skills)state.skills=v;skillsKey='';if(lazyIn('settings'))renderSkills();renderNeedsYou();return v};
+const skillAct=async(action,args)=>{const v=await sharePost(action,args);if(v&&v.skills)state.skills=v;skillsKey='';if(lazyIn('settings'))renderSkills();renderNeedsYou();return v};
 // "There's a skill for this": the agent judged that a skill would clearly help with a card. Quiet, dismissable.
 const hintFor=id=>(state.skills?.hints||[]).find(h=>String(h.suggestion_id)===String(id));
 const skillHintNote=s=>{const h=!closed(s)&&hintFor(s.id);return h?html`<p class="note skill-hint">There’s a skill for this: <button type="button" class="link" data-hint-look="${h.id}">${h.name}</button>${h.kind==='clawhub'?' on ClawHub':''}. <button type="button" class="link" data-hint-dismiss="${h.id}">Not now</button></p>`:''};
