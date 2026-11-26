@@ -58,6 +58,8 @@ import next_actions
 import notify
 import shared_graph
 from machine import night_pause
+from machine import todo_states
+from machine.app import review_status
 from timeutil import now
 from machine.owner_error import OwnerError
 import timeutil
@@ -1095,6 +1097,13 @@ class ReviewApp:
                             shared_graph.ensure(db)
                             result['share_groups'] = shared_graph.groups(db)
                 claim_reply.fit(result)  # never past the cut: the signals first, what was left out said plainly; the senders below fit after it
+                try:  # the open to-dos on this batch's threads, chats and senders, whole: the review's status has them in short
+                    with self.store.connect() as db:
+                        here = review_status.here(db, claim_reply.claim_ids(db, result['analysis_id']), todo_states.OPEN)
+                    if here and len(encoded(result)) + len(encoded(here)) <= REPLY_CUT - REPLY_RESERVE:
+                        result['open_todos_here'] = here
+                except (sqlite3.Error, ValueError) as error:  # a review never fails over this context
+                    LOG.error('review open to-dos error=%s', type(error).__name__)
                 try:  # who wrote the batch, as far as the Graph knows them: only while the reply has room for it
                     memory = recall(self, 'review', {'run': args.get('_review_run'), 'analysis': result['analysis_id']}, REPLY_CUT)
                     senders = memory.fit('sender', len(encoded(result)), REPLY_RESERVE)

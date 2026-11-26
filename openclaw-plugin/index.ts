@@ -271,6 +271,8 @@ export default definePluginEntry({
         }
         // A review's graph calls carry its session, so a thread's Team or Only you by hand stays the owner's (shared_graph.py).
         if (params.action === 'graph' && isolatedReview) args._review_session = key;
+        // A signal review's status is light and read once (machine/app/review_status.py): the service knows it by this session.
+        if (params.action === 'status' && /^agent:main:assistant-review-signals-/.test(key)) args._review_session = key;
         // Which session adds meeting notes: a signal review only reads them (the service checks).
         if (params.action === 'meeting_notes') args._notes_session = key;
         if (['begin_analysis', 'finish_analysis'].includes(params.action)) {
