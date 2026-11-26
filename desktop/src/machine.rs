@@ -81,9 +81,11 @@ pub struct Waiting {
     pub known: bool,
 }
 
-/// The account names the computer by its system (Account, Security).
+/// The account names the computer by its system (Account, Security), and the Mac App Store's build as the store's app,
+/// which it shows nothing to buy.
 fn user_agent() -> String {
-    format!("TheMachineDesktop/{} ({})", env!("CARGO_PKG_VERSION"), std::env::consts::OS)
+    let store = if cfg!(feature = "store") { " store" } else { "" };
+    format!("TheMachineDesktop/{} ({}){store}", env!("CARGO_PKG_VERSION"), std::env::consts::OS)
 }
 
 fn agent(seconds: u64) -> ureq::Agent {
@@ -420,8 +422,9 @@ mod tests {
     #[test]
     fn it_says_its_version_and_its_system() {
         let version = concat!("TheMachineDesktop/", env!("CARGO_PKG_VERSION"));
-        assert!(["windows", "macos", "linux"].map(|os| format!("{version} ({os})")).contains(&user_agent()));
-        assert!(user_agent().ends_with(if cfg!(windows) { "(windows)" } else if cfg!(target_os = "macos") { "(macos)" } else { "(linux)" }));
+        let store = if cfg!(feature = "store") { " store" } else { "" };
+        assert!(["windows", "macos", "linux"].map(|os| format!("{version} ({os}){store}")).contains(&user_agent()));
+        assert!(user_agent().ends_with(if cfg!(feature = "store") { "(macos) store" } else if cfg!(windows) { "(windows)" } else if cfg!(target_os = "macos") { "(macos)" } else { "(linux)" }));
     }
 
     #[test]

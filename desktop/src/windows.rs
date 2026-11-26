@@ -2,11 +2,11 @@
 //! layer-shell (Hyprland, Sway, KDE) they are layer surfaces: a normal Wayland window can't stay on top or choose its
 //! place. Elsewhere they are borderless windows that stay on top, out of the taskbar. All of this runs on the main thread.
 use crate::place::{self, box_at, peek, tail, Corner, Rect, BOX_WIDTH, BUBBLE_WIDTH, ROBOT, SHADOW};
-#[cfg(not(target_os = "macos"))]
+#[cfg(any(not(target_os = "macos"), feature = "store"))]
 use crate::later;
 use crate::Shared;
 use std::sync::atomic::Ordering;
-#[cfg(not(target_os = "macos"))]
+#[cfg(any(not(target_os = "macos"), feature = "store"))]
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
@@ -52,6 +52,9 @@ fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri
         let saves = app.clone();
         window.on_download(move |_, event| crate::files::download(&saves, event))
     };
+    #[cfg(all(target_os = "macos", feature = "store"))]
+    let window = crate::mac::panel(label, || window.build())?;
+    #[cfg(not(all(target_os = "macos", feature = "store")))]
     let window = window.build()?;
     #[cfg(target_os = "linux")]
     {
@@ -76,6 +79,15 @@ pub fn front(window: &WebviewWindow) {
     crate::linux_app::front(window);
     #[cfg(not(target_os = "linux"))]
     let _ = window.set_focus();
+}
+
+/// As `front`, unless the person went to another program since this one was started: on macOS 14 and later the system
+/// decides (mac.rs). Elsewhere `front`.
+pub fn offer_front(window: &WebviewWindow) {
+    #[cfg(target_os = "macos")]
+    crate::mac::offer_front(window);
+    #[cfg(not(target_os = "macos"))]
+    front(window);
 }
 
 /// The keys go to it. On macOS it shows with that, without the program coming to the front.
@@ -163,17 +175,24 @@ pub fn fit_bubble(app: &AppHandle, height: f64) {
     }
 }
 
-/// Its page doesn't answer: the next one gets a new window, or on macOS a new page (mac.rs: its windows stay).
+/// Its page doesn't answer: the next one gets a new window, or on macOS a new page (mac.rs: its windows stay). In the Mac
+/// App Store's build a new window too: there the App Sandbox ends no page's process (mac_app.rs, `end_page`).
 pub fn drop_bubble(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("bubble") {
         #[cfg(target_os = "macos")]
-        {
-            seen(&window, false);
-            crate::mac_app::end_page(window);
-        }
-        #[cfg(not(target_os = "macos"))]
-        let _ = window.destroy();
+        seen(&window, false);
+        #[cfg(all(target_os = "macos", not(feature = "store")))]
+        crate::mac_app::end_page(window);
+        #[cfg(any(not(target_os = "macos"), feature = "store"))]
+        gone(&window);
     }
+}
+
+#[cfg(any(not(target_os = "macos"), feature = "store"))]
+fn gone(window: &WebviewWindow) {
+    #[cfg(target_os = "macos")]
+    crate::mac::unprepare(window);
+    let _ = window.destroy();
 }
 
 pub fn close_bubble(app: &AppHandle) {
@@ -192,25 +211,26 @@ pub fn bubble_tail(app: &AppHandle) -> (f64, bool) {
     (tail(robot, at), at.y > robot.y)
 }
 
-/// Its page doesn't answer any more (hangs.rs): a fresh one.
-#[cfg(target_os = "macos")]
+/// Its page doesn't answer any more (hangs.rs): a fresh one. In the Mac App Store's build a fresh window, as elsewhere:
+/// there the App Sandbox ends no page's process (mac_app.rs, `end_page`), and WebKit ends that of a window that goes.
+#[cfg(all(target_os = "macos", not(feature = "store")))]
 pub fn again(app: &AppHandle, label: &'static str) {
     if let Some(window) = app.get_webview_window(label) {
         crate::mac_app::end_page(window);
     }
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(any(not(target_os = "macos"), feature = "store"))]
 pub fn again(app: &AppHandle, label: &'static str) {
     if label == "box" {
         close_box(app);
-        #[cfg(windows)]
+        #[cfg(any(windows, target_os = "macos"))]
         if let Some(card) = app.get_webview_window("card") {
-            let _ = card.destroy();
+            gone(&card);
         }
     }
     if let Some(window) = app.get_webview_window(label) {
-        let _ = window.destroy();
+        gone(&window);
     }
     let app = app.clone();
     std::thread::spawn(move || {
@@ -223,7 +243,7 @@ pub fn again(app: &AppHandle, label: &'static str) {
                 }
                 return;
             }
-            #[cfg(windows)]
+            #[cfg(any(windows, target_os = "macos"))]
             if build_box(app).is_ok() {
                 let _ = crate::card::build(app);
             }

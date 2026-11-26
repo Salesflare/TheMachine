@@ -19,7 +19,7 @@ import sys
 import time
 
 from mac_tools import (
-    A, BACK, CERTIFICATE, CMD, CTRL, DOWN, ENTER, ESCAPE, F, ID, LIBRARY, MAIL, NAME, PORT, Q, V, VERSION, W,
+    A, BACK, CERTIFICATE, CMD, CTRL, DOWN, ENTER, ESCAPE, F, FOLDER_ID, ID, LIBRARY, MAIL, NAME, PORT, Q, STORE, V, VERSION, W,
     all_windows, App, asks, click, downloaded, drag, finish, fresh, in_corner, in_front, key, move, need, need_window, no_browser,
     other, out, page, people, png, press, Rect, run, sandbox, saved, says, screens, shut, step, tray_menu, until,
     work_area, write,
@@ -671,8 +671,29 @@ def shot():
     press(app, '#add-shot')
 
 
+def pick():
+    """macOS' own picker (the Mac App Store's build): a click on a window picks it, or its button says so."""
+    windows = [x for x in all_windows() if x.get('kCGWindowOwnerName') == 'TextEdit' and x['kCGWindowLayer'] == 0]
+    need(windows, 'a window to pick')
+    at = Rect(windows[0]['kCGWindowBounds'])
+    owners = sorted({str(x.get('kCGWindowOwnerName')) for x in all_windows() if x['kCGWindowLayer'] > 0})
+    move(at.left + at.width // 2, at.top + at.height // 2)
+    time.sleep(1.5)
+    png('picking-over')
+    click(at.left + at.width // 2, at.top + at.height // 2)
+    if not until(app.box, 8):
+        png('picking-clicked')
+        for owner in owners:
+            names = run('osascript', '-e', f'tell application "System Events" to tell process "{owner}" to get name of every button of every window').stdout
+            if 'Share' in names:
+                run('osascript', '-e', f'tell application "System Events" to tell process "{owner}" to click (first button of every window whose name contains "Share")')
+    return f'over {at}; {owners}'
+
+
 @step('a screenshot macOS was not asked for yet')
 def _():
+    if STORE:
+        return 'NOT TESTED: the picker of the Mac App Store\'s build asks nothing'
     open_it()
     shot()
     need(until(lambda: 'System Settings' in says('#said'), 15), 'the box says where to allow it: ' + says('#said'))
@@ -698,6 +719,8 @@ def restarted():
 @step('a screenshot that is refused')
 def _():
     global app
+    if STORE:
+        return 'NOT TESTED: the picker of the Mac App Store\'s build asks nothing'
     allow(False)
     app = restarted()
     open_it()
@@ -709,16 +732,20 @@ def _():
 @step('a screenshot')
 def _():
     global app
-    allow(True)
-    app = restarted()
+    if not STORE:
+        allow(True)
+        app = restarted()
     open_it()
     shot()
     need(until(lambda: not app.windows(), 8), 'the robot and its box are away')
     time.sleep(2)
     png('picking')
-    if told := picker_alert():
-        time.sleep(1)
-    drag((300, 300), (520, 420))
+    if STORE:
+        told = pick()
+    else:
+        if told := picker_alert():
+            time.sleep(1)
+        drag((300, 300), (520, 420))
     need(until(app.box, 30), 'the box is back')
     need(until(lambda: 'Screenshot.png' in says('#files')), says('#files') + ' | ' + says('#said'))
     size = page('box', '(i => [i.naturalWidth, i.naturalHeight])(document.querySelector("#files img"))')
@@ -735,7 +762,7 @@ def _():
     need(until(app.box, 20), 'Escape: the box is back')
     time.sleep(1)
     need(not says('#files') and not says('#said'), 'with nothing: ' + says('#said'))
-    return f'{size} {told} {picker_alert()}'
+    return f'{size} {told} {"" if STORE else picker_alert()}'
 
 
 @step('add a file')
@@ -913,10 +940,32 @@ def made_up_app(lsregister):
     return there.resolve()
 
 
+def store_sign_in():
+    machine.loopback = True
+    try:
+        press(app, '#signin-go')
+        need(until(lambda: machine.links, 60), 'the browser opens the account')
+        need(until(lambda: says('#compose'), 30), f'signed in at its port {app.pids()} {in_front()} {says("#panel")}')
+    finally:
+        machine.loopback = False
+    png('account-in-the-browser')
+    need(machine.cookies and saved()['cookie'] in machine.cookies, 'with its session')
+    need(len(app.pids()) == 1, 'one program')
+    no_browser()
+    if not app.box():
+        click(*app.center())
+    follows('When is lunch with Nora?', [])
+    press(app, '#kind-todo')
+    need(until(lambda: not says('#answer')), 'the list again')
+    return says('#state') + ' | at its port'
+
+
 @step('account sign-in')
 def _():
     if says('#signin-other') != 'Self-hosted?':
         press(app, '#signin-other')
+    if STORE:  # in the App Sandbox the links stay whose they are: the sign-in only comes back at its port
+        return store_sign_in()
     lsregister = '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister'
     run(lsregister, '-u', people)  # there are two here, and only one on somebody's Mac
     run(lsregister, '-f', sandbox)
@@ -931,7 +980,7 @@ def _():
     need(run('open', machine.links[-1]).returncode == 0, 'macOS knows whose link it is')  # as the browser does
     need(until(lambda: says('#compose'), 25), f'signed in {app.pid} {app.pids()} {in_front()} {says("#panel")}')
     need(machine.cookies and saved()['cookie'] in machine.cookies, 'with its session')
-    need(oct((LIBRARY / 'Application Support' / ID / 'app.json').stat().st_mode)[-3:] == '600', 'in a file of its own')
+    need(oct((LIBRARY / 'Application Support' / FOLDER_ID / 'app.json').stat().st_mode)[-3:] == '600', 'in a file of its own')
     need(len(app.pids()) == 1, 'one program')
     need(until(lambda: goes_to(link) == phone, 5), f'and then go where they went: {goes_to(link)}')
     run(lsregister, '-u', str(phone))
@@ -1332,7 +1381,7 @@ def _():
     need(sent <= {'card_new', 'search_ask', 'decide', 'chat_upload', 'chat_file_remove'}, str(sent))
     crashes = [p.name for p in (LIBRARY / 'Logs/DiagnosticReports').glob(NAME + '*')]
     need(not crashes, f'no crash reports: {crashes}')
-    return [str(p) for p in LIBRARY.glob(f'*/{ID}*')]
+    return sorted({str(p) for name in {ID, FOLDER_ID} for p in LIBRARY.glob(f'*/{name}*')})
 
 
 finish()

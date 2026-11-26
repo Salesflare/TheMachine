@@ -5,11 +5,26 @@ use tauri::webview::DownloadEvent;
 use tauri::{AppHandle, Manager};
 use url::Url;
 
+/// The person's Downloads. In the App Sandbox (the Mac App Store's build) the home folder is the app's container, whose
+/// Downloads is not theirs: there it is the one in the home folder the container is in, which the sandbox lets it write to
+/// (mac/store-entitlements.plist).
+fn downloads(app: &AppHandle) -> Option<PathBuf> {
+    let own = app.path().download_dir().ok()?;
+    Some(if cfg!(feature = "store") { outside(&own).unwrap_or(own) } else { own })
+}
+
+/// ~/Library/Containers/<app>/Data/Downloads: ~/Downloads.
+fn outside(contained: &Path) -> Option<PathBuf> {
+    let text = contained.to_str()?;
+    let (home, _) = text.split_once("/Library/Containers/")?;
+    Some(Path::new(home).join("Downloads"))
+}
+
 /// What a page downloads. Where it goes is only told when it starts: those under way are kept until they are done.
 pub fn download(app: &AppHandle, event: DownloadEvent<'_>) -> bool {
     match event {
         DownloadEvent::Requested { url, destination } => {
-            let Ok(folder) = app.path().download_dir() else { return false };
+            let Some(folder) = downloads(app) else { return false };
             let name = destination.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
             #[cfg(target_os = "linux")]
             let name = crate::linux_app::sent_as(&url).unwrap_or(name);
@@ -40,7 +55,7 @@ pub fn save(app: &AppHandle, url: Url) {
     let Some(machine) = app.state::<Shared>().machine() else { return };
     let app = app.clone();
     std::thread::spawn(move || {
-        let Ok(folder) = app.path().download_dir() else { return };
+        let Some(folder) = downloads(&app) else { return };
         match machine.save(&url, &folder) {
             Ok(file) => {
                 #[cfg(windows)]
@@ -80,6 +95,13 @@ pub fn free(folder: &Path, name: &str) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_downloads_outside_the_container() {
+        let contained = Path::new("/Users/a b/Library/Containers/computer.themachine.desktop/Data/Downloads");
+        assert_eq!(outside(contained), Some(PathBuf::from("/Users/a b/Downloads")));
+        assert_eq!(outside(Path::new("/Users/a/Downloads")), None);
+    }
 
     #[test]
     fn a_name_of_its_own_in_that_folder() {

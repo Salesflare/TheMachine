@@ -7,7 +7,7 @@ use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{class, define_class, msg_send, sel, AnyThread, ClassType, MainThreadMarker};
 use objc2_app_kit::{
-    NSApplication, NSApplicationActivationOptions, NSApplicationDidChangeScreenParametersNotification,
+    NSApplication, NSApplicationActivationOptions, NSApplicationActivationPolicy, NSApplicationDidChangeScreenParametersNotification,
     NSEvent, NSPanel, NSResponder, NSRunningApplication, NSScreen, NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow,
     NSWindowAnimationBehavior, NSWindowCollectionBehavior, NSWindowDidBecomeKeyNotification, NSWindowDidChangeOcclusionStateNotification,
     NSWindowDidResignKeyNotification, NSWindowStyleMask, NSWorkspace, NSWorkspaceDidActivateApplicationNotification,
@@ -87,20 +87,118 @@ fn native(window: &WebviewWindow) -> Option<Retained<NSWindow>> {
     unsafe { Retained::retain(window.ns_window().ok()?.cast()) }
 }
 
+/// What Tauri made the windows, before they became panels.
+#[cfg(feature = "store")]
+static WAS: std::sync::OnceLock<&'static AnyClass> = std::sync::OnceLock::new();
+
+/// A window that goes is Tauri's own again first (windows.rs, `again`: only in the Mac App Store's build).
+#[cfg(feature = "store")]
+pub fn unprepare(window: &WebviewWindow) {
+    let (Some(ns), Some(was)) = (native(window), WAS.get()) else { return };
+    let ours: &AnyObject = &ns;
+    if ours.class() == Panel::class() || ours.class() == Robot::class() {
+        // SAFETY: the class it had, which holds as much as a panel (`prepare`).
+        unsafe { AnyObject::set_class(&ns, was) };
+    }
+}
+
+/// It is of that class, or of one made from it.
+fn is_a(object: &AnyObject, class: &AnyClass) -> bool {
+    std::iter::successors(Some(object.class()), |c| c.superclass()).any(|c| c == class)
+}
+
+/// What a window of the app's own becomes: the box and its to-do take the keys, the robot and its bubble don't.
+fn kind(label: &str) -> &'static AnyClass {
+    if matches!(label, "box" | "card") { Panel::class() } else { Robot::class() }
+}
+
+/// AppKit's own way to make a window.
+#[cfg(feature = "store")]
+type Init = unsafe extern "C-unwind" fn(*mut AnyObject, Sel, NSRect, NSWindowStyleMask, usize, objc2::runtime::Bool) -> *mut AnyObject;
+
+/// What AppKit made windows with, before `panel`.
+#[cfg(feature = "store")]
+static INIT: std::sync::OnceLock<Init> = std::sync::OnceLock::new();
+
+#[cfg(feature = "store")]
+thread_local! {
+    /// What the next window Tauri makes is (`panel`).
+    static NEXT: std::cell::Cell<Option<&'static AnyClass>> = const { std::cell::Cell::new(None) };
+}
+
+/// The Mac App Store's build: one of the app's own windows (`make`, Tauri's) is a panel from the moment it is made, the
+/// only moment the window system hears that a click on it leaves the program in front where it is. The other builds tell it
+/// later, with a private method (`prepare`), which the store's may not use (App Review; desktop.yml checks its program).
+#[cfg(feature = "store")]
+pub fn panel<T>(label: &str, make: impl FnOnce() -> T) -> T {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    if MainThreadMarker::new().is_none() {
+        return make(); // Tauri makes it on the main thread: `prepare` does what it can
+    }
+    ONCE.call_once(|| {
+        let Some(method) = NSWindow::class().instance_method(sel!(initWithContentRect:styleMask:backing:defer:)) else { return };
+        // SAFETY: AppKit's method takes and answers these, as `made` does, which calls it as it was for any other window.
+        unsafe {
+            let _ = INIT.set(std::mem::transmute::<objc2::runtime::Imp, Init>(method.implementation()));
+            let _ = method.set_implementation(std::mem::transmute::<Init, objc2::runtime::Imp>(made));
+        }
+    });
+    NEXT.set(Some(kind(label)));
+    let window = make();
+    NEXT.set(None);
+    window
+}
+
+/// A window is made: Tauri's next one (`panel`) as a panel that doesn't bring the program to the front. Any other as it was.
+#[cfg(feature = "store")]
+unsafe extern "C-unwind" fn made(this: *mut AnyObject, cmd: Sel, frame: NSRect, style: NSWindowStyleMask, backing: usize, defer: objc2::runtime::Bool) -> *mut AnyObject {
+    let Some(&init) = INIT.get() else { return std::ptr::null_mut() }; // never: it is set first
+    // SAFETY: a window that is being made, of the class it was made of. A panel holds nothing more than the window Tauri
+    // makes, as is compared; so all of Tauri's is there, as with `prepare`. And `unprepare` gives it Tauri's class back
+    // before it goes.
+    unsafe {
+        let Some(was) = this.as_ref().map(AnyObject::class) else { return init(this, cmd, frame, style, backing, defer) };
+        match NEXT.take() {
+            Some(class) if was.name() == c"TaoWindow" && class.instance_size() <= was.instance_size() => {
+                let _ = WAS.set(was);
+                AnyObject::set_class(&*this, class);
+                let style = style | NSWindowStyleMask::NonactivatingPanel;
+                // NSPanel's own, if it has one: it comes back here, now as any other, for NSWindow's
+                let theirs = class.instance_method(cmd).map_or(init, |m| std::mem::transmute::<objc2::runtime::Imp, Init>(m.implementation()));
+                theirs(this, cmd, frame, style, backing, defer)
+            }
+            next => {
+                NEXT.set(next);
+                init(this, cmd, frame, style, backing, defer)
+            }
+        }
+    }
+}
+
 pub fn prepare(window: &WebviewWindow) {
     let Some(ns) = native(window) else { return };
-    let keys = matches!(window.label(), "box" | "card");
-    let class = if keys { Panel::class() } else { Robot::class() };
-    if class.instance_size() == NSWindow::class().instance_size() {
+    let class = kind(window.label());
+    // Already one as it was made (`panel`): its class stays, also the one KVO gave it since for WebKit's observers, else
+    // their removal throws when the window goes.
+    if !is_a(&ns, class) && class.instance_size() == NSWindow::class().instance_size() {
+        #[cfg(feature = "store")]
+        if let Some(was) = Some((&*ns as &AnyObject).class()).filter(|c| *c != Panel::class() && *c != Robot::class()) {
+            let _ = WAS.set(was);
+        }
         // SAFETY: a panel is a window that holds nothing more than one, as was just compared, so nothing of what Tauri's
-        // own holds is in its way; and the window is never destroyed.
+        // own holds is in its way; and the window is never destroyed (but in the Mac App Store's build, where it is
+        // Tauri's own again first: `unprepare`).
         unsafe { AnyObject::set_class(&ns, class) };
         ns.setStyleMask(ns.styleMask() | NSWindowStyleMask::NonactivatingPanel);
-        // The window system only hears of that when a window is made so: else a click still brings the program to the front
-        let prevents = sel!(_setPreventsActivation:);
-        if ns.respondsToSelector(prevents) {
-            // SAFETY: it has this method, which takes a BOOL.
-            let () = unsafe { msg_send![&ns, _setPreventsActivation: true] };
+        // The window system only hears of that when a window is made so: else a click still brings the program to the front.
+        // Not in the Mac App Store's build, where it is a panel as it is made (`panel`): it uses no private method.
+        #[cfg(not(feature = "store"))]
+        {
+            let prevents = sel!(_setPreventsActivation:);
+            if ns.respondsToSelector(prevents) {
+                // SAFETY: it has this method, which takes a BOOL.
+                let () = unsafe { msg_send![&ns, _setPreventsActivation: true] };
+            }
         }
     }
     ns.setHidesOnDeactivate(false);
@@ -242,6 +340,23 @@ pub fn focus(window: &WebviewWindow) {
     });
 }
 
+/// The program comes to the front as macOS 14 lets it: not when the person went to another one since it was started, as
+/// Tauri's own does (activateIgnoringOtherApps). A sandboxed start takes longer, and that was in time to take it back. Before
+/// macOS 14 there is no such way, and it is Tauri's own.
+pub fn offer_front(window: &WebviewWindow) {
+    let Some(mtm) = MainThreadMarker::new() else { return };
+    let here = NSApplication::sharedApplication(mtm);
+    if !here.respondsToSelector(sel!(activate)) {
+        let _ = window.set_focus();
+        return;
+    }
+    // SAFETY: there since macOS 14, as just asked; it takes nothing and gives nothing.
+    let () = unsafe { msg_send![&here, activate] };
+    if let Some(ns) = native(window) {
+        ns.makeKeyAndOrderFront(None); // in front of the program's own; of others' only once it is active
+    }
+}
+
 /// The main screen's height: macOS counts from its bottom left corner, the rest of the program from its top left.
 fn top(mtm: MainThreadMarker) -> f64 {
     NSScreen::screens(mtm).firstObject().map_or(0.0, |s| s.frame().size.height)
@@ -291,7 +406,9 @@ thread_local! {
 pub fn follow_front(app: &AppHandle) {
     let seen = || {
         let front = NSWorkspace::sharedWorkspace().frontmostApplication();
-        if let Some(front) = front.filter(|p| *p != NSRunningApplication::currentApplication()) {
+        // A program the person works in: not one of macOS' own agents, as Control Center is with the screenshot picker
+        let theirs = |p: &Retained<NSRunningApplication>| *p != NSRunningApplication::currentApplication() && p.activationPolicy() == NSApplicationActivationPolicy::Regular;
+        if let Some(front) = front.filter(theirs) {
             BEFORE.set(Some(front));
         }
     };
@@ -335,8 +452,12 @@ fn links_go_to(program: &NSURL) {
 }
 
 /// The program's Info.plist names the sign-in's links, but the phone's app on this Mac does too. While it signs in they
-/// come here. Not on the main thread: what knows the programs answers when it can.
+/// come here. Not on the main thread: what knows the programs answers when it can. Not in the Mac App Store's build: in the
+/// App Sandbox macOS keeps who gets a scheme as it is, so there the sign-in only comes back at its port (signin.rs).
 pub fn take_links() {
+    if cfg!(feature = "store") {
+        return;
+    }
     let Some(link) = NSURL::URLWithString(&NSString::from_str(&format!("{}://", crate::signin::SCHEME))) else { return };
     let own = NSBundle::mainBundle().bundleURL();
     let now = NSWorkspace::sharedWorkspace().URLForApplicationToOpenURL(&link);

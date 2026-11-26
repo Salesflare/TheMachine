@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- The Mac App Store's build (README.md). Its app and team: bundle.sh writes the app's own ID here, and leaves both out
+       of a build signed ad hoc, which has no provisioning profile for them -->
+  <key>com.apple.application-identifier</key><string>BYM5H66GK9.computer.themachine.app</string>
+  <key>com.apple.developer.team-identifier</key><string>BYM5H66GK9</string>
+  <key>com.apple.security.app-sandbox</key><true/>
+  <!-- Its Machine, the account and the window's pages -->
+  <key>com.apple.security.network.client</key><true/>
+  <!-- The account's sign-in comes back to a port of 127.0.0.1 (src/signin.rs) -->
+  <key>com.apple.security.network.server</key><true/>
+  <!-- Files the person picks or drops, for a to-do or a page -->
+  <key>com.apple.security.files.user-selected.read-write</key><true/>
+  <!-- What a page downloads or a to-do leaves goes to Downloads (src/files.rs) -->
+  <key>com.apple.security.files.downloads.read-write</key><true/>
+  <!-- Talk and dictation; macOS still asks the person -->
+  <key>com.apple.security.device.audio-input</key><true/>
+</dict>
+</plist>

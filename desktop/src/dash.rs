@@ -23,6 +23,18 @@ const SCRIPT: &str = "Object.defineProperty(window,'machineDesktop',{value:Objec
 /// nothing. The Machine hears what is dictated itself.
 pub const NO_SPEECH: &str = "delete window.webkitSpeechRecognition;";
 
+/// The Mac App Store's build: in the App Sandbox WebKit drops a link's download of its own address (`<a download>`), though
+/// not one of what the page has (a blob): so the page fetches it, and saves that.
+#[cfg(feature = "store")]
+pub const DOWNLOADS: &str =
+    "addEventListener('click',e=>{const a=e.target.closest?.('a[download]');if(!a||e.defaultPrevented||e.button||e.metaKey||a.origin!==location.origin||!/^https?:$/.test(a.protocol))return;e.preventDefault();fetch(a.href,{credentials:'include'}).then(r=>r.ok?r.blob().then(b=>[b,r.headers.get('content-disposition')||'']):Promise.reject()).then(([b,d])=>{const n=/filename\\*=UTF-8''([^;]+)/i.exec(d)?.[1],u=URL.createObjectURL(b),x=document.createElement('a');x.href=u;x.download=a.download||(n&&decodeURIComponent(n))||/filename=\"?([^\";]+)/i.exec(d)?.[1]||decodeURIComponent(a.pathname.split('/').pop());document.body.append(x);x.click();x.remove();setTimeout(()=>URL.revokeObjectURL(u),6e4)},()=>{})})";
+
+/// The Mac App Store's build sells nothing: the pages show no plans or links to buy one, as in the phone app (dashboard.html,
+/// .no-buy). It marks the page as soon as there is one.
+#[cfg(feature = "store")]
+pub const NO_BUY: &str = "Object.defineProperty(self,'NO_BUY',{value:'no-buy'});{const mark=()=>{const h=document.documentElement;h?.classList.add(NO_BUY);return h};\
+     if(!mark())new MutationObserver((_,o)=>mark()&&o.disconnect()).observe(document,{childList:true})}";
+
 /// The window, or one with a file, is in front.
 #[cfg(not(windows))]
 static FRONT: AtomicBool = AtomicBool::new(false);
@@ -241,6 +253,8 @@ fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
                 loaded(&loads, page.url());
             }
         });
+    #[cfg(feature = "store")]
+    let window = window.initialization_script(NO_BUY).initialization_script(DOWNLOADS);
     #[cfg(target_os = "macos")]
     let window = window.title_bar_style(tauri::TitleBarStyle::Transparent); // else the page is under it too
     let window = window.build()?;
@@ -324,6 +338,15 @@ fn loaded(app: &AppHandle, url: &Url) {
 
 /// Opens it, at a place in the dashboard ("" or "#card=..."): where it was when none is asked for.
 pub fn show(app: &AppHandle, path: &str) {
+    shown(app, path, windows::front);
+}
+
+/// Opens it as the program starts. A program the person went to while it started stays in front (windows::offer_front).
+pub fn show_at_start(app: &AppHandle) {
+    shown(app, "", windows::offer_front);
+}
+
+fn shown(app: &AppHandle, path: &str, front: fn(&WebviewWindow)) {
     let window = match window(app) {
         Some(w) => w,
         None => match build(app) {
@@ -359,7 +382,7 @@ pub fn show(app: &AppHandle, path: &str) {
     }
     let _ = window.unminimize();
     let _ = window.show();
-    windows::front(&window);
+    front(&window);
     shared.over_dash.store(true, Ordering::Relaxed);
     windows::close_box(app);
     #[cfg(windows)]

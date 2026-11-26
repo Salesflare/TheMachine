@@ -261,6 +261,32 @@ It writes a line in `hangs.log` next to `app.json` when it doesn't answer for 5 
 its version and what it was doing. On a Mac `hang-1.txt` and so on next to it have what its threads were at, without paths or
 names. Nothing is sent anywhere. A page of the robot that stays stuck is made again.
 
+## Mac App Store
+
+A build of its own, for macOS 14 and later: `cargo build --release --no-default-features --features store`, then
+`STORE=1 mac/bundle.sh`. It runs in the App Sandbox (`mac/store-entitlements.plist`), and the store updates it. Otherwise it
+is the same app, except:
+
+- **No updater** and no plans or links to buy one, as in the phone app (`NO_BUY` in `src/dash.rs`, `.no-buy` in the dashboard).
+- **One of it:** its socket is in its own container (`src/one.rs`), not in /tmp.
+- **Screenshots:** macOS' own picker (ScreenCaptureKit), then one frame of a stream of what was picked (a screenshot of it
+  would ask for Screen Recording). It asks for no permission and keeps nothing.
+- **Sign-in** comes back to its port only: the sandbox can't claim the link. It says `on=store`, and the account shows it
+  nothing to buy.
+- **Downloads** go to the person's own Downloads folder, not the container's. The sandbox's WebKit drops a link's own
+  download (`<a download>` of the Machine's address), so the page fetches it and saves that (`DOWNLOADS` in `src/dash.rs`).
+- **A stuck page** gets a new window; nothing else is stopped. `hangs.log` has no stacks.
+- **Installed web apps** open with their own small program, as when a link is dropped on it.
+- **No private methods** (App Review): the robot and the box are panels from the moment they are made (a click on
+  them leaves the program in front where it is), and WebKit keeps the pages' key in the person's keychain itself. The `mac-store` job fails when its program names one of `mac/store-denied-selectors.txt`.
+
+The `mac-store` job (a run by hand with **mac-store-only**) uses it in the sandbox, signed ad hoc (`smoke/store.py`).
+`mac-store-sign` then signs it and makes the `.pkg`, in the `mac-store` environment: `MAS_APP_P12` (Apple Distribution) and
+`MAS_INSTALLER_P12` (Mac Installer Distribution) with their `_PASSWORD`s, `MAS_PROVISIONING_PROFILE` (base64), and
+`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` to check it with App Store Connect. **mac-store-upload** sends it there too.
+Without them nothing is signed. Its ID is `computer.themachine.app`, one listing with the phone app (`mac/bundle.sh`, or the
+repository variable `MAS_BUNDLE_ID`); the direct download keeps `computer.themachine.desktop`.
+
 ## Remove it
 
 On Windows uninstall it in Settings, Apps: its folders and what it put in the registry go with it. Else quit it, delete the

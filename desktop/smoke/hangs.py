@@ -14,11 +14,13 @@ import time
 
 import answers
 import mac_tools
-from mac_tools import ID, LIBRARY, PORT, App, click, finish, fresh, in_front, move, need, other, out, page, png, run, sandbox, saved, step, until
+from mac_tools import FOLDER_ID, ID, LIBRARY, PORT, STORE, App, click, finish, fresh, in_front, move, need, other, out, page, png, run, sandbox, saved, step, until
 from standin import Machine
 
-FOLDER = LIBRARY / 'Application Support' / ID
-CHAIN, WORD = str(out.parent / 'made-up.keychain-db'), 'made-up'
+FOLDER = LIBRARY / 'Application Support' / FOLDER_ID
+# Where a person's keychains are: the App Sandbox lets the Mac App Store's build use only those. One elsewhere is none to it,
+# and macOS then wants to make a login keychain, which the sandbox denies: WebKit keeps no key, the pages none of theirs.
+CHAIN, WORD = str(pathlib.Path.home() / 'Library' / 'Keychains' / 'the-machine-made-up.keychain-db'), 'made-up'
 ITEM = f'com.apple.WebKit.WebCrypto.master+{ID}'
 SEARCHED = [x.strip().strip('"') for x in run('security', 'list-keychains', '-d', 'user').stdout.splitlines()]
 DEFAULT = run('security', 'default-keychain', '-d', 'user').stdout.strip().strip('"')
@@ -120,7 +122,8 @@ def another():
     run('ditto', sandbox, str(copy))
     info = copy / 'Contents/Info.plist'
     info.write_bytes(plistlib.dumps({**plistlib.loads(info.read_bytes()), 'MadeUp': 'another'}))
-    need(run('codesign', '--force', '--sign', '-', str(copy)).returncode == 0, 'signed')
+    kept = ['--preserve-metadata=entitlements'] if STORE else []  # in the App Sandbox, as it was
+    need(run('codesign', '--force', '--sign', '-', *kept, str(copy)).returncode == 0, 'signed')
     return str(copy)
 
 
@@ -150,8 +153,15 @@ def now(**how):
 other()
 
 
+# The Mac App Store's build has no key of its own for its pages (mac_app.rs, keeps): WebKit's is in the keychain, as it was
+# for the other builds. So there it is the steps "as it was", last.
+OWN_KEY = 'NOT TESTED: the Mac App Store\'s build keeps WebKit\'s own key, as it was (the last steps)'
+
+
 @step('a locked keychain')
 def _():
+    if STORE:
+        return OWN_KEY
     where = chain(True)
     told = now()
     quit_it()
@@ -166,6 +176,8 @@ def _():
 
 @step('another build reads it too')
 def _():
+    if STORE:
+        return OWN_KEY
     chain(True)
     start(machine.at + '/')
     kept()
@@ -281,6 +293,9 @@ def _():
     need(stuck(12), 'the watch says so')
     need(until(lambda: 'answers again' in log(), 40), log())
     keep('stuck')
+    if STORE:  # where sample may read no other process
+        need(not stacks(), 'no stacks')
+        return f'{clicked()}; ' + ' | '.join(log().splitlines())
     told = stacks()
     need(told and all('Call graph:' in t and '/Users/' not in t for t in told.values()), f'{log()} {[t[:300] for t in told.values()]}')
     need(any('the_machine_desktop' in t for t in told.values()), 'with names')
@@ -293,9 +308,10 @@ def _():
     chain(False)
     start(machine.at + '/', MACHINE_SANDBOX_KEYCHAIN='1')
     kept()
-    need(made(), 'a key in the keychain')
+    there = made()
+    need(there or STORE, 'a key in the keychain')  # the App Sandbox's may be in another one: told
     quit_it()
-    return as_it_was('keychain-of-another', bundle=another())
+    return f'a key in the made-up keychain: {there}; ' + as_it_was('keychain-of-another', bundle=another())
 
 
 @step('a locked keychain, as it was')

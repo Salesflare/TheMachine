@@ -125,7 +125,7 @@ fn pages(app: &AppHandle) {
             }
             let file = app.state::<Shared>().file.with_file_name(NAME);
             note(&file, &format!("the {label}'s page doesn't answer for 8 s ({})", about()));
-            #[cfg(target_os = "macos")]
+            #[cfg(all(target_os = "macos", not(feature = "store")))]
             if let Some(page) = crate::mac_app::process(&window) {
                 stack(&file, page);
             }
@@ -170,7 +170,13 @@ fn stack(file: &Path, process: u32) {
     }
 }
 
-#[cfg(target_os = "macos")]
+/// Not in the Mac App Store's build: in the App Sandbox sample may read no other process, and none of its own either.
+#[cfg(all(target_os = "macos", feature = "store"))]
+fn calls(_: u32) -> Option<String> {
+    None
+}
+
+#[cfg(all(target_os = "macos", not(feature = "store")))]
 fn calls(process: u32) -> Option<String> {
     use std::process::{Command, Stdio};
     let into = std::env::temp_dir().join(format!("the-machine-sample-{process}.txt"));
@@ -213,7 +219,7 @@ fn calls(_: u32) -> Option<String> {
 }
 
 /// Of sample's answer: the system's version and the calls, not the paths.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(all(target_os = "macos", not(feature = "store")), test))]
 fn told(all: &str) -> String {
     let heads = all.lines().filter(|l| l.starts_with("OS Version:") || l.starts_with("Code Type:") || l.starts_with("Version:"));
     let calls = all.lines().skip_while(|l| !l.starts_with("Call graph:")).take_while(|l| !l.starts_with("Binary Images:")).take(1500);

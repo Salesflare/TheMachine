@@ -9,7 +9,7 @@ use objc2_app_kit::{
     NSAlert, NSAlertFirstButtonReturn, NSApplication, NSAutoresizingMaskOptions, NSButton, NSColor, NSEventModifierFlags, NSModalResponse, NSRunningApplication, NSTextField, NSTitlebarSeparatorStyle, NSView, NSWindow,
     NSWindowDidExitFullScreenNotification, NSWindowTitleVisibility,
 };
-use objc2_foundation::{ns_string, NSArray, NSData, NSDictionary, NSError, NSNotificationCenter, NSObjectNSKeyValueObserverRegistration, NSPoint, NSRect, NSSize, NSString};
+use objc2_foundation::{ns_string, NSArray, NSDictionary, NSError, NSNotificationCenter, NSObjectNSKeyValueObserverRegistration, NSPoint, NSRect, NSSize, NSString};
 use objc2_user_notifications::{
     UNAuthorizationOptions, UNAuthorizationStatus, UNMutableNotificationContent, UNNotification, UNNotificationPresentationOptions, UNNotificationRequest, UNNotificationResponse,
     UNUserNotificationCenter, UNUserNotificationCenterDelegate,
@@ -104,7 +104,9 @@ pub fn key(hex: &str) -> Option<[u8; 16]> {
     u128::from_str_radix(hex, 16).ok().filter(|_| hex.len() == 32).map(u128::to_be_bytes)
 }
 
-/// Without a key it answers none, and then the page keeps nothing.
+/// Without a key it answers none, and then the page keeps nothing. Not in the Mac App Store's build, which uses no private
+/// method (App Review; desktop.yml checks its program): there WebKit keeps its own key in the keychain, as Safari does.
+#[cfg(not(feature = "store"))]
 pub fn keeps(class: &mut ClassBuilder) {
     if cfg!(feature = "sandbox") && std::env::var_os("MACHINE_SANDBOX_KEYCHAIN").is_some() {
         return; // as it was, for smoke/hangs.py
@@ -113,11 +115,16 @@ pub fn keeps(class: &mut ClassBuilder) {
     unsafe { class.add_method(sel!(_webCryptoMasterKeyForWebView:), master_key as extern "C-unwind" fn(_, _, _) -> _) };
 }
 
-extern "C-unwind" fn master_key(_: &AnyObject, _: Sel, _: &AnyObject) -> *mut NSData {
-    KEY.get().map_or(std::ptr::null_mut(), |key| Retained::autorelease_return(NSData::with_bytes(key)))
+#[cfg(feature = "store")]
+pub fn keeps(_: &mut ClassBuilder) {}
+
+#[cfg(not(feature = "store"))]
+extern "C-unwind" fn master_key(_: &AnyObject, _: Sel, _: &AnyObject) -> *mut objc2_foundation::NSData {
+    KEY.get().map_or(std::ptr::null_mut(), |key| Retained::autorelease_return(objc2_foundation::NSData::with_bytes(key)))
 }
 
 /// The process of a window's page, where macOS tells.
+#[cfg(not(feature = "store"))]
 pub fn process(window: &WebviewWindow) -> Option<u32> {
     let (tell, told) = std::sync::mpsc::channel();
     let _ = window.with_webview(move |page| {
@@ -133,7 +140,9 @@ pub fn process(window: &WebviewWindow) -> Option<u32> {
     told.recv_timeout(std::time::Duration::from_secs(5)).ok().flatten().and_then(|pid| u32::try_from(pid).ok()).filter(|pid| *pid > 0)
 }
 
-/// Its page's process ends, also one that is stuck, and then there is a fresh one (dash.rs, `died`).
+/// Its page's process ends, also one that is stuck, and then there is a fresh one (dash.rs, `died`). Not in the Mac App
+/// Store's build: the App Sandbox lets it signal no other process (windows.rs, `again`).
+#[cfg(not(feature = "store"))]
 pub fn end_page(window: WebviewWindow) {
     std::thread::spawn(move || {
         if let Some(page) = process(&window) {
