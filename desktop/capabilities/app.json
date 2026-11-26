@@ -1,0 +1,6 @@
+{
+  "identifier": "app",
+  "description": "Only the app's own page in the dashboard's window (ui/app.html): the dashboard is a remote page, and gets none of this",
+  "windows": ["app"],
+  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten", "allow-app-state", "allow-app-retry", "allow-app-account", "allow-sign-in", "allow-connect"]
+}

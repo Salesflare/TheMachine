@@ -1,0 +1,16 @@
+{
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "appimage"],
+    "publisher": "Salesflare",
+    "copyright": "AGPL-3.0-only",
+    "category": "Productivity",
+    "shortDescription": "The Machine on your desktop",
+    "longDescription": "The Machine's robot in a corner of the screen, and its dashboard in a window of its own.",
+    "createUpdaterArtifacts": false,
+    "linux": {
+      "deb": { "depends": ["libgtk-layer-shell0"], "section": "utils" },
+      "appimage": { "bundleMediaFramework": false }
+    }
+  }
+}

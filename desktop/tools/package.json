@@ -1,0 +1,6 @@
+{
+  "name": "the-machine-desktop-tools",
+  "private": true,
+  "description": "Makes the Windows installer and signs updates, in CI only",
+  "devDependencies": { "@tauri-apps/cli": "2.12.6" }
+}

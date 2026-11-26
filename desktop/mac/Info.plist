@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key><string>computer.themachine.desktop</string>
+  <key>CFBundleName</key><string>The Machine</string>
+  <key>CFBundleDisplayName</key><string>The Machine</string>
+  <key>CFBundleExecutable</key><string>the-machine-desktop</string>
+  <key>CFBundleIconFile</key><string>icon</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+  <key>CFBundleDevelopmentRegion</key><string>en</string>
+  <key>CFBundleShortVersionString</key><string>0.0.1</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>LSMinimumSystemVersion</key><string>13.0</string>
+  <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSMicrophoneUsageDescription</key><string>To talk to your Machine and to dictate.</string>
+  <!-- What it saves is marked as from the internet, as a browser's downloads are -->
+  <key>LSFileQuarantineEnabled</key><true/>
+  <key>NSHumanReadableCopyright</key><string>AGPL-3.0-only</string>
+  <!-- The account's sign-in comes back on it (src/signin.rs) -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key><string>computer.themachine.desktop</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>CFBundleURLSchemes</key><array><string>computer.themachine.app</string></array>
+    </dict>
+  </array>
+</dict>
+</plist>

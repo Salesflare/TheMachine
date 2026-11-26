@@ -122,8 +122,9 @@ The copy protects against someone reading the browser's files (a lost laptop's d
 
 ### The desktop robot
 
-The desktop robot (a prototype) shows a to-do's notification in a small bubble instead of its computer's browser,
-never next to it (`machine/delivery/desk.py`). Whether something notifies is decided before: hours, the day's cap, a
+The desktop robot (a prototype; the app, its install and its releases are in [desktop/README.md](../desktop/README.md))
+shows a to-do's notification in a small bubble instead of its computer's browser, never next to it
+(`machine/delivery/desk.py`). Whether something notifies is decided before: hours, the day's cap, a
 dashboard in use, the kinds turned off, hidden text.
 
 - **No channel of its own.** It reads `api/status?look=1` every half minute for its dot (that opens nothing: no visit,

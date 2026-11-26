@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Machine</title>
+<link rel="stylesheet" href="style.css">
+<script src="strings.js" defer></script>
+<script src="icons.js" defer></script>
+<script src="native.js" defer></script>
+<script src="box.js" defer></script>
+</head>
+<body class="box">
+<main id="panel" role="dialog" aria-labelledby="name">
+  <header>
+    <div><h1 id="name">The Machine</h1><p id="state" role="status"></p></div>
+    <button id="more" type="button" class="icon" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h.01M8 8h.01M12.5 8h.01" stroke-width="2.2"/></svg></button>
+    <button id="close" type="button" class="icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+  </header>
+  <ul id="menu" class="rows" hidden></ul>
+
+  <section id="card" hidden>
+    <div class="card-bar">
+      <button id="card-back" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 3.5L5 8l4.5 4.5"/></svg><span id="card-back-name"></span></button>
+      <button id="card-app" type="button" class="icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5L9 7M6.5 13.5h-4v-4M2.5 13.5L7 9"/></svg></button>
+      <button id="card-close" type="button" class="icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </div>
+    <div id="card-place" role="status"><span class="turning"></span><span id="card-opening"></span></div>
+  </section>
+
+  <section id="notice" hidden>
+    <p id="notice-text" role="status"></p>
+    <button id="notice-ok" type="button" class="primary"></button>
+  </section>
+
+  <form id="signin" hidden novalidate>
+    <p id="signin-intro"></p>
+    <div id="by-account"><button id="signin-go" type="button" class="primary"></button></div>
+    <div id="by-address" hidden>
+      <input id="address" type="text" inputmode="url" autocomplete="off" spellcheck="false" maxlength="300">
+      <button id="connect" type="submit" class="primary"></button>
+    </div>
+    <p class="error" id="signin-error" role="alert"></p>
+    <button id="signin-other" type="button" class="link"></button>
+  </form>
+
+  <section id="added" hidden aria-labelledby="added-name">
+    <h2 id="added-name"></h2>
+    <ul id="added-todos" class="rows todos"></ul>
+  </section>
+
+  <section id="ready" hidden aria-labelledby="ready-name">
+    <h2 id="ready-name"></h2>
+    <ul id="todos" class="rows todos"></ul>
+  </section>
+
+  <section id="answer" hidden aria-live="polite">
+    <h2 id="answer-to"></h2>
+    <p id="answer-text"></p>
+  </section>
+
+  <form id="compose" hidden novalidate>
+    <ul id="files" hidden></ul>
+    <textarea id="text" rows="1" maxlength="2000"></textarea>
+    <ul id="adds" class="rows" hidden></ul>
+    <div class="bar">
+      <button id="plus" type="button" class="icon" aria-expanded="false" aria-controls="adds"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></button>
+      <input id="pick" type="file" multiple hidden>
+      <div class="kinds" role="radiogroup" id="kinds">
+        <label><input type="radio" name="kind" value="todo" checked><span id="kind-todo"></span></label>
+        <label><input type="radio" name="kind" value="ask"><span id="kind-ask"></span></label>
+      </div>
+      <button id="go" type="submit" class="send" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M3.8 7.6L8 3.4l4.2 4.2"/></svg></button>
+    </div>
+  </form>
+  <p id="said" role="status"></p>
+  <p id="live" role="status"></p>
+</main>
+</body>
+</html>

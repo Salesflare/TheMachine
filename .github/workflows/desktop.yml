@@ -1,0 +1,692 @@
+name: Desktop prototype
+
+# A Windows, a Mac and a Linux build of the desktop prototype (desktop/README.md), to try it: unsigned, kept 14 days as this run's
+# artifact, never a release. Each is then used on this computer's own desktop (desktop/smoke/), with its screenshots. Only
+# when desktop/ changes, or by hand. One job for each, standard runners, no secrets.
+# The prototype's own branch also gets a Mac build that is signed and notarized, so it opens on another Mac as it is, and a
+# Windows installer signed with Azure Artifact Signing.
+# A release: scripts/release.py cut starts this on main with the signed release tag, when desktop/ changed since the last
+# one. The same jobs build that tag, and publish puts the signed builds on a GitHub release of it (desktop/README.md).
+on:
+  pull_request:
+    paths: ['desktop/**', '.github/workflows/desktop.yml']
+  push:
+    branches: [desktop-bubble]
+    paths: ['desktop/**', '.github/workflows/desktop.yml']
+  workflow_dispatch:
+    inputs:
+      windows-only:
+        description: Only the Windows build and its signing, no Mac runner
+        type: boolean
+        default: false
+      release:
+        description: A signed release tag (release-YYYYMMDD-HHMM) to build and publish, from main only
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+env:
+  RELEASE: ${{ inputs.release }}
+
+concurrency:
+  group: desktop-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Skipped without a release, and a job after a skipped one is skipped too: so each job after it names the results of
+  # the ones it needs (needs.*.result doesn't do).
+  # A release's tag: signed with the release key (deploy/release-signers, as main has it) and on main. Nothing is built before.
+  release:
+    if: inputs.release != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Signed, and on main
+        id: check
+        run: |
+          set -euo pipefail
+          [ "$GITHUB_REF" = refs/heads/main ]
+          git fetch --quiet --force origin "refs/tags/$RELEASE:refs/tags/$RELEASE"
+          python3 scripts/release.py verify "$RELEASE"
+          git merge-base --is-ancestor "refs/tags/$RELEASE" origin/main
+          echo "version=$(python3 desktop/tools/version.py "$RELEASE")" >> "$GITHUB_OUTPUT"
+
+  windows:
+    needs: release
+    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' }} # its push has it
+    runs-on: windows-latest
+    timeout-minutes: 95
+    outputs:
+      sha: ${{ steps.build.outputs.sha }}
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
+      - name: Test and build
+        id: build
+        run: | # the sandbox's installers: this one and a newer, with a key made here
+          if [ -n "$RELEASE" ]; then python tools/version.py "$RELEASE"; fi
+          rustup toolchain install stable --profile minimal --no-self-update
+          (cd tools && npm ci --ignore-scripts --no-audit --no-fund)
+          tauri=tools/node_modules/.bin/tauri setup=target/release/bundle/nsis
+          cargo +stable test --release --locked
+          cargo +stable build --release --locked --features sandbox
+          mkdir out sandbox-build
+          cp target/release/the-machine-desktop.exe sandbox-build/
+          "$tauri" signer generate --ci -w "$RUNNER_TEMP/made-up.key" > /dev/null
+          for version in 0.0.1 9999.0.0; do
+            "$tauri" bundle --ci --bundles nsis --config windows/installer.json --config "{\"version\": \"$version\"}"
+            mv "$setup"/*-setup.exe "sandbox-build/setup-$version.exe"
+          done
+          "$tauri" signer sign -f "$RUNNER_TEMP/made-up.key" -p '' sandbox-build/setup-9999.0.0.exe > /dev/null
+          cargo +stable build --release --locked
+          cp target/release/the-machine-desktop.exe out/
+          "$tauri" bundle --ci --bundles nsis --config windows/installer.json
+          mv "$setup"/*-setup.exe out/the-machine-desktop-setup.exe
+          cp README.md ../LICENSE out/
+          echo "sha=$(sha256sum out/the-machine-desktop.exe | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-windows-unsigned
+          path: desktop/out/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Use it, with a made-up Machine
+        timeout-minutes: 60
+        run: | # its own certificate is trusted on this runner while this runs, for 127.0.0.1 only, and never by the build for people
+          grep -q MACHINE_SANDBOX_ROOT sandbox-build/the-machine-desktop.exe
+          if grep -q MACHINE_SANDBOX_ROOT out/the-machine-desktop.exe; then exit 1; fi
+          smoke/certificate.sh "$RUNNER_TEMP/certificate"
+          trap 'certutil -delstore Root "Made-up Machine root"' EXIT
+          certutil -addstore -f Root "$(cygpath -w "$RUNNER_TEMP/certificate/root.pem")"
+          python -m pip install --quiet tzdata # Linux and macOS have the time zones built in
+          failed=0
+          python smoke/windows.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots "$RUNNER_TEMP/certificate" || failed=1
+          python smoke/window.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/window || failed=1
+          python smoke/text.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/text || failed=1
+          python smoke/signin.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/signin || failed=1
+          MACHINE_SANDBOX_UPDATES_KEY="$(cat "$RUNNER_TEMP/made-up.key.pub")" python smoke/updates.py sandbox-build/setup-0.0.1.exe sandbox-build/setup-9999.0.0.exe shots/updates || failed=1
+          exit $failed
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-windows-screenshots
+          path: desktop/shots/
+          retention-days: 14
+
+  mac:
+    needs: release
+    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' && !inputs.windows-only }} # its push has it
+    runs-on: macos-26
+    timeout-minutes: 80
+    outputs:
+      sha: ${{ steps.build.outputs.sha }}
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
+      - name: Test and build
+        id: build
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '13.0'
+        run: |
+          if [ -n "$RELEASE" ]; then python3 tools/version.py "$RELEASE"; fi
+          rustup toolchain install stable --profile minimal --no-self-update --target aarch64-apple-darwin --target x86_64-apple-darwin
+          cargo +stable test --release --locked
+          cargo +stable build --release --locked --features sandbox
+          mac/bundle.sh sandbox-build target/release/the-machine-desktop
+          # A newer one, with a key made here
+          (cd tools && npm ci --ignore-scripts --no-audit --no-fund)
+          tools/node_modules/.bin/tauri signer generate --ci -w "$RUNNER_TEMP/made-up.key" > /dev/null
+          mkdir newer
+          ditto "sandbox-build/The Machine.app" "newer/The Machine.app"
+          plutil -replace CFBundleShortVersionString -string 9999.0.0 "newer/The Machine.app/Contents/Info.plist"
+          codesign --force --sign - --options runtime --entitlements mac/entitlements.plist "newer/The Machine.app"
+          COPYFILE_DISABLE=1 tar -czf newer/newer.app.tar.gz -C newer "The Machine.app"
+          tools/node_modules/.bin/tauri signer sign -f "$RUNNER_TEMP/made-up.key" -p '' newer/newer.app.tar.gz > /dev/null
+          for chip in aarch64 x86_64; do cargo +stable build --release --locked --target $chip-apple-darwin; done
+          mac/bundle.sh out target/{aarch64,x86_64}-apple-darwin/release/the-machine-desktop
+          cp README.md ../LICENSE out/
+          (cd out && ditto -c -k --keepParent "The Machine.app" the-machine-desktop-mac.zip)
+          echo "sha=$(shasum -a 256 out/the-machine-desktop-mac.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-mac-unsigned
+          path: |
+            desktop/out/the-machine-desktop-mac.zip
+            desktop/out/README.md
+            desktop/out/LICENSE
+          if-no-files-found: error
+          retention-days: 14
+      - name: Use it, with a made-up Machine
+        id: use
+        timeout-minutes: 45
+        run: | # its own certificate is trusted on this runner while this runs, for 127.0.0.1 only, and never by the build for people
+          grep -q MACHINE_SANDBOX_ROOT "sandbox-build/The Machine.app/Contents/MacOS/the-machine-desktop"
+          if grep -q MACHINE_SANDBOX_ROOT "out/The Machine.app/Contents/MacOS/the-machine-desktop"; then exit 1; fi
+          certificate="$RUNNER_TEMP/certificate" system=/Library/Keychains/System.keychain
+          smoke/certificate.sh "$certificate"
+          trap 'sudo security delete-certificate -c "Made-up Machine root" "$system"' EXIT
+          sudo security add-trusted-cert -d -r trustRoot -p ssl -k "$system" "$certificate/root.pem"
+          failed=0
+          MACHINE_SANDBOX_UPDATES_KEY="$(cat "$RUNNER_TEMP/made-up.key.pub")" python3 smoke/updates.py "sandbox-build/The Machine.app" newer/newer.app.tar.gz shots/updates || failed=1
+          python3 smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots "$certificate" || failed=1
+          python3 smoke/window.py "sandbox-build/The Machine.app" "out/The Machine.app" shots/window "$certificate" || failed=1
+          python3 smoke/hangs.py "sandbox-build/The Machine.app" - shots/hangs || failed=1
+          exit $failed
+      - name: Its certificate is trusted no more
+        if: always() && steps.use.outcome != 'skipped'
+        run: if security verify-cert -c "$RUNNER_TEMP/certificate/cert.pem" -p ssl -s 127.0.0.1 -L; then exit 1; fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-mac-screenshots
+          path: desktop/shots/
+          retention-days: 14
+
+  # What can keep it waiting, on an older macOS and on Intel too: there WebKit itself waits on the main thread for more
+  mac-hangs:
+    if: github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        on: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.on }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
+      - name: Build
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '13.0'
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          cargo +stable build --release --locked --features sandbox
+          mac/bundle.sh sandbox-build target/release/the-machine-desktop
+      - name: Use it
+        run: python3 smoke/hangs.py "sandbox-build/The Machine.app" - shots
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-hangs-${{ matrix.on }}
+          path: desktop/shots/
+          retention-days: 14
+
+  # Signs what the job above made and used, and nothing else: no checkout, no build and none of this repository's code runs
+  # beside the key. The environment only gives it to the prototype's branch and main, never to a pull request.
+  mac-sign:
+    needs: mac
+    if: ${{ !cancelled() && needs.mac.result == 'success' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) }}
+    runs-on: macos-26
+    timeout-minutes: 45
+    environment: mac-signing
+    outputs:
+      sha: ${{ steps.pack.outputs.sha }}
+      update: ${{ steps.pack.outputs.update }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-mac-unsigned
+      - name: Sign
+        env:
+          SHA: ${{ needs.mac.outputs.sha }}
+          P12: ${{ secrets.MAC_DEVELOPER_ID_P12 }}
+          PASSWORD: ${{ secrets.MAC_DEVELOPER_ID_PASSWORD }}
+          IDENTITY: 'Developer ID Application: Salesflare BVBA (BYM5H66GK9)'
+        run: |
+          set -euo pipefail
+          umask 077
+          echo "$SHA  the-machine-desktop-mac.zip" | shasum -a 256 -c -
+          ditto -x -k the-machine-desktop-mac.zip app
+          keychain="$RUNNER_TEMP/sign.keychain-db" p12="$RUNNER_TEMP/sign.p12" own=$(openssl rand -hex 24)
+          trap 'rm -f "$p12"' EXIT
+          printf '%s' "$P12" | base64 -D > "$p12"
+          security create-keychain -p "$own" "$keychain"
+          security set-keychain-settings -lut 900 "$keychain"
+          security unlock-keychain -p "$own" "$keychain"
+          security import "$p12" -k "$keychain" -P "$PASSWORD" -T /usr/bin/codesign > /dev/null
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$own" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          # As desktop/mac/entitlements.plist, which isn't here, and nothing of what the file itself says it has
+          plutil -create xml1 entitlements.plist
+          plutil -insert 'com\.apple\.security\.device\.audio-input' -bool true entitlements.plist
+          codesign --force --sign "$IDENTITY" --keychain "$keychain" --options runtime --entitlements entitlements.plist --timestamp "app/The Machine.app"
+          codesign --verify --strict --verbose=2 "app/The Machine.app"
+          codesign --display --verbose=4 --entitlements - "app/The Machine.app"
+      - name: The key is gone
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/sign.p12"
+          security delete-keychain "$RUNNER_TEMP/sign.keychain-db"
+          security list-keychains -d user -s login.keychain-db
+      - name: Notarize
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          umask 077
+          key="$RUNNER_TEMP/notary.p8"
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$ASC_KEY_P8" > "$key"
+          auth=(--key "$key" --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER_ID")
+          ditto -c -k --keepParent "app/The Machine.app" notary.zip
+          xcrun notarytool submit notary.zip "${auth[@]}" --wait --timeout 30m --output-format json > notary.json || { cat notary.json; exit 1; }
+          id=$(plutil -extract id raw notary.json)
+          xcrun notarytool log "$id" "${auth[@]}"
+          [ "$(plutil -extract status raw notary.json)" = Accepted ]
+          xcrun stapler staple "app/The Machine.app"
+          xcrun stapler validate "app/The Machine.app"
+          spctl --assess --type execute --verbose=4 "app/The Machine.app"
+      - name: Pack
+        id: pack
+        run: |
+          set -euo pipefail
+          mkdir out
+          ditto -c -k --keepParent "app/The Machine.app" out/the-machine-desktop-mac.zip
+          COPYFILE_DISABLE=1 tar -czf out/the-machine-desktop-mac.app.tar.gz -C app "The Machine.app"
+          echo "sha=$(shasum -a 256 out/the-machine-desktop-mac.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "update=$(shasum -a 256 out/the-machine-desktop-mac.app.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          shasum -a 256 out/*
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-mac-update
+          path: out/the-machine-desktop-mac.app.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-mac
+          path: out/the-machine-desktop-mac.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  # The signed one, opened as a download, away from the key
+  mac-open:
+    needs: mac-sign
+    if: ${{ !cancelled() && needs.mac-sign.result == 'success' }}
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-mac
+          path: signed
+      - name: Open it
+        env:
+          SHA: ${{ needs.mac-sign.outputs.sha }}
+        run: |
+          set -euo pipefail
+          echo "$SHA  signed/the-machine-desktop-mac.zip" | shasum -a 256 -c -
+          ditto -x -k signed/the-machine-desktop-mac.zip signed
+          spctl --assess --type execute --verbose=4 "signed/The Machine.app"
+          python3 desktop/smoke/mac.py - "signed/The Machine.app" shots
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-mac-opened
+          path: shots/
+          retention-days: 14
+
+  # The installer for people, signed by Azure Artifact Signing with what GitHub says this job is: no key or password is kept.
+  # Its own environment, windows-signing, holds only IDs (ARTIFACT_SIGNING_*), opens only on the prototype's branch and main,
+  # and Azure trusts only that environment of this repository, for signing with that one profile. Off without a profile.
+  windows-sign:
+    needs: windows
+    if: ${{ !cancelled() && needs.windows.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    runs-on: windows-latest
+    timeout-minutes: 20
+    environment: windows-signing
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      sha: ${{ steps.pack.outputs.sha }}
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-windows-unsigned
+          path: desktop/unsigned
+      - run: cd tools && npm ci --ignore-scripts --no-audit --no-fund
+      - name: The signer
+        if: vars.ARTIFACT_SIGNING_PROFILE != ''
+        env:
+          PROFILE: ${{ vars.ARTIFACT_SIGNING_PROFILE }}
+          ACCOUNT: ${{ vars.ARTIFACT_SIGNING_ACCOUNT }}
+          ENDPOINT: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
+          PACKAGE: 35375a4bc4e1102da729fc3d8d9925f774c3baae6b8b7ff6398d948ca9ab0d8a
+        run: |
+          set -euo pipefail
+          at="$RUNNER_TEMP/signer"
+          mkdir "$at"
+          curl -sSfL -o "$at/client.zip" https://api.nuget.org/v3-flatcontainer/microsoft.artifactsigning.client/1.0.151/microsoft.artifactsigning.client.1.0.151.nupkg
+          echo "$PACKAGE *$at/client.zip" | sha256sum -c -
+          unzip -q "$at/client.zip" -d "$at/client"
+          jq -n --arg profile "$PROFILE" --arg account "$ACCOUNT" --arg endpoint "$ENDPOINT" '{Endpoint: $endpoint, CodeSigningAccountName: $account, CertificateProfileName: $profile}' > "$at/metadata.json"
+          echo "SIGN_DLIB=$(cygpath -w "$at/client/bin/x64/Azure.CodeSigning.Dlib.dll")" >> "$GITHUB_ENV"
+          echo "SIGN_METADATA=$(cygpath -w "$at/metadata.json")" >> "$GITHUB_ENV"
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        if: vars.ARTIFACT_SIGNING_PROFILE != ''
+        with:
+          client-id: ${{ vars.ARTIFACT_SIGNING_CLIENT_ID }}
+          tenant-id: ${{ vars.ARTIFACT_SIGNING_TENANT_ID }}
+          subscription-id: ${{ vars.ARTIFACT_SIGNING_SUBSCRIPTION_ID }}
+      - name: Pack
+        id: pack
+        env:
+          SHA: ${{ needs.windows.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "$RELEASE" ]; then python tools/version.py "$RELEASE"; fi
+          echo "$SHA *unsigned/the-machine-desktop.exe" | sha256sum -c -
+          mkdir -p target/release out
+          cp unsigned/the-machine-desktop.exe target/release/
+          tools/node_modules/.bin/tauri bundle --ci --bundles nsis --config windows/installer.json
+          mv target/release/bundle/nsis/*-setup.exe out/the-machine-desktop-setup.exe
+          echo "sha=$(sha256sum out/the-machine-desktop-setup.exe | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          sha256sum out/*
+      - name: Signed by Salesflare BV
+        if: vars.ARTIFACT_SIGNING_PROFILE != ''
+        run: | # the installer, and the program as it comes out of it
+          7z x -y -o"$RUNNER_TEMP/unpacked" out/the-machine-desktop-setup.exe > /dev/null
+          program=$(find "$RUNNER_TEMP/unpacked" -iname the-machine-desktop.exe | head -1)
+          [ -n "$program" ]
+          powershell -NoProfile -ExecutionPolicy Bypass -File windows/verify.ps1 out/the-machine-desktop-setup.exe "$(cygpath -w "$program")"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-windows
+          path: desktop/out/the-machine-desktop-setup.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  # What the app itself fetches when there is a newer one, with the key it trusts (README, Updates)
+  updates-sign:
+    needs: [mac-sign, mac-open, windows-sign]
+    if: ${{ !cancelled() && needs.mac-sign.result == 'success' && needs.mac-open.result == 'success' && needs.windows-sign.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: mac-signing
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-mac-update
+          path: out
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-windows
+          path: out
+      - run: cd desktop/tools && npm ci --ignore-scripts --no-audit --no-fund
+      - name: Sign
+        env:
+          MAC: ${{ needs.mac-sign.outputs.update }}
+          WINDOWS: ${{ needs.windows-sign.outputs.sha }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.DESKTOP_UPDATER_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        run: |
+          set -euo pipefail
+          echo "$MAC  out/the-machine-desktop-mac.app.tar.gz" | sha256sum -c -
+          echo "$WINDOWS  out/the-machine-desktop-setup.exe" | sha256sum -c -
+          for file in out/the-machine-desktop-mac.app.tar.gz out/the-machine-desktop-setup.exe; do desktop/tools/node_modules/.bin/tauri signer sign "$file" > /dev/null; done
+      - name: By the key the app trusts
+        run: |
+          set -euo pipefail
+          node desktop/tools/verify.mjs out/the-machine-desktop-mac.app.tar.gz out/the-machine-desktop-setup.exe
+          if [ -n "$RELEASE" ]; then python3 desktop/tools/version.py "$RELEASE"; fi
+          node desktop/tools/latest.mjs out $RELEASE > out/latest.json
+          cat out/latest.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-updates
+          path: out/
+          if-no-files-found: error
+          retention-days: 14
+
+  # Linux for people: an AppImage (x86_64, with what it needs, gtk-layer-shell too) and a .deb, on the oldest Ubuntu runner so
+  # they run where its glibc is older. Not signed, and it doesn't update itself. The jobs after it start them where nothing
+  # of the build is: Ubuntu with X11, and Arch with Wayland (linux/PKGBUILD).
+  linux:
+    needs: release
+    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' }} # its push has it
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
+      - name: Build
+        run: |
+          set -euo pipefail
+          if [ -n "$RELEASE" ]; then python3 tools/version.py "$RELEASE"; fi
+          [ "$(grep -m1 '^pkgver=' linux/PKGBUILD | cut -d= -f2)" = "$(jq -r .version tauri.conf.json)" ]
+          sudo apt-get update -qq
+          # The tray icon is Windows' and the Mac's, but tauri bundle sees the feature and wants appindicator
+          sudo apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-dev libgtk-layer-shell-dev libayatana-appindicator3-dev librsvg2-dev file xdg-utils > /dev/null
+          rustup toolchain install stable --profile minimal --no-self-update
+          (cd tools && npm ci --ignore-scripts --no-audit --no-fund)
+          cargo +stable build --release --locked
+          if grep -q MACHINE_SANDBOX_ROOT target/release/the-machine-desktop; then exit 1; fi
+          tools/node_modules/.bin/tauri bundle --ci --bundles deb,appimage --config linux/bundle.json
+          mkdir out
+          mv target/release/bundle/appimage/*.AppImage out/the-machine-desktop-x86_64.AppImage
+          mv target/release/bundle/deb/*.deb out/the-machine-desktop-amd64.deb
+          cp README.md ../LICENSE linux/PKGBUILD out/
+      - name: What is in them
+        run: |
+          set -euo pipefail
+          deb=out/the-machine-desktop-amd64.deb
+          dpkg-deb -I "$deb"
+          dpkg-deb -c "$deb" | tee "$RUNNER_TEMP/files.txt"
+          depends="$(dpkg-deb -f "$deb" Depends)"
+          for need in libwebkit2gtk-4.1-0 libgtk-3-0 libgtk-layer-shell0; do grep -q "$need" <<< "$depends"; done
+          grep -qE ' (\./)?usr/bin/the-machine-desktop$' "$RUNNER_TEMP/files.txt"
+          chmod +x out/the-machine-desktop-x86_64.AppImage
+          own="$PWD/out/the-machine-desktop-x86_64.AppImage"
+          (cd "$RUNNER_TEMP" && "$own" --appimage-extract > /dev/null)
+          find "$RUNNER_TEMP/squashfs-root" -name 'libgtk-layer-shell.so*' -o -name 'libwebkit2gtk-4.1.so*' -o -name 'libwayland-*.so*'
+          [ -n "$(find "$RUNNER_TEMP/squashfs-root" -name 'libgtk-layer-shell.so.0*')" ]
+          # Wayland stays Wayland: on Hyprland and Sway the robot is a layer surface, not an X11 window
+          if grep -rhE '^\s*export GDK_BACKEND' "$RUNNER_TEMP/squashfs-root/apprun-hooks"; then exit 1; fi
+          echo "What it leaves to the system:"
+          { find "$RUNNER_TEMP/squashfs-root" -type f \( -name '*.so*' -o -path '*/usr/bin/*' \) -exec readelf -d {} + 2> /dev/null || true; } \
+            | grep -o 'Shared library: \[[^]]*\]' | cut -d[ -f2 | tr -d ']' | sort -u > "$RUNNER_TEMP/needed.txt"
+          find "$RUNNER_TEMP/squashfs-root" -name '*.so*' -printf '%f\n' | sort -u > "$RUNNER_TEMP/bundled.txt"
+          comm -23 "$RUNNER_TEMP/needed.txt" "$RUNNER_TEMP/bundled.txt"
+          rm -rf "$RUNNER_TEMP/squashfs-root"
+          ls -l out
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-linux
+          path: desktop/out/
+          if-no-files-found: error
+          retention-days: 14
+
+  linux-ubuntu:
+    needs: linux
+    if: ${{ !cancelled() && needs.linux.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-linux
+          path: desktop/linux-build
+      - name: The AppImage, then the .deb installed, each to its sign-in window (X11)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          # An AppImage leaves OpenGL and EGL to the system, as every desktop has them; this runner hasn't
+          sudo apt-get install -y -qq --no-install-recommends xvfb openbox dunst xdotool x11-utils imagemagick dbus libfuse2t64 fuse3 libegl1 libgles2 libgl1 > /dev/null
+          image="$PWD/linux-build/the-machine-desktop-x86_64.AppImage"
+          chmod +x "$image"
+          failed=0
+          bash smoke/linux.sh "$image" shots/appimage python3 smoke/started.py "$PWD/shots/appimage" "$image" || failed=1
+          sudo apt-get install -y -qq ./linux-build/the-machine-desktop-amd64.deb
+          dpkg -L "$(dpkg-deb -f linux-build/the-machine-desktop-amd64.deb Package)"
+          bash smoke/linux.sh /usr/bin/the-machine-desktop shots/deb python3 smoke/started.py "$PWD/shots/deb" /usr/bin/the-machine-desktop || failed=1
+          exit $failed
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-linux-screenshots
+          path: desktop/shots/
+          retention-days: 14
+
+  # Arch (Omarchy too): the AppImage where nothing of the app is installed, then the package from linux/PKGBUILD, each on a
+  # wlroots compositor with layer-shell, as Hyprland has it
+  linux-arch:
+    needs: linux
+    if: ${{ !cancelled() && needs.linux.result == 'success' }}
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Arch, with sway and nothing of the app's
+        run: |
+          set -euo pipefail
+          # and what every desktop has, which an AppImage leaves to the system: OpenGL and EGL, X11's libraries, fonts, sound
+          pacman -Syu --noconfirm --needed base-devel pacman-contrib sway grim python dbus mesa libglvnd libx11 libxcb libxext libxrender fontconfig freetype2 alsa-lib > /dev/null
+          for p in webkit2gtk-4.1 gtk-layer-shell gtk3; do if pacman -Q "$p" 2> /dev/null; then exit 1; fi; done
+          getcap /usr/bin/sway
+          setcap -r /usr/bin/sway || true # its file capability (cap_sys_nice) is more than a container may start
+          sway --version
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-linux
+          path: linux-build
+      - name: The AppImage, then the package made with makepkg and installed, each to its sign-in window (Wayland)
+        run: |
+          set -euo pipefail
+          if [ -n "$RELEASE" ]; then python3 desktop/tools/version.py "$RELEASE"; fi
+          useradd -m builder
+          home=/home/builder pkg=/home/builder/pkg
+          cp -r desktop "$home/desktop"
+          mkdir -p "$home/shots" "$pkg"
+          cp linux-build/the-machine-desktop-x86_64.AppImage "$home/"
+          version="$(grep -m1 '^pkgver=' desktop/linux/PKGBUILD | cut -d= -f2)"
+          cp desktop/linux/PKGBUILD "$pkg/"
+          cp linux-build/the-machine-desktop-amd64.deb "$pkg/the-machine-desktop-$version-amd64.deb"
+          chmod +x "$home/the-machine-desktop-x86_64.AppImage"
+          chown -R builder: "$home"
+          as() { runuser -u builder -- "$@"; }
+          failed=0
+          as bash "$home/desktop/smoke/wayland.sh" "$home/shots/appimage" python3 smoke/started.py "$home/shots/appimage" \
+            env APPIMAGE_EXTRACT_AND_RUN=1 "$home/the-machine-desktop-x86_64.AppImage" || failed=1
+          as bash -c 'cd /home/builder/pkg && updpkgsums && makepkg --nodeps --noconfirm'
+          pacman -U --noconfirm "$pkg"/the-machine-desktop-bin-*.pkg.tar.zst
+          pacman -Qi the-machine-desktop-bin
+          as bash "$home/desktop/smoke/wayland.sh" "$home/shots/package" python3 smoke/started.py "$home/shots/package" /usr/bin/the-machine-desktop || failed=1
+          mkdir out
+          cp "$pkg"/PKGBUILD "$pkg"/the-machine-desktop-bin-*.pkg.tar.zst out/
+          exit $failed
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-arch
+          path: out/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-arch-screenshots
+          path: /home/builder/shots/
+          retention-days: 14
+
+  # A release's signed builds on a GitHub release of its tag: latest.json for the app's updater, and the downloads. The
+  # newest is always at releases/latest/download/<file>. Only what every job above made, checked and signed.
+  publish:
+    needs: [release, updates-sign, mac-open, linux-ubuntu, linux-arch]
+    if: ${{ !cancelled() && needs.release.result == 'success' && needs.updates-sign.result == 'success' && needs.mac-open.result == 'success' && needs.linux-ubuntu.result == 'success' && needs.linux-arch.result == 'success' && inputs.release != '' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-updates
+          path: out
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-mac
+          path: out
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-linux
+          path: linux
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-arch
+          path: arch
+      - name: On the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          cp linux/the-machine-desktop-x86_64.AppImage linux/the-machine-desktop-amd64.deb arch/PKGBUILD arch/the-machine-desktop-bin-*.pkg.tar.zst out/
+          [ "$(jq -r .version out/latest.json)" = "$VERSION" ]
+          grep -q "^_tag=$RELEASE$" out/PKGBUILD
+          (cd out && sha256sum -- * > SHA256SUMS && cat SHA256SUMS)
+          gh release create "$RELEASE" out/* --repo "$GITHUB_REPOSITORY" --verify-tag --latest --title "The Machine desktop app $VERSION" \
+            --notes "The desktop app of $RELEASE (desktop/README.md). Windows: the-machine-desktop-setup.exe, signed. Mac: the-machine-desktop-mac.zip, signed and notarized. Linux: the AppImage, the .deb, and PKGBUILD for Arch. The newest is always at releases/latest/download/ with the same file names."

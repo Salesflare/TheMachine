@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Machine</title>
+<link rel="stylesheet" href="style.css">
+<script src="strings.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body class="app">
+<main id="panel" hidden>
+  <img src="img/machine.png" alt="">
+  <h1 id="title"></h1>
+  <p id="line"></p>
+  <button id="go" type="button" class="primary" hidden></button>
+  <form id="by-address" hidden novalidate>
+    <input id="address" type="text" inputmode="url" autocomplete="off" spellcheck="false" maxlength="300">
+    <button id="connect" type="submit" class="primary"></button>
+  </form>
+  <p class="error" id="error" role="alert"></p>
+  <button id="other" type="button" class="link" hidden></button>
+</main>
+</body>
+</html>

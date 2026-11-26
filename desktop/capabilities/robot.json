@@ -1,0 +1,9 @@
+{
+  "identifier": "robot",
+  "windows": ["robot"],
+  "permissions": [
+    "core:event:allow-listen", "core:event:allow-unlisten",
+    "allow-robot-state", "allow-robot-grab", "allow-robot-drag", "allow-robot-drop", "allow-robot-click", "allow-robot-menu", "allow-robot-take",
+    "allow-robot-list", "allow-robot-given", "allow-robot-notify"
+  ]
+}

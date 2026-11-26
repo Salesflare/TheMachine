@@ -720,7 +720,7 @@ def load_cards(db, fixture, ids, base):
                    'urgent,source_line,project) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                    (card_id, 'sandbox:' + card['key'], card['title'], card['body'], json.dumps(event_ids), json.dumps(card['accounts']), card['status'],
                     created, snoozed, 'pending' if snoozed else None, json.dumps(card['next_action']) if card.get('next_action') else None,
-                    int(bool(card.get('urgent'))), f"Source: {card['source']} · {(base - dt.timedelta(minutes=card['minutes_ago'])).strftime('%a, %b %-d')}",
+                    int(bool(card.get('urgent'))), f"Source: {card['source']} · {(base - dt.timedelta(minutes=card['minutes_ago'])).strftime('%a, %b %d').replace(' 0', ' ')}",
                     card.get('project')))
         if card.get('outcome'):  # what its run said is left (Store.prepare): needs_you with nothing ready reads Needs you
             db.execute('UPDATE suggestions SET outcome=? WHERE id=?', (json.dumps(card['outcome']), card_id))
