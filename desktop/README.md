@@ -342,7 +342,9 @@ with a home of its own: nothing of the desktop it is started on is seen or touch
 The Linux builds for people (`linux/bundle.json`, `linux/PKGBUILD`) are started by `smoke/started.py`: the window opens to
 sign in, and a start at login has only the robot. On Ubuntu with X11 (`smoke/linux.sh`) the AppImage and the installed .deb;
 on Arch the AppImage where nothing of the app is installed, then the package, on Wayland: `smoke/wayland.sh` runs sway
-headless, and there the robot has to be a layer surface.
+headless, and there the robot has to be a layer surface. Both start the AppImage on FUSE with fuse3 alone. On Ubuntu,
+AppArmor's limit on user namespaces is on, as Ubuntu 23.10 and newer and Debian 13 have it, and `smoke/namespaces.sh` checks
+that the app and its web view need none: no AppArmor profile is needed for it.
 
 On a Mac, `mac/bundle.sh <folder> target/release/the-machine-desktop` makes the app. CI signs and notarizes the one for
 people in a job of its own, which runs none of this repository's code.

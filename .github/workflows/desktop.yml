@@ -608,7 +608,7 @@ jobs:
           grep -q '^mount ' shots/namespaces-seen.txt || failed=1
           grep -q '^process WebKit' shots/namespaces-seen.txt || failed=1
           own="$(readlink /proc/self/ns/user)"
-          if grep '^process .* user:' shots/namespaces-seen.txt | grep -v " $own$"; then failed=1; fi
+          if grep '^process .* user:' shots/namespaces-seen.txt | grep -vF " $own"; then failed=1; fi
           sudo dmesg | grep -E 'apparmor=.*userns' | tee shots/userns-denied.txt || true
           if grep -E 'the-machine|WebKit|bwrap' shots/userns-denied.txt; then failed=1; fi
           exit $failed
