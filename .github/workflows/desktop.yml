@@ -35,8 +35,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Skipped without a release, and a job after a skipped one is skipped too: so each job after windows, mac and
-  # linux says itself when it runs.
+  # Skipped without a release, and a job after a skipped one is skipped too: so each job after it names the results of
+  # the ones it needs (needs.*.result doesn't do).
   # A release's tag: signed with the release key (deploy/release-signers, as main has it) and on main. Nothing is built before.
   release:
     if: inputs.release != ''
@@ -240,7 +240,7 @@ jobs:
   # beside the key. The environment only gives it to the prototype's branch and main, never to a pull request.
   mac-sign:
     needs: mac
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) }}
+    if: ${{ !cancelled() && needs.mac.result == 'success' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) }}
     runs-on: macos-26
     timeout-minutes: 45
     environment: mac-signing
@@ -329,7 +329,7 @@ jobs:
   # The signed one, opened as a download, away from the key
   mac-open:
     needs: mac-sign
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') }}
+    if: ${{ !cancelled() && needs.mac-sign.result == 'success' }}
     runs-on: macos-26
     timeout-minutes: 15
     steps:
@@ -362,7 +362,7 @@ jobs:
   # and Azure trusts only that environment of this repository, for signing with that one profile. Off without a profile.
   windows-sign:
     needs: windows
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    if: ${{ !cancelled() && needs.windows.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     runs-on: windows-latest
     timeout-minutes: 20
     environment: windows-signing
@@ -439,7 +439,7 @@ jobs:
   # What the app itself fetches when there is a newer one, with the key it trusts (README, Updates)
   updates-sign:
     needs: [mac-sign, mac-open, windows-sign]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') }}
+    if: ${{ !cancelled() && needs.mac-sign.result == 'success' && needs.mac-open.result == 'success' && needs.windows-sign.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: mac-signing
@@ -548,7 +548,7 @@ jobs:
 
   linux-ubuntu:
     needs: linux
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') }}
+    if: ${{ !cancelled() && needs.linux.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -589,7 +589,7 @@ jobs:
   # wlroots compositor with layer-shell, as Hyprland has it
   linux-arch:
     needs: linux
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') }}
+    if: ${{ !cancelled() && needs.linux.result == 'success' }}
     runs-on: ubuntu-latest
     container: archlinux:latest
     timeout-minutes: 30
@@ -656,7 +656,7 @@ jobs:
   # newest is always at releases/latest/download/<file>. Only what every job above made, checked and signed.
   publish:
     needs: [release, updates-sign, mac-open, linux-ubuntu, linux-arch]
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') && inputs.release != '' && github.ref == 'refs/heads/main' }}
+    if: ${{ !cancelled() && needs.release.result == 'success' && needs.updates-sign.result == 'success' && needs.mac-open.result == 'success' && needs.linux-ubuntu.result == 'success' && needs.linux-arch.result == 'success' && inputs.release != '' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
