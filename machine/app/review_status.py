@@ -15,15 +15,14 @@ import hashlib
 import json
 import re
 
+import message_seal
+from machine.store.conversation import CONTEXT_KEYS, one_to_one
 from machine.store.review import REVIEW_PAGE_CHARS, REVIEW_SESSION_PREFIX
 from machine.text import clamp, encoded
 
 BODY_START = 120   # characters of an open to-do's body in the light status
 HERE_MAX, HERE_CHARS = 10, 7000  # open_todos_here: to-dos and characters at most
 HERE_EVIDENCE = 20  # of a to-do's evidence, the messages its thread, chat and sender are read from
-CHAT_KEYS = {'slack.message': 'channel_id', 'whatsapp.message': 'chat_id', 'teams.message': 'chat_id', 'telegram.message': 'chat_id',
-             'signal.message': 'chat_id', 'linkedin.message': 'conversation_id'}
-
 NOTE = ('suggestions: the open to-dos, body_start is only the beginning; done: id, title (day closed). status with suggestion_id '
         'gives one in full; events and related read signals.')
 AGAIN = ('Read earlier in this review, so left out: {n} to-dos as you read them. Shown: only the ones new or changed since. '
@@ -95,15 +94,19 @@ def read_once(reads, session, result, again=False):
 
 
 def keys_of(kind, metadata):
-    """A message's thread, chat and sender, as here() matches them."""
+    """A message's thread, chat and sender, as here() matches them. Read from a store connection, which opens the
+    sealed metadata (message_seal.attach). A Slack channel or group is too wide to be one conversation, so of Slack
+    only a direct message counts (conversation.one_to_one, on the plain channel_id). A mail's sender counts only when
+    it is opened and is no mailing list: still sealed, it can't be told from a newsletter, and is left out."""
     out = set()
     if kind == 'gmail.message' and metadata.get('thread_id'):
         out.add(('thread', str(metadata['thread_id'])))
-    chat = CHAT_KEYS.get(kind)
-    if chat and metadata.get(chat) and not (kind == 'slack.message' and metadata.get('conversation_type') == 'channel'):
+    chat = CONTEXT_KEYS.get(kind) if kind != 'gmail.message' else None  # a conversation's plain key, as the message viewer matches it
+    if chat and metadata.get(chat) and (kind != 'slack.message' or one_to_one(kind, metadata)):
         out.add(('chat', str(metadata[chat])))
     sender = re.search(r'[\w.+-]+@[\w.-]+', str(metadata.get('from') or ''))
-    if kind == 'gmail.message' and sender and not metadata.get('list_unsubscribe') and 'SENT' not in (metadata.get('labels') or ()):
+    if (kind == 'gmail.message' and sender and message_seal.SEALED_KEY not in metadata and not metadata.get('list_unsubscribe')
+            and 'SENT' not in (metadata.get('labels') or ())):
         out.add(('sender', sender[0].lower()))
     return out
 
@@ -111,7 +114,7 @@ def keys_of(kind, metadata):
 def here(db, event_ids, open_states):
     """The open to-dos that share a mail thread, a chat or a sender with these signals, newest first, with their first
     400 characters and the signals they share it with: at most HERE_MAX, within HERE_CHARS. A Slack channel is too
-    wide to count as one conversation, its threads count by mail only."""
+    wide to count as one conversation (keys_of)."""
     def meta(row):
         try:
             found = json.loads(row['metadata'] or '{}') if not isinstance(row['metadata'], dict) else row['metadata']

@@ -3,9 +3,12 @@ as a line, under the cut of a review's replies; a second status in the same revi
 the batch's own threads, chats and senders whole in the claim's reply. Chats, the CLI and a to-do's run keep the status
 they had. Made-up data only, on a store as a Machine keeps it."""
 import json
+import os
+import sqlite3
 from pathlib import Path
 import tempfile
 import unittest
+import unittest.mock
 import uuid
 
 import machine.app.status as machine_app_status
@@ -26,6 +29,10 @@ def message(n, kind='gmail.message', **meta):
 
 class Store(unittest.TestCase):
     def setUp(self):
+        patcher = unittest.mock.patch.dict(os.environ)  # sealed here whatever the run chose (as test_message_seal.py)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        os.environ.pop('MESSAGE_PROTECTION_TEST', None)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite', protect=True)  # sealed, as every Machine is by default
@@ -121,6 +128,7 @@ class ReadOnce(Store):
 
 class OpenHere(Store):
     def test_the_open_to_dos_on_the_batchs_threads_chats_and_senders_come_whole(self):
+        news = {'from': 'Deals <news@shop.example>', 'list_unsubscribe': '<mailto:out@shop.example>'}
         ids = self.events(message(1, thread_id='t1', **{'from': 'Robin <robin@acme.example>'}),
                           message(2, 'whatsapp.message', chat_id='c1@g.us'),
                           message(3, 'slack.message', channel_id='C1', conversation_type='channel'),
@@ -128,17 +136,32 @@ class OpenHere(Store):
                           message(5, thread_id='t2', **{'from': 'Robin <robin@acme.example>'}),
                           message(6, 'whatsapp.message', chat_id='c1@g.us'),
                           message(7, 'slack.message', channel_id='C1', conversation_type='channel'),
-                          message(8, thread_id='t1', **{'from': 'Sam <sam@acme.example>'}))
-        mail, chat, channel, other = (self.card(n, ids[f'm{n}']) for n in (1, 2, 3, 4))
+                          message(8, thread_id='t1', **{'from': 'Sam <sam@acme.example>'}),
+                          message(10, 'slack.message', channel_id='D1', conversation_type='im'),
+                          message(11, thread_id='t3', **news),
+                          message(12, 'slack.message', channel_id='D1', conversation_type='im'),
+                          message(13, thread_id='t4', **news))
+        raw = sqlite3.connect(Path(self.temp.name) / 'events.sqlite')
+        self.addCleanup(raw.close)
+        at_rest = ' '.join(r[0] for r in raw.execute('SELECT metadata FROM events'))
+        self.assertNotIn('list_unsubscribe', at_rest)  # sealed at rest, as on a Machine: only the store's connection opens it
+        self.assertNotIn('conversation_type', at_rest)
+        mail, chat, channel, other, dm, letter = (self.card(n, ids[f'm{n}']) for n in (1, 2, 3, 4, 10, 11))
         self.card(9, ids['m1'], 'completed')  # done: not here
+        batch = [ids[f'm{n}'] for n in (5, 6, 7, 8, 12, 13)]
         with self.store.connect() as db:
-            found = review_status.here(db, [ids['m5'], ids['m6'], ids['m7'], ids['m8']], todo_states.OPEN)
+            found = review_status.here(db, batch, todo_states.OPEN)
         by = {c['id']: c for c in found}
-        self.assertEqual(set(by), {mail, chat})  # the same sender and thread; the same chat; a Slack channel is too wide
+        self.assertEqual(set(by), {mail, chat, dm})  # same sender and thread; same chat; same Slack DM
         self.assertEqual(by[mail]['shares_with_signals'], sorted([ids['m5'], ids['m8']]))
         self.assertLessEqual(len(by[chat]['body']), 401)  # its first 400 characters
-        self.assertNotIn(other, by)
-        self.assertNotIn(channel, by)
+        for wide in (other, channel, letter):  # another sender; a Slack channel; a newsletter's sender
+            self.assertNotIn(wide, by)
+        for kind, text in raw.execute('SELECT kind,metadata FROM events WHERE source_id IN (?,?,?,?)', ('m5', 'm7', 'm12', 'm13')):
+            keys = review_status.keys_of(kind, json.loads(text))  # metadata as it rests, unopened
+            # unopened, a mail with sealed keys can't be told from a newsletter: its sender is left out, never guessed
+            self.assertEqual(bool([k for k in keys if k[0] == 'sender']), kind == 'gmail.message' and 'mc1_sealed' not in text)
+            self.assertEqual(bool([k for k in keys if k[0] == 'chat']), kind == 'slack.message' and 'D1' in text)  # by the plain channel_id
 
     def test_the_claim_carries_them_and_only_while_it_fits(self):
         ids = self.events(message(1, 'whatsapp.message', chat_id='c1@g.us'))
