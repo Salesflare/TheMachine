@@ -451,6 +451,7 @@ SERVER_TEXT = {
     'machine/store/whats_new.py': ['ENTRIES'],  # What's new: each entry's title, text and button
     'routine_templates.py': ['TEMPLATES'],  # the Routines page's Templates: each one's name and what it does
     'secondhand_app.py': ['WALL_TEXT'],  # a Second-hand finds to-do: why a site stopped its search
+    'doc_writes.py': ['FORMATS'],  # a doc edit's formatting change: what it does (todos-docwrite.js)
 }
 # Constants the dashboard also shows capitalized (cap()) as a label
 CAPITALIZED = {'fleet.py': ['KIND_LABEL'], 'family.py': ['LABELS']}

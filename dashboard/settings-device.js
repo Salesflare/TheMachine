@@ -131,4 +131,4 @@ if(desktopApp)addEventListener('machinedesktop',({detail:d})=>d?.saved?toast(t('
 // A notification opens its link in this page: only the part after # changes, so nothing reloads
 if(pushOK)navigator.serviceWorker.addEventListener('message',e=>{if(!e.data?.open)return;const u=new URL(e.data.open,location.href);
  if(u.origin!==location.origin||u.pathname!==location.pathname||u.search!==location.search){location.href=u.href;return}if(u.hash!==location.hash)location.hash=u.hash;else dispatchEvent(new HashChangeEvent('hashchange'))});
-const notifyPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+const notifyPost=(action,args={})=>sharePost(action,args);

@@ -159,7 +159,7 @@ function agentEditor(s){const d=agentEditing.get(s.id);if(!d||closed(s))return''
  <div class="agent-sheet-foot"><button type="button" class="ghost" data-agent-edit-cancel="${id}">Cancel</button><button class="primary">Hand off</button></div></form>`}
 function agentAskEditor(s){if(!agentAsking.has(s.id)||!s.agent_job)return'';
  return html`<div class="change-editor"><label for="agent-ask-${s.id}">What should ${s.agent_job.name} change? <small>Goes to the ${s.agent_job.name} job</small></label><textarea id="agent-ask-${s.id}" spellcheck="true" autocapitalize="sentences" maxlength="4000" placeholder="Ctrl+Enter sends"></textarea><div class="actions"><button class="primary" data-agent-ask-send="${s.id}">Send</button><button class="ghost" data-agent-ask-cancel="${s.id}">Cancel</button></div></div>`}
-const agentPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+const agentPost=sharePost;
 async function agentHand(id,tool,b){if(b)b.disabled=true;try{const d=await agentPost('agent_draft',{suggestion_id:id});agentEditing.set(id,{tool,brief:d.brief,line:d.line,gets:d.gets,note:''});render();if(chatId)paintChat();document.getElementById('agent-note-'+id)?.focus()}catch(err){errCaught(err);toast(err.message,true)}finally{if(b)b.disabled=false}}
 $('#suggestions').addEventListener('click',async e=>{const t=e.target;let b;
  if(b=t.closest('[data-agent-hand]'))return agentHand(b.dataset.card,b.dataset.agentHand,b);

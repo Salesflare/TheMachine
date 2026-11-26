@@ -23,6 +23,12 @@ own chat message asked for that change (do_now, 2026-11-06). Never with send_now
   {after, insert} new paragraphs after the paragraph that holds `after`; {append} new paragraphs at the end.
   Text in tables, paragraphs with suggestions, tracked changes, fields or text boxes, and images stay as they are.
   The text around a change keeps its formatting; new paragraphs are plain (or headings).
+- Google Docs only (2026-11-26, a to-do's doc stayed plain text and its chat said formatting was blocked): {format,
+  style} formats text that is in the doc once: bold, italic, underline or plain (that text), h1 to h3 or p, bullet,
+  number or no_list (its paragraph, through the one holding `through`), page_break (a page break before its paragraph);
+  {format, link} links that text. New text (insert, append, a new doc's body) may hold "- " or "1. " list lines,
+  **bold**, *italic* and [text](https://link); its other text is plain. All of it goes in the same documents.batchUpdate
+  under the scope edits already use. Word and Notion take the text as it is written; tables are not made.
 
 Pinned: an edit carries the doc's version when it was drafted (Google's revisionId, Word's cTag), read live when the
 draft was saved; the to-do shows the changes against that version. If the doc changed since, nothing is written and
@@ -68,6 +74,17 @@ MAX_LINES = 400
 LABELS = re.compile(r'(?:Create|Save|Update|Add|Edit|Mark)\b')
 WHERE = {'google': 'Google Docs', 'microsoft': 'Word', 'notion': 'Notion'}
 HEADING = re.compile(r'(#{1,3}) +(.*)')
+# {format, style}: what the owner reads for each style (the dashboard translates it); link's slot is the link
+FORMATS = {'bold': 'Bold', 'italic': 'Italic', 'underline': 'Underline', 'plain': 'Plain text', 'h1': 'Heading 1',
+           'h2': 'Heading 2', 'h3': 'Heading 3', 'p': 'Normal text', 'bullet': 'Bulleted list', 'number': 'Numbered list',
+           'no_list': 'No list', 'page_break': 'Page break before', 'link': 'Link to {}'}
+TEXT_FORMATS = ('bold', 'italic', 'underline', 'plain', 'link')  # the text itself; the others style its paragraph
+RANGE_FORMATS = ('h1', 'h2', 'h3', 'p', 'bullet', 'number', 'no_list')  # these may run on through a later paragraph
+# a link is https:// or http://, as next_actions.check wants a draft's [text](link)
+LINK = re.compile(r'https?://[^\s<>"\\]{1,2000}')
+LIST_LINE = re.compile(r'(?:([-*•])|\d{1,3}[.)]) +(.*)')
+MARKS = re.compile(r'\*\*(?=\S)(.+?)(?<=\S)\*\*|(?<![\w*])\*(?=[^\s*])(.+?)(?<=[^\s*])\*(?![\w*])'
+                   r'|\[([^\]\n]{1,500})\]\((https?://[^\s<>"\\)]{1,2000})\)')
 FIXED = '\t\u000b￼'  # a tab, a line break or an object (an image) in a paragraph: never part of a change
 DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
@@ -86,6 +103,36 @@ def lines(text):
         found = HEADING.fullmatch(line)
         out.append(('h' + str(len(found[1])), found[2].strip()) if found and found[2].strip() else ('p', line))
     return out
+
+
+def rich(text):
+    """(the text, [(start, end, mark, link)]) of one line of new text for Google Docs: **bold**, *italic* and
+    [text](https://link) become marks on their text, every other character stays as written."""
+    out, marks, at = '', [], 0
+    for found in MARKS.finditer(text):
+        out += text[at:found.start()]
+        inner = found[1] or found[2] or found[3]
+        marks.append((len(out), len(out) + len(inner), 'bold' if found[1] else 'italic' if found[2] else 'link', found[4]))
+        out, at = out + inner, found.end()
+    return out + text[at:], marks
+
+
+def google_lines(text):
+    """[(style, list, text, marks)] of new text as Google Docs gets it: lines(), a "- ", "* " or "• " paragraph a
+    bulleted list item and a "1. " one a numbered one (list None otherwise), and rich()'s marks."""
+    out = []
+    for style, line in lines(text):
+        kind, found = None, LIST_LINE.fullmatch(line) if style == 'p' else None
+        if found and found[2].strip():
+            kind, line = 'bullet' if found[1] else 'number', found[2].strip()
+        out.append((style, kind, *rich(line)))
+    return out
+
+
+def new_texts(change, provider):
+    """The paragraphs an insert or append adds, as the doc will hold their text."""
+    text = change.get('insert') or change.get('append')
+    return [t for _, _, t, _ in google_lines(text)] if provider == 'google' else [t for _, t in lines(text)]
 
 
 def _text(value, field, limit, newlines):
@@ -141,9 +188,27 @@ def resolve(snapshot, changes):
         k = bisect.bisect_right(starts, first) - 1
         return k, first - starts[k]
 
-    out, spans = [], []
+    out, spans, marked = [], [], []
     for change in changes:
-        if 'find' in change:
+        if 'format' in change:
+            k, s = locate(change['format'], 'format')
+            para, style = paras[k], change.get('style', 'link')
+            if not para.get('editable', True):
+                raise ValueError(f'“{short(change["format"])}” is in a paragraph with suggestions, tracked changes or fields. '
+                                 'Format it in the doc itself')
+            last = locate(change['through'], 'through')[0] if 'through' in change else k
+            if last < k:
+                raise ValueError(f'“{short(change["through"])}” (through) comes before “{short(change["format"])}”. Give the first paragraph in format')
+            if style in ('bullet', 'number') and any(paras[i]['text'].startswith('\t') for i in range(k, last + 1)):
+                raise ValueError('A paragraph that starts with a tab can’t become a list item here. Change it in the doc itself')
+            if style in TEXT_FORMATS:
+                if any(c in FIXED for c in change['format']):
+                    raise ValueError(f'“{short(change["format"])}” runs across a tab, line break or image. Pick text within it')
+                marked.append((k, s, s + len(change['format']), change['format']))
+            # the paragraph it is in, through the last one it styles
+            out.append({**change, 'before': paragraph_text(para['text']) + (' … ' + paragraph_text(paras[last]['text']) if last > k else ''),
+                        'how': FORMATS[style]})
+        elif 'find' in change:
             k, s = locate(change['find'], 'find')
             e = s + len(change['find'])
             para = paras[k]
@@ -160,9 +225,13 @@ def resolve(snapshot, changes):
                         'after': paragraph_text(after)})
         elif 'after' in change:
             k, _ = locate(change['after'], 'after')
-            out.append({'after': change['after'], 'insert': change['insert'], 'before': paragraph_text(paras[k]['text'])})
+            # the paragraph it goes under, as its label says it (here and on the dashboard)
+            out.append({'after': change['after'], 'insert': change['insert'], 'before': short(paragraph_text(paras[k]['text']), 80)})
         else:
             out.append({'append': change['append']})
+    for k, s, e, text in marked:  # formatting text a change replaces: one of them would miss
+        if any(k == k2 and s < e2 and s2 < e for k2, s2, e2 in spans):
+            raise ValueError(f'“{short(text)}” is formatted and changed. Format the new text in a later edit, once it is in the doc')
     return out
 
 
@@ -187,8 +256,26 @@ def _changes(value):
             out.append({'after': after, 'insert': _new_text(change['insert'], 'insert')})
         elif keys == {'append'}:
             out.append({'append': _new_text(change['append'], 'append')})
+        elif keys in ({'format', 'style'}, {'format', 'link'}, {'format', 'style', 'through'}):
+            found = _text(change['format'], 'format', MAX_FIND, False)
+            if not found.strip():
+                raise ValueError('format is the text to format, from the doc')
+            item = {'format': found}
+            if 'link' in change:
+                if not isinstance(change['link'], str) or not LINK.fullmatch(change['link']):
+                    raise ValueError('link is a whole https:// link')
+                item['link'] = change['link']
+            elif not isinstance(change['style'], str) or change['style'] not in FORMATS or change['style'] == 'link':
+                raise ValueError('style is one of ' + ', '.join(k for k in FORMATS if k != 'link') + ' (or give link)')
+            else:
+                item['style'] = change['style']
+            if 'through' in change:
+                if item['style'] not in RANGE_FORMATS:
+                    raise ValueError('through goes with a heading, normal text or list style only')
+                item['through'] = _text(change['through'], 'through', MAX_FIND, False)
+            out.append(item)
         else:
-            raise ValueError('A change is {find, replace}, {after, insert} or {append}')
+            raise ValueError('A change is {find, replace}, {after, insert}, {append}, or (Google Docs) {format, style} or {format, link}')
     return out
 
 
@@ -357,6 +444,9 @@ def validate(value, context):
         raise ValueError('Editing docs is not allowed for this Docs connection yet (Allow edits on its connection; Google '
                          'needs the same permission as posting replies). Give the changes as text in the to-do instead')
     changes = _changes(value.get('changes'))
+    if account['provider'] != 'google' and any('format' in c for c in changes):
+        raise ValueError(f'Formatting changes are for Google Docs; {where(account)} takes text changes only. Leave the '
+                         'formatting out, and say in the to-do what to format by hand')
     snapshot = (context.get('snapshots') or {}).get(file_id)
     if not isinstance(snapshot, dict):
         raise ValueError(str(snapshot or 'The doc could not be read just now') + '. Nothing was saved; try again')
@@ -412,10 +502,12 @@ def done(action):
 
 
 def change_lines(change):
+    if 'format' in change:
+        return [change['how'].replace('{}', change.get('link', '')) + ': “' + change['format'] + '”', 'In: ' + change['before']]
     if 'find' in change:
         return ['Before: ' + change['before'], 'After: ' + change['after']]
     if 'after' in change:
-        return ['Add after “' + short(change['before'], 80) + '”:', change['insert']]
+        return ['Add after “' + short(change['before'], 80) + '”:', change['insert']]  # short already, but for older drafts
     return ['Add at the end:', change['append']]
 
 
@@ -449,11 +541,14 @@ def landed(snapshot, action):
     """Whether this approved edit is in the doc read back: every changed paragraph and every new one is there."""
     have = {paragraph_text(p['text']) for p in snapshot['paragraphs']}
     for change in action['changes']:
-        if 'find' in change:
+        if 'format' in change:  # formatting leaves the text as it was: it is still there
+            if not any(change['format'] in text for text in have):
+                return False
+        elif 'find' in change:
             if change['after'] not in have:
                 return False
         else:
-            if any(text not in have for _, text in lines(change.get('insert') or change.get('append'))):
+            if any(text not in have for text in new_texts(change, action.get('provider'))):
                 return False
     return True
 
@@ -562,7 +657,9 @@ def google_paragraphs(doc):
         else:
             at.append(index)
             editable = False
-        out.append({'text': text, 'editable': editable, 'at': at})
+        named = str((para.get('paragraphStyle') or {}).get('namedStyleType') or 'NORMAL_TEXT')
+        out.append({'text': text, 'editable': editable, 'at': at, 'style': STYLE_OF.get(named, named.lower()),
+                    'list': bool(para.get('bullet'))})
     return out
 
 
@@ -572,6 +669,8 @@ def google_snapshot(doc, file_id):
 
 
 STYLE = {'h1': 'HEADING_1', 'h2': 'HEADING_2', 'h3': 'HEADING_3', 'p': 'NORMAL_TEXT'}
+STYLE_OF = {v: k for k, v in STYLE.items()}  # a paragraph's named style as the run reads it (h1, p; else Google's, lowercased)
+PRESET = {'bullet': 'BULLET_DISC_CIRCLE_SQUARE', 'number': 'NUMBERED_DECIMAL_ALPHA_ROMAN'}
 
 
 def _positions(paras, changes):
@@ -583,7 +682,7 @@ def _positions(paras, changes):
         at += len(p['text']) + 1
     out = []
     for order, change in enumerate(changes):
-        needle = change.get('find', change.get('after'))
+        needle = change.get('find', change.get('after', change.get('format')))
         if needle is not None:
             first = joined.find(needle)
             if first < 0 or joined.find(needle, first + 1) >= 0:
@@ -596,14 +695,74 @@ def _positions(paras, changes):
     return out
 
 
+def _span(start, end):
+    return {'startIndex': start, 'endIndex': end}
+
+
+def styled(start, new, listed=False):
+    """The requests that give new paragraphs (google_lines), their text from document index `start` on, their own look:
+    each one's heading or normal style, its list, plain text but for its marks. Inserted text takes the look of the text
+    it follows (a list item's bullet, a bold end), so the rest is set back: bullets go only after a list item (listed)."""
+    ops, marks, runs, at = [], [], [], start
+    for style, kind, text, found in new:
+        end = at + utf16(text) + 1
+        ops.append({'updateParagraphStyle': {'range': _span(at, end), 'paragraphStyle': {'namedStyleType': STYLE[style]},
+                                             'fields': 'namedStyleType'}})
+        if runs and runs[-1][0] == kind:
+            runs[-1][2] = end
+        else:
+            runs.append([kind, at, end])
+        for s, e, mark, link in found:
+            marks.append({'updateTextStyle': {'range': _span(at + utf16(text[:s]), at + utf16(text[:e])),
+                                              'textStyle': {'link': {'url': link}} if mark == 'link' else {mark: True}, 'fields': mark}})
+        at = end
+    # without the last newline, which may end the doc: a range in a paragraph styles all of it
+    ops.append({'updateTextStyle': {'range': _span(start, at - 1), 'textStyle': {}, 'fields': 'bold,italic,underline,link'}})
+    for kind, a, b in runs:
+        if kind:
+            ops.append({'createParagraphBullets': {'range': _span(a, b - 1), 'bulletPreset': PRESET[kind]}})
+        elif listed:
+            ops.append({'deleteParagraphBullets': {'range': _span(a, b - 1)}})
+    return ops + marks
+
+
+def google_format(paras, k, s, e, change, last):
+    """The requests for a {format} change: its text's look, or its paragraphs' (k through last). None moves any index."""
+    style, para = change.get('style', 'link'), paras[k]
+    if style in TEXT_FORMATS:
+        look = ({'link': {'url': change['link']}}, 'link') if style == 'link' else ({}, 'bold,italic,underline') \
+            if style == 'plain' else ({style: True}, style)
+        return [{'updateTextStyle': {'range': _span(para['at'][s], para['at'][e]), 'textStyle': look[0], 'fields': look[1]}}]
+    span = _span(para['at'][0], paras[last]['at'][0] + 1)  # a paragraph's style is set by any range in it
+    if style == 'page_break':
+        return [{'updateParagraphStyle': {'range': span, 'paragraphStyle': {'pageBreakBefore': True}, 'fields': 'pageBreakBefore'}}]
+    if style in PRESET:
+        return [{'createParagraphBullets': {'range': span, 'bulletPreset': PRESET[style]}}]
+    if style == 'no_list':
+        return [{'deleteParagraphBullets': {'range': span}}]
+    return [{'updateParagraphStyle': {'range': span, 'paragraphStyle': {'namedStyleType': STYLE[style]}, 'fields': 'namedStyleType'}}]
+
+
 def google_requests(doc, changes):
-    """The batchUpdate requests for these changes, last in the doc first so earlier indexes stay put."""
+    """The batchUpdate requests for these changes: formatting first (it moves no index), then the text, last in the doc
+    first so earlier indexes stay put."""
     paras = google_paragraphs(doc)
     if not paras:
         raise ValueError('changed')
-    steps = []
-    for k, s, e, order, change in _positions(paras, changes):
+    steps, looks, listed = [], [], [p['list'] for p in paras]
+    found = _positions(paras, changes)
+    for k, s, e, order, change in found:
+        if 'format' in change:
+            if not paras[k]['editable']:
+                raise ValueError('changed')
+            last = _positions(paras, [{'find': change['through']}])[0][0] if 'through' in change else k
+            looks += google_format(paras, k, s, e, change, last)
+            if change.get('style') in ('bullet', 'number', 'no_list'):
+                listed[k:last + 1] = [change['style'] != 'no_list'] * (last + 1 - k)
+    for k, s, e, order, change in found:
         para = paras[k]
+        if 'format' in change:
+            continue
         if 'find' in change:
             if not para['editable']:
                 raise ValueError('changed')
@@ -613,37 +772,40 @@ def google_requests(doc, changes):
                 ops.append({'insertText': {'location': {'index': a}, 'text': change['replace']}})
             steps.append(((a, 0, order), ops))
         else:
-            new = lines(change.get('insert') or change.get('append'))
+            new = google_lines(change.get('insert') or change.get('append'))
             at = para['at'][-1]  # before this paragraph's newline: its text ends, the new paragraphs follow
-            ops = [{'insertText': {'location': {'index': at}, 'text': ''.join('\n' + text for _, text in new)}}]
-            start = at + 1
-            for style, text in new:
-                ops.append({'updateParagraphStyle': {'range': {'startIndex': start, 'endIndex': start + utf16(text) + 1},
-                                                     'paragraphStyle': {'namedStyleType': STYLE[style]}, 'fields': 'namedStyleType'}})
-                start += utf16(text) + 1
-            steps.append(((at, 2 if 'append' in change else 1, order), ops))
-    return [op for _, ops in sorted(steps, key=lambda step: step[0], reverse=True) for op in ops]
+            ops = [{'insertText': {'location': {'index': at}, 'text': ''.join('\n' + text for _, _, text, _ in new)}}]
+            steps.append(((at, 2 if 'append' in change else 1, order), ops + styled(at + 1, new, listed[k])))
+    return looks + [op for _, ops in sorted(steps, key=lambda step: step[0], reverse=True) for op in ops]
 
 
 def google_html(title, body):
-    """A new Google Doc's content: Drive converts this HTML (headings and paragraphs) to a doc."""
+    """A new Google Doc's content: Drive converts this HTML (headings, paragraphs, lists, bold, italic, links) to a doc."""
     tags = {'h1': 'h1', 'h2': 'h2', 'h3': 'h3', 'p': 'p'}
-    parts = ''.join(f'<{tags[s]}>{html.escape(t, quote=False)}</{tags[s]}>' for s, t in lines(body))
+    parts, open_list = [], None
+    for style, kind, text, marks in google_lines(body):
+        wanted = {'bullet': 'ul', 'number': 'ol'}.get(kind)
+        if open_list != wanted:
+            parts.append((f'</{open_list}>' if open_list else '') + (f'<{wanted}>' if wanted else ''))
+            open_list = wanted
+        inner, at = '', 0
+        for s, e, mark, link in marks:
+            piece = html.escape(text[s:e], quote=False)
+            inner += html.escape(text[at:s], quote=False) + (f'<a href="{html.escape(link)}">{piece}</a>' if mark == 'link' else
+                                                             f'<b>{piece}</b>' if mark == 'bold' else f'<i>{piece}</i>')
+            at = e
+        inner += html.escape(text[at:], quote=False)
+        parts.append(f'<li>{inner}</li>' if wanted else f'<{tags[style]}>{inner}</{tags[style]}>')
+    parts.append(f'</{open_list}>' if open_list else '')
     return (f'<!DOCTYPE html><html><head><meta charset="utf-8"><title>{html.escape(title, quote=False)}</title></head>'
-            f'<body>{parts}</body></html>')
+            f'<body>{"".join(parts)}</body></html>')
 
 
 def google_fill(body):
-    """The batchUpdate requests that write a new doc's text into an empty Google Doc: its paragraphs, then each one's
-    style (headings as headings)."""
-    found = lines(body)
-    requests = [{'insertText': {'location': {'index': 1}, 'text': '\n'.join(text for _, text in found)}}]
-    start = 1
-    for style, text in found:
-        requests.append({'updateParagraphStyle': {'range': {'startIndex': start, 'endIndex': start + utf16(text) + 1},
-                                                  'paragraphStyle': {'namedStyleType': STYLE[style]}, 'fields': 'namedStyleType'}})
-        start += utf16(text) + 1
-    return requests
+    """The batchUpdate requests that write a new doc's text into an empty Google Doc: its paragraphs, then their look
+    (styled: headings, lists, marks)."""
+    found = google_lines(body)
+    return [{'insertText': {'location': {'index': 1}, 'text': '\n'.join(text for _, _, text, _ in found)}}] + styled(1, found)
 
 
 def google_upload(token, title, body, boundary='tm-doc-write-boundary'):

@@ -73,7 +73,6 @@ nav button.active .badge,[data-theme="light"] nav button.active .badge{backgroun
 .notice-card{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2) var(--sp-3);color:var(--text);font-size:var(--fs-sm);line-height:1.45}.nobr{white-space:nowrap}
 .notice-card>span{flex:1 1 16em;min-width:0;overflow-wrap:anywhere}
 .notice-card .head-link{flex:0 0 auto;margin:0 0 0 auto;min-height:30px;padding:0 12px;font:inherit;font-size:.85rem;cursor:pointer}
-@media(max-width:560px){#needs-you li:has(>code){flex-direction:column;align-items:flex-start;gap:6px}#needs-you li>code{max-width:100%;overflow-x:auto}}  /* a command to run goes under its line on a phone */
 
 /* Share learnings with The Machine team: the quiet card, then exactly what would be sent, one item at a time. */
 .share-ask strong{font-weight:var(--fw-strong)}.share-ask-acts{display:flex;align-items:center;gap:4px;margin-left:auto;flex:0 0 auto}.share-ask .quiet{flex:0 0 auto;min-height:30px;padding:0 10px;font-size:.85rem}

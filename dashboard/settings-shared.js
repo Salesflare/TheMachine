@@ -74,7 +74,7 @@ document.addEventListener('click',e=>{if(lazyIn('settings'))return;const b=e.tar
 // Connected AIs' panel loads when first needed (settings-ai.js); its view, its requests and the pairing that
 // Connections and General start too are here. aiView is set only once that panel is in.
 var aiView=null;let aiPairTimer=0,aiPairUntil=0;
-const aiPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+const aiPost=(action,args={})=>sharePost(action,args);
 // Get your address (and Pair this Machine in Connections): the tab opens within the click, then goes to the account's
 // page once it is known; a browser that blocks it goes there in this tab. Then ai_pair_state every 2.5 s, up to 10 minutes.
 async function aiPairGo(done){const tab=window.open('','_blank');

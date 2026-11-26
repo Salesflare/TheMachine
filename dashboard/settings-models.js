@@ -45,7 +45,7 @@ function renderChatModel(){const cm=state.chat_model,box=$('#model-chats');if(!b
 // Saves a pick: Settings' default, Help's own (for this Help chat only) or the open to-do chat's own
 async function cmSave(kind,which,value){const cur=cmCurrent(kind)||{};
  const next=which==='model'?{model:value,thinking:cmNearest(cur.thinking,cmEntry(value)?.levels)}:{model:cur.model,thinking:value};
- const post=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+ const post=sharePost;
  try{if(kind==='help'){helpModel=next;cmPaint('help');return}
   if(kind==='default'){state.chat_model=await post('chat_model_default',next);renderChatModel();cmPaint('chat');notice(t('Saved.'));return}
   const s=chatOpen();if(!s)return;const r=await post('chat_model_set',{suggestion_id:s.id,...next});if(chat)chat.model=r.model;cmPaint('chat')}

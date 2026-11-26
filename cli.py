@@ -310,7 +310,8 @@ def cmd_doc_draft(config, args):
     if 'paragraphs' in result:
         print(f"{result.get('title') or 'Untitled document'}  version {result['version']}" + (f"  {result['url']}" if result.get('url') else ''))
         for p in result['paragraphs']:
-            print(f"\n[{p['n']}]{'' if p['editable'] else ' (not editable here)'} {p['text']}")
+            look = ' '.join(x for x in (p.get('style') if p.get('style') not in (None, 'p') else '', 'list' if p.get('list') else '') if x)
+            print(f"\n[{p['n']}]{'' if p['editable'] else ' (not editable here)'}{f' ({look})' if look else ''} {p['text']}")
         return
     print(result['preview'])
     print('\nnext_action:')
@@ -1108,10 +1109,12 @@ def parser():
     c.add_argument('--job', required=True, help='the preparation job id')
     c.add_argument('--event', type=int, help="the doc event's id, for an edit")
     c.add_argument('--file', help='the doc id (or its link), for an edit of a doc made for this to-do or linked in its messages')
-    c.add_argument('--changes', help='JSON file (or -) with the edit: [{"find","replace"} | {"after","insert"} | {"append"}]')
+    c.add_argument('--changes', help='JSON file (or -) with the edit: [{"find","replace"} | {"after","insert"} | {"append"} | '
+                                     '{"format","style"} | {"format","link"}] (format: Google Docs)')
     c.add_argument('--account', help='the Docs connection id, for a new doc')
     c.add_argument('--title', help='the new doc\'s title')
-    c.add_argument('--body', help='file (or -) with the new doc\'s text; "# " to "### " lines are headings')
+    c.add_argument('--body', help='file (or -) with the new doc\'s text; "# " to "### " lines are headings (Google Docs: also '
+                                  '"- " and "1. " lists, **bold**, *italic*, [text](https://link))')
     add('sources', 'Connection health per source', cmd_sources)
     add('busy', 'What is running now (agent jobs, sends, preparations); exit status 3 while something runs, for scripts', cmd_busy)
     c = add('reviews', 'Check backlog and recent check runs', cmd_reviews)

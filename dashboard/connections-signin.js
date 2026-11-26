@@ -12,7 +12,7 @@ async function signinClosed(){if(!(state?.suggestions||[]).some(signinWaiting))r
  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'browser_login_check',args:{}})});
   if(r.resumed?.length){toast('Signed in. Carrying on with it.');await refresh();return}}catch{}
  taskSigninPoll()}
-const signinPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+const signinPost=sharePost;
 const CONNECT_SITES=['linkedin','x','facebook'];
 // From a hosted setup page (#signin-site=linkedin): that site's sign-in only, and once in, setup connects it by itself.
 // Also ChatGPT and Claude, for Find my skills (Settings > Skills > Import): once in, the list looks there by itself (`signinAfter`).
