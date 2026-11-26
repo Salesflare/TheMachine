@@ -1,3 +1,13 @@
+; WebView2's very first start on a computer takes seconds: here, while the progress shows, and not as the app first starts
+; (src/warm.rs). An update needs none.
+!macro NSIS_HOOK_POSTINSTALL
+  ${If} $UpdateMode <> 1
+    DetailPrint "Getting The Machine ready to start..."
+    nsExec::Exec '"$INSTDIR\the-machine-desktop.exe" --warm'
+    Pop $0
+  ${EndIf}
+!macroend
+
 ; What the app itself put in this person's part of the registry and their folders goes with it. An update keeps it all, also one by hand.
 !macro NSIS_HOOK_PREUNINSTALL
   ${If} ${FileExists} "$INSTDIR\the-machine-desktop.exe"

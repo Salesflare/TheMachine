@@ -21,7 +21,7 @@ from standin import Machine
 on = importlib.import_module({'darwin': 'on_mac', 'win32': 'on_windows'}[sys.platform])
 App, SYSTEM, PORT, need, out, page, png, step, until = on.App, on.SYSTEM, on.PORT, on.need, on.out, on.page, on.png, on.step, on.until
 newer = pathlib.Path(sys.argv[2]).resolve()
-NEW = '9.9.9'
+NEW = '9999.0.0'  # newer than a release's own version too (tools/version.py)
 WINDOWS = SYSTEM == 'windows'
 on.fresh()
 machine = Machine(PORT)

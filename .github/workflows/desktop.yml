@@ -5,6 +5,8 @@ name: Desktop prototype
 # when desktop/ changes, or by hand. One job for each, standard runners, no secrets.
 # The prototype's own branch also gets a Mac build that is signed and notarized, so it opens on another Mac as it is, and a
 # Windows installer signed with Azure Artifact Signing.
+# A release: scripts/release.py cut starts this on main with the signed release tag, when desktop/ changed since the last
+# one. The same jobs build that tag, and publish puts the signed builds on a GitHub release of it (desktop/README.md).
 on:
   pull_request:
     paths: ['desktop/**', '.github/workflows/desktop.yml']
@@ -17,17 +19,49 @@ on:
         description: Only the Windows build and its signing, no Mac runner
         type: boolean
         default: false
+      release:
+        description: A signed release tag (release-YYYYMMDD-HHMM) to build and publish, from main only
+        type: string
+        default: ''
 
 permissions:
   contents: read
+
+env:
+  RELEASE: ${{ inputs.release }}
 
 concurrency:
   group: desktop-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # Skipped without a release, and a job after a skipped one is skipped too: so each job after windows, mac and
+  # linux says itself when it runs.
+  # A release's tag: signed with the release key (deploy/release-signers, as main has it) and on main. Nothing is built before.
+  release:
+    if: inputs.release != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Signed, and on main
+        id: check
+        run: |
+          set -euo pipefail
+          [ "$GITHUB_REF" = refs/heads/main ]
+          git fetch --quiet --force origin "refs/tags/$RELEASE:refs/tags/$RELEASE"
+          python3 scripts/release.py verify "$RELEASE"
+          git merge-base --is-ancestor "refs/tags/$RELEASE" origin/main
+          echo "version=$(python3 desktop/tools/version.py "$RELEASE")" >> "$GITHUB_OUTPUT"
+
   windows:
-    if: github.head_ref != 'desktop-bubble' # its push has it
+    needs: release
+    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' }} # its push has it
     runs-on: windows-latest
     timeout-minutes: 95
     outputs:
@@ -40,9 +74,11 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
       - name: Test and build
         id: build
         run: | # the sandbox's installers: this one and a newer, with a key made here
+          if [ -n "$RELEASE" ]; then python tools/version.py "$RELEASE"; fi
           rustup toolchain install stable --profile minimal --no-self-update
           (cd tools && npm ci --ignore-scripts --no-audit --no-fund)
           tauri=tools/node_modules/.bin/tauri setup=target/release/bundle/nsis
@@ -51,11 +87,11 @@ jobs:
           mkdir out sandbox-build
           cp target/release/the-machine-desktop.exe sandbox-build/
           "$tauri" signer generate --ci -w "$RUNNER_TEMP/made-up.key" > /dev/null
-          for version in 0.0.1 9.9.9; do
+          for version in 0.0.1 9999.0.0; do
             "$tauri" bundle --ci --bundles nsis --config windows/installer.json --config "{\"version\": \"$version\"}"
             mv "$setup"/*-setup.exe "sandbox-build/setup-$version.exe"
           done
-          "$tauri" signer sign -f "$RUNNER_TEMP/made-up.key" -p '' sandbox-build/setup-9.9.9.exe > /dev/null
+          "$tauri" signer sign -f "$RUNNER_TEMP/made-up.key" -p '' sandbox-build/setup-9999.0.0.exe > /dev/null
           cargo +stable build --release --locked
           cp target/release/the-machine-desktop.exe out/
           "$tauri" bundle --ci --bundles nsis --config windows/installer.json
@@ -82,7 +118,7 @@ jobs:
           python smoke/window.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/window || failed=1
           python smoke/text.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/text || failed=1
           python smoke/signin.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/signin || failed=1
-          MACHINE_SANDBOX_UPDATES_KEY="$(cat "$RUNNER_TEMP/made-up.key.pub")" python smoke/updates.py sandbox-build/setup-0.0.1.exe sandbox-build/setup-9.9.9.exe shots/updates || failed=1
+          MACHINE_SANDBOX_UPDATES_KEY="$(cat "$RUNNER_TEMP/made-up.key.pub")" python smoke/updates.py sandbox-build/setup-0.0.1.exe sandbox-build/setup-9999.0.0.exe shots/updates || failed=1
           exit $failed
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
@@ -92,7 +128,8 @@ jobs:
           retention-days: 14
 
   mac:
-    if: github.head_ref != 'desktop-bubble' && !inputs.windows-only # its push has it
+    needs: release
+    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' && !inputs.windows-only }} # its push has it
     runs-on: macos-26
     timeout-minutes: 80
     outputs:
@@ -105,11 +142,13 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
       - name: Test and build
         id: build
         env:
           MACOSX_DEPLOYMENT_TARGET: '13.0'
         run: |
+          if [ -n "$RELEASE" ]; then python3 tools/version.py "$RELEASE"; fi
           rustup toolchain install stable --profile minimal --no-self-update --target aarch64-apple-darwin --target x86_64-apple-darwin
           cargo +stable test --release --locked
           cargo +stable build --release --locked --features sandbox
@@ -119,7 +158,7 @@ jobs:
           tools/node_modules/.bin/tauri signer generate --ci -w "$RUNNER_TEMP/made-up.key" > /dev/null
           mkdir newer
           ditto "sandbox-build/The Machine.app" "newer/The Machine.app"
-          plutil -replace CFBundleShortVersionString -string 9.9.9 "newer/The Machine.app/Contents/Info.plist"
+          plutil -replace CFBundleShortVersionString -string 9999.0.0 "newer/The Machine.app/Contents/Info.plist"
           codesign --force --sign - --options runtime --entitlements mac/entitlements.plist "newer/The Machine.app"
           COPYFILE_DISABLE=1 tar -czf newer/newer.app.tar.gz -C newer "The Machine.app"
           tools/node_modules/.bin/tauri signer sign -f "$RUNNER_TEMP/made-up.key" -p '' newer/newer.app.tar.gz > /dev/null
@@ -180,6 +219,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
       - name: Build
         env:
           MACOSX_DEPLOYMENT_TARGET: '13.0'
@@ -200,7 +240,7 @@ jobs:
   # beside the key. The environment only gives it to the prototype's branch and main, never to a pull request.
   mac-sign:
     needs: mac
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) }}
     runs-on: macos-26
     timeout-minutes: 45
     environment: mac-signing
@@ -289,12 +329,14 @@ jobs:
   # The signed one, opened as a download, away from the key
   mac-open:
     needs: mac-sign
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') }}
     runs-on: macos-26
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: the-machine-desktop-mac
@@ -320,7 +362,7 @@ jobs:
   # and Azure trusts only that environment of this repository, for signing with that one profile. Off without a profile.
   windows-sign:
     needs: windows
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     runs-on: windows-latest
     timeout-minutes: 20
     environment: windows-signing
@@ -337,6 +379,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: the-machine-desktop-windows-unsigned
@@ -371,6 +414,7 @@ jobs:
           SHA: ${{ needs.windows.outputs.sha }}
         run: |
           set -euo pipefail
+          if [ -n "$RELEASE" ]; then python tools/version.py "$RELEASE"; fi
           echo "$SHA *unsigned/the-machine-desktop.exe" | sha256sum -c -
           mkdir -p target/release out
           cp unsigned/the-machine-desktop.exe target/release/
@@ -395,6 +439,7 @@ jobs:
   # What the app itself fetches when there is a newer one, with the key it trusts (README, Updates)
   updates-sign:
     needs: [mac-sign, mac-open, windows-sign]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: mac-signing
@@ -402,6 +447,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: the-machine-desktop-mac-update
@@ -426,7 +472,8 @@ jobs:
         run: |
           set -euo pipefail
           node desktop/tools/verify.mjs out/the-machine-desktop-mac.app.tar.gz out/the-machine-desktop-setup.exe
-          node desktop/tools/latest.mjs out > out/latest.json
+          if [ -n "$RELEASE" ]; then python3 desktop/tools/version.py "$RELEASE"; fi
+          node desktop/tools/latest.mjs out $RELEASE > out/latest.json
           cat out/latest.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -439,7 +486,8 @@ jobs:
   # they run where its glibc is older. Not signed, and it doesn't update itself. The jobs after it start them where nothing
   # of the build is: Ubuntu with X11, and Arch with Wayland (linux/PKGBUILD).
   linux:
-    if: github.head_ref != 'desktop-bubble' # its push has it
+    needs: release
+    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' }} # its push has it
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     defaults:
@@ -450,9 +498,11 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
       - name: Build
         run: |
           set -euo pipefail
+          if [ -n "$RELEASE" ]; then python3 tools/version.py "$RELEASE"; fi
           [ "$(grep -m1 '^pkgver=' linux/PKGBUILD | cut -d= -f2)" = "$(jq -r .version tauri.conf.json)" ]
           sudo apt-get update -qq
           # The tray icon is Windows' and the Mac's, but tauri bundle sees the feature and wants appindicator
@@ -498,6 +548,7 @@ jobs:
 
   linux-ubuntu:
     needs: linux
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
@@ -508,6 +559,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: the-machine-desktop-linux
@@ -537,6 +589,7 @@ jobs:
   # wlroots compositor with layer-shell, as Hyprland has it
   linux-arch:
     needs: linux
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') }}
     runs-on: ubuntu-latest
     container: archlinux:latest
     timeout-minutes: 30
@@ -556,6 +609,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: the-machine-desktop-linux
@@ -563,6 +617,7 @@ jobs:
       - name: The AppImage, then the package made with makepkg and installed, each to its sign-in window (Wayland)
         run: |
           set -euo pipefail
+          if [ -n "$RELEASE" ]; then python3 desktop/tools/version.py "$RELEASE"; fi
           useradd -m builder
           home=/home/builder pkg=/home/builder/pkg
           cp -r desktop "$home/desktop"
@@ -596,3 +651,42 @@ jobs:
           name: the-machine-desktop-arch-screenshots
           path: /home/builder/shots/
           retention-days: 14
+
+  # A release's signed builds on a GitHub release of its tag: latest.json for the app's updater, and the downloads. The
+  # newest is always at releases/latest/download/<file>. Only what every job above made, checked and signed.
+  publish:
+    needs: [release, updates-sign, mac-open, linux-ubuntu, linux-arch]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'skipped') && inputs.release != '' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-updates
+          path: out
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-mac
+          path: out
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-linux
+          path: linux
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-arch
+          path: arch
+      - name: On the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          cp linux/the-machine-desktop-x86_64.AppImage linux/the-machine-desktop-amd64.deb arch/PKGBUILD arch/the-machine-desktop-bin-*.pkg.tar.zst out/
+          [ "$(jq -r .version out/latest.json)" = "$VERSION" ]
+          grep -q "^_tag=$RELEASE$" out/PKGBUILD
+          (cd out && sha256sum -- * > SHA256SUMS && cat SHA256SUMS)
+          gh release create "$RELEASE" out/* --repo "$GITHUB_REPOSITORY" --verify-tag --latest --title "The Machine desktop app $VERSION" \
+            --notes "The desktop app of $RELEASE (desktop/README.md). Windows: the-machine-desktop-setup.exe, signed. Mac: the-machine-desktop-mac.zip, signed and notarized. Linux: the AppImage, the .deb, and PKGBUILD for Arch. The newest is always at releases/latest/download/ with the same file names."

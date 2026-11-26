@@ -256,6 +256,8 @@ A running service after a reboot is not enough: verify the checkpoint resumed, m
 
 Hosted Machines install only signed releases, and self-hosted installs should too. A commit pushed to main reaches no one until it is released. To cut one, the release key holder runs `python3 scripts/release.py cut`: it refuses a commit without a passed full test run on it (main's CI runs every test nightly; a push to main runs only what changed since the last full run), then signs origin/main with the release key, checks the signature against `deploy/release-signers` and pushes the tag. `--commit SHA` cuts an older commit of main that passed. `--full-run` waits for a full run that is going on the commit, or starts one on our CI runner when there is none (about 12 minutes), and cuts when it passes. GitHub sometimes holds a manual run for an hour before it makes the run's jobs; while it does, `--full-run` says so and keeps waiting (up to 3 hours), and the run's `full-run/<sha>` branch stays until that run is done, so a later `--full-run` waits for that same run. The private key is never in this repository or in CI. The hosted service gives each release to its own Machines first and to everyone else a few hours later.
 
+When `desktop/` changed since the latest GitHub release, `cut` also starts the desktop app's build of the new tag (`desktop.yml` on main). It checks the tag's signature, builds, tests and signs the app for Windows, Mac and Linux, and only then puts it on a GitHub release of that tag, marked latest: the downloads at `https://github.com/Salesflare/TheMachine/releases/latest/download/<file>` and what installed apps update from. See [desktop/README.md](../desktop/README.md#releases).
+
 ## Disable one feature
 
 | Feature | Supported change |

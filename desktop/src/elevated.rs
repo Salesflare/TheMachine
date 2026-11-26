@@ -78,7 +78,7 @@ fn wide(text: &str) -> Vec<u16> {
 
 /// The person's own full token, next to the plain one the rest of theirs has. Not so where there is only one: an account that
 /// is the administrator itself, or Windows without its User Account Control.
-fn full() -> bool {
+pub fn full() -> bool {
     use windows_sys::Win32::Foundation::CloseHandle;
     use windows_sys::Win32::Security::{GetTokenInformation, TokenElevationType, TokenElevationTypeFull, TOKEN_QUERY};
     use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};

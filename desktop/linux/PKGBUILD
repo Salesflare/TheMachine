@@ -1,8 +1,10 @@
 # The desktop app for Arch Linux (Omarchy too), from the .deb that CI builds: the same program, with the system's own
 # WebKitGTK and gtk-layer-shell. Not in the AUR yet. desktop.yml builds and installs it with makepkg; there the .deb is
-# already next to this file and its checksum is filled in (updpkgsums).
+# already next to this file and its checksum is filled in (updpkgsums). The copy on a release has that release's version,
+# tag and checksum (tools/version.py); this one names none.
 pkgname=the-machine-desktop-bin
 pkgver=0.0.1
+_tag=unreleased
 pkgrel=1
 pkgdesc='The Machine on your desktop: its robot in a corner of the screen, and its dashboard in a window'
 arch=('x86_64')
@@ -13,7 +15,7 @@ optdepends=('xdg-desktop-portal: screenshots for a to-do')
 provides=('the-machine-desktop')
 conflicts=('the-machine-desktop')
 options=('!strip' '!debug')
-source=("the-machine-desktop-$pkgver-amd64.deb::https://github.com/Salesflare/TheMachine/releases/download/desktop/the-machine-desktop-amd64.deb")
+source=("the-machine-desktop-$pkgver-amd64.deb::https://github.com/Salesflare/TheMachine/releases/download/$_tag/the-machine-desktop-amd64.deb")
 noextract=("the-machine-desktop-$pkgver-amd64.deb")
 sha256sums=('SKIP')
 

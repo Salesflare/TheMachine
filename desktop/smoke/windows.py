@@ -30,15 +30,43 @@ resolution(1920, 1080)
 print('screen', SM(0), SM(1), 'of', SM(80), 'monitors', flush=True)
 
 
-# WebView2's very first start on this computer takes more than the 5 s that count as a hang, whichever program starts it:
-# once before anything is tried, and nothing of it is kept
+# WebView2's very first start on a computer takes seconds, whichever program starts it, and before anything shows: the
+# main thread waits for it while the robot's first page is made (8 s on this runner, more than the 5 s that count as a
+# hang). The installer takes it (--warm, windows/hooks.nsh), so the app's own first start after it shows at once.
 
-at = time.time()
-app = App(people, '--login', debug=False)
-until(app.robot, 60)
-print(f'the very first start: {time.time() - at:.1f} s', flush=True)
-app.process.kill()
-app.process.wait()
+setup = pathlib.Path(people).with_name('the-machine-desktop-setup.exe')
+installed = pathlib.Path(os.environ['LOCALAPPDATA'], 'The Machine', 'the-machine-desktop.exe')
+
+
+@step('the installer takes WebView2 very first start')
+def _():
+    at = time.time()
+    subprocess.run([str(setup), '/S'], check=True, timeout=300)
+    need(until(installed.exists, 30), 'it is installed')
+    took = time.time() - at
+    subprocess.run([str(installed), '--quit'], timeout=30)  # in case the installer started it
+    return f'{took:.1f} s'
+
+
+@step('the first start after the installer shows at once')
+def _():
+    at = time.time()
+    app = App(str(installed), debug=False)  # as a person starts it: its window opens to sign in
+    need(until(lambda: app.plain() or app.windows(), 30), 'its window shows')
+    took = time.time() - at
+    need(took < 4, f'it shows after {took:.1f} s')
+    time.sleep(2)
+    need(all(user.SendMessageTimeoutW(h, 0, 0, 0, 0, 3000, None) for h, _ in app.plain() + app.windows()), 'its main thread answers')
+    return f'{took:.1f} s'
+
+
+if App.last and App.last.poll() is None:
+    App.last.kill()
+    App.last.wait()
+uninstall = installed.with_name('uninstall.exe')
+if uninstall.exists():
+    subprocess.run([str(uninstall), '/S'], timeout=60)
+    print('uninstalled' if until(lambda: not installed.exists(), 60) else 'still installed', flush=True)
 fresh()
 
 # The build for people, as it first starts with Windows

@@ -32,6 +32,8 @@ mod snip;
 mod speak;
 mod touched;
 mod updates;
+#[cfg(windows)]
+mod warm;
 mod webapp;
 mod why;
 mod windows;
@@ -1143,6 +1145,10 @@ fn main() {
     #[cfg(windows)]
     if std::env::args().nth(1).as_deref() == Some("--quit") && quit::event::ask() {
         return;
+    }
+    #[cfg(windows)]
+    if std::env::args().nth(1).as_deref() == Some("--warm") {
+        return warm::run(); // the installer's, before the first start (warm.rs)
     }
     #[cfg(windows)]
     if elevated::hands_over() || elevated::leaves() {

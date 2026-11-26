@@ -15,7 +15,7 @@
   },
   "plugins": {
     "updater": {
-      "endpoints": ["https://github.com/Salesflare/TheMachine/releases/download/desktop/latest.json"],
+      "endpoints": ["https://github.com/Salesflare/TheMachine/releases/latest/download/latest.json"],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFCMERCRkNFNzNGREIwMUIKUldRYnNQMXp6cjhORzEzZHBob3dqTXZNL2ZiMVVIRUhuQ3Z6d2NFYmhWTjhNWUtwdEQ4dUZ4cFcK"
     }
   },

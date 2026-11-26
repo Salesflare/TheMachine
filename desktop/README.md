@@ -3,7 +3,8 @@
 The Machine's robot stands in a corner of the screen, above other windows. A click opens a small box: add a to-do (with
 files or a screenshot), ask about your messages, and see the first of For you, with the quick buttons of each one's
 notification. A dot shows when something is new since you last looked.
-The dashboard, the phone app and the Machine don't change for it. It is not part of a release, and off means not started.
+The dashboard, the phone app and the Machine don't change for it. Off means not started. Its builds come with The
+Machine's releases (**Install it**).
 
 It never sends or approves anything itself. A to-do opens as the dashboard shows it, where its draft is read first. It starts with
 nothing of its own: no start at login unless you turn that on, no hotkey. On Windows it has an icon by the clock while it runs, with the same dot
@@ -42,34 +43,39 @@ and selected text from a Wayland app may not arrive there; files and links do.
 dashboard's app was in front on this computer, or a to-do was opened from the box. Opening the box takes it away. A
 dashboard in a browser's tab isn't seen by it. To know this it keeps fingerprints of what was there, not what it was.
 
-## Try it
+## Install it
 
-Windows (10 or 11, 64-bit): download `the-machine-desktop-windows-unsigned` from the newest run of
-[Desktop prototype](https://github.com/Salesflare/TheMachine/actions/workflows/desktop.yml), unpack it and start
-`the-machine-desktop-setup.exe`. It installs for you alone, without an administrator, in `%LOCALAPPDATA%\The Machine`.
-`the-machine-desktop.exe` runs as it is, without updates. Neither is signed yet, so Windows warns: **More info**, **Run
-anyway**.
+Each release of The Machine that changes the app has its builds on a
+[GitHub release](https://github.com/Salesflare/TheMachine/releases/latest), signed (**Releases**, below). The newest is
+always at `https://github.com/Salesflare/TheMachine/releases/latest/download/` followed by the file's name.
 
-Mac (macOS 13 or newer, Apple silicon or Intel): download `the-machine-desktop-mac` from the newest run of the same
-workflow, unpack it, move **The Machine** to Applications and open it there. macOS asks once whether you want to open an app
-from the internet: **Open**. Its window opens to sign in, and the robot stands in its corner when another program is in front.
-A pull request's build is `the-machine-desktop-mac-unsigned`. macOS stops that one: **Done**, then System Settings,
-Privacy & Security, scroll down, **Open Anyway**, and your password.
+Windows (10 or 11, 64-bit): `the-machine-desktop-setup.exe`, signed by Salesflare BV. It installs for you alone, without an
+administrator, in `%LOCALAPPDATA%\The Machine`, and updates itself. On a computer where nothing used WebView2 before, the
+installer takes a few seconds more to get it ready, so the app's first start is as quick as the next ones.
 
-Linux (64-bit, x86_64): download `the-machine-desktop-linux` from the newest run of the same workflow and unpack it. None of
-these update themselves yet: take a newer one from a newer run.
+Mac (macOS 13 or newer, Apple silicon or Intel): `the-machine-desktop-mac.zip`, signed and notarized. Unpack it, move
+**The Machine** to Applications and open it there. macOS asks once whether you want to open an app from the internet:
+**Open**. Its window opens to sign in, and the robot stands in its corner when another program is in front. It updates itself.
+
+Linux (64-bit, x86_64). None of these update themselves: what installed it updates it, or take the newer file.
 
 - **Any distribution**: `the-machine-desktop-x86_64.AppImage` brings what it needs, gtk-layer-shell too. `chmod +x` it and
   start it. If it says FUSE is missing, install `fuse2` (Arch) or `libfuse2t64` (Ubuntu 24.04; `libfuse2` before).
 - **Ubuntu and Debian** (Ubuntu 22.04, Debian 12 or newer): `sudo apt install ./the-machine-desktop-amd64.deb`, which also
   installs WebKitGTK 4.1 and gtk-layer-shell. It is in the applications menu as The Machine; `the-machine-desktop` starts it too.
-- **Arch and Omarchy**: `the-machine-desktop-arch` from the same run has the package. `sudo pacman -U
-  the-machine-desktop-bin-*.pkg.tar.zst` installs it with WebKitGTK 4.1 and gtk-layer-shell. Or make it yourself: put
-  `PKGBUILD` and the .deb, renamed `the-machine-desktop-<version>-amd64.deb`, in one folder, then `updpkgsums && makepkg -si`.
-  It isn't in the AUR yet. On Hyprland (Omarchy's), Sway and KDE the robot is a layer surface, above other windows and
-  without a window of its own (**How it is made**); nothing to set for it.
+- **Arch and Omarchy**: download `PKGBUILD` into an empty folder and run `makepkg -si` there. It fetches that release's .deb,
+  checks it against the checksum in the file, and installs it as `the-machine-desktop-bin` with WebKitGTK 4.1 and
+  gtk-layer-shell. A newer release: the same with its `PKGBUILD`. It isn't in the AUR yet. On Hyprland (Omarchy's), Sway and
+  KDE the robot is a layer surface, above other windows and without a window of its own (**How it is made**); nothing to set
+  for it.
 
-None is signed. To build it yourself (below), it needs WebKitGTK 4.1 and gtk-layer-shell (`libgtk-layer-shell.so.0`, from
+To try a build that isn't released: the newest run of
+[Desktop prototype](https://github.com/Salesflare/TheMachine/actions/workflows/desktop.yml) has
+`the-machine-desktop-windows` and `the-machine-desktop-mac` (signed, from this branch or main), the unsigned ones of a pull
+request (`-unsigned`: Windows warns, **More info**, **Run anyway**; macOS stops it: **Done**, then System Settings, Privacy &
+Security, **Open Anyway**), `the-machine-desktop-linux` and `the-machine-desktop-arch` (the package, for `sudo pacman -U`).
+
+To build it yourself (below), it needs WebKitGTK 4.1 and gtk-layer-shell (`libgtk-layer-shell.so.0`, from
 the system or in `lib/` next to the program); start `target/release/the-machine-desktop`. The one in `lib/` is read-only: a
 plain `cp` over a running robot's library would crash it, so it is refused. Replace it with a new file (`cp -f`, `install`,
 `mv`, `tar`).
@@ -216,8 +222,22 @@ day, fetches it and waits: **Settings** has **Restart to update**. Elsewhere, wh
 - **The key** is the secret `DESKTOP_UPDATER_KEY` of this repository's `mac-signing` environment, which pull requests don't
   get, and `desktop-updater-key` in the maintainers' key vault. It has no password. Lost, no installed app can be updated
   any more: people would install a new one by hand.
-- **To publish:** `the-machine-desktop-updates` of a run on the branch has the files, their signatures and `latest.json`.
-  Put them at that address. Nothing is there yet.
+- **Where:** `releases/latest/download/latest.json`, the newest GitHub release. It names that release's own files, so a
+  newer one published meanwhile never pairs a version with another one's file.
+
+## Releases
+
+`python3 scripts/release.py cut` signs a release of The Machine (`release-YYYYMMDD-HHMM`). When `desktop/` changed since
+the GitHub release that is the latest (or there is none), it starts `Desktop prototype` on main with that tag; else it says
+the app is as it was. By hand: `gh workflow run desktop.yml --ref main -f release=<tag>`.
+
+That run first checks the tag: signed with the release key as main's `deploy/release-signers` has it, and on main. Then
+every job builds the tag, with its version (`tools/version.py`: `release-20261126-1430` is 2026.1126.1430, so each later
+release is a newer version), uses it as for a pull request, and signs it: Developer ID and Apple's notarization, Azure
+Artifact Signing, and the update key. Only when all of that passed, `publish` puts the files on a GitHub release of the tag,
+marked latest: `the-machine-desktop-setup.exe`, `the-machine-desktop-mac.zip`, `the-machine-desktop-mac.app.tar.gz` (for
+updates), `latest.json`, the AppImage, the .deb, `PKGBUILD` with that release's tag and checksum, the Arch package and
+`SHA256SUMS`. A run that fails publishes nothing; the app stays at the release before.
 
 Windows: `windows/installer.json` and `windows/hooks.nsh` make the installer, `windows/sign.ps1` signs the program, the
 installer and the uninstaller with Azure Artifact Signing, and `windows/verify.ps1` checks the installer and the program in it are
@@ -319,13 +339,15 @@ On a Mac, `mac/bundle.sh <folder> target/release/the-machine-desktop` makes the 
 people in a job of its own, which runs none of this repository's code.
 
 On Windows, never make a window from a page's call or a message: it can wait for itself (`later` in `src/main.rs`). The
-robot's windows are all made at the start.
+robot's windows are all made at the start. WebView2's very first start on a computer takes seconds (8 on CI's runner), all
+of it while the first of them is made, before anything shows: the installer takes it with `--warm` (`src/warm.rs`,
+`windows/hooks.nsh`), and `smoke/windows.py` checks that the first start after it shows within 4 seconds, with no hang.
 
 ## Before a release
 
 - The box as a page of the Machine's, so its words come from the catalogs (`i18n/`); `native.js` is the seam.
 - A check of the whole hosted sign-in.
-- A hotkey for who wants one, signing on Windows, a first update published.
+- A hotkey for who wants one.
 - Talk and dictation: the dashboard has no address that opens Talk yet.
 
 The robot's images come from `brand/` ([TRADEMARKS.md](../TRADEMARKS.md)). The font is Inter (`ui/fonts/Inter-OFL.txt`).

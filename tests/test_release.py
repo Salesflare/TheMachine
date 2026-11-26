@@ -348,6 +348,33 @@ class Releases(unittest.TestCase):
         self.assertEqual(release.releases(), tags)
         self.gate.assert_called_once()
 
+    def test_a_release_builds_the_desktop_app_only_when_it_changed(self):
+        self.tag('release-20261021-1200')
+        (self.origin / 'desktop').mkdir()
+        (self.origin / 'desktop' / 'main.rs').write_text('fn main() {}')
+        self.commit('the desktop app changes')
+        self.tag('release-20261022-1200')
+        self.commit('only the Machine changes')
+        self.tag('release-20261023-1200')
+        run('git', 'fetch', '-q', '--tags', 'origin', cwd=self.app)
+        real, latest, calls = subprocess.run, ['release-20261021-1200'], []
+
+        def gh(args, **kwargs):
+            if args[0] != 'gh':
+                return real(args, **kwargs)
+            calls.append(args[1:3])
+            return subprocess.CompletedProcess(args, 0, latest[0] + '\n' if args[1] == 'release' else '', '')
+        with mock.patch.object(release.subprocess, 'run', side_effect=gh):
+            release.desktop_release('release-20261022-1200')
+            self.assertIn(['workflow', 'run'], calls)
+            calls.clear()
+            latest[0] = 'release-20261022-1200'
+            release.desktop_release('release-20261023-1200')
+            self.assertEqual(calls, [['release', 'view']])
+            latest[0] = ''  # none published yet
+            release.desktop_release('release-20261023-1200')
+            self.assertIn(['workflow', 'run'], calls)
+
     def test_cut_refuses_a_commit_with_translations_missing(self):
         # the commit's own translator decides, run on its own files: here one that finds a help article missing
         (self.origin / 'scripts').mkdir()
