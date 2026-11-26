@@ -468,7 +468,7 @@ jobs:
           # Wayland stays Wayland: on Hyprland and Sway the robot is a layer surface, not an X11 window
           if grep -rhE '^\s*export GDK_BACKEND' "$RUNNER_TEMP/squashfs-root/apprun-hooks"; then exit 1; fi
           echo "What it leaves to the system:"
-          find "$RUNNER_TEMP/squashfs-root" -type f \( -name '*.so*' -o -path '*/usr/bin/*' \) -exec readelf -d {} + 2> /dev/null \
+          { find "$RUNNER_TEMP/squashfs-root" -type f \( -name '*.so*' -o -path '*/usr/bin/*' \) -exec readelf -d {} + 2> /dev/null || true; } \
             | grep -o 'Shared library: \[[^]]*\]' | cut -d[ -f2 | tr -d ']' | sort -u > "$RUNNER_TEMP/needed.txt"
           find "$RUNNER_TEMP/squashfs-root" -name '*.so*' -printf '%f\n' | sort -u > "$RUNNER_TEMP/bundled.txt"
           comm -23 "$RUNNER_TEMP/needed.txt" "$RUNNER_TEMP/bundled.txt"
