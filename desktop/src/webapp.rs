@@ -3,6 +3,8 @@
 //! The open window takes it (the dashboard's launch_handler). The entry is found by the app's id, which comes from the
 //! Machine's own address: another Machine's app has another one. Without one, the browser.
 use sha2::{Digest, Sha256};
+use std::ffi::OsString;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use url::Url;
 
@@ -20,10 +22,26 @@ pub struct Entry {
     file: std::path::PathBuf,
 }
 
+impl Entry {
+    /// Its browser: an absolute path to a program that is there. Nothing else is started.
+    fn program(&self) -> Option<&Path> {
+        let program = Path::new(self.argv.first()?);
+        (program.is_absolute() && program.is_file()).then_some(program)
+    }
+
+    /// The browser with the entry's own arguments, and the page to open as one more (own() checked it first).
+    fn command(&self, address: &str) -> Option<Command> {
+        let mut open = OsString::from("--app-launch-url-for-shortcuts-menu-item=");
+        open.push(address);
+        let mut command = Command::new(self.program()?);
+        command.args(&self.argv[1..]).arg(open);
+        command.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+        Some(command)
+    }
+}
+
 fn start(entry: Entry, address: &str) -> bool {
-    let mut command = Command::new(&entry.argv[0]);
-    command.args(&entry.argv[1..]).arg(format!("--app-launch-url-for-shortcuts-menu-item={address}"));
-    command.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+    let Some(mut command) = entry.command(address) else { return false };
     system::prepare(&entry, &mut command);
     let Ok(mut child) = command.spawn() else { return false };
     std::thread::spawn(move || child.wait());
@@ -283,6 +301,25 @@ mod tests {
         assert_eq!(ids(path, true), [id(path), id(root)]);
         assert_eq!(ids(path, false), [id(path)]); // the host's own app is another Machine's
         assert_ne!(id("https://one.app.themachine.computer/"), id("https://two.app.themachine.computer/"));
+    }
+
+    #[test]
+    fn only_a_browser_that_is_there() {
+        let entry = |program: &str| Entry {
+            argv: vec![program.into(), "--app-id=x".into()],
+            #[cfg(target_os = "linux")]
+            file: Default::default(),
+        };
+        let here = std::env::current_exe().unwrap();
+        let there = entry(here.to_str().unwrap());
+        assert_eq!(there.program(), Some(here.as_path()));
+        let started = there.command("https://my.example.com/").unwrap();
+        let said: Vec<_> = started.get_args().collect();
+        assert_eq!(said, ["--app-id=x", "--app-launch-url-for-shortcuts-menu-item=https://my.example.com/"]);
+        let name = here.file_name().unwrap().to_str().unwrap();
+        for not in [name, "", "/no/such/browser", here.parent().unwrap().to_str().unwrap()] {
+            assert!(entry(not).command("https://my.example.com/").is_none(), "{not}");
+        }
     }
 
     #[test]
