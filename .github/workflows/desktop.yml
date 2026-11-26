@@ -490,6 +490,9 @@ jobs:
     if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' }} # its push has it
     runs-on: ubuntu-22.04
     timeout-minutes: 60
+    env: # the AppImage's runtime, in place of the one tauri fetched: static, mounts with fuse3's fusermount3 (linux/runtime.py)
+      RUNTIME: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64
+      RUNTIME_SHA256: 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d
     defaults:
       run:
         working-directory: desktop
@@ -504,6 +507,8 @@ jobs:
           set -euo pipefail
           if [ -n "$RELEASE" ]; then python3 tools/version.py "$RELEASE"; fi
           [ "$(grep -m1 '^pkgver=' linux/PKGBUILD | cut -d= -f2)" = "$(jq -r .version tauri.conf.json)" ]
+          curl -sSfL -o "$RUNNER_TEMP/runtime" "$RUNTIME"
+          echo "$RUNTIME_SHA256  $RUNNER_TEMP/runtime" | sha256sum -c -
           sudo apt-get update -qq
           # The tray icon is Windows' and the Mac's, but tauri bundle sees the feature and wants appindicator
           sudo apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-dev libgtk-layer-shell-dev libayatana-appindicator3-dev librsvg2-dev file xdg-utils > /dev/null
@@ -514,6 +519,7 @@ jobs:
           tools/node_modules/.bin/tauri bundle --ci --bundles deb,appimage --config linux/bundle.json
           mkdir out
           mv target/release/bundle/appimage/*.AppImage out/the-machine-desktop-x86_64.AppImage
+          python3 linux/runtime.py out/the-machine-desktop-x86_64.AppImage "$RUNNER_TEMP/runtime"
           mv target/release/bundle/deb/*.deb out/the-machine-desktop-amd64.deb
           cp README.md ../LICENSE linux/PKGBUILD out/
       - name: What is in them
@@ -527,6 +533,8 @@ jobs:
           grep -qE ' (\./)?usr/bin/the-machine-desktop$' "$RUNNER_TEMP/files.txt"
           chmod +x out/the-machine-desktop-x86_64.AppImage
           own="$PWD/out/the-machine-desktop-x86_64.AppImage"
+          [ "$(head -c "$(stat -c %s "$RUNNER_TEMP/runtime")" "$own" | sha256sum | cut -d' ' -f1)" = "$RUNTIME_SHA256" ]
+          "$own" --appimage-version
           (cd "$RUNNER_TEMP" && "$own" --appimage-extract > /dev/null)
           find "$RUNNER_TEMP/squashfs-root" -name 'libgtk-layer-shell.so*' -o -name 'libwebkit2gtk-4.1.so*' -o -name 'libwayland-*.so*'
           [ -n "$(find "$RUNNER_TEMP/squashfs-root" -name 'libgtk-layer-shell.so.0*')" ]
@@ -568,15 +576,41 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          # An AppImage leaves OpenGL and EGL to the system, as every desktop has them; this runner hasn't
-          sudo apt-get install -y -qq --no-install-recommends xvfb openbox dunst xdotool x11-utils imagemagick dbus libfuse2t64 fuse3 libegl1 libgles2 libgl1 > /dev/null
+          # An AppImage leaves OpenGL and EGL to the system, as every desktop has them; this runner hasn't. FUSE is fuse3's
+          # fusermount3 alone, as Ubuntu 24.04 has it out of the box: no libfuse2t64
+          sudo apt-get install -y -qq --no-install-recommends xvfb openbox dunst xdotool x11-utils imagemagick dbus fuse3 libegl1 libgles2 libgl1 > /dev/null
+          sudo apt-get remove -y -qq libfuse2t64 fuse > /dev/null 2>&1 || true
+          if ldconfig -p | grep -q 'libfuse\.so\.2'; then exit 1; fi
+          if { dpkg -s fuse libfuse2t64 2> /dev/null || true; } | grep -q '^Status: install'; then exit 1; fi
+          command -v fusermount3
+          ls -l /usr/bin/fusermount* # fuse3 has fusermount as a name of fusermount3
+          # As Ubuntu itself has it (this runner relaxes it): a program AppArmor has no profile for may not use a user
+          # namespace of its own. Proof that it holds: unshare can't map a user in one
+          sysctl kernel.apparmor_restrict_unprivileged_userns
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=1
+          if unshare -Ur true; then exit 1; fi
+          sudo dmesg | grep -E 'userns' || true
+          sudo dmesg --clear
           image="$PWD/linux-build/the-machine-desktop-x86_64.AppImage"
           chmod +x "$image"
+          mkdir -p shots
+          bash smoke/namespaces.sh shots/namespaces.txt &
+          watcher=$!
           failed=0
           bash smoke/linux.sh "$image" shots/appimage python3 smoke/started.py "$PWD/shots/appimage" "$image" || failed=1
           sudo apt-get install -y -qq ./linux-build/the-machine-desktop-amd64.deb
           dpkg -L "$(dpkg-deb -f linux-build/the-machine-desktop-amd64.deb Package)"
           bash smoke/linux.sh /usr/bin/the-machine-desktop shots/deb python3 smoke/started.py "$PWD/shots/deb" /usr/bin/the-machine-desktop || failed=1
+          kill "$watcher"
+          wait "$watcher" || true
+          sort -u shots/namespaces.txt | tee shots/namespaces-seen.txt
+          # The AppImage ran on FUSE (no extracting), and every process of the app and its web view stayed in this user namespace
+          grep -q '^mount ' shots/namespaces-seen.txt || failed=1
+          grep -q '^process WebKit' shots/namespaces-seen.txt || failed=1
+          own="$(readlink /proc/self/ns/user)"
+          if grep '^process .* user:' shots/namespaces-seen.txt | grep -vF " $own"; then failed=1; fi
+          sudo dmesg | grep -E 'apparmor=.*userns' | tee shots/userns-denied.txt || true
+          if grep -E 'the-machine|WebKit|bwrap' shots/userns-denied.txt; then failed=1; fi
           exit $failed
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
@@ -591,7 +625,11 @@ jobs:
     needs: linux
     if: ${{ !cancelled() && needs.linux.result == 'success' }}
     runs-on: ubuntu-latest
-    container: archlinux:latest
+    container:
+      image: archlinux:latest
+      # As a desktop has it, which a container hasn't otherwise: FUSE's mount, for the AppImage as people start it, and
+      # bubblewrap's sandbox, which GTK's image loaders (glycin) start. A throwaway runner's container, with nothing else in it
+      options: --privileged
     timeout-minutes: 30
     defaults:
       run:
@@ -601,8 +639,11 @@ jobs:
         run: |
           set -euo pipefail
           # and what every desktop has, which an AppImage leaves to the system: OpenGL and EGL, X11's libraries, fonts, sound
-          pacman -Syu --noconfirm --needed base-devel pacman-contrib sway grim python dbus mesa libglvnd libx11 libxcb libxext libxrender fontconfig freetype2 alsa-lib > /dev/null
-          for p in webkit2gtk-4.1 gtk-layer-shell gtk3; do if pacman -Q "$p" 2> /dev/null; then exit 1; fi; done
+          # FUSE is fuse3 alone, as on Omarchy: no fuse2
+          pacman -Syu --noconfirm --needed base-devel pacman-contrib sway grim python dbus mesa libglvnd libx11 libxcb libxext libxrender fontconfig freetype2 alsa-lib fuse3 > /dev/null
+          for p in webkit2gtk-4.1 gtk-layer-shell gtk3 fuse2; do if pacman -Q "$p" 2> /dev/null; then exit 1; fi; done
+          if command -v fusermount; then exit 1; fi
+          ls -l "$(command -v fusermount3)" /dev/fuse
           getcap /usr/bin/sway
           setcap -r /usr/bin/sway || true # its file capability (cap_sys_nice) is more than a container may start
           sway --version
@@ -630,8 +671,15 @@ jobs:
           chown -R builder: "$home"
           as() { runuser -u builder -- "$@"; }
           failed=0
+          # On FUSE, as people start it, not unpacked: it is mounted while it runs
+          bash desktop/smoke/namespaces.sh "$home/shots/namespaces.txt" &
+          watcher=$!
           as bash "$home/desktop/smoke/wayland.sh" "$home/shots/appimage" python3 smoke/started.py "$home/shots/appimage" \
-            env APPIMAGE_EXTRACT_AND_RUN=1 "$home/the-machine-desktop-x86_64.AppImage" || failed=1
+            "$home/the-machine-desktop-x86_64.AppImage" || failed=1
+          kill "$watcher"
+          wait "$watcher" || true
+          sort -u "$home/shots/namespaces.txt"
+          grep -q '^mount ' "$home/shots/namespaces.txt" || failed=1
           as bash -c 'cd /home/builder/pkg && updpkgsums && makepkg --nodeps --noconfirm'
           pacman -U --noconfirm "$pkg"/the-machine-desktop-bin-*.pkg.tar.zst
           pacman -Qi the-machine-desktop-bin
@@ -661,6 +709,8 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      id-token: write # for GitHub's build provenance: a Sigstore certificate of this run, nothing else
+      attestations: write
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -678,9 +728,8 @@ jobs:
         with:
           name: the-machine-desktop-arch
           path: arch
-      - name: On the release
+      - name: The files
         env:
-          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.release.outputs.version }}
         run: |
           set -euo pipefail
@@ -688,5 +737,15 @@ jobs:
           [ "$(jq -r .version out/latest.json)" = "$VERSION" ]
           grep -q "^_tag=$RELEASE$" out/PKGBUILD
           (cd out && sha256sum -- * > SHA256SUMS && cat SHA256SUMS)
+      # Every file, SHA256SUMS too, with GitHub's word that this run of this workflow made it: gh attestation verify <file> -R Salesflare/TheMachine
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: out/*
+      - name: On the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          set -euo pipefail
           gh release create "$RELEASE" out/* --repo "$GITHUB_REPOSITORY" --verify-tag --latest --title "The Machine desktop app $VERSION" \
             --notes "The desktop app of $RELEASE (desktop/README.md). Windows: the-machine-desktop-setup.exe, signed. Mac: the-machine-desktop-mac.zip, signed and notarized. Linux: the AppImage, the .deb, and PKGBUILD for Arch. The newest is always at releases/latest/download/ with the same file names."

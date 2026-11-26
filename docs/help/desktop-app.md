@@ -26,11 +26,15 @@ Unpack the zip, move The Machine to Applications and open it there. macOS asks o
 
 ## Linux
 
-- Any distribution: make the AppImage executable with `chmod +x` and start it. If it says FUSE is missing, install `fuse2` on Arch or `libfuse2t64` on Ubuntu 24.04.
+- Any distribution: make the AppImage executable with `chmod +x` and start it. If it says FUSE is missing, install `fuse3`.
 - Ubuntu 22.04, Debian 12 or newer: `sudo apt install ./the-machine-desktop-amd64.deb`. It brings WebKitGTK and gtk-layer-shell with it.
 - Arch and Omarchy: put the PKGBUILD in an empty folder and run `makepkg -si` there. It downloads that version, checks it against the checksum in the file, and installs it. On Hyprland, as Omarchy has it, the robot stays above other windows without a window of its own.
 
 On Linux the app doesn't update itself. For a newer version, download the file again, or the newer PKGBUILD.
+
+## Check a download
+
+Every file has GitHub's build provenance, which shows it was built from The Machine's code by its own workflow. With the [GitHub CLI](https://cli.github.com): `gh attestation verify <file> -R Salesflare/TheMachine`.
 
 ## Sign in
 
