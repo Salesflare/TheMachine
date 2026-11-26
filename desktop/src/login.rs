@@ -84,7 +84,9 @@ mod system {
         if !on {
             return std::fs::remove_file(&file).is_ok() || !file.exists();
         }
-        let Some(program) = std::env::current_exe().ok().and_then(|p| p.into_os_string().into_string().ok()) else { return false };
+        // An AppImage runs from a folder that is gone after it quits: the file itself starts it again
+        let program = std::env::var_os("APPIMAGE").map(PathBuf::from).filter(|p| p.is_absolute()).or_else(|| std::env::current_exe().ok());
+        let Some(program) = program.and_then(|p| p.into_os_string().into_string().ok()) else { return false };
         // Quoted as the desktop's own rules ask
         let program: String = program.chars().flat_map(|c| if "\"`$\\".contains(c) { vec!['\\', '\\', c] } else if c == '%' { vec!['%', '%'] } else { vec![c] }).collect();
         let entry = format!("[Desktop Entry]\nType=Application\nName=The Machine\nExec=\"{program}\" {ARGUMENT}\nNoDisplay=true\n");

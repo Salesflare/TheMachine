@@ -1,0 +1,24 @@
+# The desktop app for Arch Linux (Omarchy too), from the .deb that CI builds: the same program, with the system's own
+# WebKitGTK and gtk-layer-shell. Not in the AUR yet. desktop.yml builds and installs it with makepkg; there the .deb is
+# already next to this file and its checksum is filled in (updpkgsums).
+pkgname=the-machine-desktop-bin
+pkgver=0.0.1
+pkgrel=1
+pkgdesc='The Machine on your desktop: its robot in a corner of the screen, and its dashboard in a window'
+arch=('x86_64')
+url='https://github.com/Salesflare/TheMachine/tree/main/desktop'
+license=('AGPL-3.0-only')
+depends=('webkit2gtk-4.1' 'gtk3' 'gtk-layer-shell' 'libsoup3' 'glib2' 'cairo' 'gdk-pixbuf2' 'hicolor-icon-theme')
+optdepends=('xdg-desktop-portal: screenshots for a to-do')
+provides=('the-machine-desktop')
+conflicts=('the-machine-desktop')
+options=('!strip' '!debug')
+source=("the-machine-desktop-$pkgver-amd64.deb::https://github.com/Salesflare/TheMachine/releases/download/desktop/the-machine-desktop-amd64.deb")
+noextract=("the-machine-desktop-$pkgver-amd64.deb")
+sha256sums=('SKIP')
+
+package() {
+  bsdtar -xOf "the-machine-desktop-$pkgver-amd64.deb" 'data.tar.*' | bsdtar -xf - -C "$pkgdir" --no-same-owner
+  chmod -R u=rwX,go=rX "$pkgdir/usr"
+  test -x "$pkgdir/usr/bin/the-machine-desktop"
+}

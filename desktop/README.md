@@ -56,10 +56,23 @@ from the internet: **Open**. Its window opens to sign in, and the robot stands i
 A pull request's build is `the-machine-desktop-mac-unsigned`. macOS stops that one: **Done**, then System Settings,
 Privacy & Security, scroll down, **Open Anyway**, and your password.
 
-Linux (64-bit): build it (below), then start `target/release/the-machine-desktop`. It needs WebKitGTK 4.1 and
-gtk-layer-shell (`libgtk-layer-shell.so.0`, from the system or in `lib/` next to the program). The one in `lib/` is
-read-only: a plain `cp` over a running robot's library would crash it, so it is refused. Replace it with a new file (`cp
--f`, `install`, `mv`, `tar`).
+Linux (64-bit, x86_64): download `the-machine-desktop-linux` from the newest run of the same workflow and unpack it. None of
+these update themselves yet: take a newer one from a newer run.
+
+- **Any distribution**: `the-machine-desktop-x86_64.AppImage` brings what it needs, gtk-layer-shell too. `chmod +x` it and
+  start it. If it says FUSE is missing, install `fuse2` (Arch) or `libfuse2t64` (Ubuntu 24.04; `libfuse2` before).
+- **Ubuntu and Debian** (Ubuntu 22.04, Debian 12 or newer): `sudo apt install ./the-machine-desktop-amd64.deb`, which also
+  installs WebKitGTK 4.1 and gtk-layer-shell. It is in the applications menu as The Machine; `the-machine-desktop` starts it too.
+- **Arch and Omarchy**: `the-machine-desktop-arch` from the same run has the package. `sudo pacman -U
+  the-machine-desktop-bin-*.pkg.tar.zst` installs it with WebKitGTK 4.1 and gtk-layer-shell. Or make it yourself: put
+  `PKGBUILD` and the .deb, renamed `the-machine-desktop-<version>-amd64.deb`, in one folder, then `updpkgsums && makepkg -si`.
+  It isn't in the AUR yet. On Hyprland (Omarchy's), Sway and KDE the robot is a layer surface, above other windows and
+  without a window of its own (**How it is made**); nothing to set for it.
+
+None is signed. To build it yourself (below), it needs WebKitGTK 4.1 and gtk-layer-shell (`libgtk-layer-shell.so.0`, from
+the system or in `lib/` next to the program); start `target/release/the-machine-desktop`. The one in `lib/` is read-only: a
+plain `cp` over a running robot's library would crash it, so it is refused. Replace it with a new file (`cp -f`, `install`,
+`mv`, `tar`).
 
 On Windows it needs no administrator: started as one, it starts again as you. There is only ever one: another start, also of a
 copy elsewhere, brings the one that runs forward.
@@ -270,7 +283,7 @@ the dashboard's own token and Origin. No others.
 
 | | Windows | Linux: layer-shell (Hyprland, Sway, KDE) | Linux: X11, GNOME (XWayland) | macOS |
 |---|---|---|---|---|
-| Built | yes, by CI | yes | yes | yes, by CI |
+| Built | yes, by CI | yes, by CI | yes, by CI | yes, by CI |
 | On top, no taskbar entry | window flags | layer surface | window hints | a floating panel on every Space; the Dock icon is the window's |
 | The dashboard's window | yes | yes | yes | yes |
 | Notifications | toasts, with its name and icon in `HKCU\Software\Classes\AppUserModelId` while they are on | the desktop's own (`org.freedesktop.Notifications`), also kept where it keeps them | as beside | Notification Center |
@@ -293,6 +306,11 @@ CI also uses the Windows and the Mac build, with real mouse and keys against a m
 change the screen, so they are for a throwaway computer. `smoke/linux.sh` runs `window.py` on a screen that isn't there,
 with a home of its own: nothing of the desktop it is started on is seen or touched. Also over https, as a hosted Machine: with a certificate made for that run
 (`smoke/certificate.sh`), which only a sandbox build and that computer trust, until it ends.
+
+The Linux builds for people (`linux/bundle.json`, `linux/PKGBUILD`) are started by `smoke/started.py`: the window opens to
+sign in, and a start at login has only the robot. On Ubuntu with X11 (`smoke/linux.sh`) the AppImage and the installed .deb;
+on Arch the AppImage where nothing of the app is installed, then the package, on Wayland: `smoke/wayland.sh` runs sway
+headless, and there the robot has to be a layer surface.
 
 On a Mac, `mac/bundle.sh <folder> target/release/the-machine-desktop` makes the app. CI signs and notarizes the one for
 people in a job of its own, which runs none of this repository's code.
