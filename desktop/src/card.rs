@@ -101,6 +101,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .initialization_script(ESCAPE)
         .initialization_script(crate::dash::NO_SPEECH)
         .initialization_script(crate::dash::NO_BUY)
+        .initialization_script(crate::dash::DOWNLOADS)
         .on_navigation(move |url| {
             if url.as_str() == BACK {
                 say(&here, "back");

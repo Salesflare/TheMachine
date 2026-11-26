@@ -228,8 +228,8 @@ mod system {
 }
 
 /// The Mac App Store's build: in the App Sandbox the tool above can't be started. macOS' own picker (ScreenCaptureKit, macOS
-/// 14) shows the windows and screens, and what the person picks there is what this app may see, once: it asks for no
-/// permission, and nothing is kept. One at a time (main.rs, `picking`).
+/// 14) shows the windows and screens, and what the person picks there is what this app may see, once: one frame of a
+/// stream of it (a screenshot of it would ask for Screen Recording), and nothing is kept. One at a time (main.rs, `picking`).
 #[cfg(all(target_os = "macos", feature = "store"))]
 mod system {
     use block2::RcBlock;
@@ -245,6 +245,41 @@ mod system {
 
     #[link(name = "ScreenCaptureKit", kind = "framework")]
     extern "C" {}
+
+    #[link(name = "CoreImage", kind = "framework")]
+    extern "C" {}
+
+    #[link(name = "CoreMedia", kind = "framework")]
+    extern "C" {
+        fn CMSampleBufferGetImageBuffer(buffer: *mut SampleBuffer) -> *mut PixelBuffer;
+    }
+
+    #[repr(C)]
+    struct SampleBuffer([u8; 0]);
+    // SAFETY: CoreMedia's own type, only ever behind a pointer.
+    unsafe impl RefEncode for SampleBuffer {
+        const ENCODING_REF: Encoding = Encoding::Pointer(&Encoding::Struct("opaqueCMSampleBuffer", &[]));
+    }
+
+    #[repr(C)]
+    struct PixelBuffer([u8; 0]);
+    // SAFETY: CoreVideo's own type, only ever behind a pointer.
+    unsafe impl RefEncode for PixelBuffer {
+        const ENCODING_REF: Encoding = Encoding::Pointer(&Encoding::Struct("__CVBuffer", &[]));
+    }
+
+    extern "C" {
+        fn dispatch_queue_create(label: *const std::ffi::c_char, attributes: *const std::ffi::c_void) -> *mut AnyObject;
+    }
+
+    /// The stream of what was picked, and what hears it, while its first frame is still to come.
+    struct Streaming {
+        stream: Retained<AnyObject>,
+        _hears: Retained<AnyObject>,
+    }
+    // SAFETY: ScreenCaptureKit's stream may be stopped from any thread; what hears it is only kept here.
+    unsafe impl Send for Streaming {}
+    static STREAMING: Mutex<Option<Streaming>> = Mutex::new(None);
 
     extern "C" {
         /// Foundation's: a line in the system's log (Console), where what went wrong with the picker is told.
@@ -262,13 +297,6 @@ mod system {
     const MODES: usize = 1 | 1 << 4;
     /// NSBitmapImageFileTypePNG
     const PNG: usize = 4;
-
-    #[repr(C)]
-    struct CGImage([u8; 0]);
-    // SAFETY: CoreGraphics' own type, only ever behind a pointer.
-    unsafe impl RefEncode for CGImage {
-        const ENCODING_REF: Encoding = Encoding::Pointer(&Encoding::Struct("CGImage", &[]));
-    }
 
     /// Where the answer goes: a picture, nothing when the person picked nothing, or Err when what was picked can't be taken.
     static TOLD: Mutex<Option<Sender<Result<Option<Vec<u8>>, ()>>>> = Mutex::new(None);
@@ -328,6 +356,20 @@ mod system {
         })
     }
 
+    fn output() -> &'static AnyClass {
+        AnyClass::get(c"TheMachineShotFrame").unwrap_or_else(|| {
+            let mut class = ClassBuilder::new(c"TheMachineShotFrame", NSObject::class()).expect("a name of its own");
+            if let Some(output) = AnyProtocol::get(c"SCStreamOutput") {
+                class.add_protocol(output);
+            }
+            // SAFETY: the stream output's method, with its arguments.
+            unsafe {
+                class.add_method(sel!(stream:didOutputSampleBuffer:ofType:), frame as extern "C-unwind" fn(_, _, _, _, _));
+            }
+            class.register()
+        })
+    }
+
     fn picker() -> Option<Retained<AnyObject>> {
         // SAFETY: ScreenCaptureKit's shared picker, since macOS 14, the oldest this build runs on.
         AnyClass::get(c"SCContentSharingPicker").and_then(|c| unsafe { msg_send![c, sharedPicker] })
@@ -353,6 +395,7 @@ mod system {
     }
 
     extern "C-unwind" fn stop(_: &AnyClass, _: Sel) {
+        ended();
         let (Some(picker), Some(hears)) = (picker(), HEARS.take()) else { return };
         // SAFETY: what was added in `present`.
         unsafe {
@@ -370,9 +413,12 @@ mod system {
         tell(Err(()));
     }
 
-    /// What was picked, as large as it is on its screen, without the pointer.
+    /// What was picked, as large as it is on its screen, without the pointer: a stream of it, until its first frame.
     extern "C-unwind" fn picked(_: &AnyObject, _: Sel, _: &AnyObject, filter: &AnyObject, _: *mut AnyObject) {
-        // SAFETY: the filter the picker gives (macOS 14 has its rect and scale), and a stream configuration's properties.
+        ended();
+        let none: Option<&AnyObject> = None;
+        // SAFETY: the filter the picker gives (macOS 14 has its rect and scale), a stream configuration's properties, and a
+        // stream of that filter with this class as its output (on ScreenCaptureKit's own queue).
         unsafe {
             let rect: NSRect = msg_send![filter, contentRect];
             let scale: f32 = msg_send![filter, pointPixelScale];
@@ -380,28 +426,66 @@ mod system {
             let () = msg_send![&configuration, setWidth: (rect.size.width * f64::from(scale)).round().max(1.0) as usize];
             let () = msg_send![&configuration, setHeight: (rect.size.height * f64::from(scale)).round().max(1.0) as usize];
             let () = msg_send![&configuration, setShowsCursor: false];
-            let done = RcBlock::new(move |image: *mut CGImage, error: *mut NSError| {
-                let taken = png(image);
-                if taken.is_none() {
-                    // The error ScreenCaptureKit gives with no picture, or none.
-                    let error = error.as_ref().map(|e| e.localizedDescription().to_string()).unwrap_or_default();
-                    say(&format!("{} at {}x{}: {error}", if image.is_null() { "not taken" } else { "no PNG" }, rect.size.width, rect.size.height));
+            let () = msg_send![&configuration, setQueueDepth: 3isize];
+            let made: Allocated<AnyObject> = msg_send![class!(SCStream), alloc];
+            let stream: Retained<AnyObject> = msg_send![made, initWithFilter: filter, configuration: &*configuration, delegate: none];
+            let hears: Retained<AnyObject> = msg_send![output(), new];
+            // One queue of its own for the frames, kept as long as the app runs
+            static QUEUE: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
+            let queue = *QUEUE.get_or_init(|| dispatch_queue_create(c"computer.themachine.shot".as_ptr(), std::ptr::null()) as usize) as *mut AnyObject;
+            let added: bool = msg_send![&stream, addStreamOutput: &*hears, type: 0isize, sampleHandlerQueue: queue, error: std::ptr::null_mut::<*mut NSError>()];
+            if !added {
+                say("no output");
+                return tell(Err(()));
+            }
+            let started = RcBlock::new(|error: *mut NSError| {
+                // The error ScreenCaptureKit gives when it can't start, or none.
+                if let Some(error) = error.as_ref() {
+                    say(&format!("not started: {}", error.localizedDescription()));
+                    ended();
+                    tell(Err(()));
                 }
-                tell(taken.map(Some).ok_or(()));
             });
-            let () = msg_send![class!(SCScreenshotManager), captureImageWithFilter: filter, configuration: &*configuration, completionHandler: &*done];
+            let () = msg_send![&stream, startCaptureWithCompletionHandler: &*started];
+            *STREAMING.lock().unwrap() = Some(Streaming { stream, _hears: hears });
         }
     }
 
-    fn png(image: *mut CGImage) -> Option<Vec<u8>> {
-        if image.is_null() {
-            return None;
+    /// The stream's first frame with a picture in it, as a PNG; then it ends.
+    extern "C-unwind" fn frame(_: &AnyObject, _: Sel, _: &AnyObject, buffer: *mut SampleBuffer, kind: isize) {
+        if kind != 0 || TOLD.lock().unwrap().is_none() {
+            return;
         }
-        // SAFETY: a CGImage that lives while this runs; a bitmap of it, as a PNG.
+        // SAFETY: the sample buffer of this call, which lives while it runs.
+        let pixels = unsafe { CMSampleBufferGetImageBuffer(buffer) };
+        if pixels.is_null() {
+            return; // a frame that says only that nothing changed
+        }
+        let taken = png(pixels);
+        if taken.is_none() {
+            say("no PNG");
+        }
+        tell(taken.map(Some).ok_or(()));
+        ended();
+    }
+
+    /// The stream ends, if there is one.
+    fn ended() {
+        let Some(Streaming { stream, .. }) = STREAMING.lock().unwrap().take() else { return };
+        let none: Option<&block2::Block<dyn Fn(*mut NSError)>> = None;
+        // SAFETY: a stream that was started; it may be stopped from any thread, without being told when.
         unsafe {
+            let () = msg_send![&stream, stopCaptureWithCompletionHandler: none];
+        }
+    }
+
+    fn png(pixels: *mut PixelBuffer) -> Option<Vec<u8>> {
+        // SAFETY: a pixel buffer that lives while this runs; an image of it, a bitmap of that, as a PNG.
+        unsafe {
+            let image: Option<Retained<AnyObject>> = msg_send![class!(CIImage), imageWithCVPixelBuffer: pixels];
             let made: Allocated<AnyObject> = msg_send![class!(NSBitmapImageRep), alloc];
-            let bitmap: Retained<AnyObject> = msg_send![made, initWithCGImage: image];
-            let data: Option<Retained<NSData>> = msg_send![&bitmap, representationUsingType: PNG, properties: &*NSDictionary::<NSString, AnyObject>::new()];
+            let bitmap: Option<Retained<AnyObject>> = msg_send![made, initWithCIImage: &*image?];
+            let data: Option<Retained<NSData>> = msg_send![&bitmap?, representationUsingType: PNG, properties: &*NSDictionary::<NSString, AnyObject>::new()];
             data.map(|d| d.to_vec())
         }
     }

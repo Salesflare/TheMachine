@@ -113,11 +113,11 @@ def probe(build, folder):
 
 
 def unasked():
-    """What macOS still asks from a step before (the microphone, which window.py leaves unanswered): Don't Allow, so that
-    it is no longer in front of the next."""
+    """What macOS still asks from a step before (the microphone, which window.py leaves unanswered): Don't Allow (or
+    Deny), so that it is no longer in front of the next."""
     for owner in ('UserNotificationCenter', 'universalAccessAuthWarn', 'CoreServicesUIAgent', 'the-machine-desktop'):
         subprocess.run(['osascript', '-e', f'tell application "System Events" to tell process "{owner}" to repeat with w in windows\n'
-                        'repeat with b in buttons of w\nif name of b starts with "Don" then click b\nend repeat\nend repeat'],
+                        'repeat with b in buttons of w\nif name of b starts with "Don" or name of b is "Deny" then click b\nend repeat\nend repeat'],
                        capture_output=True, timeout=20, check=False)
 
 

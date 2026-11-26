@@ -260,10 +260,12 @@ is the same app, except:
 
 - **No updater** and no plans or links to buy one, as in the phone app (`NO_BUY` in `src/dash.rs`, `.no-buy` in the dashboard).
 - **One of it:** its socket is in its own container (`src/one.rs`), not in /tmp.
-- **Screenshots:** macOS' own picker (ScreenCaptureKit). It asks for no permission and keeps nothing.
+- **Screenshots:** macOS' own picker (ScreenCaptureKit), then one frame of a stream of what was picked (a screenshot of it
+  would ask for Screen Recording). It asks for no permission and keeps nothing.
 - **Sign-in** comes back to its port only: the sandbox can't claim the link. It says `on=store`, and the account shows it
   nothing to buy.
-- **Downloads** go to the person's own Downloads folder, not the container's.
+- **Downloads** go to the person's own Downloads folder, not the container's. The sandbox's WebKit drops a link's own
+  download (`<a download>` of the Machine's address), so the page fetches it and saves that (`DOWNLOADS` in `src/dash.rs`).
 - **A stuck page** gets a new window; nothing else is stopped. `hangs.log` has no stacks.
 - **Installed web apps** open with their own small program, as when a link is dropped on it.
 

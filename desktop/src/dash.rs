@@ -23,6 +23,14 @@ const SCRIPT: &str = "Object.defineProperty(window,'machineDesktop',{value:Objec
 /// nothing. The Machine hears what is dictated itself.
 pub const NO_SPEECH: &str = "delete window.webkitSpeechRecognition;";
 
+/// The Mac App Store's build: in the App Sandbox WebKit drops a link's download of its own address (`<a download>`), though
+/// not one of what the page has (a blob): so the page fetches it, and saves that.
+pub const DOWNLOADS: &str = if cfg!(feature = "store") {
+    "addEventListener('click',e=>{const a=e.target.closest?.('a[download]');if(!a||e.defaultPrevented||e.button||e.metaKey||a.origin!==location.origin||!/^https?:$/.test(a.protocol))return;e.preventDefault();fetch(a.href,{credentials:'include'}).then(r=>r.ok?r.blob().then(b=>[b,r.headers.get('content-disposition')||'']):Promise.reject()).then(([b,d])=>{const n=/filename\\*=UTF-8''([^;]+)/i.exec(d)?.[1],u=URL.createObjectURL(b),x=document.createElement('a');x.href=u;x.download=a.download||(n&&decodeURIComponent(n))||/filename=\"?([^\";]+)/i.exec(d)?.[1]||decodeURIComponent(a.pathname.split('/').pop());document.body.append(x);x.click();x.remove();setTimeout(()=>URL.revokeObjectURL(u),6e4)},()=>{})})"
+} else {
+    ""
+};
+
 /// The Mac App Store's build sells nothing: the pages show no plans or links to buy one, as in the phone app (dashboard.html,
 /// .no-buy). It marks the page as soon as there is one.
 pub const NO_BUY: &str = if cfg!(feature = "store") {
@@ -234,6 +242,7 @@ fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .initialization_script(SCRIPT)
         .initialization_script(NO_SPEECH)
         .initialization_script(NO_BUY)
+        .initialization_script(DOWNLOADS)
         .on_navigation(move |url| navigation(&goes_to, url))
         .on_new_window(move |url, _| {
             later(&opens, move |app| open_link(app, &url));
