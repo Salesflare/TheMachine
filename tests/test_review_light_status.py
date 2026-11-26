@@ -158,10 +158,12 @@ class OpenHere(Store):
         for wide in (other, channel, letter):  # another sender; a Slack channel; a newsletter's sender
             self.assertNotIn(wide, by)
         for kind, text in raw.execute('SELECT kind,metadata FROM events WHERE source_id IN (?,?,?,?)', ('m5', 'm7', 'm12', 'm13')):
-            keys = review_status.keys_of(kind, json.loads(text))  # metadata as it rests, unopened
+            resting = json.loads(text)
+            keys = review_status.keys_of(kind, resting)  # metadata as it rests, unopened
             # unopened, a mail with sealed keys can't be told from a newsletter: its sender is left out, never guessed
-            self.assertEqual(bool([k for k in keys if k[0] == 'sender']), kind == 'gmail.message' and 'mc1_sealed' not in text)
-            self.assertEqual(bool([k for k in keys if k[0] == 'chat']), kind == 'slack.message' and 'D1' in text)  # by the plain channel_id
+            self.assertEqual(bool([k for k in keys if k[0] == 'sender']), kind == 'gmail.message' and 'mc1_sealed' not in resting)
+            # by the plain channel_id (not by 'D1' anywhere in the text: the sealed part's base64 has it now and then)
+            self.assertEqual(bool([k for k in keys if k[0] == 'chat']), kind == 'slack.message' and resting.get('channel_id') == 'D1', text)
 
     def test_the_claim_carries_them_and_only_while_it_fits(self):
         ids = self.events(message(1, 'whatsapp.message', chat_id='c1@g.us'))
