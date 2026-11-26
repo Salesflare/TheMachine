@@ -8151,8 +8151,8 @@
  "{} in #{}": "{}在#{}中",
  "{} in last sync": "{}在上次同步中",
  "{} in {} go to {}.": "{}在{}中的内容将移至{}。",
- "{} in “{}” holds these values already": "“{}”中的{}已包含这些值",
- "{} in “{}” holds these values already: leave this change out": "“{}”中的{}已包含这些值：请省略此项更改",
+ "{} in “{}” holds these values already": "{}（“{}”工作表）已包含这些值",
+ "{} in “{}” holds these values already: leave this change out": "{}（“{}”工作表）已包含这些值：请省略此项更改",
  "{} invites made.": {
   "other": "已创建{}个邀请。"
  },

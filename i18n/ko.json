@@ -8151,8 +8151,8 @@
  "{} in #{}": "#{1}의 {0}",
  "{} in last sync": "{} 마지막 동기화 때",
  "{} in {} go to {}.": "{1} 중 {0}은(는) {2}로 이동해요.",
- "{} in “{}” holds these values already": "“{}”의 {}에 다음 값이 이미 있어요.",
- "{} in “{}” holds these values already: leave this change out": "“{}”의 {}에 다음 값이 이미 있어요. 이 변경사항은 생략해 주세요.",
+ "{} in “{}” holds these values already": "{}(“{}” 탭)에 다음 값이 이미 있어요.",
+ "{} in “{}” holds these values already: leave this change out": "{}(“{}” 탭)에 다음 값이 이미 있어요. 이 변경사항은 생략해 주세요.",
  "{} invites made.": {
   "other": "초대 {}건을 보냈어요."
  },
