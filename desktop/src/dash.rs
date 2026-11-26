@@ -23,6 +23,15 @@ const SCRIPT: &str = "Object.defineProperty(window,'machineDesktop',{value:Objec
 /// nothing. The Machine hears what is dictated itself.
 pub const NO_SPEECH: &str = "delete window.webkitSpeechRecognition;";
 
+/// The Mac App Store's build sells nothing: the pages show no plans or links to buy one, as in the phone app (dashboard.html,
+/// .no-buy). It marks the page as soon as there is one.
+pub const NO_BUY: &str = if cfg!(feature = "store") {
+    "Object.defineProperty(self,'NO_BUY',{value:'no-buy'});{const mark=()=>{const h=document.documentElement;h?.classList.add(NO_BUY);return h};\
+     if(!mark())new MutationObserver((_,o)=>mark()&&o.disconnect()).observe(document,{childList:true})}"
+} else {
+    ""
+};
+
 /// The window, or one with a file, is in front.
 #[cfg(not(windows))]
 static FRONT: AtomicBool = AtomicBool::new(false);
@@ -224,6 +233,7 @@ fn build(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .additional_browser_args(&windows::browser())
         .initialization_script(SCRIPT)
         .initialization_script(NO_SPEECH)
+        .initialization_script(NO_BUY)
         .on_navigation(move |url| navigation(&goes_to, url))
         .on_new_window(move |url, _| {
             later(&opens, move |app| open_link(app, &url));

@@ -1,8 +1,10 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><base href="__BASE__"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>The Machine · To-dos</title>
 <meta name="theme-color" content="#1b1c1f">
-<script>// The mobile app (its WebView says TheMachineApp/<n>): nothing that leads to buying is shown in it ([data-buy]).
-if(/ TheMachineApp\/\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app');
+<script>
+// The mobile app (its WebView says TheMachineApp/<n>), and the desktop app from the Mac App Store (its
+// desktop/src/dash.rs, NO_BUY, which marks the page itself): nothing that leads to buying is shown in them ([data-buy]).
+if(/ TheMachineApp\/\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app',self.NO_BUY='no-buy');
 // One to-do on its own (?compact=1#card=<id>, todos-compact.js): nothing shows until that part is in
 if(location.search=='?compact=1'&&top==self)document.documentElement.classList.add(self.COMPACT='compact');
 // The visible part of the window as --vv-h and --vv-top on <html> (the chat column and sheets on a phone follow it,

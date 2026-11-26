@@ -10,7 +10,7 @@ const flWait=fl=>fl?.why==='retry'&&flFailing(fl)?t('The last tries did not fini
 const AI_FAILED='Your AI didn’t answer a short test. Sign in again or use another AI.',aiFailed=fl=>fl?.why=='model_check'&&'error'in fl;
 // With a line about the plan (model_check.plan_note); in the phone app only what Claude needs
 const AI_PLAN={chatgpt:['','This ChatGPT account is on the free plan. The Machine works best with a paid plan.'],claude:['This needs a paid Claude plan.','This Claude account is on the free plan. This needs a paid Claude plan.']};
-const aiFailedText=fl=>[AI_FAILED,fl.plan==='chatgpt'&&DEV.phoneApp?'':AI_PLAN[fl.plan]?.[fl.plan_free?1:0]].filter(Boolean).map(x=>t(x)).join(' ');
+const aiFailedText=fl=>[AI_FAILED,fl.plan==='chatgpt'&&self.NO_BUY?'':AI_PLAN[fl.plan]?.[fl.plan_free?1:0]].filter(Boolean).map(x=>t(x)).join(' ');
 const flDetail=i=>i.detail?make('details',{class:'fl-detail'},make('summary',{},t('Details')),make('p',{translate:'no'},i.detail)):'';
 const firstLookDays=(fl,run)=>{const hours=run?run.window_hours:fl?.quick&&fl.hours;return hours?Math.max(1,Math.round(hours/24)):fl?.days||7};
 function reviewLiveRows(live){const rows=[];const name=id=>{const c=(state.connectors||[]).find(c=>c.id===id);return c?(c.display_name||c.email||id):id};

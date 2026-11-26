@@ -20,8 +20,12 @@ pub struct Entry {
     argv: Vec<String>,
     #[cfg(target_os = "linux")]
     file: std::path::PathBuf,
+    /// The small program itself, on a Mac.
+    #[cfg(target_os = "macos")]
+    app: String,
 }
 
+#[cfg_attr(all(target_os = "macos", feature = "store"), allow(dead_code))] // the store's build opens the app by NSWorkspace
 impl Entry {
     /// Its browser: an absolute path to a program that is there. Nothing else is started.
     fn program(&self) -> Option<&Path> {
@@ -41,6 +45,14 @@ impl Entry {
 }
 
 fn start(entry: Entry, address: &str) -> bool {
+    #[cfg(all(target_os = "macos", feature = "store"))]
+    return system::open_with(&entry, address);
+    #[cfg(not(all(target_os = "macos", feature = "store")))]
+    started(entry, address)
+}
+
+#[cfg(not(all(target_os = "macos", feature = "store")))]
+fn started(entry: Entry, address: &str) -> bool {
     let Some(mut command) = entry.command(address) else { return false };
     system::prepare(&entry, &mut command);
     let Ok(mut child) = command.spawn() else { return false };
@@ -232,6 +244,7 @@ mod system {
     use super::Entry;
     use objc2_app_kit::NSWorkspace;
     use objc2_foundation::{NSBundle, NSString};
+    #[cfg(not(feature = "store"))]
     use std::process::Command;
 
     const BROWSERS: [&str; 7] = [
@@ -252,7 +265,22 @@ mod system {
         let app = bundle(&format!("{browser}.app.{id}"))?;
         let says = |key: &str| app.objectForInfoDictionaryKey(&NSString::from_str(key)).and_then(|v| v.downcast::<NSString>().ok()).map(|v| v.to_string());
         let program = bundle(browser)?.executableURL()?.path()?.to_string();
-        argv(program, says("CrAppModeShortcutID")?, says("CrAppModeProfileDir"), id).map(|argv| Entry { argv })
+        let shim = app.bundlePath().to_string();
+        argv(program, says("CrAppModeShortcutID")?, says("CrAppModeProfileDir"), id).map(|argv| Entry { argv, app: shim })
+    }
+
+    /// In the App Sandbox a program it starts is in its sandbox too, and macOS gives another no arguments from it: the
+    /// installed app's own small program is given the address, as when a link is dropped on it, and its browser opens it
+    /// in the app's window.
+    #[cfg(feature = "store")]
+    pub fn open_with(entry: &Entry, address: &str) -> bool {
+        use objc2_app_kit::NSWorkspaceOpenConfiguration;
+        use objc2_foundation::{NSArray, NSURL};
+        let Some(url) = NSURL::URLWithString(&NSString::from_str(address)) else { return false };
+        let app = NSURL::fileURLWithPath(&NSString::from_str(&entry.app));
+        let configuration = NSWorkspaceOpenConfiguration::configuration();
+        NSWorkspace::sharedWorkspace().openURLs_withApplicationAtURL_configuration_completionHandler(&NSArray::from_retained_slice(&[url]), &app, &configuration, None);
+        true
     }
 
     fn argv(program: String, named: String, profile: Option<String>, id: &str) -> Option<Vec<String>> {
@@ -260,6 +288,7 @@ mod system {
         (named == id).then(|| [program].into_iter().chain(profile).chain([format!("--app-id={id}")]).collect())
     }
 
+    #[cfg(not(feature = "store"))]
     pub fn prepare(_: &Entry, _: &mut Command) {}
 
     #[cfg(test)]

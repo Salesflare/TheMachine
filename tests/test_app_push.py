@@ -739,13 +739,16 @@ class Share(unittest.TestCase):
 
 
 class InApp(unittest.TestCase):
-    """In the mobile app (Apple 3.1.3(b), Google Play the same) nothing leads to buying: the page marks itself .in-app
-    from the WebView's user agent and hides every [data-buy]. Open account stays, for deleting the account (5.1.1(v))."""
+    """In the mobile app (Apple 3.1.3(b), Google Play the same) nothing leads to buying: the page marks itself .no-buy
+    from the WebView's user agent and hides every [data-buy]. Open account stays, for deleting the account (5.1.1(v)).
+    The desktop app from the Mac App Store says so itself (desktop/src/dash.rs, NO_BUY)."""
     def test_detection_and_rule(self):
         page = dashboard_parts.assemble(Path(machine_config.ROOT))
         head = page[:page.index('</script>')]  # set before anything renders
-        self.assertIn("/ TheMachineApp\\/\\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app')", head)
-        self.assertIn('.in-app [data-buy]{display:none!important}', page)
+        self.assertIn("/ TheMachineApp\\/\\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app',self.NO_BUY='no-buy')", head)
+        self.assertIn('.no-buy [data-buy]{display:none!important}', page)
+        desktop = (Path(machine_config.ROOT) / 'desktop' / 'src' / 'dash.rs').read_text(encoding='utf-8')
+        self.assertIn('''Object.defineProperty(self,'NO_BUY',{value:'no-buy'})''', desktop)
 
     def test_account_buttons_that_buy_are_marked_and_open_account_is_not(self):
         source = (Path(machine_config.ROOT) / 'dashboard' / 'settings-general.js').read_text(encoding='utf-8')
@@ -762,7 +765,7 @@ class InApp(unittest.TestCase):
         # The quiet end of the tab also holds Delete account, which the app keeps: each buying link is marked, and the
         # line goes when nothing in it is left to show
         self.assertIn("end.innerHTML=quiet.join('')", source)
-        self.assertIn('.in-app .acct-danger:not(:has(>:not([data-buy]))){display:none}', dashboard_parts.assemble(Path(machine_config.ROOT)))
+        self.assertIn('.no-buy .acct-danger:not(:has(>:not([data-buy]))){display:none}', dashboard_parts.assemble(Path(machine_config.ROOT)))
         self.assertIn("const ACCT_BUY=new Set(['plan','portal','cancel','fleet','billing','withdraw','network']);", source)
         self.assertIn("b.toggleAttribute('data-buy',!paired)", source)  # Join the Network (a sign-up) when not paired
 

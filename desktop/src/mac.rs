@@ -87,13 +87,33 @@ fn native(window: &WebviewWindow) -> Option<Retained<NSWindow>> {
     unsafe { Retained::retain(window.ns_window().ok()?.cast()) }
 }
 
+/// What Tauri made the windows, before they became panels.
+#[cfg(feature = "store")]
+static WAS: std::sync::OnceLock<&'static AnyClass> = std::sync::OnceLock::new();
+
+/// A window that goes is Tauri's own again first (windows.rs, `again`: only in the Mac App Store's build).
+#[cfg(feature = "store")]
+pub fn unprepare(window: &WebviewWindow) {
+    let (Some(ns), Some(was)) = (native(window), WAS.get()) else { return };
+    let ours: &AnyObject = &ns;
+    if ours.class() == Panel::class() || ours.class() == Robot::class() {
+        // SAFETY: the class it had, which holds as much as a panel (`prepare`).
+        unsafe { AnyObject::set_class(&ns, was) };
+    }
+}
+
 pub fn prepare(window: &WebviewWindow) {
     let Some(ns) = native(window) else { return };
     let keys = matches!(window.label(), "box" | "card");
     let class = if keys { Panel::class() } else { Robot::class() };
     if class.instance_size() == NSWindow::class().instance_size() {
+        #[cfg(feature = "store")]
+        if let Some(was) = Some((&*ns as &AnyObject).class()).filter(|c| *c != Panel::class() && *c != Robot::class()) {
+            let _ = WAS.set(was);
+        }
         // SAFETY: a panel is a window that holds nothing more than one, as was just compared, so nothing of what Tauri's
-        // own holds is in its way; and the window is never destroyed.
+        // own holds is in its way; and the window is never destroyed (but in the Mac App Store's build, where it is
+        // Tauri's own again first: `unprepare`).
         unsafe { AnyObject::set_class(&ns, class) };
         ns.setStyleMask(ns.styleMask() | NSWindowStyleMask::NonactivatingPanel);
         // The window system only hears of that when a window is made so: else a click still brings the program to the front
@@ -335,8 +355,12 @@ fn links_go_to(program: &NSURL) {
 }
 
 /// The program's Info.plist names the sign-in's links, but the phone's app on this Mac does too. While it signs in they
-/// come here. Not on the main thread: what knows the programs answers when it can.
+/// come here. Not on the main thread: what knows the programs answers when it can. Not in the Mac App Store's build: in the
+/// App Sandbox macOS keeps who gets a scheme as it is, so there the sign-in only comes back at its port (signin.rs).
 pub fn take_links() {
+    if cfg!(feature = "store") {
+        return;
+    }
     let Some(link) = NSURL::URLWithString(&NSString::from_str(&format!("{}://", crate::signin::SCHEME))) else { return };
     let own = NSBundle::mainBundle().bundleURL();
     let now = NSWorkspace::sharedWorkspace().URLForApplicationToOpenURL(&link);

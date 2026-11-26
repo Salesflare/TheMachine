@@ -1,14 +1,14 @@
 //! A newer version: looked for once a day, fetched, and put in place when the person says so. What isn't signed with the key
 //! in tauri.conf.json is never used. The look asks the one address there, and says nothing of this computer or who uses it.
 //! Only where the app can replace itself: an app of its own on a Mac, or as its installer put it on Windows. Elsewhere, what
-//! installed it updates it.
+//! installed it updates it, as the Mac App Store does its own build, which has none of this (Cargo.toml, `updates`).
 use tauri::AppHandle;
 
 #[tauri::command]
 pub async fn update_apply(app: AppHandle) -> Result<(), String> {
-    #[cfg(any(windows, target_os = "macos"))]
+    #[cfg(all(feature = "updates", any(windows, target_os = "macos")))]
     return crate::away(move || there::apply(&app)).await;
-    #[cfg(not(any(windows, target_os = "macos")))]
+    #[cfg(not(all(feature = "updates", any(windows, target_os = "macos"))))]
     {
         let _ = app;
         Err("failed".into())
@@ -17,21 +17,21 @@ pub async fn update_apply(app: AppHandle) -> Result<(), String> {
 
 /// The version that is there to be put in place.
 pub fn ready() -> Option<String> {
-    #[cfg(any(windows, target_os = "macos"))]
+    #[cfg(all(feature = "updates", any(windows, target_os = "macos")))]
     return there::READY.lock().unwrap().as_ref().map(|(update, _)| update.version.clone());
-    #[cfg(not(any(windows, target_os = "macos")))]
+    #[cfg(not(all(feature = "updates", any(windows, target_os = "macos"))))]
     None
 }
 
 pub fn watch(_app: &AppHandle) {
-    #[cfg(any(windows, target_os = "macos"))]
+    #[cfg(all(feature = "updates", any(windows, target_os = "macos")))]
     if there::replaces() {
         let app = _app.clone();
         std::thread::spawn(move || there::watch(&app));
     }
 }
 
-#[cfg(any(windows, target_os = "macos"))]
+#[cfg(all(feature = "updates", any(windows, target_os = "macos")))]
 mod there {
     use std::path::Path;
     use std::sync::Mutex;

@@ -23,6 +23,14 @@ on:
         description: A signed release tag (release-YYYYMMDD-HHMM) to build and publish, from main only
         type: string
         default: ''
+      mac-store-only:
+        description: Only the Mac App Store's build, used in its App Sandbox, and signed for the store where the keys are
+        type: boolean
+        default: false
+      mac-store-upload:
+        description: With mac-store-only, also send that build to App Store Connect
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -61,7 +69,7 @@ jobs:
 
   windows:
     needs: release
-    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' }} # its push has it
+    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' && !inputs.mac-store-only }} # its push has it
     runs-on: windows-latest
     timeout-minutes: 95
     outputs:
@@ -129,7 +137,7 @@ jobs:
 
   mac:
     needs: release
-    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' && !inputs.windows-only }} # its push has it
+    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' && !inputs.windows-only && !inputs.mac-store-only }} # its push has it
     runs-on: macos-26
     timeout-minutes: 80
     outputs:
@@ -151,6 +159,7 @@ jobs:
           if [ -n "$RELEASE" ]; then python3 tools/version.py "$RELEASE"; fi
           rustup toolchain install stable --profile minimal --no-self-update --target aarch64-apple-darwin --target x86_64-apple-darwin
           cargo +stable test --release --locked
+          cargo +stable check --release --locked --no-default-features --features store # the Mac App Store's (mac-store)
           cargo +stable build --release --locked --features sandbox
           mac/bundle.sh sandbox-build target/release/the-machine-desktop
           # A newer one, with a key made here
@@ -326,6 +335,187 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # The Mac App Store's build (desktop/README.md): in the App Sandbox, for macOS 14 and later, without the updater. Only by
+  # hand (mac-store-only). Used here signed ad hoc with the sandbox's entitlements (desktop/smoke/store.py); mac-store-sign
+  # signs it for the store. Its ID is the repository variable MAS_BUNDLE_ID, else the direct download's.
+  mac-store:
+    if: inputs.mac-store-only
+    runs-on: macos-26
+    timeout-minutes: 100
+    outputs:
+      sha: ${{ steps.build.outputs.sha }}
+      entitled: ${{ steps.build.outputs.entitled }}
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    env:
+      STORE: '1'
+      BUNDLE_ID: ${{ vars.MAS_BUNDLE_ID || 'computer.themachine.desktop' }}
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test and build
+        id: build
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '14.0'
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update --target aarch64-apple-darwin --target x86_64-apple-darwin
+          store=(--no-default-features --features store)
+          cargo +stable test --release --locked "${store[@]}"
+          cargo +stable build --release --locked --no-default-features --features sandbox,store
+          mac/bundle.sh sandbox-build target/release/the-machine-desktop
+          for chip in aarch64 x86_64; do cargo +stable build --release --locked "${store[@]}" --target $chip-apple-darwin; done
+          mac/bundle.sh out target/{aarch64,x86_64}-apple-darwin/release/the-machine-desktop
+          codesign -d --entitlements :- "out/The Machine.app"
+          plutil -p out/store-entitlements.plist
+          (cd out && ditto -c -k --keepParent "The Machine.app" the-machine-desktop-mac-store.zip)
+          echo "sha=$(shasum -a 256 out/the-machine-desktop-mac-store.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "entitled=$(shasum -a 256 out/store-entitlements.plist | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-mac-store-unsigned
+          path: |
+            desktop/out/the-machine-desktop-mac-store.zip
+            desktop/out/store-entitlements.plist
+          if-no-files-found: error
+          retention-days: 14
+      - name: Use it, in the App Sandbox, with a made-up Machine
+        id: use
+        timeout-minutes: 70
+        run: |
+          date '+%Y-%m-%d %H:%M:%S' > "$RUNNER_TEMP/start"
+          certificate="$RUNNER_TEMP/certificate" system=/Library/Keychains/System.keychain
+          smoke/certificate.sh "$certificate"
+          trap 'sudo security delete-certificate -c "Made-up Machine root" "$system"' EXIT
+          sudo security add-trusted-cert -d -r trustRoot -p ssl -k "$system" "$certificate/root.pem"
+          failed=0
+          python3 smoke/store.py probe "out/The Machine.app" shots/probe || failed=1
+          python3 smoke/store.py run smoke/mac.py "sandbox-build/The Machine.app" "out/The Machine.app" shots "$certificate" || failed=1
+          python3 smoke/store.py run smoke/window.py "sandbox-build/The Machine.app" "out/The Machine.app" shots/window "$certificate" || failed=1
+          python3 smoke/store.py run smoke/hangs.py "sandbox-build/The Machine.app" - shots/hangs || failed=1
+          exit $failed
+      - name: What the sandbox denied
+        if: always() && steps.use.outcome != 'skipped'
+        run: |
+          mkdir -p shots
+          log show --start "$(cat "$RUNNER_TEMP/start")" --style compact --info --debug \
+            --predicate 'eventMessage CONTAINS "Sandbox: " AND eventMessage CONTAINS " deny("' > shots/sandbox-denials.txt || true
+          python3 smoke/store.py denials shots/sandbox-denials.txt || true
+          cp ~/Library/Logs/DiagnosticReports/the-machine-desktop* shots/ 2>/dev/null || true
+      - name: Its certificate is trusted no more
+        if: always() && steps.use.outcome != 'skipped'
+        run: if security verify-cert -c "$RUNNER_TEMP/certificate/cert.pem" -p ssl -s 127.0.0.1 -L; then exit 1; fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: the-machine-desktop-mac-store-screenshots
+          path: desktop/shots/
+          retention-days: 14
+
+  # Signs the job above's build for the Mac App Store and makes its installer, as mac-sign does the direct download: no
+  # checkout, and none of this repository's code runs beside the keys. The environment mac-store holds them; without them
+  # it signs nothing and says so. mac-store-upload also sends it to App Store Connect.
+  mac-store-sign:
+    needs: mac-store
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-26
+    timeout-minutes: 45
+    environment: mac-store
+    steps:
+      - name: Its keys are there
+        id: keys
+        env:
+          APP: ${{ secrets.MAS_APP_P12 }}
+          INSTALLER: ${{ secrets.MAS_INSTALLER_P12 }}
+          PROFILE: ${{ secrets.MAS_PROVISIONING_PROFILE }}
+        run: |
+          if [ -n "$APP" ] && [ -n "$INSTALLER" ] && [ -n "$PROFILE" ]; then
+            echo "there=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::The environment mac-store has no Mac App Store certificates or profile: nothing is signed"
+          fi
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: steps.keys.outputs.there
+        with:
+          name: the-machine-desktop-mac-store-unsigned
+      - name: Sign and make its installer
+        if: steps.keys.outputs.there
+        env:
+          SHA: ${{ needs.mac-store.outputs.sha }}
+          ENTITLED: ${{ needs.mac-store.outputs.entitled }}
+          APP: ${{ secrets.MAS_APP_P12 }}
+          APP_PASSWORD: ${{ secrets.MAS_APP_P12_PASSWORD }}
+          INSTALLER: ${{ secrets.MAS_INSTALLER_P12 }}
+          INSTALLER_PASSWORD: ${{ secrets.MAS_INSTALLER_P12_PASSWORD }}
+          PROFILE: ${{ secrets.MAS_PROVISIONING_PROFILE }}
+          INSTALLER_IDENTITY: '3rd Party Mac Developer Installer: Salesflare BVBA (BYM5H66GK9)'
+        run: |
+          set -euo pipefail
+          umask 077
+          echo "$SHA  the-machine-desktop-mac-store.zip" | shasum -a 256 -c -
+          echo "$ENTITLED  store-entitlements.plist" | shasum -a 256 -c -
+          ditto -x -k the-machine-desktop-mac-store.zip app
+          app="app/The Machine.app" keychain="$RUNNER_TEMP/store.keychain-db" own=$(openssl rand -hex 24)
+          trap 'rm -f "$RUNNER_TEMP/app.p12" "$RUNNER_TEMP/installer.p12"' EXIT
+          printf '%s' "$APP" | base64 -D > "$RUNNER_TEMP/app.p12"
+          printf '%s' "$INSTALLER" | base64 -D > "$RUNNER_TEMP/installer.p12"
+          security create-keychain -p "$own" "$keychain"
+          security set-keychain-settings -lut 900 "$keychain"
+          security unlock-keychain -p "$own" "$keychain"
+          security import "$RUNNER_TEMP/app.p12" -k "$keychain" -P "$APP_PASSWORD" -T /usr/bin/codesign > /dev/null
+          security import "$RUNNER_TEMP/installer.p12" -k "$keychain" -P "$INSTALLER_PASSWORD" -T /usr/bin/productbuild > /dev/null
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$own" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          identity=$(security find-identity -v -p codesigning "$keychain" | sed -nE 's/.*"((Apple Distribution|3rd Party Mac Developer Application): .*)"/\1/p' | head -1)
+          [ -n "$identity" ] || { echo "::error::No Apple Distribution identity in MAS_APP_P12"; exit 1; }
+          printf '%s' "$PROFILE" | base64 -D > "$app/Contents/embedded.provisionprofile"
+          # The profile is this app's, as the entitlements say
+          security cms -D -i "$app/Contents/embedded.provisionprofile" > profile.plist
+          own_id=$(plutil -extract 'com\.apple\.application-identifier' raw store-entitlements.plist)
+          profiled=$(plutil -extract 'Entitlements.com\.apple\.application-identifier' raw profile.plist)
+          [ "$profiled" = "$own_id" ] || { echo "::error::The profile is for $profiled, the app is $own_id"; exit 1; }
+          codesign --force --sign "$identity" --keychain "$keychain" --options runtime --entitlements store-entitlements.plist --timestamp "$app"
+          codesign --verify --strict --verbose=2 "$app"
+          codesign --display --verbose=4 --entitlements - "$app"
+          mkdir out
+          productbuild --component "$app" /Applications --sign "$INSTALLER_IDENTITY" --keychain "$keychain" out/the-machine-desktop-mac-store.pkg
+          pkgutil --check-signature out/the-machine-desktop-mac-store.pkg
+          shasum -a 256 out/*
+      - name: The keys are gone
+        if: always() && steps.keys.outputs.there
+        run: |
+          rm -f "$RUNNER_TEMP/app.p12" "$RUNNER_TEMP/installer.p12"
+          security delete-keychain "$RUNNER_TEMP/store.keychain-db" || true
+          security list-keychains -d user -s login.keychain-db
+      - name: App Store Connect checks it, and takes it with mac-store-upload
+        if: steps.keys.outputs.there
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          UPLOAD: ${{ inputs.mac-store-upload }}
+        run: |
+          set -euo pipefail
+          umask 077
+          if [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_KEY_P8" ]; then echo "::notice::No App Store Connect key: not checked"; exit 0; fi
+          keys="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$keys"
+          trap 'rm -rf "$keys"' EXIT
+          printf '%s\n' "$ASC_KEY_P8" > "$keys/AuthKey_$ASC_KEY_ID.p8"
+          auth=(-t macos --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID")
+          xcrun altool --validate-app -f out/the-machine-desktop-mac-store.pkg "${auth[@]}"
+          if [ "$UPLOAD" = true ]; then xcrun altool --upload-app -f out/the-machine-desktop-mac-store.pkg "${auth[@]}"; fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: steps.keys.outputs.there
+        with:
+          name: the-machine-desktop-mac-store
+          path: out/the-machine-desktop-mac-store.pkg
+          if-no-files-found: error
+          retention-days: 14
+
   # The signed one, opened as a download, away from the key
   mac-open:
     needs: mac-sign
@@ -487,7 +677,7 @@ jobs:
   # of the build is: Ubuntu with X11, and Arch with Wayland (linux/PKGBUILD).
   linux:
     needs: release
-    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' }} # its push has it
+    if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' && !inputs.mac-store-only }} # its push has it
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     defaults:

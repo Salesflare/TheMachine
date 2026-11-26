@@ -118,6 +118,7 @@ extern "C-unwind" fn master_key(_: &AnyObject, _: Sel, _: &AnyObject) -> *mut NS
 }
 
 /// The process of a window's page, where macOS tells.
+#[cfg(not(feature = "store"))]
 pub fn process(window: &WebviewWindow) -> Option<u32> {
     let (tell, told) = std::sync::mpsc::channel();
     let _ = window.with_webview(move |page| {
@@ -133,7 +134,9 @@ pub fn process(window: &WebviewWindow) -> Option<u32> {
     told.recv_timeout(std::time::Duration::from_secs(5)).ok().flatten().and_then(|pid| u32::try_from(pid).ok()).filter(|pid| *pid > 0)
 }
 
-/// Its page's process ends, also one that is stuck, and then there is a fresh one (dash.rs, `died`).
+/// Its page's process ends, also one that is stuck, and then there is a fresh one (dash.rs, `died`). Not in the Mac App
+/// Store's build: the App Sandbox lets it signal no other process (windows.rs, `again`).
+#[cfg(not(feature = "store"))]
 pub fn end_page(window: WebviewWindow) {
     std::thread::spawn(move || {
         if let Some(page) = process(&window) {

@@ -1,6 +1,8 @@
 //! The Machine on the desktop: a prototype (README.md). Parts that only meet here: the robot's windows (windows.rs,
 //! place.rs), the dashboard's (dash.rs), the pages (ui/) and the person's Machine (machine.rs, signin.rs).
 #![cfg_attr(all(not(debug_assertions), windows), windows_subsystem = "windows")]
+#[cfg(all(feature = "store", any(feature = "updates", not(target_os = "macos"))))]
+compile_error!("the Mac App Store's build is a Mac's, without updates: --no-default-features --features store");
 
 mod address;
 mod card;
@@ -22,6 +24,10 @@ mod mac;
 #[cfg(target_os = "macos")]
 mod mac_app;
 mod notify;
+#[cfg(feature = "store")]
+mod one;
+#[cfg(feature = "store")]
+use tauri_plugin_single_instance as _; // the other builds' (one.rs)
 mod place;
 mod quit;
 mod saved;
@@ -1133,6 +1139,28 @@ fn watch(app: AppHandle) {
     let _ = app;
 }
 
+/// Started again: --toggle (for a key the person binds), --quit, or just show the robot. Or a sign-in comes back.
+fn started_again(app: &AppHandle, args: Vec<String>) {
+    if args.get(1).is_some_and(|a| a == "--quit") {
+        return quit::quit(app);
+    }
+    later(app, move |app| match args.get(1).map(String::as_str) {
+        Some("--toggle") => toggle(app),
+        #[cfg(feature = "sandbox")]
+        Some("--hang") => std::thread::sleep(Duration::from_secs(args.get(2).and_then(|s| s.parse().ok()).unwrap_or(60))), // for smoke/: --quit still has to work
+        Some(link) if link.starts_with(signin::SCHEME) => {
+            came_back(app, link);
+        }
+        _ if dash::here() => dash::show(app, ""),
+        _ => {
+            show(app);
+            if app.state::<Shared>().machine().is_none() {
+                open(app);
+            }
+        }
+    });
+}
+
 fn main() {
     // GNOME's Wayland has no layer-shell, and a plain Wayland window can't stay on top or keep its place: XWayland can.
     #[cfg(target_os = "linux")]
@@ -1160,29 +1188,11 @@ fn main() {
         let label = page.label().to_string();
         later(page.app_handle(), move |app| dash::died(app, &label));
     });
+    #[cfg(not(feature = "store"))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _| started_again(app, args)));
+    #[cfg(feature = "store")]
+    let builder = builder.plugin(one::init(started_again));
     builder
-        .plugin(tauri_plugin_single_instance::init(|app, args, _| {
-            // Started again: --toggle (for a key the person binds), --quit, or just show the robot. Or a sign-in comes
-            // back.
-            if args.get(1).is_some_and(|a| a == "--quit") {
-                return quit::quit(app);
-            }
-            later(app, move |app| match args.get(1).map(String::as_str) {
-                Some("--toggle") => toggle(app),
-                #[cfg(feature = "sandbox")]
-                Some("--hang") => std::thread::sleep(Duration::from_secs(args.get(2).and_then(|s| s.parse().ok()).unwrap_or(60))), // for smoke/: --quit still has to work
-                Some(link) if link.starts_with(signin::SCHEME) => {
-                    came_back(app, link);
-                }
-                _ if dash::here() => dash::show(app, ""),
-                _ => {
-                    show(app);
-                    if app.state::<Shared>().machine().is_none() {
-                        open(app);
-                    }
-                }
-            });
-        }))
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::Builder::new().open_js_links_on_click(false).build()) // the pages have no links of their own (card.rs)
         .invoke_handler(tauri::generate_handler![
@@ -1289,7 +1299,7 @@ fn main() {
             }
             #[cfg(all(feature = "sandbox", not(windows)))]
             debug(app.handle());
-            #[cfg(any(windows, target_os = "macos"))]
+            #[cfg(all(feature = "updates", any(windows, target_os = "macos")))]
             app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
             hangs::watch(app.handle());
             #[cfg(target_os = "macos")]

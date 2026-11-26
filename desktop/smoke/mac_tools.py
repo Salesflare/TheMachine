@@ -36,6 +36,7 @@ out = pathlib.Path(sys.argv[3]).resolve()
 MAIL = out / 'mail.txt'  # where the app leaves an address for the mail app
 out.mkdir(parents=True, exist_ok=True)
 CERTIFICATE = pathlib.Path(sys.argv[4]).resolve() if len(sys.argv) > 4 else None
+STORE = os.environ.get('MACHINE_STORE') == '1'  # the Mac App Store's build, in the App Sandbox (store.py)
 results = []
 
 

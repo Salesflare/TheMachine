@@ -196,7 +196,7 @@ mod system {
 
 /// macOS' own, as by Command-Shift-4. Its file is in a folder only its owner can read. macOS lets a program see other
 /// programs' windows only with the person's yes, so it is asked here and nowhere else.
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", not(feature = "store")))]
 mod system {
     use std::{fs, os::unix::fs::DirBuilderExt, process::Command};
 
@@ -224,6 +224,166 @@ mod system {
         let image = fs::read(&file).ok();
         fs::remove_dir_all(&folder)?;
         done.map(|_| image)
+    }
+}
+
+/// The Mac App Store's build: in the App Sandbox the tool above can't be started. macOS' own picker (ScreenCaptureKit, macOS
+/// 14) shows the windows and screens, and what the person picks there is what this app may see, once: it asks for no
+/// permission, and nothing is kept. One at a time (main.rs, `picking`).
+#[cfg(all(target_os = "macos", feature = "store"))]
+mod system {
+    use block2::RcBlock;
+    use objc2::encode::{Encoding, RefEncode};
+    use objc2::rc::Retained;
+    use objc2::runtime::{AnyClass, AnyObject, AnyProtocol, ClassBuilder, NSObject, Sel};
+    use objc2::{class, msg_send, sel, ClassType};
+    use objc2_foundation::{NSArray, NSBundle, NSData, NSDictionary, NSError, NSNumber, NSRect, NSString};
+    use std::cell::RefCell;
+    use std::sync::mpsc::{channel, Sender};
+    use std::sync::Mutex;
+    use std::time::Duration;
+
+    #[link(name = "ScreenCaptureKit", kind = "framework")]
+    extern "C" {}
+
+    /// How long a person may take.
+    const WAIT: Duration = Duration::from_secs(180);
+    /// SCContentSharingPickerModeSingleWindow and SingleDisplay
+    const MODES: usize = 1 | 1 << 4;
+    /// NSBitmapImageFileTypePNG
+    const PNG: usize = 4;
+
+    #[repr(C)]
+    struct CGImage([u8; 0]);
+    // SAFETY: CoreGraphics' own type, only ever behind a pointer.
+    unsafe impl RefEncode for CGImage {
+        const ENCODING_REF: Encoding = Encoding::Pointer(&Encoding::Struct("CGImage", &[]));
+    }
+
+    /// Where the answer goes: a picture, or nothing when the person picked nothing.
+    static TOLD: Mutex<Option<Sender<Option<Vec<u8>>>>> = Mutex::new(None);
+
+    thread_local! {
+        /// What hears the picker, while it is there (the main thread).
+        static HEARS: RefCell<Option<Retained<AnyObject>>> = const { RefCell::new(None) };
+    }
+
+    pub fn there() -> bool {
+        true
+    }
+
+    pub fn allowed() -> bool {
+        true
+    }
+
+    fn tell(answer: Option<Vec<u8>>) {
+        if let Some(to) = TOLD.lock().unwrap().take() {
+            let _ = to.send(answer);
+        }
+    }
+
+    pub fn take() -> std::io::Result<Option<Vec<u8>>> {
+        let (to, told) = channel();
+        *TOLD.lock().unwrap() = Some(to);
+        on_main(sel!(present));
+        let answer = told.recv_timeout(WAIT).ok().flatten();
+        on_main(sel!(stop));
+        TOLD.lock().unwrap().take();
+        Ok(answer)
+    }
+
+    fn on_main(what: Sel) {
+        let none: Option<&AnyObject> = None;
+        // SAFETY: the class's own methods, which take nothing, run on the main thread.
+        unsafe {
+            let () = msg_send![class(), performSelectorOnMainThread: what, withObject: none, waitUntilDone: false];
+        }
+    }
+
+    fn class() -> &'static AnyClass {
+        AnyClass::get(c"TheMachineShot").unwrap_or_else(|| {
+            let mut class = ClassBuilder::new(c"TheMachineShot", NSObject::class()).expect("a name of its own");
+            if let Some(observer) = AnyProtocol::get(c"SCContentSharingPickerObserver") {
+                class.add_protocol(observer);
+            }
+            // SAFETY: each function fits its selector: the picker's observer's methods, and the class's own.
+            unsafe {
+                class.add_class_method(sel!(present), present as extern "C-unwind" fn(_, _));
+                class.add_class_method(sel!(stop), stop as extern "C-unwind" fn(_, _));
+                class.add_method(sel!(contentSharingPicker:didCancelForStream:), cancelled as extern "C-unwind" fn(_, _, _, _));
+                class.add_method(sel!(contentSharingPicker:didUpdateWithFilter:forStream:), picked as extern "C-unwind" fn(_, _, _, _, _));
+                class.add_method(sel!(contentSharingPickerStartDidFailWithError:), failed as extern "C-unwind" fn(_, _, _));
+            }
+            class.register()
+        })
+    }
+
+    fn picker() -> Option<Retained<AnyObject>> {
+        // SAFETY: ScreenCaptureKit's shared picker, since macOS 14, the oldest this build runs on.
+        AnyClass::get(c"SCContentSharingPicker").and_then(|c| unsafe { msg_send![c, sharedPicker] })
+    }
+
+    extern "C-unwind" fn present(class: &AnyClass, _: Sel) {
+        let Some(picker) = picker() else { return tell(None) };
+        // SAFETY: a new object of this class; the picker's configuration has these properties.
+        unsafe {
+            let hears: Retained<AnyObject> = msg_send![class, new];
+            let configuration: Retained<AnyObject> = msg_send![class!(SCContentSharingPickerConfiguration), new];
+            let () = msg_send![&configuration, setAllowedPickerModes: MODES];
+            if let Some(own) = NSBundle::mainBundle().bundleIdentifier() {
+                let () = msg_send![&configuration, setExcludedBundleIDs: &*NSArray::from_retained_slice(&[own])];
+            }
+            let () = msg_send![&picker, setDefaultConfiguration: &*configuration];
+            let () = msg_send![&picker, setMaximumStreamCount: &*NSNumber::new_usize(1)];
+            let () = msg_send![&picker, addObserver: &*hears];
+            let () = msg_send![&picker, setActive: true];
+            let () = msg_send![&picker, present];
+            HEARS.set(Some(hears));
+        }
+    }
+
+    extern "C-unwind" fn stop(_: &AnyClass, _: Sel) {
+        let (Some(picker), Some(hears)) = (picker(), HEARS.take()) else { return };
+        // SAFETY: what was added in `present`.
+        unsafe {
+            let () = msg_send![&picker, removeObserver: &*hears];
+            let () = msg_send![&picker, setActive: false];
+        }
+    }
+
+    extern "C-unwind" fn cancelled(_: &AnyObject, _: Sel, _: &AnyObject, _: *mut AnyObject) {
+        tell(None);
+    }
+
+    extern "C-unwind" fn failed(_: &AnyObject, _: Sel, _: &NSError) {
+        tell(None);
+    }
+
+    /// What was picked, as large as it is on its screen, without the pointer.
+    extern "C-unwind" fn picked(_: &AnyObject, _: Sel, _: &AnyObject, filter: &AnyObject, _: *mut AnyObject) {
+        // SAFETY: the filter the picker gives (macOS 14 has its rect and scale), and a stream configuration's properties.
+        unsafe {
+            let rect: NSRect = msg_send![filter, contentRect];
+            let scale: f32 = msg_send![filter, pointPixelScale];
+            let configuration: Retained<AnyObject> = msg_send![class!(SCStreamConfiguration), new];
+            let () = msg_send![&configuration, setWidth: (rect.size.width * f64::from(scale)).round().max(1.0) as usize];
+            let () = msg_send![&configuration, setHeight: (rect.size.height * f64::from(scale)).round().max(1.0) as usize];
+            let () = msg_send![&configuration, setShowsCursor: false];
+            let done = RcBlock::new(|image: *mut CGImage, _: *mut NSError| tell(png(image)));
+            let () = msg_send![class!(SCScreenshotManager), captureImageWithFilter: filter, configuration: &*configuration, completionHandler: &*done];
+        }
+    }
+
+    fn png(image: *mut CGImage) -> Option<Vec<u8>> {
+        if image.is_null() {
+            return None;
+        }
+        // SAFETY: a CGImage that lives while this runs; a bitmap of it, as a PNG.
+        unsafe {
+            let bitmap: Retained<AnyObject> = msg_send![msg_send![class!(NSBitmapImageRep), alloc], initWithCGImage: image];
+            let data: Option<Retained<NSData>> = msg_send![&bitmap, representationUsingType: PNG, properties: &*NSDictionary::<NSString, AnyObject>::new()];
+            data.map(|d| d.to_vec())
+        }
     }
 }
 

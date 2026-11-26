@@ -20,8 +20,8 @@ var acct={at:0,data:null,busy:false};  // var: settingsSync may run before this 
 const ACCT_GO={account:'Open account',plan:'Change plan',portal:'Billing',cancel:'Cancel plan',connections:'Manage',fleet:'Fleet',
  overview:'Details',username:'Change',friends:'Manage',security:'Manage',data:'Export',delete:'Delete account',withdraw:'Withdraw from contract',billing:'Billing',network:'Manage'};
 const acctDay=d=>{const x=new Date(d+'T12:00:00');return isNaN(x)?d:humanDay(x)};  // the app's style: Fri 20 Nov, the year only when not this one
-// In the mobile app (.in-app) the plan, billing and Fleet seat pages are hidden ([data-buy]); Open account stays, for
-// deleting the account.
+// In the mobile app and the Mac App Store's (.no-buy) the plan, billing and Fleet seat pages are hidden ([data-buy]);
+// Open account stays, for deleting the account.
 const ACCT_BUY=new Set(['plan','portal','cancel','fleet','billing','withdraw','network']);
 // A hosted Machine has no account dashboard besides this tab (the control plane sends a bare /account back here): each
 // button is a focused step there (one part of the account, Stripe's page, a passkey, a confirmation) in this same tab,
