@@ -181,6 +181,10 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     found" block (the to-do as saved and a header line per message it came from, no text), and `RunReads` keeps
     which messages each run got whole from `events` or `related`, so a repeat read gets `already_read` and a note.
     `history_once` does the same for `preparation_history` pages, and `slack_read` uses it to list only new messages.
+  - `machine/app/review_status.py`: a signal review's status, light and read once. `light` lists every open to-do
+    by its title and `body_start` and every done one as a line, kept under the review page size by `fit`; `read_once`
+    gives a second status in the same review only the to-dos new or changed since (on `RunReads`); `here` puts the
+    open to-dos on the claim's own threads, chats and senders whole in its reply (`open_todos_here`).
   - `machine/app/claim_reply.py`: what a claim (`begin_analysis`) carries next to its signals: the boards with only
     the claim's own projects (`boards`), one whole board on request (`lookup`, `graph` `board`), and `fit`, which
     keeps the whole reply under the review page size and says in `left_out` what it dropped.

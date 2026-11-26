@@ -24,6 +24,7 @@ from machine.config import LOG, WORKSPACE
 from machine.delivery.push import reminder_channels, reviews_start_by_themselves
 from machine import action_basis, names as display_names
 from machine import stamps
+from machine.app import review_status
 from machine.store.views import STATUS_NARROW, STATUS_QUIET, SYNC_TABLES, status_tables
 from machine.timing import aside
 from machine.sources.connectors import (connector_says, docs_files_offered, docs_offered, docs_provider, docs_unset, docs_write_offered,
@@ -224,7 +225,11 @@ class StatusApp:
 
     def status_action(self, name, args, owner_dashboard=False):
         if not args.get('full'):  # an agent: only what compact_status reads, so it stays fast on a busy Machine
-            return self.agent_status(str(args.get('suggestion_id') or '').strip() or None)
+            one = str(args.get('suggestion_id') or '').strip() or None
+            if one is None and review_status.is_review(args):  # a signal review: light, and read once (review_status.py)
+                return review_status.read_once(self.run_reads, str(args['_review_session']), review_status.light(self.agent_status()),
+                                               again=args.get('again') is True)
+            return self.agent_status(one)
         # done: how many done to-dos (the dashboard: its Done list's first page, it loads the rest itself); else the last 100
         done = args.get('done')
         done = max(0, min(int(done), 100)) if isinstance(done, int) else None
