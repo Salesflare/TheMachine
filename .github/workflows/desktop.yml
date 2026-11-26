@@ -467,6 +467,11 @@ jobs:
           [ -n "$(find "$RUNNER_TEMP/squashfs-root" -name 'libgtk-layer-shell.so.0*')" ]
           # Wayland stays Wayland: on Hyprland and Sway the robot is a layer surface, not an X11 window
           if grep -rhE '^\s*export GDK_BACKEND' "$RUNNER_TEMP/squashfs-root/apprun-hooks"; then exit 1; fi
+          echo "What it leaves to the system:"
+          find "$RUNNER_TEMP/squashfs-root" -type f \( -name '*.so*' -o -path '*/usr/bin/*' \) -exec readelf -d {} + 2> /dev/null \
+            | grep -o 'Shared library: \[[^]]*\]' | cut -d[ -f2 | tr -d ']' | sort -u > "$RUNNER_TEMP/needed.txt"
+          find "$RUNNER_TEMP/squashfs-root" -name '*.so*' -printf '%f\n' | sort -u > "$RUNNER_TEMP/bundled.txt"
+          comm -23 "$RUNNER_TEMP/needed.txt" "$RUNNER_TEMP/bundled.txt"
           rm -rf "$RUNNER_TEMP/squashfs-root"
           ls -l out
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -496,7 +501,8 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends xvfb openbox dunst xdotool x11-utils imagemagick dbus libfuse2t64 fuse3 > /dev/null
+          # An AppImage leaves OpenGL and EGL to the system, as every desktop has them; this runner hasn't
+          sudo apt-get install -y -qq --no-install-recommends xvfb openbox dunst xdotool x11-utils imagemagick dbus libfuse2t64 fuse3 libegl1 libgles2 libgl1 > /dev/null
           image="$PWD/linux-build/the-machine-desktop-x86_64.AppImage"
           chmod +x "$image"
           failed=0
@@ -526,8 +532,12 @@ jobs:
       - name: Arch, with sway and nothing of the app's
         run: |
           set -euo pipefail
-          pacman -Syu --noconfirm --needed base-devel pacman-contrib sway grim python dbus mesa > /dev/null
+          # and what every desktop has, which an AppImage leaves to the system: OpenGL and EGL, X11's libraries, fonts, sound
+          pacman -Syu --noconfirm --needed base-devel pacman-contrib sway grim python dbus mesa libglvnd libx11 libxcb libxext libxrender fontconfig freetype2 alsa-lib > /dev/null
           for p in webkit2gtk-4.1 gtk-layer-shell gtk3; do if pacman -Q "$p" 2> /dev/null; then exit 1; fi; done
+          getcap /usr/bin/sway
+          setcap -r /usr/bin/sway || true # its file capability (cap_sys_nice) is more than a container may start
+          sway --version
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
