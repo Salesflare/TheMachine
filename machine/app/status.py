@@ -27,7 +27,7 @@ from machine import stamps
 from machine.app import review_status
 from machine.store.views import STATUS_NARROW, STATUS_QUIET, SYNC_TABLES, status_tables
 from machine.timing import aside
-from machine.sources.connectors import (connector_says, docs_files_offered, docs_offered, docs_provider, docs_unset, docs_write_offered,
+from machine.sources.connectors import (connector_says, docs_files_offered, docs_files_write_offered, docs_offered, docs_provider, docs_unset, docs_write_offered,
                                         reconnect_help, SIGNIN_ONLY)
 from machine.text import clamp
 import message_seal
@@ -431,6 +431,9 @@ class StatusApp:
                 connector['docs_write_signin'] = 'microsoft_docs_write'  # Allow edits: Files.ReadWrite.All, its own consent
             if kind == 'google' and len(connector.get('docs_files') or ()) < 2 and docs_files_offered(self.config, account):
                 connector['docs_files_signin'] = 'google_docs_files'  # Allow Sheets and Slides: its own consent, only when pressed
+            elif (kind == 'google' and not {'sheets', 'slides'} <= set(connector.get('docs_writes') or ()) and account.get('actions') is not False
+                  and docs_files_write_offered(self.config, account)):
+                connector['docs_files_signin'] = 'google_docs_files_write'  # then Allow edits for them (file_writes.py), only when pressed
             if connector.get('service') == 'teams' and not manage and 'connect_name' in connector:
                 connector['signin'] = fleet.SIGNIN_OF['teams']  # self-hosted: Reconnect is Teams' own Microsoft consent, through the control plane
             if connector.get('service') in SIGNIN_ONLY and not manage and 'connect_name' in connector:

@@ -1009,8 +1009,11 @@ def writes_on(config, account, helpers):
             granted = {str(s).rsplit('/', 1)[-1] for s in ms_graph.scopes(config, helpers.credential, sign)}
             return {'create', 'edit'} if MS_WRITE_SCOPE in granted else set()
         granted = google_scopes(config, helpers, sign)
-        # drive does both; documents edits a doc by its id, drive.file makes a new one (a Google Docs sign-in has these two)
-        return ({'create'} if granted & {REPLY_SCOPE, FILE_SCOPE} else set()) | ({'edit'} if granted & {REPLY_SCOPE, DOCS_SCOPE} else set())
+        # drive does both; documents edits a doc by its id, drive.file makes a new one (a Google Docs sign-in has these two);
+        # spreadsheets and presentations edit a linked Sheet or Slides file (Allow edits to Sheets and Slides, file_writes.py)
+        import file_writes  # noqa: PLC0415
+        return (({'create'} if granted & {REPLY_SCOPE, FILE_SCOPE} else set()) | ({'edit'} if granted & {REPLY_SCOPE, DOCS_SCOPE} else set())
+                | {kind for kind, scope in file_writes.EDIT_SCOPE.items() if granted & {REPLY_SCOPE, scope}})
     except Exception:  # noqa: BLE001 - unknown means off: the change stays text in the to-do
         return set()
 
@@ -1077,6 +1080,22 @@ class Writer:
         # a Google Docs sign-in (documents, drive.file) reads any doc by its id with documents, not only the ones it made
         scope = DOCS_SCOPE if not self.gog and DOCS_SCOPE in self.granted() and READ_SCOPE not in self.granted() else None
         return self.source.call('docs.documents.get', {'documentId': file_id}, **({'scope': scope} if scope else {}))
+
+    def file_call(self, kind, method, params, body=None, write=False):
+        """A linked Google Sheet or Slides file (file_writes.py): a read with the narrowest scope that reads it, a write
+        with spreadsheets or presentations (or drive, when that is what the sign-in holds). Never through gog."""
+        import file_writes  # noqa: PLC0415
+        import google_files  # noqa: PLC0415
+        if self.gog or self.provider != 'google':
+            raise self.helpers.SourceError('docs_edit_unsupported')
+        granted = self.granted()
+        if write:
+            scope = file_writes.EDIT_SCOPE[kind] if file_writes.EDIT_SCOPE[kind] in granted or REPLY_SCOPE not in granted else REPLY_SCOPE
+            return self.source.call(method, params, scope=scope, write=True, body=body)
+        scope = google_files.scope_for(kind, granted)
+        if not scope:
+            raise self.helpers.SourceError('docs_files_not_granted')
+        return google_files.Reader(self.source, kind, scope).call(method, params)
 
     def update(self, file_id, requests, revision):
         return self.source.call('docs.documents.batchUpdate', {'documentId': file_id}, scope=self.docs_write_scope(), write=True,
