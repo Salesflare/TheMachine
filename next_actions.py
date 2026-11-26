@@ -1021,7 +1021,9 @@ def check(value, result='', own_addresses=()):
     for action in actions(value):
         subject = action.get('subject') or ''
         text = (action.get('body') or action.get('preview') or '') + ('\n' + action['message'] if action.get('message') else '')
-        if action['kind'] == 'doc_write' and action['op'] == 'edit':
+        if action['kind'] == 'doc_write' and action.get('file_kind'):  # a Sheet's values or a deck's text (file_writes.py)
+            text += '\n' + doc_writes.file_writes.new_text(action)
+        elif action['kind'] == 'doc_write' and action['op'] == 'edit':
             text += ''.join('\n' + str(c.get('replace', c.get('insert', c.get('append', c.get('link', ''))))) for c in action['changes'])
         left = draft_marks.placeholder(text, '' if action.get('in_reply_to') else subject)  # a reply's subject is the thread's
         if left:

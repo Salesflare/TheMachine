@@ -19,6 +19,7 @@ import abilities
 import calendar_writes
 import doc_writes
 import enrichment
+import file_writes
 from machine.browser import browser_read_failure, recover_browser
 from machine.config import ROOT
 from machine import names
@@ -123,7 +124,7 @@ def docs_health(config, account, state):
     what it may write after the owner's OK (state.writes: create, edit)."""
     plugin = load_connector('docs')
     kind = plugin.provider(config, account) if plugin else 'google'
-    writes = [w for w in state.get('writes') or [] if w in doc_writes.OPS] if not account.get('shared') else []
+    writes = [w for w in state.get('writes') or [] if w in (*doc_writes.OPS, *file_writes.KINDS)] if not account.get('shared') else []
     # a hosted Machine's own Google Docs sign-in has documents and drive.file only: it opens docs by their link, and its own
     linked_only = kind == 'google' and bool(account.get('own_grant')) and account.get('transport') == 'broker'
     return {'docs_provider': kind, 'docs_replies': bool(state.get('replies')) and kind in ('google', 'notion'), 'docs_writes': writes,
@@ -177,6 +178,13 @@ def docs_files_offered(config, account):
     consent = (config or {}).get('docs_files_consent')
     return (bool(config.get('manage_url')) and isinstance(consent, list) and 'google' in consent and account.get('service') == 'docs'
             and account.get('provider') == 'google' and bool(account.get('own_grant')) and not account.get('shared'))
+
+
+def docs_files_write_offered(config, account):
+    """Where Allow edits to Sheets and Slides signs in (spreadsheets and presentations, file_writes.py): the same
+    sign-in as Allow Sheets and Slides, once its account page offers it (`docs_files_write_consent`). Only when pressed."""
+    consent = (config or {}).get('docs_files_write_consent')
+    return isinstance(consent, list) and 'google' in consent and docs_files_offered({**config, 'docs_files_consent': ['google']}, account)
 
 
 def linear_transport(config):
@@ -233,6 +241,10 @@ def doc_write_files(db, event_ids, config=None, area=None, suggestion_id=None):
         for r in db.execute("SELECT e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id ORDER BY e.occurred_at", (event_ids,)):
             for file_id in plugin.doc_links_of(via[0], str(r[0] or '') + ' ' + str(r[1] or '')):
                 found.setdefault(file_id, {'account_id': via[0]['id'], 'doc_title': None, 'provider': provider})
+            # a Google Sheet or Slides file linked there: edited through the same connection after Allow edits (file_writes.py)
+            for file_id, file in (plugin.file_links(str(r[0] or '') + ' ' + str(r[1] or '')).items() if provider == 'google' else ()):
+                if file['kind'] in file_writes.KINDS:
+                    found.setdefault(file_id, {'account_id': via[0]['id'], 'doc_title': None, 'provider': provider, 'kind': file['kind']})
     return found
 
 
@@ -276,6 +288,7 @@ def doc_write_prompt(config):
     reads = [a for a in config.get('accounts') or () if a.get('service') in abilities.DOC_SERVICES and abilities.actions_on(a)]
     files = any(docs_files_offered(config, a) or plugin.provider(config, a) == 'google' and not a.get('own_grant') for a in reads)
     gog = any(t.get('gog') for t in found.values())
+    edits = any(docs_files_write_offered(config, a) or plugin.provider(config, a) == 'google' and not a.get('own_grant') for a in reads)
     sheets = ("A linked Google Sheet or Slides file reads the same way (its values, or slide text and speaker notes), and another part of it with "
               "--range 'Tab!A1:H200' or --range 21-40. ")
     names = '; '.join(f"{k} ({doc_writes.WHERE.get(t['provider'], 'Docs')}, {t['email'] or t['name']}, {doc_writes.area_name(t['boundary'])})"
@@ -304,6 +317,12 @@ def doc_write_prompt(config):
                "page is private, in the owner's Private section; it is made only after their OK, like an edit. A task assigned to the owner "
                "(a notion.task event) is marked done with {kind:'doc_write',op:'done',file_id}, also only after their OK."
                if any(t['provider'] == 'notion' for t in found.values()) else '')
+            + ("\n- A Google Sheet or Slides file linked in this task's messages is edited the same way, only with Allow edits to Sheets and "
+               "Slides on: {kind:'doc_write',op:'edit',file_id:<its id>,changes:[...]}. A sheet: {tab,cells:'B2' or 'B2:C3',values:[[...]]} "
+               "(values only), {tab,append:[[...]]} (rows after its last row) or {add_tab,values?}. Values go in as text; add formulas:true "
+               "to a change only when it holds a formula ('=...') and say so in the to-do. Slides: {slide:<number>,find,replace} (on that "
+               "slide only) or {add_slide:<title>,body,at?}. Check it with assistant doc-draft --file <its id> like a doc."
+               if edits else '')
             + ("\n- Files of any kind in the Google Drive of this to-do's area: gog -a <account email> --client <its gog client> --readonly drive search '<words>'. "
                f"doc-find doesn't look there: {', '.join(sorted(t['email'] for t in found.values() if t.get('gog')))}."
                if gog else '')
@@ -386,7 +405,7 @@ def load_connector(service):
 # The Machine's Slack app is in the Slack Marketplace, Slack allows it 1 history read a minute: the reader paces itself
 # (sources/slack.py SLACK_LIMITS), new messages and DMs first, older ones gradually.
 HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'shortcut', 'notion', 'linear', 'github', 'whatsapp', 'android', 'microsoft_docs',
-                  'microsoft_docs_write', 'codex', 'google_meet', 'google_docs', 'google_docs_files', 'microsoft_teams', 'slack', 'salesforce'}
+                  'microsoft_docs_write', 'codex', 'google_meet', 'google_docs', 'google_docs_files', 'google_docs_files_write', 'microsoft_teams', 'slack', 'salesforce'}
 
 
 ON_DASHBOARD = ('github', 'whatsapp', 'android', 'codex')

@@ -11,6 +11,7 @@
     "connections": 32300,
     "digest": 3000,
     "docwrite": 650,
+    "filewrite": 1200,
     "emailframe": 3800,
     "fbpeople": 1600,
     "fleet": 29100,

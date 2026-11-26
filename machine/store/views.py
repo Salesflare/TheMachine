@@ -619,7 +619,7 @@ class ViewsStore(ConversationStore):
                                    **({'sent_at':r['updated_at']} if r['status']=='sent' else {}),
                                    # Held for a new message in the thread: which one, so the to-do shows it and offers a redo
                                    **({'held_by':held} if r['status']=='blocked' and (r['error']==follow_ups.HELD or send_later.is_replied_line(r['error'])) and (held:=follow_ups.held_message(db,r['id'])) else {}),
-                                   **({'url':link} if r['status']=='sent' and (link:=doc_writes.link_of(r['message_id'],json.loads(r['payload'] or '{}').get('provider'))) else {}),  # a doc made: its link
+                                   **({'url':link} if r['status']=='sent' and (link:=doc_writes.link_of(r['message_id'],*map(json.loads(r['payload'] or '{}').get,('provider','file_kind')))) else {}),  # a doc made, or a Sheet or Slides file edited: its link
                                    # Checked long enough without a trace: the owner may try again, and the card says so.
                                    **({'retry_ok':True,'error':'Last attempt unconfirmed: I found no sign of it going out. Check the conversation; if it isn’t there, try again.'}
                                       if send_retry_ok(r,json.loads(r['payload']).get('kind')) else {}),

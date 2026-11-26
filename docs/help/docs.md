@@ -85,13 +85,23 @@ Then your Machine also reads a Google Sheet or Slides file linked in a to-do's m
 - From a sheet, the linked tab or cells first, then the other tabs, up to 2,000 cells. A formula shows as its value. Hidden tabs are read only when linked or asked for.
 - From slides, the text and speaker notes, in order. Images and charts aren't read.
 
+### Edit Sheets and Slides
+
+Once your Machine reads them, Google Docs may also show **Allow edits to Sheets and Slides**. Press it and allow both, and your Machine can change a linked Sheet or Slides file the same way it changes a doc: it only prepares the change, **Review changes** shows it, and nothing is written until you press **Save**.
+
+- In a sheet: new values for cells in a tab, rows added under the last row, or a new tab. Each cell shows before and after. Values go in as text; a formula goes in as a formula only when the to-do says so.
+- In slides: text replaced on one slide, before and after, or a new slide with a title and text.
+- It writes only into the file as you saw it. If someone changed those cells or the slides in the meantime, nothing is written and the to-do says so.
+
+Formatting, charts, images and Excel or PowerPoint files stay as they are.
+
 For a large file, ask in the chat for the tab, cells or slides you mean. If a file is private to someone else, deleted or an Excel or PowerPoint file, the to-do says so. A Google Drive link works the same way when it is a Google Doc, Sheet or Slides file.
 
 ## Google Docs on your own computer
 
 On your own computer, your Machine can make a new Google Doc in a Gmail account signed in there that already has Drive access. It doesn't read your other Google Docs or their comments. **Docs and files** shows it as Google Docs, on that account. It can also change a doc it made there for a to-do.
 
-It also reads a Google Sheet or Slides file linked in a to-do, or pasted in its chat, if that Google sign-in already has access to Drive, Sheets or Slides. It never asks Google for more. If Google says no, turn on the Google Sheets or Slides API in that sign-in's own Google project.
+It also reads a Google Sheet or Slides file linked in a to-do, or pasted in its chat, if that Google sign-in already has access to Drive, Sheets or Slides. It never asks Google for more, and doesn't change them there. If Google says no, turn on the Google Sheets or Slides API in that sign-in's own Google project.
 
 ## Work or personal
 

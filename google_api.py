@@ -54,6 +54,8 @@ READ = {
     # A linked Google Sheet or Slides file (google_files.py), with spreadsheets.readonly or presentations.readonly
     'sheets.spreadsheets.get': ('GET', 'https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}'),
     'sheets.spreadsheets.values.get': ('GET', 'https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values/{range}'),
+    # the cells an owner-approved edit changes, before and after it (file_writes.py)
+    'sheets.spreadsheets.values.batchGet': ('GET', 'https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values:batchGet'),
     'slides.presentations.get': ('GET', 'https://slides.googleapis.com/v1/presentations/{presentationId}'),
     # Google Meet (connectors/google_meet.py), with meetings.space.readonly from Meet's own Google sign-in; the Gemini
     # notes doc is read with docs.documents.get and documents.readonly, never a Drive scope
@@ -78,6 +80,11 @@ WRITE = {
     # revision, or a new doc uploaded as HTML that Drive converts
     'docs.documents.batchUpdate': ('POST', 'https://docs.googleapis.com/v1/documents/{documentId}:batchUpdate'),
     'drive.files.upload': ('POST', 'https://www.googleapis.com/upload/drive/v3/files'),
+    # An owner-approved edit to a linked Google Sheet or Slides file (file_writes.py), with spreadsheets or presentations:
+    # a sheet's new tabs or rows, then its cells' values; a deck's text and new slides, pinned to the approved revision
+    'sheets.spreadsheets.batchUpdate': ('POST', 'https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}:batchUpdate'),
+    'sheets.spreadsheets.values.batchUpdate': ('POST', 'https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values:batchUpdate'),
+    'slides.presentations.batchUpdate': ('POST', 'https://slides.googleapis.com/v1/presentations/{presentationId}:batchUpdate'),
 }
 # Where requests may go: Google's API hosts, over HTTPS. A URL built from a method template and its parameters is
 # checked once more before it's opened, and the broker's address must be HTTPS too (it gets this machine's token).

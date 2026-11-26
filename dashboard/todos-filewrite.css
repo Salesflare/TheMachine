@@ -1,0 +1,3 @@
+/*@lazy*/
+/* A Sheet's cells before and after (todos-filewrite.js): a small table that scrolls sideways on a phone, never the page */
+.fw-t{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;font-size:.9em;margin:2px 0 6px}.fw-t th,.fw-t td{padding:3px 10px 3px 0;text-align:left;vertical-align:top;white-space:pre-wrap;border-bottom:1px solid var(--border)}.fw-t thead th{font-size:.8rem;font-weight:500;color:var(--faint)}.fw-t tbody th{font-weight:500;color:var(--muted)}

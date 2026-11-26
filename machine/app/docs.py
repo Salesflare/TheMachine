@@ -5,6 +5,7 @@ import re
 
 import abilities
 import doc_writes
+import file_writes
 import google_files
 from machine.sources.connectors import CONNECTOR_HELPERS, doc_write_files, docs_files_offered, load_connector
 from sources import SourceError
@@ -112,8 +113,8 @@ class DocsApp:
             elif args.get('file_id'):
                 file_id = doc_writes.file_id_of(args['file_id'])
                 if file_id not in files:
-                    raise OwnerError('That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc '
-                                     'linked in its messages)')
+                    raise OwnerError('That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, '
+                                     'Sheet or Slides file linked in its messages)')
         plugin = load_connector('docs')
         if not plugin or not hasattr(plugin, 'Writer'):
             raise ValueError('There is no Docs connection here')
@@ -125,9 +126,13 @@ class DocsApp:
             context = doc_writes.context(self.config, plugin, CONNECTOR_HELPERS, files, value)
             found = (context or {}).get('snapshots', {}).get(file_id)
             if found is None:
+                if files[file_id].get('kind'):
+                    raise ValueError('Edits are not allowed for this Docs connection yet (Allow edits to Sheets and Slides on its connection)')
                 raise ValueError('Edits are not allowed for this Docs connection yet (Allow edits on its connection)')
             if isinstance(found, str):
                 raise ValueError(found)
+            if found.get('kind') in file_writes.KINDS:  # a linked Sheet's tabs or a deck's slides (file_writes.outline)
+                return {'file_id': file_id, 'title': found['title'], 'url': found['url'], **file_writes.outline(found)}
             return {'file_id': file_id, 'title': found['title'], 'version': found['version'], 'url': found.get('url'),
                     'paragraphs': [{'n': i + 1, 'text': p['text'], 'editable': p['editable'],
                                     **{k: p[k] for k in ('style', 'list') if p.get(k)}}  # a Google Doc's look, to check formatting

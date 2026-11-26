@@ -44,6 +44,7 @@ LAZY = {
     'compose': ('todos-send.js', 'todos-compose.js'),
     'kept': ('todos-kept.css', 'todos-kept.js'),
     'docwrite': ('todos-send-doc.js',),
+    'filewrite': ('todos-filewrite.css', 'todos-filewrite.js'),  # a Sheet or Slides edit (file_writes.py), drawn through fileW
     'sendlater': ('todos-send-later.js',),
     'keptbox': ('todos-kept-box.js',),
     'signin': ('connections-signin-dialog.js',),

@@ -21,6 +21,10 @@ writes polite *です/ます* and Korean polite *해요체* (요 endings), both 
 Chinese and Japanese use full-width punctuation (，。：？！) in their own text. No em dashes. Placeholders (`{}`, `{0}`,
 `{1}`) stay; reorder with `{0}`, `{1}` when the sentence needs it.
 
+A Sheet's **tab** and **cell** (an edit to Google Sheets, "New tab “Q4”", "Cells B2:C3 in “Budget”") are the words
+Google Sheets itself uses in that language (Dutch *tabblad* and *cel*, German *Tabellenblatt* and *Zelle*, French
+*onglet* and *cellule*), never a browser tab. Cell names like B2 and B2:C3 stay as they are.
+
 Plurals: Chinese, Japanese and Korean have one form (a plural entry is `{"other": ...}`); Russian has four
 (`one`, `few`, `many`, `other`, CLDR: 1, 21 задача; 2-4, 22 задачи; 5-20, 25 задач; 1.5 задачи).
 

@@ -52,6 +52,7 @@ import re
 import uuid
 import zipfile
 from machine.owner_error import OwnerError
+import file_writes
 import google_links
 import timeutil
 
@@ -434,6 +435,8 @@ def validate(value, context):
                          'ids. Never ask the owner to paste a link to a doc made for this to-do')
     if value.get('account_id') not in (None, known['account_id']):
         raise ValueError('That doc belongs to another Docs connection')
+    if known.get('kind') in file_writes.KINDS:  # a linked Google Sheet or Slides file: its own changes (file_writes.py)
+        return file_writes.validate(value, known, accounts.get(known['account_id']), (context.get('snapshots') or {}).get(file_id), result)
     account = accounts.get(known['account_id'])
     if not account or not can_edit(account, known):
         if known.get('made'):
@@ -479,6 +482,8 @@ def can_edit(account, known):
     Google sign-in for a doc it made for this to-do itself (known['made']), with the same Drive access that made it.
     A gog sign-in edits no other doc."""
     writes = account.get('writes') or ()
+    if known.get('kind') in file_writes.KINDS:  # a linked Sheet or Slides file: Allow edits for those (file_writes.py)
+        return known['kind'] in writes
     return 'edit' in writes or bool(known.get('made') and account.get('gog') and 'create' in writes)
 
 
@@ -488,7 +493,7 @@ def label(action):
 
 
 def where(action):
-    return WHERE.get(action.get('provider'), 'Docs')
+    return file_writes.WHERE.get(action.get('file_kind')) or WHERE.get(action.get('provider'), 'Docs')
 
 
 def done(action):
@@ -521,6 +526,8 @@ def untitled(action):
 
 def preview(action):
     """The whole write as plain text: the new doc in full, or every change as before and after."""
+    if action.get('file_kind'):
+        return file_writes.preview(action)
     if action['op'] == 'create':
         return f'New {"page" if action.get("provider") == "notion" else "doc"} in {where(action)}: “{action["title"]}”\n\n{untitled(action)}'
     if action['op'] == 'done':
@@ -566,6 +573,8 @@ POLICY = ('domainPolicy', 'ORG_POLICY_VIOLATION', 'cannotCreateFile')
 def failed(action, status, reason=None):
     """The to-do's line when the doc refused the write: what was refused, in plain words, and that nothing changed.
     `reason` is Google's label from its error body; the error number stays at the end for support."""
+    if action.get('file_kind'):
+        return file_writes.failed(action, status, reason)
     if status in (409, 412):
         return 'The doc changed since this was drafted. Nothing was changed; ask for a new draft.'
     if status == 423:
@@ -595,10 +604,12 @@ def made_by_itself(job):
     return bool(job) and str(job['approval_id'] or '').startswith(NEW_DOC)
 
 
-def link_of(message_id, provider=None):
-    """A made Google Doc's link from its write's message id (docwrite:<file id>), or a Notion page's; None for Word or
-    anything else."""
+def link_of(message_id, provider=None, kind=None):
+    """A made Google Doc's link from its write's message id (docwrite:<file id>), or a Notion page's, or an edited Sheet
+    or Slides file's (kind); None for Word or anything else."""
     found = re.fullmatch(r'docwrite:([\w-]{1,200})', str(message_id or ''))
+    if found and kind in file_writes.KINDS:
+        return file_writes.link(kind, found[1])
     if found and provider == 'notion':
         return f'https://www.notion.so/{found[1]}' if re.fullmatch(r'[0-9a-f]{32}', found[1]) else None
     return google_link(found[1]) if found else None
@@ -1074,7 +1085,10 @@ class DocWriteTransport:
             raise OwnerError('That Docs connection is no longer here. Nothing was changed.')
         writes = self.connector.writes_on(self.config, account, self.helpers)
         # a gog sign-in edits only a doc it made for this to-do (validate's made), with the Drive access that made it
-        if action['op'] not in writes and not (action['op'] == 'edit' and action.get('made') and gog(account) and 'create' in writes):
+        if action.get('file_kind'):  # a Sheet or Slides file: Allow edits for those, never a gog sign-in (file_writes.py)
+            if action['file_kind'] not in writes or gog(account):
+                raise OwnerError(f'Editing {where(action)} is not allowed for this connection anymore. Nothing was changed.')
+        elif action['op'] not in writes and not (action['op'] == 'edit' and action.get('made') and gog(account) and 'create' in writes):
             raise OwnerError('Writing docs is not allowed for this connection anymore. Nothing was changed.')
         return self.connector.Writer(self.config, account, self.helpers)
 
@@ -1086,6 +1100,8 @@ class DocWriteTransport:
         try:
             if action['op'] == 'done':
                 return  # marking a task done twice leaves it done
+            if action.get('file_kind'):
+                return file_writes.preflight(writer, action)
             if action['op'] == 'edit':
                 current = self.snapshot(writer, action['file_id'])
                 if current['version'] != action['version']:
@@ -1148,6 +1164,8 @@ class DocWriteTransport:
                 **({'url': made['webUrl']} if str(made.get('webUrl') or '').startswith('https://') else {})}
 
     def edit(self, writer, action):
+        if action.get('file_kind'):  # a linked Sheet or Slides file (file_writes.py)
+            return file_writes.edit(writer, action, self.helpers.SourceError)
         if writer.provider == 'notion':  # read again right before, pinned to the version the owner approved
             return writer.edit(action['file_id'], action['changes'], action['version'])
         if writer.provider == 'google':
@@ -1173,6 +1191,8 @@ class DocWriteTransport:
     def reconcile(self, action, job):
         try:
             writer = self.writer(action)
+            if action.get('file_kind'):
+                return file_writes.reconcile(writer, action)
             if action['op'] == 'done':
                 return {'message_id': 'docwrite:' + action['file_id']} if writer.task(action['file_id'])[2] is None else {}
             if action['op'] == 'create':
@@ -1261,9 +1281,20 @@ def context(config, connector, helpers, files, value, area=None):
             continue
         account = next(a for a in config['accounts'] if a['id'] == known['account_id'])
         try:
-            snapshots[file_id] = snapshot(connector.Writer(config, account, helpers), file_id)
+            if known.get('kind') in file_writes.KINDS:  # the cells or slides its changes touch (file_writes.snapshot)
+                try:
+                    changes = file_writes.parse(known['kind'], w.get('changes'))
+                except ValueError:
+                    changes = []  # validate says what is wrong with them
+                snapshots[file_id] = file_writes.snapshot(connector.Writer(config, account, helpers), file_id, known['kind'], changes)
+            else:
+                snapshots[file_id] = snapshot(connector.Writer(config, account, helpers), file_id)
         except helpers.SourceError as error:
-            snapshots[file_id] = {'docs_edit_unsupported': 'That file can’t be edited here (only Google Docs and .docx Word files)',
+            snapshots[file_id] = {'docs_files_not_granted': 'Editing Sheets and Slides is not allowed for this connection yet (Allow edits to Sheets and Slides on its connection)',
+                                  'docs_no_access': 'That file is not shared with the Google account connected here',
+                                  'docs_gone': 'That file was deleted, or its link is wrong',
+                                  'docs_file_kind': 'That file is not a Google Sheet or Slides file (an Excel or PowerPoint file in Drive)',
+                                  'docs_edit_unsupported':'That file can’t be edited here (only Google Docs and .docx Word files)',
                                   'docs_file_too_large': 'That file is too large to edit here',
                                   'docs_not_connected': 'Reading docs is not allowed for this connection'}.get(
                                       error.category, f'The doc could not be read ({error.category})')

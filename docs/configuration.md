@@ -110,7 +110,7 @@
 | `fleet`, `network_urls` | the Network, once paired | A hosted setup's `{"url": ...}` for [The Machine Network](network.md), and more addresses to fail over to |
 | `network_keys`, `learnings_keys` | `network-keys.json`, `learnings-keys.json` next to the database | This Machine's Network keys and its team learnings key |
 | `started_at` | its first activity | When this Machine started (a hosted Machine's signup) |
-| `docs_consent`, `docs_write_consent`, `docs_files_consent`, `teams_consent` | unset | A hosted Machine: set by the control plane once its account page offers the Docs, Docs edits, Sheets and Slides, or Teams consent (`true`, or the providers, like `["microsoft"]`) |
+| `docs_consent`, `docs_write_consent`, `docs_files_consent`, `docs_files_write_consent`, `teams_consent` | unset | A hosted Machine: set by the control plane once its account page offers the Docs, Docs edits, Sheets and Slides, Sheets and Slides edits, or Teams consent (`true`, or the providers, like `["microsoft"]`) |
 | `accounts` | `[]` | Sources, below |
 
 ## Accounts

@@ -1,3 +1,5 @@
+// A project's to-dos on its page: open ones, then the latest done (graph.project_todos). The count is the open ones; none open: no count.
+const projectTodos=n=>n.kind==='project'&&n.todos?.length?html`<div class="section-head"><h2>To-dos</h2>${n.todos.some(c=>!c.done)?html`<span class="count">${n.todos.filter(c=>!c.done).length}</span>`:''}</div><article class="graph-open project-todos">${n.todos.map(c=>html`<div class="promise${c.done?html` done`:''}"><span class="grow"><a href="#card=${c.id}" translate="no">${c.title}</a>${c.done?html`<small>done</small>`:c.due?html`<small>due ${day(c.due)}</small>`:''}</span></div>`)}</article>`:'';
 const promiseFirst=who=>String(who||'').split(/\s+/)[0]||who;
 const PROMISE_SAID={'gmail.message':'an email','slack.message':'Slack','teams.message':'Teams','whatsapp.message':'WhatsApp','telegram.message':'Telegram','signal.message':'Signal','linkedin.message':'LinkedIn','x.message':'X','intercom.message':'Intercom','calendar.event':'a meeting'};
 function promiseState(p){const late=p.due&&p.due<localDay(new Date());

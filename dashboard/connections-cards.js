@@ -13,7 +13,8 @@ function spark(c){const a=[...(c.sync_activity||[])].reverse();if(!a.some(x=>x.s
 // (a saved sign-in never does). #connections=add opens the list on a phone and Email on a computer; a setup under way
 // (a sign-in, a form, a run) shows in its source's category.
 const CONN_PHONE=matchMedia('(max-width:719px)'),connCat=id=>CONNECT_GROUPS.some(([k])=>k===id),healthGroup=c=>connCat(c.group)?c.group:'other';
-let connShown='mail',connTiles=new Map(),connCatsSig='',connDrawing=false,connExtra=[],connExtraSig='[]';  // none: no redraw
+// none: no redraw
+let connShown='mail',connTiles=new Map(),connCatsSig='',connDrawing=false,connExtra=[],connExtraSig='[]';
 const connOpened=new Set(),connClosed=new Set();
 const connSrcCat=name=>{const x=connectList?.sources?.find(v=>v.name===name);return name==='codex'?'work':name==='gbrain'?'other':x?(connCat(x.group)?x.group:'other'):''};
 // The category of the setup on screen, if one is (else none): its source's, else the one it started from
@@ -44,7 +45,8 @@ function connDraw(){const cs=state.connectors||[],of=g=>cs.filter(c=>healthGroup
  if(!$('#conn-title'))h.querySelector('.conn-pane').prepend(make('button',{type:'button',class:'conn-back','data-conn-back':'',hidden:''},make('span',{'aria-hidden':'true'},'‹'),' ',make('span',{},t('Connections'))),make('h2',{class:'conn-title',id:'conn-title'}));
  const title=$('#conn-title');title.textContent=t([...cats,...extra].find(p=>p[0]===current)?.[1]||'');
  h.querySelector('[data-conn-back]').hidden=!(phone&&open);$('#conn-suggested').hidden=!!flow||phone&&open||!phone&&!isCat;
- if(isCat||index){if(connectList&&!flow)renderConnectAdd();if(!h.hidden)connectAdd()}  // the list of sources: only once Connections shows
+ // the list of sources: only once Connections shows
+ if(isCat||index){if(connectList&&!flow)renderConnectAdd();if(!h.hidden)connectAdd()}
  if(!connectResumed&&!healthPicked&&!h.hidden){connectResumed=true;connectResume().then(found=>{if(found&&!healthPicked){healthPane='add';healthPicked=true;renderHealthTabs();renderConnectRun()}})}}
 CONN_PHONE.addEventListener('change',()=>{if(!$('#health').hidden)renderHealthTabs()});
 // The list's own Connections link (the nav, tapped) on a phone: back to the list, not the category last open
@@ -78,7 +80,8 @@ async function connectResumeNow(){if(connectPicking||connectStopping)return fals
 async function connectAddNow(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
  // before the wait: a later call (a forced one from a sign-in's way back) wins over this one
  const n=++connectAddSeq;
- const box=$('#connect-add');if(!box.childElementCount)setHTML(box,html`<p class="muted">Loading…</p>`);  // a restart's few seconds: not an empty box
+ // a restart's few seconds: not an empty box
+ const box=$('#connect-add');if(!box.childElementCount)setHTML(box,html`<p class="muted">Loading…</p>`);
  if(await connectResume()){renderConnectRun();return}
  if(n!==connectAddSeq)return;
  const load=connectPost('connect_sources');connectAddLast=load.catch(()=>{});
@@ -128,14 +131,17 @@ function connectInner(x,why,ext,note=connectHaveLine(x),tag=false){const on=x.co
  const line=why?html`<small class="why">${why}</small>`:x.what?html`<small class="what">${x.what}</small>`:'';
  return html`<span class="cs-icon">${connectLogo(x)}${on}</span><span class="cs-text"><span class="cs-head"><b>${x.label}</b>${tag?html`<span class="cs-tag">${t('Suggested')}</span>`:''}</span>${line}${note?html`<small class="count">${note}</small>`:''}</span><span class="cs-go" aria-hidden="true">${ext?'↗':'›'}</span>`}
 function connectTile(x,why,tag){const inner=ext=>connectInner(x,why,ext,undefined,tag);
- if(x.via)return html`<button type="button" class="connect-source" data-connect-card="${x.via[0]}">${inner()}</button>`;  // opens the card it rests on
+ // opens the card it rests on
+ if(x.via)return html`<button type="button" class="connect-source" data-connect-card="${x.via[0]}">${inner()}</button>`;
  if(x.hosted_signin&&connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}">${inner()}</button>`;
  if(x.account_page&&connectList.manage_url)return html`<a class="connect-source" href="${safeHref(connectList.manage_url+'#'+x.account_page)}" target="_blank" rel="noopener">${inner(true)}</a>`;
  if(x.signin&&!connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}">${inner()}</button>`;
  return x.broker?(connectList.manage_url?html`<a class="connect-source" href="${safeHref(connectList.manage_url+(BROKER_LINK[x.service]||'#sources'))}" target="_blank" rel="noopener">${inner(true)}</a>`:''):html`<button type="button" class="connect-source" data-connect="${x.name}">${inner()}</button>`}
-function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return renderConnectRun();if(connectSignin)return renderConnectSignin();if(connectForm)return renderConnectForm();if(connectGbrain)return renderGbrain();if(!connectList?.sources)return connectDraw(box,'grid',html``);  // a setup ended before the list came: leave it
+// a setup ended before the list came: leave it
+function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return renderConnectRun();if(connectSignin)return renderConnectSignin();if(connectForm)return renderConnectForm();if(connectGbrain)return renderGbrain();if(!connectList?.sources)return connectDraw(box,'grid',html``);
  const by=new Map(connectList.sources.map(x=>[x.name,x])),why=new Map();
- for(const s of connectList.suggested||[]){const x=by.get(s.name),w=x&&!x.connected&&why.size<3&&connectWhy(s,x);if(w&&connectTile(x,w))why.set(s.name,w)}  // only one it can show
+ // only one it can show
+ for(const s of connectList.suggested||[]){const x=by.get(s.name),w=x&&!x.connected&&why.size<3&&connectWhy(s,x);if(w&&connectTile(x,w))why.set(s.name,w)}
  // A to Z in each group; a catch-all (last, groups.CATCH_ALL: Other email) after the rest
  const groups=new Map(CONNECT_GROUPS.map(([k])=>[k,[]])),on=[],add=(g,label,tile,last,x)=>{if(!tile)return;g=connCat(g)?g:'other';groups.get(g).push([label,tile,!!last]);if(x?.connected)on.push([g,x])};
  // Teams: one Microsoft sign-in, two tiles. Its chats under Chat, its meeting notes under Meetings as Teams meetings; either
@@ -265,6 +271,7 @@ const SIGNIN_COPY={intercom:{many:1,label:'Intercom',about:'Reads your conversat
   selfAbout:'Your chats and meeting chats. Replies only after you press Send.'},
  google_docs:{label:'Google',title:'Google Docs',about:'Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.'},
  google_docs_files:{label:'Google',title:'Google Docs',about:'Reads the Sheets and Slides your to-dos link to. Never changes them.'},
+ google_docs_files_write:{label:'Google',title:'Google Docs',about:'Reads and edits the Sheets and Slides your to-dos link to. Edits wait for your OK.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
  codex:{},android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
  stripe:{label:'Stripe',about:'Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.',other:'Or paste a restricted key',how:'A restricted key with Read on Events, Customers and Account.',go:'Paste a key',off:'Sign in with {} isn’t available yet. Paste a restricted key instead.'},
@@ -283,7 +290,7 @@ const HOSTED_TILE={google:'#google',microsoft:'#microsoft',microsoft_teams:'#tea
 // GitHub, WhatsApp and the phone have no provider page to come back from: the Machine gets a code, shown right here
 // (GitHub's to type at GitHub, WhatsApp's QR code or pairing code, the OpenClaw app's setup code)
 const GITHUB_DEVICE=/^https:\/\/github\.com\/login\/device[\w/.-]*$/;
-const NO_SCOPE_SIGNIN=['intercom','android','microsoft_docs','microsoft_docs_write','microsoft_teams','google_docs_files','codex'];
+const NO_SCOPE_SIGNIN=['intercom','android','microsoft_docs','microsoft_docs_write','microsoft_teams','google_docs_files','google_docs_files_write','codex'];
 const STARTING={github:'Getting a sign-in code from GitHub…',whatsapp:'Getting a code from WhatsApp…',android:'Making a setup code…'};
 const qrImg=s=>html`<img class="connect-qr" src="${safeHref('/_machine/connect-qr?s='+encodeURIComponent(s.provider)+'&c='+encodeURIComponent(s.command)+'&v='+encodeURIComponent(String(s.until||'')))}" alt="QR code">`;
 function phoneBody(s,back){const h=[];
@@ -299,7 +306,8 @@ function hostedSigninBody(s,copy,back){const scope=NO_SCOPE_SIGNIN.includes(s.pr
  if(s.state==='qr')return html`<p class="connect-q">On your phone, open WhatsApp, then Settings, Linked devices, Link a device, and scan this code:</p>${qrImg(s)}<p class="muted">WhatsApp changes the code every few seconds. This follows it.</p>`;
  if(s.state==='pair'&&s.code)return connectCodeHTML({kind:'pair',code:s.code});
  if(s.state==='phone')return phoneBody(s,back);
- if(s.state==='connecting'&&s.provider==='whatsapp')return html`<p class="signin-status" role="status"><i class="spin" aria-hidden="true"></i><span>${whatsappLinked(s)}</span></p>`;  // the sign-in dialog's spinner
+ // the sign-in dialog's spinner
+ if(s.state==='connecting'&&s.provider==='whatsapp')return html`<p class="signin-status" role="status"><i class="spin" aria-hidden="true"></i><span>${whatsappLinked(s)}</span></p>`;
  if(s.state==='stalled')return html`<p class="alert">${s.provider==='whatsapp'&&s.phase&&s.phase!=='code'?'Connecting WhatsApp is taking too long. Try again to pick up where it stopped.':'This is taking longer than it should. Try again.'}</p><div class="actions"><button type="button" class="primary" data-signin-go>Try again</button>${back}</div>`;
  if(s.state==='done'&&s.provider==='whatsapp'){const c=connectCard({account:s.made});return html`<p class="note sent-ok"><span>Connected.</span> <span>${c?'Its card shows your chat history coming in.':'Restarting to start reading it…'}</span></p><div class="actions">${c?html`<button type="button" class="primary" data-connect-card="${c.id}">Open its card</button>`:''}${back}</div>`}
  if(s.state==='connecting'||s.state==='code')return html`<p class="muted">Signed in. Connecting it now.</p>`;
@@ -314,9 +322,11 @@ function hostedSigninGo(s,way){const form=document.createElement('form'),box=$('
  form.method='post';form.action='/_machine/connect';form.hidden=true;add('source',s.provider);
  if(!NO_SCOPE_SIGNIN.includes(s.provider)){add('scope',box.querySelector('input[name="signin-scope"]:checked')?.value||'work');add('boundary','')}
  if(SIGNIN_COPY[s.provider]?.many&&s.another)add('another','1');
- if(s.email)add('email',s.email);  // Reconnect on its card: that address
+ // Reconnect on its card: that address
+ if(s.email)add('email',s.email);
  if(s.provider==='whatsapp'&&way==='code'){add('way','code');add('phone',box.querySelector('input[name="signin-phone"]')?.value||'')}
- if(s.provider==='whatsapp'&&s.account)add('account_id',s.account);  // Link again: the one that is not linked any more
+ // Link again: the one that is not linked any more
+ if(s.provider==='whatsapp'&&s.account)add('account_id',s.account);
  document.body.append(form);form.submit()}
 // WhatsApp, linked (the control plane's phase, from the agent's cmd_whatsapp): the Machine connects it right away, after
 // other setup work when some runs; the history comes in afterwards and its card counts it. Never a bare "connecting"
@@ -352,7 +362,8 @@ function openSignedInLink(){const m=/^#signed-in=([a-z_]{1,32})(\/again)?$/.exec
   toast(t(m[2]?'Reconnected to {}.':'Connected to {}.',s[0]=='microsoft'&&s[1]?(s[1]=='teams'?'Microsoft Teams':'Microsoft OneDrive'):s.slice(0,2).map(w=>w[0].toUpperCase()+w.slice(1)).join(' ')))}
 async function openConnectLinkNow(){const m=/^#connect=([a-z_]+)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url||!Object.keys(SIGNIN_COPY).includes(m[1]))return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
- const src={microsoft_docs_write:'microsoft_docs',google_docs_files:'google_docs'}[m[1]],docs=src&&connectList?.sources.find(v=>v.hosted_signin===src);  // Allow edits, Allow Sheets and Slides: its Docs source
+ // Allow edits, Allow Sheets and Slides (and edits to them): its Docs source
+ const src=/^(\w+_docs)_/.exec(m[1])?.[1],docs=src&&connectList?.sources.find(v=>v.hosted_signin===src);
  const x=m[1]==='codex'?connectList?.codex&&codexSource():docs?{...docs,hosted_signin:m[1]}:connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
  connectSignin=signinOf(x,command.startsWith('f_')?'checking':command?ON_DASHBOARD.includes(m[1])?'starting':'connecting':m[2]?'stopped':'intro',command);$('#connect-add').dataset.sig='';renderConnectSignin();hostedPoll();viewTop($('#connect-add'))}
 function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paired=connectList?.paired;
@@ -383,7 +394,8 @@ function signinPoll(){clearTimeout(signinTimer);if(!connectSignin||!['started','
   if(r.state!=='none')connectSignin={...connectSignin,...r};renderConnectSignin();if(r.state==='done')connectionsSettle()}catch{}signinPoll()},2500)}
 async function signinGo(way){const s=connectSignin;if(!s)return;
  if(s.provider==='codex'&&!s.hosted)return codexGo(s);
- if(s.hosted){if(s.state==='intro')return hostedSigninGo(s,way);connectSignin={...s,state:'intro',error:''};$('#connect-add').dataset.sig='';return renderConnectSignin()}  // Try again: Work or Personal first
+ // Try again: Work or Personal first
+ if(s.hosted){if(s.state==='intro')return hostedSigninGo(s,way);connectSignin={...s,state:'intro',error:''};$('#connect-add').dataset.sig='';return renderConnectSignin()}
  // The tab opens only once there is a start link: one the control plane refuses opens no tab, and the other way shows.
  // Still within the click's few seconds of user activation; a browser that blocks it goes there in this tab instead.
  try{const r=await connectPost('connect_signin',{name:s.start||s.source});
@@ -438,11 +450,13 @@ function renderConnectRun(){const r=connectRun,box=$('#connect-add'),q=r?.questi
 // After a source is added the running service reads it at once (live), or restarts to: wait until it answers with the new account,
 // then move to that account's card, which shows how its first sync goes (the + Add pane says so until then).
 const connectCard=r=>r?.account&&(state.connectors||[]).find(c=>c.id===r.account)||null;
-function cardShow(id,flash){const c=(state.connectors||[]).find(x=>x.id===id);if(!c)return;connOpened.add(id);connClosed.delete(id);if(connFlowCat()&&connectRun?.state!=='running'){connectRun=null;connectSignin=null;connectForm=null;connectGbrain=null;const box=$('#connect-add');box.dataset.sig='';box.dataset.view='grid';setHTML(box,html``)}showHealthPane(healthGroup(c));  // the setup gives way to its card
+// the setup gives way to its card
+function cardShow(id,flash){const c=(state.connectors||[]).find(x=>x.id===id);if(!c)return;connOpened.add(id);connClosed.delete(id);if(connFlowCat()&&connectRun?.state!=='running'){connectRun=null;connectSignin=null;connectForm=null;connectGbrain=null;const box=$('#connect-add');box.dataset.sig='';box.dataset.view='grid';setHTML(box,html``)}showHealthPane(healthGroup(c));
 
  const el=[...document.querySelectorAll('#connectors>article')].find(a=>a.dataset.conn===id);if(!el)return;
  el.querySelector('.conn-body').hidden=false;el.querySelector('[data-conn-open]').setAttribute('aria-expanded','true');el.scrollIntoView({block:'center',behavior:'smooth'});
- if(flash){el.classList.add('conn-new');setTimeout(()=>document.querySelectorAll('#connectors .conn-new').forEach(a=>a.dataset.conn===id&&a.classList.remove('conn-new')),4000)}}  // also once redrawn
+ // also once redrawn
+ if(flash){el.classList.add('conn-new');setTimeout(()=>document.querySelectorAll('#connectors .conn-new').forEach(a=>a.dataset.conn===id&&a.classList.remove('conn-new')),4000)}}
 // Change on a guessed Work or Personal: its card, with Details open on the choice
 function scopeOpen(id){cardShow(id,false);const d=document.getElementById('sync-details-'+id);if(d)d.open=true;setTimeout(()=>document.querySelector(`select[data-scope="${CSS.escape(id)}"]`)?.focus(),300)}
 async function connectFollow(run){const start=Date.now();await new Promise(r=>setTimeout(r,run.live?800:6000));
@@ -466,7 +480,8 @@ const connectClick=async e=>{const t=e.target;
  if(t.closest('[data-codex-signin]')){connectSignin=signinOf(codexSource(),'intro');$('#connect-add').dataset.sig='';renderConnectSignin();return}
  const signin=t.closest('[data-connect-signin]');if(signin){const x=connectList.sources.find(v=>v.name===signin.dataset.connectSignin);connectSignin=signinOf(x,'intro');$('#connect-add').dataset.sig='';renderConnectSignin();return}
  if(t.closest('[data-signin-go]')){signinGo(t.closest('[data-signin-go]').dataset.way);return}
- if(t.closest('[data-connect-pair]')){aiPairGo(()=>{if(connectList)connectList.paired=true;$('#connect-add').dataset.sig='';if(connectSignin)renderConnectSignin()});return}  // one-click pairing (settings-ai.js, pairing.py)
+ // one-click pairing (settings-ai.js, pairing.py)
+ if(t.closest('[data-connect-pair]')){aiPairGo(()=>{if(connectList)connectList.paired=true;$('#connect-add').dataset.sig='';if(connectSignin)renderConnectSignin()});return}
  const approve=t.closest('[data-phone-approve]');if(approve){phoneApprove(approve);return}
  const start=t.closest('[data-connect]');if(start){connectSignin=null;clearTimeout(signinTimer);
   if(!start.dataset.connectAccount&&connectList?.sources.some(v=>v.name===start.dataset.connect&&v.form)){connectRun=null;connectForm=start.dataset.connect;$('#connect-add').dataset.sig='';renderConnectForm();return}
@@ -476,7 +491,8 @@ const connectClick=async e=>{const t=e.target;
  const pick=t.closest('[data-connect-pick]');if(pick){const v=pick.dataset.connectPick;connectAnswer(v==='yes'?true:v==='no'?false:+v);return}
  if(t.closest('[data-connect-stop]')&&connectRun){const s=connectRun.session,src=connectRun.source||connectRun.name;connectRun=null;connectCut++;connectStopping=true;clearTimeout(connectTimer);$('#connect-add').dataset.sig='';if(connectList)renderConnectAdd();else connectDraw($('#connect-add'),'grid',html``);
   try{await connectPost('connect_cancel',{session:s})}catch{}connectStopping=false;
-  await connectAdd(true);const cat=connSrcCat(src);if(cat&&healthPane==='add')showHealthPane(cat);return}  // back in the source's own kind, also on a phone
+  // back in the source's own kind, also on a phone
+  await connectAdd(true);const cat=connSrcCat(src);if(cat&&healthPane==='add')showHealthPane(cat);return}
  const card=t.closest('[data-connect-card]');if(card){cardShow(card.dataset.connectCard,true);return}
  const guess=t.closest('[data-connect-scope]');if(guess){scopeOpen(guess.dataset.connectScope);return}
  if(t.closest('[data-connect-back]')){connectRun=null;connectCut++;connectSignin=null;connectForm=null;connectGbrain=null;clearTimeout(signinTimer);$('#connect-add').dataset.sig='';connectAdd(true)}};
@@ -511,7 +527,7 @@ return t('Quiet conversations last: {} of {}',f.done,f.total)}
 // What a Docs connection may write (doc_writes.py: a new doc by itself, an edit after the owner's OK) and the linked Sheets and Slides it reads; or the buttons that ask
 const docsWrites=c=>{const line=docsWritesLine(c);return line?html`<p class="muted conn-what conn-writes">${line}</p>`:''};
 const docsWritesLine=c=>{if(c.actions===false)return '';const w=c.docs_writes||[],go=c.docs_write_signin&&!c.shared_by?(state.manage_url?hostedReconnect({...c,hosted_signin:c.docs_write_signin},'Allow edits','browser-link'):html`<button type="button" class="browser-link" data-reconnect="docs" data-account="${c.id}" data-signin-source="${c.docs_write_signin}">Allow edits</button>`):'';
- const read=c.docs_files?.[1]?'Reads linked Sheets and Slides.':'',ask=c.docs_files_signin?hostedReconnect({...c,hosted_signin:c.docs_files_signin},'Allow Sheets and Slides','browser-link'):'';
+ const read=c.docs_files?.[1]?w.includes('sheets')?SIGNIN_COPY.google_docs_files_write.about:'Reads linked Sheets and Slides.':'',ask=c.docs_files_signin?hostedReconnect({...c,hosted_signin:c.docs_files_signin},/e$/.test(c.docs_files_signin)?'Allow edits to Sheets and Slides':'Allow Sheets and Slides','browser-link'):'';
  const line=w.includes('edit')?'Creates private docs. Edits docs only after you OK each change.':w.includes('create')?'Creates private docs only you can see until you share them.':go?'Can’t create or edit docs yet.':'';
  return line||read||ask?html`${line&&t(line)} ${go} ${read&&t(read)} ${ask}`:''};
 const docsConnect=c=>/:not_set_up$/.test(c.error)?'Connect':!/docs_not_connected/.test(c.error)?'Reconnect':c.docs_provider==='microsoft'?'Connect Microsoft documents':'Connect Google Docs';
@@ -529,8 +545,10 @@ document.addEventListener('change',async e=>{const s=e.target.closest('select[da
  if(!b){const name=(prompt('Company name')||'').trim();if(!name){s.value=s.dataset.was;return}b='work:'+name}
  s.disabled=true;try{const r=await connectPost('connect_scope',{account:s.dataset.scope,boundary:b});if(r.restarting)restartSoon();toast(r.restarting?'Saved. Restarting…':'Saved. Restart the service to use it.');setTimeout(refresh,r.restarting?8000:500)}catch(err){errCaught(err);toast(err.message,true);s.disabled=false;s.value=s.dataset.was}});
 function connActions(c){const name=connTitle(c)||c.id;
- if(c.shared_by)return html`<p class="note">${t('Shared by {}. Its admins manage it.',c.shared_by)}</p>`;  // shared_connectors.py: no token, no Disconnect here
- if(c.hosted_signin&&state.manage_url)return html`<div class="actions conn-actions">${hostedReconnect(c,docsConnect(c),'ghost')}${c.account_page?html`<a class="btn-link" href="${safeHref(c.account_page)}" target="_blank" rel="noopener">Disconnect ↗</a>`:html`<button type="button" class="ghost danger" data-disconnect="${c.id}" data-name="${name}">Disconnect</button>`}</div>`;  // Disconnect: the account page when it holds the grant
+ // shared_connectors.py: no token, no Disconnect here
+ if(c.shared_by)return html`<p class="note">${t('Shared by {}. Its admins manage it.',c.shared_by)}</p>`;
+ // Disconnect: the account page when it holds the grant
+ if(c.hosted_signin&&state.manage_url)return html`<div class="actions conn-actions">${hostedReconnect(c,docsConnect(c),'ghost')}${c.account_page?html`<a class="btn-link" href="${safeHref(c.account_page)}" target="_blank" rel="noopener">Disconnect ↗</a>`:html`<button type="button" class="ghost danger" data-disconnect="${c.id}" data-name="${name}">Disconnect</button>`}</div>`;
  if(c.account_page)return html`<div class="actions conn-actions"><a class="btn-link" href="${safeHref(c.account_page)}" target="_blank" rel="noopener">Reconnect or disconnect ↗</a></div>`;
  return html`${c.shared_with?html`<p class="note">Shared with ${c.shared_with}.</p>`:''}${c.connect_name?html`<div class="actions conn-actions"><button type="button" class="ghost" data-reconnect="${c.connect_name}" data-account="${c.id}"${c.signin?html` data-signin-source="${c.signin}"`:''}>Reconnect</button><button type="button" class="ghost danger" data-disconnect="${c.id}" data-name="${name}">Disconnect</button></div>`:''}`}
 // Salesflare (assistant.py salesflare_progress): what it reads, the round of accounts it is on, Stop or Start, Restart
@@ -659,7 +677,8 @@ function connCardsDraw(){tabDraw('health','cards',drawConnectors)}
 // a catch-all (Other email, Other calendar, a calendar link) after the rest, Machine health last
 function drawConnectors(){const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id)),fresh=new Set([...document.querySelectorAll('#connectors .conn-new')].map(a=>a.dataset.conn)),folds=[...document.querySelectorAll('#connectors details:not([id])')].filter(d=>d.open).map(d=>d.closest('article')?.dataset.conn+' '+d.className),order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'});
  setHTML($('#connectors'),html`${[...state.connectors].sort((a,b)=>(a.service==='gateway')-(b.service==='gateway')||!!a.last-!!b.last||order.compare(a.display_name||a.email||'',b.display_name||b.email||'')).map(c=>connectorCard(c,expandedSync))}${connExtra.map(e=>html`<article data-group="${e.g}" class="conn-extra"><button type="button" class="conn-row"${e.k==='codex'?html` data-codex-signin`:e.k==='gbrain'?html` data-gbrain`:html` data-connect-card="${e.k}"`}>${connLogo(e.c)}<span class="conn-row-text"><span class="conn-name">${e.c.card_title}</span><small>${e.c.card_subtitle?html`<span class="conn-sub">${e.c.card_subtitle}</span> · `:''}<span class="state-dot t-mint" aria-hidden="true"></span> <span class="connection-status">${e.on}</span></small></span><span class="cs-go" aria-hidden="true">›</span></button></article>`)}`);
- for(const a of $('#connectors').children){a.hidden=a.dataset.group!==connShown;if(fresh.has(a.dataset.conn))a.classList.add('conn-new');for(const d of a.querySelectorAll('details:not([id])'))if(folds.includes(a.dataset.conn+' '+d.className))d.open=true}renderDisconnected()}  // what was open stays open
+ // what was open stays open
+ for(const a of $('#connectors').children){a.hidden=a.dataset.group!==connShown;if(fresh.has(a.dataset.conn))a.classList.add('conn-new');for(const d of a.querySelectorAll('details:not([id])'))if(folds.includes(a.dataset.conn+' '+d.className))d.open=true}renderDisconnected()}
 // Connections' own page mark (pageMarks, shell-core.js): a category open beside the list, not the index
 PAGE_MARKS.push(['m-conn-split','#health.conn-split:not(.conn-index):not([hidden])']);pageMarks();
 // Connections keeps itself current, never needing a manual refresh: when a sign-in ends, and when the page is in front

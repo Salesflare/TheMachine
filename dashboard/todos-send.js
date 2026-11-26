@@ -192,5 +192,5 @@ if(sendBatch){const sb=sendBatch,n=sb.list.length;sb.done[sb.at]={...sb.done[sb.
  let went=0;for(const x of sb.done){try{await sendConfirmed(sb.id,x.revision,x.kind,{...x.extra,later})}catch(e){if(went)e.message=t('Sent {} of {}. {}',went,n,e.message);throw e}went++}
  sendBatch=null;return await sendDone(later,t('Sending your {} approved drafts…',n))}
 await sendConfirmed(sendTask,sendRevision,sendDraft.kind,extra);
-await sendDone(later,sendDraft.kind==='merge'?'Testing and merging the fix…':sendDraft.kind==='finish'?'On it. I’ll report back.':sendDraft.kind==='calendar'?'Changing the calendar…':sendDraft.kind==='doc_write'?'Writing the doc…':sendDraft.kind==='linear'?'Changing it in Linear…':'Sending your approved draft…');
+await sendDone(later,sendDraft.kind==='merge'?'Testing and merging the fix…':sendDraft.kind==='finish'?'On it. I’ll report back.':sendDraft.kind==='calendar'?'Changing the calendar…':sendDraft.kind==='doc_write'?docBusy(sendDraft):sendDraft.kind==='linear'?'Changing it in Linear…':'Sending your approved draft…');
 }catch(e){errCaught(e);$('#send-error').textContent=e.offline&&!e.slow?t('Offline. Send again when you’re back online.'):e.message;b.disabled=false}}
