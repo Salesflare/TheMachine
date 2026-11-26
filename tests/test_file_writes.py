@@ -165,11 +165,10 @@ class Sheets(Base):
         action = self.draft(SHEET, [{'tab': 'budget', 'cells': 'B2:B3', 'values': [['1350'], [300]]}])
         self.assertEqual((action['file_kind'], action['doc_title'], action['url']),
                          ('sheets', 'Event budget', f'https://docs.google.com/spreadsheets/d/{SHEET}/edit'))
-        self.assertEqual(action['changes'][0]['shown'], [{'cell': 'B2', 'before': '1,200', 'after': '1350'},
-                                                         {'cell': 'B3', 'before': '300', 'after': '300'}])
+        self.assertEqual(action['changes'][0]['shown'], [{'cell': 'B2', 'before': '1,200', 'after': '1350'}])  # B3 keeps its 300
         self.assertEqual(n.label(action), 'Save changes')
         self.assertEqual(n.preview(action), 'Edit “Event budget” in Google Sheets: 1 change\n\nCells B2:B3 in “Budget”:\n'
-                                            'B2: “1,200” becomes “1350”\nB3: “300” becomes “300”')
+                                            'B2: “1,200” becomes “1350”')
         self.assertEqual(self.send(action), {'message_id': 'docwrite:' + SHEET})
         self.assertEqual(self.fake.writes, [{'valueInputOption': 'RAW', 'data': [
             {'range': "'Budget'!B2:B3", 'majorDimension': 'ROWS', 'values': [['1350'], [300]]}]}])
@@ -243,7 +242,7 @@ class Sheets(Base):
         for changes, said in (([{'tab': 'Nope', 'cells': 'A1', 'values': [['x']]}], 'is not a tab'),
                               ([{'tab': 'Budget', 'cells': 'E1', 'values': [['x']]}], 'outside'),
                               ([{'tab': 'Budget', 'cells': 'A1:B1', 'values': [['x']]}], 'same size'),
-                              ([{'tab': 'Budget', 'cells': 'A1', 'values': [['Item']]}], 'holds these values already'),
+                              ([{'tab': 'Budget', 'cells': 'A1:B1', 'values': [['Item', 'Cost']]}], 'holds these values already'),
                               ([{'tab': 'Budget', 'cells': 'A1:A2', 'values': [['a'], ['b']]}, {'tab': 'Budget', 'cells': 'A2', 'values': [['c']]}], 'Make them one'),
                               ([{'tab': 'Budget', 'cells': 'A1', 'values': [['x\x07']]}], 'control characters'),
                               ([{'tab': 'Budget', 'cells': 'B', 'values': [['x']]}], 'a cell like'),

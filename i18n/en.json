@@ -7297,6 +7297,7 @@
  "Writing notes…": "Writing notes…",
  "Writing the doc…": "Writing the doc…",
  "Writing the draft": "Writing the draft",
+ "Writing the file…": "Writing the file…",
  "Writing {} follow-ups…": {
   "one": "Writing {} follow-up…",
   "other": "Writing {} follow-ups…"
@@ -8274,6 +8275,7 @@
  "{} in last sync": "{} in last sync",
  "{} in {} go to {}.": "{} in {} go to {}.",
  "{} in “{}” holds these values already": "{} in “{}” holds these values already",
+ "{} in “{}” holds these values already: leave this change out": "{} in “{}” holds these values already: leave this change out",
  "{} invites made.": {
   "one": "{} invite made.",
   "other": "{} invites made."

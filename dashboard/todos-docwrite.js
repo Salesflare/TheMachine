@@ -7,6 +7,7 @@ const DOC_DO={create:'New doc in {}',edit:'Edit “{}” in {}',done:'Mark “{}
 const DOC_LABEL={create:'Review and create',edit:'Review changes',done:'Mark done'};
 const docWhere=a=>a.provider==='microsoft'?'Word':a.provider==='notion'?'Notion':a.file_kind==='sheets'?'Google Sheets':a.file_kind?'Google Slides':'Google Docs';
 // A Sheet or Slides file's edit draws in its lazy part (todos-filewrite.js), once that's in
+const docBusy=a=>a?.file_kind?'Writing the file…':'Writing the doc…';
 const fileW=(a,x,sent)=>lazyIn('filewrite')?fileWrite(a,x,sent):(lazyRun('filewrite',render),'');
 const docHead=(a,done)=>done?t(DOC_DID[a.op]||DOC_DID.edit,docWhere(a)):a.op==='create'?t(a.provider==='notion'?'New page in {}':DOC_DO.create,docWhere(a)):t(DOC_DO[a.op]||DOC_DO.edit,a.doc_title||'',docWhere(a));
 const docDoneText=(a,sent)=>a.file_kind?fileW(a,2,sent):a.op==='create'?(a.provider==='notion'?sentNote(sent,'Page created.','Page created at {}.'):sentNote(sent,'Doc created.','Doc created at {}.'))

@@ -243,8 +243,9 @@ def resolve_sheet(snapshot, changes):
             raise ValueError('The sheet could not be read for this change just now. Nothing was saved; try again')
         cells = [{'cell': name, 'before': read['shown'][i][j], 'after': shown(change['values'][i][j])}
                  for name, i, j in cells_of(change['cells'], change['values'])]
-        if all(c['before'] == c['after'] for c in cells):
-            raise ValueError(f'{change["cells"]} in “{tab["title"]}” holds these values already')
+        cells = [c for c in cells if c['before'] != c['after']]  # a cell that already shows its value isn't a change
+        if not cells:
+            raise ValueError(f'{change["cells"]} in “{tab["title"]}” holds these values already: leave this change out')
         out.append({**change, 'shown': cells})
     return out
 
