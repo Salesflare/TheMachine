@@ -116,11 +116,15 @@ pub fn prepare(window: &WebviewWindow) {
         // Tauri's own again first: `unprepare`).
         unsafe { AnyObject::set_class(&ns, class) };
         ns.setStyleMask(ns.styleMask() | NSWindowStyleMask::NonactivatingPanel);
-        // The window system only hears of that when a window is made so: else a click still brings the program to the front
-        let prevents = sel!(_setPreventsActivation:);
-        if ns.respondsToSelector(prevents) {
-            // SAFETY: it has this method, which takes a BOOL.
-            let () = unsafe { msg_send![&ns, _setPreventsActivation: true] };
+        // The window system only hears of that when a window is made so: else a click still brings the program to the front.
+        // Not in the Mac App Store's build, which uses no private method (App Review; desktop.yml checks its program).
+        #[cfg(not(feature = "store"))]
+        {
+            let prevents = sel!(_setPreventsActivation:);
+            if ns.respondsToSelector(prevents) {
+                // SAFETY: it has this method, which takes a BOOL.
+                let () = unsafe { msg_send![&ns, _setPreventsActivation: true] };
+            }
         }
     }
     ns.setHidesOnDeactivate(false);
@@ -260,6 +264,23 @@ pub fn focus(window: &WebviewWindow) {
             }
         }
     });
+}
+
+/// The program comes to the front as macOS 14 lets it: not when the person went to another one since it was started, as
+/// Tauri's own does (activateIgnoringOtherApps). A sandboxed start takes longer, and that was in time to take it back. Before
+/// macOS 14 there is no such way, and it is Tauri's own.
+pub fn offer_front(window: &WebviewWindow) {
+    let Some(mtm) = MainThreadMarker::new() else { return };
+    let here = NSApplication::sharedApplication(mtm);
+    if !here.respondsToSelector(sel!(activate)) {
+        let _ = window.set_focus();
+        return;
+    }
+    // SAFETY: there since macOS 14, as just asked; it takes nothing and gives nothing.
+    let () = unsafe { msg_send![&here, activate] };
+    if let Some(ns) = native(window) {
+        ns.makeKeyAndOrderFront(None); // in front of the program's own; of others' only once it is active
+    }
 }
 
 /// The main screen's height: macOS counts from its bottom left corner, the rest of the program from its top left.

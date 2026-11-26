@@ -78,6 +78,15 @@ pub fn front(window: &WebviewWindow) {
     let _ = window.set_focus();
 }
 
+/// As `front`, unless the person went to another program since this one was started: on macOS 14 and later the system
+/// decides (mac.rs). Elsewhere `front`.
+pub fn offer_front(window: &WebviewWindow) {
+    #[cfg(target_os = "macos")]
+    crate::mac::offer_front(window);
+    #[cfg(not(target_os = "macos"))]
+    front(window);
+}
+
 /// The keys go to it. On macOS it shows with that, without the program coming to the front.
 pub fn focus(window: &WebviewWindow) {
     #[cfg(target_os = "macos")]

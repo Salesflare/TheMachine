@@ -268,6 +268,8 @@ is the same app, except:
   download (`<a download>` of the Machine's address), so the page fetches it and saves that (`DOWNLOADS` in `src/dash.rs`).
 - **A stuck page** gets a new window; nothing else is stopped. `hangs.log` has no stacks.
 - **Installed web apps** open with their own small program, as when a link is dropped on it.
+- **No private methods** (App Review): the robot and the box are panels by their style alone, and WebKit keeps the pages' key
+  in the keychain itself. The `mac-store` job fails when its program names one of `mac/store-denied-selectors.txt`.
 
 The `mac-store` job (a run by hand with **mac-store-only**) uses it in the sandbox, signed ad hoc (`smoke/store.py`).
 `mac-store-sign` then signs it and makes the `.pkg`, in the `mac-store` environment: `MAS_APP_P12` (Apple Distribution) and

@@ -343,6 +343,15 @@ fn loaded(app: &AppHandle, url: &Url) {
 
 /// Opens it, at a place in the dashboard ("" or "#card=..."): where it was when none is asked for.
 pub fn show(app: &AppHandle, path: &str) {
+    shown(app, path, windows::front);
+}
+
+/// Opens it as the program starts. A program the person went to while it started stays in front (windows::offer_front).
+pub fn show_at_start(app: &AppHandle) {
+    shown(app, "", windows::offer_front);
+}
+
+fn shown(app: &AppHandle, path: &str, front: fn(&WebviewWindow)) {
     let window = match window(app) {
         Some(w) => w,
         None => match build(app) {
@@ -378,7 +387,7 @@ pub fn show(app: &AppHandle, path: &str) {
     }
     let _ = window.unminimize();
     let _ = window.show();
-    windows::front(&window);
+    front(&window);
     shared.over_dash.store(true, Ordering::Relaxed);
     windows::close_box(app);
     #[cfg(windows)]

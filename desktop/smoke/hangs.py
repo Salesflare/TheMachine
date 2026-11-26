@@ -151,8 +151,15 @@ def now(**how):
 other()
 
 
+# The Mac App Store's build has no key of its own for its pages (mac_app.rs, keeps): WebKit's is in the keychain, as it was
+# for the other builds. So there it is the steps "as it was", last.
+OWN_KEY = 'NOT TESTED: the Mac App Store\'s build keeps WebKit\'s own key, as it was (the last steps)'
+
+
 @step('a locked keychain')
 def _():
+    if STORE:
+        return OWN_KEY
     where = chain(True)
     told = now()
     quit_it()
@@ -167,6 +174,8 @@ def _():
 
 @step('another build reads it too')
 def _():
+    if STORE:
+        return OWN_KEY
     chain(True)
     start(machine.at + '/')
     kept()
@@ -294,20 +303,17 @@ def _():
 # How it was before its pages had a key of their own. Last, as what macOS asks may stay on the screen.
 @step('a key of another build, as it was')
 def _():
-    if STORE:
-        return 'NOT TESTED: the Mac App Store\'s build never had it'
     chain(False)
     start(machine.at + '/', MACHINE_SANDBOX_KEYCHAIN='1')
     kept()
-    need(made(), 'a key in the keychain')
+    there = made()
+    need(there or STORE, 'a key in the keychain')  # the App Sandbox's may be in another one: told
     quit_it()
-    return as_it_was('keychain-of-another', bundle=another())
+    return f'a key in the made-up keychain: {there}; ' + as_it_was('keychain-of-another', bundle=another())
 
 
 @step('a locked keychain, as it was')
 def _():
-    if STORE:
-        return 'NOT TESTED: the Mac App Store\'s build never had it'
     run('security', 'delete-generic-password', '-a', ITEM, CHAIN)
     chain(True)
     return as_it_was('keychain-locked')

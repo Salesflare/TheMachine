@@ -1314,7 +1314,7 @@ fn main() {
             tray(app.handle())?;
             notify::start(app.handle());
             if opens {
-                dash::show(app.handle(), ""); // also to sign in
+                dash::show_at_start(app.handle()); // also to sign in
             } else if app.state::<Shared>().machine().is_none() {
                 open(app.handle()); // it says what it is, and signs in
             }

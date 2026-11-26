@@ -173,6 +173,7 @@ jobs:
           tools/node_modules/.bin/tauri signer sign -f "$RUNNER_TEMP/made-up.key" -p '' newer/newer.app.tar.gz > /dev/null
           for chip in aarch64 x86_64; do cargo +stable build --release --locked --target $chip-apple-darwin; done
           mac/bundle.sh out target/{aarch64,x86_64}-apple-darwin/release/the-machine-desktop
+          grep -aqF -f mac/store-denied-selectors.txt "out/The Machine.app/Contents/MacOS/the-machine-desktop" # mac-store's check sees them
           cp README.md ../LICENSE out/
           (cd out && ditto -c -k --keepParent "The Machine.app" the-machine-desktop-mac.zip)
           echo "sha=$(shasum -a 256 out/the-machine-desktop-mac.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
@@ -369,6 +370,16 @@ jobs:
           mac/bundle.sh sandbox-build target/release/the-machine-desktop
           for chip in aarch64 x86_64; do cargo +stable build --release --locked "${store[@]}" --target $chip-apple-darwin; done
           mac/bundle.sh out target/{aarch64,x86_64}-apple-darwin/release/the-machine-desktop
+          # No private methods (App Review): none of these selectors in its program, for either chip. The direct build has
+          # them (the mac job checks that), so this sees them where they are.
+          for program in "out/The Machine.app/Contents/MacOS/the-machine-desktop" sandbox-build/"The Machine.app/Contents/MacOS/the-machine-desktop"; do
+            grep -aqF 'makeKeyAndOrderFront:' "$program"
+            found="$(grep -aoF -f mac/store-denied-selectors.txt "$program" | sort -u | tr '\n' ' ' || true)"
+            if [ -n "$found" ]; then
+              echo "::error::A private method in the Mac App Store's build ($program): $found"
+              exit 1
+            fi
+          done
           codesign -d --entitlements :- "out/The Machine.app"
           plutil -p out/store-entitlements.plist
           (cd out && ditto -c -k --keepParent "The Machine.app" the-machine-desktop-mac-store.zip)
