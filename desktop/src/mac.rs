@@ -102,6 +102,11 @@ pub fn unprepare(window: &WebviewWindow) {
     }
 }
 
+/// It is of that class, or of one made from it.
+fn is_a(object: &AnyObject, class: &AnyClass) -> bool {
+    std::iter::successors(Some(object.class()), |c| c.superclass()).any(|c| c == class)
+}
+
 /// What a window of the app's own becomes: the box and its to-do take the keys, the robot and its bubble don't.
 fn kind(label: &str) -> &'static AnyClass {
     if matches!(label, "box" | "card") { Panel::class() } else { Robot::class() }
@@ -173,7 +178,9 @@ unsafe extern "C-unwind" fn made(this: *mut AnyObject, cmd: Sel, frame: NSRect, 
 pub fn prepare(window: &WebviewWindow) {
     let Some(ns) = native(window) else { return };
     let class = kind(window.label());
-    if class.instance_size() == NSWindow::class().instance_size() {
+    // Already one as it was made (`panel`): its class stays, also the one KVO gave it since for WebKit's observers, else
+    // their removal throws when the window goes.
+    if !is_a(&ns, class) && class.instance_size() == NSWindow::class().instance_size() {
         #[cfg(feature = "store")]
         if let Some(was) = Some((&*ns as &AnyObject).class()).filter(|c| *c != Panel::class() && *c != Robot::class()) {
             let _ = WAS.set(was);
