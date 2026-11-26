@@ -34,6 +34,11 @@ try{
   'outbound module':{'send-1.mjs':'import { n as other } from "./outbound-1.mjs";\nfunction sendMessageTelegram() {}\nexport { sendMessageTelegram as n };\n',
    'outbound-1.mjs':'import { t as getOrCreateAccountThrottler } from "./gate-1.mjs";\nfunction other() {}\nfunction createTelegramClientFetch() { return 1; }\nfunction asTelegramClientFetch() { return 2; }\nexport { other as n, createTelegramClientFetch as a, asTelegramClientFetch as b };\n',
    'gate-1.mjs':'import "./outbound-1.mjs";\nfunction getOrCreateAccountThrottler() { return 3; }\nexport { getOrCreateAccountThrottler as t };\n'},
+  // 2026.11.10: the same, minified (no optional spaces, everything on one line)
+  minified:{'send-1.mjs':'import{n as other}from"./outbound-1.mjs";function sendMessageTelegram(){}export{sendMessageTelegram as n};',
+   'outbound-1.mjs':'import{t as getOrCreateAccountThrottler}from"./gate-1.mjs";function other(){}function createTelegramClientFetch(){return 1}function asTelegramClientFetch(){return 2}export{other as n,createTelegramClientFetch as a,asTelegramClientFetch as b};',
+   'gate-1.mjs':'import"./outbound-1.mjs";function getOrCreateAccountThrottler(){return 3}export{getOrCreateAccountThrottler as t};',
+   'extensions/telegram/runtime-api.js':'import{n as sendMessageTelegram}from"../../send-1.mjs";function resolveTelegramTransport(){}function makeProxyFetch(){}export{sendMessageTelegram,resolveTelegramTransport,makeProxyFetch};'},
   // removed: nothing guessed, the plain prompt goes out instead
   removed:{'send-1.mjs':'import { n as other } from "./outbound-1.mjs";\nfunction sendMessageTelegram() {}\nexport { sendMessageTelegram as n };\n',
    'outbound-1.mjs':'function other() {}\nfunction createTelegramClientFetch() { return 1; }\nfunction asTelegramClientFetch() { return 2; }\nexport { other as n, createTelegramClientFetch as a, asTelegramClientFetch as b };\n'},
@@ -44,14 +49,17 @@ try{
  await writeFile(probe,`import {telegramInternals} from ${JSON.stringify(new URL('../openclaw-plugin/change-prompt.ts',import.meta.url).href)};
 try{const r=await telegramInternals();console.log([r.createTelegramClientFetch(),r.asTelegramClientFetch(),r.getOrCreateAccountThrottler()].join())}catch(e){console.log(e.message)}`);
  for(const [name,files] of Object.entries(layouts)) {
-  const pkg=join(dir,name.replace(' ','-')),put=async(path,text)=>{const to=join(pkg,path);await mkdir(dirname(to),{recursive:true});await writeFile(to,text)};
+  const pkg=join(dir,name.replace(' ','-'),'node_modules/openclaw'),put=async(path,text)=>{const to=join(pkg,path);await mkdir(dirname(to),{recursive:true});await writeFile(to,text)};
   await put('package.json','{"name":"openclaw","type":"module"}');
-  await put('node_modules/grammy/out/mod.js','export class Bot {}\n');
+  // npm puts it in the package, or next to it
+  const grammy=name==='minified'?'../grammy':'node_modules/grammy';
+  await put(grammy+'/package.json','{"name":"grammy","type":"module","exports":"./out/mod.js"}');
+  await put(grammy+'/out/mod.js','export class Bot {}\n');
   await put('dist/extensions/telegram/api.js','export function resolveTelegramAccount() {}\n');
   await put('dist/extensions/telegram/runtime-api.js','import { n as sendMessageTelegram } from "../../send-1.mjs";\nfunction resolveTelegramTransport() {}\nfunction makeProxyFetch() {}\nexport { sendMessageTelegram, resolveTelegramTransport, makeProxyFetch };\n');
   for(const [path,text] of Object.entries(files))await put('dist/'+path,text);
   const found=execFileSync(process.execPath,[probe],{env:{...process.env,OPENCLAW_PACKAGE_DIR:pkg},timeout:30000}).toString().trim();
   assert.equal(found,['removed','outside'].includes(name)?'Telegram client helper unavailable: getOrCreateAccountThrottler':'1,2,3',name);
  }
- console.log('Change prompt: helpers found in both layouts, pre-send classification, accepted receipt before bookkeeping and cleanup fencing passed.');
+ console.log('Change prompt: helpers found in every layout, pre-send classification, accepted receipt before bookkeeping and cleanup fencing passed.');
 }finally{await rm(dir,{recursive:true,force:true})}

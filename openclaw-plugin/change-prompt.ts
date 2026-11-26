@@ -1,3 +1,5 @@
+import {createRequire} from 'node:module';
+import {realpathSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
@@ -14,31 +16,31 @@ export async function telegramInternals() {
   if(manifest.name!=='openclaw') throw Error('OpenClaw not found next to this Node');
   const entry=resolve(DIST,'dist/extensions/telegram/runtime-api.js');
   const source=await readFile(entry,'utf8');
-  const sendPath=source.match(/import \{[^}]*\bas sendMessageTelegram\b[^}]*\} from "([^"\n]+)"/);
+  const sendPath=source.match(/import\s*\{[^}]*\bas sendMessageTelegram\b[^}]*\}\s*from\s*"([^"\n]+)"/);
   if(!sendPath) throw Error('Telegram send module unavailable');
   const sendFile=resolve(dirname(entry),sendPath[1]);
   if(!sendFile.startsWith(resolve(DIST,'dist')+'/')) throw Error('Unexpected Telegram send module');
   const sendSource=await readFile(sendFile,'utf8');
-  const table=sendSource.match(/export \{ ([^}]+) \};\s*$/)?.[1];
   const [account,runtime,send,{Bot}]=await Promise.all([
     import(pathToFileURL(resolve(DIST,'dist/extensions/telegram/api.js')).href),
     import(pathToFileURL(entry).href),import(pathToFileURL(sendFile).href),
-    import(pathToFileURL(resolve(DIST,'node_modules/grammy/out/mod.js')).href)]);
+    import(pathToFileURL(createRequire(resolve(realpathSync(DIST),'package.json')).resolve('grammy')).href)]);
   // Each helper by its own name in the export table of the send module or a module it reaches through its imports,
   // nearest first: builds move them (2026.11.7 keeps the throttler with the flood gate, the fetch helpers in the
-  // outbound module, neither imported by the send module itself). Only modules inside OpenClaw's dist are read.
+  // outbound module, neither imported by the send module itself; 2026.11.10 writes the files without the optional
+  // spaces). Only modules inside OpenClaw's dist are read.
   const wanted=['getOrCreateAccountThrottler','createTelegramClientFetch','asTelegramClientFetch'],helpers:any={};
   const root=resolve(DIST,'dist')+'/',seen=new Set<string>([sendFile]),queue=[sendFile];
   while(queue.length&&seen.size<=600&&wanted.some(n=>!helpers[n])) {
     const file=queue.shift()!,source=file===sendFile?sendSource:await readFile(file,'utf8');
-    const exports=(file===sendFile?table:source.match(/export \{ ([^}]+) \};\s*$/)?.[1])?.split(',').map(x=>x.trim().split(/\s+as\s+/));
+    const exports=source.match(/export\s*\{([^}]+)\};?\s*$/)?.[1].split(',').map(x=>x.trim().split(/\s+as\s+/));
     for(const name of wanted) {
       const found=helpers[name]?null:exports?.find(x=>x[0]===name);
       if(!found) continue;
       const fn=(file===sendFile?send:await import(pathToFileURL(file).href))[found[1]??found[0]];
       if(typeof fn==='function') helpers[name]=fn;
     }
-    for(const m of source.matchAll(/from "(\.[^"\n]+)"/g)) {
+    for(const m of source.matchAll(/from\s*"(\.[^"\n]+)"/g)) {
       const next=resolve(dirname(file),m[1]);
       if(next.startsWith(root)&&!seen.has(next)) { seen.add(next); queue.push(next); }
     }

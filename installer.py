@@ -1589,12 +1589,16 @@ def staged_swap(facts, stamp, restart, fingerprint):
 # where the owner set nothing, and each only once, so a value they choose later (or remove) stays theirs.
 QUIET_OPENCLAW = {
     'agents.defaults.heartbeat.every': '0m',
-    'skills.workshop.autonomous.mode': 'off',
+    'skills.workshop.autonomous.mode': 'off',  # WORKSHOP
     'agents.defaults.utilityModel': '',
 }
 # From 2026.11.5 OpenClaw refuses the heartbeat setting: its setup makes an ordinary job instead, every half hour, turned
 # off here under the same rules. An older OpenClaw's heartbeat at 0m becomes a job that is off when it updates.
 HEARTBEAT, HEARTBEAT_IS_A_JOB, HEARTBEAT_JOB = 'agents.defaults.heartbeat.every', (2026, 11, 5), 'Proactive check ('
+# From 2026.11.10 Skill Workshop is a bundled plugin with its settings there, and the old place is refused. OpenClaw's
+# own update moves what was set in the old one.
+WORKSHOP, WORKSHOP_IS_A_PLUGIN = 'skills.workshop.autonomous.mode', (2026, 11, 10)
+WORKSHOP_PLUGIN = 'plugins.entries.skill-workshop.config.autonomous.mode'
 # Each Gateway session keeps its MCP tool connections until it is stopped or reset, unless an idle time is set, and the
 # Gateway holds at most 256: past that every new turn fails (2026-10-30, after three days of to-do chats and reviews on
 # one Gateway). Idle sessions let theirs go after 30 minutes; they reconnect on their next turn. Same rules as above.
@@ -1666,24 +1670,25 @@ def quiet_openclaw(facts, stamp):
         done = set()
     changed = []
     telegram = TELEGRAM_NO_PREVIEWS if has_telegram(settings) else {}  # set up later: the next install or update sets it
+    version = version_tuple(facts.get('openclaw_version')) or ()
     for key, value in {**QUIET_OPENCLAW, **OPENCLAW_UPKEEP, **telegram}.items():
-        node = settings
-        for part in key.split('.'):
+        node, path = settings, WORKSHOP_PLUGIN if key == WORKSHOP and version >= WORKSHOP_IS_A_PLUGIN else key
+        for part in path.split('.'):
             node = node.get(part, None) if isinstance(node, dict) else None
         if key in done or node is not None:
             done.add(key)
             continue
-        if key == HEARTBEAT and (version_tuple(facts.get('openclaw_version')) or ()) >= HEARTBEAT_IS_A_JOB:
+        if key == HEARTBEAT and version >= HEARTBEAT_IS_A_JOB:
             if heartbeat_job_off(openclaw):  # else the next install or update tries again
                 changed.append(key)
                 done.add(key)
             continue
-        result = run([openclaw, 'config', 'set', key, json.dumps(value), '--strict-json'], timeout=120)
+        result = run([openclaw, 'config', 'set', path, json.dumps(value), '--strict-json'], timeout=120)
         if result.returncode == 0:
             changed.append(key)
             done.add(key)
         else:
-            say(f'  could not set {key} in OpenClaw: ' + (result.stderr or result.stdout).strip()[:200])
+            say(f'  could not set {path} in OpenClaw: ' + (result.stderr or result.stdout).strip()[:200])
     try:
         stamp.parent.mkdir(parents=True, exist_ok=True)
         stamp.write_text(json.dumps(sorted(done)) + '\n')
