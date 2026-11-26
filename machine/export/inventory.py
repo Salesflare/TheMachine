@@ -171,6 +171,7 @@ HOME_OTHER = {
     'Library/Application Support/gogcli/keyring': 'Google sign-in keys: included only with keys',
     '.config/the-machine-release/signing-key': 'the release signing key of The Machine itself, not yours',
     'Library': "a Mac's own folder: only the desktop robot's smoke run looks in it, on a throwaway computer (desktop/smoke/mac.py)",
+    '.made-up-home': "the desktop robot's Linux smoke run marks its throwaway home folder with it (desktop/smoke/linux.sh); never on a Machine",
     'Downloads': 'where files are saved: only that smoke run looks in it',
     'Applications': 'where Chrome puts the apps it installs: only that smoke run looks in it',
     '.config/linkedin-inbox/query-ids.json': "LinkedIn's page ids, found again by itself",
