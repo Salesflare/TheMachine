@@ -62,7 +62,7 @@ class Started:
 
     def read(self):
         for line in self.process.stderr:
-            if re.match(r'\s*\[\s*\d+\.\d+\]', line):  # WAYLAND_DEBUG: only what makes and shows its surfaces
+            if re.match(r'\s*\[\s*[\d:]+\.\d+\]', line):  # [1234.567], or the clock's [09:57:18.031244] in newer libwayland  # WAYLAND_DEBUG: only what makes and shows its surfaces
                 if not re.search(r'layer|xdg_toplevel', line):
                     continue
                 self.said.append(line.strip())
