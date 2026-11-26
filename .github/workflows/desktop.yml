@@ -440,7 +440,8 @@ jobs:
           set -euo pipefail
           [ "$(grep -m1 '^pkgver=' linux/PKGBUILD | cut -d= -f2)" = "$(jq -r .version tauri.conf.json)" ]
           sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-dev libgtk-layer-shell-dev librsvg2-dev file xdg-utils > /dev/null
+          # The tray icon is Windows' and the Mac's, but tauri bundle sees the feature and wants appindicator
+          sudo apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-dev libgtk-layer-shell-dev libayatana-appindicator3-dev librsvg2-dev file xdg-utils > /dev/null
           rustup toolchain install stable --profile minimal --no-self-update
           (cd tools && npm ci --ignore-scripts --no-audit --no-fund)
           cargo +stable build --release --locked
