@@ -493,6 +493,7 @@ jobs:
           own_id=$(plutil -extract 'com\.apple\.application-identifier' raw store-entitlements.plist)
           profiled=$(plutil -extract 'Entitlements.com\.apple\.application-identifier' raw profile.plist)
           [ "$profiled" = "$own_id" ] || { echo "::error::The profile is for $profiled, the app is $own_id"; exit 1; }
+          chmod -R u+rwX,go+rX,go-w "$app" # umask 077 is for the keys: the app's files are everyone's to read (App Store Connect 90255)
           codesign --force --sign "$identity" --keychain "$keychain" --options runtime --entitlements store-entitlements.plist --timestamp "$app"
           codesign --verify --strict --verbose=2 "$app"
           codesign --display --verbose=4 --entitlements - "$app"
