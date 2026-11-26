@@ -337,7 +337,7 @@ jobs:
 
   # The Mac App Store's build (desktop/README.md): in the App Sandbox, for macOS 14 and later, without the updater. Only by
   # hand (mac-store-only). Used here signed ad hoc with the sandbox's entitlements (desktop/smoke/store.py); mac-store-sign
-  # signs it for the store. Its ID is the repository variable MAS_BUNDLE_ID, else the direct download's.
+  # signs it for the store. Its ID is mac/bundle.sh's, or the repository variable MAS_BUNDLE_ID.
   mac-store:
     if: inputs.mac-store-only
     runs-on: macos-26
@@ -351,7 +351,7 @@ jobs:
         shell: bash
     env:
       STORE: '1'
-      BUNDLE_ID: ${{ vars.MAS_BUNDLE_ID || 'computer.themachine.desktop' }}
+      BUNDLE_ID: ${{ vars.MAS_BUNDLE_ID }}
       BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

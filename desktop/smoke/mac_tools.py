@@ -16,6 +16,8 @@ import uuid
 import answers
 
 PORT, DEBUG, ID, NAME = 8941, 9227, 'computer.themachine.desktop', 'the-machine-desktop'
+# Where it keeps its own files (tauri.conf.json's identifier): the store build's too, whose ID (store.py) is another
+FOLDER_ID = ID
 cg = ctypes.CDLL('/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices')
 cf = ctypes.CDLL('/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation')
 
@@ -341,7 +343,7 @@ def step(name):
             results.append((name, False, f'{type(e).__name__}: {e}'))
             traceback.print_exc()
         app = App.last
-        robot = app and app.pids() and answers.after(LIBRARY / 'Application Support' / ID / 'hangs.log', out, len(results), app.center, pointer, move, lambda: page('robot', '1'))
+        robot = app and app.pids() and answers.after(LIBRARY / 'Application Support' / FOLDER_ID / 'hangs.log', out, len(results), app.center, pointer, move, lambda: page('robot', '1'))
         if robot and results[-1][1]:
             results[-1] = (name, False, f'{robot}; {results[-1][2]}')
         try:
@@ -362,12 +364,13 @@ LIBRARY = pathlib.Path.home() / 'Library'
 
 def fresh():
     for folder in ('Application Support', 'Caches', 'WebKit'):
-        shutil.rmtree(LIBRARY / folder / ID, ignore_errors=True)
+        for name in {ID, FOLDER_ID}:
+            shutil.rmtree(LIBRARY / folder / name, ignore_errors=True)
     run('defaults', 'delete', ID)
 
 
 def saved():
-    return json.loads((LIBRARY / 'Application Support' / ID / 'app.json').read_text())
+    return json.loads((LIBRARY / 'Application Support' / FOLDER_ID / 'app.json').read_text())
 
 
 def other(name='TextEdit'):

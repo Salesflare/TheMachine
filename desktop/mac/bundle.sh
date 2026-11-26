@@ -3,7 +3,8 @@
 # Signed ad hoc, as Apple silicon asks at least, or by the identity in SIGN. With the hardened runtime either way, and one
 # entitlement: the microphone, which macOS still asks the person about.
 # STORE=1: the Mac App Store's build (README.md), in the App Sandbox (store-entitlements.plist), for macOS 14 and later,
-# with the ID in BUNDLE_ID (else Info.plist's), the build number in BUILD_NUMBER and the provisioning profile in PROFILE.
+# with the ID in BUNDLE_ID (else computer.themachine.app, one listing with the phone app; the direct download's is
+# computer.themachine.desktop), the build number in BUILD_NUMBER and the provisioning profile in PROFILE.
 # Signed ad hoc, it has neither its app's nor its team's entitlement, which only a profile allows; all of them are left
 # beside the app, for the store's signature.
 set -euo pipefail
@@ -18,7 +19,7 @@ entitlements="$here/entitlements.plist"
 if [ "${STORE:-}" = 1 ]; then
   info="$app/Contents/Info.plist" entitlements=$(mktemp -d)/entitlements.plist
   cp "$here/store-entitlements.plist" "$entitlements"
-  id=${BUNDLE_ID:-$(plutil -extract CFBundleIdentifier raw "$info")}
+  id=${BUNDLE_ID:-computer.themachine.app}
   plutil -replace CFBundleIdentifier -string "$id" "$info"
   plutil -replace LSMinimumSystemVersion -string 14.0 "$info"
   plutil -replace CFBundleVersion -string "${BUILD_NUMBER:-1}" "$info" # the store takes each build number once

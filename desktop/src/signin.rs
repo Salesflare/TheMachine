@@ -15,6 +15,9 @@ use std::time::{Duration, Instant};
 use url::Url;
 
 pub const SCHEME: &str = "computer.themachine.app";
+/// Whose sign-in it is: the Mac App Store's build is the store's app, which the account shows nothing to buy (as the phone
+/// app); the direct download's is the person's own browser's.
+const ON: &str = if cfg!(feature = "store") { "store" } else { "desktop" };
 const LASTS: Duration = Duration::from_secs(15 * 60);
 
 pub struct Pending {
@@ -32,7 +35,7 @@ impl Pending {
 
     pub fn address(&self) -> String {
         let port = self.port.map(|p| format!("&p={p}")).unwrap_or_default();
-        format!("{}/open?to=app&on=desktop&c={}{port}", account(), challenge(&self.verifier))
+        format!("{}/open?to=app&on={ON}&c={}{port}", account(), challenge(&self.verifier))
     }
 }
 
@@ -208,7 +211,7 @@ mod tests {
         let pending = start(|_| true).unwrap();
         let address = pending.address();
         let address = address.split("&p=").next().unwrap();
-        assert!(address.contains("/open?to=app&on=desktop&c=") && address.ends_with(&challenge(&pending.verifier)) && !address.contains(&pending.verifier));
+        assert!(address.contains(&format!("/open?to=app&on={ON}&c=")) && address.ends_with(&challenge(&pending.verifier)) && !address.contains(&pending.verifier));
         assert_eq!(pending.verifier.len(), 43);
     }
 

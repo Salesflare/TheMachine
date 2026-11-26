@@ -14,10 +14,10 @@ import time
 
 import answers
 import mac_tools
-from mac_tools import ID, LIBRARY, PORT, STORE, App, click, finish, fresh, in_front, move, need, other, out, page, png, run, sandbox, saved, step, until
+from mac_tools import FOLDER_ID, ID, LIBRARY, PORT, STORE, App, click, finish, fresh, in_front, move, need, other, out, page, png, run, sandbox, saved, step, until
 from standin import Machine
 
-FOLDER = LIBRARY / 'Application Support' / ID
+FOLDER = LIBRARY / 'Application Support' / FOLDER_ID
 CHAIN, WORD = str(out.parent / 'made-up.keychain-db'), 'made-up'
 ITEM = f'com.apple.WebKit.WebCrypto.master+{ID}'
 SEARCHED = [x.strip().strip('"') for x in run('security', 'list-keychains', '-d', 'user').stdout.splitlines()]

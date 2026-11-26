@@ -4,7 +4,7 @@
 <dict>
   <!-- The Mac App Store's build (README.md). Its app and team: bundle.sh writes the app's own ID here, and leaves both out
        of a build signed ad hoc, which has no provisioning profile for them -->
-  <key>com.apple.application-identifier</key><string>BYM5H66GK9.computer.themachine.desktop</string>
+  <key>com.apple.application-identifier</key><string>BYM5H66GK9.computer.themachine.app</string>
   <key>com.apple.developer.team-identifier</key><string>BYM5H66GK9</string>
   <key>com.apple.security.app-sandbox</key><true/>
   <!-- Its Machine, the account and the window's pages -->

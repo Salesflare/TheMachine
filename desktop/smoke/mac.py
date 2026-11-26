@@ -19,7 +19,7 @@ import sys
 import time
 
 from mac_tools import (
-    A, BACK, CERTIFICATE, CMD, CTRL, DOWN, ENTER, ESCAPE, F, ID, LIBRARY, MAIL, NAME, PORT, Q, STORE, V, VERSION, W,
+    A, BACK, CERTIFICATE, CMD, CTRL, DOWN, ENTER, ESCAPE, F, FOLDER_ID, ID, LIBRARY, MAIL, NAME, PORT, Q, STORE, V, VERSION, W,
     all_windows, App, asks, click, downloaded, drag, finish, fresh, in_corner, in_front, key, move, need, need_window, no_browser,
     other, out, page, people, png, press, Rect, run, sandbox, saved, says, screens, shut, step, tray_menu, until,
     work_area, write,
@@ -980,7 +980,7 @@ def _():
     need(run('open', machine.links[-1]).returncode == 0, 'macOS knows whose link it is')  # as the browser does
     need(until(lambda: says('#compose'), 25), f'signed in {app.pid} {app.pids()} {in_front()} {says("#panel")}')
     need(machine.cookies and saved()['cookie'] in machine.cookies, 'with its session')
-    need(oct((LIBRARY / 'Application Support' / ID / 'app.json').stat().st_mode)[-3:] == '600', 'in a file of its own')
+    need(oct((LIBRARY / 'Application Support' / FOLDER_ID / 'app.json').stat().st_mode)[-3:] == '600', 'in a file of its own')
     need(len(app.pids()) == 1, 'one program')
     need(until(lambda: goes_to(link) == phone, 5), f'and then go where they went: {goes_to(link)}')
     run(lsregister, '-u', str(phone))
@@ -1381,7 +1381,7 @@ def _():
     need(sent <= {'card_new', 'search_ask', 'decide', 'chat_upload', 'chat_file_remove'}, str(sent))
     crashes = [p.name for p in (LIBRARY / 'Logs/DiagnosticReports').glob(NAME + '*')]
     need(not crashes, f'no crash reports: {crashes}')
-    return [str(p) for p in LIBRARY.glob(f'*/{ID}*')]
+    return sorted({str(p) for name in {ID, FOLDER_ID} for p in LIBRARY.glob(f'*/{name}*')})
 
 
 finish()

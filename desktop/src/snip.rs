@@ -234,7 +234,7 @@ mod system {
 mod system {
     use block2::RcBlock;
     use objc2::encode::{Encoding, RefEncode};
-    use objc2::rc::Retained;
+    use objc2::rc::{Allocated, Retained};
     use objc2::runtime::{AnyClass, AnyObject, AnyProtocol, ClassBuilder, NSObject, Sel};
     use objc2::{class, msg_send, sel, ClassType};
     use objc2_foundation::{NSArray, NSBundle, NSData, NSDictionary, NSError, NSNumber, NSRect, NSString};
@@ -380,7 +380,8 @@ mod system {
         }
         // SAFETY: a CGImage that lives while this runs; a bitmap of it, as a PNG.
         unsafe {
-            let bitmap: Retained<AnyObject> = msg_send![msg_send![class!(NSBitmapImageRep), alloc], initWithCGImage: image];
+            let made: Allocated<AnyObject> = msg_send![class!(NSBitmapImageRep), alloc];
+            let bitmap: Retained<AnyObject> = msg_send![made, initWithCGImage: image];
             let data: Option<Retained<NSData>> = msg_send![&bitmap, representationUsingType: PNG, properties: &*NSDictionary::<NSString, AnyObject>::new()];
             data.map(|d| d.to_vec())
         }

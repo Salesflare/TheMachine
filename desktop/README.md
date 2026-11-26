@@ -261,7 +261,8 @@ is the same app, except:
 - **No updater** and no plans or links to buy one, as in the phone app (`NO_BUY` in `src/dash.rs`, `.no-buy` in the dashboard).
 - **One of it:** its socket is in its own container (`src/one.rs`), not in /tmp.
 - **Screenshots:** macOS' own picker (ScreenCaptureKit). It asks for no permission and keeps nothing.
-- **Sign-in** comes back to its port only: the sandbox can't claim the link.
+- **Sign-in** comes back to its port only: the sandbox can't claim the link. It says `on=store`, and the account shows it
+  nothing to buy.
 - **Downloads** go to the person's own Downloads folder, not the container's.
 - **A stuck page** gets a new window; nothing else is stopped. `hangs.log` has no stacks.
 - **Installed web apps** open with their own small program, as when a link is dropped on it.
@@ -270,7 +271,8 @@ The `mac-store` job (a run by hand with **mac-store-only**) uses it in the sandb
 `mac-store-sign` then signs it and makes the `.pkg`, in the `mac-store` environment: `MAS_APP_P12` (Apple Distribution) and
 `MAS_INSTALLER_P12` (Mac Installer Distribution) with their `_PASSWORD`s, `MAS_PROVISIONING_PROFILE` (base64), and
 `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` to check it with App Store Connect. **mac-store-upload** sends it there too.
-Without them nothing is signed. The ID is the repository variable `MAS_BUNDLE_ID`, else `computer.themachine.desktop`.
+Without them nothing is signed. Its ID is `computer.themachine.app`, one listing with the phone app (`mac/bundle.sh`, or the
+repository variable `MAS_BUNDLE_ID`); the direct download keeps `computer.themachine.desktop`.
 
 ## Remove it
 
