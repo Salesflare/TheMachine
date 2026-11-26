@@ -338,6 +338,8 @@ mod tests {
             argv: vec![program.into(), "--app-id=x".into()],
             #[cfg(target_os = "linux")]
             file: Default::default(),
+            #[cfg(target_os = "macos")]
+            app: String::new(),
         };
         let here = std::env::current_exe().unwrap();
         let there = entry(here.to_str().unwrap());
