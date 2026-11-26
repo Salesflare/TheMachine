@@ -60,7 +60,8 @@ Mac (macOS 13 or newer, Apple silicon or Intel): `the-machine-desktop-mac.zip`, 
 Linux (64-bit, x86_64). None of these update themselves: what installed it updates it, or take the newer file.
 
 - **Any distribution**: `the-machine-desktop-x86_64.AppImage` brings what it needs, gtk-layer-shell too. `chmod +x` it and
-  start it. If it says FUSE is missing, install `fuse2` (Arch) or `libfuse2t64` (Ubuntu 24.04; `libfuse2` before).
+  start it. It needs FUSE's `fusermount3` (or the older `fusermount`), which most desktops have; no libfuse. If it says
+  FUSE is missing, install `fuse3`.
 - **Ubuntu and Debian** (Ubuntu 22.04, Debian 12 or newer): `sudo apt install ./the-machine-desktop-amd64.deb`, which also
   installs WebKitGTK 4.1 and gtk-layer-shell. It is in the applications menu as The Machine; `the-machine-desktop` starts it too.
 - **Arch and Omarchy**: download `PKGBUILD` into an empty folder and run `makepkg -si` there. It fetches that release's .deb,
@@ -238,6 +239,14 @@ Artifact Signing, and the update key. Only when all of that passed, `publish` pu
 marked latest: `the-machine-desktop-setup.exe`, `the-machine-desktop-mac.zip`, `the-machine-desktop-mac.app.tar.gz` (for
 updates), `latest.json`, the AppImage, the .deb, `PKGBUILD` with that release's tag and checksum, the Arch package and
 `SHA256SUMS`. A run that fails publishes nothing; the app stays at the release before.
+
+Each of those files has GitHub's build provenance: a signed statement that this workflow made it, from that tag. To check a
+download: `gh attestation verify <file> -R Salesflare/TheMachine`.
+
+The AppImage's runtime, the small program in front of its files that mounts them, is the static one of
+[type2-runtime](https://github.com/AppImage/type2-runtime), a release named with its checksum in `desktop.yml`:
+`linux/runtime.py` puts it in place of the one Tauri's tools fetched, and keeps the rest as it was. It mounts with fuse3,
+without libfuse2. CI starts it where only fuse3 is: Ubuntu 24.04, and Arch.
 
 Windows: `windows/installer.json` and `windows/hooks.nsh` make the installer, `windows/sign.ps1` signs the program, the
 installer and the uninstaller with Azure Artifact Signing, and `windows/verify.ps1` checks the installer and the program in it are
