@@ -485,7 +485,7 @@ class DashboardWiring(unittest.TestCase):
     def test_a_waiting_card_shows_it_carried_on_and_closing_the_browser_looks_at_once(self):
         html = dashboard_parts.assemble(Path(__file__).parent.parent)
         self.assertIn('setInterval(taskSigninPoll,5000)', html)
-        self.assertIn("action:'browser_login_check'", html)
+        self.assertIn("sharePost('browser_login_check'", html)
         self.assertIn('signinClosed()', html)
 
 
