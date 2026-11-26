@@ -51,10 +51,28 @@ def apply(doc, requests):
         elif 'insertText' in r:
             i = r['insertText']['location']['index']
             text = text[:i] + r['insertText']['text'] + text[i:]
-        else:
+        elif 'namedStyleType' in r.get('updateParagraphStyle', {}).get('paragraphStyle', {}):
             span = r['updateParagraphStyle']['range']
             styles.append((text[span['startIndex']:span['endIndex']].rstrip('\n'), r['updateParagraphStyle']['paragraphStyle']['namedStyleType']))
     return text[1:].split('\n')[:-1], styles
+
+
+def looks(doc, requests):
+    """What the formatting requests style, read on the text as it is when each one runs: [(kind, text, what)]."""
+    text = '\x00' + ''.join(p['paragraph']['elements'][0]['textRun']['content'] for p in doc['body']['content'][1:])
+    out = []
+    for r in requests:
+        (kind, body), = r.items()
+        if kind == 'insertText':
+            i = body['location']['index']
+            text = text[:i] + body['text'] + text[i:]
+        elif kind == 'deleteContentRange':
+            text = text[:body['range']['startIndex']] + text[body['range']['endIndex']:]
+        else:
+            piece = text[body['range']['startIndex']:body['range']['endIndex']]
+            what = next((body[k] for k in ('bulletPreset', 'textStyle', 'paragraphStyle') if k in body), None)
+            out.append((kind, piece, what))
+    return out
 
 
 def word(*paragraphs):
@@ -130,6 +148,18 @@ class Validate(unittest.TestCase):
                 w.validate(value, context)
             self.assertIn(said, str(caught.exception))
 
+    def test_formatting_is_for_google_docs_and_shows_what_it_does(self):
+        edit = {'kind': 'doc_write', 'op': 'edit', 'file_id': 'doc1', 'changes': [{'format': 'week 2', 'style': 'bold'}]}
+        action = w.validate(edit, self.context())
+        self.assertEqual(action['changes'], [{'format': 'week 2', 'style': 'bold', 'before': 'Launch in week 2.', 'how': 'Bold'}])
+        self.assertEqual(n.preview(action), 'Edit “Q4 plan” in Google Docs: 1 change\n\nBold: “week 2”\nIn: Launch in week 2.')
+        self.assertEqual(n.check(action), [])
+        word = self.context()
+        word['accounts']['acme-docs']['provider'] = 'microsoft'
+        with self.assertRaises(ValueError) as caught:
+            w.validate(edit, word)
+        self.assertIn('Formatting changes are for Google Docs; Word takes text changes only', str(caught.exception))
+
     def test_a_placeholder_in_new_text_is_refused_like_in_any_draft(self):
         value = {'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-docs', 'title': 'T', 'body': 'Hi [NAME]'}
         action = n.validate(value, {'accounts': [ACCOUNT]}, ['acme-docs'], doc_write_context=self.context())
@@ -157,6 +187,80 @@ class GoogleRequests(unittest.TestCase):
         paragraphs, styles = apply(doc, w.google_requests(doc, changes))
         self.assertEqual(paragraphs, ['Q4 plan', 'Goals', 'Ship it', 'Launch in week 3, then a retro.', 'Budget: ', 'Owner: ops'])
         self.assertEqual(styles, [('Owner: ops', 'NORMAL_TEXT'), ('Goals', 'HEADING_2'), ('Ship it', 'NORMAL_TEXT')])
+
+    def test_formatting_existing_text_goes_first_and_hits_the_text_the_owner_saw(self):
+        # 2026-11-26: a to-do's doc kept plain paragraphs and bullet characters, and its chat said formatting was blocked
+        doc = gdoc(['Plan', 'Pricing: $10 a seat', 'Alpha', 'Beta', 'Gamma', 'End'])
+        changes = w.resolve(w.google_snapshot(doc, 'doc1'), w._changes([
+            {'format': 'Plan', 'style': 'h1'}, {'format': '$10', 'style': 'bold'}, {'find': 'a seat', 'replace': 'per seat'},
+            {'format': 'Alpha', 'style': 'bullet', 'through': 'Gamma'}, {'format': 'End', 'style': 'page_break'},
+            {'format': 'Pricing', 'link': 'https://example.com/pricing'}, {'format': 'Beta', 'style': 'plain'}]))
+        requests = w.google_requests(doc, changes)
+        self.assertEqual(looks(doc, requests)[:6], [
+            ('updateParagraphStyle', 'P', {'namedStyleType': 'HEADING_1'}),
+            ('updateTextStyle', '$10', {'bold': True}),
+            ('createParagraphBullets', 'Alpha\nBeta\nG', 'BULLET_DISC_CIRCLE_SQUARE'),
+            ('updateParagraphStyle', 'E', {'pageBreakBefore': True}),
+            ('updateTextStyle', 'Pricing', {'link': {'url': 'https://example.com/pricing'}}),
+            ('updateTextStyle', 'Beta', {})])
+        self.assertEqual(requests[5]['updateTextStyle']['fields'], 'bold,italic,underline')
+        self.assertEqual(apply(doc, requests)[0], ['Plan', 'Pricing: $10 per seat', 'Alpha', 'Beta', 'Gamma', 'End'])
+        self.assertEqual(w.change_lines(changes[3]), ['Bulleted list: “Alpha”', 'In: Alpha … Gamma'])
+        self.assertEqual(w.change_lines(changes[5]), ['Link to https://example.com/pricing: “Pricing”', 'In: Pricing: $10 a seat'])
+
+    def test_new_text_gets_its_lists_and_marks_and_nothing_of_the_text_before(self):
+        doc = gdoc(['Intro', 'Item one', 'Outro'])
+        doc['body']['content'][2]['paragraph']['bullet'] = {'listId': 'l1'}  # a list item: new paragraphs after it take its bullet
+        snap = w.google_snapshot(doc, 'doc1')
+        self.assertEqual([(p['style'], p['list']) for p in snap['paragraphs']], [('p', False), ('p', True), ('p', False)])
+        changes = w.resolve(snap, w._changes([{'after': 'Item one', 'insert': '## Next\n- one **big** step\n- see [the site](https://example.com/a)\n1. first\nPlain *it* is'}]))
+        requests = w.google_requests(doc, changes)
+        self.assertEqual(apply(doc, requests)[0], ['Intro', 'Item one', 'Next', 'one big step', 'see the site', 'first', 'Plain it is', 'Outro'])
+        found = looks(doc, requests)
+        self.assertIn(('updateTextStyle', 'Next\none big step\nsee the site\nfirst\nPlain it is', {}), found)  # the rest is plain
+        self.assertIn(('deleteParagraphBullets', 'Next', None), found)
+        self.assertIn(('createParagraphBullets', 'one big step\nsee the site', 'BULLET_DISC_CIRCLE_SQUARE'), found)
+        self.assertIn(('createParagraphBullets', 'first', 'NUMBERED_DECIMAL_ALPHA_ROMAN'), found)
+        self.assertIn(('deleteParagraphBullets', 'Plain it is', None), found)
+        self.assertEqual([x for x in found if x[0] == 'updateTextStyle' and x[2]],
+                         [('updateTextStyle', 'big', {'bold': True}), ('updateTextStyle', 'the site', {'link': {'url': 'https://example.com/a'}}),
+                          ('updateTextStyle', 'it', {'italic': True})])
+        after = gdoc(apply(doc, requests)[0], revision='r2')
+        self.assertTrue(w.landed(w.google_snapshot(after, 'doc1'), {'provider': 'google', 'changes': changes}))
+        # not after a list item: no bullets to take back
+        plain = gdoc(['Intro'])
+        found = looks(plain, w.google_requests(plain, w.resolve(w.google_snapshot(plain, 'doc1'), [{'append': 'Text'}])))
+        self.assertEqual([x[0] for x in found], ['updateParagraphStyle', 'updateTextStyle'])
+
+    def test_marks_are_read_only_where_they_are_meant(self):
+        self.assertEqual(w.google_lines('* a *b* c\n2020. was a year\n5 * 3 * 2\n•   dot\n**  not bold**\n[x](javascript:alert(1))'), [
+            ('p', 'bullet', 'a b c', [(2, 3, 'italic', None)]), ('p', None, '2020. was a year', []), ('p', None, '5 * 3 * 2', []),
+            ('p', 'bullet', 'dot', []), ('p', None, '**  not bold**', []), ('p', None, '[x](javascript:alert(1))', [])])
+        self.assertEqual(w.google_html('T', '# H\n- a **b**\n- c\n1. d\nSee [x](https://e.example/?a=1&b=2) <now>'),
+                         '<!DOCTYPE html><html><head><meta charset="utf-8"><title>T</title></head><body><h1>H</h1><ul><li>a <b>b</b>'
+                         '</li><li>c</li></ul><ol><li>d</li></ol><p>See <a href="https://e.example/?a=1&amp;b=2">x</a> &lt;now&gt;</p></body></html>')
+        fill = w.google_fill('# H\n- a **b**')
+        self.assertEqual(fill[0], {'insertText': {'location': {'index': 1}, 'text': 'H\na b'}})
+        self.assertEqual(looks(gdoc(['']), fill)[-2:], [('createParagraphBullets', 'a b', 'BULLET_DISC_CIRCLE_SQUARE'),
+                                                      ('updateTextStyle', 'b', {'bold': True})])
+
+    def test_formatting_that_cant_be_done_well_is_refused_with_what_to_do(self):
+        snap = w.google_snapshot(gdoc(['Plan', 'Launch in week 2.', '\tTabbed', 'End']), 'doc1')
+        for changes, said in (([{'format': 'Plan', 'style': 'huge'}], 'style is one of'),
+                              ([{'format': 'Plan', 'style': 'link'}], 'style is one of'),
+                              ([{'format': 'Plan', 'style': ['bold']}], 'style is one of'),
+                              ([{'format': 'Plan', 'link': 'javascript:alert(1)'}], 'https:// link'),
+                              ([{'format': 'Plan', 'style': 'bold', 'link': 'https://x.example'}], 'A change is'),
+                              ([{'format': 'Plan', 'style': 'bold', 'through': 'End'}], 'through goes with'),
+                              ([{'format': 'End', 'style': 'h2', 'through': 'Plan'}], 'comes before'),
+                              ([{'format': 'Plan', 'style': 'bullet', 'through': 'Tabbed'}], 'starts with a tab'),
+                              ([{'format': 'week', 'style': 'bold'}, {'find': 'week 2', 'replace': 'week 3'}], 'formatted and changed'),
+                              ([{'format': 'Nope', 'style': 'bold'}], 'is not in the doc')):
+            with self.assertRaises(ValueError, msg=changes) as caught:
+                w.resolve(snap, w._changes(changes))
+            self.assertIn(said, str(caught.exception))
+        # a heading on a paragraph whose text another change replaces is fine: the paragraph stays
+        self.assertEqual(len(w.resolve(snap, w._changes([{'format': 'week 2', 'style': 'h2'}, {'find': 'week 2', 'replace': 'week 3'}]))), 2)
 
     def test_utf16_indexes(self):
         doc = gdoc(['Ship 🚀 now', 'Next'])

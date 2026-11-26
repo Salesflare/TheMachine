@@ -129,7 +129,9 @@ class DocsApp:
             if isinstance(found, str):
                 raise ValueError(found)
             return {'file_id': file_id, 'title': found['title'], 'version': found['version'], 'url': found.get('url'),
-                    'paragraphs': [{'n': i + 1, 'text': p['text'], 'editable': p['editable']} for i, p in enumerate(found['paragraphs'])]}
+                    'paragraphs': [{'n': i + 1, 'text': p['text'], 'editable': p['editable'],
+                                    **{k: p[k] for k in ('style', 'list') if p.get(k)}}  # a Google Doc's look, to check formatting
+                                   for i, p in enumerate(found['paragraphs'])]}
         if file_id and value.get('op') == 'edit':
             value = {**value, 'file_id': value.get('file_id') or file_id}
         value = {**value, 'kind': doc_writes.KIND}

@@ -1022,7 +1022,7 @@ def check(value, result='', own_addresses=()):
         subject = action.get('subject') or ''
         text = (action.get('body') or action.get('preview') or '') + ('\n' + action['message'] if action.get('message') else '')
         if action['kind'] == 'doc_write' and action['op'] == 'edit':
-            text += ''.join('\n' + str(c.get('replace', c.get('insert', c.get('append')))) for c in action['changes'])
+            text += ''.join('\n' + str(c.get('replace', c.get('insert', c.get('append', c.get('link', ''))))) for c in action['changes'])
         left = draft_marks.placeholder(text, '' if action.get('in_reply_to') else subject)  # a reply's subject is the thread's
         if left:
             problems.append(f"“{action.get('label') or action['kind']}” still has a placeholder ({left}): fill it in from the evidence")

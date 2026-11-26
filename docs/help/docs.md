@@ -41,7 +41,7 @@ Your Machine can write a new doc, or change a doc a to-do is about:
 - In Talk, it reads the whole change aloud and waits for a clear yes.
 - If Microsoft or Google refuses a new doc, the to-do says why and shows **Review and create** to try again.
 
-It can replace text and add text, paragraphs and headings. Tables, images, tracked changes and fields stay as they are.
+It can replace text and add text, paragraphs and headings. In Google Docs it can also format: bold, italic, underline, links, headings, bulleted and numbered lists, and a page break. **Review changes** shows each one. It can't make tables, and images, tracked changes and fields stay as they are.
 
 A Work to-do's doc goes to that company's account, never to a personal one. On your own computer, a Google account connected for Gmail with Drive access can take new Google Docs too. If no account fits, the to-do says what to connect for Work: Microsoft OneDrive, or Google Docs where your Machine can use it.
 

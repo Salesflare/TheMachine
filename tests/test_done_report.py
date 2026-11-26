@@ -125,7 +125,7 @@ class DoneReport(unittest.TestCase):
     def test_the_dashboard_lists_them_under_just_done(self):
         import dashboard_parts
         page = dashboard_parts.assemble()
-        self.assertIn("action:'card_report_seen'", page)
+        self.assertIn("sharePost('card_report_seen'", page)
         self.assertIn('Just done', page)
         self.assertIn('${justDoneList(justDone(finished))}', page)
 

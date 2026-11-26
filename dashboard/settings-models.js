@@ -30,7 +30,7 @@ const cmTrigger=(kind,which,label,cls,extra='',after='')=>html`<button type="but
 const cmFastOk=ref=>!!cmEntry(ref)?.fast,cmFastShown=(kind,cur)=>kind==='chat'&&!!state.chat_model?.fast&&cmFastOk(cur?.model);
 const cmFastItem=cur=>{const ok=cmFastOk(cur.model),on=!!state.chat_model?.fast&&ok;
  return html`<div class="cm-speed" role="group" aria-label="${t('Speed')}"><button type="button" role="menuitemcheckbox" aria-checked="${on}" data-cm-fast${ok?'':html` aria-disabled="true"`}>${raw(CM_CHECK)}<span>${t('Fast')}</span><small>${t(ok?'Quicker replies, at a higher cost':'Not offered for this model')}</small></button></div>`};
-async function cmFastSave(on){try{state.chat_model=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_fast_set',args:{fast:on}})});cmPaint('chat')}
+async function cmFastSave(on){try{state.chat_model=await sharePost('chat_fast_set',{fast:on});cmPaint('chat')}
  catch(err){errCaught(err);toast(err.message,true);cmPaint('chat')}}
 // The pill: "Model  Thinking", each part a quiet button over the menu; a to-do chat's model says Fast when it runs fast
 function cmPill(kind){const cm=state.chat_model,cur=cmCurrent(kind);if(!cm?.known||!cm.models.length||!cur?.model)return '';const levels=cmEntry(cur.model)?.levels||[];
@@ -45,7 +45,7 @@ function renderChatModel(){const cm=state.chat_model,box=$('#model-chats');if(!b
 // Saves a pick: Settings' default, Help's own (for this Help chat only) or the open to-do chat's own
 async function cmSave(kind,which,value){const cur=cmCurrent(kind)||{};
  const next=which==='model'?{model:value,thinking:cmNearest(cur.thinking,cmEntry(value)?.levels)}:{model:cur.model,thinking:value};
- const post=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+ const post=sharePost;
  try{if(kind==='help'){helpModel=next;cmPaint('help');return}
   if(kind==='default'){state.chat_model=await post('chat_model_default',next);renderChatModel();cmPaint('chat');notice(t('Saved.'));return}
   const s=chatOpen();if(!s)return;const r=await post('chat_model_set',{suggestion_id:s.id,...next});if(chat)chat.model=r.model;cmPaint('chat')}
@@ -169,7 +169,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-skill-upda
  if(b.dataset.settings!==undefined){const s=state.skills?.skills.find(x=>x.id===id);skillUpdateOpen(s?.update,'Your Machine rewrote it with what it learned. Nothing else changes.',review=>skillAct('skill_decide',{id,choice:'approve',reviewed:review}));return}
  const s=state.suggestions.find(x=>x.id===id);
  skillUpdateOpen(s?.skill_proposal?.update,`Merges what ${s?.skill_proposal?.notes.length} notes taught. Nothing else changes.`,
-  async review=>{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:id,choice:'accept',feedback:'',decision_id:crypto.randomUUID(),reviewed:review}})});await refresh()})},true);
+  async review=>{await sharePost('decide',{suggestion_id:id,choice:'accept',feedback:'',decision_id:crypto.randomUUID(),reviewed:review});await refresh()})},true);
 {$('#skill-update-cancel').onclick=()=>$('#skill-update').close();
  $('#skill-update-ok').onclick=async()=>{const u=skillUpdating;if(!u)return;const ok=$('#skill-update-ok');ok.disabled=true;
   try{await u.send(u.review);$('#skill-update').close();skillUpdating=null;toast('Updated '+u.skill+'.')}

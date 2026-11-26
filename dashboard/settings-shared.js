@@ -64,7 +64,7 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-voice-edit
 addEventListener('hashchange',()=>requestAnimationFrame(voiceEditShow));
 // Skills' own panel loads when first needed (settings-skills.js); a to-do card's skill hint and Create skill use these.
 let skillsKey='',skillEditing=null,skillSharing=null;
-const skillAct=async(action,args)=>{const v=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});if(v&&v.skills)state.skills=v;skillsKey='';if(lazyIn('settings'))renderSkills();renderNeedsYou();return v};
+const skillAct=async(action,args)=>{const v=await sharePost(action,args);if(v&&v.skills)state.skills=v;skillsKey='';if(lazyIn('settings'))renderSkills();renderNeedsYou();return v};
 // "There's a skill for this": the agent judged that a skill would clearly help with a card. Quiet, dismissable.
 const hintFor=id=>(state.skills?.hints||[]).find(h=>String(h.suggestion_id)===String(id));
 const skillHintNote=s=>{const h=!closed(s)&&hintFor(s.id);return h?html`<p class="note skill-hint">There’s a skill for this: <button type="button" class="link" data-hint-look="${h.id}">${h.name}</button>${h.kind==='clawhub'?' on ClawHub':''}. <button type="button" class="link" data-hint-dismiss="${h.id}">Not now</button></p>`:''};
@@ -74,7 +74,7 @@ document.addEventListener('click',e=>{if(lazyIn('settings'))return;const b=e.tar
 // Connected AIs' panel loads when first needed (settings-ai.js); its view, its requests and the pairing that
 // Connections and General start too are here. aiView is set only once that panel is in.
 var aiView=null;let aiPairTimer=0,aiPairUntil=0;
-const aiPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+const aiPost=(action,args={})=>sharePost(action,args);
 // Get your address (and Pair this Machine in Connections): the tab opens within the click, then goes to the account's
 // page once it is known; a browser that blocks it goes there in this tab. Then ai_pair_state every 2.5 s, up to 10 minutes.
 async function aiPairGo(done){const tab=window.open('','_blank');

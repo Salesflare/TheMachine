@@ -546,7 +546,7 @@ async function cardProjectPick(id,anchor){const inChat=!!anchor.closest('.chat-m
  anchor.closest('details.more-actions,details.chat-menu')?.removeAttribute('open');(anchor.closest('.card')||anchor.closest('.chat-main')||document.body).appendChild(box);box.querySelector('select').focus();
  box.onclick=async e=>{const b=e.target.closest('[data-pp]');if(!b)return;const k=b.dataset.pp;if(k==='cancel'){box.remove();return}
   const v=k==='none'?'':box.querySelector('select').value;if(k==='save'&&!v){box.remove();return}b.disabled=true;
-  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_project',args:{suggestion_id:id,project:v}})});
+  try{const r=await sharePost('card_project',{suggestion_id:id,project:v});
    const t=(state.suggestions||[]).find(x=>x.id===id);if(t){t.project_node=r.project;t.project=r.project?.name||null}box.remove();toast(r.project?'On '+r.project.name+'.':'Off its project.');if(typeof render==='function')render()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-card-project]');if(!b)return;e.preventDefault();cardProjectPick(b.dataset.cardProject,b)});
 // A to-do's area (todo_areas.py): a tap on its area chip opens a small picker; Move moves it, with Undo on the toast.
@@ -570,12 +570,12 @@ const useAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_err
 const connectAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_connect&&TODO.RUN_CAN_ASK.includes(s.status);
 const useText=u=>u.mail?(u.n===1?t('Use this email for this to-do'):t('Use these emails for this to-do')):(u.n===1?t('Use this message for this to-do'):t('Use these messages for this to-do'));
 async function cardUse(id,b){if(b)b.disabled=true;
- try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_use_sources',args:{suggestion_id:id,decision_id:crypto.randomUUID()}})});
+ try{const r=await sharePost('card_use_sources',{suggestion_id:id,decision_id:crypto.randomUUID()});
   await refresh();if(typeof chatId!=='undefined'&&chatId===id&&typeof chatPoll==='function')chatPoll();toast(r.line)}
  catch(err){errCaught(err);toast(err.message,true)}finally{if(b)b.disabled=false}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-card-use]');if(!b)return;e.preventDefault();b.closest('details.more-actions,details.chat-menu')?.removeAttribute('open');cardUse(b.dataset.cardUse,b)});
 async function cardMove(id,area,b,undo){if(b)b.disabled=true;
- try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_move',args:{suggestion_id:id,decision_id:crypto.randomUUID(),...(undo?{undo}:{area})}})});
+ try{const r=await sharePost('card_move',{suggestion_id:id,decision_id:crypto.randomUUID(),...(undo?{undo}:{area})});
   document.querySelector('.area-picker')?.remove();await refresh();if(typeof chatId!=='undefined'&&chatId===id&&typeof chatPoll==='function')chatPoll();
   if(undo){toast(t('Undone.'));return}
   // one that asked for it carries on by itself: Preparing shows on it
@@ -603,7 +603,7 @@ const firstTips=()=>(state.first_tips||[]).filter(x=>!tipsGone.has(x));
 const TIP_SEND_KINDS=[...SENDS,'email_demo'];
 const sendTipFits=s=>s.status==='prepared'&&!closed(s)&&!s.handled_hint&&!withTeammate(s)&&taskActions(s).some(a=>TIP_SEND_KINDS.includes(a.kind)&&draftText(a)&&!sendBusy(a.state||s.action_status));
 function tipDone(tip){if(!firstTips().includes(tip))return;tipsGone.add(tip);
- request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'tip_done',args:{tip}})})
+ sharePost('tip_done',{tip})
   .then(r=>{if(Array.isArray(r?.first_tips))state.first_tips=r.first_tips}).catch(()=>{})}
 const tipLine=(tip,text)=>html`<p class="first-tip" data-tip="${tip}"><svg class="tip-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M12 3a6 6 0 0 0-3.7 10.7c.7.6 1.2 1.4 1.2 2.3h5c0-.9.5-1.7 1.2-2.3A6 6 0 0 0 12 3z"/></svg><span class="tip-text">${text}</span><button type="button" class="tip-x" data-tip-done="${tip}" aria-label="Hide this tip" title="Hide this tip">×</button></p>`;
 function firstTip(s,section,choices){if(closed(s)||section!=='For you')return '';
@@ -781,7 +781,7 @@ function paintPeek(id){const p=peeks.get(id);for(const slot of document.querySel
 function peekStopPaint(){const d=$('#peek-dialog'),b=$('#peek-stop'),id=d.dataset.task,s=(state.suggestions||[]).find(x=>x.id===id),on=!!(d.open&&id&&peeks.get(id)?.on);
  b.hidden=!on;b.disabled=false;const label=s?.title?t('Stop “{}”',s.title):t('Stop');b.title=label;b.setAttribute('aria-label',label)}
 $('#peek-stop').onclick=async()=>{const d=$('#peek-dialog'),b=$('#peek-stop'),id=d.dataset.task,title=(state.suggestions||[]).find(x=>x.id===id)?.title||'';if(b.hidden||!id)return;b.disabled=true;
- try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_stop',args:{suggestion_id:id,via:'browser'}})});
+ try{const r=await sharePost('chat_stop',{suggestion_id:id,via:'browser'});
   b.hidden=true;const p=peeks.get(id);if(p)p.on=false;paintPeek(id);toast(r?.stopped?t('Stopped “{}”',title):t('“{}” had already finished.',title))}
  catch(err){errCaught(err);toast(err.message,true);b.disabled=false;return}
  // The to-do, as it waits now (Stopped, Try again), is brought into view and takes the focus the closed view gave up
@@ -796,6 +796,6 @@ const REPORT_MS=864e5;
 const justDone=list=>list.filter(s=>s.status==='completed'&&s.done_report&&Date.now()-Date.parse(s.done_report)<REPORT_MS);
 const justDoneList=items=>items.length?html`<div class="section-head just-done-head" id="section-just-done"><h2>Just done</h2><span class="count">${items.length}</span><button type="button" class="ghost just-done-seen" data-report-seen="${items.map(s=>s.id).join(',')}">Got it</button></div>${items.map(s=>suggestionCard(s,'Just done'))}`:'';
 document.addEventListener('click',async e=>{const b=e.target.closest?.('[data-report-seen]');if(!b)return;e.preventDefault();b.disabled=true;const ids=b.dataset.reportSeen.split(',').filter(Boolean);
- try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_report_seen',args:{ids}})});
+ try{await sharePost('card_report_seen',{ids});
   for(const s of state.suggestions||[])if(ids.includes(s.id))s.done_report=null;render()}
  catch(x){errCaught(x);toast(x.message,true);b.disabled=false}});

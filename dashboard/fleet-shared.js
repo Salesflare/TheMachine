@@ -2,7 +2,7 @@
 // sharing pop-ups and the handlers for Fleet markup on to-dos). The Fleet tab's own views (fleet-rules, -sharing, -tabs
 // and -manage) load when first needed (dashboard_parts.LAZY); fleetView() fetches the Fleet and draws the tab once they're in.
 // The Fleet: what teammates' Machines said, the questions waiting for you, your rules per teammate, and the log of both directions.
-const fleetPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+const fleetPost=sharePost;
 // Share: the OK is signed at once; sealing the team's Graph for them runs after (shared_connectors.graph_soon). One line while it does.
 const graphSendingLine=n=>html`<p class="graph-sending" role="status"><i class="spin" aria-hidden="true"></i>Sharing with ${n}…</p>`;
 const graphSent={};  // fleet: how many Share with all shared with, to say so once the line is gone

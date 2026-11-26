@@ -37,7 +37,7 @@ let healthPane=(localStorage.getItem('health-pane')||'').replace(/^phone$/,'othe
 // an account, and its row follows how that goes; pasting a key stays, folded away, where the service has one (Intercom and
 // Trello sign in only).
 let connectList=null,connectListAt=0,connectRun=null,connectTimer=0,connectSignin=null,signinTimer=0,connectForm=null,connectSiteShown=null,connectGbrain=null;
-const connectPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+const connectPost=(action,args={})=>sharePost(action,args);
 const hostedReconnectNode=(c,label,cls)=>make('button',{type:'button',class:cls,'data-hosted-reconnect':c.hosted_signin??'',...c.email?{'data-email':c.email}:{},...c.service==='whatsapp'?{'data-account':c.id??''}:{}},label);
 // A code the connect shows to sign in with: GitHub's device sign-in, or WhatsApp's pairing code for Linked devices.
 // A QR code the Machine sends as rows of 0 and 1 (Telegram's login), drawn here: no image from anywhere else.
