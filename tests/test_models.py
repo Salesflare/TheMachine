@@ -69,6 +69,34 @@ class Models(unittest.TestCase):
             self.openclaw(main)
             self.assertIsNone(models.background_model(self.config), main)
 
+    def test_gpt_62_sol_swap_follows_the_installed_openclaw_version(self):
+        # The package as the installer leaves it: openclaw_package_dir in config.json, OpenClaw's own package.json there
+        package = Path(self.tmp.name) / 'lib/node_modules/openclaw'
+        package.mkdir(parents=True)
+        self.config['openclaw_package_dir'] = str(package)
+        allowed = {'openai/gpt-6-astra': {}, 'openai/gpt-6.2-sol': {}, 'openai/gpt-6.1-sol': {}}
+        older, cached = (('openai', 'gpt-6.1-sol'), ('openai', 'gpt-6.1-sol')), (('openai', 'gpt-6.2-sol'), None)
+        cases = (('2026.11.2', older), ('2026.11.9', older),  # hosted Machines today: as before
+                 ('2026.11.10', cached), ('2026.12.1', cached), ('2027.1.0-beta.1', cached))
+        for version, (from_astra, from_sol) in cases:
+            (package / 'package.json').write_text(json.dumps({'name': 'openclaw', 'version': version}))
+            self.openclaw('openai/gpt-6-astra', allowed)
+            self.assertEqual(models.background_model(self.config), from_astra, version)
+            self.openclaw('openai/gpt-6.2-sol', allowed)
+            self.assertEqual(models.background_model(self.config), from_sol, version)  # None: the main model, 6.2
+        with patch.object(models, 'GPT_62_UNCACHED', False):  # the switch still turns it off everywhere
+            (package / 'package.json').write_text(json.dumps({'name': 'openclaw', 'version': '2026.11.2'}))
+            self.assertIsNone(models.background_model(self.config))
+        # Unknown version: today's swap. No folder, no package.json, another package, an unreadable version
+        for body in (None, '{', json.dumps({'name': 'other', 'version': '2026.11.10'}), json.dumps({'name': 'openclaw', 'version': 'x'})):
+            (package / 'package.json').unlink(missing_ok=True)
+            if body:
+                (package / 'package.json').write_text(body)
+            self.assertIsNone(models.openclaw_version(self.config), body)
+            self.assertEqual(models.background_model(self.config), ('openai', 'gpt-6.1-sol'), body)
+        del self.config['openclaw_package_dir']
+        self.assertEqual(models.background_model(self.config), ('openai', 'gpt-6.1-sol'))
+
     def test_main_model_reads_openclaw_settings(self):
         self.openclaw({'primary': 'openai/gpt-6-astra'})
         with patch.dict(os.environ, {'OPENCLAW_CONFIG_PATH': str(self.path)}):
