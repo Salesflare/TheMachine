@@ -7,7 +7,7 @@ use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject, NSObjectProtocol, ProtocolObject, Sel};
 use objc2::{class, define_class, msg_send, sel, AnyThread, ClassType, MainThreadMarker};
 use objc2_app_kit::{
-    NSApplication, NSApplicationActivationOptions, NSApplicationDidChangeScreenParametersNotification,
+    NSApplication, NSApplicationActivationOptions, NSApplicationActivationPolicy, NSApplicationDidChangeScreenParametersNotification,
     NSEvent, NSPanel, NSResponder, NSRunningApplication, NSScreen, NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow,
     NSWindowAnimationBehavior, NSWindowCollectionBehavior, NSWindowDidBecomeKeyNotification, NSWindowDidChangeOcclusionStateNotification,
     NSWindowDidResignKeyNotification, NSWindowStyleMask, NSWorkspace, NSWorkspaceDidActivateApplicationNotification,
@@ -406,7 +406,9 @@ thread_local! {
 pub fn follow_front(app: &AppHandle) {
     let seen = || {
         let front = NSWorkspace::sharedWorkspace().frontmostApplication();
-        if let Some(front) = front.filter(|p| *p != NSRunningApplication::currentApplication()) {
+        // A program the person works in: not one of macOS' own agents, as Control Center is with the screenshot picker
+        let theirs = |p: &Retained<NSRunningApplication>| *p != NSRunningApplication::currentApplication() && p.activationPolicy() == NSApplicationActivationPolicy::Regular;
+        if let Some(front) = front.filter(theirs) {
             BEFORE.set(Some(front));
         }
     };
