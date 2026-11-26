@@ -245,16 +245,24 @@ def connect(path, key=None):
     return db
 
 
+def _all_of(db, table):
+    """Every row of one of the database's own tables, in a stable order. Only a name sqlite_master has goes in, quoted
+    as an identifier, and its order is the table's own columns (_order)."""
+    if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone():
+        raise sqlite3.OperationalError(table)  # as SQLite's own "no such table" would
+    return db.execute(' '.join(('SELECT * FROM', quoted(table), 'ORDER BY', _order(db, table))))
+
+
 def rows(db, table):
     """One table's rows as dicts, in a stable order, one at a time."""
-    for row in db.execute('SELECT * FROM ' + quoted(table) + ' ORDER BY ' + _order(db, table)):
+    for row in _all_of(db, table):
         yield {k: row[k] for k in row.keys()}
 
 
 def digest(db, table):
     """(rows, sha256 hex) of a table's rows in a stable order, every value as written (blobs in base64)."""
     h, count = hashlib.sha256(), 0
-    for row in db.execute('SELECT * FROM ' + quoted(table) + ' ORDER BY ' + _order(db, table)):
+    for row in _all_of(db, table):
         h.update(json.dumps([_plain(v) for v in tuple(row)], ensure_ascii=False, default=str).encode() + b'\n')
         count += 1
     return count, h.hexdigest()
