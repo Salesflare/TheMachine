@@ -133,6 +133,8 @@ brief their Fleet tab shows. Teammates' Team Graph records and threads never go 
 | `add_summary_line` | Read & edit | A line on a person's summary (`id`, `text`), shown "AI: <name>" (`person_summary.add_line`) |
 | `search_messages` | Read, with Messages on | Messages by words (`query`, optional), `channel`, `area`, newest first: who, when, subject and the first 300 characters, each with its thread. With `person` (an id from `search_graph`): only the messages with that person or organization, from every address and number merged into them, as their Graph page's timeline has them |
 | `read_thread` | Read, with Messages on | The thread or chat around one message (`id`), oldest first, up to 30 messages of up to 4000 characters |
+| `get_learnings` | Read, with `ai_learnings` on | The owner's rules, general facts and voice per channel, as Learning has them, in the connection's area; optional `query` (every word in it) and `limit` (30, at most 100 of each) ([Learnings and the brief](#learnings-and-the-brief)) |
+| `get_brief` | Read, with `ai_learnings` on | The brief the server's instructions end with, for apps that don't read those |
 
 Every tool is listed to every connection. A tool above the connection's level is refused with what to change and where,
 and the refusal is logged. The AI can't raise its own level.
@@ -183,6 +185,39 @@ AI](intelligence.md#import-from-another-ai)).
 
 **A summary line** is not an owner's edit. The owner can edit or remove it. The next summary pass gets it as data
 (`ai_lines`, ids A1…) and may keep, revise or drop it; a line citing it keeps the AI's name and area.
+
+## Learnings and the brief
+
+Off until the config's `ai_learnings` is on (`ai_learnings.FLAG`). Off, the two tools are neither listed nor answered
+("Unknown tool") and the instructions are as before.
+
+**get_learnings** (`ai_learnings.learnings`) gives what Learning, What I've learned has: the rules (How to do things),
+the general facts (about no one in the Graph; a fact about someone is on their record) and the voice of each channel.
+Removed and ended ones never go. Used or said last first.
+
+- **Area.** A rule or fact learned on a to-do has that to-do's area (`suggestion_scope`), so a rule from a Personal
+  to-do never reaches a Work-only connection. One learned elsewhere (the owner's chat, their notes, the learning loop)
+  is for both. Voices are for both.
+- **Who wrote it.** The owner's own (a note on a to-do, their chat, their OpenClaw notes, anything they edited) and their
+  voices go out as they are. A connected AI's or an import the owner didn't edit (`facts.ai_fact_by`) goes inside
+  `<untrusted source="ai">`, and one the learning loop wrote from what happened (`tune:`, other people's messages among
+  it) and the owner didn't edit inside `<untrusted source="messages">`, with `source` on the item.
+
+**The brief** (`ai_learnings.brief_text`, about 200 words): `initialize`'s instructions end with it, and `get_brief`
+gives the same. It holds:
+
+- who the owner is (name, time zone, language), up to 4 rules and 3 facts, marked as above;
+- what changed since this connection's last visit, its newest line in Activity (not a settings change or a sign-in), or
+  in the last 7 days on a first one: new to-dos (up to 3 titles), promises due within 7 days, overdue ones too (up to 3),
+  new people (first seen since, up to 5 names), and what Learning took in (new rules and facts, voices updated);
+- one line on when to call `get_learnings`, `search_graph` and `list_todos`.
+
+All of it is in the connection's area, as the tools give it. To-do titles and promises are marked as their tools mark
+them, and people's names as `messages` (their senders chose them). Never a message's subject or text, with Messages on
+or off. An off or expired connection gets none.
+
+An `initialize` with the brief is a line in Activity ("Read the brief"), which is the visit; not again while that
+connection's last line is a brief from the last 10 minutes (a client that starts over for each call).
 
 ## Messages
 
