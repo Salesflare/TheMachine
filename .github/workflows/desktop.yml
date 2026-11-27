@@ -31,6 +31,10 @@ on:
         description: With mac-store-only, also send that build to App Store Connect
         type: boolean
         default: false
+      mac-store-version:
+        description: With mac-store-only, the version it is in App Store Connect (each version takes one build for review)
+        type: string
+        default: '1.0'
 
 permissions:
   contents: read
@@ -354,6 +358,7 @@ jobs:
       STORE: '1'
       BUNDLE_ID: ${{ vars.MAS_BUNDLE_ID }}
       BUILD_NUMBER: ${{ github.run_number }}
+      STORE_VERSION: ${{ inputs.mac-store-version }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

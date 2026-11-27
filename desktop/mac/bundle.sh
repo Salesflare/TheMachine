@@ -22,6 +22,7 @@ if [ "${STORE:-}" = 1 ]; then
   id=${BUNDLE_ID:-computer.themachine.app}
   plutil -replace CFBundleIdentifier -string "$id" "$info"
   plutil -replace LSMinimumSystemVersion -string 14.0 "$info"
+  plutil -replace CFBundleShortVersionString -string "${STORE_VERSION:-1.0}" "$info" # its version in App Store Connect
   plutil -replace CFBundleVersion -string "${BUILD_NUMBER:-1}" "$info" # the store takes each build number once
   team=$(plutil -extract 'com\.apple\.developer\.team-identifier' raw "$entitlements")
   plutil -replace 'com\.apple\.application-identifier' -string "$team.$id" "$entitlements"
