@@ -1,0 +1,1490 @@
+{
+ "id": "hx-9",
+ "about": "Independent piano tuner and restorer working alone, with home clients, a music school and a few venues",
+ "owner": {
+  "name": "Lucia Ferraro",
+  "email": "lucia@ferraropianos.example"
+ },
+ "accounts": [
+  {
+   "id": "wmail",
+   "boundary": "work:Ferraro Pianos",
+   "email": "lucia@ferraropianos.example"
+  },
+  {
+   "id": "pmail",
+   "boundary": "personal:home",
+   "email": "lucia.ferraro@mail.example"
+  }
+ ],
+ "messages": [
+  {
+   "key": "n1",
+   "account": "wmail",
+   "thread": "s1",
+   "day": 58,
+   "hour": 9,
+   "from": [
+    "Clara Webb",
+    "clara.webb@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Tuning before the holidays",
+   "body": "Hi Lucia, could you come and tune our piano sometime in the next couple of weeks? Mornings are best for us. Thanks, Clara",
+   "bulk": false
+  },
+  {
+   "key": "n2",
+   "account": "wmail",
+   "thread": "s1",
+   "day": 57,
+   "hour": 8,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Clara Webb",
+     "clara.webb@mail.example"
+    ]
+   ],
+   "subject": "Re: Tuning before the holidays",
+   "body": "Hi Clara, Tuesday the 6th at 9:30 works for me. See you then!\n\nLucia\nFerraro Pianos",
+   "bulk": false
+  },
+  {
+   "key": "n3",
+   "account": "wmail",
+   "thread": "s2",
+   "day": 55,
+   "hour": 7,
+   "from": [
+    "Piano Technicians Journal",
+    "news@ptjournal.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "November issue: humidity control and hammer voicing",
+   "body": "In this issue: room humidity control for older uprights, voicing tips for worn hammers, and a profile of a restoration shop. Read online. Unsubscribe.",
+   "bulk": true
+  },
+  {
+   "key": "n4",
+   "account": "wmail",
+   "thread": "s3",
+   "day": 52,
+   "hour": 14,
+   "from": [
+    "Thomas Wright",
+    "t.wright@linden.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Recital hall piano before Dec 12",
+   "body": "Dear Lucia,\n\nOur winter recital is on Saturday December 12. Could you tune and check the concert grand in the recital hall a day or two before? Last year's visit was excellent and the students noticed.\n\nBest wishes,\nThomas Wright\nFacilities Manager, Linden Conservatory",
+   "bulk": false
+  },
+  {
+   "key": "n5",
+   "account": "wmail",
+   "thread": "s3",
+   "day": 51,
+   "hour": 10,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Thomas Wright",
+     "t.wright@linden.example"
+    ]
+   ],
+   "subject": "Re: Recital hall piano before Dec 12",
+   "body": "Dear Thomas, happy to. I've put you down for Thursday December 10 at 9:00. I'll need about three hours in a quiet hall.\n\nLucia",
+   "bulk": false
+  },
+  {
+   "key": "n6",
+   "account": "wmail",
+   "thread": "s4",
+   "day": 49,
+   "hour": 19,
+   "from": [
+    "Greta Holm",
+    "greta.holm@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Upright tuning",
+   "body": "Hello Lucia, a neighbor recommended you. Can you tune our upright next week? It's been two years, I'm a bit embarrassed to say. Greta Holm",
+   "bulk": false
+  },
+  {
+   "key": "n7",
+   "account": "wmail",
+   "thread": "s4",
+   "day": 49,
+   "hour": 21,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Greta Holm",
+     "greta.holm@mail.example"
+    ]
+   ],
+   "subject": "Re: Upright tuning",
+   "body": "Hi Greta, no need to be embarrassed, two years is very normal! Tuesday at 14:00? It may need a pitch raise first, which takes a little longer.\n\nLucia",
+   "bulk": false
+  },
+  {
+   "key": "n8",
+   "account": "wmail",
+   "thread": "s5",
+   "day": 46,
+   "hour": 11,
+   "from": [
+    "Greta Novak",
+    "greta@novakmovers.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Invoice: Ames job",
+   "body": "Hi Lucia, attached is our invoice for the stair carry at Mr. Ames' place last week, your share as agreed is 180. Thanks for the smooth job.\n\nGreta Novak\nNovak Movers",
+   "bulk": false
+  },
+  {
+   "key": "n9",
+   "account": "wmail",
+   "thread": "s5",
+   "day": 45,
+   "hour": 9,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Greta Novak",
+     "greta@novakmovers.example"
+    ]
+   ],
+   "subject": "Re: Invoice: Ames job",
+   "body": "Paid this morning. Thanks Greta, great crew as always.",
+   "bulk": false
+  },
+  {
+   "key": "n10",
+   "account": "wmail",
+   "thread": "s6",
+   "day": 44,
+   "hour": 10,
+   "from": [
+    "Bergmann Saiten",
+    "service@bergmann.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Ihre Bestellung 30418",
+   "body": "Sehr geehrte Frau Ferraro,\n\nleider haben wir Ihnen bei der Bestellung 30418 die Saiten in Stärke 17 statt 16 geschickt. Das tut uns sehr leid. Bitte schicken Sie die falschen Saiten nicht zurück, wir senden die richtigen so schnell wie möglich.\n\nMit freundlichen Grüßen\nKarl Bergmann",
+   "bulk": false
+  },
+  {
+   "key": "n11",
+   "account": "wmail",
+   "thread": "s6",
+   "day": 44,
+   "hour": 12,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Karl Bergmann",
+     "service@bergmann.example"
+    ]
+   ],
+   "subject": "Re: Ihre Bestellung 30418",
+   "body": "Sehr geehrter Herr Bergmann,\n\ndanke für die Nachricht. Bitte senden Sie die richtigen Saiten per Express, ich warte mit einer Restaurierung darauf.\n\nMit freundlichen Grüßen\nLucia Ferraro",
+   "bulk": false
+  },
+  {
+   "key": "n12",
+   "account": "wmail",
+   "thread": "s7",
+   "day": 42,
+   "hour": 18,
+   "from": [
+    "Paul Dupont",
+    "paul.dupont@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Restauration de notre piano",
+   "body": "Bonjour Lucia,\n\nOù en est la restauration de notre piano ? Nous avons des invités pour les fêtes et ma femme aimerait beaucoup jouer pour eux. Est-ce que vous avez une date ?\n\nMerci et bonne soirée,\nPaul Dupont",
+   "bulk": false
+  },
+  {
+   "key": "n13",
+   "account": "wmail",
+   "thread": "s7",
+   "day": 41,
+   "hour": 9,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Paul Dupont",
+     "paul.dupont@mail.example"
+    ]
+   ],
+   "subject": "Re: Restauration de notre piano",
+   "body": "Bonjour Paul,\n\nLe travail est presque fini, mais j'attends les bonnes cordes de mon fournisseur. Je vous donne une date dès que je les ai, normalement avant la mi-novembre.\n\nBonne journée,\nLucia",
+   "bulk": false
+  },
+  {
+   "key": "n14",
+   "account": "wmail",
+   "thread": "s6",
+   "day": 37,
+   "hour": 8,
+   "from": [
+    "Bergmann Saiten",
+    "service@bergmann.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Re: Ihre Bestellung 30418",
+   "body": "Sehr geehrte Frau Ferraro,\n\ndie richtigen Saiten sind heute per Express an Sie unterwegs. Die Lieferung ist für Sie kostenlos.\n\nMit freundlichen Grüßen\nKarl Bergmann",
+   "bulk": false
+  },
+  {
+   "key": "n15",
+   "account": "wmail",
+   "thread": "s7",
+   "day": 29,
+   "hour": 20,
+   "from": [
+    "Paul Dupont",
+    "paul.dupont@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Re: Restauration de notre piano",
+   "body": "Bonjour Lucia,\n\nLe piano est de retour et il est magnifique ! Ma femme joue tous les soirs. Merci pour tout, et la facture est payée.\n\nBien à vous,\nPaul",
+   "bulk": false
+  },
+  {
+   "key": "n16",
+   "account": "wmail",
+   "thread": "s8",
+   "day": 40,
+   "hour": 13,
+   "from": [
+    "Harold Pike",
+    "hpike@pikelowe.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Sticky key on our baby grand",
+   "body": "Dear Ms. Ferraro,\n\nOur baby grand at home has a sticky key (the D above middle C) and a faint buzz in the bass. Could you take a look sometime soon?\n\nHarold Pike\nPartner, Pike & Lowe",
+   "bulk": false
+  },
+  {
+   "key": "n17",
+   "account": "wmail",
+   "thread": "s9",
+   "day": 38,
+   "hour": 21,
+   "from": [
+    "Harold Pike",
+    "harold.pike@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Piano at home",
+   "body": "Hi Lucia, Harold again, this time from my home email so my wife sees it too. The sticky D and the bass buzz on our baby grand: could you come next week? Any evening is fine.\n\nHarold Pike\n(Pike & Lowe by day)",
+   "bulk": false
+  },
+  {
+   "key": "n18",
+   "account": "wmail",
+   "thread": "s9",
+   "day": 37,
+   "hour": 9,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Harold Pike",
+     "harold.pike@mail.example"
+    ]
+   ],
+   "subject": "Re: Piano at home",
+   "body": "Hi Harold, got both your emails. Thursday at 18:00 works; it sounds like a key bushing and a loose part in the bass, both quick fixes.\n\nLucia",
+   "bulk": false
+  },
+  {
+   "key": "n19",
+   "account": "wmail",
+   "thread": "s10",
+   "day": 36,
+   "hour": 15,
+   "from": [
+    "Larchmont Supply",
+    "orders@larchmont.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Order shipped: hammer felt and center pins",
+   "body": "Hi Lucia, your order of hammer felt (2 sheets) and center pins (size 24) shipped today and should arrive Thursday. Thanks for your order! Dana at Larchmont Supply",
+   "bulk": false
+  },
+  {
+   "key": "n20",
+   "account": "pmail",
+   "thread": "s11",
+   "day": 20,
+   "hour": 10,
+   "from": [
+    "Ed Burns",
+    "ed.burns@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Borrow a hammer?",
+   "body": "Hi Lucia, could I borrow your hammer and the long level this weekend? Putting up shelves for Jo finally. Ed next door",
+   "bulk": false
+  },
+  {
+   "key": "n21",
+   "account": "pmail",
+   "thread": "s11",
+   "day": 20,
+   "hour": 12,
+   "from": [
+    "Lucia Ferraro",
+    "lucia.ferraro@mail.example"
+   ],
+   "to": [
+    [
+     "Ed Burns",
+     "ed.burns@mail.example"
+    ]
+   ],
+   "subject": "Re: Borrow a hammer?",
+   "body": "Sure, they're in the shed, it's open. Good luck with the shelves!",
+   "bulk": false
+  },
+  {
+   "key": "n22",
+   "account": "pmail",
+   "thread": "s11",
+   "day": 16,
+   "hour": 18,
+   "from": [
+    "Ed Burns",
+    "ed.burns@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Re: Borrow a hammer?",
+   "body": "Returned, thanks! Shelves are up and level. Mostly.",
+   "bulk": false
+  },
+  {
+   "key": "n23",
+   "account": "wmail",
+   "thread": "s12",
+   "day": 31,
+   "hour": 7,
+   "from": [
+    "Tally Books",
+    "noreply@tallybooks.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Your quarterly tax estimate is ready",
+   "body": "Your quarterly tax estimate is ready. Log in to review it.",
+   "bulk": true
+  },
+  {
+   "key": "n24",
+   "account": "wmail",
+   "thread": "s13",
+   "day": 27,
+   "hour": 17,
+   "from": [
+    "Joy Adeyemi",
+    "joy.adeyemi@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Spring tuning and a teacher?",
+   "body": "Hi Lucia, could you put us down for the spring tuning again? And a question: do you know a good piano teacher for an 8-year-old around here? Our son finally wants lessons. Joy",
+   "bulk": false
+  },
+  {
+   "key": "n25",
+   "account": "wmail",
+   "thread": "s13",
+   "day": 26,
+   "hour": 9,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Joy Adeyemi",
+     "joy.adeyemi@mail.example"
+    ]
+   ],
+   "subject": "Re: Spring tuning and a teacher?",
+   "body": "Hi Joy, spring tuning is booked for March 9. For a teacher, Linden Conservatory has a children's program on Saturdays; ask for the junior department.\n\nLucia",
+   "bulk": false
+  },
+  {
+   "key": "n26",
+   "account": "pmail",
+   "thread": "s14",
+   "day": 24,
+   "hour": 20,
+   "from": [
+    "Marco Ferraro",
+    "marco.ferraro@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Piano teacher for Sofia",
+   "body": "Ciao cuz! Sofia wants to start piano lessons after New Year. You must know a teacher near Riverside? Someone patient, she's shy. Hugs, Marco",
+   "bulk": false
+  },
+  {
+   "key": "n27",
+   "account": "pmail",
+   "thread": "s14",
+   "day": 23,
+   "hour": 8,
+   "from": [
+    "Lucia Ferraro",
+    "lucia.ferraro@mail.example"
+   ],
+   "to": [
+    [
+     "Marco Ferraro",
+     "marco.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Re: Piano teacher for Sofia",
+   "body": "So exciting! Try Mrs. Halvorsen on Birch Street, she's wonderful with shy kids. Tell her I sent you.",
+   "bulk": false
+  },
+  {
+   "key": "n28",
+   "account": "wmail",
+   "thread": "s3",
+   "day": 23,
+   "hour": 11,
+   "from": [
+    "Thomas Wright",
+    "t.wright@linden.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Re: Recital hall piano before Dec 12",
+   "body": "Dear Lucia, confirming Thursday December 10 at 9:00. The hall will be unlocked and quiet until noon. Best, Thomas",
+   "bulk": false
+  },
+  {
+   "key": "n29",
+   "account": "pmail",
+   "thread": "s15",
+   "day": 17,
+   "hour": 19,
+   "from": [
+    "Thomas Wright",
+    "thomas.wright@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Old upright piano",
+   "body": "Hi Lucia,\n\nNadia gave me your address, hope that's okay. We're clearing out my late aunt's house and there's an old upright in the living room. Is it worth anything, or should we donate it? We need the house empty by mid-December.\n\nThanks,\nThomas Wright",
+   "bulk": false
+  },
+  {
+   "key": "n30",
+   "account": "pmail",
+   "thread": "s15",
+   "day": 16,
+   "hour": 9,
+   "from": [
+    "Lucia Ferraro",
+    "lucia.ferraro@mail.example"
+   ],
+   "to": [
+    [
+     "Thomas Wright",
+     "thomas.wright@mail.example"
+    ]
+   ],
+   "subject": "Re: Old upright piano",
+   "body": "Hi Thomas, of course. Send me a photo of the inside of the lid and the serial number and I'll tell you honestly. Most old uprights are worth more to a school than on the market.",
+   "bulk": false
+  },
+  {
+   "key": "n31",
+   "account": "wmail",
+   "thread": "s16",
+   "day": 15,
+   "hour": 7,
+   "from": [
+    "Tuners Guild",
+    "events@tunersguild.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Webinar: pricing your restoration work",
+   "body": "Join our members' webinar on December 8 about pricing restoration work. Free for members. Register now.",
+   "bulk": true
+  },
+  {
+   "key": "n32",
+   "account": "wmail",
+   "thread": "s17",
+   "day": 14,
+   "hour": 16,
+   "from": [
+    "Rafael Soto",
+    "rafael.soto@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Afinación antes de Navidad",
+   "body": "Hola Lucia,\n\n¿Puedes venir a afinar el piano antes de Navidad? Mi hija tiene un concierto en la escuela y quiere practicar con el piano bien afinado. Estamos en casa por las tardes.\n\nGracias y saludos,\nRafael Soto",
+   "bulk": false
+  },
+  {
+   "key": "n33",
+   "account": "wmail",
+   "thread": "s17",
+   "day": 13,
+   "hour": 9,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Rafael Soto",
+     "rafael.soto@mail.example"
+    ]
+   ],
+   "subject": "Re: Afinación antes de Navidad",
+   "body": "Hola Rafael,\n\nSí, claro. ¿Te va bien el jueves 17 de diciembre a las 16:00? Son unas dos horas.\n\nSaludos,\nLucia",
+   "bulk": false
+  },
+  {
+   "key": "n34",
+   "account": "wmail",
+   "thread": "s17",
+   "day": 12,
+   "hour": 20,
+   "from": [
+    "Rafael Soto",
+    "rafael.soto@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Re: Afinación antes de Navidad",
+   "body": "Perfecto, el jueves a las 16:00. ¡Muchas gracias!\n\nRafael",
+   "bulk": false
+  },
+  {
+   "key": "n35",
+   "account": "wmail",
+   "thread": "s4",
+   "day": 44,
+   "hour": 18,
+   "from": [
+    "Greta Holm",
+    "greta.holm@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Re: Upright tuning",
+   "body": "It sounds wonderful, thank you! I'll pay the invoice tonight.",
+   "bulk": false
+  },
+  {
+   "key": "n36",
+   "account": "wmail",
+   "thread": "s18",
+   "day": 9,
+   "hour": 7,
+   "from": [
+    "Larchmont Supply",
+    "news@larchmont.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Winter catalog: 15% off tools",
+   "body": "Our winter catalog is out. 15% off tuning hammers and mutes until December 15.",
+   "bulk": true
+  },
+  {
+   "key": "n37",
+   "account": "wmail",
+   "thread": "s19",
+   "day": 5,
+   "hour": 11,
+   "from": [
+    "Kestrel Mutual",
+    "policies@kestrelmutual.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Van and tools policy renewal",
+   "body": "Dear Ms. Ferraro, your van and tools policy renews on January 1 at the same premium. No action is needed unless your tools are worth more than the 12,000 insured. Kestrel Mutual",
+   "bulk": false
+  },
+  {
+   "key": "n38",
+   "account": "wmail",
+   "thread": "s20",
+   "day": 3,
+   "hour": 14,
+   "from": [
+    "Nina Cole",
+    "nina@harborarts.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Tuning schedule for 2027",
+   "body": "Hi Lucia, we'd like to set up a regular tuning schedule for the two grands at Harbor Arts Center next year, about ten visits. Could you send a quote?\n\nNina Cole\nProduction Manager",
+   "bulk": false
+  },
+  {
+   "key": "n39",
+   "account": "wmail",
+   "thread": "s20",
+   "day": 2,
+   "hour": 10,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Nina Cole",
+     "nina@harborarts.example"
+    ]
+   ],
+   "subject": "Re: Tuning schedule for 2027",
+   "body": "Hi Nina, thanks for thinking of me. Quote attached: ten visits for both grands, with concert touch-ups at a lower rate. Happy to adjust.\n\nLucia",
+   "bulk": false
+  },
+  {
+   "key": "n40",
+   "account": "wmail",
+   "thread": "s21",
+   "day": 1,
+   "hour": 7,
+   "from": [
+    "Coastal Bank",
+    "alerts@coastalbank.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Payment received",
+   "body": "You received a payment of 240.00 from P. Dupont.",
+   "bulk": true
+  },
+  {
+   "key": "n41",
+   "account": "wmail",
+   "thread": "s22",
+   "day": 0,
+   "hour": 10,
+   "from": [
+    "Owen Lark",
+    "owen.lark@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Price for regulation?",
+   "body": "Hello, what would a full regulation cost for a 1960s upright? The action feels heavy and uneven. Thanks, Owen Lark",
+   "bulk": false
+  },
+  {
+   "key": "n42",
+   "account": "wmail",
+   "thread": "s23",
+   "day": 34,
+   "hour": 13,
+   "from": [
+    "Greta Holm",
+    "greta.holm@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Bench",
+   "body": "Hi Lucia, silly question, do you sell adjustable piano benches? My daughter is too short for ours. Greta",
+   "bulk": false
+  },
+  {
+   "key": "n43",
+   "account": "wmail",
+   "thread": "s23",
+   "day": 34,
+   "hour": 16,
+   "from": [
+    "Lucia Ferraro",
+    "lucia@ferraropianos.example"
+   ],
+   "to": [
+    [
+     "Greta Holm",
+     "greta.holm@mail.example"
+    ]
+   ],
+   "subject": "Re: Bench",
+   "body": "Not a silly question! I don't sell them, but a footstool with a box works fine until she grows. Larchmont Supply has adjustable ones if you want to buy.",
+   "bulk": false
+  },
+  {
+   "key": "n44",
+   "account": "pmail",
+   "thread": "s24",
+   "day": 50,
+   "hour": 19,
+   "from": [
+    "Bianca Ferraro",
+    "bianca.ferraro@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Thanksgiving at mine?",
+   "body": "Hey! Thanksgiving at mine this year? Mom's bringing the pie, can you do the green beans? B",
+   "bulk": false
+  },
+  {
+   "key": "n45",
+   "account": "pmail",
+   "thread": "s24",
+   "day": 49,
+   "hour": 8,
+   "from": [
+    "Lucia Ferraro",
+    "lucia.ferraro@mail.example"
+   ],
+   "to": [
+    [
+     "Bianca Ferraro",
+     "bianca.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Re: Thanksgiving at mine?",
+   "body": "Yes! Green beans it is. I'll come early to help.",
+   "bulk": false
+  },
+  {
+   "key": "n46",
+   "account": "pmail",
+   "thread": "s25",
+   "day": 35,
+   "hour": 7,
+   "from": [
+    "Streamly",
+    "offers@streamly.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "New this week",
+   "body": "New this week on Streamly: three new series and a concert film. Watch now.",
+   "bulk": true
+  },
+  {
+   "key": "n47",
+   "account": "pmail",
+   "thread": "s26",
+   "day": 30,
+   "hour": 17,
+   "from": [
+    "Nadia Kerr",
+    "nadia.kerr@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Dinner Friday?",
+   "body": "Dinner Friday at the Thai place? 19:30? Also I gave your email to a friend of a friend with an old piano, hope that's ok!",
+   "bulk": false
+  },
+  {
+   "key": "n48",
+   "account": "pmail",
+   "thread": "s26",
+   "day": 30,
+   "hour": 18,
+   "from": [
+    "Lucia Ferraro",
+    "lucia.ferraro@mail.example"
+   ],
+   "to": [
+    [
+     "Nadia Kerr",
+     "nadia.kerr@mail.example"
+    ]
+   ],
+   "subject": "Re: Dinner Friday?",
+   "body": "Yes to both! See you Friday.",
+   "bulk": false
+  },
+  {
+   "key": "n49",
+   "account": "pmail",
+   "thread": "s27",
+   "day": 22,
+   "hour": 7,
+   "from": [
+    "Corefit Gym",
+    "hello@corefit.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Holiday opening hours",
+   "body": "Our holiday opening hours are online. Stay strong this winter!",
+   "bulk": true
+  },
+  {
+   "key": "n50",
+   "account": "pmail",
+   "thread": "s28",
+   "day": 19,
+   "hour": 21,
+   "from": [
+    "Femke de Boer",
+    "femke.deboer@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Bezoek in januari",
+   "body": "Hoi Lucia,\n\nWij komen in januari een week naar jullie kant van de oceaan! Heb je zin om een dag samen iets te doen? Ik ben er van 8 tot 15 januari. Het zou zo leuk zijn om je weer te zien.\n\nLiefs,\nFemke",
+   "bulk": false
+  },
+  {
+   "key": "n51",
+   "account": "pmail",
+   "thread": "s28",
+   "day": 18,
+   "hour": 9,
+   "from": [
+    "Lucia Ferraro",
+    "lucia.ferraro@mail.example"
+   ],
+   "to": [
+    [
+     "Femke de Boer",
+     "femke.deboer@mail.example"
+    ]
+   ],
+   "subject": "Re: Bezoek in januari",
+   "body": "Hoi Femke,\n\nJa, wat leuk! Zaterdag 9 januari ben ik vrij. Wij kunnen naar de kust gaan als het weer goed is.\n\nLiefs,\nLucia",
+   "bulk": false
+  },
+  {
+   "key": "n52",
+   "account": "pmail",
+   "thread": "s29",
+   "day": 11,
+   "hour": 7,
+   "from": [
+    "Brightline Energy",
+    "billing@brightline.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Your November energy bill",
+   "body": "Your November bill of 71.20 will be collected on the 15th.",
+   "bulk": true
+  },
+  {
+   "key": "n53",
+   "account": "pmail",
+   "thread": "s24",
+   "day": 0,
+   "hour": 20,
+   "from": [
+    "Bianca Ferraro",
+    "bianca.ferraro@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Re: Thanksgiving at mine?",
+   "body": "Thanks for yesterday, it was perfect. Photos attached, the one of mom with the pie is a keeper.",
+   "bulk": false
+  },
+  {
+   "key": "n54",
+   "account": "pmail",
+   "thread": "s30",
+   "day": 6,
+   "hour": 7,
+   "from": [
+    "Skyway Air",
+    "deals@skyway.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Cyber week fares",
+   "body": "Cyber week: fares from 59. Book by Monday.",
+   "bulk": true
+  },
+  {
+   "key": "n55",
+   "account": "pmail",
+   "thread": "s31",
+   "day": 2,
+   "hour": 7,
+   "from": [
+    "City Library",
+    "notices@citylibrary.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "A hold is ready for you",
+   "body": "Your hold is ready for pickup at the Main branch until December 4.",
+   "bulk": true
+  },
+  {
+   "key": "n56",
+   "account": "pmail",
+   "thread": "s32",
+   "day": 8,
+   "hour": 12,
+   "from": [
+    "Dr. Lena Ortiz",
+    "frontdesk@ortizdental.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Appointment confirmation",
+   "body": "Hi Lucia, confirming your cleaning on Tuesday December 15 at 8:30. Reply if you need to change it. Ortiz Dental",
+   "bulk": false
+  },
+  {
+   "key": "n57",
+   "account": "wmail",
+   "thread": "s33",
+   "day": 25,
+   "hour": 15,
+   "from": [
+    "Clara Webb",
+    "clara.webb@mail.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Thank you",
+   "body": "Hi Lucia, just wanted to say the piano still sounds lovely. I've recommended you to two friends.",
+   "bulk": false
+  },
+  {
+   "key": "n58",
+   "account": "wmail",
+   "thread": "s34",
+   "day": 47,
+   "hour": 7,
+   "from": [
+    "Tally Books",
+    "noreply@tallybooks.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia@ferraropianos.example"
+    ]
+   ],
+   "subject": "Invoice 2026-118 was paid",
+   "body": "Good news: invoice 2026-118 to Greta Holm was paid.",
+   "bulk": true
+  },
+  {
+   "key": "n59",
+   "account": "pmail",
+   "thread": "s35",
+   "day": 41,
+   "hour": 10,
+   "from": [
+    "Westside Auto",
+    "service@westsideauto.example"
+   ],
+   "to": [
+    [
+     "Lucia Ferraro",
+     "lucia.ferraro@mail.example"
+    ]
+   ],
+   "subject": "Winter tire swap",
+   "body": "Time for your winter tire swap. Book a slot online.",
+   "bulk": true
+  }
+ ],
+ "todos": [
+  {
+   "key": "k1",
+   "title": "Reply to Clara about a tuning",
+   "evidence": [
+    "n1"
+   ],
+   "day": 58,
+   "state": "done"
+  },
+  {
+   "key": "k2",
+   "title": "Reply to Thomas about the recital hall tuning",
+   "evidence": [
+    "n4"
+   ],
+   "day": 52,
+   "state": "done"
+  },
+  {
+   "key": "k3",
+   "title": "Reply to Greta about tuning her upright",
+   "evidence": [
+    "n6"
+   ],
+   "day": 49,
+   "state": "done"
+  },
+  {
+   "key": "k4",
+   "title": "Pay Novak Movers' invoice for the Ames job",
+   "evidence": [
+    "n8"
+   ],
+   "day": 46,
+   "state": "done"
+  },
+  {
+   "key": "k5",
+   "title": "Reply to Bergmann about the wrong strings",
+   "evidence": [
+    "n10"
+   ],
+   "day": 44,
+   "state": "done"
+  },
+  {
+   "key": "k6",
+   "title": "Reply to Paul about the restoration date",
+   "evidence": [
+    "n12"
+   ],
+   "day": 42,
+   "state": "done"
+  },
+  {
+   "key": "k7",
+   "title": "Reply to Harold about the sticky key",
+   "evidence": [
+    "n16"
+   ],
+   "day": 40,
+   "state": "done"
+  },
+  {
+   "key": "k8",
+   "title": "Reply to Harold about a visit next week",
+   "evidence": [
+    "n17"
+   ],
+   "day": 38,
+   "state": "done"
+  },
+  {
+   "key": "k9",
+   "title": "Reply to Ed about borrowing tools",
+   "evidence": [
+    "n20"
+   ],
+   "day": 20,
+   "state": "done"
+  },
+  {
+   "key": "k10",
+   "title": "Reply to Joy about spring tuning and a teacher",
+   "evidence": [
+    "n24"
+   ],
+   "day": 27,
+   "state": "done"
+  },
+  {
+   "key": "k11",
+   "title": "Reply to Marco about a piano teacher",
+   "evidence": [
+    "n26"
+   ],
+   "day": 24,
+   "state": "done"
+  },
+  {
+   "key": "k12",
+   "title": "Reply to Thomas about his aunt's upright",
+   "evidence": [
+    "n29"
+   ],
+   "day": 17,
+   "state": "done"
+  },
+  {
+   "key": "k13",
+   "title": "Reply to Rafael about a tuning before Christmas",
+   "evidence": [
+    "n32"
+   ],
+   "day": 14,
+   "state": "done"
+  },
+  {
+   "key": "k14",
+   "title": "Send Nina a quote for 2027 tunings",
+   "evidence": [
+    "n38"
+   ],
+   "day": 3,
+   "state": "done"
+  },
+  {
+   "key": "k15",
+   "title": "Reply to Owen about regulation pricing",
+   "evidence": [
+    "n41"
+   ],
+   "day": 0,
+   "state": "open"
+  },
+  {
+   "key": "k16",
+   "title": "Reply to Greta about piano benches",
+   "evidence": [
+    "n42"
+   ],
+   "day": 34,
+   "state": "done"
+  },
+  {
+   "key": "k17",
+   "title": "Reply to Bianca about Thanksgiving",
+   "evidence": [
+    "n44"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "k18",
+   "title": "Reply to Nadia about Friday dinner",
+   "evidence": [
+    "n47"
+   ],
+   "day": 30,
+   "state": "done"
+  },
+  {
+   "key": "k19",
+   "title": "Reply to Femke about her January visit",
+   "evidence": [
+    "n50"
+   ],
+   "day": 19,
+   "state": "done"
+  }
+ ],
+ "promises": [
+  {
+   "direction": "mine",
+   "who": "Thomas Wright",
+   "what": "tune the recital hall grand on Dec 10 at 9:00",
+   "message": "n5",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Karl Bergmann",
+   "what": "send the correct strings as soon as possible",
+   "message": "n10",
+   "status": "kept"
+  },
+  {
+   "direction": "mine",
+   "who": "Paul Dupont",
+   "what": "give a date once the strings arrive",
+   "message": "n13",
+   "status": "kept"
+  },
+  {
+   "direction": "mine",
+   "who": "Harold Pike",
+   "what": "come Thursday at 18:00 to fix the key and the buzz",
+   "message": "n18",
+   "status": "kept"
+  },
+  {
+   "direction": "mine",
+   "who": "Thomas Wright",
+   "what": "assess the upright from photos",
+   "message": "n30",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Rafael Soto",
+   "what": "tune the piano on Dec 17 at 16:00",
+   "message": "n33",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Femke de Boer",
+   "what": "spend Jan 9 together",
+   "message": "n51",
+   "status": "open"
+  }
+ ],
+ "key": {
+  "opportunities": [],
+  "traps": [
+   {
+    "id": "y1",
+    "kind": "namesake",
+    "what": "Two different people named Thomas Wright: the conservatory facilities manager (work, recital grand) and a private person clearing an aunt's house (personal, old upright). Both are about a piano in mid-December, but they are unrelated.",
+    "evidence": [
+     "n4",
+     "n28",
+     "n29",
+     "n30"
+    ]
+   },
+   {
+    "id": "y2",
+    "kind": "coincidence",
+    "what": "Greta Holm, a tuning client, and Greta Novak at the movers only share a first name; the movers' invoice is for a different client.",
+    "evidence": [
+     "n6",
+     "n8"
+    ]
+   },
+   {
+    "id": "y3",
+    "kind": "coincidence",
+    "what": "Hammer felt from the supplier and a neighbor borrowing a hammer only share the word hammer.",
+    "evidence": [
+     "n19",
+     "n20"
+    ]
+   },
+   {
+    "id": "y4",
+    "kind": "cross_area",
+    "what": "A client and Lucia's cousin both want a piano teacher for a child, but one is work and one is personal; both were already answered on their own.",
+    "evidence": [
+     "n24",
+     "n26"
+    ]
+   },
+   {
+    "id": "y5",
+    "kind": "resolved",
+    "what": "The wrong strings held up Paul's restoration, but the correct strings came and Paul has his piano back and paid.",
+    "evidence": [
+     "n10",
+     "n12",
+     "n14",
+     "n15"
+    ]
+   },
+   {
+    "id": "y6",
+    "kind": "same_source",
+    "what": "Harold Pike wrote from his work and his home address about the same sticky key; it is one request, and Lucia already booked the visit.",
+    "evidence": [
+     "n16",
+     "n17",
+     "n18"
+    ]
+   }
+  ]
+ }
+}
