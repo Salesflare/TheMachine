@@ -68,23 +68,28 @@ def settle_sent(store, db, suggestion_id, job_id, label='', note=None):
     row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
     if not row or row['status'] != 'prepared':
         return False
-    finished = {r[0] for r in db.execute("SELECT revision FROM action_jobs WHERE suggestion_id=? AND status IN ('sent','done')", (suggestion_id,))}
-    waiting = [a for a in next_actions.visible_actions(row['next_action'])
-               if a['kind'] in next_actions.APPROVE_KINDS + next_actions.FINISH_KINDS and a['revision'] not in finished]
+    finished = {r['revision']: r for r in db.execute("SELECT id,revision,payload FROM action_jobs WHERE suggestion_id=? AND status IN ('sent','done') ORDER BY rowid", (suggestion_id,))}
+    steps = next_actions.visible_actions(row['next_action'])
+    waiting = [a for a in steps if a['kind'] in next_actions.APPROVE_KINDS + next_actions.FINISH_KINDS and a['revision'] not in finished]
     if waiting:
         return False
     body = NOTHING_SENT.sub('', row['body'] or '').strip() or row['body']
     db.execute('UPDATE suggestions SET body=?,outcome=NULL WHERE id=?', (body, suggestion_id))
-    job = db.execute('SELECT payload FROM action_jobs WHERE id=?', (job_id,)).fetchone()
-    try:
-        sent = json.loads(job['payload']) if job else {}
-    except (TypeError, ValueError):
-        sent = {}
-    sent = sent if isinstance(sent, dict) else {}
-    if sent.get('still_owed'):
-        # The reply only promised the work (still_owed, judged when it was drafted): the to-do stays open for it
+    # Every message of this to-do's draft that went out, as approved: one that only promised work keeps its promise
+    # whichever went last
+    def payload(job):
+        try:
+            sent = json.loads(job['payload']) if job else {}
+        except (TypeError, ValueError):
+            sent = {}
+        return sent if isinstance(sent, dict) else {}
+    sent = payload(db.execute('SELECT payload FROM action_jobs WHERE id=?', (job_id,)).fetchone())
+    sents = [payload(finished[a['revision']]) for a in steps if a['revision'] in finished and finished[a['revision']]['id'] != job_id] + [sent]
+    if any(s.get('still_owed') or s.get('owed_unsure') for s in sents):
+        # A reply only promised the work (still_owed, judged on the words that went out): the to-do stays open for it.
+        # One edited after that judgment (owed_unsure) keeps it open too, with no promise or day it may no longer say.
         from machine.store.promises import keep_owed
-        keep_owed(db, {**dict(row), 'body': body}, sent, job_id, now())
+        keep_owed(db, {**dict(row), 'body': body}, sents, job_id, now())
         return True
     if 'done_when' in row.keys() and row['done_when']:
         # The owner's part went out, the result it is for hasn't come yet (outcomes.py): it waits for that, not done

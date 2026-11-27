@@ -379,7 +379,7 @@ class CardChatApp:
                     owner.append({'kind': 'event', 'text': outcomes.chat_line(card['done_when']), 'at': at})
                 continue
             if r['id'].startswith(promises.OWED_PREFIX):  # the reply only promised the work: it stays open (promises.keep_owed)
-                owner.append({'kind': 'event', 'text': promises.owed_line(), 'at': at + 1})  # under its send, also in the same millisecond
+                owner.append({'kind': 'event', 'text': promises.owed_line(r['feedback']), 'at': at + 1})  # under its send, also in the same millisecond
                 continue
             if r['id'].startswith(WROTE_AGAIN_PREFIX):  # they replied on their promise; it stays open (Store.settle_awaiting)
                 owner.append({'kind': 'event', 'text': i18n.t('They wrote again'), 'at': at})

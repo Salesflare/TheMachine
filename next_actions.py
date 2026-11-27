@@ -1091,6 +1091,9 @@ def revise(action, subject=None, body=None):
         if not isinstance(subject, str) or not subject.strip() or len(subject) > 250 or '\r' in subject or '\n' in subject or '\x00' in subject:
             raise OwnerError('The subject needs one line of text')
         result['subject'] = subject
+    if result.get('still_owed') and any(' '.join(str(result.get(k) or '').split()) != ' '.join(str(action.get(k) or '').split()) for k in ('subject', 'body')):
+        # still_owed was judged on the drafted words; other words are unknown until a message shows it (promises.keep_owed)
+        result = {**{k: v for k, v in result.items() if k != 'still_owed'}, 'owed_unsure': True}
     result['revision'] = hashlib.sha256(canonical(result).encode()).hexdigest()[:12]
     return result
 

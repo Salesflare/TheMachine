@@ -475,7 +475,7 @@ class PromiseChecksApp:
             if _db.execute("UPDATE promises SET status='carded',suggestion_id=?,updated_at=? WHERE id=? AND status='open'", (home['id'], now(), p['id'])).rowcount:
                 promise_logged(_db, p['id'], 'carded')
             return {'id': home['id'], 'status': home['status'], 'duplicate': True, 'attached': True}
-        if home is not None and p['direction'] == 'mine' and (promise_closed_at(_db, home) or '') >= p['made_at']:
+        if home is not None and p['direction'] == 'mine' and (promise_closed_at(_db, home, owner=True) or '') >= p['made_at']:
             # The owner closed that to-do after promising: it goes with it (kept when done), and nothing comes back.
             _db.execute("UPDATE promises SET status='carded',suggestion_id=?,updated_at=? WHERE id=?", (home['id'], now(), p['id']))
             promise_logged(_db, p['id'], 'carded', 'closed with its to-do')
