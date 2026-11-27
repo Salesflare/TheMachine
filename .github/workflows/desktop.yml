@@ -721,6 +721,8 @@ jobs:
           [ "$(grep -m1 '^pkgver=' linux/PKGBUILD | cut -d= -f2)" = "$(jq -r .version tauri.conf.json)" ]
           curl -sSfL -o "$RUNNER_TEMP/runtime" "$RUNTIME"
           echo "$RUNTIME_SHA256  $RUNNER_TEMP/runtime" | sha256sum -c -
+          # The runner's own Microsoft package source isn't needed here, and its server has refused runners (403)
+          grep -l packages.microsoft.com /etc/apt/sources.list.d/* 2>/dev/null | xargs -r sudo rm -f || true
           sudo apt-get update -qq
           # The tray icon is Windows' and the Mac's, but tauri bundle sees the feature and wants appindicator
           sudo apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-dev libgtk-layer-shell-dev libayatana-appindicator3-dev librsvg2-dev file xdg-utils > /dev/null
@@ -787,6 +789,8 @@ jobs:
       - name: The AppImage, then the .deb installed, each to its sign-in window (X11)
         run: |
           set -euo pipefail
+          # The runner's own Microsoft package source isn't needed here, and its server has refused runners (403)
+          grep -l packages.microsoft.com /etc/apt/sources.list.d/* 2>/dev/null | xargs -r sudo rm -f || true
           sudo apt-get update -qq
           # An AppImage leaves OpenGL and EGL to the system, as every desktop has them; this runner hasn't. FUSE is fuse3's
           # fusermount3 alone, as Ubuntu 24.04 has it out of the box: no libfuse2t64
