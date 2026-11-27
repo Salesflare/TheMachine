@@ -6,6 +6,7 @@ twice. Made-up data; no model, nothing is sent."""
 import datetime as dt
 import json
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -193,9 +194,9 @@ class ProjectStall(unittest.TestCase):
             self.assertEqual(action_basis.from_decision(db, decision), {'kind': 'ahead'})
 
     def test_anything_but_both_yes_stays_the_owners_step_as_before(self):
-        import help_chat
+        unavailable = sys.modules['help_chat'].Unavailable  # loaded with the app; importing it would pull this test into every doc change
         for n, verdict in enumerate(({'mine': True, 'asked': False}, {'mine': False, 'asked': True}, {'mine': 'yes', 'asked': True},
-                                     'no JSON', help_chat.Unavailable('down'))):
+                                     'no JSON', unavailable('down'))):
             with self.subTest(verdict=verdict):
                 if n:
                     self.setUp()  # a fresh Machine for each case
