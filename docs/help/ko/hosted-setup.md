@@ -27,7 +27,7 @@ translated: 45dda198434fcd3a
 
 설정 중에는 선택 사항을 요청하지 않아요. 설정이 끝난 뒤 설정 페이지의 **언제든 더 추가할 수 있어요**에 있는 **소스 더 보기**에서 Slack, WhatsApp, GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) 같은 소스를 연결할 수 있어요. 대시보드에서도 도움이 될 때 소스를 추천해요. 예를 들어 GitHub 알림 메일이 계속 들어오면 GitHub를 추천해요.
 
-내 Machine이 준비되면 화면 상단에 **대시보드 열기**가 표시돼요. **Claude에 추가**를 누르면 Claude에 메일과 할 일에 관해 물어볼 수 있어요. 알림을 받으려면 휴대폰 홈 화면에 The Machine을 추가하세요. [앱을 설치하고 알림 켜기](phone-app.md)를 참고하세요.
+내 Machine이 준비되면 화면 상단에 **대시보드 열기**가 표시돼요. **Claude에 추가**를 누르면 Claude에 메일과 할 일에 관해 물어볼 수 있어요. 알림을 받으려면 휴대폰 홈 화면에 The Machine을 추가하세요. [앱 설치하고 알림 켜기](phone-app.md)를 참고하세요.
 
 ## 소스 요청하기
 
