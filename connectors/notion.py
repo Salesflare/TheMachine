@@ -11,7 +11,9 @@ What comes in (each an event, linked to people like mail), from the pages the in
   the integration, made by someone else, is the closest it tells.
 - notion.edit: someone else changed a page on which the owner has an open comment (they asked for a change): a quiet
   heads-up, never a buzz (machine/todo_kinds.py notion_edits).
-The first sync goes back 7 days (bootstrap_days).
+The first sync goes back 7 days (bootstrap_days). A 403 or 404 on one page, block, database, comment thread or person
+(GONE: deleted, or no longer shared with the integration) leaves that one out and the rest are read; a search cursor
+kept from an earlier run that Notion no longer takes starts the search over, once.
 
 Two ways in:
 - Sign in with Notion (the usual one): The Machine's public integration, through the hosting control plane, which
@@ -104,6 +106,10 @@ READS = (('GET', r'users/me'), ('GET', r'users/[0-9a-f-]{32,36}'), ('GET', r'use
          ('GET', r'databases/[0-9a-f-]{32,36}'))
 WRITES = (('POST', r'comments'), ('PATCH', r'blocks/[0-9a-f-]{32,36}'), ('PATCH', r'blocks/[0-9a-f-]{32,36}/children'),
           ('PATCH', r'pages/[0-9a-f-]{32,36}'), ('POST', r'pages'))
+# One page, block, database, comment thread or person this integration may no longer read (403) or Notion no longer has
+# (404: deleted, or no longer shared with the integration): about that one, never the round's failure. The sign-in's own
+# (401, notion_signin_expired) and the rest stay the connection's.
+GONE = (403, 404)
 
 
 def signin(secret):
@@ -361,7 +367,7 @@ class Source:
         try:
             u = self.call('GET', 'users/' + uid)
         except self.helpers.SourceError as error:
-            if error.status in (403, 404):
+            if error.status in GONE:
                 known[uid] = ['', '']
                 return '', ''
             raise
@@ -372,12 +378,22 @@ class Source:
 
     # ------------------------------------------------------------------------------------------- reads
     def pages(self, since, cursor=None):
-        """Pages edited since `since`, newest first, at most MAX_SEARCH searches: (pages, next cursor or None)."""
-        found = []
-        for _ in range(MAX_SEARCH):
-            page = self.call('POST', 'search', body={'filter': {'property': 'object', 'value': 'page'},
-                                                      'sort': {'direction': 'descending', 'timestamp': 'last_edited_time'},
-                                                      'page_size': 50, **({'start_cursor': cursor} if cursor else {})})
+        """Pages edited since `since`, newest first, at most MAX_SEARCH searches: (pages, next cursor or None). A cursor
+        kept from an earlier run that Notion no longer takes (400 or 404) starts the search over from the newest page,
+        once: at most MAX_SEARCH + 1 calls."""
+        found, kept, n = [], bool(cursor), 0
+        while n < MAX_SEARCH:
+            n += 1
+            try:
+                page = self.call('POST', 'search', body={'filter': {'property': 'object', 'value': 'page'},
+                                                          'sort': {'direction': 'descending', 'timestamp': 'last_edited_time'},
+                                                          'page_size': 50, **({'start_cursor': cursor} if cursor else {})})
+            except self.helpers.SourceError as error:
+                if not (kept and error.category == 'notion_http' and error.status in (400, 404)):
+                    raise
+                cursor, kept, n = None, False, 0
+                continue
+            kept = False  # only the kept cursor can have run out; the ones Notion just gave are fresh
             results = [p for p in page.get('results') or () if isinstance(p, dict) and plain_id(p.get('id'))]
             fresh = [p for p in results if (stamp(p.get('last_edited_time')) or since) >= since]
             found += fresh
@@ -394,7 +410,7 @@ class Source:
                 page = self.call('GET', 'comments', query={'block_id': dashed(block_id), 'page_size': 100,
                                                            **({'start_cursor': cursor} if cursor else {})})
             except self.helpers.SourceError as error:
-                if error.status in (403, 404):
+                if error.status in GONE:
                     return out  # comments closed to this integration, or the page is gone
                 raise
             out += [c for c in page.get('results') or () if isinstance(c, dict) and c.get('id')]
@@ -423,7 +439,7 @@ class Source:
             try:
                 cache[key] = self.call('GET', 'databases/' + key)
             except self.helpers.SourceError as error:
-                if error.status not in (403, 404):
+                if error.status not in GONE:
                     raise
                 cache[key] = {}
         return cache[key]
@@ -661,7 +677,13 @@ def sync(store, config, account, helpers):
         # comments: on the page, and inline on the first blocks of a page the owner made
         comments = source.comments(page_id)
         if creator == owner:
-            for block in source.children(page_id, MAX_BLOCKS):
+            try:
+                blocks = source.children(page_id, MAX_BLOCKS)
+            except helpers.SourceError as error:
+                if error.status not in GONE:
+                    raise
+                blocks = []  # deleted, or no longer shared with the integration, since it was listed: the rest are read
+            for block in blocks:
                 comments += source.comments(block['id'])
         events += comment_events(account, store, source, owner, page, comments, start, seen, people, asked)
         # someone changed a page the owner asked to have changed (an open comment of theirs): a quiet heads-up

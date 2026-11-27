@@ -83,6 +83,7 @@ class Notion:
                                'heading_2': {'rich_text': [text('Next steps')]}}]}
         self.requests, self.writes, self.refreshes = [], [], []
         self.token = 'ntn_fixture_access'
+        self.fail = {}  # (method, path, start_cursor or None) -> the HTTP status Notion answers it with
 
     def respond(self, request, timeout):
         self.test.assertEqual(timeout, 30)
@@ -100,6 +101,9 @@ class Notion:
         path = parts.path[len('/v1/'):]
         query = dict(urllib.parse.parse_qsl(parts.query))
         self.requests.append((method, path))
+        status = self.fail.get((method, path, (body or {}).get('start_cursor') or query.get('start_cursor')))
+        if status:
+            raise urllib.error.HTTPError(request.full_url, status, 'error', {}, None)
         if method != 'GET' and path != 'search':
             self.writes.append((method, path, body))
         return Response(json.dumps(self.answer(method, path, query, body)).encode())
@@ -242,6 +246,40 @@ class NotionTests(unittest.TestCase):
             self.assertEqual([i['text'] for i in app.card_chat_service(db, sid)[0] if i['kind'] == 'event'], ['Done in Notion'])
         self.assertEqual(self.store.decide(sid, 'undo', '', 'u1', 'dashboard')['status'], 'pending')
         self.assertEqual(self.store.close_done_notion(), [])  # the same done never closes it again
+
+    def test_a_page_gone_since_it_was_listed_is_set_aside_not_a_failed_round(self):
+        # A page of the owner's, deleted or no longer shared with the integration after the search listed it: reading its
+        # blocks answered 404 and raised notion_http:HTTP_404 as the round's failure. Left pending, it failed every round.
+        self.api.fail[('GET', f'blocks/{MINE}/children', None)] = 404
+        self.api.fail[('GET', 'databases/' + DB, None)] = 404  # the task's database no longer shared
+        self.api.fail[('GET', 'users/' + OTHER, None)] = 404  # a person who left the workspace
+        result = self.sync()
+        self.assertFalse(result['more'])
+        self.assertIsNone(self.store.checkpoint(self.account['id'])['cycle'])  # nothing left pending to fail on again
+        self.assertEqual({e['kind'] for e in self.events()}, {'notion.comment', 'notion.mention', 'notion.task'})  # the rest is read
+        self.api.pages[MINE]['last_edited_time'] = '2026-11-16T11:00:00.000Z'
+        self.assertEqual(self.sync()['events'], 0)  # listed again, still gone: no failure either
+        for status in (401, 429, 500):  # the sign-in's own and Notion's trouble stay the connection's
+            self.api.fail[('GET', f'blocks/{MINE}/children', None)] = status
+            self.api.pages[MINE]['last_edited_time'] = f'2026-11-16T11:{status % 60:02d}:00.000Z'
+            with self.assertRaises(sources.SourceError):
+                self.sync()
+
+    def test_a_search_cursor_notion_no_longer_takes_starts_the_search_over_once(self):
+        self.store.commit_page(self.account['id'], {'cycle': {'at': '2026-11-16T11:00:00+00:00', 'cursor': 'run-out', 'pending': []}}, [])
+        self.api.fail[('POST', 'search', 'run-out')] = 400
+        self.assertEqual(self.sync()['events'], 3)
+        self.assertEqual([r for r in self.api.requests if r[1] == 'search'], [('POST', 'search')] * 2)
+        self.assertIsNone(self.store.checkpoint(self.account['id'])['cycle'])
+        # a fresh search refused, or the kept cursor refused again after starting over: the connection's, no loop
+        source = notion.Source(self.config, self.account, self.helpers)
+        self.api.fail[('POST', 'search', None)] = 400
+        self.api.requests.clear()
+        for cursor in (None, 'run-out'):
+            with self.assertRaises(sources.SourceError) as caught:
+                source.pages(notion.stamp(NOW), cursor)
+            self.assertEqual(caught.exception.status, 400)
+        self.assertEqual(len(self.api.requests), 3)
 
     def test_a_page_the_owner_asked_to_change_being_changed_is_a_quiet_heads_up(self):
         self.api.pages[ASKED] = page(ASKED, 'Pricing page', OTHER)
