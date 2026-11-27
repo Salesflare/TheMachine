@@ -3,11 +3,11 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// One count for For you: the header ("5 to-dos for you"), the stat tile, the For you section and the sidebar's For you all
-// count the same items, Fleet asks among them. The sidebar once left the Fleet asks out (header 4, sidebar 2). The
+// One count for For you: the header ("5 to-dos for you"), the stat tile, the For you section, the sidebar's For you and
+// the To-dos badge all count the same items, Fleet asks among them. The sidebar once left the Fleet asks out (header 4, sidebar 2). The
 // Fleet asks (a teammate waits) come before the to-dos, prepared or not (their chip says which, #1225). A Fleet ask's
 // sidebar row brings its card up, also from an open chat. A briefing to read counts too (the header once left it out:
-// header 4, section 5). Made-up data.
+// header 4, section 5, and the To-dos badge 4 next to For you 5). Made-up data.
 const dashboard=await dashboardPage(process.env.PAGE);
 const FL='fl_'+'c'.repeat(16);
 const card=(id,title,status)=>({id:id.repeat(16).slice(0,16),title,body:'Made-up to-do.',status,scope:'work',event_ids:[],created_at:new Date(Date.now()-36e5).toISOString()});
@@ -33,10 +33,10 @@ try{
   await page.locator('#suggestions #fleet-share-p0').waitFor();await page.locator('#suggestions #fleet-w1').waitFor();
   await page.waitForFunction(()=>/6 to-dos for you/.test(document.querySelector('.page-sub')?.textContent||''));
   const counts=await page.evaluate(()=>({header:+/(\d+) to-dos for you/.exec(document.querySelector('.page-sub').textContent)[1],
-   tile:+document.querySelector('#suggestion-stats [data-fold-tile="foryou"] b').textContent,section:+document.querySelector('#section-foryou .count').textContent,
+   tile:+document.querySelector('#suggestion-stats [data-fold-tile="foryou"] b').textContent,badge:+document.querySelector('#badge-inbox').textContent,section:+document.querySelector('#section-foryou .count').textContent,
    side:+document.querySelector('#side-cards [data-side-fold="foryou"] .count').textContent,
    rows:[...document.querySelectorAll('#side-cards [data-side-fold="foryou"]~a')].map(a=>a.textContent.trim())}));
-  assert.deepEqual({header:counts.header,tile:counts.tile,section:counts.section,side:counts.side},{header:6,tile:6,section:6,side:6},width+': '+JSON.stringify(counts));
+  assert.deepEqual({header:counts.header,tile:counts.tile,section:counts.section,side:counts.side,badge:counts.badge},{header:6,tile:6,section:6,side:6,badge:6},width+': '+JSON.stringify(counts));
   assert.equal(counts.rows.length,6,JSON.stringify(counts.rows));
   const at=t=>counts.rows.findIndex(r=>r.includes(t));
   assert.ok(Math.max(at('Rae Moss'),at('Robin Vale'))<Math.min(at('Reply to Sam'),at('Pick a date'),at('Approve the new logo'),at('Prepare for the design')),
