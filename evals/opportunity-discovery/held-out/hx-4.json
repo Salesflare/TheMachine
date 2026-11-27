@@ -1,0 +1,1571 @@
+{
+ "id": "hx-4",
+ "about": "Part-time freelance bookkeeper with five small-business clients, plus family mail",
+ "owner": {
+  "name": "Annelies Carver",
+  "email": "annelies@carverledger.example"
+ },
+ "accounts": [
+  {
+   "id": "wmail",
+   "boundary": "work:Carver Ledger",
+   "email": "annelies@carverledger.example"
+  },
+  {
+   "id": "pmail",
+   "boundary": "personal:home",
+   "email": "annelies.carver@mail.example"
+  }
+ ],
+ "messages": [
+  {
+   "key": "m1",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 55,
+   "hour": 9,
+   "from": [
+    "Dale Ostrander",
+    "dale@brightwaterplumbing.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "October receipts",
+   "body": "Hi Annelies,\n\nOctober receipts are uploaded to the shared folder. Sorry they're late, it was a crazy month with all the water heater calls.\n\nDale",
+   "bulk": false
+  },
+  {
+   "key": "m2",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 55,
+   "hour": 14,
+   "from": [
+    "Annelies Carver",
+    "annelies@carverledger.example"
+   ],
+   "to": [
+    [
+     "Dale Ostrander",
+     "dale@brightwaterplumbing.example"
+    ]
+   ],
+   "subject": "Re: October receipts",
+   "body": "Thanks Dale! No worries. I'll have October reconciled by the 10th.\n\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m3",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 26,
+   "hour": 8,
+   "from": [
+    "Dale Ostrander",
+    "dale@brightwaterplumbing.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "November stuff + van question",
+   "body": "Hi Annelies,\n\nNovember receipts are in the folder. One question: I bought a used van on the 12th for $18,400, financed through the dealer. Does that go in as an expense or do we depreciate it?\n\nAlso the shop has a new phone number, it's on the invoices now.\n\nThanks,\nDale\nBrightwater Plumbing | leaks, water heaters, drains",
+   "bulk": false
+  },
+  {
+   "key": "m4",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 25,
+   "hour": 10,
+   "from": [
+    "Annelies Carver",
+    "annelies@carverledger.example"
+   ],
+   "to": [
+    [
+     "Dale Ostrander",
+     "dale@brightwaterplumbing.example"
+    ]
+   ],
+   "subject": "Re: November stuff + van question",
+   "body": "Hi Dale,\n\nThe van gets capitalized and depreciated, not expensed all at once. Could you send me the loan papers from the dealer so I can set up the loan balance? I've updated the phone number on your profile too.\n\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m5",
+   "account": "wmail",
+   "thread": "t3",
+   "day": 12,
+   "hour": 11,
+   "from": [
+    "Dale Ostrander",
+    "dale@brightwaterplumbing.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Copy of our engagement letter?",
+   "body": "Hi Annelies,\n\nMy bank wants a copy of our engagement letter (the one we signed when I started with you) for the line of credit application. Could you send me a PDF when you get a sec? No rush before Friday.\n\nThanks,\nDale / Brightwater Plumbing",
+   "bulk": false
+  },
+  {
+   "key": "m6",
+   "account": "wmail",
+   "thread": "t4",
+   "day": 10,
+   "hour": 16,
+   "from": [
+    "Dale Kimura",
+    "dale.kimura@cedarrowspaces.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Your desk agreement renews January 1",
+   "body": "Hi Annelies,\n\nJust a heads up that your desk agreement at Cedar Row renews on January 1. The rate stays at $210/month. Please sign the renewal form (attached) and send it back by December 15.\n\nThanks!\nDale Kimura\nMember Services, Cedar Row Workspace",
+   "bulk": false
+  },
+  {
+   "key": "m7",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 50,
+   "hour": 10,
+   "from": [
+    "Priya Fennick",
+    "priya@fennickflorals.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "October statements",
+   "body": "Hi Annelies,\n\nAttached are the October statements for the checking account and the card. The big deposit on the 14th is the Whitfield wedding.\n\nBest,\nPriya Fennick\nFennick Florals",
+   "bulk": false
+  },
+  {
+   "key": "m8",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 48,
+   "hour": 9,
+   "from": [
+    "Annelies Carver",
+    "annelies@carverledger.example"
+   ],
+   "to": [
+    [
+     "Priya Fennick",
+     "priya@fennickflorals.example"
+    ]
+   ],
+   "subject": "Re: October statements",
+   "body": "Got them, thanks Priya. Everything looks normal at first glance.\n\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m9",
+   "account": "wmail",
+   "thread": "t6",
+   "day": 18,
+   "hour": 13,
+   "from": [
+    "Priya Fennick",
+    "priya@fennickflorals.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Greenleaf says invoice 4471 is unpaid??",
+   "body": "Hi Annelies,\n\nGreenleaf Stems says invoice 4471 is still open, $1,212.50 for the October wedding flowers. I'm pretty sure I paid it by bank transfer in early November. Can you check whether it shows in the books? I'd hate to pay it twice.\n\nPriya",
+   "bulk": false
+  },
+  {
+   "key": "m10",
+   "account": "wmail",
+   "thread": "t7",
+   "day": 4,
+   "hour": 10,
+   "from": [
+    "Priya Fennick",
+    "priya@fennickflorals.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "November statements",
+   "body": "Hi Annelies,\n\nNovember statements attached. Also, when is my Q4 estimated tax payment due again? I always forget.\n\nThanks!\nPriya",
+   "bulk": false
+  },
+  {
+   "key": "m11",
+   "account": "wmail",
+   "thread": "t7",
+   "day": 3,
+   "hour": 9,
+   "from": [
+    "Annelies Carver",
+    "annelies@carverledger.example"
+   ],
+   "to": [
+    [
+     "Priya Fennick",
+     "priya@fennickflorals.example"
+    ]
+   ],
+   "subject": "Re: November statements",
+   "body": "Hi Priya,\n\nThanks! The Q4 estimate is due January 15. I'll send you the amount once November is closed.\n\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m12",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 44,
+   "hour": 19,
+   "from": [
+    "Hannah Bell",
+    "hannah@lindenyoga.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Bank feed stuck",
+   "body": "Hi Annelies,\n\nThe bank feed in Tallybook hasn't pulled anything in since Oct 28. I tried reconnecting but it just spins forever. Should I download the statements by hand for now?\n\nThanks,\nHannah",
+   "bulk": false
+  },
+  {
+   "key": "m13",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 44,
+   "hour": 21,
+   "from": [
+    "Annelies Carver",
+    "annelies@carverledger.example"
+   ],
+   "to": [
+    [
+     "Hannah Bell",
+     "hannah@lindenyoga.example"
+    ]
+   ],
+   "subject": "Re: Bank feed stuck",
+   "body": "Hi Hannah,\n\nDon't download anything yet. Tallybook has a problem on their end with some bank feeds. I'll keep an eye on it and let you know when it's working again.\n\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m14",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 42,
+   "hour": 8,
+   "from": [
+    "Katrin Brandt",
+    "katrin@holzwerkbrandt.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Bankverbindung in Tallybook",
+   "body": "Hallo Annelies,\n\nseit Ende Oktober werden die Umsätze von meinem Geschäftskonto nicht mehr in Tallybook importiert. Ich habe die Verbindung schon zweimal neu eingerichtet, aber es klappt einfach nicht. Kannst du bitte mal schauen?\n\nDanke und viele Grüße\nKatrin",
+   "bulk": false
+  },
+  {
+   "key": "m15",
+   "account": "wmail",
+   "thread": "t11",
+   "day": 45,
+   "hour": 7,
+   "from": [
+    "Tallybook Status",
+    "status@tallybook.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Known issue: bank feeds delayed",
+   "body": "Some bank feeds have been delayed since October 28. Please don't reconnect affected accounts. Transactions will import automatically once the issue is fixed. We'll post an update here.\n\nThe Tallybook team",
+   "bulk": true
+  },
+  {
+   "key": "m16",
+   "account": "wmail",
+   "thread": "t12",
+   "day": 40,
+   "hour": 7,
+   "from": [
+    "Tallybook Status",
+    "status@tallybook.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Resolved: bank feeds restored",
+   "body": "The bank feed delay is fixed. All delayed transactions since October 28 have been imported. No action is needed on your side.\n\nThe Tallybook team",
+   "bulk": true
+  },
+  {
+   "key": "m17",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 39,
+   "hour": 8,
+   "from": [
+    "Hannah Bell",
+    "hannah@lindenyoga.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Re: Bank feed stuck",
+   "body": "Good news, everything from October showed up this morning! Thanks for telling me not to mess with it.\n\nH.",
+   "bulk": false
+  },
+  {
+   "key": "m18",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 41,
+   "hour": 10,
+   "from": [
+    "Annelies Carver",
+    "annelies@carverledger.example"
+   ],
+   "to": [
+    [
+     "Katrin Brandt",
+     "katrin@holzwerkbrandt.example"
+    ]
+   ],
+   "subject": "Re: Bankverbindung in Tallybook",
+   "body": "Hallo Katrin,\n\ndanke für die Nachricht. Das ist gerade ein bekanntes Problem bei Tallybook, nicht nur bei dir. Die arbeiten daran. Bitte richte die Verbindung nicht noch einmal neu ein, ich schaue nächste Woche wieder nach.\n\nViele Grüße\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m19",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 38,
+   "hour": 12,
+   "from": [
+    "Katrin Brandt",
+    "katrin@holzwerkbrandt.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Re: Bankverbindung in Tallybook",
+   "body": "Hallo Annelies,\n\nes funktioniert wieder! Alle Umsätze sind jetzt da, auch die vom 28. Oktober. Danke für deine Hilfe.\n\nLiebe Grüße\nKatrin",
+   "bulk": false
+  },
+  {
+   "key": "m20",
+   "account": "wmail",
+   "thread": "t13",
+   "day": 15,
+   "hour": 18,
+   "from": [
+    "Hannah Bell",
+    "hannah@lindenyoga.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Where does invoice 4471 go?",
+   "body": "Hi Annelies,\n\nQuick one: I got invoice 4471 from the Maplewood Community Center for the room we rent on Saturdays for the kids' class. Should that go under rent or under program costs? It's $640 for the fall session.\n\nThanks!\nHannah",
+   "bulk": false
+  },
+  {
+   "key": "m21",
+   "account": "wmail",
+   "thread": "t14",
+   "day": 7,
+   "hour": 20,
+   "from": [
+    "Hannah Bell",
+    "hannah@lindenyoga.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "November receipts + mats",
+   "body": "Hi Annelies,\n\nNovember receipts are in the folder. I bought 20 new mats for $1,150, is that an expense or equipment? I'll send the receipt for the mats tomorrow, it's still in my car.\n\nHannah\nLinden Yoga Studio",
+   "bulk": false
+  },
+  {
+   "key": "m22",
+   "account": "wmail",
+   "thread": "t14",
+   "day": 6,
+   "hour": 9,
+   "from": [
+    "Annelies Carver",
+    "annelies@carverledger.example"
+   ],
+   "to": [
+    [
+     "Hannah Bell",
+     "hannah@lindenyoga.example"
+    ]
+   ],
+   "subject": "Re: November receipts + mats",
+   "body": "Hi Hannah,\n\nAt that price per mat you can expense them as supplies. Thanks for the receipt when you find it.\n\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m23",
+   "account": "wmail",
+   "thread": "t15",
+   "day": 22,
+   "hour": 21,
+   "from": [
+    "Joost Verhaegen",
+    "joost@caferozenhof.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Aangifte vierde kwartaal",
+   "body": "Hoi Annelies,\n\nSorry dat ik het nog een keer stuur, ik weet niet of mijn vorige mail aangekomen is (die kwam van mijn privéadres). Wanneer moet de aangifte voor het vierde kwartaal binnen zijn? En moet ik nog bonnetjes aanleveren?\n\nGroet,\nJoost Verhaegen\nCafé Rozenhof",
+   "bulk": false
+  },
+  {
+   "key": "m24",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 53,
+   "hour": 15,
+   "from": [
+    "Katrin Brandt",
+    "katrin@holzwerkbrandt.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Belege Oktober",
+   "body": "Hallo Annelies,\n\nanbei die Belege für Oktober. Die Rechnung vom Holzhändler kommt noch, er hat sie mir noch nicht geschickt.\n\nViele Grüße\nKatrin Brandt\nHolzwerk Brandt",
+   "bulk": false
+  },
+  {
+   "key": "m25",
+   "account": "wmail",
+   "thread": "t16",
+   "day": 24,
+   "hour": 22,
+   "from": [
+    "Joost Verhaegen",
+    "joost.verhaegen@mail.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Vraagje over de kwartaalaangifte",
+   "body": "Hoi Annelies,\n\nIk heb een vraag over de kwartaalaangifte voor de sales tax. Wanneer moet die van het vierde kwartaal binnen zijn, en heb je nog iets van mij nodig? Ik wil het graag op tijd regelen, vorig jaar werd het een beetje krap.\n\nGroetjes,\nJoost",
+   "bulk": false
+  },
+  {
+   "key": "m26",
+   "account": "wmail",
+   "thread": "t15",
+   "day": 21,
+   "hour": 9,
+   "from": [
+    "Annelies Carver",
+    "annelies@carverledger.example"
+   ],
+   "to": [
+    [
+     "Joost Verhaegen",
+     "joost@caferozenhof.example"
+    ]
+   ],
+   "subject": "Re: Aangifte vierde kwartaal",
+   "body": "Hoi Joost,\n\nBeide mails zijn aangekomen, geen zorgen. De aangifte voor het vierde kwartaal moet uiterlijk 31 januari binnen zijn. Ik heb alles van oktober al, dus ik heb alleen de bonnetjes van november en december nog nodig. Die kun je gewoon begin januari sturen.\n\nGroetjes,\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m27",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 35,
+   "hour": 20,
+   "from": [
+    "Joost Verhaegen",
+    "joost@caferozenhof.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Bonnetjes oktober",
+   "body": "Hoi Annelies,\n\nHierbij de bonnetjes van oktober. De rekening van de koffiebranderij zit er ook bij, die was dit keer wat hoger.\n\nFijne avond!\nJoost",
+   "bulk": false
+  },
+  {
+   "key": "m28",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 34,
+   "hour": 8,
+   "from": [
+    "Annelies Carver",
+    "annelies@carverledger.example"
+   ],
+   "to": [
+    [
+     "Joost Verhaegen",
+     "joost@caferozenhof.example"
+    ]
+   ],
+   "subject": "Re: Bonnetjes oktober",
+   "body": "Dank je Joost, alles is binnen. Ik verwerk het deze week.\n\nGroet,\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m29",
+   "account": "wmail",
+   "thread": "t18",
+   "day": 2,
+   "hour": 19,
+   "from": [
+    "Joost Verhaegen",
+    "joost@caferozenhof.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Bonnetjes november",
+   "body": "Hoi Annelies,\n\nHier zijn de bonnetjes van november. Er zit ook een nieuwe rekening bij voor de vaatwasser, die hebben wij vorige week vervangen. Laat maar weten als je nog iets mist.\n\nGroetjes,\nJoost",
+   "bulk": false
+  },
+  {
+   "key": "m30",
+   "account": "wmail",
+   "thread": "t19",
+   "day": 40,
+   "hour": 11,
+   "from": [
+    "Cedar Row Billing",
+    "billing@cedarrowspaces.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Invoice CR-1188",
+   "body": "Hello Annelies,\n\nInvoice CR-1188 for your November desk membership is attached: $210.00, due November 1. You can pay online or drop off a check at the front desk.\n\nCedar Row Workspace",
+   "bulk": false
+  },
+  {
+   "key": "m31",
+   "account": "wmail",
+   "thread": "t20",
+   "day": 52,
+   "hour": 7,
+   "from": [
+    "Ledger Desk Weekly",
+    "news@ledgerdesk.example"
+   ],
+   "to": [
+    [
+     "Subscribers",
+     "list@ledgerdesk.example"
+    ]
+   ],
+   "subject": "This week: the new mileage rate and five reconcile shortcuts",
+   "body": "In this issue: the new standard mileage rate, five shortcuts for faster bank reconciles, and reader Q&A on petty cash. Read online or unsubscribe anytime.",
+   "bulk": true
+  },
+  {
+   "key": "m32",
+   "account": "wmail",
+   "thread": "t21",
+   "day": 31,
+   "hour": 7,
+   "from": [
+    "Ledger Desk Weekly",
+    "news@ledgerdesk.example"
+   ],
+   "to": [
+    [
+     "Subscribers",
+     "list@ledgerdesk.example"
+    ]
+   ],
+   "subject": "Year-end is coming: build your client checklist",
+   "body": "Year-end is six weeks away. This week: a printable client checklist, how to record gift cards, and why you should lock prior periods. Plus a reader asks how to price catch-up work.",
+   "bulk": true
+  },
+  {
+   "key": "m33",
+   "account": "wmail",
+   "thread": "t22",
+   "day": 9,
+   "hour": 7,
+   "from": [
+    "Ledger Desk Weekly",
+    "news@ledgerdesk.example"
+   ],
+   "to": [
+    [
+     "Subscribers",
+     "list@ledgerdesk.example"
+    ]
+   ],
+   "subject": "Your tax-deadline calendar for the new year",
+   "body": "Pin this: January 15 for Q4 estimated payments, January 31 for W-2s, March 16 for partnership returns, April 15 for individual returns. Also: a quick refresher on extensions.",
+   "bulk": true
+  },
+  {
+   "key": "m34",
+   "account": "wmail",
+   "thread": "t23",
+   "day": 28,
+   "hour": 7,
+   "from": [
+    "Tallybook Billing",
+    "billing@tallybook.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Your Tallybook receipt",
+   "body": "Thanks for your payment. Tallybook Practice plan, monthly: $45.00, charged to the card ending 0412.",
+   "bulk": true
+  },
+  {
+   "key": "m35",
+   "account": "pmail",
+   "thread": "p1",
+   "day": 30,
+   "hour": 7,
+   "from": [
+    "Sycamore Community Bank",
+    "alerts@sycamorebank.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "Your October statement is ready",
+   "body": "Your October statement for checking ending 7730 is ready to view in online banking.",
+   "bulk": true
+  },
+  {
+   "key": "m36",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 17,
+   "hour": 14,
+   "from": [
+    "Owen Tasker",
+    "owen@taskertile.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Taking new clients?",
+   "body": "Hi Annelies,\n\nYour name came up at the small business meetup last week. I run a two-person tile company and I need someone for monthly bookkeeping. Are you taking on new clients?\n\nOwen Tasker\nTasker Tile",
+   "bulk": false
+  },
+  {
+   "key": "m37",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 16,
+   "hour": 10,
+   "from": [
+    "Annelies Carver",
+    "annelies@carverledger.example"
+   ],
+   "to": [
+    [
+     "Owen Tasker",
+     "owen@taskertile.example"
+    ]
+   ],
+   "subject": "Re: Taking new clients?",
+   "body": "Hi Owen,\n\nThanks for thinking of me. I'm full until March, but I'd be happy to talk then.\n\nBest,\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m38",
+   "account": "pmail",
+   "thread": "p2",
+   "day": 8,
+   "hour": 20,
+   "from": [
+    "Teo Carver",
+    "teo.carver@mail.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "faucet again",
+   "body": "Hey, the kitchen faucet is dripping again, worse than last time. Can you call someone this week? I'm on the Fairview job site every day until Friday.\n\nLove, T",
+   "bulk": false
+  },
+  {
+   "key": "m39",
+   "account": "pmail",
+   "thread": "p2",
+   "day": 8,
+   "hour": 21,
+   "from": [
+    "Annelies Carver",
+    "annelies.carver@mail.example"
+   ],
+   "to": [
+    [
+     "Teo Carver",
+     "teo.carver@mail.example"
+    ]
+   ],
+   "subject": "Re: faucet again",
+   "body": "Ugh. I'll call someone Monday morning. Put a bowl under it for now?",
+   "bulk": false
+  },
+  {
+   "key": "m40",
+   "account": "pmail",
+   "thread": "p3",
+   "day": 47,
+   "hour": 16,
+   "from": [
+    "Ruth Achterberg",
+    "ruth.achterberg@mail.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "Thanksgiving",
+   "body": "Hi sweetheart,\n\nAre you coming here for Thanksgiving this year or going to Teo's family? Let me know so I can plan the turkey. Not too big this time, I still have leftovers in the freezer from last year!\n\nLove, Mom",
+   "bulk": false
+  },
+  {
+   "key": "m41",
+   "account": "pmail",
+   "thread": "p3",
+   "day": 46,
+   "hour": 19,
+   "from": [
+    "Annelies Carver",
+    "annelies.carver@mail.example"
+   ],
+   "to": [
+    [
+     "Ruth Achterberg",
+     "ruth.achterberg@mail.example"
+    ]
+   ],
+   "subject": "Re: Thanksgiving",
+   "body": "Hi Mom, we're coming to you! I'll bring the pies. Love, A",
+   "bulk": false
+  },
+  {
+   "key": "m42",
+   "account": "pmail",
+   "thread": "p4",
+   "day": 5,
+   "hour": 11,
+   "from": [
+    "Ruth Achterberg",
+    "ruth.achterberg@mail.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "Letter from my plan",
+   "body": "Hi honey,\n\nI got a letter from my Medicare plan about changes for next year and I don't understand half of it. Can you look at it when you're here Thursday? It's on the fridge.\n\nMom",
+   "bulk": false
+  },
+  {
+   "key": "m43",
+   "account": "pmail",
+   "thread": "p5",
+   "day": 37,
+   "hour": 21,
+   "from": [
+    "Femke Smits",
+    "femke.smits@mail.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "lake pics",
+   "body": "Hi sis! Back from the lake, here are some photos. Milo would have loved the canoe. Next year you guys have to come.\n\nF",
+   "bulk": false
+  },
+  {
+   "key": "m44",
+   "account": "pmail",
+   "thread": "p6",
+   "day": 20,
+   "hour": 13,
+   "from": [
+    "Femke Smits",
+    "femke.smits@mail.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "Mom's 70th",
+   "body": "Mom turns 70 on December 20 (can you believe it). Want to go in together on something? I was thinking a nice piece of jewelry, maybe the garnet earrings she keeps looking at downtown. Let me know what you think.\n\nF",
+   "bulk": false
+  },
+  {
+   "key": "m45",
+   "account": "pmail",
+   "thread": "p7",
+   "day": 45,
+   "hour": 15,
+   "from": [
+    "Brookside Elementary",
+    "office@brooksideelementary.example"
+   ],
+   "to": [
+    [
+     "Brookside Families",
+     "families@brooksideelementary.example"
+    ]
+   ],
+   "subject": "Brookside News: picture day and book fair",
+   "body": "Picture day is this Thursday. The fall book fair runs all next week in the library. Volunteers are always welcome!",
+   "bulk": true
+  },
+  {
+   "key": "m46",
+   "account": "pmail",
+   "thread": "p8",
+   "day": 14,
+   "hour": 15,
+   "from": [
+    "Brookside Elementary",
+    "office@brooksideelementary.example"
+   ],
+   "to": [
+    [
+     "Brookside Families",
+     "families@brooksideelementary.example"
+    ]
+   ],
+   "subject": "Brookside News: winter concert",
+   "body": "The winter concert is December 11 at 6 pm in the school theater. Enrollment for spring after-school clubs opens December 1.",
+   "bulk": true
+  },
+  {
+   "key": "m47",
+   "account": "pmail",
+   "thread": "p9",
+   "day": 29,
+   "hour": 18,
+   "from": [
+    "Ray Dunmore",
+    "ray.dunmore@mail.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ],
+    [
+     "Lena Ortiz",
+     "lena.ortiz@mail.example"
+    ],
+    [
+     "Mark Huang",
+     "mark.huang@mail.example"
+    ]
+   ],
+   "subject": "End-of-season party Saturday",
+   "body": "Hi soccer families,\n\nWhat a season! Party is Saturday at 4 at Kessler Field. Please reply with what dish you'll bring so we don't end up with six bags of chips.\n\nCoach Ray",
+   "bulk": false
+  },
+  {
+   "key": "m48",
+   "account": "pmail",
+   "thread": "p9",
+   "day": 29,
+   "hour": 20,
+   "from": [
+    "Annelies Carver",
+    "annelies.carver@mail.example"
+   ],
+   "to": [
+    [
+     "Ray Dunmore",
+     "ray.dunmore@mail.example"
+    ]
+   ],
+   "subject": "Re: End-of-season party Saturday",
+   "body": "Hi Ray, we'll bring a big pasta salad. Thanks for a great season, Milo loved it.\n\nAnnelies",
+   "bulk": false
+  },
+  {
+   "key": "m49",
+   "account": "pmail",
+   "thread": "p10",
+   "day": 19,
+   "hour": 9,
+   "from": [
+    "Gus Patel",
+    "gus.patel@mail.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "ladder",
+   "body": "Hey Annelies, could I borrow your extension ladder Saturday? Gutters again. Gus",
+   "bulk": false
+  },
+  {
+   "key": "m50",
+   "account": "pmail",
+   "thread": "p10",
+   "day": 19,
+   "hour": 12,
+   "from": [
+    "Annelies Carver",
+    "annelies.carver@mail.example"
+   ],
+   "to": [
+    [
+     "Gus Patel",
+     "gus.patel@mail.example"
+    ]
+   ],
+   "subject": "Re: ladder",
+   "body": "Sure, it's in the garage. The side door is open.",
+   "bulk": false
+  },
+  {
+   "key": "m51",
+   "account": "pmail",
+   "thread": "p11",
+   "day": 11,
+   "hour": 10,
+   "from": [
+    "Riverside Pharmacy",
+    "noreply@riversidepharmacy.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "Your prescription is ready",
+   "body": "Your prescription is ready for pickup at the Elm Street location. It will be held for 7 days.",
+   "bulk": true
+  },
+  {
+   "key": "m52",
+   "account": "pmail",
+   "thread": "p12",
+   "day": 36,
+   "hour": 8,
+   "from": [
+    "Oakridge Outfitters",
+    "deals@oakridgeoutfitters.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "Fall sale: 30% off jackets",
+   "body": "Our fall sale is on. Take 30% off all jackets and boots through Sunday. Free shipping over $75.",
+   "bulk": true
+  },
+  {
+   "key": "m53",
+   "account": "pmail",
+   "thread": "p13",
+   "day": 1,
+   "hour": 17,
+   "from": [
+    "Teo Carver",
+    "teo.carver@mail.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "store",
+   "body": "At the store for pie stuff. Need anything else for tomorrow?",
+   "bulk": false
+  },
+  {
+   "key": "m54",
+   "account": "pmail",
+   "thread": "p13",
+   "day": 1,
+   "hour": 17,
+   "from": [
+    "Annelies Carver",
+    "annelies.carver@mail.example"
+   ],
+   "to": [
+    [
+     "Teo Carver",
+     "teo.carver@mail.example"
+    ]
+   ],
+   "subject": "Re: store",
+   "body": "Butter and the good cinnamon. And whipped cream!",
+   "bulk": false
+  },
+  {
+   "key": "m55",
+   "account": "pmail",
+   "thread": "p14",
+   "day": 13,
+   "hour": 10,
+   "from": [
+    "Marta Lindqvist",
+    "marta@lakeviewdental.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "Please confirm your cleaning",
+   "body": "Hi Annelies,\n\nThis is Marta from Lakeview Dental. Please confirm your cleaning on December 3 at 8:30 am. Reply to this email or call the front desk.\n\nThank you!\nMarta",
+   "bulk": false
+  },
+  {
+   "key": "m56",
+   "account": "pmail",
+   "thread": "p14",
+   "day": 13,
+   "hour": 13,
+   "from": [
+    "Annelies Carver",
+    "annelies.carver@mail.example"
+   ],
+   "to": [
+    [
+     "Marta Lindqvist",
+     "marta@lakeviewdental.example"
+    ]
+   ],
+   "subject": "Re: Please confirm your cleaning",
+   "body": "Hi Marta, confirmed for December 3 at 8:30. See you then. Annelies",
+   "bulk": false
+  },
+  {
+   "key": "m57",
+   "account": "pmail",
+   "thread": "p15",
+   "day": 24,
+   "hour": 9,
+   "from": [
+    "Kessler Public Library",
+    "holds@kesslerlibrary.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies.carver@mail.example"
+    ]
+   ],
+   "subject": "Your hold is ready",
+   "body": "The item you placed on hold is ready for pickup at the main branch. It will be held until next Tuesday.",
+   "bulk": true
+  },
+  {
+   "key": "m58",
+   "account": "wmail",
+   "thread": "t25",
+   "day": 0,
+   "hour": 8,
+   "from": [
+    "Tallybook",
+    "noreply@tallybook.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Your monthly practice summary",
+   "body": "Here's your November summary: 5 clients, 312 transactions categorized, 2 bank rules created. Keep it up!",
+   "bulk": true
+  },
+  {
+   "key": "m59",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 6,
+   "hour": 16,
+   "from": [
+    "Katrin Brandt",
+    "katrin@holzwerkbrandt.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "Belege November",
+   "body": "Hallo Annelies,\n\nhier sind die Belege für November. Die Rechnung vom Holzhändler für Oktober ist auch dabei, sorry für die Verspätung.\n\nSchönes Wochenende!\nKatrin",
+   "bulk": false
+  },
+  {
+   "key": "m60",
+   "account": "wmail",
+   "thread": "t27",
+   "day": 58,
+   "hour": 17,
+   "from": [
+    "Hannah Bell",
+    "hannah@lindenyoga.example"
+   ],
+   "to": [
+    [
+     "Annelies Carver",
+     "annelies@carverledger.example"
+    ]
+   ],
+   "subject": "September receipts",
+   "body": "Hi Annelies,\n\nSeptember receipts are uploaded. Two of them are blurry, I can re-scan if you need.\n\nHannah\nLinden Yoga Studio",
+   "bulk": false
+  }
+ ],
+ "todos": [
+  {
+   "key": "td1",
+   "title": "Reconcile Brightwater Plumbing October receipts",
+   "evidence": [
+    "m1"
+   ],
+   "day": 55,
+   "state": "done"
+  },
+  {
+   "key": "td2",
+   "title": "Reply to Dale about the van purchase",
+   "evidence": [
+    "m3"
+   ],
+   "day": 26,
+   "state": "done"
+  },
+  {
+   "key": "td3",
+   "title": "Send Dale Ostrander a copy of the engagement letter",
+   "evidence": [
+    "m5"
+   ],
+   "day": 12,
+   "state": "open"
+  },
+  {
+   "key": "td4",
+   "title": "Sign and return the Cedar Row desk renewal",
+   "evidence": [
+    "m6"
+   ],
+   "day": 10,
+   "state": "open"
+  },
+  {
+   "key": "td5",
+   "title": "Reconcile Fennick Florals October statements",
+   "evidence": [
+    "m7"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "td6",
+   "title": "Check whether Priya paid Greenleaf invoice 4471",
+   "evidence": [
+    "m9"
+   ],
+   "day": 18,
+   "state": "open"
+  },
+  {
+   "key": "td7",
+   "title": "Reconcile Fennick Florals November statements",
+   "evidence": [
+    "m10"
+   ],
+   "day": 4,
+   "state": "open"
+  },
+  {
+   "key": "td8",
+   "title": "Reply to Hannah about the stuck bank feed",
+   "evidence": [
+    "m12"
+   ],
+   "day": 44,
+   "state": "done"
+  },
+  {
+   "key": "td9",
+   "title": "Reply to Katrin about the bank connection",
+   "evidence": [
+    "m14"
+   ],
+   "day": 42,
+   "state": "done"
+  },
+  {
+   "key": "td10",
+   "title": "Reply to Hannah about where invoice 4471 goes",
+   "evidence": [
+    "m20"
+   ],
+   "day": 15,
+   "state": "open"
+  },
+  {
+   "key": "td11",
+   "title": "Reply to Hannah about the yoga mats",
+   "evidence": [
+    "m21"
+   ],
+   "day": 7,
+   "state": "done"
+  },
+  {
+   "key": "td12",
+   "title": "Reply to Joost about the Q4 sales tax filing",
+   "evidence": [
+    "m25",
+    "m23"
+   ],
+   "day": 22,
+   "state": "done"
+  },
+  {
+   "key": "td13",
+   "title": "Process Holzwerk Brandt October receipts",
+   "evidence": [
+    "m24"
+   ],
+   "day": 53,
+   "state": "done"
+  },
+  {
+   "key": "td14",
+   "title": "Process Café Rozenhof October receipts",
+   "evidence": [
+    "m27"
+   ],
+   "day": 35,
+   "state": "done"
+  },
+  {
+   "key": "td15",
+   "title": "Process Café Rozenhof November receipts",
+   "evidence": [
+    "m29"
+   ],
+   "day": 2,
+   "state": "open"
+  },
+  {
+   "key": "td16",
+   "title": "Pay Cedar Row invoice CR-1188",
+   "evidence": [
+    "m30"
+   ],
+   "day": 40,
+   "state": "done"
+  },
+  {
+   "key": "td17",
+   "title": "Reply to Owen about taking on a new client",
+   "evidence": [
+    "m36"
+   ],
+   "day": 17,
+   "state": "done"
+  },
+  {
+   "key": "td18",
+   "title": "Call a plumber about the kitchen faucet",
+   "evidence": [
+    "m38"
+   ],
+   "day": 8,
+   "state": "open"
+  },
+  {
+   "key": "td19",
+   "title": "Reply to Mom about Thanksgiving",
+   "evidence": [
+    "m40"
+   ],
+   "day": 47,
+   "state": "done"
+  },
+  {
+   "key": "td20",
+   "title": "Look at Mom's Medicare plan letter",
+   "evidence": [
+    "m42"
+   ],
+   "day": 5,
+   "state": "open"
+  },
+  {
+   "key": "td21",
+   "title": "Reply to Femke about Mom's birthday gift",
+   "evidence": [
+    "m44"
+   ],
+   "day": 20,
+   "state": "open"
+  },
+  {
+   "key": "td22",
+   "title": "Reply to Coach Ray with a dish for the party",
+   "evidence": [
+    "m47"
+   ],
+   "day": 29,
+   "state": "done"
+  },
+  {
+   "key": "td23",
+   "title": "Reply to Gus about the ladder",
+   "evidence": [
+    "m49"
+   ],
+   "day": 19,
+   "state": "done"
+  },
+  {
+   "key": "td24",
+   "title": "Confirm the dentist cleaning on December 3",
+   "evidence": [
+    "m55"
+   ],
+   "day": 13,
+   "state": "done"
+  },
+  {
+   "key": "td25",
+   "title": "Process Holzwerk Brandt November receipts",
+   "evidence": [
+    "m59"
+   ],
+   "day": 6,
+   "state": "open"
+  },
+  {
+   "key": "td26",
+   "title": "Reconcile Linden Yoga September receipts",
+   "evidence": [
+    "m60"
+   ],
+   "day": 58,
+   "state": "done"
+  }
+ ],
+ "promises": [
+  {
+   "direction": "mine",
+   "who": "Dale Ostrander",
+   "what": "reconcile October by the 10th",
+   "message": "m2",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Priya Fennick",
+   "what": "send the Q4 estimate amount once November is closed",
+   "message": "m11",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Hannah Bell",
+   "what": "say when the bank feed works again",
+   "message": "m13",
+   "status": "done"
+  },
+  {
+   "direction": "theirs",
+   "who": "Hannah Bell",
+   "what": "send the receipt for the mats",
+   "message": "m21",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Teo Carver",
+   "what": "call a plumber Monday morning",
+   "message": "m39",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Ruth Achterberg",
+   "what": "bring the pies for Thanksgiving",
+   "message": "m41",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Ray Dunmore",
+   "what": "bring a pasta salad to the party",
+   "message": "m48",
+   "status": "done"
+  }
+ ],
+ "key": {
+  "opportunities": [],
+  "traps": [
+   {
+    "id": "x1",
+    "kind": "coincidence",
+    "what": "Two people with the first name Dale want a signed agreement, but one is a client's engagement letter and the other the owner's desk renewal.",
+    "evidence": [
+     "m5",
+     "m6"
+    ]
+   },
+   {
+    "id": "x2",
+    "kind": "coincidence",
+    "what": "Priya and Hannah both mention invoice 4471, but they are different vendors; the shared number is chance.",
+    "evidence": [
+     "m9",
+     "m20"
+    ]
+   },
+   {
+    "id": "x3",
+    "kind": "cross_area",
+    "what": "Teo needs a plumber and client Dale runs a plumbing shop, but hiring a client for home repairs joins personal and work.",
+    "evidence": [
+     "m38",
+     "m3"
+    ]
+   },
+   {
+    "id": "x4",
+    "kind": "resolved",
+    "what": "Two clients reported the same bank feed outage, but the vendor fixed it and both confirmed it works again.",
+    "evidence": [
+     "m12",
+     "m14",
+     "m16",
+     "m17",
+     "m19"
+    ]
+   },
+   {
+    "id": "x5",
+    "kind": "same_source",
+    "what": "Two sales tax questions are Joost asking once from each of his addresses, already answered.",
+    "evidence": [
+     "m25",
+     "m23"
+    ]
+   }
+  ]
+ }
+}

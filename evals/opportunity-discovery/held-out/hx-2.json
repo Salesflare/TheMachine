@@ -1,0 +1,3672 @@
+{
+ "id": "hx-2",
+ "about": "Operations lead at Saltmarsh Provisions, a small specialty-food wholesaler supplying delis, restaurants and grocers; also a personal mailbox.",
+ "owner": {
+  "name": "Odile Marchetti",
+  "email": "odile@saltmarsh.example"
+ },
+ "accounts": [
+  {
+   "id": "wmail",
+   "boundary": "work:Saltmarsh Provisions",
+   "email": "odile@saltmarsh.example"
+  },
+  {
+   "id": "pmail",
+   "boundary": "personal:home",
+   "email": "odile.marchetti@mail.example"
+  }
+ ],
+ "messages": [
+  {
+   "key": "m1",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 30,
+   "hour": 9,
+   "from": [
+    "Nell Pickering",
+    "nell@pickeringdeli.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Hot honey jars leaking",
+   "body": "Hi Odile,\n\nOur delivery this morning had 4 of the 12 jars of Ridgeback chili hot honey leaking at the lid. Sticky mess all over the case and two of the labels are ruined. Lot code on the jars is L-2207. Can we get those credited? The other 8 look ok for now but I'm keeping an eye on them.\n\nThanks,\nNell\nPickering & Daughters Deli",
+   "bulk": false
+  },
+  {
+   "key": "m2",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 30,
+   "hour": 14,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Nell Pickering",
+     "nell@pickeringdeli.example"
+    ]
+   ],
+   "subject": "Re: Hot honey jars leaking",
+   "body": "Hi Nell,\n\nSo sorry about that. I'll credit the 4 jars on your next invoice. Could you keep the bad ones aside in case the producer wants photos? I'll look into what happened.\n\nBest,\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m3",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 26,
+   "hour": 16,
+   "from": [
+    "Dario Venn",
+    "dario@oxbowkitchen.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "honey in the dry store",
+   "body": "Odile - quick one. Opened the case of hot honey from last week and three jars had leaked through the lids, glaze all over the carton. Not the end of the world but we had to toss the carton and wipe down a shelf. Is this a known thing?\n\nDario, Oxbow Kitchen",
+   "bulk": false
+  },
+  {
+   "key": "m4",
+   "account": "wmail",
+   "thread": "t3",
+   "day": 22,
+   "hour": 11,
+   "from": [
+    "Maeve Tran",
+    "maeve@holliscorner.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Weeping lids on hot honey (again)",
+   "body": "Hello Odile,\n\nThis is the third case of the chili hot honey where the lids are weeping. Customers have brought back two jars this week because the outside was sticky. The lot is L-2207 on all of them. We'd like to pull it from the shelf until you can tell us what's going on, and we'd rather not reorder until it's sorted.\n\nRegards,\nMaeve Tran\nBuyer, Hollis Corner Grocer",
+   "bulk": false
+  },
+  {
+   "key": "m5",
+   "account": "wmail",
+   "thread": "t4",
+   "day": 19,
+   "hour": 10,
+   "from": [
+    "Ines Calloway",
+    "ines@ridgebackapiary.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Lid issue on batch L-2207",
+   "body": "Hi Odile,\n\nHeads up from our side. Our lid supplier told us yesterday that the lids used on our batch L-2207 had a faulty liner, so some jars may not seal fully, especially after a bumpy truck ride. The honey itself is fine. We can either send you 300 replacement lids with relabel kits, or credit the whole lot at cost. Could you tell me how many L-2207 jars you still have in stock and which option you'd prefer?\n\nReally sorry about this.\nInes\nRidgeback Apiary",
+   "bulk": false
+  },
+  {
+   "key": "m6",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 20,
+   "hour": 17,
+   "from": [
+    "Teodor Ilic",
+    "teodor@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Cycle count results",
+   "body": "Odile,\n\nCycle count done for aisles A and B. Variances are small: -2 on the 1 kg sea salt, +1 on the dried porcini. One note: we still hold 9 cases of the chili hot honey on B4 (all L-2207), and a couple of the cases look sticky on the outside. Didn't do anything with them yet.\n\nTeo",
+   "bulk": false
+  },
+  {
+   "key": "m7",
+   "account": "wmail",
+   "thread": "t6",
+   "day": 50,
+   "hour": 8,
+   "from": [
+    "Verdant Groves Billing",
+    "billing@verdantgroves.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Invoice INV-3381",
+   "body": "Dear customer,\n\nPlease find attached invoice INV-3381 for your order of 40 tins of extra virgin olive oil, 5-liter, at 41.00 per tin. Total due: 1,640.00. Payment terms 30 days.\n\nThank you for your business.\nVerdant Groves Imports, Accounts",
+   "bulk": false
+  },
+  {
+   "key": "m8",
+   "account": "wmail",
+   "thread": "t7",
+   "day": 36,
+   "hour": 8,
+   "from": [
+    "Verdant Groves Billing",
+    "billing@verdantgroves.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Invoice INV-3456",
+   "body": "Dear customer,\n\nPlease find attached invoice INV-3456 for your order of 40 tins of extra virgin olive oil, 5-liter, at 44.50 per tin. Total due: 1,780.00. Payment terms 30 days. Note: the price reflects updated supplier costs.\n\nThank you for your business.\nVerdant Groves Imports, Accounts",
+   "bulk": false
+  },
+  {
+   "key": "m9",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 23,
+   "hour": 8,
+   "from": [
+    "Verdant Groves Billing",
+    "billing@verdantgroves.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Invoice INV-3529",
+   "body": "Dear customer,\n\nPlease find attached invoice INV-3529 for your order of 40 tins of extra virgin olive oil, 5-liter, at 47.80 per tin. Total due: 1,912.00. Payment terms 30 days. Note: a new-harvest price adjustment applies to all orders from this month.\n\nThank you for your business.\nVerdant Groves Imports, Accounts",
+   "bulk": false
+  },
+  {
+   "key": "m10",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 25,
+   "hour": 12,
+   "from": [
+    "Lucía Calderón",
+    "lucia@calderonaceites.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Cotización aceite de oliva virgen extra",
+   "body": "Hola Odile,\n\nGracias por la llamada de la semana pasada. Como le comenté, le enviamos la cotización: lata de 5 litros de aceite de oliva virgen extra, cosecha nueva, a 42,00 por lata. El pedido mínimo es de 30 latas y la entrega es en unos seis días desde nuestro almacén. El precio es válido hasta el 31 de diciembre.\n\nSi necesita una muestra, se la mandamos sin coste.\n\nUn saludo muy cordial,\nLucía Calderón\nCalderón Aceites",
+   "bulk": false
+  },
+  {
+   "key": "m11",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 24,
+   "hour": 9,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Lucía Calderón",
+     "lucia@calderonaceites.example"
+    ]
+   ],
+   "subject": "Re: Cotización aceite de oliva virgen extra",
+   "body": "Hola Lucía,\n\nMuchas gracias por la cotización. Lo miro con mi jefe esta semana y le digo algo pronto. Una muestra sería muy útil, por favor.\n\nSaludos,\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m12",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 11,
+   "hour": 15,
+   "from": [
+    "Colm Ashby",
+    "colm@fernhillhotels.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Allergen info for holiday gift boxes",
+   "body": "Hi Odile,\n\nWe've confirmed 120 Harvest Boxes and 60 Fireside Boxes for the in-room holiday gifts. Before they go into rooms, our group policy needs an allergen declaration for every item in each box, ideally as one matrix against the 14 major allergens. Could you get that to me by Monday, December 7? Our compliance team signs off that week.\n\nMany thanks,\nColm Ashby\nPurchasing, Fernhill Hotels",
+   "bulk": false,
+   "project": "Holiday gift boxes"
+  },
+  {
+   "key": "m13",
+   "account": "wmail",
+   "thread": "t11",
+   "day": 9,
+   "hour": 10,
+   "from": [
+    "Sunita Rao",
+    "sunita@brightwatercookery.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Fireside Box order and allergens",
+   "body": "Dear Odile,\n\nWe'd like to order 30 Fireside Boxes as end-of-term prizes for our students. A few parents have asked about nut and sesame content, since two of the kids have allergies. Could you send an allergen sheet covering each item in the box? Happy to place the order once we have that.\n\nKind regards,\nSunita Rao\nBrightwater Cookery School",
+   "bulk": false,
+   "project": "Holiday gift boxes"
+  },
+  {
+   "key": "m14",
+   "account": "wmail",
+   "thread": "t12",
+   "day": 14,
+   "hour": 13,
+   "from": [
+    "Joy Abiola",
+    "joy@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Gift box spec sheets",
+   "body": "Hi Odile, FYI I finally collected the producer spec sheets for all 11 items across the Harvest and Fireside boxes. They're in the QA folder under Gift Boxes 2026. Not compiled into anything yet, just the PDFs as they came in. The almond brittle and the tahini caramel are the ones with the most allergens.\n\nJoy",
+   "bulk": false,
+   "project": "Holiday gift boxes"
+  },
+  {
+   "key": "m15",
+   "account": "wmail",
+   "thread": "t13",
+   "day": 3,
+   "hour": 11,
+   "from": [
+    "Marguerite Osei",
+    "m.osei@countyhealth.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Routine inspection: Thursday, December 3",
+   "body": "Dear Ms. Marchetti,\n\nThis is to confirm your routine food safety inspection on Thursday, December 3, starting at 9:00 am. I will review temperature records for the last 90 days and walk through all chilled and frozen storage, including both walk-in cold rooms, as well as receiving and dispatch. Please make sure someone who can open all units is on site.\n\nRegards,\nMarguerite Osei\nEnvironmental Health Inspector, County Health Department",
+   "bulk": false
+  },
+  {
+   "key": "m16",
+   "account": "wmail",
+   "thread": "t14",
+   "day": 8,
+   "hour": 9,
+   "from": [
+    "Hamid Sorensen",
+    "hamid@polararc.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Cold room 2 compressor swap",
+   "body": "Hi Odile,\n\nThe new compressor for cold room 2 has arrived. We can do the swap Thursday, December 3, starting 7 am, done by around 3 pm. The room needs to be fully empty and the unit will be open and powered down during the job. Let me know if that works and I'll lock it in.\n\nHamid\nPolar Arc Refrigeration",
+   "bulk": false
+  },
+  {
+   "key": "m17",
+   "account": "wmail",
+   "thread": "t14",
+   "day": 7,
+   "hour": 10,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Hamid Sorensen",
+     "hamid@polararc.example"
+    ]
+   ],
+   "cc": [
+    [
+     "Teodor Ilic",
+     "teodor@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: Cold room 2 compressor swap",
+   "body": "Hi Hamid,\n\nThursday Dec 3 works, please lock it in. Teodor will move everything out of cold room 2 into the rental reefer trailer the evening before.\n\nThanks,\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m18",
+   "account": "wmail",
+   "thread": "t15",
+   "day": 16,
+   "hour": 10,
+   "from": [
+    "Priya Natarajan",
+    "priya@saffronandsalt.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Move our order to Tuesday?",
+   "body": "Hi Odile, could our order (2 kg Kashmiri chili, 5 tins of anchovies, 3 kg arborio) go on Tuesday's run instead of Thursday? We have a private event on Wednesday. Thanks so much!\n\nPriya, Saffron & Salt",
+   "bulk": false
+  },
+  {
+   "key": "m19",
+   "account": "wmail",
+   "thread": "t15",
+   "day": 16,
+   "hour": 12,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Priya Natarajan",
+     "priya@saffronandsalt.example"
+    ]
+   ],
+   "subject": "Re: Move our order to Tuesday?",
+   "body": "Hi Priya, done, it's on Tuesday's route now. Good luck with the event!\n\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m20",
+   "account": "wmail",
+   "thread": "t16",
+   "day": 15,
+   "hour": 8,
+   "from": [
+    "Priya Okafor",
+    "priya.okafor@coldlinefreight.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Tuesday pickup time change",
+   "body": "Hello Odile,\n\nFrom next week our Tuesday pickup at your dock moves from 6:00 to 7:30 am because of a route change on the northern loop. Please let me know if that causes any problem for your outbound loads.\n\nBest regards,\nPriya Okafor\nDispatch, Coldline Freight",
+   "bulk": false
+  },
+  {
+   "key": "m21",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 28,
+   "hour": 14,
+   "from": [
+    "Aksel Moen",
+    "aksel@tollgatecreamery.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Bellwether is back",
+   "body": "Hi Odile! The Bellwether tomme is out of the aging room and it's a good one this year. I have 12 wheels free. Want your usual 4?\n\nAksel, Tollgate Creamery",
+   "bulk": false
+  },
+  {
+   "key": "m22",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 27,
+   "hour": 9,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Aksel Moen",
+     "aksel@tollgatecreamery.example"
+    ]
+   ],
+   "subject": "Re: Bellwether is back",
+   "body": "Hi Aksel, yes please, 4 wheels of Bellwether. Same delivery day as usual is fine.\n\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m23",
+   "account": "wmail",
+   "thread": "t18",
+   "day": 27,
+   "hour": 18,
+   "from": [
+    "Nadia Ferreira",
+    "nadia@junostable.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Delivery to Bellwether Street",
+   "body": "Hello,\n\nWe're opening Juno's Table at 14 Bellwether Street in January and Rafael said you might deliver to our area. Our kitchen needs deliveries before 10 am, because the street is closed to trucks after that. Can you do that? Also, could you send your catalog?\n\nThanks,\nNadia Ferreira",
+   "bulk": false
+  },
+  {
+   "key": "m24",
+   "account": "wmail",
+   "thread": "t19",
+   "day": 18,
+   "hour": 16,
+   "from": [
+    "Teodor Ilic",
+    "teodor@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Extra van for December",
+   "body": "Odile, peak is coming. With the gift boxes on top of the normal routes we'll need one extra refrigerated van for three weeks from Dec 7. Can you get a couple of rental quotes?\n\nTeo",
+   "bulk": false
+  },
+  {
+   "key": "m25",
+   "account": "pmail",
+   "thread": "t20",
+   "day": 17,
+   "hour": 19,
+   "from": [
+    "Joost van Dam",
+    "joost.vandam@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Bestelbus te koop",
+   "body": "Hoi Odile,\n\nIk heb gehoord dat je soms een bus nodig hebt voor je werk. Ik verkoop mijn oude bestelbus, een witte van 2019 met een koelinstallatie achterin, want ik stop met de cateringzaak. Hij rijdt nog prima en de keuring is net gedaan. Als je interesse hebt of iemand kent, laat het me dan weten. Ik wil hem voor het einde van de maand kwijt.\n\nGroetjes van hiernaast,\nJoost",
+   "bulk": false
+  },
+  {
+   "key": "m26",
+   "account": "pmail",
+   "thread": "t20",
+   "day": 17,
+   "hour": 21,
+   "from": [
+    "Odile Marchetti",
+    "odile.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Joost van Dam",
+     "joost.vandam@mail.example"
+    ]
+   ],
+   "subject": "Re: Bestelbus te koop",
+   "body": "Hoi Joost,\n\nDank je voor de tip! Ik heb zelf geen bus nodig, maar ik denk er even over na. Succes met de verkoop en tot snel op de trap.\n\nGroetjes,\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m27",
+   "account": "wmail",
+   "thread": "t21",
+   "day": 34,
+   "hour": 7,
+   "from": [
+    "Kieran Molloy",
+    "kieran@frostway.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Temperature alert, truck 12",
+   "body": "Hi Odile,\n\nThe data logger on truck 12 recorded 9°C for about 40 minutes on Tuesday's southern route, between the second and fourth drops. Affected deliveries: Pickering & Daughters, Larkfield Bistro and Oxbow Kitchen. We're checking whether the logger or the unit is at fault and will report back.\n\nKieran Molloy\nOperations, Frostway Logistics",
+   "bulk": false
+  },
+  {
+   "key": "m28",
+   "account": "wmail",
+   "thread": "t22",
+   "day": 33,
+   "hour": 12,
+   "from": [
+    "Owen Pratt",
+    "owen@larkfieldbistro.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Warm dairy on Tuesday",
+   "body": "Hi Odile, the burrata and creme fraiche from Tuesday felt warm when they came in. Can we get a credit on those?\n\nOwen, Larkfield Bistro",
+   "bulk": false
+  },
+  {
+   "key": "m29",
+   "account": "wmail",
+   "thread": "t22",
+   "day": 33,
+   "hour": 15,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Owen Pratt",
+     "owen@larkfieldbistro.example"
+    ]
+   ],
+   "subject": "Re: Warm dairy on Tuesday",
+   "body": "Hi Owen, sorry about that. The carrier flagged a possible temperature issue on that route. I'm checking with them and will come back to you.\n\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m30",
+   "account": "wmail",
+   "thread": "t22",
+   "day": 30,
+   "hour": 10,
+   "from": [
+    "Owen Pratt",
+    "owen@larkfieldbistro.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: Warm dairy on Tuesday",
+   "body": "Odile, scratch that. Turns out our receiving thermometer was broken. We probed everything again with a new one and the dairy was at 3°C. No credit needed, all good.\n\nOwen",
+   "bulk": false
+  },
+  {
+   "key": "m31",
+   "account": "wmail",
+   "thread": "t21",
+   "day": 31,
+   "hour": 16,
+   "from": [
+    "Kieran Molloy",
+    "kieran@frostway.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: Temperature alert, truck 12",
+   "body": "Update: the logger on truck 12 was faulty and has been replaced. The backup probes in the unit show 3 to 4°C for the whole route, so there was no excursion. Sorry for the scare.\n\nKieran",
+   "bulk": false
+  },
+  {
+   "key": "m32",
+   "account": "wmail",
+   "thread": "t23",
+   "day": 12,
+   "hour": 9,
+   "from": [
+    "Mateo Ibarra",
+    "mateo@puntaalba.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "New-season anchovies",
+   "body": "Dear Odile,\n\nA short update: the new-season anchovy fillets will ship once the spring catch is in and fully cured. Curing takes several months and depends on the catch, so we can't give you a date yet. We'll write again as soon as we know.\n\nBest wishes,\nMateo Ibarra\nPunta Alba Conservas",
+   "bulk": false
+  },
+  {
+   "key": "m33",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 10,
+   "hour": 20,
+   "from": [
+    "Tomasz Wolny",
+    "tomasz@gullandanchor.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "anchovies",
+   "body": "Hey Odile, when the new-season anchovies come in, can you let me know? I'll want a full case for the spring menu.\n\nCheers, Tomasz (Gull & Anchor)",
+   "bulk": false
+  },
+  {
+   "key": "m34",
+   "account": "wmail",
+   "thread": "t25",
+   "day": 57,
+   "hour": 11,
+   "from": [
+    "Gemma Holt",
+    "gemma@riverbendfair.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Stall confirmed: Riverbend Harvest Fair",
+   "body": "Hi Odile,\n\nYour stall (no. 18) at the Riverbend Harvest Fair on Saturday, October 24 is confirmed. Please send your product list by October 10 so we can print the map.\n\nThanks!\nGemma Holt\nRiverbend Harvest Fair",
+   "bulk": false
+  },
+  {
+   "key": "m35",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 52,
+   "hour": 14,
+   "from": [
+    "Tilly Marsh",
+    "tilly@sorrellanepreserves.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Samples for the fair",
+   "body": "Hi Odile, would you be able to take 2 cases of our quince jam samples to the Riverbend fair on the 24th? We can't staff a stall ourselves this year.\n\nTilly, Sorrel Lane Preserves",
+   "bulk": false
+  },
+  {
+   "key": "m36",
+   "account": "wmail",
+   "thread": "t27",
+   "day": 21,
+   "hour": 8,
+   "from": [
+    "Hugo Brandt",
+    "hugo@brandtfeinkost.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Lieferungen schon wieder zu spät",
+   "body": "Hallo Frau Marchetti,\n\nich muss mich leider wieder melden. Die Lieferung am Dienstag kam erst um 11:40 Uhr, obwohl wir ein Fenster bis 9 Uhr vereinbart haben. Um diese Zeit ist der Laden schon voll und wir haben keinen Platz, um die Ware anzunehmen. Das ist jetzt das zweite Mal in diesem Monat. Bitte sorgen Sie dafür, dass das nicht wieder passiert.\n\nMit freundlichen Grüßen\nHugo Brandt\nBrandt Feinkost",
+   "bulk": false
+  },
+  {
+   "key": "m37",
+   "account": "wmail",
+   "thread": "t27",
+   "day": 21,
+   "hour": 13,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Hugo Brandt",
+     "hugo@brandtfeinkost.example"
+    ]
+   ],
+   "subject": "Re: Lieferungen schon wieder zu spät",
+   "body": "Hallo Herr Brandt,\n\nvielen Dank für die Nachricht und entschuldigen Sie bitte die Verspätung. Ich spreche heute mit unserem Spediteur und sorge dafür, dass Sie wieder der erste Stopp auf der Route sind.\n\nViele Grüße\nOdile Marchetti",
+   "bulk": false
+  },
+  {
+   "key": "m38",
+   "account": "wmail",
+   "thread": "t28",
+   "day": 18,
+   "hour": 22,
+   "from": [
+    "Hugo Brandt",
+    "hugo.brandt@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Noch einmal wegen der Lieferzeit",
+   "body": "Hallo Frau Marchetti,\n\nich schreibe Ihnen von meiner privaten Adresse, weil ich nicht sicher bin, ob meine letzte Mail angekommen ist. Die Lieferung am Dienstag war wieder zu spät, erst nach 11 Uhr. Wir brauchen die Ware vor 9 Uhr. Können Sie das bitte prüfen?\n\nGrüße\nHugo Brandt",
+   "bulk": false
+  },
+  {
+   "key": "m39",
+   "account": "wmail",
+   "thread": "t29",
+   "day": 29,
+   "hour": 7,
+   "from": [
+    "Fine Food Trade Weekly",
+    "news@finefoodweekly.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "This week: vanilla prices climb again",
+   "body": "This week in fine food: vanilla bean prices are up 18% this quarter after a poor harvest, and importers expect more increases before spring. Also inside: holiday gifting trends, a profile of a family-run smokehouse, and five ways to cut cold-chain waste.\n\nYou are receiving this because you subscribed. Unsubscribe anytime.",
+   "bulk": true
+  },
+  {
+   "key": "m40",
+   "account": "wmail",
+   "thread": "t30",
+   "day": 15,
+   "hour": 7,
+   "from": [
+    "Fine Food Trade Weekly",
+    "news@finefoodweekly.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Vanilla squeeze continues; importers warn of rationing",
+   "body": "This week in fine food: the vanilla squeeze continues, with several importers warning that they may ration whole beans through the first quarter. Plus: what buyers are stocking for New Year's Eve and a look at new packaging rules.\n\nYou are receiving this because you subscribed. Unsubscribe anytime.",
+   "bulk": true
+  },
+  {
+   "key": "m41",
+   "account": "wmail",
+   "thread": "t31",
+   "day": 22,
+   "hour": 8,
+   "from": [
+    "Spice Market Monitor",
+    "digest@spicemonitor.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Monthly price index: vanilla, saffron, cardamom",
+   "body": "Your monthly price index is ready. Vanilla: +11% month on month. Saffron: flat. Cardamom: -4%. Black pepper: +2%. Log in to see the full charts and the outlook for next quarter.\n\nManage your email preferences in your account settings.",
+   "bulk": true
+  },
+  {
+   "key": "m42",
+   "account": "wmail",
+   "thread": "t32",
+   "day": 6,
+   "hour": 10,
+   "from": [
+    "Ada Corbin",
+    "ada@corbinsmarket.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Holiday delivery days?",
+   "body": "Hi Odile, what are your delivery days around Christmas and New Year? We need to plan our last orders.\n\nThanks, Ada (Corbin's Market)",
+   "bulk": false
+  },
+  {
+   "key": "m43",
+   "account": "wmail",
+   "thread": "t33",
+   "day": 5,
+   "hour": 14,
+   "from": [
+    "Liam Novak",
+    "liam@pinecrestcafe.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Dec 24 / Dec 31",
+   "body": "Hey, are you delivering on Dec 24 or Dec 31 this year? We're open both mornings.\n\nLiam - Pinecrest Cafe",
+   "bulk": false
+  },
+  {
+   "key": "m44",
+   "account": "wmail",
+   "thread": "t34",
+   "day": 4,
+   "hour": 9,
+   "from": [
+    "Magnus Hale",
+    "magnus@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Holiday schedule",
+   "body": "Odile, Ada and Liam both asked me about holiday deliveries too. Can you send one holiday delivery schedule to all accounts this week? Routes: last run Dec 23, closed Dec 24-27, normal again Dec 28, closed Jan 1.\n\nThanks, M",
+   "bulk": false
+  },
+  {
+   "key": "m45",
+   "account": "pmail",
+   "thread": "t35",
+   "day": 6,
+   "hour": 20,
+   "from": [
+    "Felix Marchetti",
+    "felix.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Dad's 70th",
+   "body": "Hey sis,\n\nIt's official: we booked the back room at Lantern House for Dad's 70th, Saturday December 12 at 7 pm. Mom wants everyone there, no excuses, and Aunt Lise is driving up from the coast. Can you do the toast? You're better at it than me.\n\nFelix",
+   "bulk": false
+  },
+  {
+   "key": "m46",
+   "account": "pmail",
+   "thread": "t36",
+   "day": 15,
+   "hour": 11,
+   "from": [
+    "Wynn Abernathy",
+    "wynn@cedarhollowcabins.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Your booking at Cedar Hollow: cabin 3",
+   "body": "Hi Odile,\n\nThanks for booking with us! This confirms cabin 3 for 2 guests, check-in Friday, December 11, check-out Sunday, December 13. Total 410.00, paid in full. Dates can be changed free of charge until December 1; after that the booking is non-refundable.\n\nSee you soon,\nWynn Abernathy\nCedar Hollow Cabins",
+   "bulk": false
+  },
+  {
+   "key": "m47",
+   "account": "pmail",
+   "thread": "t37",
+   "day": 14,
+   "hour": 19,
+   "from": [
+    "Saskia Brenner",
+    "saskia.brenner@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "cabin!!",
+   "body": "Odile!! Just got the confirmation you forwarded. I already took Friday the 11th off. Bringing the board games and way too much cheese. Can't wait.\n\nS",
+   "bulk": false
+  },
+  {
+   "key": "m48",
+   "account": "pmail",
+   "thread": "t37",
+   "day": 14,
+   "hour": 21,
+   "from": [
+    "Odile Marchetti",
+    "odile.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Saskia Brenner",
+     "saskia.brenner@mail.example"
+    ]
+   ],
+   "subject": "Re: cabin!!",
+   "body": "Ha, I'll bring the wine. So ready for a weekend off. x",
+   "bulk": false
+  },
+  {
+   "key": "m49",
+   "account": "pmail",
+   "thread": "t38",
+   "day": 17,
+   "hour": 18,
+   "from": [
+    "Hanne Marchetti",
+    "hanne.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "My flight",
+   "body": "Hi sweetheart,\n\nI booked my flight for Christmas. I land at Northgate airport on Tuesday December 22 at 2:10 pm. Could you or Felix pick me up? I'll have the big suitcase and the presents, so the train is too much for me.\n\nLove,\nMom",
+   "bulk": false
+  },
+  {
+   "key": "m50",
+   "account": "pmail",
+   "thread": "t39",
+   "day": 13,
+   "hour": 16,
+   "from": [
+    "Théo Lambert",
+    "theo.lambert@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Mon arrivée pour Noël",
+   "body": "Bonjour Odile,\n\nJe voulais te dire que j'ai enfin réservé mon billet pour Noël. J'arrive à l'aéroport de Northgate le mardi 22 décembre, le vol atterrit à 15h05. Est-ce que quelqu'un peut venir me chercher ? Sinon je prendrai le bus, ce n'est pas un problème pour moi.\n\nJe t'embrasse,\nTonton Théo",
+   "bulk": false
+  },
+  {
+   "key": "m51",
+   "account": "pmail",
+   "thread": "t39",
+   "day": 13,
+   "hour": 21,
+   "from": [
+    "Odile Marchetti",
+    "odile.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Théo Lambert",
+     "theo.lambert@mail.example"
+    ]
+   ],
+   "subject": "Re: Mon arrivée pour Noël",
+   "body": "Bonjour Théo,\n\nMerci pour le message, et c'est super que tu viennes ! Je regarde avec Felix et je te dis vite. Ne prends pas le bus pour l'instant.\n\nBises,\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m52",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 51,
+   "hour": 9,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Tilly Marsh",
+     "tilly@sorrellanepreserves.example"
+    ]
+   ],
+   "subject": "Re: Samples for the fair",
+   "body": "Hi Tilly, happy to. Drop the two cases at our dock any weekday before the 22nd and I'll take them along.\n\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m53",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 45,
+   "hour": 8,
+   "from": [
+    "Magnus Hale",
+    "magnus@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Ops meeting moved",
+   "body": "Odile, can we move Monday's ops meeting to Tuesday 8:30? I have the bank at 9 on Monday.\n\nM",
+   "bulk": false
+  },
+  {
+   "key": "m54",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 45,
+   "hour": 9,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Magnus Hale",
+     "magnus@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: Ops meeting moved",
+   "body": "Tuesday 8:30 works. I'll tell Teo and Bea.",
+   "bulk": false
+  },
+  {
+   "key": "m55",
+   "account": "wmail",
+   "thread": "t41",
+   "day": 40,
+   "hour": 11,
+   "from": [
+    "Bea Lindqvist",
+    "bea@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Expense report sign-off",
+   "body": "Hi Odile, I need your sign-off on the October warehouse expenses before Friday (total 3,212.40, the forklift repair is the big one). The report is in the shared drive. Thanks!\n\nBea",
+   "bulk": false
+  },
+  {
+   "key": "m56",
+   "account": "wmail",
+   "thread": "t41",
+   "day": 39,
+   "hour": 10,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Bea Lindqvist",
+     "bea@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: Expense report sign-off",
+   "body": "Signed off, thanks Bea.",
+   "bulk": false
+  },
+  {
+   "key": "m57",
+   "account": "wmail",
+   "thread": "t42",
+   "day": 47,
+   "hour": 10,
+   "from": [
+    "Marieke Bosch",
+    "marieke@delindekaas.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Bevestiging pallet Goudse kaas",
+   "body": "Beste Odile,\n\nHierbij de bevestiging van jullie bestelling: één pallet belegen en oude Goudse kaas, 48 stuks, levering in week 47 via de gebruikelijke vervoerder. De factuur volgt na verzending. Laat het me weten als er nog iets moet worden aangepast.\n\nMet vriendelijke groet,\nMarieke Bosch\nKaasboerderij De Linde",
+   "bulk": false
+  },
+  {
+   "key": "m58",
+   "account": "wmail",
+   "thread": "t42",
+   "day": 46,
+   "hour": 15,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Marieke Bosch",
+     "marieke@delindekaas.example"
+    ]
+   ],
+   "subject": "Re: Bevestiging pallet Goudse kaas",
+   "body": "Hallo Marieke,\n\nDank je wel voor de bevestiging. Kunnen jullie er ook vier stuks extra oude kaas bij doen? Die hebben we nodig voor de kerstpakketten.\n\nGroeten,\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m59",
+   "account": "wmail",
+   "thread": "t42",
+   "day": 44,
+   "hour": 9,
+   "from": [
+    "Marieke Bosch",
+    "marieke@delindekaas.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: Bevestiging pallet Goudse kaas",
+   "body": "Hallo Odile,\n\nGeen probleem, ik heb vier extra stuks oude kaas aan de pallet toegevoegd. De nieuwe totaalprijs staat op de factuur. Fijne week nog!\n\nGroetjes,\nMarieke",
+   "bulk": false
+  },
+  {
+   "key": "m60",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 39,
+   "hour": 9,
+   "from": [
+    "Étienne Roux",
+    "etienne@fauvel-moutarde.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Nouvelles étiquettes pour la moutarde à l'ancienne",
+   "body": "Bonjour Odile,\n\nJe vous écris pour vous prévenir que nous changeons les étiquettes de notre moutarde à l'ancienne à partir de janvier. Le produit et la recette ne changent pas, mais le code-barres sera différent. Je vous envoie les nouveaux codes la semaine prochaine pour que vous puissiez mettre à jour votre système.\n\nCordialement,\nÉtienne Roux\nMoutarderie Fauvel",
+   "bulk": false
+  },
+  {
+   "key": "m61",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 38,
+   "hour": 11,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Étienne Roux",
+     "etienne@fauvel-moutarde.example"
+    ]
+   ],
+   "subject": "Re: Nouvelles étiquettes pour la moutarde à l'ancienne",
+   "body": "Bonjour Étienne,\n\nMerci pour l'information. J'attends les nouveaux codes et je fais la mise à jour dans notre système dès que je les reçois.\n\nCordialement,\nOdile Marchetti",
+   "bulk": false
+  },
+  {
+   "key": "m62",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 32,
+   "hour": 10,
+   "from": [
+    "Étienne Roux",
+    "etienne@fauvel-moutarde.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: Nouvelles étiquettes pour la moutarde à l'ancienne",
+   "body": "Bonjour Odile,\n\nComme promis, voici les nouveaux codes-barres : 3 760 112 450 018 pour le pot de 200 g et 3 760 112 450 025 pour le pot de 500 g. Les anciens codes restent valables pour le stock actuel.\n\nBonne journée et merci,\nÉtienne",
+   "bulk": false
+  },
+  {
+   "key": "m63",
+   "account": "wmail",
+   "thread": "t44",
+   "day": 26,
+   "hour": 9,
+   "from": [
+    "Sanne de Wit",
+    "sanne@noordzeeforwarding.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Container vertraagd",
+   "body": "Goedemorgen Odile,\n\nHelaas is jullie container met de koekjes en stroopwafels twee dagen vertraagd in de haven door de storm van dit weekend. De nieuwe aankomstdatum is donderdag. Ik stuur je de bijgewerkte vrachtbrief zodra ik die heb.\n\nMet vriendelijke groet,\nSanne de Wit\nNoordzee Forwarding",
+   "bulk": false
+  },
+  {
+   "key": "m64",
+   "account": "wmail",
+   "thread": "t44",
+   "day": 26,
+   "hour": 11,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Sanne de Wit",
+     "sanne@noordzeeforwarding.example"
+    ]
+   ],
+   "subject": "Re: Container vertraagd",
+   "body": "Hoi Sanne,\n\nDank je voor het bericht. Donderdag is geen probleem voor ons, het magazijn is op de hoogte. Stuur de vrachtbrief maar als je hem hebt.\n\nGroeten,\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m65",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 37,
+   "hour": 7,
+   "from": [
+    "Feinkost Rundschau",
+    "newsletter@feinkostrundschau.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Feinkost Rundschau: Ausgabe November",
+   "body": "Liebe Leserinnen und Leser,\n\nin dieser Ausgabe: die besten Weihnachtsmärkte für Feinkosthändler, ein Interview mit einer jungen Käserin aus den Bergen und unsere Tipps für die Lagerung von Trüffeln. Außerdem erklären wir, was die neuen Regeln für Etiketten für kleine Händler bedeuten.\n\nViel Spaß beim Lesen!\nIhre Redaktion",
+   "bulk": true
+  },
+  {
+   "key": "m66",
+   "account": "pmail",
+   "thread": "t46",
+   "day": 43,
+   "hour": 20,
+   "from": [
+    "Carmen Vidal",
+    "carmen.vidal@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "¡Visita en primavera!",
+   "body": "¡Hola Odile!\n\n¿Qué tal todo? Te escribo porque por fin tenemos fechas: Jordi y yo queremos ir a verte en abril, probablemente la segunda semana. No hace falta que nos busques nada, solo quería avisarte con tiempo. ¡Tengo muchas ganas de verte y de probar todos esos quesos de los que hablas!\n\nUn abrazo muy fuerte,\nCarmen",
+   "bulk": false
+  },
+  {
+   "key": "m67",
+   "account": "pmail",
+   "thread": "t46",
+   "day": 42,
+   "hour": 8,
+   "from": [
+    "Odile Marchetti",
+    "odile.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Carmen Vidal",
+     "carmen.vidal@mail.example"
+    ]
+   ],
+   "subject": "Re: ¡Visita en primavera!",
+   "body": "¡Hola Carmen!\n\n¡Qué alegría! Abril es perfecto, la casa es pequeña pero hay sitio para los dos. Ya preparo una tabla de quesos para vosotros.\n\nUn abrazo,\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m68",
+   "account": "wmail",
+   "thread": "t47",
+   "day": 58,
+   "hour": 7,
+   "from": [
+    "StockPilot",
+    "noreply@stockpilot.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Weekly low-stock report",
+   "body": "Low stock this week: arborio rice 1 kg (6 cases), smoked paprika (3 cases), dried porcini (4 cases). Open StockPilot to create purchase orders.",
+   "bulk": true
+  },
+  {
+   "key": "m69",
+   "account": "wmail",
+   "thread": "t48",
+   "day": 44,
+   "hour": 7,
+   "from": [
+    "StockPilot",
+    "noreply@stockpilot.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Weekly low-stock report",
+   "body": "Low stock this week: sea salt flakes (2 cases), fig jam (5 cases), dark chocolate callets (3 cases). Open StockPilot to create purchase orders.",
+   "bulk": true
+  },
+  {
+   "key": "m70",
+   "account": "wmail",
+   "thread": "t49",
+   "day": 25,
+   "hour": 7,
+   "from": [
+    "StockPilot",
+    "noreply@stockpilot.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Weekly low-stock report",
+   "body": "Low stock this week: crackers (4 cases), tahini caramel (2 cases), extra virgin olive oil 5-liter (6 tins). Open StockPilot to create purchase orders.",
+   "bulk": true
+  },
+  {
+   "key": "m71",
+   "account": "wmail",
+   "thread": "t50",
+   "day": 8,
+   "hour": 7,
+   "from": [
+    "StockPilot",
+    "noreply@stockpilot.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Weekly low-stock report",
+   "body": "Low stock this week: almond brittle (3 cases), gift box sleeves (40 units), black truffle paste (1 kg). Open StockPilot to create purchase orders.",
+   "bulk": true
+  },
+  {
+   "key": "m72",
+   "account": "wmail",
+   "thread": "t51",
+   "day": 1,
+   "hour": 7,
+   "from": [
+    "StockPilot",
+    "noreply@stockpilot.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Weekly low-stock report",
+   "body": "Low stock this week: aged gouda (5 wheels), plum tomatoes (4 cases), quince jam (2 cases). Open StockPilot to create purchase orders.",
+   "bulk": true
+  },
+  {
+   "key": "m73",
+   "account": "wmail",
+   "thread": "t52",
+   "day": 42,
+   "hour": 10,
+   "from": [
+    "Doreen Achebe",
+    "doreen@harrowinsure.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Warehouse insurance renewal",
+   "body": "Hi Odile,\n\nYour warehouse and stock policy renews on December 31. The premium goes from 6,480 to 6,910, mostly because of the higher stock value you declared. I need the signed renewal form back by December 15. Form attached.\n\nBest,\nDoreen Achebe\nHarrow Insurance Brokers",
+   "bulk": false
+  },
+  {
+   "key": "m74",
+   "account": "wmail",
+   "thread": "t53",
+   "day": 35,
+   "hour": 13,
+   "from": [
+    "Malik Johnson",
+    "malik.johnson@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Warehouse picker position",
+   "body": "Hello,\n\nI saw your posting for a warehouse picker. I have two years of experience in a cold-storage warehouse and a forklift license. My resume is attached. I'm available to start in December.\n\nThank you for considering me.\nMalik Johnson",
+   "bulk": false
+  },
+  {
+   "key": "m75",
+   "account": "wmail",
+   "thread": "t53",
+   "day": 34,
+   "hour": 9,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Malik Johnson",
+     "malik.johnson@mail.example"
+    ]
+   ],
+   "subject": "Re: Warehouse picker position",
+   "body": "Thanks Malik, can you come in Thursday at 2 pm for a short chat with Teodor and me? Address is in the posting.\n\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m76",
+   "account": "wmail",
+   "thread": "t53",
+   "day": 34,
+   "hour": 18,
+   "from": [
+    "Malik Johnson",
+    "malik.johnson@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: Warehouse picker position",
+   "body": "Thursday at 2 works great, see you then!",
+   "bulk": false
+  },
+  {
+   "key": "m77",
+   "account": "wmail",
+   "thread": "t54",
+   "day": 48,
+   "hour": 9,
+   "from": [
+    "Owen Pratt",
+    "owen@larkfieldbistro.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Weekly order",
+   "body": "Hi Odile, weekly order: 6 burrata, 2 kg parmesan, 4 tins plum tomatoes, 1 case of the fig jam. Thursday delivery as usual.\n\nOwen",
+   "bulk": false
+  },
+  {
+   "key": "m78",
+   "account": "wmail",
+   "thread": "t54",
+   "day": 48,
+   "hour": 11,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Owen Pratt",
+     "owen@larkfieldbistro.example"
+    ]
+   ],
+   "subject": "Re: Weekly order",
+   "body": "Got it, Thursday it is.",
+   "bulk": false
+  },
+  {
+   "key": "m79",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 53,
+   "hour": 11,
+   "from": [
+    "Liam Novak",
+    "liam@pinecrestcafe.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "add to friday",
+   "body": "Hey Odile, can you add 2 kg of the dark chocolate callets to Friday's order? Thx\n\nLiam",
+   "bulk": false
+  },
+  {
+   "key": "m80",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 53,
+   "hour": 13,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Liam Novak",
+     "liam@pinecrestcafe.example"
+    ]
+   ],
+   "subject": "Re: add to friday",
+   "body": "Added!",
+   "bulk": false
+  },
+  {
+   "key": "m81",
+   "account": "wmail",
+   "thread": "t56",
+   "day": 41,
+   "hour": 15,
+   "from": [
+    "Ada Corbin",
+    "ada@corbinsmarket.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "New products?",
+   "body": "Hi Odile, do you have a list of new products for winter? We'd like to refresh our cheese and preserves shelf before the holidays.\n\nAda",
+   "bulk": false
+  },
+  {
+   "key": "m82",
+   "account": "wmail",
+   "thread": "t56",
+   "day": 40,
+   "hour": 9,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Ada Corbin",
+     "ada@corbinsmarket.example"
+    ]
+   ],
+   "subject": "Re: New products?",
+   "body": "Hi Ada, attached is our winter catalog. Rafael will call you this week to go through it.\n\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m83",
+   "account": "wmail",
+   "thread": "t57",
+   "day": 46,
+   "hour": 12,
+   "from": [
+    "Gus Tamm",
+    "gus@clearpathpest.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Monthly service report",
+   "body": "Hi Odile, monthly visit done today. No activity in any of the bait stations, two traps replaced near loading door 2. Next visit November 18. Report attached.\n\nGus, ClearPath Pest Services",
+   "bulk": false
+  },
+  {
+   "key": "m84",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 37,
+   "hour": 9,
+   "from": [
+    "Rhea Castillo",
+    "rhea@liftonequip.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Forklift service booking",
+   "body": "Hello Odile,\n\nThe annual service for your two reach trucks is due. We can come Wednesday, October 28 or Friday, October 30. Which do you prefer?\n\nRhea Castillo\nLifton Equipment",
+   "bulk": false
+  },
+  {
+   "key": "m85",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 36,
+   "hour": 14,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Rhea Castillo",
+     "rhea@liftonequip.example"
+    ]
+   ],
+   "subject": "Re: Forklift service booking",
+   "body": "Hi Rhea, Friday the 30th please, after 1 pm when the morning routes are out.\n\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m86",
+   "account": "wmail",
+   "thread": "t59",
+   "day": 2,
+   "hour": 16,
+   "from": [
+    "Magnus Hale",
+    "magnus@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Q4 numbers for the board",
+   "body": "Odile, could you put together the Q4 ops numbers (on-time delivery, waste, stock turns) for the board pack? I need them by December 10.\n\nM",
+   "bulk": false
+  },
+  {
+   "key": "m87",
+   "account": "wmail",
+   "thread": "t60",
+   "day": 1,
+   "hour": 18,
+   "from": [
+    "Teodor Ilic",
+    "teodor@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Sam out tomorrow",
+   "body": "Heads up, Sam called in sick for tomorrow. I'll cover the picking with Lena, routes should leave on time.\n\nTeo",
+   "bulk": false
+  },
+  {
+   "key": "m88",
+   "account": "wmail",
+   "thread": "t61",
+   "day": 31,
+   "hour": 10,
+   "from": [
+    "Joy Abiola",
+    "joy@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "HACCP plan review",
+   "body": "Hi Odile, our annual HACCP plan review is due by January 15. I've started on the cold-chain sections. Could we block two hours in December to go through it together?\n\nJoy",
+   "bulk": false
+  },
+  {
+   "key": "m89",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 49,
+   "hour": 14,
+   "from": [
+    "Viktor Lund",
+    "viktor@foldpackaging.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Quote: gift box sleeves",
+   "body": "Hi Odile, as discussed, here is the quote for 500 printed sleeves for the Harvest and Fireside boxes: 1.15 each, kraft board, two-color print, 10 working days. Let me know and we'll start proofs.\n\nViktor\nFold & Co Packaging",
+   "bulk": false,
+   "project": "Holiday gift boxes"
+  },
+  {
+   "key": "m90",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 48,
+   "hour": 10,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Viktor Lund",
+     "viktor@foldpackaging.example"
+    ]
+   ],
+   "subject": "Re: Quote: gift box sleeves",
+   "body": "Go ahead please: 300 Harvest, 200 Fireside. Artwork attached.\n\nOdile",
+   "bulk": false,
+   "project": "Holiday gift boxes"
+  },
+  {
+   "key": "m91",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 43,
+   "hour": 15,
+   "from": [
+    "Viktor Lund",
+    "viktor@foldpackaging.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: Quote: gift box sleeves",
+   "body": "Proofs attached for both sleeves. Please approve and we'll go to print tomorrow.\n\nViktor",
+   "bulk": false,
+   "project": "Holiday gift boxes"
+  },
+  {
+   "key": "m92",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 43,
+   "hour": 17,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Viktor Lund",
+     "viktor@foldpackaging.example"
+    ]
+   ],
+   "subject": "Re: Quote: gift box sleeves",
+   "body": "Approved, they look great.",
+   "bulk": false,
+   "project": "Holiday gift boxes"
+  },
+  {
+   "key": "m93",
+   "account": "wmail",
+   "thread": "t63",
+   "day": 12,
+   "hour": 10,
+   "from": [
+    "Oxbow Kitchen Accounts",
+    "accounts@oxbowkitchen.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Remittance advice",
+   "body": "Hello,\n\nPayment of 2,145.60 for invoices 10-2291 and 10-2304 was sent today.\n\nKind regards,\nOxbow Kitchen Accounts",
+   "bulk": false
+  },
+  {
+   "key": "m94",
+   "account": "wmail",
+   "thread": "t64",
+   "day": 10,
+   "hour": 11,
+   "from": [
+    "Bea Lindqvist",
+    "bea@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Late payers",
+   "body": "Hi Odile, three accounts are over 60 days now: Larkfield Bistro (1 invoice), Pinecrest Cafe (2) and Gull & Anchor (1). Do you want me to send reminders, or would you rather call them yourself?\n\nBea",
+   "bulk": false
+  },
+  {
+   "key": "m95",
+   "account": "wmail",
+   "thread": "t65",
+   "day": 31,
+   "hour": 17,
+   "from": [
+    "Pat Lowe",
+    "pat@eastsidebiz.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Holiday mixer invite",
+   "body": "Hi Odile, you're invited to our holiday mixer on December 9 at 6 pm at the old mill. Let me know if you can make it!\n\nPat, Eastside Business Association",
+   "bulk": false
+  },
+  {
+   "key": "m96",
+   "account": "wmail",
+   "thread": "t66",
+   "day": 24,
+   "hour": 15,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Teodor Ilic",
+     "teodor@saltmarsh.example"
+    ]
+   ],
+   "subject": "December shift plan",
+   "body": "Teo, the draft December shift plan is in the drive. Please check the weekend rotations before I send it to the team.\n\nOdile",
+   "bulk": false
+  },
+  {
+   "key": "m97",
+   "account": "wmail",
+   "thread": "t66",
+   "day": 23,
+   "hour": 9,
+   "from": [
+    "Teodor Ilic",
+    "teodor@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: December shift plan",
+   "body": "Looks fine, I swapped Lena and Sam on the 19th. Good to go.",
+   "bulk": false
+  },
+  {
+   "key": "m98",
+   "account": "wmail",
+   "thread": "t67",
+   "day": 19,
+   "hour": 7,
+   "from": [
+    "Winter Fine Food Expo",
+    "expo@winterfoodexpo.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Last chance: exhibitor booths",
+   "body": "Only 12 exhibitor booths left for the Winter Fine Food Expo. Book before Friday to get the early rate and a free listing in the show guide.",
+   "bulk": true
+  },
+  {
+   "key": "m99",
+   "account": "wmail",
+   "thread": "t68",
+   "day": 55,
+   "hour": 8,
+   "from": [
+    "Northbank Business Banking",
+    "alerts@northbankbiz.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Your statement is ready",
+   "body": "Your monthly business account statement is ready to view in online banking. This is an automated message, please do not reply.",
+   "bulk": true
+  },
+  {
+   "key": "m100",
+   "account": "wmail",
+   "thread": "t69",
+   "day": 27,
+   "hour": 7,
+   "from": [
+    "ProNet",
+    "digest@pronet.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Your weekly network digest",
+   "body": "5 people viewed your profile this week. 3 new jobs match your skills in operations and logistics. See what your network is talking about.",
+   "bulk": true
+  },
+  {
+   "key": "m101",
+   "account": "wmail",
+   "thread": "t70",
+   "day": 13,
+   "hour": 12,
+   "from": [
+    "Food Safety Hub",
+    "webinar@foodsafetyhub.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Webinar: new traceability rules for distributors",
+   "body": "Join our free webinar on December 8 to learn what the new traceability record rules mean for small distributors. Seats are limited, register today.",
+   "bulk": true
+  },
+  {
+   "key": "m102",
+   "account": "wmail",
+   "thread": "t71",
+   "day": 4,
+   "hour": 13,
+   "from": [
+    "Rafael Duarte",
+    "rafael@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Weekly sales",
+   "body": "Hi Odile, sales up 12% on last week, the gift boxes are doing most of the work. Cheese is steady, preserves slightly down. Full sheet in the drive.\n\nRafael",
+   "bulk": false
+  },
+  {
+   "key": "m103",
+   "account": "wmail",
+   "thread": "t72",
+   "day": 56,
+   "hour": 10,
+   "from": [
+    "Rafael Duarte",
+    "rafael@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "New account: Saffron & Salt",
+   "body": "Odile, signed Saffron & Salt today, Priya Natarajan is the chef-owner. Deliveries Tuesday and Thursday. Can you set them up in the system and on the routes?\n\nR",
+   "bulk": false
+  },
+  {
+   "key": "m104",
+   "account": "wmail",
+   "thread": "t73",
+   "day": 38,
+   "hour": 14,
+   "from": [
+    "Dario Venn",
+    "dario@oxbowkitchen.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Christmas menu",
+   "body": "Odile, heads up, we'll need 3 extra kg of the black truffle paste for the Christmas menu. Can you reserve it for us?\n\nDario",
+   "bulk": false
+  },
+  {
+   "key": "m105",
+   "account": "wmail",
+   "thread": "t73",
+   "day": 38,
+   "hour": 16,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Dario Venn",
+     "dario@oxbowkitchen.example"
+    ]
+   ],
+   "subject": "Re: Christmas menu",
+   "body": "Reserved, 3 kg for the week of the 14th.",
+   "bulk": false
+  },
+  {
+   "key": "m106",
+   "account": "wmail",
+   "thread": "t74",
+   "day": 29,
+   "hour": 11,
+   "from": [
+    "Maeve Tran",
+    "maeve@holliscorner.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "January promo?",
+   "body": "Hi Odile, would Saltmarsh be interested in a January in-store promo on the preserves? We'd do an end-cap display and want 10% off for two weeks. Let me know what you think.\n\nMaeve",
+   "bulk": false
+  },
+  {
+   "key": "m107",
+   "account": "wmail",
+   "thread": "t75",
+   "day": 47,
+   "hour": 16,
+   "from": [
+    "Teodor Ilic",
+    "teodor@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Loading door 2 seal",
+   "body": "Door 2 seal is torn again, cold air pouring out. I called the door company, they come Friday.\n\nTeo",
+   "bulk": false
+  },
+  {
+   "key": "m108",
+   "account": "wmail",
+   "thread": "t76",
+   "day": 33,
+   "hour": 8,
+   "from": [
+    "Eastgrid Power",
+    "billing@eastgrid.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Your business energy statement",
+   "body": "Your statement for account 44-1093 is ready. Amount due 1,284.17, collected by direct debit on the 15th. This is an automated message.",
+   "bulk": true
+  },
+  {
+   "key": "m109",
+   "account": "pmail",
+   "thread": "t77",
+   "day": 50,
+   "hour": 19,
+   "from": [
+    "Felix Marchetti",
+    "felix.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "ladder?",
+   "body": "Can I borrow your long ladder this weekend? Gutters again. F",
+   "bulk": false
+  },
+  {
+   "key": "m110",
+   "account": "pmail",
+   "thread": "t77",
+   "day": 50,
+   "hour": 20,
+   "from": [
+    "Odile Marchetti",
+    "odile.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Felix Marchetti",
+     "felix.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Re: ladder?",
+   "body": "Sure, it's in the shed, code is the usual one.",
+   "bulk": false
+  },
+  {
+   "key": "m111",
+   "account": "pmail",
+   "thread": "t78",
+   "day": 39,
+   "hour": 18,
+   "from": [
+    "Hattie Moreau",
+    "hattie.moreau@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ],
+    [
+     "Saskia Brenner",
+     "saskia.brenner@mail.example"
+    ],
+    [
+     "Ruth Okonkwo",
+     "ruth.okonkwo@mail.example"
+    ]
+   ],
+   "subject": "Book club next week",
+   "body": "Hi all! Book club is at mine next Wednesday, 7:30. We're doing the lighthouse one. Bring snacks if you like!\n\nHattie",
+   "bulk": false
+  },
+  {
+   "key": "m112",
+   "account": "pmail",
+   "thread": "t78",
+   "day": 38,
+   "hour": 8,
+   "from": [
+    "Odile Marchetti",
+    "odile.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Hattie Moreau",
+     "hattie.moreau@mail.example"
+    ]
+   ],
+   "subject": "Re: Book club next week",
+   "body": "I'll bring cheese, obviously. Halfway through the book, will finish it by then!",
+   "bulk": false
+  },
+  {
+   "key": "m113",
+   "account": "pmail",
+   "thread": "t79",
+   "day": 20,
+   "hour": 8,
+   "from": [
+    "Bright Smile Dental",
+    "reminders@brightsmile.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Appointment reminder",
+   "body": "This is a reminder of your checkup on Wednesday, December 2 at 4:15 pm. Reply C to confirm or call us to reschedule.",
+   "bulk": true
+  },
+  {
+   "key": "m114",
+   "account": "pmail",
+   "thread": "t80",
+   "day": 33,
+   "hour": 9,
+   "from": [
+    "Riverside Water",
+    "billing@riversidewater.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Your water bill",
+   "body": "Your quarterly water bill of 96.40 is ready and will be collected on the 20th. Thank you for saving water this summer.",
+   "bulk": true
+  },
+  {
+   "key": "m115",
+   "account": "pmail",
+   "thread": "t81",
+   "day": 27,
+   "hour": 8,
+   "from": [
+    "FitLoop Gym",
+    "hello@fitloop.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Your membership renews soon",
+   "body": "Your annual membership renews on December 15. Renew now and get a free guest pass for a friend.",
+   "bulk": true
+  },
+  {
+   "key": "m116",
+   "account": "pmail",
+   "thread": "t82",
+   "day": 11,
+   "hour": 17,
+   "from": [
+    "Ruth Okonkwo",
+    "ruth.okonkwo@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Your parcel",
+   "body": "Hi Odile, the courier left a parcel for you with me this afternoon. I'm home all evening if you want to grab it.\n\nRuth (2B)",
+   "bulk": false
+  },
+  {
+   "key": "m117",
+   "account": "pmail",
+   "thread": "t82",
+   "day": 11,
+   "hour": 19,
+   "from": [
+    "Odile Marchetti",
+    "odile.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Ruth Okonkwo",
+     "ruth.okonkwo@mail.example"
+    ]
+   ],
+   "subject": "Re: Your parcel",
+   "body": "Thank you Ruth! I'll knock around 8.",
+   "bulk": false
+  },
+  {
+   "key": "m118",
+   "account": "pmail",
+   "thread": "t83",
+   "day": 9,
+   "hour": 12,
+   "from": [
+    "ShopNest",
+    "orders@shopnest.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Your order has shipped",
+   "body": "Good news! Your order #88213 (wool throw, gray) has shipped and should arrive in 2-3 days.",
+   "bulk": true
+  },
+  {
+   "key": "m119",
+   "account": "pmail",
+   "thread": "t84",
+   "day": 3,
+   "hour": 12,
+   "from": [
+    "ShopNest",
+    "orders@shopnest.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Your order was delivered",
+   "body": "Your order #88341 was delivered today. Tell us how we did and get 5% off your next order.",
+   "bulk": true
+  },
+  {
+   "key": "m120",
+   "account": "pmail",
+   "thread": "t85",
+   "day": 36,
+   "hour": 7,
+   "from": [
+    "Riverside Runners",
+    "news@riversiderunners.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Club newsletter: winter trail series",
+   "body": "The winter trail series starts in January! Four races, one every other Sunday. Plus: new group run times and a reminder to renew your club membership.",
+   "bulk": true
+  },
+  {
+   "key": "m121",
+   "account": "pmail",
+   "thread": "t86",
+   "day": 23,
+   "hour": 9,
+   "from": [
+    "Eastside Library",
+    "holds@eastsidelibrary.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Your hold is ready",
+   "body": "The item you requested is ready for pickup at the main desk. It will be held for 7 days.",
+   "bulk": true
+  },
+  {
+   "key": "m122",
+   "account": "pmail",
+   "thread": "t87",
+   "day": 5,
+   "hour": 18,
+   "from": [
+    "Craig Doyle",
+    "craig@elmcourtapts.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ],
+    [
+     "Ruth Okonkwo",
+     "ruth.okonkwo@mail.example"
+    ]
+   ],
+   "subject": "Water shut-off Tuesday",
+   "body": "Dear residents,\n\nThe water will be off on Tuesday, December 1 from 9 am to 1 pm for pipe work in the basement. Sorry for the inconvenience.\n\nCraig Doyle\nElm Court building manager",
+   "bulk": false
+  },
+  {
+   "key": "m123",
+   "account": "pmail",
+   "thread": "t88",
+   "day": 30,
+   "hour": 21,
+   "from": [
+    "Hanne Marchetti",
+    "hanne.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "plum cake recipe",
+   "body": "Hi love, here's Grandma's plum cake recipe you asked for. Use the small dark plums, not the big ones, and don't skip the cinnamon.\n\nLove, Mom",
+   "bulk": false
+  },
+  {
+   "key": "m124",
+   "account": "pmail",
+   "thread": "t88",
+   "day": 29,
+   "hour": 8,
+   "from": [
+    "Odile Marchetti",
+    "odile.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Hanne Marchetti",
+     "hanne.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Re: plum cake recipe",
+   "body": "Thanks Mom! Making it on Sunday, I'll send a photo.",
+   "bulk": false
+  },
+  {
+   "key": "m125",
+   "account": "pmail",
+   "thread": "t89",
+   "day": 25,
+   "hour": 13,
+   "from": [
+    "Benny Kessler",
+    "benny@kesslerauto.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Annual service and winter tires",
+   "body": "Hi Odile, your car is due for its annual service. We can also swap on the winter tires while it's here. How about Saturday, December 5 at 9 am?\n\nBenny, Kessler Auto",
+   "bulk": false
+  },
+  {
+   "key": "m126",
+   "account": "pmail",
+   "thread": "t89",
+   "day": 24,
+   "hour": 10,
+   "from": [
+    "Odile Marchetti",
+    "odile.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Benny Kessler",
+     "benny@kesslerauto.example"
+    ]
+   ],
+   "subject": "Re: Annual service and winter tires",
+   "body": "Dec 5 at 9 is good, thanks Benny.",
+   "bulk": false
+  },
+  {
+   "key": "m127",
+   "account": "pmail",
+   "thread": "t90",
+   "day": 44,
+   "hour": 21,
+   "from": [
+    "Saskia Brenner",
+    "saskia.brenner@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "photos from the hike",
+   "body": "Finally sorted the photos from our hike. The one of you with the goat is my favorite. Uploading them to the shared album tonight.\n\nS",
+   "bulk": false
+  },
+  {
+   "key": "m128",
+   "account": "pmail",
+   "thread": "t91",
+   "day": 58,
+   "hour": 19,
+   "from": [
+    "Hattie Moreau",
+    "hattie.moreau@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "thank you for dinner",
+   "body": "Thanks again for Saturday, the risotto was amazing. Next one is at mine!\n\nH",
+   "bulk": false
+  },
+  {
+   "key": "m129",
+   "account": "pmail",
+   "thread": "t92",
+   "day": 21,
+   "hour": 10,
+   "from": [
+    "Northgate Airport",
+    "offers@northgateairport.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Holiday parking deals",
+   "body": "Flying over the holidays? Book airport parking online and save up to 30%. Short-stay pickup zone rates also apply.",
+   "bulk": true
+  },
+  {
+   "key": "m130",
+   "account": "pmail",
+   "thread": "t93",
+   "day": 16,
+   "hour": 20,
+   "from": [
+    "Felix Marchetti",
+    "felix.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Mom's Christmas present",
+   "body": "What are we getting Mom this year? I was thinking a new e-reader, her old one barely charges. Split it?\n\nF",
+   "bulk": false
+  },
+  {
+   "key": "m131",
+   "account": "pmail",
+   "thread": "t93",
+   "day": 15,
+   "hour": 9,
+   "from": [
+    "Odile Marchetti",
+    "odile.marchetti@mail.example"
+   ],
+   "to": [
+    [
+     "Felix Marchetti",
+     "felix.marchetti@mail.example"
+    ]
+   ],
+   "subject": "Re: Mom's Christmas present",
+   "body": "Yes to the e-reader. I'll order it this week, you send me half.",
+   "bulk": false
+  },
+  {
+   "key": "m132",
+   "account": "pmail",
+   "thread": "t94",
+   "day": 7,
+   "hour": 19,
+   "from": [
+    "CineNorth",
+    "news@cinenorth.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "This week at the theater",
+   "body": "New this week: a restored classic on the big screen, a family matinee on Sunday and our holiday gift cards.",
+   "bulk": true
+  },
+  {
+   "key": "m133",
+   "account": "pmail",
+   "thread": "t95",
+   "day": 2,
+   "hour": 20,
+   "from": [
+    "Saskia Brenner",
+    "saskia.brenner@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile.marchetti@mail.example"
+    ]
+   ],
+   "subject": "playlist",
+   "body": "Making a road trip playlist, send me your top 5 songs. No skipping this time!",
+   "bulk": false
+  },
+  {
+   "key": "m134",
+   "account": "wmail",
+   "thread": "t96",
+   "day": 14,
+   "hour": 11,
+   "from": [
+    "Nell Pickering",
+    "nell@pickeringdeli.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Order for next week",
+   "body": "Hi Odile, next week's order: 4 kg aged gouda, 2 cases of crackers, 6 jars fig jam. No hot honey this time, ha.\n\nNell",
+   "bulk": false
+  },
+  {
+   "key": "m135",
+   "account": "wmail",
+   "thread": "t96",
+   "day": 14,
+   "hour": 12,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Nell Pickering",
+     "nell@pickeringdeli.example"
+    ]
+   ],
+   "subject": "Re: Order for next week",
+   "body": "Got it, thanks Nell.",
+   "bulk": false
+  },
+  {
+   "key": "m136",
+   "account": "wmail",
+   "thread": "t97",
+   "day": 5,
+   "hour": 9,
+   "from": [
+    "Kieran Molloy",
+    "kieran@frostway.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "December route changes",
+   "body": "Hi Odile, during December we'll add a second southern route on Tuesdays and Thursdays. Please send me your expected volumes per route by Dec 2 so we can plan trucks.\n\nKieran",
+   "bulk": false
+  },
+  {
+   "key": "m137",
+   "account": "wmail",
+   "thread": "t98",
+   "day": 0,
+   "hour": 9,
+   "from": [
+    "Bea Lindqvist",
+    "bea@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Payroll cutoff",
+   "body": "Hi Odile, payroll cutoff is Monday. Please send me the overtime hours for the warehouse team by then.\n\nThanks, Bea",
+   "bulk": false
+  },
+  {
+   "key": "m138",
+   "account": "wmail",
+   "thread": "t99",
+   "day": 0,
+   "hour": 15,
+   "from": [
+    "StockPilot",
+    "noreply@stockpilot.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "New in StockPilot: batch tracking",
+   "body": "You can now track lot numbers on every receipt and see which customers got which batch. Turn it on in Settings.",
+   "bulk": true
+  },
+  {
+   "key": "m139",
+   "account": "wmail",
+   "thread": "t100",
+   "day": 59,
+   "hour": 10,
+   "from": [
+    "Magnus Hale",
+    "magnus@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Welcome back",
+   "body": "Odile, welcome back from leave. Main thing this week: gift box planning kickoff Thursday 10 am in the small room.\n\nM",
+   "bulk": false,
+   "project": "Holiday gift boxes"
+  },
+  {
+   "key": "m140",
+   "account": "wmail",
+   "thread": "t101",
+   "day": 54,
+   "hour": 9,
+   "from": [
+    "Teodor Ilic",
+    "teodor@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Odile Marchetti",
+     "odile@saltmarsh.example"
+    ]
+   ],
+   "subject": "Racking quote",
+   "body": "Got the racking quote: 4,850 installed, two extra bays in aisle C. Worth it before peak?\n\nTeo",
+   "bulk": false
+  },
+  {
+   "key": "m141",
+   "account": "wmail",
+   "thread": "t101",
+   "day": 54,
+   "hour": 11,
+   "from": [
+    "Odile Marchetti",
+    "odile@saltmarsh.example"
+   ],
+   "to": [
+    [
+     "Teodor Ilic",
+     "teodor@saltmarsh.example"
+    ]
+   ],
+   "subject": "Re: Racking quote",
+   "body": "Yes, go ahead, as long as it's in before November.",
+   "bulk": false
+  }
+ ],
+ "todos": [
+  {
+   "key": "td1",
+   "title": "Reply to Nell about leaking hot honey jars",
+   "evidence": [
+    "m1"
+   ],
+   "day": 30,
+   "state": "done"
+  },
+  {
+   "key": "td2",
+   "title": "Reply to Dario about leaking honey jars",
+   "evidence": [
+    "m3"
+   ],
+   "day": 26,
+   "state": "open"
+  },
+  {
+   "key": "td3",
+   "title": "Reply to Maeve about weeping lids on the hot honey",
+   "evidence": [
+    "m4"
+   ],
+   "day": 22,
+   "state": "open"
+  },
+  {
+   "key": "td4",
+   "title": "Reply to Ines about the L-2207 lid batch",
+   "evidence": [
+    "m5"
+   ],
+   "day": 19,
+   "state": "open"
+  },
+  {
+   "key": "td5",
+   "title": "Pay Verdant Groves invoice INV-3381",
+   "evidence": [
+    "m7"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "td6",
+   "title": "Pay Verdant Groves invoice INV-3456",
+   "evidence": [
+    "m8"
+   ],
+   "day": 36,
+   "state": "done"
+  },
+  {
+   "key": "td7",
+   "title": "Pay Verdant Groves invoice INV-3529",
+   "evidence": [
+    "m9"
+   ],
+   "day": 23,
+   "state": "open"
+  },
+  {
+   "key": "td8",
+   "title": "Reply to Lucía about the olive oil quote",
+   "evidence": [
+    "m10"
+   ],
+   "day": 25,
+   "state": "done"
+  },
+  {
+   "key": "td9",
+   "title": "Send Colm allergen declarations for the gift boxes",
+   "evidence": [
+    "m12"
+   ],
+   "day": 11,
+   "state": "open"
+  },
+  {
+   "key": "td10",
+   "title": "Send Sunita an allergen sheet for the Fireside Box",
+   "evidence": [
+    "m13"
+   ],
+   "day": 9,
+   "state": "open"
+  },
+  {
+   "key": "td11",
+   "title": "Confirm the December 3 inspection with Marguerite",
+   "evidence": [
+    "m15"
+   ],
+   "day": 3,
+   "state": "open"
+  },
+  {
+   "key": "td12",
+   "title": "Reply to Hamid about the compressor swap",
+   "evidence": [
+    "m16"
+   ],
+   "day": 8,
+   "state": "done"
+  },
+  {
+   "key": "td13",
+   "title": "Move Priya Natarajan's order to Tuesday",
+   "evidence": [
+    "m18"
+   ],
+   "day": 16,
+   "state": "done"
+  },
+  {
+   "key": "td14",
+   "title": "Reply to Priya Okafor about the Tuesday pickup time",
+   "evidence": [
+    "m20"
+   ],
+   "day": 15,
+   "state": "open"
+  },
+  {
+   "key": "td15",
+   "title": "Reply to Aksel about Bellwether wheels",
+   "evidence": [
+    "m21"
+   ],
+   "day": 28,
+   "state": "done"
+  },
+  {
+   "key": "td16",
+   "title": "Reply to Nadia about deliveries to Bellwether Street",
+   "evidence": [
+    "m23"
+   ],
+   "day": 27,
+   "state": "open"
+  },
+  {
+   "key": "td17",
+   "title": "Get van rental quotes for December",
+   "evidence": [
+    "m24"
+   ],
+   "day": 18,
+   "state": "open"
+  },
+  {
+   "key": "td18",
+   "title": "Reply to Joost about the van",
+   "evidence": [
+    "m25"
+   ],
+   "day": 17,
+   "state": "done"
+  },
+  {
+   "key": "td19",
+   "title": "Reply to Kieran about the truck 12 temperature alert",
+   "evidence": [
+    "m27"
+   ],
+   "day": 34,
+   "state": "done"
+  },
+  {
+   "key": "td20",
+   "title": "Reply to Owen about the dairy credit",
+   "evidence": [
+    "m28"
+   ],
+   "day": 33,
+   "state": "done"
+  },
+  {
+   "key": "td21",
+   "title": "Reply to Tomasz about new-season anchovies",
+   "evidence": [
+    "m33"
+   ],
+   "day": 10,
+   "state": "open"
+  },
+  {
+   "key": "td22",
+   "title": "Send Gemma the product list for the fair",
+   "evidence": [
+    "m34"
+   ],
+   "day": 57,
+   "state": "done"
+  },
+  {
+   "key": "td23",
+   "title": "Reply to Tilly about fair samples",
+   "evidence": [
+    "m35"
+   ],
+   "day": 52,
+   "state": "done"
+  },
+  {
+   "key": "td24",
+   "title": "Reply to Hugo Brandt about late deliveries",
+   "evidence": [
+    "m36"
+   ],
+   "day": 21,
+   "state": "done"
+  },
+  {
+   "key": "td25",
+   "title": "Reply to Hugo Brandt about delivery times",
+   "evidence": [
+    "m38"
+   ],
+   "day": 18,
+   "state": "open"
+  },
+  {
+   "key": "td26",
+   "title": "Reply to Ada about holiday delivery days",
+   "evidence": [
+    "m42"
+   ],
+   "day": 6,
+   "state": "open"
+  },
+  {
+   "key": "td27",
+   "title": "Reply to Liam about Dec 24 and Dec 31 deliveries",
+   "evidence": [
+    "m43"
+   ],
+   "day": 5,
+   "state": "open"
+  },
+  {
+   "key": "td28",
+   "title": "Send the holiday delivery schedule to all customers",
+   "evidence": [
+    "m44"
+   ],
+   "day": 4,
+   "state": "open"
+  },
+  {
+   "key": "td29",
+   "title": "Reply to Felix about Dad's 70th dinner",
+   "evidence": [
+    "m45"
+   ],
+   "day": 6,
+   "state": "open"
+  },
+  {
+   "key": "td30",
+   "title": "Reply to Saskia about the cabin weekend",
+   "evidence": [
+    "m47"
+   ],
+   "day": 14,
+   "state": "done"
+  },
+  {
+   "key": "td31",
+   "title": "Reply to Mom about the airport pickup",
+   "evidence": [
+    "m49"
+   ],
+   "day": 17,
+   "state": "open"
+  },
+  {
+   "key": "td32",
+   "title": "Reply to Théo about his arrival",
+   "evidence": [
+    "m50"
+   ],
+   "day": 13,
+   "state": "done"
+  },
+  {
+   "key": "td33",
+   "title": "Reply to Magnus about moving the ops meeting",
+   "evidence": [
+    "m53"
+   ],
+   "day": 45,
+   "state": "done"
+  },
+  {
+   "key": "td34",
+   "title": "Sign off the October expense report",
+   "evidence": [
+    "m55"
+   ],
+   "day": 40,
+   "state": "done"
+  },
+  {
+   "key": "td35",
+   "title": "Reply to Marieke about the cheese pallet",
+   "evidence": [
+    "m57"
+   ],
+   "day": 47,
+   "state": "done"
+  },
+  {
+   "key": "td36",
+   "title": "Reply to Étienne about the new labels",
+   "evidence": [
+    "m60"
+   ],
+   "day": 39,
+   "state": "done"
+  },
+  {
+   "key": "td37",
+   "title": "Update the mustard barcodes in the system",
+   "evidence": [
+    "m62"
+   ],
+   "day": 32,
+   "state": "done"
+  },
+  {
+   "key": "td38",
+   "title": "Reply to Sanne about the delayed container",
+   "evidence": [
+    "m63"
+   ],
+   "day": 26,
+   "state": "done"
+  },
+  {
+   "key": "td39",
+   "title": "Reply to Carmen about her April visit",
+   "evidence": [
+    "m66"
+   ],
+   "day": 43,
+   "state": "done"
+  },
+  {
+   "key": "td40",
+   "title": "Return the signed insurance renewal form to Doreen",
+   "evidence": [
+    "m73"
+   ],
+   "day": 42,
+   "state": "open"
+  },
+  {
+   "key": "td41",
+   "title": "Reply to Malik about the picker position",
+   "evidence": [
+    "m74"
+   ],
+   "day": 35,
+   "state": "done"
+  },
+  {
+   "key": "td42",
+   "title": "Confirm Owen's weekly order",
+   "evidence": [
+    "m77"
+   ],
+   "day": 48,
+   "state": "done"
+  },
+  {
+   "key": "td43",
+   "title": "Add callets to Liam's Friday order",
+   "evidence": [
+    "m79"
+   ],
+   "day": 53,
+   "state": "done"
+  },
+  {
+   "key": "td44",
+   "title": "Send Ada the winter product list",
+   "evidence": [
+    "m81"
+   ],
+   "day": 41,
+   "state": "done"
+  },
+  {
+   "key": "td45",
+   "title": "Reply to Rhea about the forklift service date",
+   "evidence": [
+    "m84"
+   ],
+   "day": 37,
+   "state": "done"
+  },
+  {
+   "key": "td46",
+   "title": "Send Magnus the Q4 ops numbers",
+   "evidence": [
+    "m86"
+   ],
+   "day": 2,
+   "state": "open"
+  },
+  {
+   "key": "td47",
+   "title": "Reply to Joy about the HACCP review",
+   "evidence": [
+    "m88"
+   ],
+   "day": 31,
+   "state": "open"
+  },
+  {
+   "key": "td48",
+   "title": "Reply to Viktor about the sleeve quote",
+   "evidence": [
+    "m89"
+   ],
+   "day": 49,
+   "state": "done"
+  },
+  {
+   "key": "td49",
+   "title": "Approve the sleeve proofs",
+   "evidence": [
+    "m91"
+   ],
+   "day": 43,
+   "state": "done"
+  },
+  {
+   "key": "td50",
+   "title": "Reply to Bea about late-paying accounts",
+   "evidence": [
+    "m94"
+   ],
+   "day": 10,
+   "state": "open"
+  },
+  {
+   "key": "td51",
+   "title": "Reply to Pat about the holiday mixer",
+   "evidence": [
+    "m95"
+   ],
+   "day": 31,
+   "state": "dismissed"
+  },
+  {
+   "key": "td52",
+   "title": "Set up Saffron & Salt in the system",
+   "evidence": [
+    "m103"
+   ],
+   "day": 56,
+   "state": "done"
+  },
+  {
+   "key": "td53",
+   "title": "Reserve truffle paste for Dario",
+   "evidence": [
+    "m104"
+   ],
+   "day": 38,
+   "state": "done"
+  },
+  {
+   "key": "td54",
+   "title": "Reply to Maeve about the January preserves promo",
+   "evidence": [
+    "m106"
+   ],
+   "day": 29,
+   "state": "open"
+  },
+  {
+   "key": "td55",
+   "title": "Reply to Felix about the ladder",
+   "evidence": [
+    "m109"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "td56",
+   "title": "Reply to Hattie about book club",
+   "evidence": [
+    "m111"
+   ],
+   "day": 39,
+   "state": "done"
+  },
+  {
+   "key": "td57",
+   "title": "Pick up the parcel from Ruth",
+   "evidence": [
+    "m116"
+   ],
+   "day": 11,
+   "state": "done"
+  },
+  {
+   "key": "td58",
+   "title": "Reply to Benny about the car service",
+   "evidence": [
+    "m125"
+   ],
+   "day": 25,
+   "state": "done"
+  },
+  {
+   "key": "td59",
+   "title": "Reply to Felix about Mom's present",
+   "evidence": [
+    "m130"
+   ],
+   "day": 16,
+   "state": "done"
+  },
+  {
+   "key": "td60",
+   "title": "Send Saskia songs for the playlist",
+   "evidence": [
+    "m133"
+   ],
+   "day": 2,
+   "state": "open"
+  },
+  {
+   "key": "td61",
+   "title": "Confirm Nell's order",
+   "evidence": [
+    "m134"
+   ],
+   "day": 14,
+   "state": "done"
+  },
+  {
+   "key": "td62",
+   "title": "Send Kieran December volumes per route",
+   "evidence": [
+    "m136"
+   ],
+   "day": 5,
+   "state": "open"
+  },
+  {
+   "key": "td63",
+   "title": "Send Bea the warehouse overtime hours",
+   "evidence": [
+    "m137"
+   ],
+   "day": 0,
+   "state": "open"
+  },
+  {
+   "key": "td64",
+   "title": "Reply to Teodor about the racking quote",
+   "evidence": [
+    "m140"
+   ],
+   "day": 54,
+   "state": "done"
+  }
+ ],
+ "promises": [
+  {
+   "direction": "mine",
+   "who": "Nell Pickering",
+   "what": "credit the 4 leaking jars on the next invoice",
+   "message": "m2",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Lucía Calderón",
+   "what": "get back to her about the olive oil quote",
+   "message": "m11",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Hamid Sorensen",
+   "what": "have cold room 2 emptied the evening before the swap",
+   "message": "m17",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Hugo Brandt",
+   "what": "make Brandt Feinkost the first stop on the route",
+   "message": "m37",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Théo Lambert",
+   "what": "let him know about an airport pickup",
+   "message": "m51",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Kieran Molloy",
+   "what": "report back on the truck 12 logger",
+   "message": "m27",
+   "status": "done"
+  },
+  {
+   "direction": "theirs",
+   "who": "Étienne Roux",
+   "what": "send the new mustard barcodes next week",
+   "message": "m60",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Ada Corbin",
+   "what": "have Rafael call her this week about the winter catalog",
+   "message": "m82",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Felix Marchetti",
+   "what": "order Mom's e-reader this week",
+   "message": "m131",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Owen Pratt",
+   "what": "come back to him after checking with the carrier",
+   "message": "m29",
+   "status": "done"
+  }
+ ],
+ "key": {
+  "opportunities": [
+   {
+    "id": "o1",
+    "what": "Nell, Dario and Maeve all report leaking hot honey lids from lot L-2207; Ines confirms a faulty lid batch and offers replacement lids or a full credit, and Teodor still holds 9 cases. Pull the stock, take Ridgeback's credit or lids, and send the three customers one fix-and-credit reply.",
+    "evidence": [
+     "m1",
+     "m3",
+     "m4",
+     "m5",
+     "m6"
+    ],
+    "ready_day": 19
+   },
+   {
+    "id": "o2",
+    "what": "Verdant Groves raised the 5-liter olive oil tin from 41.00 to 44.50 to 47.80 over three invoices, while Calderón quotes 42.00 for the same grade. Prepare a price comparison and renegotiate with Verdant or move the next order.",
+    "evidence": [
+     "m7",
+     "m8",
+     "m9",
+     "m10"
+    ],
+    "ready_day": 23
+   },
+   {
+    "id": "o3",
+    "what": "Fernhill (due Dec 7) and Brightwater both need allergen info for the gift box items, and Joy has every producer spec sheet. Compile one allergen matrix for both boxes and send it to both customers.",
+    "evidence": [
+     "m12",
+     "m13",
+     "m14"
+    ],
+    "ready_day": 9
+   },
+   {
+    "id": "o4",
+    "what": "The food safety inspection on Thursday Dec 3 covers both walk-in cold rooms, but cold room 2 will be empty and powered down for the compressor swap that same day. Move the swap or warn the inspector and prepare the records.",
+    "evidence": [
+     "m15",
+     "m16",
+     "m17"
+    ],
+    "ready_day": 3
+   },
+   {
+    "id": "o5",
+    "what": "Dad's 70th dinner is Saturday Dec 12, inside the Dec 11-13 cabin booking with Saskia; dates change free only until Dec 1. Move the cabin dates now and tell Saskia.",
+    "evidence": [
+     "m45",
+     "m46",
+     "m47"
+    ],
+    "ready_day": 6
+   },
+   {
+    "id": "o6",
+    "what": "Mom lands at Northgate at 2:10 pm and Uncle Théo at 3:05 pm on Tuesday Dec 22. Plan one airport pickup for both and tell them.",
+    "evidence": [
+     "m49",
+     "m50",
+     "m51"
+    ],
+    "ready_day": 13
+   }
+  ],
+  "traps": [
+   {
+    "id": "x1",
+    "kind": "coincidence",
+    "what": "Two people with the first name Priya (Natarajan at a restaurant, Okafor at a freight carrier) both mention Tuesday, but an order move and a dock pickup time are unrelated.",
+    "evidence": [
+     "m18",
+     "m20"
+    ]
+   },
+   {
+    "id": "x2",
+    "kind": "coincidence",
+    "what": "Bellwether is a cheese from Tollgate Creamery and also the street of a new restaurant; the shared word links nothing.",
+    "evidence": [
+     "m21",
+     "m23"
+    ]
+   },
+   {
+    "id": "x3",
+    "kind": "cross_area",
+    "what": "Teodor needs an extra refrigerated van for December, and a neighbor is selling a refrigerated van in personal mail; joining work and personal threads is out of bounds.",
+    "evidence": [
+     "m24",
+     "m25"
+    ]
+   },
+   {
+    "id": "x4",
+    "kind": "resolved",
+    "what": "A truck temperature alert and a warm-dairy complaint looked linked, but the logger was faulty and the customer withdrew the credit request.",
+    "evidence": [
+     "m27",
+     "m28",
+     "m30",
+     "m31"
+    ]
+   },
+   {
+    "id": "x5",
+    "kind": "obvious",
+    "what": "The anchovy producer gives no date for new-season stock and Tomasz just wants a heads-up; any deadline would be invented, and the single reply to Tomasz already covers it.",
+    "evidence": [
+     "m32",
+     "m33"
+    ]
+   },
+   {
+    "id": "x6",
+    "kind": "stale",
+    "what": "Fair stall and jam samples for the Riverbend fair on October 24, which passed more than 30 days ago.",
+    "evidence": [
+     "m34",
+     "m35"
+    ]
+   },
+   {
+    "id": "x7",
+    "kind": "same_source",
+    "what": "Two late-delivery complaints are the same customer, Hugo Brandt, writing from his shop and his personal address.",
+    "evidence": [
+     "m36",
+     "m38"
+    ]
+   },
+   {
+    "id": "x8",
+    "kind": "bulk",
+    "what": "Rising vanilla prices show up only in trade newsletters and a price digest.",
+    "evidence": [
+     "m39",
+     "m40",
+     "m41"
+    ]
+   },
+   {
+    "id": "x9",
+    "kind": "covered",
+    "what": "Ada and Liam both asked about holiday deliveries, but the open to-do from Magnus's message already covers one schedule for all customers.",
+    "evidence": [
+     "m42",
+     "m43",
+     "m44"
+    ]
+   }
+  ]
+ }
+}

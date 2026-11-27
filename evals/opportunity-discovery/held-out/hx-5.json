@@ -1,0 +1,1528 @@
+{
+ "id": "hx-5",
+ "about": "Semi-retired music teacher who gives a few private lessons and directs a small community choir",
+ "owner": {
+  "name": "Odile Fairweather",
+  "email": "odile.fairweather@mail.example"
+ },
+ "accounts": [
+  {
+   "id": "pm",
+   "boundary": "personal:home",
+   "email": "odile.fairweather@mail.example"
+  },
+  {
+   "id": "cm",
+   "boundary": "work:Brackenridge Choir",
+   "email": "odile@brackenridgechoir.example"
+  }
+ ],
+ "messages": [
+  {
+   "key": "m1",
+   "account": "pm",
+   "thread": "t1",
+   "day": 59,
+   "hour": 9,
+   "bulk": true,
+   "from": [
+    "Hollowell Public Library",
+    "news@hollowell-library.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "October at the library: author talks, knitting circle and more",
+   "body": "Hello neighbor! Here is what is happening at Hollowell Public Library this October. Author talk with a local historian on Oct 8, the knitting circle every Wednesday, and the used book sale on Oct 24 in the community room. Remember you can renew items online from your account page. See you soon!"
+  },
+  {
+   "key": "m2",
+   "account": "pm",
+   "thread": "t2",
+   "day": 52,
+   "hour": 11,
+   "bulk": false,
+   "from": [
+    "Harold Vance",
+    "harold.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Lunch for Marguerite",
+   "body": "Hi Odile,\n\nA few of us from the old music department are taking Marguerite out for lunch to celebrate her retirement. Linden Bistro, Saturday Oct 10 at 12:30. She would be so happy to see you there. Can you let me know by Wednesday so I can give them a headcount?\n\nAll best,\nHarold"
+  },
+  {
+   "key": "m3",
+   "account": "pm",
+   "thread": "t2",
+   "day": 51,
+   "hour": 16,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Harold Vance",
+     "harold.vance@mail.example"
+    ]
+   ],
+   "subject": "Re: Lunch for Marguerite",
+   "body": "Harold, count me in! Wouldn't miss it. I'll bring a card for everyone to sign.\n\nOdile"
+  },
+  {
+   "key": "m4",
+   "account": "pm",
+   "thread": "t3",
+   "day": 47,
+   "hour": 10,
+   "bulk": false,
+   "from": [
+    "Hélène Marchand",
+    "helene.marchand@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Une petite nouvelle",
+   "body": "Chère Odile,\n\nJe t'écris avec une grande nouvelle : ma fille a eu son bébé la semaine dernière ! C'est une petite fille, elle s'appelle Clémence et elle est magnifique. Nous sommes tous très fatigués mais aussi très heureux.\n\nEt toi, comment vas-tu ? Est-ce que ta chorale prépare toujours le concert de décembre ? Je pense souvent à nos étés à Lyon avec le piano de ma mère.\n\nJe t'embrasse,\nHélène"
+  },
+  {
+   "key": "m5",
+   "account": "pm",
+   "thread": "t3",
+   "day": 45,
+   "hour": 20,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Hélène Marchand",
+     "helene.marchand@mail.example"
+    ]
+   ],
+   "subject": "Re: Une petite nouvelle",
+   "body": "Ma chère Hélène,\n\nQuelle belle nouvelle, félicitations à toute la famille ! Clémence, c'est un très joli prénom. Envoie-moi une photo quand tu peux.\n\nOui, la chorale prépare le concert pour le 13 décembre, avec des chants de Noël anglais. Je pense aussi souvent à ces étés et au vieux piano de ta mère.\n\nGros bisous,\nOdile"
+  },
+  {
+   "key": "m6",
+   "account": "pm",
+   "thread": "t4",
+   "day": 40,
+   "hour": 8,
+   "bulk": true,
+   "from": [
+    "Hollowell Public Library",
+    "noreply@hollowell-library.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Reminder: 1 item due soon",
+   "body": "This is an automated reminder. The following item is due in 3 days: A Life in Song (large print). Renew online or at the front desk. Thank you for using Hollowell Public Library."
+  },
+  {
+   "key": "m7",
+   "account": "pm",
+   "thread": "t5",
+   "day": 36,
+   "hour": 18,
+   "bulk": false,
+   "from": [
+    "Grace Lindqvist",
+    "grace.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "October lessons",
+   "body": "Hi Mrs. Fairweather,\n\nCould you send me an invoice for Hazel's October piano lessons? My employer's benefits program reimburses part of it but they need a proper invoice with dates. Sorry for the bother!\n\nThanks,\nGrace"
+  },
+  {
+   "key": "m8",
+   "account": "pm",
+   "thread": "t5",
+   "day": 35,
+   "hour": 9,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Grace Lindqvist",
+     "grace.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Re: October lessons",
+   "body": "Hi Grace,\n\nNo bother at all. Attached is the invoice for Hazel's four October lessons (Oct 6, 13, 20 and 27), $45 each, $180 total, marked paid. Let me know if they need anything else on it.\n\nBest,\nOdile Fairweather"
+  },
+  {
+   "key": "m9",
+   "account": "pm",
+   "thread": "t6",
+   "day": 33,
+   "hour": 21,
+   "bulk": false,
+   "from": [
+    "Marijke Oosterbeek",
+    "marijke.oosterbeek@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Zolder van papa",
+   "body": "Lieve Odile,\n\nIk ben eindelijk begonnen met de zolder van papa op te ruimen. Ik vond zijn oude metronoom en een doos met liedboeken van het koor waar hij in zong. Wil jij die hebben? Anders gaan ze naar de kringloop, maar dat vind ik zonde.\n\nLaat het me maar weten, dan stuur ik het op. Het is niet zo zwaar.\n\nDikke kus,\nMarijke"
+  },
+  {
+   "key": "m10",
+   "account": "pm",
+   "thread": "t6",
+   "day": 32,
+   "hour": 10,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Marijke Oosterbeek",
+     "marijke.oosterbeek@mail.example"
+    ]
+   ],
+   "subject": "Re: Zolder van papa",
+   "body": "Lieve Marijke,\n\nJa, graag! Die metronoom stond altijd op de piano, ik heb er nog als kind mee geoefend. Stuur het maar op, ik betaal de verzendkosten wel terug. Dank je wel dat je daar aan dacht.\n\nLiefs,\nOdile"
+  },
+  {
+   "key": "m11",
+   "account": "pm",
+   "thread": "t6",
+   "day": 30,
+   "hour": 14,
+   "bulk": false,
+   "from": [
+    "Marijke Oosterbeek",
+    "marijke.oosterbeek@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Re: Zolder van papa",
+   "body": "Het pakket is vandaag op de post gegaan! Het zou er binnen twee weken moeten zijn. Je hoeft niets terug te betalen hoor, het is een cadeautje van papa.\n\nKus,\nMarijke"
+  },
+  {
+   "key": "m12",
+   "account": "pm",
+   "thread": "t7",
+   "day": 30,
+   "hour": 7,
+   "bulk": true,
+   "from": [
+    "Fernhill Garden Club",
+    "newsletter@fernhillgarden.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Fernhill Garden Club: November newsletter",
+   "body": "Dear members, the dahlias are lifted and the bulbs are in! This month: our plant swap on Saturday Nov 21 at the community center, a talk on winter pruning, and a reminder that dues for next year can be paid by check at any meeting. Happy gardening!"
+  },
+  {
+   "key": "m13",
+   "account": "pm",
+   "thread": "t8",
+   "day": 27,
+   "hour": 19,
+   "bulk": false,
+   "from": [
+    "Sofía Medina",
+    "sofia.medina@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Clases de violín de Mateo",
+   "body": "Hola Odile,\n\nMateo está muy contento con las clases de violín, gracias por tu paciencia con él. Te quería preguntar una cosa: ¿es posible pagar las clases una vez al mes en lugar de cada semana? Para nosotros es más fácil así por el trabajo de mi marido.\n\nMuchas gracias y saludos,\nSofía"
+  },
+  {
+   "key": "m14",
+   "account": "pm",
+   "thread": "t8",
+   "day": 26,
+   "hour": 11,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Sofía Medina",
+     "sofia.medina@mail.example"
+    ]
+   ],
+   "subject": "Re: Clases de violín de Mateo",
+   "body": "Hola Sofía,\n\nClaro que sí, no hay problema. Podemos hacerlo así: pagas el primer sábado de cada mes por todas las clases del mes. Mateo trabaja muy bien, y su sonido es cada vez más bonito.\n\nUn saludo,\nOdile"
+  },
+  {
+   "key": "m15",
+   "account": "pm",
+   "thread": "t9",
+   "day": 22,
+   "hour": 8,
+   "bulk": true,
+   "from": [
+    "Ashgrove Health Center",
+    "noreply@ashgrovehealth.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Appointment reminder: annual checkup",
+   "body": "This is a reminder of your upcoming appointment: Annual checkup with Dr. Patel, Wednesday Dec 2 at 10:00 AM, Ashgrove Health Center, 2nd floor. Please arrive 15 minutes early and bring your insurance card. To reschedule, call the front desk. Do not reply to this message."
+  },
+  {
+   "key": "m16",
+   "account": "pm",
+   "thread": "t10",
+   "day": 20,
+   "hour": 17,
+   "bulk": false,
+   "from": [
+    "Bea Castellanos",
+    "bea.castellanos@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Cabin in April??",
+   "body": "Odile!! My brother-in-law has finally fixed up his cabin near Shenandoah and says we can have it for a weekend in April. Hiking, porch, a fire, no phones. You, me and Lorraine like the old days. He's still working out which weekends are free, I'll send you dates as soon as I hear from him. Say yes!\n\nxo Bea"
+  },
+  {
+   "key": "m17",
+   "account": "pm",
+   "thread": "t10",
+   "day": 19,
+   "hour": 9,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Bea Castellanos",
+     "bea.castellanos@mail.example"
+    ]
+   ],
+   "subject": "Re: Cabin in April??",
+   "body": "Yes, yes and yes. My April is wide open after the choir's spring break starts. Send dates whenever he has them and I'll put it straight on the calendar.\n\nOdile"
+  },
+  {
+   "key": "m18",
+   "account": "pm",
+   "thread": "t11",
+   "day": 17,
+   "hour": 7,
+   "bulk": true,
+   "from": [
+    "Riverbend Savings",
+    "statements@riverbendsavings.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Your November statement is ready",
+   "body": "Your monthly statement for account ending 4471 is now available in online banking. This is an automated message, please do not reply."
+  },
+  {
+   "key": "m19",
+   "account": "pm",
+   "thread": "t12",
+   "day": 15,
+   "hour": 10,
+   "bulk": false,
+   "from": [
+    "Desmond Pell",
+    "desmond@pelltuning.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Your piano is due for its tuning",
+   "body": "Hello Mrs. Fairweather,\n\nIt has been about a year since I last tuned your home grand, so this is my friendly reminder. With the heating season starting it usually drifts a bit. I have openings the first week of December. Just reply with a morning that suits you.\n\nRegards,\nDesmond Pell\nPell Piano Tuning"
+  },
+  {
+   "key": "m20",
+   "account": "pm",
+   "thread": "t12",
+   "day": 14,
+   "hour": 15,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Desmond Pell",
+     "desmond@pelltuning.example"
+    ]
+   ],
+   "subject": "Re: Your piano is due for its tuning",
+   "body": "Hi Desmond, good timing, the top octave has been sounding sour. Thursday Dec 3 in the morning would be perfect if you have it.\n\nThanks,\nOdile"
+  },
+  {
+   "key": "m21",
+   "account": "pm",
+   "thread": "t12",
+   "day": 13,
+   "hour": 12,
+   "bulk": false,
+   "from": [
+    "Desmond Pell",
+    "desmond@pelltuning.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Re: Your piano is due for its tuning",
+   "body": "You're booked: Thursday Dec 3 at 9:30. I'll take a look at that top octave too. See you then.\n\nDesmond"
+  },
+  {
+   "key": "m22",
+   "account": "pm",
+   "thread": "t13",
+   "day": 11,
+   "hour": 13,
+   "bulk": true,
+   "from": [
+    "Hollowell Public Library",
+    "noreply@hollowell-library.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Your hold is ready for pickup",
+   "body": "Good news! The item you placed on hold is ready: The Choral Director's Handbook. It will be held at the front desk for 7 days. Hollowell Public Library."
+  },
+  {
+   "key": "m23",
+   "account": "pm",
+   "thread": "t14",
+   "day": 9,
+   "hour": 18,
+   "bulk": false,
+   "from": [
+    "Theo Diaz",
+    "theo.diaz@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "band concert!!",
+   "body": "hi grandma\n\nour winter band concert is thursday dec 10 at 6:30 in the school gym. we are playing Shenandoah and i have a little trumpet solo in the middle!! mom said you would want to know. can you come?\n\nlove theo"
+  },
+  {
+   "key": "m24",
+   "account": "pm",
+   "thread": "t14",
+   "day": 8,
+   "hour": 8,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Theo Diaz",
+     "theo.diaz@mail.example"
+    ]
+   ],
+   "subject": "Re: band concert!!",
+   "body": "Theo, a trumpet solo! I am so proud of you. Of course I'll be there, front row if they let me. Keep practicing that long note at the end.\n\nLove,\nGrandma"
+  },
+  {
+   "key": "m25",
+   "account": "pm",
+   "thread": "t15",
+   "day": 7,
+   "hour": 10,
+   "bulk": false,
+   "from": [
+    "Tobias Kettering",
+    "kettering@fernhillgarden.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Chairs for Saturday?",
+   "body": "Hi Odile,\n\nWe're short on seating for the plant swap tomorrow (Saturday the 21st, 2 to 4 at the community center). You mentioned you have some folding chairs in your garage. Could you bring three or four? Happy to swing by and pick them up if that's easier.\n\nThanks a bunch,\nTobias\nFernhill Garden Club"
+  },
+  {
+   "key": "m26",
+   "account": "pm",
+   "thread": "t15",
+   "day": 7,
+   "hour": 14,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Tobias Kettering",
+     "kettering@fernhillgarden.example"
+    ]
+   ],
+   "subject": "Re: Chairs for Saturday?",
+   "body": "Of course, Tobias. I'll bring four chairs around 1:30 so you can set up. I may also bring a few hellebore seedlings for the table.\n\nOdile"
+  },
+  {
+   "key": "m27",
+   "account": "pm",
+   "thread": "t16",
+   "day": 4,
+   "hour": 19,
+   "bulk": false,
+   "from": [
+    "Tobias Wren",
+    "tobias.wren@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Lily's lesson this Saturday",
+   "body": "Hi Odile, would it be possible to move Lily's lesson this Saturday (Nov 28) from 10 to 11? We have a family breakfast that runs late. If not, no worries, we'll make 10 work.\n\nThanks,\nTobias Wren"
+  },
+  {
+   "key": "m28",
+   "account": "pm",
+   "thread": "t16",
+   "day": 4,
+   "hour": 21,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Tobias Wren",
+     "tobias.wren@mail.example"
+    ]
+   ],
+   "subject": "Re: Lily's lesson this Saturday",
+   "body": "Hi Tobias, 11 is fine this week. See Lily then. Tell her to bring the minuet!\n\nOdile"
+  },
+  {
+   "key": "m29",
+   "account": "pm",
+   "thread": "t17",
+   "day": 3,
+   "hour": 12,
+   "bulk": false,
+   "from": [
+    "Annelies Diaz",
+    "annelies.diaz@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Thursday",
+   "body": "Hi Mom, we're eating at 3 on Thursday. Could you bring a pie? The kids keep asking for your pumpkin one. Theo told me he invited you to his concert, he's over the moon.\n\nLove you,\nAnnelies"
+  },
+  {
+   "key": "m30",
+   "account": "pm",
+   "thread": "t17",
+   "day": 3,
+   "hour": 17,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile.fairweather@mail.example"
+   ],
+   "to": [
+    [
+     "Annelies Diaz",
+     "annelies.diaz@mail.example"
+    ]
+   ],
+   "subject": "Re: Thursday",
+   "body": "Pumpkin pie it is, and I'll bring whipped cream. See you at 3, sweetheart.\n\nMom"
+  },
+  {
+   "key": "m31",
+   "account": "pm",
+   "thread": "t18",
+   "day": 2,
+   "hour": 9,
+   "bulk": true,
+   "from": [
+    "Hollowell Symphony",
+    "tickets@hollowellsymphony.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Holiday concerts: last seats available",
+   "body": "Join us for our holiday program! A few seats remain for the Dec 19 and Dec 20 performances. Subscribers get 15% off with their member code. Book online today."
+  },
+  {
+   "key": "m32",
+   "account": "pm",
+   "thread": "t19",
+   "day": 0,
+   "hour": 8,
+   "bulk": false,
+   "from": [
+    "Grace Lindqvist",
+    "grace.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile.fairweather@mail.example"
+    ]
+   ],
+   "subject": "Hazel is sick",
+   "body": "Hi Mrs. Fairweather, Hazel came down with a fever last night so we need to skip her lesson on Tuesday. So sorry for the short notice. Could we make it up the following week, or should we just skip it?\n\nGrace"
+  },
+  {
+   "key": "m33",
+   "account": "cm",
+   "thread": "t20",
+   "day": 58,
+   "hour": 10,
+   "bulk": false,
+   "from": [
+    "Pauline Rourke",
+    "pauline@stpetershall.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Hall booking confirmed: fall season and Dec 13 concert",
+   "body": "Dear Odile,\n\nThis confirms the main hall for Brackenridge Community Choir: Tuesday rehearsals 7 to 9 PM from Sept 29 through Dec 8, and Sunday Dec 13 from 1 PM for the concert at 4. The rate is the same as last year. Could you just reply to confirm you received this?\n\nKind regards,\nPauline Rourke\nSt. Peter's Hall"
+  },
+  {
+   "key": "m34",
+   "account": "cm",
+   "thread": "t20",
+   "day": 57,
+   "hour": 9,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Pauline Rourke",
+     "pauline@stpetershall.example"
+    ]
+   ],
+   "subject": "Re: Hall booking confirmed: fall season and Dec 13 concert",
+   "body": "Received, thank you Pauline. All looks right. See you Tuesday.\n\nOdile"
+  },
+  {
+   "key": "m35",
+   "account": "cm",
+   "thread": "t21",
+   "day": 55,
+   "hour": 20,
+   "bulk": true,
+   "from": [
+    "Regional Choral Guild",
+    "news@choralguild.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Choral Guild fall newsletter",
+   "body": "In this issue: warming up an aging voice, a spotlight on three small-town choirs, and the dates for the spring festival. Member choirs can enroll for the festival from January 15. Thank you for singing with us!"
+  },
+  {
+   "key": "m36",
+   "account": "cm",
+   "thread": "t22",
+   "day": 49,
+   "hour": 9,
+   "bulk": false,
+   "from": [
+    "Wendell Marsh",
+    "wendell@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Board minutes + repertoire list",
+   "body": "Hi Odile,\n\nMinutes from Thursday's board meeting are attached. One action for you: could you send me the final repertoire list for the December concert by Nov 1? I want to start on the program layout early this year.\n\nThanks,\nWendell\nSecretary"
+  },
+  {
+   "key": "m37",
+   "account": "cm",
+   "thread": "t22",
+   "day": 48,
+   "hour": 11,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Wendell Marsh",
+     "wendell@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Re: Board minutes + repertoire list",
+   "body": "Hi Wendell, here it is, early for once:\n\n1. The Holly and the Ivy\n2. Wassail Song\n3. In the Bleak Midwinter\n4. Ding Dong Merrily on High\n5. Silent Night (with audience)\n\nThe order may shift a little but the pieces are final.\n\nOdile"
+  },
+  {
+   "key": "m38",
+   "account": "cm",
+   "thread": "t23",
+   "day": 44,
+   "hour": 15,
+   "bulk": false,
+   "from": [
+    "Imogen Takahashi",
+    "imogen.t@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Joining the choir?",
+   "body": "Hello, I just moved to Brackenridge and saw your flyer at the library. I sang soprano in my college choir but haven't sung in years. Are you taking new members, and is there an audition?\n\nBest,\nImogen Takahashi"
+  },
+  {
+   "key": "m39",
+   "account": "cm",
+   "thread": "t23",
+   "day": 43,
+   "hour": 10,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Imogen Takahashi",
+     "imogen.t@mail.example"
+    ]
+   ],
+   "subject": "Re: Joining the choir?",
+   "body": "Hi Imogen, welcome to town! We'd love to have you, and there's no audition. Just come to a Tuesday rehearsal, 7 PM at St. Peter's Hall. We'll have music for you there.\n\nOdile Fairweather\nDirector, Brackenridge Community Choir"
+  },
+  {
+   "key": "m40",
+   "account": "cm",
+   "thread": "t24",
+   "day": 38,
+   "hour": 14,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Harbinger Music Supply",
+     "orders@harbingermusic.example"
+    ]
+   ],
+   "subject": "Order for Brackenridge Community Choir",
+   "body": "Hello,\n\nI'd like to order 40 copies each of The Holly and the Ivy (SATB) and Wassail Song (SATB). We have 34 singers, so the extra copies are spares for newcomers and lost folders. Please ship to the choir address on file and invoice the choir.\n\nThank you,\nOdile Fairweather"
+  },
+  {
+   "key": "m41",
+   "account": "cm",
+   "thread": "t24",
+   "day": 37,
+   "hour": 9,
+   "bulk": false,
+   "from": [
+    "Clara Benning",
+    "orders@harbingermusic.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Re: Order for Brackenridge Community Choir",
+   "body": "Hi Odile,\n\nThanks for your order! Both titles are in stock. Invoice #20871 for $212.00 is attached, payable within 30 days by check or online. You'll get a shipping notice when it leaves the warehouse.\n\nClara Benning\nHarbinger Music Supply"
+  },
+  {
+   "key": "m42",
+   "account": "cm",
+   "thread": "t25",
+   "day": 34,
+   "hour": 7,
+   "bulk": true,
+   "from": [
+    "Harbinger Music Supply",
+    "noreply@harbingermusic.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Your order has shipped",
+   "body": "Order #20871 has shipped and should arrive in 3 to 5 business days. Track your package from your account page. This mailbox is not monitored."
+  },
+  {
+   "key": "m43",
+   "account": "cm",
+   "thread": "t26",
+   "day": 29,
+   "hour": 20,
+   "bulk": false,
+   "from": [
+    "Jürgen Haas",
+    "juergen.haas@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Zwei Proben verpasst",
+   "body": "Liebe Odile,\n\nich muss dir leider sagen, dass ich die Proben am 3. und 10. November nicht schaffe. Meine Mutter in Freiburg ist gestürzt und ich fliege für zwei Wochen zu ihr. Es geht ihr aber schon besser.\n\nIch übe die Stücke zu Hause, versprochen. Ist das in Ordnung für dich?\n\nViele Grüße,\nJürgen"
+  },
+  {
+   "key": "m44",
+   "account": "cm",
+   "thread": "t26",
+   "day": 28,
+   "hour": 9,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Jürgen Haas",
+     "juergen.haas@mail.example"
+    ]
+   ],
+   "subject": "Re: Zwei Proben verpasst",
+   "body": "Lieber Jürgen,\n\ndas ist natürlich kein Problem. Die Familie geht vor! Ich wünsche deiner Mutter gute Besserung. Wenn du zurück bist, frag einfach den Stimmführer der Bässe, er hat alle Notizen.\n\nHerzliche Grüße und gute Reise,\nOdile"
+  },
+  {
+   "key": "m45",
+   "account": "cm",
+   "thread": "t27",
+   "day": 25,
+   "hour": 9,
+   "bulk": false,
+   "from": [
+    "Pauline Rourke",
+    "pauline@stpetershall.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Heating problem in the main hall",
+   "body": "Good morning Odile,\n\nThe boiler for the main hall stopped working over the weekend. A technician is coming tomorrow morning. If he can't fix it, tomorrow evening's rehearsal may need to move to the small annex room, or be canceled. I'll let you know by noon tomorrow.\n\nApologies,\nPauline"
+  },
+  {
+   "key": "m46",
+   "account": "cm",
+   "thread": "t28",
+   "day": 25,
+   "hour": 19,
+   "bulk": false,
+   "from": [
+    "Nora Feldkamp",
+    "nora.feldkamp@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Where are we tomorrow?",
+   "body": "Hi Odile, I heard a rumor from one of the tenors that the hall has no heat. Are we still on for tomorrow? I carpool with two other altos so I'd like to tell them.\n\nNora"
+  },
+  {
+   "key": "m47",
+   "account": "cm",
+   "thread": "t28",
+   "day": 25,
+   "hour": 20,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Nora Feldkamp",
+     "nora.feldkamp@mail.example"
+    ]
+   ],
+   "subject": "Re: Where are we tomorrow?",
+   "body": "Hi Nora, the rumor is true, but a technician is coming in the morning. I'll know by noon and will write to you then.\n\nOdile"
+  },
+  {
+   "key": "m48",
+   "account": "cm",
+   "thread": "t27",
+   "day": 24,
+   "hour": 11,
+   "bulk": false,
+   "from": [
+    "Pauline Rourke",
+    "pauline@stpetershall.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Re: Heating problem in the main hall",
+   "body": "Good news: the boiler is fixed and the hall is warming up already. Tonight's rehearsal is on as usual in the main hall.\n\nPauline"
+  },
+  {
+   "key": "m49",
+   "account": "cm",
+   "thread": "t28",
+   "day": 24,
+   "hour": 12,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Nora Feldkamp",
+     "nora.feldkamp@mail.example"
+    ]
+   ],
+   "subject": "Re: Where are we tomorrow?",
+   "body": "All fixed! Rehearsal tonight at 7 in the main hall as usual. See you there.\n\nOdile"
+  },
+  {
+   "key": "m50",
+   "account": "cm",
+   "thread": "t29",
+   "day": 19,
+   "hour": 8,
+   "bulk": true,
+   "from": [
+    "Regional Choral Guild",
+    "news@choralguild.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Member deals: choir folders 20% off",
+   "body": "Guild members save 20% on black ring-binder choir folders through December from our partner supplier. Also inside: holiday concert tips and a free warm-up sheet to download."
+  },
+  {
+   "key": "m51",
+   "account": "cm",
+   "thread": "t30",
+   "day": 16,
+   "hour": 18,
+   "bulk": false,
+   "from": [
+    "Felix Ambrose",
+    "felix@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Hall piano",
+   "body": "Odile, the upright in the hall sounded rough last Tuesday, especially the middle C area. Should we get it tuned before the concert? Pauline says the hall always uses Rosemary Quill at Keystone Tuning and I can book her directly. About $140, which the choir budget can cover.\n\nFelix\nTreasurer"
+  },
+  {
+   "key": "m52",
+   "account": "cm",
+   "thread": "t30",
+   "day": 15,
+   "hour": 8,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Felix Ambrose",
+     "felix@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Re: Hall piano",
+   "body": "Yes please, Felix. Book Rosemary for any day before Dec 13, ideally before our last rehearsal. Thank you for handling it.\n\nOdile"
+  },
+  {
+   "key": "m53",
+   "account": "cm",
+   "thread": "t30",
+   "day": 13,
+   "hour": 17,
+   "bulk": false,
+   "from": [
+    "Felix Ambrose",
+    "felix@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Re: Hall piano",
+   "body": "Done. Rosemary is tuning it Tuesday Dec 8 at 2, so it'll be fresh for that evening's rehearsal. Pauline will let her in.\n\nFelix"
+  },
+  {
+   "key": "m54",
+   "account": "cm",
+   "thread": "t31",
+   "day": 12,
+   "hour": 10,
+   "bulk": true,
+   "from": [
+    "Harbinger Music Supply",
+    "deals@harbingermusic.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "This week only: choir folders 20% off",
+   "body": "Stock up before the holiday concerts! Choir folders, pencil clips and stand lights are 20% off this week. Free shipping on orders over $75."
+  },
+  {
+   "key": "m55",
+   "account": "cm",
+   "thread": "t32",
+   "day": 10,
+   "hour": 15,
+   "bulk": false,
+   "from": [
+    "Wendell Marsh",
+    "wendell@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Concert program: printer deadline",
+   "body": "Hi Odile, the printer needs the final program by Friday Nov 20 to have copies ready for the 13th. I have the layout done. Could you send the final running order and the short director's note you wrote last year (updated)?\n\nWendell"
+  },
+  {
+   "key": "m56",
+   "account": "cm",
+   "thread": "t32",
+   "day": 7,
+   "hour": 11,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Wendell Marsh",
+     "wendell@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Re: Concert program: printer deadline",
+   "body": "Hi Wendell, final running order and director's note attached. I swapped In the Bleak Midwinter and Wassail Song so we end the first half on something lively. Thanks for all your work on this.\n\nOdile"
+  },
+  {
+   "key": "m57",
+   "account": "cm",
+   "thread": "t33",
+   "day": 5,
+   "hour": 21,
+   "bulk": false,
+   "from": [
+    "Lionel Brandt",
+    "lionel.brandt@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Alto practice tracks",
+   "body": "Hi Odile, I've recorded the alto lines for all five pieces and put them in the shared folder, same place as the soprano ones. Let me know if any tempos feel off.\n\nLionel"
+  },
+  {
+   "key": "m58",
+   "account": "cm",
+   "thread": "t33",
+   "day": 5,
+   "hour": 22,
+   "bulk": false,
+   "from": [
+    "Odile Fairweather",
+    "odile@brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Lionel Brandt",
+     "lionel.brandt@mail.example"
+    ]
+   ],
+   "subject": "Re: Alto practice tracks",
+   "body": "Lionel, you're a star. Tempos sound just right. I'll mention them at Tuesday's rehearsal.\n\nOdile"
+  },
+  {
+   "key": "m59",
+   "account": "cm",
+   "thread": "t34",
+   "day": 1,
+   "hour": 8,
+   "bulk": true,
+   "from": [
+    "Brackenridge Choir List",
+    "noreply@lists.brackenridgechoir.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Weekly digest: 3 new messages",
+   "body": "This week on the members list: carpool offers for Tuesday, a photo from last rehearsal, and a reminder to wear black on Dec 13. Visit the list page to read and reply."
+  },
+  {
+   "key": "m60",
+   "account": "cm",
+   "thread": "t35",
+   "day": 0,
+   "hour": 16,
+   "bulk": false,
+   "from": [
+    "Ruth Okonkwo",
+    "ruth.okonkwo@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Fairweather",
+     "odile@brackenridgechoir.example"
+    ]
+   ],
+   "subject": "Lost my Wassail Song",
+   "body": "Hi Odile, embarrassing, but I think I left my copy of Wassail Song on the bus. Is there a spare I could take on Tuesday? Happy to pay for it.\n\nThanks, Ruth"
+  }
+ ],
+ "todos": [
+  {
+   "key": "td1",
+   "title": "Reply to Harold about Marguerite's retirement lunch",
+   "evidence": [
+    "m2"
+   ],
+   "day": 52,
+   "state": "done"
+  },
+  {
+   "key": "td2",
+   "title": "Reply to Hélène about her new grandchild",
+   "evidence": [
+    "m4"
+   ],
+   "day": 47,
+   "state": "done"
+  },
+  {
+   "key": "td3",
+   "title": "Send Grace the invoice for Hazel's October lessons",
+   "evidence": [
+    "m7"
+   ],
+   "day": 36,
+   "state": "done"
+  },
+  {
+   "key": "td4",
+   "title": "Reply to Marijke about Dad's metronome and songbooks",
+   "evidence": [
+    "m9"
+   ],
+   "day": 33,
+   "state": "done"
+  },
+  {
+   "key": "td5",
+   "title": "Reply to Sofía about paying Mateo's lessons monthly",
+   "evidence": [
+    "m13"
+   ],
+   "day": 27,
+   "state": "done"
+  },
+  {
+   "key": "td6",
+   "title": "Go to the annual checkup on Dec 2 at 10:00",
+   "evidence": [
+    "m15"
+   ],
+   "day": 22,
+   "state": "open"
+  },
+  {
+   "key": "td7",
+   "title": "Reply to Bea about the April cabin weekend",
+   "evidence": [
+    "m16"
+   ],
+   "day": 20,
+   "state": "done"
+  },
+  {
+   "key": "td8",
+   "title": "Book the home piano tuning with Desmond",
+   "evidence": [
+    "m19"
+   ],
+   "day": 15,
+   "state": "done"
+  },
+  {
+   "key": "td9",
+   "title": "Reply to Theo about his Dec 10 band concert",
+   "evidence": [
+    "m23"
+   ],
+   "day": 9,
+   "state": "done"
+  },
+  {
+   "key": "td10",
+   "title": "Reply to Tobias Kettering about folding chairs for the plant swap",
+   "evidence": [
+    "m25"
+   ],
+   "day": 7,
+   "state": "done"
+  },
+  {
+   "key": "td11",
+   "title": "Reply to Tobias Wren about moving Lily's lesson to 11",
+   "evidence": [
+    "m27"
+   ],
+   "day": 4,
+   "state": "done"
+  },
+  {
+   "key": "td12",
+   "title": "Reply to Annelies about bringing a pie on Thursday",
+   "evidence": [
+    "m29"
+   ],
+   "day": 3,
+   "state": "done"
+  },
+  {
+   "key": "td13",
+   "title": "Reply to Grace about Hazel's canceled Tuesday lesson",
+   "evidence": [
+    "m32"
+   ],
+   "day": 0,
+   "state": "open"
+  },
+  {
+   "key": "td14",
+   "title": "Confirm the hall booking with Pauline",
+   "evidence": [
+    "m33"
+   ],
+   "day": 58,
+   "state": "done"
+  },
+  {
+   "key": "td15",
+   "title": "Send Wendell the concert repertoire list",
+   "evidence": [
+    "m36"
+   ],
+   "day": 49,
+   "state": "done"
+  },
+  {
+   "key": "td16",
+   "title": "Reply to Imogen about joining the choir",
+   "evidence": [
+    "m38"
+   ],
+   "day": 44,
+   "state": "done"
+  },
+  {
+   "key": "td17",
+   "title": "Pay Harbinger invoice #20871 ($212)",
+   "evidence": [
+    "m41"
+   ],
+   "day": 37,
+   "state": "done"
+  },
+  {
+   "key": "td18",
+   "title": "Reply to Jürgen about the two missed rehearsals",
+   "evidence": [
+    "m43"
+   ],
+   "day": 29,
+   "state": "done"
+  },
+  {
+   "key": "td19",
+   "title": "Check whether the Tuesday rehearsal must move",
+   "evidence": [
+    "m45"
+   ],
+   "day": 25,
+   "state": "done"
+  },
+  {
+   "key": "td20",
+   "title": "Reply to Nora about where rehearsal is",
+   "evidence": [
+    "m46"
+   ],
+   "day": 25,
+   "state": "done"
+  },
+  {
+   "key": "td21",
+   "title": "Reply to Felix about tuning the hall piano",
+   "evidence": [
+    "m51"
+   ],
+   "day": 16,
+   "state": "done"
+  },
+  {
+   "key": "td22",
+   "title": "Send Wendell the final concert program",
+   "evidence": [
+    "m55"
+   ],
+   "day": 10,
+   "state": "done"
+  },
+  {
+   "key": "td23",
+   "title": "Reply to Ruth about a spare Wassail Song copy",
+   "evidence": [
+    "m60"
+   ],
+   "day": 0,
+   "state": "open"
+  }
+ ],
+ "promises": [
+  {
+   "direction": "mine",
+   "who": "Theo Diaz",
+   "what": "come to the Dec 10 band concert",
+   "message": "m24",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Tobias Kettering",
+   "what": "bring four folding chairs to the plant swap",
+   "message": "m26",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Annelies Diaz",
+   "what": "bring a pumpkin pie on Thursday",
+   "message": "m30",
+   "status": "done"
+  },
+  {
+   "direction": "theirs",
+   "who": "Desmond Pell",
+   "what": "tune the home piano on Dec 3 at 9:30",
+   "message": "m21",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Bea Castellanos",
+   "what": "send dates for the April cabin weekend",
+   "message": "m16",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Felix Ambrose",
+   "what": "book the hall piano tuning before the concert",
+   "message": "m51",
+   "status": "done"
+  }
+ ],
+ "key": {
+  "opportunities": [],
+  "traps": [
+   {
+    "id": "x1",
+    "kind": "coincidence",
+    "what": "Two people with the first name Tobias ask Saturday favors; garden club chairs and a lesson move are unrelated and both handled.",
+    "evidence": [
+     "m25",
+     "m27"
+    ]
+   },
+   {
+    "id": "x2",
+    "kind": "coincidence",
+    "what": "Shenandoah is both Bea's cabin location and the piece in Theo's band concert; unrelated, different months.",
+    "evidence": [
+     "m16",
+     "m23"
+    ]
+   },
+   {
+    "id": "x3",
+    "kind": "cross_area",
+    "what": "Home piano tuning with Desmond and the choir's hall piano tuning look combinable, but one is personal and Felix already booked the hall's own tuner.",
+    "evidence": [
+     "m19",
+     "m51",
+     "m53"
+    ]
+   },
+   {
+    "id": "x4",
+    "kind": "resolved",
+    "what": "Hall heating outage and Nora's question suggest telling members about a venue move, but the boiler was fixed the next day.",
+    "evidence": [
+     "m45",
+     "m46",
+     "m48",
+     "m49"
+    ]
+   },
+   {
+    "id": "x5",
+    "kind": "bulk",
+    "what": "Choir folders 20% off shows up twice, but only in a guild newsletter and a supplier promo.",
+    "evidence": [
+     "m50",
+     "m54"
+    ]
+   }
+  ]
+ }
+}
