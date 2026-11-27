@@ -34,7 +34,7 @@ like its own lines. A line that cites it keeps the AI's name and area.
 
 Area privacy: each line keeps the areas (Work, Personal) of the accounts its sources came from. A preparation (a
 meeting prep for them too) gets only the lines whose areas are the to-do's own (prep_lines), the way personal details
-stay out of work. The summary is the owner's own view: it stays on this Machine. The team's Graph, Fleet briefs and
+stay out of work; Stay in touch only Personal "now" lines (news_lines). The summary is the owner's own view: it stays on this Machine. The team's Graph, Fleet briefs and
 the Network never read it (shared_graph.py and fleet.py don't), like the timeline.
 
 The lines are derived from messages, so they are sealed at rest like a role's quote (message_seal.DERIVED). A line
@@ -722,6 +722,12 @@ def view(db, node_id):
 def prep_lines(db, node_id, sides=None):
     """The summary's lines for a preparation: only those whose areas are the to-do's own (sides: its accounts' areas).
     A line from a Work account stays out of a Personal to-do and the other way round."""
+    return [line['text'] for line, _ in _usable(db, node_id, sides)]
+
+
+def _usable(db, node_id, sides):
+    """[(line, its sources)] that may be used for something in these areas: every source still there, not only closed
+    promises."""
     row = _row(db, node_id)
     if not row:
         return []
@@ -733,5 +739,16 @@ def prep_lines(db, node_id, sides=None):
         sources = [_source(db, s) for s in line.get('sources') or ()]
         if any(s is None for s in sources) or _closed(sources):
             continue
-        out.append(line['text'])
+        out.append((line, sources))
     return out
+
+
+def news_lines(db, node_id, limit=2):
+    """[(day of its newest message or '', text)] for a Personal check-in (stay_in_touch.material): the summary's
+    "where things stand" lines from Personal accounts or the owner, as prep_lines checks them, never a connected AI's.
+    The day lets "next month" be read from when it was said."""
+    out = []
+    for line, sources in _usable(db, node_id, ['personal']):
+        if line.get('kind') == 'now' and not _from_ai(line):
+            out.append((max((timeutil.local_day_text(s['at']) for s in sources if s['type'] == 'event'), default=''), line['text']))
+    return out[:limit]

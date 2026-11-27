@@ -561,7 +561,8 @@ Tables: `project_stall_runs` (counts only), `project_stall_items` (which to-do w
 - Your edit wins: a rewrite then shows a **Suggested update** with Use it and Keep mine. **Let The Machine write it**
   gives it back.
 - Preparations add a "summary:" part with only the lines whose sources are in the to-do's area (a personal line never
-  reaches a Work to-do). The Team Graph and Fleets never get it.
+  reaches a Work to-do). The Stay in touch template reads up to two "where things stand" lines from Personal accounts
+  or the owner, never a connected AI's (`person_summary.news_lines`). The Team Graph and Fleets never get it.
 
 Tables: `person_summaries` (`lines` and `proposal` sealed), `person_summary_runs`.
 
