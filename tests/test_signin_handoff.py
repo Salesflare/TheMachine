@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest.mock import patch
 import dashboard_parts
 from seams import patch_everywhere  # noqa: E402
-from machine.browser import signin_look, task_tabs
 
 spec = importlib.util.spec_from_file_location('signin_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -469,9 +468,9 @@ class SigninDialogOpens(unittest.TestCase):
 
 
 STALE = '45E2D1B57A085E3E59809F09FDAF32F4'
-PAGE = 'https://start.ledger.example.be/?ReturnUrl=%2fdocs%2fInvoice.aspx%3fid%3d7'
+PAGE = 'https://start.ledger.example.be/?ReturnUrl=%2fpurchase%2fInvoice.aspx%3fid%3d7'
 CODE_STEP = 'https://login.ledger-id.example.com/b2c/api/SelfAsserted/confirmed?tx=1'
-SIGNED_IN = 'https://start.ledger.example.be/docs/Invoice.aspx?id=7'
+SIGNED_IN = 'https://start.ledger.example.be/purchase/Invoice.aspx?id=7'
 CODE_REASON = 'Enter your authenticator code and finish signing in on the open Ledger tab, then tap Continue.'
 
 
@@ -536,17 +535,14 @@ class StaleCodeStep(unittest.TestCase):
         navigate.assert_called_once_with('http://127.0.0.1:18800', STALE, PAGE, timeout=15)
         self.assertEqual(self.job()['status'], 'queued')
 
-    def test_a_form_on_the_site_itself_is_no_sign_in_done(self):
-        _, past = signin_look([{'id': 'n', 'url': PAGE}, {'id': STALE, 'url': CODE_STEP}], PAGE, [{'host': 'start.ledger.example.be', 'id': '0:n'}])
-        self.assertFalse(past)
-        at, past = signin_look([{'id': 'n', 'url': SIGNED_IN}, {'id': STALE, 'url': CODE_STEP}], PAGE, [])
-        self.assertEqual((at, past), ([{'id': STALE, 'url': CODE_STEP}], True))
-
-    def test_the_tasks_own_tabs_come_from_its_open_steps_without_a_devtools_address(self):
+    def test_only_the_tasks_own_tabs_in_this_browser_are_reopened(self):
+        # The open step's answer names a tab in another computer's browser: that ID is not the task's tab here.
         with self.store.connect() as db:
-            self.assertEqual(task_tabs(db, self.job()['job_id']), {STALE})
-            db.execute('UPDATE preparation_calls SET result=? WHERE call_id=?', (opened('B' * 32, PAGE, 'x', wsUrl='ws://10.0.0.9:1/x'), '0'))  # another computer's browser
-            self.assertEqual(task_tabs(db, self.job()['job_id']), set())
+            db.execute('UPDATE preparation_calls SET result=? WHERE call_id=?', (opened(STALE, PAGE, 'invoice', wsUrl='ws://10.0.0.9:1/x'), '0'))
+        tabs = [{'id': 'NEWTAB', 'url': SIGNED_IN}, {'id': STALE, 'url': CODE_STEP}]
+        seen, navigate = self.look(tabs, [], lambda: self.app.fresh_signin(self.sid))
+        self.assertEqual(seen['state'], 'done')
+        navigate.assert_not_called()
 
 
 class DashboardWiring(unittest.TestCase):
