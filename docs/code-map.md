@@ -207,7 +207,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     request and no other; on ChatGPT the addresses are those the answer names), both cached (`meeting_prep_web`), written in one background turn, or
     none when there is nothing useful; once per meeting, by its iCalUID (and the planned time in a series). Each briefing carries its format
     (`meeting_prep.FORMAT`); once after an upgrade that raises it, open, unedited briefings for meetings still ahead
-    are written again (`stale`, `meeting_prep_rebuild`; done per format in `learning_state`).
+    are written again (`stale`, `meeting_prep_rebuild`; done per format in `learning_state`). A note in a briefing's
+    chat runs as any to-do's chat, told `meeting_prep.chat_rule`; `Store.prepare` saves only an answer or the briefing
+    with the note in it, never a step or a send, and puts it back to read (`_briefing_saved`).
   - `machine/model_reply.py`: the JSON in a small background turn's reply (`read`, `rows`), the one more ask when it can't
     be read (`ask`), and the rest and cap after that (`waiting`, in memory, no table). Used where an unreadable reply
     would otherwise stand as an answer: briefings, the checks that close to-dos and promises, person summaries; the first

@@ -19,6 +19,7 @@ import fleet
 import follow_ups
 import i18n
 import locale_prefs
+import meeting_prep
 from machine import action_basis
 from machine.cards import (
     ask_blocked,
@@ -1384,6 +1385,16 @@ class DecisionsStore:
             title = ' '.join(str(title).split())
             if not title or len(title) > 90:
                 raise ValueError('title is the card\'s new short title, under 90 characters, or left out to keep the current one')
+        with self.connect() as db:
+            briefing = meeting_prep.briefing_todo(db, suggestion_id)
+        if briefing:  # its chat's answer or the briefing with the owner's note in it: never a step, a draft or a send (told to the run)
+            if next_actions.actions(next_action):
+                raise ValueError('A meeting briefing has no steps: save next_actions empty, answer in reply, and say there that a new to-do does it')
+            if send_now:
+                raise ValueError('Nothing is sent from a meeting briefing: save without send_now')
+            if len(body) > meeting_prep.BODY_CHARS:
+                raise ValueError(f'Keep the briefing within {meeting_prep.BODY_CHARS} characters (meeting_prep.BODY_CHARS)')
+            return self._briefing_saved(suggestion_id, body, job_id, outcome, note_kind, require_note)
         if len(body) > 1000:
             raise OwnerError('Keep the preparation short: at most 1000 characters. Put longer drafts in a local document, not a wall of Telegram text.')
         with self.connect() as db:
@@ -1457,6 +1468,33 @@ class DecisionsStore:
                 db.execute('UPDATE suggestions SET done_report=? WHERE id=?',(now(),suggestion_id))
                 return {'status':'completed','reported':True,'note':'Result saved; the confirmed step went through, so the card is done.',**named}
         return {'status': 'prepared', 'note': 'Result saved. The service itself executed nothing.', **named}
+
+    def _briefing_saved(self, suggestion_id, body, job_id, outcome, note_kind, require_note):
+        """A chat run's result on a meeting briefing (meeting_prep.chat_rule): its note's kind for the learning loop and,
+        for a correction, the briefing with the note worked in. It goes back to To read as it was: no result to approve,
+        no new notification (the owner is in its chat). Asked for later, it snoozes like any to-do."""
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            job = db.execute('SELECT * FROM preparations WHERE suggestion_id=?', (suggestion_id,)).fetchone()
+            row = db.execute('SELECT status FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            if job and job['status'] == 'done' and job_id and job['job_id'] == job_id:
+                return {'status': row['status'] if row else 'pending', 'replayed': True}
+            if job_id and (not job or job['job_id'] != job_id or job['status'] not in ('starting', 'running')):
+                raise OwnerError('Preparation canceled or replaced by newer owner feedback')
+            if not row or row['status'] not in todo_states.TAKEN_ON:
+                raise OwnerError('Prepare only an owner-accepted suggestion or written instruction')
+            if job_id and (note_kind or require_note):
+                self.tag_note(suggestion_id, note_kind, db)
+            db.execute('UPDATE suggestions SET body=?,next_action=NULL,outcome=NULL WHERE id=?', (body, suggestion_id))
+            todo_moves.transition(db, suggestion_id, todo_states.PENDING, 'briefing_note')
+            db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
+            db.execute("UPDATE preparations SET status='done',updated_at=?,error=NULL,reason=NULL WHERE suggestion_id=?", (now(), suggestion_id))
+            if job_id:
+                preparation_state.note_saved(db, job_id, now())
+            if (outcome or {}).get('state') == 'snoozed':
+                done = self._decide(db, suggestion_id, 'snooze', '', 'snooze-ask:' + (job_id or uuid.uuid4().hex), 'assistant', snoozed_until=outcome['until'])
+                return {'status': 'snoozed', 'snoozed_until': done['snoozed_until'], 'note': 'Saved, and the briefing is snoozed until then.'}
+        return {'status': 'pending', 'note': 'Saved. The briefing stays to read; nothing was sent or carried out.'}
 
     def review_body(self, suggestion_id, body):
         """An open to-do's text as the owner accepted it from a review (fleet_reviews.py): its plan or result, never a send."""

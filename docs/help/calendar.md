@@ -113,7 +113,9 @@ Before a meeting with people from outside your company, The Machine makes one to
 - **Open questions:** what is still unanswered.
 - **Decide or bring:** what to settle or bring along, and what they'll likely care about.
 
-It comes on the morning of a work day: the meeting's own day when it's in the afternoon, else the work day before. It is only for reading: **Done** when you have read it. A promise or question in it that needs doing has its own to-do.
+It comes on the morning of a work day: the meeting's own day when it's in the afternoon, else the work day before. It is there to read: **Done** when you have read it. A promise or question in it that needs doing has its own to-do.
+
+Ask about the meeting in its chat, or add what you know: The Machine answers, or works your note into the briefing, like **Decide or bring**, and learns from it. Nothing is sent from a briefing.
 
 Earlier meetings count when someone from outside is in both, whatever the meeting was called and whichever address they used. It reads the notes your Machine has: yours, your meeting app's, or the notes it mailed you, else the transcript or the notes in the calendar event. The newest ones weigh most, and a point settled later isn't shown as open.
 

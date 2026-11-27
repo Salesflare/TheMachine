@@ -567,8 +567,10 @@ class CardActionsApp:
                 refused = todo_kinds.refused(db, args.get('suggestion_id'))  # its picks are on the to-do, or it is only for reading
                 if refused:
                     raise OwnerError(refused)
-                briefing = db.execute('SELECT dedupe_key FROM suggestions WHERE id=?', (args.get('suggestion_id'),)).fetchone()
-                if briefing and meeting_prep.is_briefing(briefing[0]):
+                # A briefing has no Do it. Its chat (other) answers or works the note in (meeting_prep.chat_rule), and
+                # Try again carries on a chat run that stopped; never one on a pending briefing, which would accept it.
+                briefing = db.execute('SELECT dedupe_key,status FROM suggestions WHERE id=?', (args.get('suggestion_id'),)).fetchone()
+                if briefing and meeting_prep.is_briefing(briefing[0]) and (args['choice'] == 'accept' or args['choice'] == 'retry' and briefing[1] == 'pending'):
                     raise OwnerError(i18n.t('A briefing is only for reading.'))
         terminal_job=None
         files=args.get('files') if owner_dashboard and args.get('choice')=='other' else None  # added in the chat's composer
