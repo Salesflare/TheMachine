@@ -711,7 +711,7 @@ class PhoneApp(unittest.TestCase):
 
     def test_the_dashboard_shows_it_and_the_network_line_once(self):
         apps = (Path(machine_config.ROOT) / 'dashboard' / 'settings-apps.js').read_text(encoding='utf-8')
-        body = re.search(r'^function appsSignIn\(.*?(?=^\S)', apps, re.M | re.S)[0]
+        body = re.search(r'^function appsSignIn\(.*?(?=^\S|\Z)', apps, re.M | re.S)[0]
         self.assertIn('qrSvg(p.qr)', body)  # in Settings, Apps, under the stores (not General: one place for the app)
         self.assertIn("t('Install the app, then scan this with the phone’s camera.')", body)
         self.assertIn("t('The app signs in with your account.')", body)

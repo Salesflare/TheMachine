@@ -9,7 +9,7 @@ outside only: The Machine's own agent, Do it and [coding agents](agents.md) are 
 
 ## Two ways in
 
-Settings, **Apps** shows The Machine's phone apps first, then Add in ChatGPT and Add in Claude, the official app's listings and the default. Folded under
+Settings, **Apps** shows The Machine's phone apps first (on a computer also the desktop app), then Add in ChatGPT and Add in Claude, the official app's listings and the default. Folded under
 **Or add it by address** are the two addresses, each with Copy, and the steps to add one by hand in ChatGPT or Claude.
 
 ### Claude: the connector directory

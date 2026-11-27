@@ -8,13 +8,15 @@ order: 3
 ---
 Install The Machine as an app on your phone or computer to get a notification for each to-do, result and reminder, within your [work hours](work-hours.md). Pick what it sends in [Notifications](notifications.md).
 
-The **Get more out of The Machine** to-do at the top of To-dos has a row for each: **Get the phone app** (see [The mobile app](mobile-app.md)), **Turn on notifications** and **Install on this computer**. Only what that device doesn't have yet shows. The × on a row closes it. The same controls stay in **Settings**, **General**, **This device**.
+The **Get more out of The Machine** to-do at the top of To-dos has a row for each: **Get the phone app** (see [The mobile app](mobile-app.md)), **Get the desktop app** (see [The desktop app](desktop-app.md)), **Turn on notifications**, and **Install on this computer**. Only what that device doesn't have yet shows. The × on a row closes it. The same controls stay in **Settings**, **General**, **This device**.
+
+**Install on this computer** shows only on a computer without the desktop app, like a Chromebook.
 
 In the phone app, **Get a ping when something needs you.** shows while notifications are off. **Turn on** asks the phone, or opens its settings. **×** hides it for 7 days.
 
 ## On a computer (Chrome or Edge)
 
-1. Open your dashboard and click **Install** on its row in that to-do, **Install app** in Settings, **General**, or **Install** next to **Computer** in Settings, **Apps**.
+1. Open your dashboard and click **Install app** in Settings, **General**, **This device**, or **Install** on its row in that to-do on a Chromebook.
 2. The Machine opens in its own window. Pin it to your taskbar or dock.
 3. Click **Turn on** on its row and allow notifications. A test notification shows up right away.
 

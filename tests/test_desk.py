@@ -285,6 +285,44 @@ class Desk(unittest.TestCase):
         (said,) = self.app.desk_look(ONE, True)['notices']
         self.assertEqual((said['id'], [option for option, _ in said['snooze']][0], said['snooze']), (CARD['id'], '2h', a.snooze_choices()))
 
+    def test_a_look_marks_the_machine_as_having_the_desktop_app_once(self):
+        # the setup to-do's desktop row is done (setup_card.desktop): from the first look of any robot, up or not, kept
+        with self.store.connect() as db:
+            self.assertFalse(desk.seen(db))
+        self.app.desk_look('nope', True)
+        with self.store.connect() as db:
+            self.assertFalse(desk.seen(db))  # not a robot's id
+        self.app.desk_look(ONE, False)
+        self.app.desk_look(TWO, True)
+        with self.store.connect() as db:
+            self.assertTrue(desk.seen(db))
+            self.assertEqual(db.execute("SELECT count(*) FROM milestones WHERE name='desktop_app'").fetchone()[0], 1)
+        with patch.object(self.store, 'note_desktop_app') as note:  # once a run: no write on every half-minute look
+            self.app.desk_look(ONE, True)
+        note.assert_not_called()
+
+    def test_a_robot_that_opened_the_dashboard_before_counts_too(self):
+        # a Machine whose robot linked a browser before the mark existed (notify_desks)
+        self.link(ONE, '')
+        with self.store.connect() as db:
+            self.assertTrue(desk.seen(db))
+
+    def test_the_desktop_app_for_each_computer(self):
+        # api/status desktop_app: every system's file, this one's, and Linux's help (three ways to install)
+        file = 'https://github.com/Salesflare/TheMachine/releases/latest/download/the-machine-desktop-'
+        files = {'windows': file + 'setup.exe', 'mac': file + 'mac.zip', 'linux': file + 'x86_64.AppImage'}
+        help_page = 'https://themachine.computer/help/desktop-app'
+        for agent, on, get in (('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'windows', files['windows']),
+                               ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 'mac', files['mac']),
+                               ('Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0', 'linux', help_page + '#linux'),
+                               ('Mozilla/5.0 (X11; CrOS x86_64 14541.0.0)', None, None), ('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)', None, None),
+                               ('Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X)', None, None), ('', None, None), (None, None, None)):
+            self.assertEqual(desk.app(agent), {**files, 'help': help_page, 'mac_store': '', 'on': on, 'get': get}, agent)
+        # once the Mac App Store has it: a Mac gets the store
+        with patch.dict(desk.APP, mac_store='https://apps.apple.com/app/id1'):
+            got = desk.app('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')
+        self.assertEqual((got['mac'], got['get']), ('https://apps.apple.com/app/id1', 'https://apps.apple.com/app/id1'))
+
 
 if __name__ == '__main__':
     unittest.main()

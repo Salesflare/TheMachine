@@ -39,6 +39,7 @@ SOON = 10 * 60  # seconds before a meeting the robot says so
 COMPUTERS = ('mac', 'windows', 'linux', 'other')  # what a browser with notifications on runs on (other: a phone)
 SCHEMA = ('CREATE TABLE IF NOT EXISTS notify_desks(desk TEXT NOT NULL,endpoint TEXT NOT NULL,at TEXT NOT NULL,'
           'PRIMARY KEY(desk,endpoint))')
+SEEN = 'desktop_app'  # the milestone once a robot looked (Store.note_desktop_app, seen)
 _lock = threading.Lock()
 _desks = {}  # id -> {'at', 'up', 'on', 'none', 'waiting': [{'key', 'id', 'kind', 'at', 'payload', 'instead'}]}
 
@@ -54,6 +55,24 @@ def computer(agent):
     if re.search(r'Android|iPhone|iPad|iPod|Mobi|CrOS', agent):
         return 'other'
     return next((name for name, word in (('mac', 'Macintosh'), ('windows', 'Windows'), ('linux', 'Linux')) if word in agent), None)
+
+
+# Getting the desktop app: each system's file from the newest signed release on GitHub (docs/help/desktop-app.md says how
+# to install each; the site's How it works links the same files). mac_store: the Mac App Store's https link once Apple
+# approves the app; Mac then gets the store instead of the zip, with its badge in Settings, Apps.
+FILE = 'https://github.com/Salesflare/TheMachine/releases/latest/download/the-machine-desktop-'
+APP = {'windows': FILE + 'setup.exe', 'mac': FILE + 'mac.zip', 'linux': FILE + 'x86_64.AppImage',
+       'help': 'https://themachine.computer/help/desktop-app', 'mac_store': ''}
+
+
+def app(agent):
+    """The desktop app for a browser with this User-Agent, for Settings, Apps and the setup to-do's row (api/status
+    desktop_app): each system's link and the help, `on` (this computer's system, None on a phone or a computer without
+    the app, like a Chromebook) and `get` (this computer's link; for Linux the help's Linux part, as it has three)."""
+    on = computer(agent)
+    on = on if on in ('windows', 'mac', 'linux') else None
+    links = {**APP, 'mac': APP['mac_store'] or APP['mac']}
+    return {**links, 'on': on, 'get': links['help'] + '#linux' if on == 'linux' else links.get(on)}
 
 
 def look(desk, up, got=(), clock=notify.wall, on='', none=''):
@@ -91,6 +110,17 @@ def link(db, desk, endpoint, at):
         db.execute("DELETE FROM notify_desks WHERE desk=? AND endpoint=''", (desk,))
     db.execute('INSERT INTO notify_desks(desk,endpoint,at) VALUES(?,?,?) ON CONFLICT(desk,endpoint) DO UPDATE SET at=excluded.at', (desk, endpoint, at))
     db.execute('DELETE FROM notify_desks WHERE rowid NOT IN (SELECT rowid FROM notify_desks ORDER BY at DESC LIMIT ?)', (LINKS,))
+
+
+def seen(db):
+    """Whether this Machine ever had the desktop app: a robot's look (Store.note_desktop_app), or a page it opened before that was noted
+    (notify_desks). The setup to-do's desktop row is done then (machine/app/setup_card.py)."""
+    if db.execute('SELECT 1 FROM milestones WHERE name=?', (SEEN,)).fetchone():
+        return True
+    try:
+        return bool(db.execute('SELECT 1 FROM notify_desks LIMIT 1').fetchone())
+    except sqlite3.OperationalError:  # no robot ever opened the dashboard
+        return False
 
 
 def up(clock=notify.wall):

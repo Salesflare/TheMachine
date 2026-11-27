@@ -454,6 +454,12 @@ class FirstLookStore:
         with self.connect() as db:
             setup_closed(db, step, closed)
 
+    def note_desktop_app(self):
+        """A desktop robot looked at this Machine: the setup to-do's desktop row is done (one row, kept; read by
+        machine/delivery/desk.py seen)."""
+        with self.connect() as db:
+            db.execute("INSERT OR IGNORE INTO milestones(name,at) VALUES('desktop_app',?)", (now(),))
+
     def tip_done(self, tip):
         """A first-use tip closed (×) or its button used on the dashboard: it never comes back, on any device."""
         if tip not in FIRST_TIPS:

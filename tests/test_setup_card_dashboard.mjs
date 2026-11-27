@@ -7,7 +7,8 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // The setup to-do at the top of To-dos (dashboard/setup-card.js): one small card, "Get more out of The Machine", a row per
-// step (the phone app, notifications, WhatsApp, the app on this computer, another account, more connections, then what
+// step (the phone app, the desktop app, notifications, WhatsApp, installing from the browser on a computer without the
+// desktop app, another account, more connections, then what
 // setup left out), at most 5, each with one button that does the step, ticked once done, closed for good with its ×
 // (setup_dismiss, kept on the Machine so every device agrees). Open steps come first: a done row only fills a slot no
 // open step needs. Rows show only where they apply. From the first visit,
@@ -19,11 +20,11 @@ const now=new Date().toISOString();
 const codes=JSON.parse(execFileSync('python3',['-c','import json,qr;print(json.dumps([qr.encode(u) for u in ("https://apps.example.test/ios","https://play.example.test/android","https://example.test/app")]))'],{cwd:new URL('..',import.meta.url)}).toString());
 const STORE={ios:'https://apps.example.test/ios',android:'https://play.example.test/android',phones:0,qr_ios:codes[0],qr_android:codes[1]};
 const FRESH={closed:false,dismissed:[],phones:0,whatsapp:false,calendar:true,mail_accounts:1,add:'google',more:false,memory:true};  // the import row: test_memory_import_dashboard.mjs
-let setupHints=[],phoneStore=STORE,setup={...FRESH},manage='https://app.example.test/setup',firstLook=null;
+let setupHints=[],phoneStore=STORE,setup={...FRESH},manage='https://app.example.test/setup',firstLook=null,desktop=null;
 let connectors=[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}];
 const status=()=>({suggestions:[{id:'ab'.repeat(8),title:'Reply to Robin about the garden plan',body:'Robin asked for the dates.',status:'pending',scope:'personal',created_at:now,event_ids:[1]}],
  promises:[],connectors,suggestion_counts:{pending:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:firstLook||{runs:[]},
- setup_hints:setupHints,phone_app_store:phoneStore,setup_card:setup,...(manage?{manage_url:manage}:{})});
+ setup_hints:setupHints,phone_app_store:phoneStore,setup_card:setup,desktop_app:desktop,...(manage?{manage_url:manage}:{})});
 const actions=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -48,7 +49,15 @@ const UA={
  iphone:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1',
  ipad:'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1',
  firefox:'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0',
- phoneApp:'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36 TheMachineApp/1'};
+ phoneApp:'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36 TheMachineApp/1',
+ mac:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+ linux:'Mozilla/5.0 (X11; Linux x86_64; rv:144.0) Gecko/20100101 Firefox/144.0',
+ chromebook:'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'};
+// The desktop app as the Machine hands it to a browser with this User-Agent (machine/delivery/desk.py app). The tests
+// above the desktop app's own run with a Chromebook's (no desktop app for it), where installing from the browser is the
+// computer's row; the status for the others is set per test.
+const deskApp=ua=>JSON.parse(execFileSync('python3',['-c','import json,sys;from machine.delivery import desk;print(json.dumps(desk.app(sys.argv[1])))',UA[ua]],{cwd:new URL('..',import.meta.url)}).toString());
+UA.windows=UA.chrome;const NO_DESK=deskApp('chromebook');desktop=NO_DESK;
 // The browser's side, made up: permission, a push subscription, display mode, related apps, and what was asked.
 function fakeBrowser(o){
  const log=window.__log=[];
@@ -66,6 +75,7 @@ function fakeBrowser(o){
  window.matchMedia=q=>{const m=/display-mode: ([\w-]+)/.exec(q);return m?{matches:o.mode===m[1],media:q,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}}:mm(q)};
  if('related' in o)navigator.getInstalledRelatedApps=async()=>o.related?[{platform:'webapp',url:location.origin+'/manifest.webmanifest'}]:[];
  if(o.iosApp)Object.defineProperty(navigator,'standalone',{configurable:true,value:true});
+ if(o.desktopApp)Object.defineProperty(window,'machineDesktop',{value:Object.freeze({version:1})});
  if(o.blockStorage)for(const m of ['getItem','setItem','removeItem']){const real=Storage.prototype[m];Storage.prototype[m]=function(k,...v){if(/^(nudge|device|push-off|app-installed)/.test(k))throw new DOMException('blocked','SecurityError');return real.call(this,k,...v)}}
  window.__installPrompt=(outcome='accepted')=>{const e=new Event('beforeinstallprompt',{cancelable:true});e.prompt=async()=>{log.push('prompt')};e.userChoice=Promise.resolve({outcome});dispatchEvent(e)};
 }
@@ -92,7 +102,7 @@ const settings=async page=>{await page.evaluate(()=>showSettings('general'));awa
    order:[...document.querySelector('#device-app').parentElement.children].map(e=>e.id||e.querySelector('[id]')?.id)}})};
 const shot=async(page,name,sel)=>{if(!shots)return;if(sel)await page.locator(sel).evaluate(e=>scrollTo(0,Math.max(0,e.getBoundingClientRect().top+scrollY-120)));else await page.evaluate(()=>scrollTo(0,0));await page.waitForTimeout(150);await page.screenshot({path:`${shots}/${name}.png`})};
 const actionNames=()=>actions.map(a=>a.action).filter(n=>n!=='voice_status');  // Settings, General reads voice input's state
-const reset=()=>{setupHints=[];phoneStore=STORE;setup={...FRESH};manage='https://app.example.test/setup';firstLook=null;actions.length=0};
+const reset=()=>{setupHints=[];phoneStore=STORE;setup={...FRESH};manage='https://app.example.test/setup';firstLook=null;desktop=NO_DESK;actions.length=0};
 const fits=async(page,why)=>assert.ok(await page.evaluate(()=>{const c=document.querySelector('#setup-card').getBoundingClientRect();return document.documentElement.scrollWidth<=innerWidth&&c.left>=0&&c.right<=innerWidth}),why+': fits the screen');
 const opened=page=>page.evaluate(()=>{window.__opened=[];window.open=(u,...r)=>{window.__opened.push([u,...r]);return null}});
 const copy=/—|^You/m;
@@ -255,6 +265,34 @@ try{
  // Self-hosted: WhatsApp and another account sign in from a terminal there, so only the rows the dashboard can do.
  {reset();manage='';const {context,page}=await open({mode:'standalone'});
   assert.deepEqual(await steps(page),['phone','push','connect'],'installed already, so no install row');await context.close()}
+ // The desktop app on Windows, a Mac and Linux: Get the desktop app right after the phone app, its Get it a link to
+ // this computer's download in a new tab (Linux: the help's Linux part), and no installing from the browser next to it,
+ // even when the browser offers it. Done once a robot looked (setup_card.desktop); its × closes it on the Machine.
+ for(const [sys,width,scheme] of [['windows',1440,'light'],['windows',1440,'dark'],['windows',390,'light'],['windows',390,'dark'],['mac',1440,'light'],['linux',1440,'dark'],['linux',390,'light']]){reset();
+  desktop=deskApp(sys);const {context,page}=await open({ua:sys,width,height:width>600?900:844,scheme,touch:false});await page.evaluate(()=>__installPrompt());
+  const c=await card(page);
+  assert.deepEqual(c.rows,[['phone','Get the phone app','Get it'],['desktop','Get the desktop app','Get it'],['push','Turn on notifications','Turn on'],['whatsapp','Connect WhatsApp','Connect'],['account','Add another email account','Add']],sys+' '+width);
+  const go=await page.evaluate(()=>{const a=document.querySelector('[data-setup-go="desktop"]');return [a.tagName,a.getAttribute('href'),a.target,a.rel]});
+  assert.deepEqual(go,['A',sys==='linux'?'https://themachine.computer/help/desktop-app#linux':desktop[sys],'_blank','noopener'],sys);
+  assert.equal(await page.locator('[data-step="desktop"] svg.setup-ic').count(),1,'its icon');
+  await fits(page,sys+' '+width);await shot(page,`setup-desktop-${sys}-${width}-${scheme}`,'#setup-card');await context.close()}
+ {reset();desktop=deskApp('windows');setup={...FRESH,desktop:true};const {context,page}=await open();await page.evaluate(()=>__installPrompt());
+  assert.deepEqual(await steps(page),['phone','push','whatsapp','account','connect'],'a robot looked: done, and still no install row');
+  setup={...FRESH};await page.evaluate(()=>refresh());await page.locator('[data-step="desktop"]').waitFor();
+  await page.locator('[data-setup-dismiss="desktop"]').click();await page.waitForFunction(()=>!document.querySelector('[data-step="desktop"]'));
+  await sent(dismissed,[{action:'setup_dismiss',args:{step:'desktop'}}]);
+  await page.locator('#toast [data-setup-undo="desktop"]').click();await page.locator('[data-step="desktop"]').waitFor();await context.close()}
+ // Not inside the desktop app, the phone app or on a phone (also a phone asking for desktop sites), even with a
+ // computer's desktop app in the status
+ for(const [why,o] of [['desktop app',{ua:'windows',desktopApp:true}],['phone app',{ua:'phoneApp',width:390,height:844}],['android',{ua:'android',width:390,height:844}],['desktop site on a phone',{ua:'windows',width:390,height:844,touch:true}]]){reset();
+  desktop=deskApp('windows');const {context,page}=await open(o);
+  const got=await steps(page);assert.ok(!got.includes('desktop')&&!got.includes('install'),why+': '+got);await context.close()}
+ // The site's demo: a desktop row is a button that does nothing
+ {reset();desktop=deskApp('windows');const {context,page}=await open({url:base+'frame'});const frame=page.frames().find(f=>f!==page.mainFrame());
+  await frame.locator('#task-'+'ab'.repeat(8)).waitFor();setup={demo:true,rows:[{id:'phone'},{id:'desktop'}]};
+  await frame.evaluate(()=>refresh());await frame.locator('[data-step="desktop"]').waitFor();
+  assert.equal(await frame.evaluate(()=>document.querySelector('[data-setup-go="desktop"]').tagName),'BUTTON');
+  await frame.locator('[data-setup-go="desktop"]').click();assert.deepEqual(actionNames(),[]);await context.close()}
  // Microsoft mail: another Microsoft account
  {reset();setup={...FRESH,add:'microsoft'};const {context,page}=await open({mode:'standalone'});
   assert.deepEqual((await card(page)).rows.find(r=>r[0]==='account'),['account','Add another email account','Add'],'the same row, whichever provider they have');await context.close()}

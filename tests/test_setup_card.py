@@ -23,8 +23,15 @@ class SetupCard(unittest.TestCase):
     def test_a_new_machine_has_every_step_open(self):
         card = self.card()
         self.assertTrue(card.pop('since'))  # when this Machine started counting, until a first to-do shows
-        self.assertEqual(card, {'closed': False, 'dismissed': [], 'phones': 0, 'whatsapp': False, 'calendar': True,
+        self.assertEqual(card, {'closed': False, 'dismissed': [], 'phones': 0, 'desktop': False, 'whatsapp': False, 'calendar': True,
                                 'mail_accounts': 1, 'add': 'google', 'more': False, 'memory': False})
+
+    def test_the_desktop_app_step_is_done_once_a_robot_looked_and_closes_like_any(self):
+        # done from the robot's first look (Store.note_desktop_app), on every device
+        self.store.note_desktop_app()
+        self.assertTrue(self.card()['desktop'])
+        self.assertEqual(machine_app_setup_card.setup_dismiss(self.store, self.config, 'desktop')['setup_card']['dismissed'], ['desktop'])
+        self.assertEqual(machine_app_setup_card.setup_restore(self.store, self.config, 'desktop')['setup_card']['dismissed'], [])
 
     def test_the_calendar_step_follows_mail(self):
         # mail without a calendar: the card's first row offers the calendar next; Outlook's counts as one too
