@@ -713,6 +713,29 @@ class MemoryReach(unittest.TestCase):
             _, _, revenue = self.routine_message('every monday at 9, sum up the recurring revenue of last week')
         self.assertIn(REVENUE, self.rules_block(revenue))
 
+    def test_without_embeddings_a_routine_finds_rules_by_word_forms_scripts_and_the_records_they_are_about(self):
+        self.many_rules()
+        forms = 'Rechnungen gehen immer mit der Bestellnummer im Betreff raus.'   # German: one word, another form
+        paired = '請求書は月末に必ず経理宛に送る。'                                  # Japanese: no spaces between words
+        client = 'Their reports go to the board in a single PDF.'              # about a project its words don't name
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('project:atlas','project','Project Atlas',1,1,'{}')")
+            old = (NOW - dt.timedelta(days=200)).isoformat()
+            for text in (forms, paired, client):
+                fid = db.execute("INSERT INTO facts(text,decision_id,created_at,kind) VALUES(?,'note-1',?,'draft')", (text, old)).lastrowid
+            db.execute("INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,'project:atlas','agent',?)", (fid, old))
+        for words, rule in (('jeden Montag um 9 die offenen Rechnungsbeträge prüfen', forms), ('毎週金曜日に請求書の一覧を確認する', paired),
+                            ('every friday at 4, sum up the week for Atlas', client)):
+            _, run, message = self.routine_message(words)
+            self.assertIn(rule, self.rules_block(message), words)
+            self.assertNotIn(REVENUE, self.rules_block(message))
+        _, run, garden = self.routine_message('every saturday at 9, tell me what to do in the vegetable garden')
+        self.assertFalse({forms, paired, client} & set(l[2:] for l in self.rules_block(garden).split('\n')))
+        with self.store.connect() as db:  # first for sharing a telling word, logged as match, but not a use: word_match's bar is
+            self.assertEqual([None, None, None], [db.execute('SELECT used_at FROM facts WHERE text=?', (t,)).fetchone()[0] for t in (forms, paired, client)])
+            ids = [str(db.execute('SELECT id FROM facts WHERE text=?', (t,)).fetchone()[0]) for t in (forms, paired, client)]
+            self.assertEqual({('match',)}, {tuple(r) for r in db.execute("SELECT how FROM memory_use WHERE purpose='routine' AND row_id IN (?,?,?)", ids)})
+
     def test_a_routine_follows_its_new_words_and_the_rule_that_replaced_one(self):
         self.many_rules()
         made, _, before = self.routine_message('every saturday at 9, tell me what to do in the vegetable garden')
