@@ -129,6 +129,7 @@ pub fn prepare(window: &WebviewWindow) {
     }
     let _ = window.with_webview(move |page| {
         let page = page.inner();
+        shade(&page);
         if dash::label(&label) {
             menu(&app, &label, &page);
         }
@@ -157,6 +158,22 @@ pub fn prepare(window: &WebviewWindow) {
             FIND.with_borrow_mut(|f| *f = bar);
         }
     });
+}
+
+/// What isn't drawn yet while it scrolls fast has the page's own color, as in a browser, not WebKitGTK's white: its
+/// theme-color, which the dashboard keeps in step with its theme (light, dark, Omarchy's). WebKitGTK has it since 2.50.
+fn shade(page: &WebView) {
+    if page.find_property("theme-color").is_none() {
+        return;
+    }
+    let follow = |page: &WebView| {
+        let color = page.property::<Option<gtk::gdk::RGBA>>("theme-color");
+        if let Some(color) = color.filter(|c| c.alpha() > 0.9) {
+            page.set_background_color(&color);
+        }
+    };
+    follow(page);
+    page.connect_notify_local(Some("theme-color"), move |page, _| follow(page));
 }
 
 /// A key as keys.rs has it.
