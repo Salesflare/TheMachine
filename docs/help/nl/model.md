@@ -1,54 +1,56 @@
 ---
 title: Model
 area: settings
-summary: Welk AI-model antwoordt, hoeveel denkwerk het gebruikt en hoeveel van de limieten van je abonnement al zijn verbruikt.
+summary: Welk AI-model je antwoorden geeft, hoeveel denkwerk het doet en hoeveel van de limieten van je abonnement het heeft gebruikt.
 covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
-translated: f34db396a7290252
+translated: 9a0777c555ab5637
 ---
-**Instellingen**, **Model** laat zien welk AI-model je **Achtergrondwerk** doet en hoe je bent ingelogd, bijvoorbeeld met ChatGPT.
+Bij **Instellingen** > **Model** zie je welk AI-model je **Achtergrondwerk** uitvoert en hoe je bent ingelogd, bijvoorbeeld met ChatGPT.
 
-Op een gehoste Machine is het hoofdmodel met een ChatGPT-login GPT-6.2 Sol: het geeft sneller antwoord dan GPT-6.1 Sol voor dezelfde prijs.
+Op een gehoste Machine met een ChatGPT-login is GPT-6.2 Sol het hoofdmodel: het geeft sneller antwoord dan GPT-6.1 Sol voor dezelfde prijs.
 
-Een persoonlijk ChatGPT- of Claude-abonnement kan standaard je chats gebruiken om te trainen. **Training met je gegevens uitschakelen** opent die instelling bij de aanbieder. Met **Gedaan** verberg je de regel.
+Een Claude-login verloopt ongeveer vier weken nadat je bent ingelogd. **Wacht op jou** laat dat drie dagen van tevoren weten. Na afloop krijg je één melding. Met **Opnieuw inloggen** los je dit in één stap op.
+
+Een persoonlijk ChatGPT- of Claude-abonnement kan je chats standaard gebruiken om te trainen. Met **Training met je gegevens uitschakelen** open je die instelling bij de aanbieder. Met **Gedaan** verberg je de melding.
 
 ## Model en denkwerk voor chats
 
-Kies onder **Chats** het model en het denkwerkniveau voor je to-do-chats en Hulp. Je ziet alleen de modellen en niveaus die je login aanbiedt.
+Kies onder **Chats** het model en het niveau van het denkwerk voor je to-do-chats en Hulp. Je ziet alleen de modellen en niveaus die bij je login beschikbaar zijn.
 
-Meer denkwerk levert betere antwoorden op moeilijke vragen op, maar duurt langer en verbruikt meer van je abonnement. **Ultra denkwerk** schakelt hulp in voor de moeilijkste vragen en verbruikt het meest. Een nieuwe Machine begint op **Weinig denkwerk**: goede resultaten voor veel minder verbruik van je abonnement. Een wijziging geldt vanaf het volgende bericht.
+Meer denkwerk levert betere antwoorden op lastige vragen op, maar duurt langer en gebruikt meer van je abonnement. **Ultra denkwerk** schakelt hulpmodellen in voor de lastigste vragen en verbruikt het meest. Een nieuwe Machine begint met **Weinig denkwerk**: goede resultaten voor een veel kleiner deel van je abonnement. Een wijziging geldt vanaf je volgende bericht.
 
-Als je dit alleen voor één chat wilt wijzigen, tik je onder het berichtvak op het model of het denkwerkniveau. Kies opnieuw de optie Instellingen om de instelling te volgen.
+Je kunt dit ook voor één chat wijzigen door onder het berichtvak op het model of het niveau van het denkwerk te tikken. Kies opnieuw de optie Instellingen om de instellingen te volgen.
 
-Checks, je profiel en concepten die vooraf zijn voorbereid, gebruiken hun eigen model.
+Controles, je profiel en vooraf gemaakte concepten gebruiken hun eigen model.
 
 ## Limieten
 
-Heeft je abonnement gebruikslimieten, zoals de limieten van 5 uur en per week van een ChatGPT- of Claude-abonnement, dan zie je hoeveel ervan is verbruikt en wanneer ze worden gereset. Alleen kijken verbruikt niets van je abonnement.
+Heeft je abonnement gebruikslimieten, zoals de limieten van ChatGPT of Claude voor vijf uur en een week? Dan zie je hoeveel je hebt gebruikt en wanneer elke limiet wordt gereset. Alleen kijken gebruikt niets van je abonnement.
 
 ## Ruimte voor je eigen chats
 
-Achtergrondwerk laat ruimte over voor je eigen chats. Het pauzeert bij ongeveer 65% van de limiet van 5 uur. Checks van nieuwe berichten gaan door tot ongeveer 90% van de weeklimiet. Ander werk gebruikt ongeveer een zevende van de week per dag. Een login zonder limieten, zoals een API-sleutel, pauzeert nooit.
+Achtergrondwerk laat ruimte over voor je eigen chats. Het wordt onderbroken bij ongeveer 65% van de limiet voor vijf uur. Controles op nieuwe berichten gaan door tot ongeveer 90% van de weeklimiet. Ander werk gebruikt ongeveer een zevende van de week per dag. Een login zonder limieten, zoals een API-sleutel, wordt nooit onderbroken.
 
-Achtergrondwerk draait nooit op GPT-6 Astra. Met een ChatGPT-login en een OpenClaw-versie ouder dan 2026.11.10 gebruikt het GPT-6.1 Sol, ook als je hoofdmodel GPT-6.2 Sol is. Daar hergebruikt 6.2 zijn gecachete instructies niet, waardoor het meer van je abonnement verbruikt. Vanaf OpenClaw 2026.11.10 gebruikt achtergrondwerk weer je hoofdmodel. Voor je chats blijft het model staan dat je hebt gekozen.
+Achtergrondwerk wordt nooit uitgevoerd op GPT-6 Astra. Als je bent ingelogd met ChatGPT en OpenClaw ouder is dan 2026.11.10, gebruikt het GPT-6.1 Sol, ook als GPT-6.2 Sol je hoofdmodel is. GPT-6.2 hergebruikt daar de gecachte instructies niet, waardoor het meer van je abonnement verbruikt. Vanaf OpenClaw 2026.11.10 gebruikt achtergrondwerk weer je hoofdmodel. Je chats blijven het model gebruiken dat je hebt gekozen.
 
-Voordat een check begint, filtert een klein model (GPT-6 Luna met ChatGPT, Haiku met Claude) nieuwsbrieven, aanbiedingen en appmeldingen eruit die duidelijk geen aandacht nodig hebben. Zo verbruiken checks minder van je abonnement. Je kunt ze nog steeds doorzoeken. Berichten van personen, rekeningen, beveiligingswaarschuwingen en inlogcodes worden altijd gecontroleerd.
+Voor een controle haalt een klein model (GPT-6 Luna met ChatGPT, Haiku met Claude) eerst nieuwsbrieven, aanbiedingen en appmeldingen eruit die duidelijk nergens voor nodig zijn. Zo verbruiken controles minder van je abonnement. Je kunt ze nog steeds doorzoeken. Berichten van mensen, rekeningen, beveiligingsmeldingen en inlogcodes worden altijd gecontroleerd.
 
 ## Voordat een limiet is bereikt
 
-Heeft je ChatGPT-abonnement nog resets over, dan toont To-do's een korte melding zodra achtergrondwerk trager wordt: bij ongeveer 65% van de limiet van 5 uur of 90% van de weeklimiet. De melding geeft aan hoeveel is verbruikt en hoeveel resets je nog hebt. Met **Een reset gebruiken** begin je opnieuw, nadat je dit hebt bevestigd. Met × verberg je de melding totdat die limiet wordt gereset. Zonder resets verschijnt er niets nieuws.
+Als je ChatGPT-abonnement nog resets heeft, verschijnt bij To-do's een korte melding wanneer achtergrondwerk langzamer gaat: bij ongeveer 65% van de limiet voor vijf uur of 90% van de weeklimiet. Je ziet hoeveel je hebt gebruikt en hoeveel resets je nog hebt. Met **Een reset gebruiken** begin je opnieuw aan de limieten, nadat je dit hebt bevestigd. Met × verberg je de melding tot die limiet wordt gereset. Zonder resets verschijnt er geen melding.
 
-Op een gehoste Machine kan je Machine resets zien en gebruiken zodra Codex op je Machine is ingelogd bij hetzelfde ChatGPT-account. Tot die tijd tonen To-do's en Instellingen **Resets inschakelen**. Hiermee open je de Codex-stap van je installatiepagina. Daar log je in met een code, net als bij je ChatGPT-login.
+Op een gehoste Machine kan je Machine resets zien en gebruiken zodra Codex op je Machine is ingelogd bij hetzelfde ChatGPT-account. Tot die tijd zie je bij To-do's en Instellingen **Resets inschakelen**. Hiermee open je de Codex-stap van je installatiepagina. Daar log je in met een code, net als bij je ChatGPT-login.
 
 ## Wanneer een limiet is bereikt
 
-Bovenaan het dashboard staat welke limiet is bereikt en wanneer die wordt gereset. Het werk wacht en gaat daarna verder waar het was gebleven. Er gaat niets verloren. Heeft je ChatGPT-abonnement resets, dan begin je met **Een reset gebruiken** opnieuw. Is Codex op een gehoste Machine niet ingelogd, dan opent **Resets inschakelen** je installatiepagina. Anders opent **Resets bekijken in ChatGPT** de pagina van ChatGPT.
+Bovenaan het dashboard staat welke limiet is bereikt en wanneer deze wordt gereset. Het werk wacht en gaat daarna verder waar het was gebleven. Er gaat niets verloren. Heeft je ChatGPT-abonnement resets, dan begint **Een reset gebruiken** opnieuw aan de limieten. Is Codex op een gehoste Machine niet ingelogd, dan opent **Resets inschakelen** je installatiepagina. Anders opent **Resets bekijken in ChatGPT** de pagina van ChatGPT.
 
 ## Met een terugvalmodel
 
-Heeft je Machine een terugvalmodel bij een ander abonnement of een andere aanbieder, dan neemt dat het over zodra een limiet is bereikt en hoeft er niets te wachten. Bovenaan het dashboard staat: "ChatGPT-limiet bereikt, je terugvalmodel wordt gebruikt." Als het terugvalmodel niet meer werkt, worden de taken weer gepauzeerd.
+Heeft je Machine een terugvalmodel bij een ander abonnement of een andere aanbieder, dan neemt dat het over zodra een limiet is bereikt. Er hoeft dan niets te wachten. Bovenaan het dashboard staat: "ChatGPT-limiet bereikt, je terugvalmodel wordt gebruikt." Als het terugvalmodel niet meer werkt, worden taken weer onderbroken.
 
 ## Het hoofdmodel wijzigen
 
-Het hoofdmodel is het model dat de rest van The Machine gebruikt. Wijzig het op een gehoste Machine op je installatiepagina, onder Your AI. Bekijk voor je eigen computer [ChatGPT](chatgpt.md), [Mistral](mistral.md) en de [handleiding voor modellen](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
+Het hoofdmodel wordt voor de rest van The Machine gebruikt. Wijzig het op een gehoste Machine op je installatiepagina, onder Your AI. Bekijk op je eigen computer [ChatGPT](chatgpt.md), [Mistral](mistral.md) en de [handleiding voor modellen](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
