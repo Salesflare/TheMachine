@@ -6,11 +6,11 @@ other providers and local models have nothing to ask, and neither has a plan who
 
 state() is in the Machine's status (`ai_training`), so the account can say owners are asked: todo, done or na."""
 import json
-import re
-import shutil
 import subprocess
 import time
 from pathlib import Path
+
+from machine import claude_signin
 
 LAYER = 0  # whether the owner's AI plan trains on chats, and where to turn that off (a leaf)
 
@@ -19,35 +19,15 @@ SETTINGS = {'chatgpt': 'https://chatgpt.com/settings/data-controls',
             'claude': 'https://claude.ai/settings/data-privacy-controls'}
 # The personal plans whose provider trains on chats unless the owner turns it off
 PERSONAL = {'chatgpt': {'free', 'go', 'plus', 'pro'}, 'claude': {'free', 'pro', 'max'}}
-CLAUDE_PLAN_SECONDS = 3600
-_claude_plan = {'at': 0.0, 'plan': None}
+# A plan's kind in lower case, from how a provider names it: 'plus', 'Max (20x)', 'self_serve_business' -> 'plus',
+# 'max', 'business'. None when there is none.
+plan_kind = claude_signin.plan_kind
 
 
-def plan_kind(plan):
-    """A plan's kind in lower case, from how a provider names it: 'plus', 'Max (20x)', 'self_serve_business' -> 'plus',
-    'max', 'business'. None when there is none."""
-    words = re.findall(r'[a-z]+', re.sub(r'^self_serve_', '', str(plan or '').strip().lower()))
-    return words[0] if words else None
-
-
-def claude_plan(config, run=subprocess.run, clock=time.time):
-    """The kind of plan Claude Code is signed in to, from `claude auth status --json` (it prints no secrets; only
-    subscriptionType is kept). Read at most once an hour; None when there is no Claude Code or it can't tell."""
-    if clock() - _claude_plan['at'] < CLAUDE_PLAN_SECONDS:
-        return _claude_plan['plan']
-    found = config.get('claude') or shutil.which('claude')
-    local = Path.home() / '.local' / 'bin' / 'claude'
-    binary = found or (str(local) if local.exists() else None)
-    plan = None
-    if binary:
-        try:
-            data = json.loads(run([str(binary), 'auth', 'status', '--json'], capture_output=True, text=True, timeout=30).stdout)
-            if isinstance(data, dict) and data.get('loggedIn'):
-                plan = plan_kind(data.get('subscriptionType'))
-        except (OSError, ValueError, subprocess.TimeoutExpired):
-            plan = None
-    _claude_plan.update(at=clock(), plan=plan)
-    return plan
+def claude_plan(config, run=subprocess.run, clock=time.monotonic):
+    """The kind of plan Claude Code is signed in to: the same reading of `claude auth status --json` as Needs you's
+    (machine/claude_signin.py, at most once an hour while signed in). None when there is no Claude Code or it can't tell."""
+    return (claude_signin.read(config, run, clock) or {}).get('plan')
 
 
 def done_for(config, config_path=None):

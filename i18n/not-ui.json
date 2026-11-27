@@ -188,6 +188,7 @@
  "Routines are run by the owner, on the dashboard",
  "Rows${s.total>s.rows.length?",
  "Rows{}",
+ "Run: claude auth login",
  "Running a command",
  "Saved, it goes out by itself soon. Say exactly that in a few words, nothing more.",
  "Say only: \"Sent the bug report.\" Don’t say it is being looked into or fixed.",

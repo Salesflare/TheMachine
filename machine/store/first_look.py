@@ -163,6 +163,11 @@ def note_review_pause(db, name, at, detail):
     db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)', (name, at, json.dumps(detail, sort_keys=True)))
 
 
+def note_ai_signin_told(db, at, lapse):
+    """The Claude sign-in lapse that was told on the phone and in Telegram (machine/app/ai_signin.py), so it's told once."""
+    db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)', ('claude_signin_told', at, json.dumps({'lapse': lapse})))
+
+
 def first_magic_done(db):
     """The first look has done its job, so the rest of onboarding (profile, voices, roles, organizations, drafts
     beyond the first) may start: the first card was shown, or a review finished a while ago (one that found no card,

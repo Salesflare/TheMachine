@@ -56,6 +56,10 @@ To use your own Claude plan (Pro, Max or Team), install Claude Code with Anthrop
 - Pick one as main model or fallback like any other; your current main model stays until you do. (`openclaw models auth login --provider anthropic --method cli --set-default` also makes a Claude model the main model; it needs a terminal.)
 - Usage counts against your plan. With a Claude model as main model, Settings → Model says "Uses your Claude plan".
 - Sign out with `claude auth logout`.
+- A Claude sign-in ends on a fixed day, about four weeks after you signed in: Claude Code's token refreshes never move
+  that day later. Three days ahead, Needs you says when it ends; once it ended, Needs you says Claude is signed out,
+  and a phone notification and Telegram tell it once (`machine/claude_signin.py`, `machine/app/ai_signin.py`). Sign in
+  again with `claude auth login` (on a hosted Machine: **Sign in again** on its setup page).
 - One-shot turns (the short test, Help, bringing in a CSV, the bug report check, mail cleanup, notes, subscriptions) run through
   Claude Code's own print mode (`claude -p`, `claude_print.py`): no tools, MCP servers, skills, settings files or saved
   session, and a one-line system prompt. `openclaw infer model run` never takes the Claude Code route. `"claude":

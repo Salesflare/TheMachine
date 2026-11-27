@@ -15,6 +15,7 @@ import doc_writes
 import follow_ups
 import linear_writes
 from machine.cards import ACTION_WORKING, deadline_of, hide_until, PREPARATION_WORKING, wait_return
+from machine.app import ai_signin
 from machine.config import LOG
 from machine.delivery.deliver import deliver
 from machine.delivery.push import app_clear_step
@@ -130,6 +131,7 @@ class ActionRunsApp:
                 self.feedback_prompt_step()
                 deliver(self.store, self.config)
                 self.notify_step()
+                ai_signin.step(self)  # a Claude sign-in that ended: told once on the phone and in Telegram
                 self.digest_step()
                 self.evening_step()
                 app_clear_step(self.store, self.config)  # notifications on phones for what no longer waits

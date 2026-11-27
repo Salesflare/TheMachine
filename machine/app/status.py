@@ -23,7 +23,7 @@ from machine.chat import chat_draft
 from machine.config import LOG, WORKSPACE
 from machine.delivery.push import reminder_channels, reviews_start_by_themselves
 from machine import action_basis, names as display_names
-from machine import stamps
+from machine import claude_signin, stamps
 from machine.app import review_status
 from machine.store.views import STATUS_NARROW, STATUS_QUIET, SYNC_TABLES, status_tables
 from machine.timing import aside
@@ -32,7 +32,7 @@ from machine.sources.connectors import (connector_says, docs_files_offered, docs
 from machine.text import clamp
 import message_seal
 import notify
-from models import main_model, model_ready
+from models import claude_plan_route, main_model, model_ready
 from sources import gog_signin_command, NOT_INSTALLED, NOT_SET_UP
 from timeutil import now
 from machine import todo_states
@@ -154,6 +154,23 @@ def sign_in_help(service, error, manage):
             if manage and site else None}
 
 
+def claude_signin_item(config, manage, clock=time.time):
+    """Needs you's line for the Claude sign-in the main model runs on (machine/claude_signin.py): signed out, or ending
+    within three days, with the one step that signs in again. None off the Claude CLI route, or while it reads fine."""
+    if not claude_plan_route(config):
+        return None
+    found = claude_signin.read(config, wait=False)  # the poll never waits on `claude auth status`
+    left = claude_signin.days_left(found, clock())
+    if found and not found['signed_in']:
+        text = 'Claude is signed out, so nothing new gets checked or prepared.'
+    elif left is not None:
+        text = ('Your Claude sign-in ends today.', 'Your Claude sign-in ends tomorrow.')[left] if left < 2 else 'Your Claude sign-in ends in 2 days.'
+    else:
+        return None
+    return {'id': 'claude-signed-out' if not found['signed_in'] else 'claude-signin-ends', 'text': text,
+            'url': manage + '#model' if manage else None, 'action': 'Sign in again' if manage else 'Run: claude auth login'}
+
+
 def needs_you(config):
     """What only the owner can fix, for the top of the dashboard: sources that are not fully set up, and notes that a
     hosting layer leaves in `needs_you_file` (a JSON list of {id, text, url}). Connections whose sign-in fails are added
@@ -177,6 +194,9 @@ def needs_you(config):
         items.append({'id': 'model-signed-out', 'text': f'Your main model, {model}, can\u2019t run: nothing is signed in for it. '
                       'Nothing gets checked until it can.', 'url': manage + '#model' if manage else None,
                       'action': 'Fix it' if manage else 'Run: openclaw models auth login'})
+    claude = claude_signin_item(config, manage)
+    if claude:
+        items.append(claude)
     # The message key (message_seal.py): without it, the messages can't be read after a restart
     try:
         for key, text, fix in message_seal.problems(config['database']) if config.get('database') else []:

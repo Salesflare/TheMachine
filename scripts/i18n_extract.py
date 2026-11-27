@@ -431,6 +431,8 @@ SERVER_TEXT = {
     'own_addresses.py': ['classify', 'SENT_ONLY', 'NAMED_ONLY', 'LABELS'],
     'onboarding.py': ['WHAT', 'LABELS'],
     'machine/services.py': ['SERVICES'],  # each service's names and what its card counts (the page's SERVICE_ROWS)
+    'machine/app/status.py': ['claude_signin_item'],  # Needs you's line for a Claude sign-in that ended or ends soon
+    'machine/app/ai_signin.py': ['TEXT'],  # and the same, told on Telegram
     # + Add's calendars beyond Google and Outlook: their names, lines, form notes and fields, and what setup says
     'machine/sources/calendar_setup.py': ['LABELS', 'WHAT', 'NOTES', 'SECRETS', 'ASKS', 'FIELDS', 'REFUSED', 'MISSING'],
     'shared_graph.py': ['why'],          # why a thread is shared or not, under Sharing

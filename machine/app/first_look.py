@@ -10,6 +10,7 @@ import time
 import activity
 import chat_model
 import graph
+from machine import claude_signin
 from machine.config import LOG
 from machine.delivery.push import mailing_sources
 from machine.sources.suggest import suggestions
@@ -274,6 +275,7 @@ class FirstLookApp:
                     # In the error reports too (a signature, the provider's words normalized): a log line alone never
                     # reached them, and a check that failed on every Machine on a Claude sign-in went unseen (2026-11-16)
                     self.store.record_error('service', 'ModelCheckFailed', found.get('error') or '', 'machine/app/first_look.py', 'model_check_run')
+                    claude_signin.stale()  # a Claude sign-in that ended shows on Needs you at the next poll, not an hour later
                 if found['ok']:
                     self.agent_warm_up(run)
             with self.store.connect() as db:
