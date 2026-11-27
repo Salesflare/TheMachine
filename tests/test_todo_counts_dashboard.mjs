@@ -6,11 +6,13 @@ const {chromium}=await import('./browser.mjs');
 // One count for For you: the header ("5 to-dos for you"), the stat tile, the For you section and the sidebar's For you all
 // count the same items, Fleet asks among them. The sidebar once left the Fleet asks out (header 4, sidebar 2). The
 // Fleet asks (a teammate waits) come before the to-dos, prepared or not (their chip says which, #1225). A Fleet ask's
-// sidebar row brings its card up, also from an open chat. Made-up data.
+// sidebar row brings its card up, also from an open chat. A briefing to read counts too (the header once left it out:
+// header 4, section 5). Made-up data.
 const dashboard=await dashboardPage(process.env.PAGE);
 const FL='fl_'+'c'.repeat(16);
 const card=(id,title,status)=>({id:id.repeat(16).slice(0,16),title,body:'Made-up to-do.',status,scope:'work',event_ids:[],created_at:new Date(Date.now()-36e5).toISOString()});
-const cards=[card('a','Reply to Sam about the pilot','prepared'),card('b','Pick a date for the board call','pending'),card('c','Approve the new logo','pending')];
+const cards=[card('a','Reply to Sam about the pilot','prepared'),card('b','Pick a date for the board call','pending'),card('c','Approve the new logo','pending'),
+ {...card('d','Prepare for the design review','pending'),briefing:true,body:'**Still open:** Decide whether the import step is optional.'}];  // To read: in For you, so in its count
 const graph={fleet:FL,name:'Acme',admin:true,confirmed:true,prompts:[],off:null,waiting:0,week:null,teammates:2,started:true,paused:null,require:[],connections:[],people:[],new_devices:[],sending:0};
 const fleet={on:true,kinds:{},kind_rules:{},no_details:[],scoped:[],scopes:{},asked:[],log:[],notices:[],
  waiting:[{id:'w1',kind:'relationships',fleet:FL,member_id:'q',name:'Robin Vale',question:'Who knows someone at Initech?',at:new Date().toISOString()}],
@@ -29,15 +31,15 @@ try{
   const context=await browser.newContext({viewport:{width,height},serviceWorkers:'block',locale:'en-US'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await page.locator('#suggestions #fleet-share-p0').waitFor();await page.locator('#suggestions #fleet-w1').waitFor();
-  await page.waitForFunction(()=>/5 to-dos for you/.test(document.querySelector('.page-sub')?.textContent||''));
+  await page.waitForFunction(()=>/6 to-dos for you/.test(document.querySelector('.page-sub')?.textContent||''));
   const counts=await page.evaluate(()=>({header:+/(\d+) to-dos for you/.exec(document.querySelector('.page-sub').textContent)[1],
    tile:+document.querySelector('#suggestion-stats [data-fold-tile="foryou"] b').textContent,section:+document.querySelector('#section-foryou .count').textContent,
    side:+document.querySelector('#side-cards [data-side-fold="foryou"] .count').textContent,
    rows:[...document.querySelectorAll('#side-cards [data-side-fold="foryou"]~a')].map(a=>a.textContent.trim())}));
-  assert.deepEqual({header:counts.header,tile:counts.tile,section:counts.section,side:counts.side},{header:5,tile:5,section:5,side:5},width+': '+JSON.stringify(counts));
-  assert.equal(counts.rows.length,5,JSON.stringify(counts.rows));
+  assert.deepEqual({header:counts.header,tile:counts.tile,section:counts.section,side:counts.side},{header:6,tile:6,section:6,side:6},width+': '+JSON.stringify(counts));
+  assert.equal(counts.rows.length,6,JSON.stringify(counts.rows));
   const at=t=>counts.rows.findIndex(r=>r.includes(t));
-  assert.ok(Math.max(at('Rae Moss'),at('Robin Vale'))<Math.min(at('Reply to Sam'),at('Pick a date'),at('Approve the new logo')),
+  assert.ok(Math.max(at('Rae Moss'),at('Robin Vale'))<Math.min(at('Reply to Sam'),at('Pick a date'),at('Approve the new logo'),at('Prepare for the design')),
    'Fleet asks, then the to-dos: '+JSON.stringify(counts.rows));
   assert.ok(counts.rows.includes('Rae Moss joined Acme. Share the team\'s Graph with them?'),JSON.stringify(counts.rows));
   assert.ok(counts.rows.includes('Robin Vale asks: Who knows someone at Initech?'),JSON.stringify(counts.rows));
