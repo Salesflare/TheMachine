@@ -554,11 +554,12 @@ class ExportPageTest(Folder):
             opened = login_import.export_open('http://127.0.0.1:9', 'chrome', self.folder, self.store)
             folder = browser.folder()
             self.assertTrue(login_import.export_stop(opened['watch']))
-            for _ in range(100):
-                if ('close', None) in browser.calls:
+            for _ in range(250):  # the export's thread closes the session, then removes the folder: wait for both
+                if ('close', None) in browser.calls and not folder.exists():
                     break
                 time.sleep(0.02)
             self.assertIn(('Browser.setDownloadBehavior', {'behavior': 'default'}), browser.calls)
+            self.assertIn(('close', None), browser.calls)
             self.assertFalse(folder.exists())
             with self.assertRaisesRegex(ValueError, 'Which password manager'):
                 login_import.export_open('http://127.0.0.1:9', '1password', self.folder, self.store)
