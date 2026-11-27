@@ -41,6 +41,7 @@ It checks whether you're actually using the dashboard, not just whether it's ope
 - No phone app, browser notifications or Telegram? The email comes for everything above.
 - Telegram can't be reached: the push goes anyway, once, and Telegram is tried again by itself.
 - A teammate hands you a to-do and your Machine has no phone or Telegram to reach you: one email with its title and a link, 15 minutes later if still unseen. **Email** for **Results and questions** turns it off.
+- Your Claude sign-in ends within 3 days, or ended: one email with **Sign in again**, once per sign-in. **Email** for **Results and questions** turns it off.
 - Outside your work hours: nothing. The morning digest has it.
 - A new work to-do on a day off waits for your next work day's digest time. The to-do shows when it will reach you, like Notification Mon 2 Nov · 08:30.
 

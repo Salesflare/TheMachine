@@ -61,7 +61,9 @@ To use your own Claude plan (Pro, Max or Team), install Claude Code with Anthrop
   for about a year, kept as `CLAUDE_CODE_OAUTH_TOKEN` in `~/.claude/settings.json`'s `env` (OpenClaw's Claude Code
   route reads user settings; one-shot turns are handed it, `claude_print.env`), with its end and plan beside it in
   `~/.claude/the-machine-token.json`, since `claude auth status` gives no end for it. Three days ahead, Needs you says when it ends; once it ended, Needs you says Claude is signed out,
-  and a phone notification and Telegram tell it once (`machine/claude_signin.py`, `machine/app/ai_signin.py`). A
+  and a phone notification and Telegram tell it once (`machine/claude_signin.py`, `machine/app/ai_signin.py`). One
+  email goes too, once per sign-in: three days ahead when its end is known, else when it ended, through the control
+  plane's mailer (a hosted Machine or one on The Machine Network; **Email** for Results and questions). A
   sign-in whose refresh failed earlier ("OAuth session expired and could not be refreshed") counts as signed out the
   same way once the AI's short test fails with it, though `claude auth status` still says logged in. Sign in
   again with `claude auth login` (on a hosted Machine: **Sign in again** on its setup page). A lapsed sign-in is
