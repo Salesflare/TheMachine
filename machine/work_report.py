@@ -19,6 +19,7 @@ import time
 
 from machine.config import LOG
 
+LAYER = 1  # counts of the background jobs' runs, for the hosted health report
 WINDOW = 24 * 3600
 # job -> (table, its status column, when it finished)
 JOBS = {'reviews': ('review_runs', 'status', 'finished_at'), 'profiles': ('profile_runs', 'status', 'finished_at'),
