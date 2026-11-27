@@ -184,10 +184,50 @@ class MeetingPrep(unittest.TestCase):
         with self.store.connect() as db:
             card = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (made,)).fetchone())
             self.assertTrue(self.store.suggestion_result(card, db).get('briefing'))  # the dashboard's To read, Done first
-        for choice in ('accept', 'other'):  # nothing to do it with or change
+        for choice in ('accept', 'retry'):  # no Do it; Try again only carries on a chat run
             with self.assertRaisesRegex(ValueError, 'only for reading'):
                 self.app.action('decide', {'suggestion_id': made, 'choice': choice, 'feedback': 'x', 'decision_id': 'go-' + choice}, owner_dashboard=True)
         self.assertEqual(self.cards()[0]['status'], 'pending')
+
+    def test_a_note_in_a_briefings_chat_is_answered_and_worked_into_it(self):
+        """The owner's note in a briefing's chat ("they are closer to X than to us") was refused as "only for reading".
+        Now it runs like any to-do's chat, told it is a briefing: it answers, or rewrites the briefing with the note in it
+        and tags the note for the learning loop. Still never a step, a draft or a send, and it stays To read."""
+        asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
+        self.answer['sources'] = [f'E{asked}']
+        self.add(meeting('g1', '10:00'))
+        made = self.run_pass()
+        self.app.action('decide', {'suggestion_id': made, 'choice': 'other', 'feedback': 'I think they are closer to Initech than to us',
+                                   'decision_id': 'chat-note'}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (made,)).fetchone()[0], 'instructions')
+            job = dict(db.execute('SELECT * FROM preparations WHERE suggestion_id=?', (made,)).fetchone())
+            self.assertEqual(job['decision_id'], 'chat-note')
+            db.execute("UPDATE preparations SET status='running' WHERE suggestion_id=?", (made,))
+        rule = self.app.briefing_rule({'suggestion_id': made})
+        self.assertIn('meeting briefing', rule)
+        self.assertIn('next_actions stays empty', rule)
+        self.assertEqual(self.app.briefing_rule({'suggestion_id': 'f' * 16}), '')  # any other to-do: nothing added
+        draft = {'kind': 'email', 'label': 'Email Sam', 'to': [SAM], 'subject': 'Pilot', 'body': 'Hi Sam'}
+        with self.assertRaisesRegex(ValueError, 'no steps'):
+            self.store.prepare(made, 'x', job['job_id'], draft, {'state': 'answered'}, 'fact', require_note=True)
+        with self.assertRaisesRegex(ValueError, 'Nothing is sent'):
+            self.store.prepare(made, 'x', job['job_id'], None, {'state': 'answered'}, 'fact', require_note=True, send_now=True)
+        before = self.cards()[0]['body']
+        body = before.replace('The pilot plan; decide on the start date.', 'The pilot plan; they lean to Initech, so bring what sets us apart.')
+        saved = self.store.prepare(made, body, job['job_id'], None, {'state': 'answered'}, 'fact', require_note=True)
+        self.assertEqual(saved['status'], 'pending')
+        card = self.cards()[0]
+        self.assertEqual((card['status'], card['next_action'], card['outcome']), ('pending', None, None))  # To read again, nothing to approve
+        self.assertIn('**Decide or bring:** The pilot plan; they lean to Initech', card['body'])
+        self.assertTrue(card['body'].startswith('**Who:** Sam Rivera'))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT kind FROM note_kinds WHERE decision_id=?', ('chat-note',)).fetchone()[0], 'fact')
+            self.assertEqual(db.execute('SELECT status FROM preparations WHERE suggestion_id=?', (made,)).fetchone()[0], 'done')
+            self.assertTrue(self.store.suggestion_result(dict(db.execute('SELECT * FROM suggestions WHERE id=?', (made,)).fetchone()), db).get('briefing'))
+        self.assertEqual(self.store.prepare(made, body, job['job_id'], None, {'state': 'answered'}, 'fact')['replayed'], True)
+        with self.assertRaisesRegex(ValueError, 'only for reading'):
+            self.app.action('decide', {'suggestion_id': made, 'choice': 'accept', 'decision_id': 'go-again'}, owner_dashboard=True)
 
     def test_no_evidence_means_no_turn_and_no_to_do(self):
         self.add(meeting('g2', '10:00', guests=('new@initech.example',)))

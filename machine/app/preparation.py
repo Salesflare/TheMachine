@@ -5,6 +5,7 @@ import datetime as dt
 import json
 import os
 import re
+import sqlite3
 import subprocess
 import threading
 import time
@@ -46,6 +47,7 @@ from machine.store.cards import pressing_cutoff
 from machine.store.machine_cards import parked_redo
 from machine.text import encoded
 import learned_skills
+import meeting_prep
 import memory_use
 import model_budget
 from models import background_model, openclaw_model
@@ -716,10 +718,19 @@ class PreparationApp:
         except OSError as error:LOG.error('chat files error=%s',type(error).__name__)
         return tail
 
+    def briefing_rule(self, job):
+        """What a run on a meeting briefing is told on top (meeting_prep.chat_rule), else ''."""
+        try:
+            with self.store.connect() as db:
+                return meeting_prep.chat_rule() if meeting_prep.briefing_todo(db,job['suggestion_id']) else ''
+        except sqlite3.Error as error:
+            LOG.error('briefing rule error=%s',type(error).__name__)
+            return ''
+
     def chat_start(self, job, request, start, changing):
         """A chat message's turn (chat_prompt) with what changed since its session began; returns what it read of what
         was learned."""
-        start.base=chat_prompt(job,self.config)
+        start.base=chat_prompt(job,self.config)+self.briefing_rule(job)
         # what was learned since the session read the list (a small delta), and earlier facts outside that list that bear on it
         memory=recall(self,'todo_chat',{'todo':job['suggestion_id'],'session':request['session_job_id']},PROMPT_LIMIT)
         for block in ('new','retained'):
@@ -750,7 +761,8 @@ class PreparationApp:
         model=request.get('model') or openclaw_model(self.config)
         parts={'facts':memory.text('facts'),'retained':memory.text('retained'),  # with the history that bears on it (retained_facts.py)
                'rules':rules,'style':style,'gaps':gaps,'edits':'' if style else self.store.draft_edits_text()}
-        build=lambda p:preparation_prompt(job,'\n\n'.join(filter(None,(p['facts'],p['retained']))),self.config,p['edits'],p['rules'],p['style'],p['gaps'],model)
+        briefing=self.briefing_rule(job)
+        build=lambda p:preparation_prompt(job,'\n\n'.join(filter(None,(p['facts'],p['retained']))),self.config,p['edits'],p['rules'],p['style'],p['gaps'],model)+briefing
         start.base,gone=start_message.trimmed(build,parts,('edits','gaps','retained','style','facts','rules'),start.base_room())
         for block in set(gone)&{'facts','retained','rules'}:memory.drop(block)
         try:  # how to read the card's own sources (its accounts' notes, and those its messages came in on)

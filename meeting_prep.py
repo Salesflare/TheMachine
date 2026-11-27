@@ -167,11 +167,31 @@ def meeting_key(row, meta):
 
 
 def is_briefing(dedupe_key):
-    """Whether a to-do is a meeting briefing: only for reading, like the Daily digest (nothing to do it with or change).
-    What it lists that needs doing (a promise, a question) has its own to-do. Its text is for the owner alone: it is
+    """Whether a to-do is a meeting briefing: to read, like the Daily digest (no Do it, no steps). Its chat answers a
+    question about the meeting or works the owner's note into the briefing (chat_rule). What it lists that needs doing (a promise, a question) has its own to-do. Its text is for the owner alone: it is
     written from earlier meetings' notes, later messages and summaries that are not among the to-do's sources, which
     decide what others may see. So it goes in no handoff (fleet_requests.card_reason) and to no reviewer (fleet_reviews)."""
     return str(dedupe_key or '').startswith(KEY_PREFIX)
+
+
+def briefing_todo(db, suggestion_id):
+    """Whether this to-do (by id) is a meeting briefing."""
+    row = db.execute('SELECT dedupe_key FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+    return bool(row) and is_briefing(row[0])
+
+
+# What a run on a briefing is told: the owner wrote in its chat. A briefing has nothing to do with it, so a message there
+# is a question about the meeting or a note on the briefing, never an ask to act (Store.prepare refuses steps on it).
+def chat_rule():
+    return ('\n\nThis to-do is a meeting briefing, and the owner wrote in its chat: answer it, never carry anything out. '
+            'A question about the meeting, the people or their organization: answer it in reply, from the briefing, its '
+            'evidence and what you know, and leave body out. A correction or note (something in it is wrong or missing, '
+            'or how they see it): work it into the briefing and save body=<the whole briefing again: the same parts in '
+            'the same order with the same bold labels and links, what the note changes rewritten (often Decide or bring), '
+            f'the rest as it was; at most {BODY_CHARS} characters>, reply=<one line on what changed>, and note_kind as '
+            'usual, so what holds beyond this meeting is learned. A briefing has no steps: next_actions stays empty and '
+            'nothing is drafted or sent from it. When they ask for something to be done or sent, say in reply that a new '
+            'to-do does that.')
 
 
 def outside_guests(meta, owner_emails, owner_domains):
