@@ -39,7 +39,7 @@ function aiApps(ready){
  if(!ready)return '<div class="ai-later"><span class="grow"><strong translate="no">ChatGPT · Claude</strong><small>Ready once this Machine has its address.</small></span></div>';
  return `<div><span class="grow"><strong translate="no">ChatGPT</strong><small>One click from ChatGPT’s plugins.</small></span><a class="btn-link primary" href="${AI_CHATGPT_APP}" target="_blank" rel="noopener" data-ai-chatgpt>Add in ChatGPT</a></div>`
   +`<div><span class="grow"><strong translate="no">Claude</strong><small>One click from Claude’s directory.</small></span><a class="btn-link primary" href="${AI_CLAUDE_DIRECTORY}" target="_blank" rel="noopener" data-ai-claude>Add in Claude</a></div>`
-  +`<div><span class="grow"><strong>Claude skill</strong><small>In Claude, add it under Customize, Skills.</small></span><a class="store-badge alt" href="https://github.com/Salesflare/TheMachine/releases/latest/download/the-machine-skill.zip" data-ai-skill>${DL_ICON}<span>Download</span></a></div>`}
+  +`<div><span class="grow"><strong>Claude skill</strong><small>In Claude, add it under Customize, Skills.</small></span><a class="store-badge" href="https://github.com/Salesflare/TheMachine/releases/latest/download/the-machine-skill.zip" data-ai-skill>${DL_ICON}<span>Download</span></a></div>`}
 function aiOfficial(r){
  if(r.shared)return aiApps(true);
  if(!r.address)return aiApps(false)+aiAddress(r);
