@@ -176,11 +176,15 @@
     if (id) rowOf(id, '.choices button')?.focus();
     else if (was) rowOf(was, '[data-act^=snooze]')?.focus();
   }
-  // The buttons the Machine names for each, as it is now
+  // The buttons the Machine names for each, as it is now. Only the last ask counts: an earlier one that ends later knows
+  // an older list, and would take the buttons of a to-do that came back meanwhile
+  let buttonsAsked = 0;
   async function buttons() {
-    const ids = [...new Set(listed().map(x => x.id).filter(Boolean))];
-    await Promise.all(ids.map(async id => { quick.set(id, {buttons: await native.quick(id).catch(() => [])}); }));
-    for (const id of quick.keys()) if (!ids.includes(id)) quick.delete(id);
+    const turn = ++buttonsAsked, ids = [...new Set(listed().map(x => x.id).filter(Boolean))];
+    const got = await Promise.all(ids.map(async id => [id, await native.quick(id).catch(() => [])]));
+    if (turn !== buttonsAsked) return;
+    quick.clear();
+    for (const [id, b] of got) quick.set(id, {buttons: b});
     showReady(shown);
   }
   // As the notification's button on the phone. "Snoozed it · tomorrow 9:00"
