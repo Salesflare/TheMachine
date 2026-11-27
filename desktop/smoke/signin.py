@@ -176,12 +176,13 @@ def _():
 def _():
     start(signed_in=True)
     need(dashboard(), text())
-    kept = lambda: {k: v for k, v in saved().items() if k != 'window'}  # its place is kept as another comes in front
+    # Its place is kept as another comes in front, and what was seen as the dashboard shows the list: that is its own, not the copy's
+    kept = lambda: {k: v for k, v in saved().items() if k not in ('window', 'seen')}
     was = kept()
     on.other()
     ended = subprocess.run([str(copy)], env=app.env, timeout=20).returncode
     need(until(on.ours, 8), 'the one that runs comes forward')
-    need(ended == 0 and pids() == app.pids() and kept() == was, f'{ended} {pids()} {saved()}')
+    need(ended == 0 and pids() == app.pids() and kept() == was, f'{ended} {pids()} {app.pids()} {kept()}, was {was}')
     start()
     sign_in(False)
     its = handler()
