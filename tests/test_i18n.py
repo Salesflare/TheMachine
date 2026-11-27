@@ -193,6 +193,17 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(found, [], '\n'.join(f'{lit!r} in {ctx}' for lit, ctx in found[:30]))
 
 
+    def test_a_connected_ais_read_lines_say_what_it_did(self):
+        # "Read the brief" in Settings, Activity reads as a command too: translated as one ("Brief lezen", 概要を読む)
+        # until glossary.md said what each means, which the daily translator sends with it
+        import ai_access
+        import translate
+        means = translate.glossary()['means']
+        reads = sorted({w for w in ai_access.TOOL_WORDS.values() if w.startswith('Read ')})
+        self.assertTrue(reads)
+        self.assertEqual([w for w in reads if 'past tense' not in means.get(w, '').lower()], [])
+
+
 class ServerTextTest(unittest.TestCase):
     def tearDown(self):
         locale_prefs.configure({})
