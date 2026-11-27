@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "the-machine": {
+      "type": "http",
+      "url": "https://mcp.themachine.computer/mcp"
+    }
+  }
+}
