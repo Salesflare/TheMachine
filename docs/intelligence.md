@@ -946,8 +946,11 @@ names you needs a to-do"). It costs no turn of its own.
   (r1, r2...), never by the Graph's ids. A rule or fact the pass writes says where it holds: `global`, an area, a
   channel, or one person or organization (`with:`, also tied to their record). A price, a discount or a form of address
   for one of them is never a general rule.
-- A scope the signals don't bear out, or none, becomes what the signals it came from all share, narrowest first (the one
-  person or organization, the area, the channel). When they share nothing, the change is not kept: an unknown scope is
+- The code checks the scope against the signals it came from (`learning_loop.scope_of`), not only the prompt: `global`
+  only when they span different people and more than one area or channel, or one note in the owner's own words says
+  it; an area or channel only when every signal the pass named was in it, and not when they are all with one person
+  (then it is that person's). A scope the signals don't bear out, or none, becomes what the signals it came from all
+  share, narrowest first (the one person or organization, the area, the channel). When they share nothing, the change is not kept: an unknown scope is
   never global. The column is `facts.scope`; rules and facts from before (NULL) hold everywhere, as before. Edit and
   Undo work as for any other; an edit keeps where it holds.
 - Every recall applies it before ranking (`Store.in_scope`): a preparation gets a person's or organization's rule only

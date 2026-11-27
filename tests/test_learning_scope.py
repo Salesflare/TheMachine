@@ -139,6 +139,28 @@ class LearningScope(unittest.TestCase):
         self.assertNotIn('Answer within the day.', learned)  # Pat and family share nothing: not kept
         self.assertNotIn('Keep it short.', learned)
 
+    def test_a_scope_wider_than_its_signals_narrows_to_them(self):
+        """global, an area or a channel the pass gives is kept only as far as the signals it names bear it out."""
+        self.price_pass(lambda n, ref: [{'kind': 'draft', 'text': PRICE, 'why': 'x', 'scope': 'global', 'from': n('Seat pricing', 'Renewal')},
+                                        {'kind': 'draft', 'text': 'Quote per seat.', 'why': 'x', 'scope': 'area:work', 'from': n('Seat pricing', 'Renewal')},
+                                        {'kind': 'fact', 'text': 'Lunch can wait.', 'why': 'x', 'scope': 'area:work', 'from': n('Sunday lunch')}])
+        learned = self.learned()
+        self.assertEqual(learned[PRICE]['scope'], 'with:p-pat')  # two signals, both Pat's: Pat's, not everywhere
+        self.assertEqual(learned['Quote per seat.']['scope'], 'with:p-pat')  # nor all of work
+        self.assertEqual(learned['Lunch can wait.']['scope'], 'with:p-mom')  # a work scope from a family signal: theirs
+        self.assertNotIn('partner rate', self.rules_for(self.todo('dana', 'A quote')))
+
+    def test_global_when_the_signals_span_people_and_areas_or_one_note_says_so(self):
+        pat, mom = self.todo('pat', 'Quote'), self.todo('mom', 'Dinner')
+        self.edit(pat, 'Great!', 'Great.')
+        self.edit(mom, 'Lovely!', 'Lovely.')
+        self.note(self.todo('dana', 'Call time'), 'never before 10, for anything')
+        self.learn(lambda n, ref: [{'kind': 'draft', 'text': 'Never use exclamation marks.', 'why': 'x', 'scope': 'global', 'from': n('Quote', 'Dinner')},
+                                   {'kind': 'fact', 'text': 'You take no calls before 10.', 'why': 'x', 'scope': 'global', 'from': n('Call time')}])
+        learned = self.learned()
+        self.assertEqual(learned['Never use exclamation marks.']['scope'], 'global')
+        self.assertEqual(learned['You take no calls before 10.']['scope'], 'global')  # the owner's own words say where
+
     def test_an_area_rule_stays_in_its_area_and_out_of_routines(self):
         self.price_pass(lambda n, ref: [{'kind': 'draft', 'text': 'Sign off with Love.', 'why': 'x', 'scope': 'area:personal', 'from': n('Sunday lunch')},
                                         {'kind': 'draft', 'text': 'Never use exclamation marks.', 'why': 'x', 'scope': 'global'}])
