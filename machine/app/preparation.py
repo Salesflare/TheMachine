@@ -932,6 +932,8 @@ class PreparationApp:
             except Exception as error:loop_failed(LOG,'expiry',error)
             try:self.done_check_step()  # a waiting to-do's page, read before it comes back (done_checks.py)
             except Exception as error:loop_failed(LOG,'done check',error)
+            try:self.result_check_step()  # what came for a waiting to-do, checked against what was agreed (result_checks.py)
+            except Exception as error:loop_failed(LOG,'result check',error)
             try:self.clash_step()
             except Exception as error:LOG.error('calendar clash error=%s',type(error).__name__)
 

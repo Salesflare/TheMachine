@@ -588,8 +588,8 @@ class DecisionsStore:
             newest = db.execute('SELECT max(ingested_at) FROM events WHERE id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchone()[0]
             if said and (newest or '') <= said:
                 return {'skipped': 'the owner said it is not done; only a newer signal can show otherwise'}
-            if outcomes.result_seen(db, row, reason, event_ids, now()) == 'closed':
-                return {'saved': True, 'closed': True, 'note': 'It waited for this result: it closed by itself, with Undo for a day.'}
+            if outcomes.result_seen(db, row, reason, event_ids, now()) == 'checking':
+                return {'saved': True, 'checking': True, 'note': 'It waited for this result: checked against what was agreed, it closes by itself or comes back.'}
         return {'saved': True}
 
     def bill_paid(self, suggestion_id, reason, event_ids, undo_hours=24):

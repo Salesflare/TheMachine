@@ -262,6 +262,8 @@ class StoreCore:
             # The page that will show that result and what it must show, with the check's state (done_checks.py), sealed
             if 'done_check' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN done_check TEXT')
+            if 'result_check' not in columns:  # what came for a waiting to-do, checked against what was agreed (result_checks.py)
+                db.execute('ALTER TABLE suggestions ADD COLUMN result_check TEXT')
             # A bill to pay by hand, in the review's words (family_done.bill_fields): {"payee", "invoice", "amount"}, sealed.
             # Matches the same bill on another Family member's Machine when it has no IBAN and reference (family_done.sources)
             if 'bill' not in columns:

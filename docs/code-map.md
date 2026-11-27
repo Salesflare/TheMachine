@@ -124,7 +124,12 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     Settings' own connect steps.
   - `machine/store/done_checks.py` with `machine/app/done_checks.py` (`DoneChecksApp`): a waiting to-do whose done when
     a public page will show (`suggestions.done_check`, sealed) has that page read when its time to chase comes, before
-    it comes back: shown, it closes by itself with Undo; not there or unread, it comes back as before. Read only.
+    it comes back: shown, it is checked (below); not there or unread, it comes back as before. Read only.
+  - `machine/store/result_checks.py` with `machine/app/result_checks.py` (`ResultChecksApp`) and
+    `machine/prompts/result_check.py`: what came for a waiting to-do (its page, a message, `outcomes.result_seen`)
+    read against what was agreed in its thread in one small background turn (`suggestions.result_check`, sealed).
+    Closes only on a match with nothing owed in return; a difference, a skipped OK, the owner's half of an exchange
+    or can't tell comes back with its line. Eval: `evals/result-checks`.
   - `note_pages_app.py` (`NotesApp`): trips and events for Calendar: their bands (`calendar_notes`) and a trip's or an
     event's page on `api/graph?node=note:<id>`, opened from its band (dashboard: `dashboard/graph-notes.js`). Nothing
     on it is edited. `note_pages.sync` keeps them under Trips and Events, with what an owner changed before on top.

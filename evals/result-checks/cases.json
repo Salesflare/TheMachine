@@ -1,0 +1,634 @@
+[
+ {
+  "id": "m1",
+  "set": "matching",
+  "want": "close",
+  "done_when": "Toolbench lists Quillnote with the description sent",
+  "source": "page",
+  "url": "https://toolbench.example/note-apps",
+  "thread": [
+   "From Dana (Toolbench): Happy to add Quillnote to our note apps list. Send me a one-line description and your price.",
+   "The owner sent: Here you go. Description: \"Quillnote turns meeting notes into tasks your team actually finishes.\" Price: from $8 per user per month. Link: https://quillnote.example",
+   "From Dana (Toolbench): Perfect, it goes live this week."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. The best note apps for teams in 2026. 1. Paperline: notes with a calendar. From $10/user/month. 2. Quillnote: Quillnote turns meeting notes into tasks your team actually finishes. From $8 per user per month. Visit quillnote.example 3. Ledgerpad: notes for finance teams. From $12. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "m2",
+  "set": "matching",
+  "want": "close",
+  "done_when": "Northdesk publishes the guest post as sent",
+  "source": "page",
+  "url": "https://northdesk.example/blog/handoffs-that-stick",
+  "thread": [
+   "From Ravi (Northdesk): We would love a guest post on handoffs for our blog. 800 words, by the 20th.",
+   "The owner sent: Draft attached, title \"Handoffs that stick: three habits of calm teams\". Bio: Mira runs ops at Brightwell. Link to brightwell.example in the bio please.",
+   "From Ravi (Northdesk): Read it, it is great. Scheduled for Tuesday, no edits."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Handoffs that stick: three habits of calm teams. By Mira, guest author. Most handoffs fail quietly... Habit one: write the next step, not the history. Habit two: name one owner. Habit three: set a check-in date. About the author: Mira runs ops at Brightwell (brightwell.example). Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "m3",
+  "set": "matching",
+  "want": "close",
+  "done_when": "Saasmap lists Tallyhive at €19 per month",
+  "source": "page",
+  "url": "https://saasmap.example/invoicing",
+  "thread": [
+   "From Lotte (Saasmap): We are updating our invoicing tools page. What is your starting price?",
+   "The owner sent: Tallyhive starts at €19 per month, billed yearly. Free plan for up to 5 invoices.",
+   "From Lotte (Saasmap): Thanks, updating now."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Invoicing tools compared. Tallyhive: from €19/month (billed yearly), free plan up to 5 invoices. Billora: from €25/month. Sumly: from €15/month. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "m4",
+  "set": "matching",
+  "want": "close",
+  "done_when": "Opsweekly links to the Fernstack launch post",
+  "source": "page",
+  "url": "https://opsweekly.example/issue-212",
+  "thread": [
+   "From Jo (Opsweekly): Send me the link to your launch post and I will feature it in Thursday's issue.",
+   "The owner sent: Here it is: https://fernstack.example/blog/launch-2 . One-line blurb: \"Fernstack 2 cuts deploy rollbacks in half.\"",
+   "From Jo (Opsweekly): Got it, in Thursday's issue."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Opsweekly issue 212. Featured: Fernstack 2 cuts deploy rollbacks in half. Read more: https://fernstack.example/blog/launch-2 . Also this week: a guide to on-call rotations. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "m5",
+  "set": "matching",
+  "want": "close",
+  "done_when": "Builtlist shows Orbitly in the scheduling category",
+  "source": "page",
+  "url": "https://builtlist.example/scheduling",
+  "thread": [
+   "From Sam (Builtlist): We can list Orbitly under scheduling. Short description?",
+   "The owner sent: \"Orbitly books meetings across time zones without the back and forth.\"",
+   "From Sam (Builtlist): Will do."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Scheduling tools. Orbitly: books meetings across time zones without the back-and-forth. Calendo: team calendars. Slotwise: booking pages. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "m6",
+  "set": "matching",
+  "want": "close",
+  "done_when": "The Partner directory lists Kitewell as a certified partner",
+  "source": "page",
+  "url": "https://partners.hubline.example/directory/kitewell",
+  "thread": [
+   "From Hubline partner team: Your certification is approved. Your directory profile will use the logo and text from your application.",
+   "The owner sent: Application text: \"Kitewell builds Hubline integrations for logistics companies in Benelux.\" Region: Benelux."
+  ],
+  "promises": [],
+  "came": "Hubline partner directory. Kitewell. Certified partner. Region: Benelux. Kitewell builds Hubline integrations for logistics companies in Benelux. Contact partner."
+ },
+ {
+  "id": "m7",
+  "set": "matching",
+  "want": "close",
+  "done_when": "Priya signs the order form as sent",
+  "source": "message",
+  "url": null,
+  "thread": [
+   "The owner sent: Hi Priya, here is the order form for 12 seats at $40 per seat per month, annual term. Sign when ready.",
+   "From Priya: Looks good, will sign Monday."
+  ],
+  "promises": [],
+  "came": "From Priya: Signed and attached. Order form: 12 seats, $40/seat/month, annual term, signed by Priya Shah."
+ },
+ {
+  "id": "m8",
+  "set": "matching",
+  "want": "close",
+  "done_when": "Appgarden lists Driftnote with the description sent",
+  "source": "page",
+  "url": "https://appgarden.example/writing",
+  "thread": [
+   "From Appgarden: Thanks for submitting. We list tools with a short description, you can send one.",
+   "The owner sent: Description: \"Driftnote helps writers keep a daily habit with gentle prompts.\""
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Writing tools. Driftnote helps writers keep a daily writing habit with gentle prompts. Inkflow: distraction-free editor. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "p1",
+  "set": "mismatch-price",
+  "want": "differs",
+  "done_when": "Saasmap lists Tallyhive at €19 per month",
+  "source": "page",
+  "url": "https://saasmap.example/invoicing",
+  "thread": [
+   "From Lotte (Saasmap): What is your starting price?",
+   "The owner sent: Tallyhive starts at €19 per month, billed yearly."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Invoicing tools compared. Tallyhive: from €29/month. Billora: from €25/month. Sumly: from €15/month. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "29",
+    "19"
+   ]
+  ]
+ },
+ {
+  "id": "p2",
+  "set": "mismatch-price",
+  "want": "differs",
+  "done_when": "Toolbench lists Quillnote at $8 per user",
+  "source": "page",
+  "url": "https://toolbench.example/note-apps",
+  "thread": [
+   "From Dana (Toolbench): Send me your price.",
+   "The owner sent: From $8 per user per month. We dropped the $12 plan last month."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Note apps. Quillnote: meeting notes into tasks. From $12 per user per month. Paperline: from $10. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "12",
+    "8"
+   ]
+  ]
+ },
+ {
+  "id": "p3",
+  "set": "mismatch-price",
+  "want": "differs",
+  "done_when": "Stackwise shows the Brightwell team plan at $30",
+  "source": "page",
+  "url": "https://stackwise.example/ops-tools",
+  "thread": [
+   "From Stackwise: Please confirm pricing before we publish.",
+   "The owner sent: Team plan is $30 per month for up to 10 people. There is no free plan anymore."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Ops tools. Brightwell: team plan $30/month for up to 10 people. Free plan available. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "free"
+   ]
+  ]
+ },
+ {
+  "id": "d1",
+  "set": "mismatch-description",
+  "want": "differs",
+  "done_when": "Toolbench lists Quillnote with the description sent",
+  "source": "page",
+  "url": "https://toolbench.example/note-apps",
+  "thread": [
+   "From Dana (Toolbench): Send me a one-line description.",
+   "The owner sent: \"Quillnote turns meeting notes into tasks your team actually finishes.\""
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Note apps. Quillnote: a simple notebook for personal journaling. From $8. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "journal"
+   ],
+   [
+    "notebook"
+   ]
+  ]
+ },
+ {
+  "id": "d2",
+  "set": "mismatch-description",
+  "want": "differs",
+  "done_when": "Builtlist shows Orbitly with the new description",
+  "source": "page",
+  "url": "https://builtlist.example/scheduling",
+  "thread": [
+   "From Sam (Builtlist): We still have your old text from 2024, want to update it?",
+   "The owner sent: Yes please replace it. New: \"Orbitly books meetings across time zones without the back and forth.\" Old one was \"Orbitly is a calendar for freelancers.\""
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Scheduling tools. Orbitly is a calendar for freelancers. Calendo: team calendars. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "freelancer"
+   ]
+  ]
+ },
+ {
+  "id": "d3",
+  "set": "mismatch-description",
+  "want": "differs",
+  "done_when": "Appgarden lists Driftnote as a writing habit app",
+  "source": "page",
+  "url": "https://appgarden.example/writing",
+  "thread": [
+   "The owner sent: Description: \"Driftnote helps writers keep a daily habit with gentle prompts.\" Category: writing.",
+   "From Appgarden: Received, publishing soon."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Writing tools. Driftnote: AI that writes your blog posts for you. Inkflow: distraction-free editor. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "ai"
+   ],
+   [
+    "writes your blog"
+   ]
+  ]
+ },
+ {
+  "id": "l1",
+  "set": "mismatch-link",
+  "want": "differs",
+  "done_when": "Opsweekly links to the Fernstack launch post",
+  "source": "page",
+  "url": "https://opsweekly.example/issue-212",
+  "thread": [
+   "From Jo (Opsweekly): Send me the link.",
+   "The owner sent: https://fernstack.example/blog/launch-2"
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Opsweekly issue 212. Featured: Fernstack 2 cuts deploy rollbacks in half. Read more: https://fernstack.example/blog/launch-1 Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "launch-1"
+   ]
+  ]
+ },
+ {
+  "id": "l2",
+  "set": "mismatch-link",
+  "want": "differs",
+  "done_when": "Saasmap links Tallyhive to its pricing page",
+  "source": "page",
+  "url": "https://saasmap.example/invoicing",
+  "thread": [
+   "The owner sent: Please link to https://tallyhive.example/pricing , not the old tallyhive.io domain, which we no longer own."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Invoicing tools. Tallyhive: from €19/month. Website: https://tallyhive.io Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "tallyhive.io"
+   ]
+  ]
+ },
+ {
+  "id": "l3",
+  "set": "mismatch-link",
+  "want": "differs",
+  "done_when": "Northdesk publishes the guest post with the bio link",
+  "source": "page",
+  "url": "https://northdesk.example/blog/handoffs-that-stick",
+  "thread": [
+   "The owner sent: Draft attached. Bio: Mira runs ops at Brightwell. Link to brightwell.example in the bio please.",
+   "From Ravi: Scheduled."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Handoffs that stick: three habits of calm teams. By Mira. About the author: Mira runs ops at Brightwell (brightwel.example). Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "brightwel.example"
+   ]
+  ]
+ },
+ {
+  "id": "n1",
+  "set": "mismatch-name",
+  "want": "differs",
+  "done_when": "Toolbench lists Quillnote",
+  "source": "page",
+  "url": "https://toolbench.example/note-apps",
+  "thread": [
+   "The owner sent: Name: Quillnote (one word, capital Q). Description: meeting notes into tasks."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Note apps. Quill Notes: meeting notes into tasks. From $8. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "quill notes"
+   ]
+  ]
+ },
+ {
+  "id": "n2",
+  "set": "mismatch-name",
+  "want": "differs",
+  "done_when": "The partner directory lists Kitewell with its new name",
+  "source": "page",
+  "url": "https://partners.hubline.example/directory/kitewell",
+  "thread": [
+   "The owner sent: We renamed from Kiteworks Logistics to Kitewell in May, please update the profile.",
+   "From Hubline partner team: Will update."
+  ],
+  "promises": [],
+  "came": "Hubline partner directory. Kiteworks Logistics. Certified partner. Region: Benelux.",
+  "difference": [
+   [
+    "kiteworks"
+   ]
+  ]
+ },
+ {
+  "id": "n3",
+  "set": "mismatch-name",
+  "want": "differs",
+  "done_when": "Northdesk publishes the guest post under Mira's name",
+  "source": "page",
+  "url": "https://northdesk.example/blog/handoffs-that-stick",
+  "thread": [
+   "The owner sent: Byline: Mira Okafor, Head of Ops at Brightwell.",
+   "From Ravi: Got it."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Handoffs that stick: three habits of calm teams. By Maya Okafor, Head of Ops at Brightwell. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms",
+  "difference": [
+   [
+    "maya"
+   ]
+  ]
+ },
+ {
+  "id": "e1",
+  "set": "early",
+  "want": "early",
+  "done_when": "Builtlist publishes the Orbitly profile after the owner approves it",
+  "source": "page",
+  "url": "https://builtlist.example/scheduling",
+  "thread": [
+   "From Sam (Builtlist): I drafted your profile, I will send a preview and only publish once you approve.",
+   "From Sam (Builtlist): Preview attached, let me know if it is OK."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Scheduling tools. Orbitly books meetings across time zones. Calendo: team calendars. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "e2",
+  "set": "early",
+  "want": "early",
+  "done_when": "Northdesk publishes the guest post after the owner signs off on edits",
+  "source": "page",
+  "url": "https://northdesk.example/blog/handoffs-that-stick",
+  "thread": [
+   "The owner sent: Draft attached. Please send me any edits for sign-off before it goes live.",
+   "From Ravi: We made a few edits, sending them over for your OK tomorrow."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Handoffs that stick: three habits of calm teams. By Mira. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "e3",
+  "set": "early",
+  "want": "early",
+  "done_when": "The press release goes out after the owner approves the final text",
+  "source": "message",
+  "url": null,
+  "thread": [
+   "From agency: Here is the final press release text for your approval. We send it to the wire once you OK it."
+  ],
+  "promises": [],
+  "came": "From agency: Great news, the release went out on the wire this morning! Coverage report to follow."
+ },
+ {
+  "id": "e4",
+  "set": "early",
+  "want": "early",
+  "done_when": "Saasmap publishes the Tallyhive review after the owner checks the facts",
+  "source": "page",
+  "url": "https://saasmap.example/reviews/tallyhive",
+  "thread": [
+   "From Lotte (Saasmap): I will share the review with you to check facts before we publish.",
+   "The owner sent: Thanks, looking forward to it."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Tallyhive review: simple invoicing for small teams. From €19/month. Verdict: 4/5. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "t1",
+  "set": "partial",
+  "want": "back",
+  "done_when": "Toolbench lists both Quillnote and Quillboard",
+  "source": "page",
+  "url": "https://toolbench.example/note-apps",
+  "thread": [
+   "From Dana (Toolbench): Happy to list both your products, Quillnote and Quillboard.",
+   "The owner sent: Great, descriptions attached."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Note apps. Quillnote: meeting notes into tasks. Paperline: notes with a calendar. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "t2",
+  "set": "partial",
+  "want": "back",
+  "done_when": "Builtlist shows the full Orbitly profile",
+  "source": "page",
+  "url": "https://builtlist.example/scheduling",
+  "thread": [
+   "The owner sent: Profile text, logo and three screenshots attached.",
+   "From Sam: Thanks, publishing the full profile next week."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Coming soon to Builtlist: Orbitly, Slotwise and more. Full profiles are on the way. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "t3",
+  "set": "partial",
+  "want": "back",
+  "done_when": "Opsweekly features the Fernstack launch",
+  "source": "page",
+  "url": "https://opsweekly.example/issue-212",
+  "thread": [
+   "From Jo (Opsweekly): Send me the link to your launch post and I will feature it.",
+   "The owner sent: https://fernstack.example/blog/launch-2"
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Opsweekly issue 212. Tools we are watching: Fernstack, Harborctl, Wavelog. Featured this week: a guide to on-call rotations. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "u1",
+  "set": "unrelated",
+  "want": "back",
+  "done_when": "Toolbench lists Quillnote",
+  "source": "page",
+  "url": "https://toolbench.example/note-apps",
+  "thread": [
+   "From Dana (Toolbench): Happy to add Quillnote to our note apps list.",
+   "The owner sent: Description attached."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Note apps. Paperline: notes with a calendar. Ledgerpad: finance notes. Comments: \"Has anyone tried Quillnote? Is it any good?\" - reader Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "u2",
+  "set": "unrelated",
+  "want": "back",
+  "done_when": "Saasmap lists Tallyhive",
+  "source": "page",
+  "url": "https://saasmap.example/invoicing",
+  "thread": [
+   "From Lotte (Saasmap): Will add Tallyhive to our invoicing page."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Tallyhive raises seed round. Invoicing startup Tallyhive announced funding today. Related: our invoicing tools page is being updated. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "u3",
+  "set": "unrelated",
+  "want": "back",
+  "done_when": "Opsweekly features the Fernstack launch",
+  "source": "page",
+  "url": "https://opsweekly.example/issue-212",
+  "thread": [
+   "From Jo (Opsweekly): Send me your launch post link for Thursday's issue.",
+   "The owner sent: https://fernstack.example/blog/launch-2"
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Sponsored: Fernstack is hiring a senior engineer. Opsweekly issue 212: on-call rotations, incident reviews. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "r1",
+  "set": "reciprocal-theirs-first",
+  "want": "owed",
+  "done_when": "Stackreview lists Lumen CRM",
+  "source": "page",
+  "url": "https://stackreview.example/crm",
+  "thread": [
+   "From Priya (Stackreview): Deal: we list Lumen CRM on our CRM page, and you add our \"Reviewed on Stackreview\" badge to your site.",
+   "The owner sent: Deal. Description: \"Lumen CRM keeps every customer conversation in one place.\" Badge goes up once you are live."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Best CRMs. Lumen CRM keeps every customer conversation in one place. From $20. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "r2",
+  "set": "reciprocal-theirs-first",
+  "want": "owed",
+  "done_when": "Northdesk publishes the guest post",
+  "source": "page",
+  "url": "https://northdesk.example/blog/handoffs-that-stick",
+  "thread": [
+   "From Ravi (Northdesk): Guest post swap: we publish yours, then you publish one of ours on your blog.",
+   "The owner sent: Sounds good. Draft attached. We will run yours the week after."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Handoffs that stick: three habits of calm teams. By Mira, guest author from Brightwell. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "r3",
+  "set": "reciprocal-theirs-first",
+  "want": "owed",
+  "done_when": "Toolbench links to Quillnote",
+  "source": "page",
+  "url": "https://toolbench.example/note-apps",
+  "thread": [
+   "From Dana (Toolbench): Link swap? We link to Quillnote from our note apps page, you link to our guide from your resources page.",
+   "The owner sent: Yes, happy to. Send your link when ready."
+  ],
+  "promises": [
+   "Link to Toolbench's guide from the resources page"
+  ],
+  "came": "Home | Reviews | Lists | About | Newsletter. Note apps. Quillnote: meeting notes into tasks (quillnote.example). Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "r4",
+  "set": "reciprocal-theirs-first",
+  "want": "owed",
+  "done_when": "Brightloop posts the co-marketing announcement",
+  "source": "message",
+  "url": null,
+  "thread": [
+   "From Elin (Brightloop): Co-marketing plan: we post the integration announcement on our LinkedIn Monday, you post yours Tuesday.",
+   "The owner sent: Perfect, Tuesday works."
+  ],
+  "promises": [],
+  "came": "From Elin (Brightloop): Our post is live! Over to you for Tuesday."
+ },
+ {
+  "id": "r5",
+  "set": "reciprocal-both-done",
+  "want": "close",
+  "done_when": "Stackreview lists Lumen CRM",
+  "source": "page",
+  "url": "https://stackreview.example/crm",
+  "thread": [
+   "From Priya (Stackreview): Deal: we list Lumen CRM, you add our badge to your site.",
+   "The owner sent: Deal. Description: \"Lumen CRM keeps every customer conversation in one place.\"",
+   "The owner sent: Badge is up on lumencrm.example/reviews, have a look."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Best CRMs. Lumen CRM keeps every customer conversation in one place. From $20. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "r6",
+  "set": "reciprocal-both-done",
+  "want": "close",
+  "done_when": "Toolbench links to Quillnote",
+  "source": "page",
+  "url": "https://toolbench.example/note-apps",
+  "thread": [
+   "From Dana (Toolbench): Link swap? We link to Quillnote, you link to our guide.",
+   "The owner sent: Done on our side: https://quillnote.example/resources now links to your guide. Your turn!"
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Note apps. Quillnote: meeting notes into tasks (quillnote.example). Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "r7",
+  "set": "reciprocal-owner-first",
+  "want": "close",
+  "done_when": "Brightloop posts the co-marketing announcement",
+  "source": "message",
+  "url": null,
+  "thread": [
+   "From Elin (Brightloop): Co-marketing plan: you post first Monday, we post Tuesday.",
+   "The owner sent: Our post is live: https://linkedin.example/posts/123 . Over to you!"
+  ],
+  "promises": [],
+  "came": "From Elin (Brightloop): Ours is up too: https://linkedin.example/posts/456 . Thanks for the smooth launch!"
+ },
+ {
+  "id": "r8",
+  "set": "reciprocal-owner-first",
+  "want": "close",
+  "done_when": "Northdesk publishes their half of the guest post swap",
+  "source": "page",
+  "url": "https://northdesk.example/blog/handoffs-that-stick",
+  "thread": [
+   "From Ravi (Northdesk): Guest post swap: you publish ours first, then we publish yours.",
+   "The owner sent: Your post is live on our blog: brightwell.example/blog/async-standups . Here is our draft."
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Handoffs that stick: three habits of calm teams. By Mira, guest author from Brightwell. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "r9",
+  "set": "reciprocal-one-way",
+  "want": "close",
+  "done_when": "Saasmap lists Tallyhive",
+  "source": "page",
+  "url": "https://saasmap.example/invoicing",
+  "thread": [
+   "From Lotte (Saasmap): We list tools for free, no strings attached. Just send a description.",
+   "The owner sent: Thanks! \"Tallyhive: simple invoicing for small teams.\""
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Invoicing tools. Tallyhive: simple invoicing for small teams. Billora: invoicing for agencies. Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ },
+ {
+  "id": "r10",
+  "set": "reciprocal-one-way",
+  "want": "close",
+  "done_when": "Opsweekly features the Fernstack launch",
+  "source": "page",
+  "url": "https://opsweekly.example/issue-212",
+  "thread": [
+   "From Jo (Opsweekly): Send me the link and I will feature it, happy to help.",
+   "The owner sent: https://fernstack.example/blog/launch-2 . Thanks so much!"
+  ],
+  "promises": [],
+  "came": "Home | Reviews | Lists | About | Newsletter. Opsweekly issue 212. Featured: Fernstack 2 cuts deploy rollbacks in half. https://fernstack.example/blog/launch-2 Subscribe to our weekly digest. © 2026 All rights reserved. Privacy | Terms"
+ }
+]

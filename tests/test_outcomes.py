@@ -45,6 +45,12 @@ class Outcomes(unittest.TestCase):
         app.config = {'accounts': [GMAIL]}
         return app
 
+    def checked(self, answer, asked=None):
+        """Its result check's turn (result_checks.py), with a stand-in answer."""
+        app = self.app()
+        app.result_check_model = lambda config, text: ((asked if asked is not None else []).append(text), json.dumps(answer))[1]
+        return app.result_check_step()
+
     def suggestion(self):
         with self.store.connect() as db:
             return dict(db.execute('SELECT * FROM suggestions WHERE id=?', (self.sid,)).fetchone())
@@ -124,18 +130,25 @@ class Outcomes(unittest.TestCase):
         self.assertIn('Write a short nudge', json.loads(row['chat_asks']))
         with self.store.connect() as db:
             self.assertEqual(todo_moves.history(db, self.sid)[-1], {'at': '2026-12-01T09:00:00+00:00', 'from': 'prepared', 'to': 'pending', 'reason': 'chase_time'})
-        # Sam's signed form arrives; the review sees the result: closed by itself, Undo for a day
+        # Sam's signed form arrives; the review sees the result: checked against what was agreed, then closed by itself,
+        # Undo for a day
         self.store.commit_page('work', {}, [email('m2', '2026-12-02T08:00:00+00:00', body='Signed form attached.')])
         with self.store.connect() as db:
             signed = db.execute("SELECT id FROM events WHERE source_id='m2'").fetchone()[0]
         saved = self.store.looks_handled(self.sid, 'Sam sent the signed form', [signed])
-        self.assertTrue(saved.get('closed'))
+        self.assertTrue(saved.get('checking'))
+        self.assertEqual(self.suggestion()['status'], 'pending')
+        asked = []
+        with patch_everywhere(timeutil, 'now', return_value='2026-12-02T09:00:00+00:00'):
+            self.assertEqual(self.checked({'state': 'matches', 'checked': 'signed as sent'}, asked), 'closed')
+        self.assertIn('Signed form attached.', asked[0])  # what came, and what the owner sent
+        self.assertIn('Here is the order form.', asked[0])
         row = self.suggestion()
         self.assertEqual(row['status'], 'completed')
         self.assertIsNone(row['handled_hint'])
         self.assertTrue(row['undo_until'])
         # Its card and chat say the result, not the wait it was in; only shown, so Undo shows its own text again
-        self.assertEqual(self.shown_body(), f'Done: {RESULT}.')
+        self.assertEqual(self.shown_body(), f'Done: {RESULT}, signed as sent.')
         self.assertEqual(self.suggestion()['body'], row['body'])
         self.decide('undo', 'undo-1')  # closed on the real clock: Undo is open
         self.assertEqual(self.shown_body(), row['body'])
@@ -182,6 +195,7 @@ class Outcomes(unittest.TestCase):
         self.send()
         with self.store.connect() as db:
             outcomes.project_proof(db, self.sid, 'Listing is live', self.event, '2026-10-18T09:00:00+00:00')
+        self.assertEqual(self.checked({'state': 'matches', 'checked': ''}), 'closed')
         self.assertEqual(self.suggestion()['status'], 'completed')
 
     def test_a_changed_goal_moves_the_waiting_line_that_was_the_old_goal_only(self):

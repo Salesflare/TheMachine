@@ -16,9 +16,9 @@ When the to-do's time to chase comes (outcome until, the same time return_waitin
 first, once a claim is written (claim): one plain read of the page as a polite reader (the App's step, through
 connectors/web_page.read: robots.txt, public addresses only, size and time limits). Then (settle):
 
-- met: the page shows every expected word. The to-do closes by itself the way a result in a message closes it
-  (outcomes.close_handled: Done, "Closed by itself: <page> shows <words>", Undo for a day), once for that version of
-  the page;
+- met: the page shows every expected word. Then it is checked against what was agreed (result_checks.py: the price,
+  the description, an approval step, the owner's half of an exchange) and closes by itself only when it matches, once
+  for that version of the page;
 - not met: it comes back as before (return_waiting), with "Checked <page>: not there yet" in its chat. When its deadline
   is still ahead, it reads the page once more the morning after the deadline first;
 - unknown (the page couldn't be read): never a close. Read again after RETRY, at most MAX_ATTEMPTS reads; then it comes
@@ -249,9 +249,9 @@ def _settle_baseline(db, job, result, stamp):
     return 'baseline:' + base.get('state', 'retry')
 
 
-def settle(db, job, result, stamp, why=None, fingerprint=None):
+def settle(db, job, result, stamp, why=None, fingerprint=None, lines=None):
     """Keep what one read found, inside the caller's write transaction, only for the claim it was read for on a to-do
-    that still waits the same way. Returns 'closed', 'recheck', 'retry', 'back', 'baseline:<clear|shown|unread|retry>'
+    that still waits the same way. Returns 'checking' (shown: result_checks.py checks it), 'recheck', 'retry', 'back', 'baseline:<clear|shown|unread|retry>'
     or None (the to-do moved on)."""
     if job.get('baseline'):
         return _settle_baseline(db, job, result, stamp)
@@ -277,8 +277,9 @@ def settle(db, job, result, stamp, why=None, fingerprint=None):
         decision_id = VERIFIED + hashlib.sha256(f"{row['id']}:{plan['url']}:{fingerprint}".encode()).hexdigest()[:32]
         if db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
             return 'back'  # closed for this version of the page before and the owner took it back: theirs stands
-        outcomes.close_handled(db, row, decision_id, i18n.t('{} shows {}', page, ', '.join(plan['expect'])), stamp)
-        return 'closed'
+        from machine.store import result_checks  # the words are there: checked against what was agreed before it closes
+        return result_checks.request(db, row, 'page', i18n.t('{} shows {}', page, ', '.join(plan['expect'])), decision_id, stamp,
+                                     url=plan['url'], lines=lines)
     if result == 'not_met':
         end = _deadline_end(row)
         if end and not run.get('rechecked') and end > dt.datetime.fromisoformat(stamp):
