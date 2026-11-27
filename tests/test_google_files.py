@@ -289,6 +289,24 @@ class ToDo(Base):
             self.assertEqual(self.read(DOC)['text'], 'Week 2.')
         self.assertEqual(read.call_args.args[1]['id'], hosted.ACCOUNT['id'])
 
+    def test_a_linked_doc_reads_through_the_next_connection_when_the_first_cant_open_it(self):
+        """2026-11-27: a linked Google Doc was read only through the first Google Docs connection in the area."""
+        self.config['accounts'] = [dict(t.GMAIL), dict(hosted.ACCOUNT), {**hosted.ACCOUNT, 'id': 'acme-docs-b'}]
+        self.chat(f'and https://docs.google.com/document/d/{DOC}/edit')
+        tried = []
+
+        def read_text(config, account, file_id, helpers):
+            tried.append(account['id'])
+            if account['id'] == hosted.ACCOUNT['id']:
+                raise sources.SourceError('docs_no_access')
+            return {'text': 'Week 2.'}
+        with patch.object(docs, 'read_text', read_text), patch('machine.app.docs.load_connector', return_value=docs):
+            self.assertEqual(self.read(DOC)['text'], 'Week 2.')
+            self.assertEqual(tried, [hosted.ACCOUNT['id'], 'acme-docs-b'])
+            self.config['accounts'] = [dict(t.GMAIL), dict(hosted.ACCOUNT)]
+            with self.assertRaisesRegex(ValueError, 'private to someone else'):  # none opens it: the reason, as before
+                self.read(DOC)
+
     def test_only_a_sign_in_of_the_to_dos_own_area_that_can_do_things(self):
         self.config['accounts'] = [dict(t.GMAIL), dict(hosted.PERSONAL)]
         with self.assertRaisesRegex(ValueError, 'No Docs connection'):

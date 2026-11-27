@@ -431,9 +431,9 @@ def validate(value, context):
         made = sorted(k for k, f in files.items() if f.get('made'))
         raise ValueError('That file_id is not one of this to-do’s docs. Its docs: '
                          + (', '.join(f'{k} ({files[k].get("doc_title") or "made for this to-do"})' for k in made) + ', made for it; ' if made else '')
-                         + 'the metadata.file_id of its doc events; the id in a Google Doc link in its messages. Use one of these '
+                         + 'the metadata.file_id of its doc events; the id in a Google Doc, Sheet or Slides link in its messages or its chat. Use one of these '
                          'ids. Never ask the owner to paste a link to a doc made for this to-do')
-    if value.get('account_id') not in (None, known['account_id']):
+    if value.get('account_id') not in (None, known['account_id'], *(known.get('accounts') or ())):
         raise ValueError('That doc belongs to another Docs connection')
     if known.get('kind') in file_writes.KINDS:  # a linked Google Sheet or Slides file: its own changes (file_writes.py)
         return file_writes.validate(value, known, accounts.get(known['account_id']), (context.get('snapshots') or {}).get(file_id), result)
@@ -1273,29 +1273,54 @@ def context(config, connector, helpers, files, value, area=None):
     if not wanted or not connector:
         return None
     accounts = targets(config, connector, helpers)
-    snapshots = {}
+    files, snapshots = dict(files or {}), {}
     for w in wanted:
         file_id = file_id_of(w.get('file_id'))
         known = files.get(file_id)
-        if w.get('op') != 'edit' or not known or file_id in snapshots or not can_edit(accounts.get(known['account_id']) or {}, known):
+        if w.get('op') != 'edit' or not known or file_id in snapshots:
             continue
-        account = next(a for a in config['accounts'] if a['id'] == known['account_id'])
-        try:
-            if known.get('kind') in file_writes.KINDS:  # the cells or slides its changes touch (file_writes.snapshot)
-                try:
-                    changes = file_writes.parse(known['kind'], w.get('changes'))
-                except ValueError:
-                    changes = []  # validate says what is wrong with them
-                snapshots[file_id] = file_writes.snapshot(connector.Writer(config, account, helpers), file_id, known['kind'], changes)
-            else:
-                snapshots[file_id] = snapshot(connector.Writer(config, account, helpers), file_id)
-        except helpers.SourceError as error:
-            snapshots[file_id] = {'docs_files_not_granted': 'Editing Sheets and Slides is not allowed for this connection yet (Allow edits to Sheets and Slides on its connection)',
-                                  'docs_no_access': 'That file is not shared with the Google account connected here',
-                                  'docs_gone': 'That file was deleted, or its link is wrong',
-                                  'docs_file_kind': 'That file is not a Google Sheet or Slides file (an Excel or PowerPoint file in Drive)',
-                                  'docs_edit_unsupported':'That file can’t be edited here (only Google Docs and .docx Word files)',
-                                  'docs_file_too_large': 'That file is too large to edit here',
-                                  'docs_not_connected': 'Reading docs is not allowed for this connection'}.get(
-                                      error.category, f'The doc could not be read ({error.category})')
+        # a file linked where several connections open it (doc_write_files' accounts): those that may edit it, in their
+        # fixed order (the one the draft names first), each tried until one opens it; none may: the first, refused as before
+        editors = [a for a in known.get('accounts') or [known['account_id']] if can_edit(accounts.get(a) or {}, known)]
+        editors.sort(key=lambda a: a != w.get('account_id'))
+        for n, account_id in enumerate(editors[:MAX_SIGNINS]):
+            found = snapshot_of(config, connector, helpers, account_id, file_id, known, w.get('changes'))
+            if n == 0 or isinstance(found, dict):
+                snapshots[file_id], files[file_id] = found, {**known, 'account_id': account_id}
+            if not isinstance(found, helpers.SourceError) or found.category not in CANT_OPEN:
+                break
+        if isinstance(snapshots.get(file_id), helpers.SourceError):
+            snapshots[file_id] = read_error(snapshots[file_id])
     return {'accounts': accounts, 'files': files, 'snapshots': snapshots, 'area': area, 'google': google_offered(accounts, config)}
+
+
+MAX_SIGNINS = 3  # connections tried for one linked file
+CANT_OPEN = ('docs_no_access', 'docs_gone', 'docs_files_not_granted', 'docs_not_connected', 'docs_signin_expired', 'docs_no_signin')
+
+
+def snapshot_of(config, connector, helpers, account_id, file_id, known, changes):
+    """The file as it is now through this connection (snapshot, or file_writes.snapshot for the cells or slides its
+    changes touch), else the SourceError."""
+    account = next(a for a in config['accounts'] if a['id'] == account_id)
+    try:
+        if known.get('kind') in file_writes.KINDS:
+            try:
+                changes = file_writes.parse(known['kind'], changes)
+            except ValueError:
+                changes = []  # validate says what is wrong with them
+            return file_writes.snapshot(connector.Writer(config, account, helpers), file_id, known['kind'], changes)
+        return snapshot(connector.Writer(config, account, helpers), file_id)
+    except helpers.SourceError as error:
+        return error
+
+
+def read_error(error):
+    """What an edit's draft hears when its file could not be read."""
+    return {'docs_files_not_granted': 'Editing Sheets and Slides is not allowed for this connection yet (Allow edits to Sheets and Slides on its connection)',
+            'docs_no_access': 'That file is not shared with the Google account connected here',
+            'docs_gone': 'That file was deleted, or its link is wrong',
+            'docs_file_kind': 'That file is not a Google Sheet or Slides file (an Excel or PowerPoint file in Drive)',
+            'docs_edit_unsupported':'That file can’t be edited here (only Google Docs and .docx Word files)',
+            'docs_file_too_large': 'That file is too large to edit here',
+            'docs_not_connected': 'Reading docs is not allowed for this connection'}.get(
+                error.category, f'The doc could not be read ({error.category})')

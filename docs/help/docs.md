@@ -74,6 +74,8 @@ Then your Machine:
 - Prepares changes to that doc. Each waits for your OK, as above.
 - Makes new private docs in your Google Drive.
 
+With more than one Google Docs connection in a to-do's area, it reads and changes a file through one that can open it and may change it.
+
 It doesn't search your Drive. It sees comments, shares and suggestions only on docs it made. More would need access to your whole Drive, which it doesn't ask for.
 
 ## Google Sheets and Slides
@@ -87,7 +89,7 @@ Then your Machine also reads a Google Sheet or Slides file linked in a to-do's m
 
 ### Edit Sheets and Slides
 
-Once your Machine reads them, Google Docs may also show **Allow edits to Sheets and Slides**. Press it and allow both, and your Machine can change a linked Sheet or Slides file the same way it changes a doc: it only prepares the change, **Review changes** shows it, and nothing is written until you press **Save**.
+Once your Machine reads them, Google Docs may also show **Allow edits to Sheets and Slides**. Press it and allow both, and your Machine can change a Sheet or Slides file linked in a to-do or pasted in its chat, the same way it changes a doc: it only prepares the change, **Review changes** shows it, and nothing is written until you press **Save**.
 
 - In a sheet: new values for cells in a tab, rows added under the last row, or a new tab. Each cell shows before and after. Values go in as text; a formula goes in as a formula only when the to-do says so.
 - In slides: text replaced on one slide, before and after, or a new slide with a title and text.

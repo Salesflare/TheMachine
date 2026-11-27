@@ -332,7 +332,7 @@ Every connection brings in signals; one that can send, reply, change events or w
 
 ### Sheet and Slides edits
 
-`file_writes.py`: a `doc_write` edit whose `file_id` is a Google Sheet or Slides file linked in the task's messages (`doc_write_files`, through the area's first Google Docs connection). The draft carries `file_kind`, and everything else is a doc edit's: review in the to-do, Save, one write, a read-back when the outcome is unclear.
+`file_writes.py`: a `doc_write` edit whose `file_id` is a Google Sheet or Slides file linked in the task's messages or the owner's chat on it, the same places reads take (`doc_texts`). With several Google Docs connections in the area, `doc_writes.context` edits through the first by id that has Allow edits for that kind of file and opens it (at most three tried); with none, the draft is refused as before. Reads of a linked Google Doc try the area's connections in the same order. The draft carries `file_kind`, and everything else is a doc edit's: review in the to-do, Save, one write, a read-back when the outcome is unclear.
 
 - **Sheets:** `{tab, cells: 'B2' | 'B2:C3', values: [[...]]}` sets values (only values; formatting stays), `{tab, append: [[...]]}` adds rows under the tab's last row with anything in it (growing the grid when needed), `{add_tab, values?}` adds a tab. Values go in `RAW`; `formulas: true` on a change enters them `USER_ENTERED`, and is refused on a change without a `=` value, as is a `=` value without it. At most 200 cells and 20 changes; set ranges inside the grid and not overlapping. The review shows each cell before and after.
 - **Sheet version:** Google Sheets has no revision to write against, so the draft pins a digest of the tabs, the target cells (as their formulas) and each appended tab's last row. The send reads them again and writes nothing when the digest differs. The write is one `spreadsheets.batchUpdate` (new tabs, more rows) and one `values.batchUpdate` per input option; a refusal after the first went through is an unclear outcome, checked by reading back.
@@ -353,7 +353,7 @@ Every connection brings in signals; one that can send, reply, change events or w
 - A Word edit downloads the `.docx`, changes the `w:t` text in place (no new dependency; DTDs refused), and puts it back with `If-Match` on the eTag read just before.
 - A new doc is a small `.docx` uploaded with `conflictBehavior=fail` under a free name.
 
-`assistant doc-draft` lets a preparation print a doc's paragraphs and check its draft first (`--event` for a doc event, `--file` for a doc made for the to-do or linked in its messages).
+`assistant doc-draft` lets a preparation print a doc's paragraphs and check its draft first (`--event` for a doc event, `--file` for a doc made for the to-do or linked in its messages or chat).
 
 A doc The Machine made for a to-do (its sent `doc_write` create) is one of that to-do's own docs for later edits, through the connection that made it. A gog Google sign-in edits only such a doc, with the Drive access that made it; it edits no other doc. An edit naming a doc that isn't the to-do's own is refused with the ids it may use.
 

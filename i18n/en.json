@@ -5964,6 +5964,7 @@
  "That didn’t work. Try again.": "That didn’t work. Try again.",
  "That doc is not one of this task’s own doc events": "That doc is not one of this task’s own doc events",
  "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc linked in its messages)": "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc linked in its messages)",
+ "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, Sheet or Slides file linked in its messages or its chat)": "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, Sheet or Slides file linked in its messages or its chat)",
  "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, Sheet or Slides file linked in its messages)": "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, Sheet or Slides file linked in its messages)",
  "That doesn’t look like a Granola API key": "That doesn’t look like a Granola API key",
  "That doesn’t look like a Linear API key": "That doesn’t look like a Linear API key",

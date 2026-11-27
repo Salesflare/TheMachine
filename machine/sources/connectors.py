@@ -206,12 +206,26 @@ def docs_write_transport(config):
     return doc_writes.DocWriteTransport(config, plugin, CONNECTOR_HELPERS) if plugin and hasattr(plugin, 'Writer') else None
 
 
+def doc_texts(db, event_ids, suggestion_id=None):
+    """Where a to-do links its files: its messages, and with its id what the owner wrote in its chat (the dashboard or
+    Telegram, a line with a link, the latest 50). Reads (DocsApp.doc_run) and edits (doc_write_files) take the same."""
+    said = [str(r[0] or '') + ' ' + str(r[1] or '') for r in db.execute(
+        "SELECT e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id ORDER BY e.occurred_at", (event_ids,))]
+    if suggestion_id:
+        said += [str(r[0] or '') for r in db.execute(
+            "SELECT feedback FROM decisions WHERE suggestion_id=? AND choice='other' AND source IN ('telegram','dashboard') "
+            "AND feedback LIKE '%://%' ORDER BY created_at DESC LIMIT 50", (suggestion_id,))]
+    return said
+
+
 def doc_write_files(db, event_ids, config=None, area=None, suggestion_id=None):
     """The docs a doc_write may edit, {file_id: {account_id, doc_title, provider}}: the ones this task's own doc events are
-    about, and with config, a Google Doc linked in the task's messages, through the owner's Google Docs connection in the
-    to-do's area that can do things (a hosted Machine's Connect Google Docs reads and edits a doc by its id). With the
-    to-do's id, also each doc The Machine made for it (its sent doc_write create): that doc is the to-do's own, edited
-    through the connection that made it (made: True)."""
+    about, and with config, a Google Doc (or Notion page, Sheet or Slides file) linked in the task's messages or the
+    owner's chat on it (doc_texts, as reads take them), through the owner's connections for it in the to-do's area that
+    can do things (a hosted Machine's Connect Google Docs reads and edits a doc by its id). With several, `accounts` lists
+    them all and doc_writes.context picks the one that may edit it and opens it. With the to-do's id, also each doc The
+    Machine made for it (its sent doc_write create): that doc is the to-do's own, edited through the connection that made
+    it (made: True)."""
     found = {}
     if suggestion_id:
         for r in db.execute("SELECT payload,message_id FROM action_jobs WHERE suggestion_id=? AND status='sent' "
@@ -231,20 +245,23 @@ def doc_write_files(db, event_ids, config=None, area=None, suggestion_id=None):
             found[str(m['file_id'])] = {'account_id': r[0], 'doc_title': m.get('doc_title'), 'provider': m.get('provider'),
                                         **({'task': True} if m.get('task') else {})}
     plugin = load_connector('docs') if config else None
-    mine = [a for a in (config or {}).get('accounts') or () if plugin and a.get('service') in abilities.DOC_SERVICES and not a.get('shared')
-            and abilities.actions_on(a) and doc_writes.fits(a.get('boundary'), area)]
-    # a Google Doc, or a Notion page, linked in the task's messages: through the owner's connection for it in this area
+    said = doc_texts(db, event_ids, suggestion_id) if plugin else []
+    # by id: the order a linked file's connections are tried in (doc_writes.context), the same every time
+    mine = sorted((a for a in (config or {}).get('accounts') or () if plugin and a.get('service') in abilities.DOC_SERVICES
+                   and not a.get('shared') and abilities.actions_on(a) and doc_writes.fits(a.get('boundary'), area)), key=lambda a: str(a['id']))
+    # a Google Doc, or a Notion page, linked there: through the owner's connections for it in this area
     for provider in ('google', 'notion'):
         via = [a for a in mine if plugin.provider(config, a) == provider]
         if not via:
             continue
-        for r in db.execute("SELECT e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id ORDER BY e.occurred_at", (event_ids,)):
-            for file_id in plugin.doc_links_of(via[0], str(r[0] or '') + ' ' + str(r[1] or '')):
-                found.setdefault(file_id, {'account_id': via[0]['id'], 'doc_title': None, 'provider': provider})
-            # a Google Sheet or Slides file linked there: edited through the same connection after Allow edits (file_writes.py)
-            for file_id, file in (plugin.file_links(str(r[0] or '') + ' ' + str(r[1] or '')).items() if provider == 'google' else ()):
+        which = {'account_id': via[0]['id'], **({'accounts': [a['id'] for a in via]} if len(via) > 1 else {})}
+        for text in said:
+            for file_id in plugin.doc_links_of(via[0], text):
+                found.setdefault(file_id, {**which, 'doc_title': None, 'provider': provider})
+            # a Google Sheet or Slides file linked there: edited through a connection with Allow edits for it (file_writes.py)
+            for file_id, file in (plugin.file_links(text).items() if provider == 'google' else ()):
                 if file['kind'] in file_writes.KINDS:
-                    found.setdefault(file_id, {'account_id': via[0]['id'], 'doc_title': None, 'provider': provider, 'kind': file['kind']})
+                    found.setdefault(file_id, {**which, 'doc_title': None, 'provider': provider, 'kind': file['kind']})
     return found
 
 
@@ -299,7 +316,7 @@ def doc_write_prompt(config):
             "unless their message in this turn asks for that change: then do_now:true beside next_actions makes it now. Sharing a doc "
             "always waits for their OK (a step after it). The shapes: {kind:'doc_write',op:'create',account_id,title,body} (body plain text, '# ' to '### ' lines are headings; the title is the doc's name and "
             "the to-do shows it, so the body doesn't start with it again) or "
-            "{kind:'doc_write',op:'edit',file_id:<the id of a doc made for this to-do (its docs.google.com link in the to-do), the metadata.file_id of this task's doc event, or the id in a Google Doc link in this task's messages>,changes:[{find,replace} | {after,insert} | {append} | {format,style} | {format,link}]}. "
+            "{kind:'doc_write',op:'edit',file_id:<the id of a doc made for this to-do (its docs.google.com link in the to-do), the metadata.file_id of this task's doc event, or the id in a Google Doc link in this task's messages or the owner's chat>,changes:[{find,replace} | {after,insert} | {append} | {format,style} | {format,link}]}. "
             "Google Docs formatting: {format:<text in the doc once>,style:bold|italic|underline|plain|h1|h2|h3|p|bullet|number|no_list|page_break} "
             "(a heading, normal or list style may add through:<text of a later paragraph>), {format,link:<https link>}; new text (insert, append, body) "
             "may hold '- ' and '1. ' list lines, **bold**, *italic* and [text](https://link). Tables can't be made: say in the result what is left to do "
@@ -317,7 +334,7 @@ def doc_write_prompt(config):
                "page is private, in the owner's Private section; it is made only after their OK, like an edit. A task assigned to the owner "
                "(a notion.task event) is marked done with {kind:'doc_write',op:'done',file_id}, also only after their OK."
                if any(t['provider'] == 'notion' for t in found.values()) else '')
-            + ("\n- A Google Sheet or Slides file linked in this task's messages is edited the same way, only with Allow edits to Sheets and "
+            + ("\n- A Google Sheet or Slides file linked in this task's messages or the owner's chat is edited the same way, only with Allow edits to Sheets and "
                "Slides on: {kind:'doc_write',op:'edit',file_id:<its id>,changes:[...]}. A sheet: {tab,cells:'B2' or 'B2:C3',values:[[...]]} "
                "(values only), {tab,append:[[...]]} (rows after its last row) or {add_tab,values?}. Values go in as text; add formulas:true "
                "to a change only when it holds a formula ('=...') and say so in the to-do. Slides: {slide:<number>,find,replace} (on that "

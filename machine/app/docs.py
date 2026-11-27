@@ -7,7 +7,7 @@ import abilities
 import doc_writes
 import file_writes
 import google_files
-from machine.sources.connectors import CONNECTOR_HELPERS, doc_write_files, docs_files_offered, load_connector
+from machine.sources.connectors import CONNECTOR_HELPERS, doc_texts, doc_write_files, docs_files_offered, load_connector
 from sources import SourceError
 from machine.owner_error import OwnerError
 
@@ -47,23 +47,33 @@ class DocsApp:
                 return self.linked_file(file_id, linked, args.get('range'))
             if file_id in found:
                 account = next((a for a in self.config['accounts'] if a['id'] == found[file_id]), None)
-            elif linked:
-                account = next((a for a in self.doc_connections(area) if a['id'] == linked), None)
-                if not account:
+            elif linked:  # each connection here that opens it, in turn, until one can (linked_file's way)
+                tries = [a for a in self.doc_connections(area) if a['id'] in linked]
+                if not tries:
                     raise ValueError(self.NO_DOC_CONNECTION)
+                return self.linked_doc(file_id, tries)
             else:
                 raise ValueError('Read a doc linked in this task’s messages or the owner’s chat on it, or one assistant doc-find gave this run')
         else:
             raise ValueError('Give the event_id of the doc event, or the file_id of the doc')
         if not account or not file_id or not plugin:
             raise OwnerError('That Docs connection is no longer here')
-        off = abilities.refuse(self.config, account['id'])
-        if off:
-            raise ValueError(off)
-        try:
-            return plugin.read_text(self.config, account, str(file_id), CONNECTOR_HELPERS)
-        except SourceError as error:
-            raise self.doc_read_error(error) from None
+        return self.linked_doc(str(file_id), [account])
+
+    def linked_doc(self, file_id, accounts):
+        """A doc's text through the first of these connections that opens it; the first one's reason when none does."""
+        plugin, first = load_connector('docs'), None
+        for account in accounts[:MAX_FILE_SIGNINS]:
+            off = abilities.refuse(self.config, account['id'])
+            if off:
+                raise ValueError(off)
+            try:
+                return plugin.read_text(self.config, account, file_id, CONNECTOR_HELPERS)
+            except SourceError as error:
+                first = first or error
+                if error.category not in ('docs_no_access', 'docs_gone', 'docs_signin_expired', 'docs_no_signin', 'docs_not_connected'):
+                    break  # this sign-in opened it, or Google is the one failing
+        raise self.doc_read_error(first) from None
 
     def doc_find(self, args):
         """Docs that match some words, for a run the owner started: through each Docs connection in the to-do's area that
@@ -114,7 +124,7 @@ class DocsApp:
                 file_id = doc_writes.file_id_of(args['file_id'])
                 if file_id not in files:
                     raise OwnerError('That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, '
-                                     'Sheet or Slides file linked in its messages)')
+                                     'Sheet or Slides file linked in its messages or its chat)')
         plugin = load_connector('docs')
         if not plugin or not hasattr(plugin, 'Writer'):
             raise ValueError('There is no Docs connection here')
@@ -166,18 +176,16 @@ class DocsApp:
             area = doc_writes.area(self.config, json.loads(run['account_ids'] or '[]'))
             # a doc linked in the task's messages, or in what the owner wrote in its chat -> their connection that opens it
             # here (Google Docs, or Notion); a Google Sheet or Slides file -> what it is and the sign-ins that may read it
+            # (its connections by id, each tried in turn: doc_text)
             links, plugin = {}, load_connector('docs')
             via = {}
-            for account in self.doc_connections(area) if plugin else ():
-                via.setdefault(plugin.provider(self.config, account), account)
-            said = [str(r['body'] or '') + ' ' + str(r['metadata'] or '') for r in db.execute(
-                "SELECT e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id", (run['event_ids'],))] if plugin else []
-            said += [str(r[0] or '') for r in db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND choice='other' AND source IN ('telegram','dashboard') AND feedback LIKE '%://%' "
-                                                         "ORDER BY created_at DESC LIMIT 50", (run['id'],))] if plugin else []
+            for account in sorted(self.doc_connections(area), key=lambda a: str(a['id'])) if plugin else ():
+                via.setdefault(plugin.provider(self.config, account), []).append(account)
+            said = doc_texts(db, run['event_ids'], run['id']) if plugin else []
         for text in said:
-            for account in (via.get('google'), via.get('notion')):
-                for file_id in plugin.doc_links_of(account, text) if account else ():
-                    links.setdefault(file_id, account['id'])
+            for accounts in (via.get('google'), via.get('notion')):
+                for file_id in plugin.doc_links_of(accounts[0], text) if accounts else ():
+                    links.setdefault(file_id, tuple(a['id'] for a in accounts))
         files = {}
         for text in said:  # each on its own: one full of links hides no other's
             for file_id in plugin.doc_links(text) if not via.get('google') else ():

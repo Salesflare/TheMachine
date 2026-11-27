@@ -19,6 +19,8 @@ import mail_grants
 import next_actions as n
 import test_connector_docs as t
 import test_google_docs_hosted as hosted
+from test_assistant import event as ux_event
+import machine.main as machine_main
 import machine.sources.connectors as machine_sources_connectors
 
 SHEET, DECK = 's' * 44, 'p' * 44
@@ -263,6 +265,55 @@ class Sheets(Base):
         self.assertEqual(docs.writes_on(self.config, hosted.ACCOUNT, self.helpers), {'create', 'edit', 'sheets', 'slides'})
 
 
+class TwoConnections(Base):
+    """2026-11-27: with two Google Docs connections in the to-do's area, an edit went through the first one, which may not
+    edit, and was refused. It goes through one that may edit that kind of file and opens it; the same one every time."""
+
+    def setUp(self):
+        super().setUp()
+        self.reader = {**hosted.ACCOUNT, 'id': 'acme-docs'}  # first, in config and by id
+        self.editor = {**hosted.ACCOUNT, 'id': 'acme-docs-b'}
+        self.config['accounts'] = [self.reader, self.editor]
+        self.may = {'acme-docs': {'create', 'edit'}, 'acme-docs-b': {'create', 'edit', 'sheets', 'slides'}}
+        patch.object(docs, 'writes_on', lambda config, account, helpers: set(self.may.get(account['id'], ()))).start()
+        db = sqlite3.connect(':memory:')
+        db.execute('CREATE TABLE events(id INTEGER PRIMARY KEY, account_id TEXT, kind TEXT, body TEXT, metadata TEXT, occurred_at TEXT)')
+        db.execute("INSERT INTO events VALUES(1,'acme-gmail','gmail.message',?,'{}','2026-10-27')",
+                   (f'Numbers: https://docs.google.com/spreadsheets/d/{SHEET}/edit#gid=0',))
+        self.files = machine_sources_connectors.doc_write_files(db, json.dumps([1]), self.config, {'boundaries': ['work:Acme']})
+
+    def draft(self, file_id, changes, **more):
+        value = {'kind': 'doc_write', 'op': 'edit', 'file_id': file_id, 'changes': changes, **more}
+        return w.validate(value, w.context(self.config, docs, self.helpers, self.files, value))
+
+    def test_through_the_one_that_may_edit(self):
+        action = self.draft(SHEET, [{'tab': 'Budget', 'cells': 'B2', 'values': [['1350']]}])
+        self.assertEqual(action['account_id'], 'acme-docs-b')
+        self.assertEqual(self.send(action), {'message_id': 'docwrite:' + SHEET})
+        self.config['accounts'] = [self.editor, self.reader]  # the order they were added in doesn't change it
+        self.assertEqual(self.draft(SHEET, [{'tab': 'Budget', 'cells': 'B2', 'values': [['1400']]}])['account_id'], 'acme-docs-b')
+
+    def test_several_that_may_a_fixed_one_and_the_next_when_it_cant_open_it(self):
+        self.may['acme-docs'] = self.may['acme-docs-b']
+        self.assertEqual(self.draft(SHEET, [{'tab': 'Budget', 'cells': 'B2', 'values': [['1']]}])['account_id'], 'acme-docs')
+        real = f.snapshot
+
+        def snapshot(writer, *args):
+            if writer.account['id'] == 'acme-docs':
+                raise self.helpers.SourceError('docs_no_access')
+            return real(writer, *args)
+        with patch.object(f, 'snapshot', snapshot):
+            self.assertEqual(self.draft(SHEET, [{'tab': 'Budget', 'cells': 'B2', 'values': [['1']]}])['account_id'], 'acme-docs-b')
+            self.may['acme-docs-b'] = {'create', 'edit'}  # the only one that may edit can't open it: its reason
+            with self.assertRaisesRegex(ValueError, 'not shared with the Google account'):
+                self.draft(SHEET, [{'tab': 'Budget', 'cells': 'B2', 'values': [['1']]}])
+
+    def test_none_that_may_edit_is_still_the_honest_refusal(self):
+        self.may['acme-docs-b'] = {'create', 'edit'}
+        with self.assertRaisesRegex(ValueError, 'Allow edits to Sheets and Slides'):
+            self.draft(SHEET, [{'tab': 'Budget', 'cells': 'B2', 'values': [['1']]}])
+
+
 class Slides(Base):
     def test_text_replaced_on_one_slide_only(self):
         action = self.draft(DECK, [{'slide': 1, 'find': 'week 2', 'replace': 'week 3'}])
@@ -310,6 +361,25 @@ class Linked(unittest.TestCase):
         files = machine_sources_connectors.doc_write_files(db, json.dumps([1]), config, {'boundaries': ['work:Acme']})
         self.assertEqual(files, FILES)
         self.assertEqual(machine_sources_connectors.doc_write_files(db, json.dumps([1]), {**config, 'accounts': [t.GMAIL]}, {'boundaries': ['work:Acme']}), {})
+
+    def test_a_link_pasted_in_the_to_dos_chat_is_one_to_edit_too(self):
+        """2026-11-27: a Sheet linked in a to-do's chat was read, but its edit was refused as not one of the to-do's docs.
+        Edits take the files reads take: the to-do's messages and what the owner wrote in its chat, never another to-do's."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
+        store.commit_page('acme-gmail', {}, [ux_event('acme-gmail', 'm1', 'Can you update the numbers?'), ux_event('acme-gmail', 'm2')])
+        with store.connect() as db:
+            first, second = [r[0] for r in db.execute('SELECT id FROM events ORDER BY id')]
+        sid = store.suggest('sheet-task', 'Update the numbers', 'Change the budget.', [first])['id']
+        other = store.suggest('other-task', 'Another to-do', 'Something else.', [second])['id']
+        store.decide(sid, 'other', f'Here: https://docs.google.com/spreadsheets/d/{SHEET}/edit#gid=0', 'chat-1', 'dashboard')
+        store.decide(other, 'other', f'And https://docs.google.com/presentation/d/{DECK}/edit', 'chat-2', 'dashboard')
+        config = {**hosted.HOSTED, 'accounts': [t.GMAIL, hosted.ACCOUNT]}
+        with store.connect() as db:
+            files = machine_sources_connectors.doc_write_files(db, json.dumps([first]), config, {'boundaries': ['work:Acme']}, sid)
+            self.assertEqual(files, {SHEET: FILES[SHEET]})  # the other to-do's chat link isn't this one's
+            self.assertEqual(machine_sources_connectors.doc_write_files(db, json.dumps([first]), config, {'boundaries': ['work:Acme']}), {})
 
     def test_allow_edits_is_offered_only_where_the_account_page_offers_it(self):
         offered = machine_sources_connectors.docs_files_write_offered
