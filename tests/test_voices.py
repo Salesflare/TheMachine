@@ -556,10 +556,11 @@ class Learned(unittest.TestCase):
         own = self.store.remember_fact('This card’s own note: they write listing copy themselves.', self.decision, quote='remember these')['id']
         with self.store.connect() as db:  # a fact learned on this card
             db.execute('UPDATE facts SET suggestion_id=? WHERE id=?', (self.sid, own))
-        # No embeddings: the newest first, up to the limit.
+        # No embeddings: the one that shares the card's words ("listings"), then the newest, up to the limit.
         newest = self.store.facts_for(self.sid, limit=400).splitlines()
         self.assertEqual(newest[0], '- This card’s own note: they write listing copy themselves.')
-        self.assertIn('lunch', newest[1])
+        self.assertIn('listing', newest[1])
+        self.assertIn('lunch', newest[2])
         # With embeddings: this card's own facts, then the closest ones above the floor.
         def embed(settings, texts, timeout=120):
             return [[1.0, 0.0] if 'listing' in t or 'Answer the listing' in t else [0.6, 0.8] if 'paint' in t or 'tax' in t else [0.0, 1.0] for t in texts]
@@ -573,7 +574,7 @@ class Learned(unittest.TestCase):
         self.assertEqual([('listing' in p, 'paint' in p or 'tax' in p) for p in picked[1:]], [(True, False), (False, True)])
         self.assertFalse(any('garden' in p or 'Fridays' in p for p in picked))  # below the floor
         with patch.object(embeddings, 'embed', side_effect=embeddings.EmbeddingError('down')):
-            self.assertIn('lunch', self.store.facts_for(self.sid, settings=settings, limit=400).splitlines()[1])  # down: the newest
+            self.assertIn('lunch', self.store.facts_for(self.sid, settings=settings, limit=400).splitlines()[2])  # down: by words, then the newest
         del few, ids
 
     def test_condensing_merges_keeps_the_originals_and_the_owner_can_undo_it(self):

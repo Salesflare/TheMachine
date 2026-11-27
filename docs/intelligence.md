@@ -960,7 +960,7 @@ Memory comes in kinds, each with its own table and its own picker:
 
 | kind | what it is | picked by |
 |---|---|---|
-| `fact`, `rule` | what was learned, and the draft rules (`facts`) | all of them while they are few (always), the to-do's own, closeness in meaning to the to-do or the routine, else shared words (match), then weight; in a review past its cap also by turns (rotation) |
+| `fact`, `rule` | what was learned, and the draft rules (`facts`) | all of them while they are few (always), the to-do's own, closeness in meaning to the to-do or the routine, else shared words (match: `word_match`, then the most telling shared words, `word_scores`), then weight; in a review past its cap also by turns (rotation) |
 | `promise` | open promises (`promises`) | always, in a review |
 | `history` | what the owner did with the last 30 days' to-dos (`decisions`) | recency |
 | `record` | the people and projects on a to-do (`graph_nodes`) | being on the to-do (about) |

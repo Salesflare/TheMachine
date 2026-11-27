@@ -126,6 +126,15 @@ characters of facts, 600 of rules), no extra model call, logged as `match` or `c
 run is admitted, like a preparation's picks. A rule the learning loop scoped (an area, a channel, one person or
 organization) goes in only where it holds, before any ranking ([Keeps learning](intelligence.md#keeps-learning)).
 
+Without embeddings (every hosted Machine under 8 GB) that word step found little: a long rule needs a third of its
+words shared (`word_match`), so a routine got the newest facts instead. The room left after `word_match`'s picks now
+goes to the facts and rules with the most telling words in common with the work (`facts.word_scores`, BM25 over what
+is learned: a word few facts have counts more), before those that count most. Words are cut to their first five
+letters without accents, so forms and compounds meet ("Rechnungen" and "Rechnungsbeträge", "отчёт" and "отчета");
+Chinese, Japanese and Korean count by pairs of characters; a fact counts with the names of the records it is about,
+so a rule about a client its words don't name reaches a routine that names them. Same budgets, no model call. They
+are logged as `match` but count as used only past `word_match`'s bar.
+
 ## One fact end to end
 
 `tests/test_memory_e2e.py` follows one fact through every surface, on a database file with made-up data, and checks
@@ -160,6 +169,7 @@ the owner removes it under Learning.
 - **Without embeddings**, the owner's main chat, Talk and Ask match what was learned by words in their plain form
   only: a word that changes its stem ("flights" for "fly") or another word for the same thing ("plane") finds it
   only by meaning. With embeddings on, a fact learned in the last minute (before the background pass embeds it) is
-  found by words only.
+  found by words only. Preparations and routines share word forms and record names without embeddings
+  (`word_scores`), but another word for the same thing still needs meaning.
 - **The morning digest and weekly recap** are plain code with no model turn: what was learned reaches them only
   through the to-dos and promises they list. By design.

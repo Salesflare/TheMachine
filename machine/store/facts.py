@@ -2,9 +2,11 @@
 fact, how fast one fades, and which facts a preparation gets. A mixin of Store (assistant.py), like App's mixins. Moved
 out of assistant.py as is."""
 import datetime as dt
+import functools
 import json
 import math
 import re
+import unicodedata
 
 import contact_facts
 import embeddings
@@ -108,6 +110,59 @@ def word_match(text, asked, norm=None):
     own = norm(key_words(text)) if norm else key_words(text)
     shared = len(own & asked)
     return shared / len(own) if shared >= MATCH_WORDS and shared * 3 >= len(own) else 0.0
+
+
+# Without embeddings, a preparation or routine run fills its room with the facts that share the most telling words
+# with its work (word_scores, BM25 over what is learned) before the ones that count most. Words are cut to their
+# first STEM letters, without accents, so inflections and compounds meet in every language with spaces ("invoices",
+# "invoicing"; "Rechnungen", "Rechnungsadresse"; "отчёт", "отчета"); Chinese, Japanese and Korean, written without
+# spaces or with particles attached, count by pairs of characters. A rare shared word counts more than a common one.
+# Only word_match's bar makes one count as used (memory_use): sharing one word is enough to come first, not to be a use.
+STEM = 5
+PAIRED = re.compile('[぀-ヿ㐀-鿿가-힯豈-﫿]')  # kana, CJK ideographs, Hangul
+
+
+@functools.lru_cache(maxsize=16384)
+def terms(text):
+    """The words of a text as word_scores counts them: no digits, filler or words under three letters."""
+    out = []
+    for word in re.findall(r'[^\W\d_]+', str(text or '').casefold()):
+        if PAIRED.search(word):
+            out += [word[i:i + 2] for i in range(len(word) - 1)] or [word]
+            continue
+        word = ''.join(c for c in unicodedata.normalize('NFKD', word) if not unicodedata.combining(c))
+        if len(word) >= 3 and word not in FILLER:
+            out.append(word[:STEM])
+    return tuple(out)
+
+
+def word_scores(facts, asked, corpus):
+    """{fact id: BM25 score} of the facts that share a word (terms) with the text asked; how rare a word is, from
+    corpus (all of this kind that may go in). A fact's text counts with the names of the records it is about
+    (f['names']), so one about a client the work names shares that name. No model, no request."""
+    def words(f):
+        return terms(f['text'] + ' ' + (f.get('names') or ''))
+    seen, size = {}, 0
+    for f in corpus:
+        ts = words(f)
+        size += len(ts)
+        for t in set(ts):
+            seen[t] = seen.get(t, 0) + 1
+    n, mean = max(1, len(corpus)), max(1.0, size / max(1, len(corpus)))
+    query = {}
+    for t in terms(asked):
+        query[t] = min(3, query.get(t, 0) + 1)
+    out = {}
+    for f in facts:
+        ts = words(f)
+        tf = {}
+        for t in ts:
+            if t in query:
+                tf[t] = tf.get(t, 0) + 1
+        if tf:
+            out[f['id']] = sum(query[t] * math.log(1 + (n - seen.get(t, 0) + 0.5) / (seen.get(t, 0) + 0.5)) * c * 2.2
+                               / (c + 1.2 * (0.25 + 0.75 * len(ts) / mean)) for t, c in tf.items())
+    return out
 
 
 def rewords(new, old):
@@ -1009,7 +1064,8 @@ class FactsStore:
         First what may go in at all (in_scope): with an area, a connected AI's fact of the other area stays out, and so
         does a fact about a person on the other side only. Then all of them while they are few (all_under); else the
         to-do's own, those about its records, then those closest in meaning to what is asked (embeddings), else those
-        that share its words (word_match) and then those that count most.
+        that share its words (word_match), those with the most telling shared words (word_scores, logged as match but
+        not counted as used) and then those that count most.
         Each counts by its decayed weight (fact_weight): an event fades in weeks, a preference or commitment in months, a
         fact in a year; one past its end day is gone. Closeness picks (at least floor), the weight orders. A fact about
         a record on the to-do's signals (fact_about) comes before the closeness picks, within the same top: it takes
@@ -1035,12 +1091,15 @@ class FactsStore:
                 ranked = self.facts_ranked(embeddings.document(asked.get('title') or '', asked.get('text') or ''), facts, settings)
             except Exception as error:  # the embedding server is down: those that share its words, then those that count most
                 LOG.error('fact ranking error=%s', type(error).__name__)
-        said = {}
-        if ranked is None:  # no meaning search: the ones that share the work's words first, then those that count most
-            words = key_words(about)
-            said = {f['id']: word_match(f['text'], words) for f in facts if f not in own and f not in tied}
+        said, shared = {}, {}
+        if ranked is None:  # no meaning search: word_match's first, then the most telling shared words, then those that count most
+            words, rest = key_words(about), [f for f in facts if f not in own and f not in tied]
+            said = {f['id']: word_match(f['text'], words) for f in rest}
             said = {i: s for i, s in said.items() if s}
-            picked = own + tied + sorted((f for f in reversed(facts) if f not in own and f not in tied), key=lambda f: (-said.get(f['id'], 0), -weight[f['id']]))
+            for f in facts:
+                f['names'] = ' '.join(who[n]['name'] for n in f['about'] if n in who and who[n].get('name'))
+            shared = word_scores(rest, about, facts)
+            picked = own + tied + sorted(reversed(rest), key=lambda f: (-said.get(f['id'], 0), -shared.get(f['id'], 0), -weight[f['id']]))
         else:
             close = sorted(((score * (0.5 + 0.5 * weight[f['id']]), f) for score, f in ranked if score >= floor and f not in own and f not in tied), key=lambda x: -x[0])
             picked = own + (tied + [f for _, f in close])[:top]
@@ -1052,7 +1111,7 @@ class FactsStore:
             out.append(f); size += len(line) + 1
         if memory_use.collecting():  # a prompt's recall: its use log stamps them as used once the run is admitted (memory_use.record)
             scores = {f['id']: score for score, f in close} if ranked is not None else {}
-            note_facts(out, lambda f: 'own' if f in own else 'about' if f in tied else 'closeness' if ranked is not None else 'match' if f['id'] in said else 'weight',
+            note_facts(out, lambda f: 'own' if f in own else 'about' if f in tied else 'closeness' if ranked is not None else 'match' if f['id'] in said or f['id'] in shared else 'weight',
                        scores=scores, used=lambda f: ranked is not None or f in tied or f['id'] in said)
         elif ranked is not None or tied or said:  # picked for meaning, its record or its words (not just newest while the embedding server is down): used
             try:
