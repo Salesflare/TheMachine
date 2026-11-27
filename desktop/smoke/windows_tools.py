@@ -171,6 +171,7 @@ def need(ok, text):
 
 class App:
     last = last_app = None
+    started = 0
 
     def __init__(self, program, *args, debug=True, over=None, window=False, account=None):
         if App.last and App.last.poll() is None:  # a step before this one failed
@@ -183,7 +184,11 @@ class App:
         if debug:
             env['MACHINE_SANDBOX_DEBUG'] = str(DEBUG)
         self.env, self.program = env, program
-        self.process = App.last = subprocess.Popen([program, *args], env=env)
+        # What a sandbox build says it does (trace! in main.rs), one file for each start, next to the screenshots
+        App.started += 1
+        self.log = out / f'app-{App.started:02d}.log'
+        with self.log.open('ab') as log:
+            self.process = App.last = subprocess.Popen([program, *args], env=env, stdout=log, stderr=log)
         App.last_app = self
 
     def again(self, *args, seconds=15):
@@ -323,6 +328,12 @@ def step(name):
         except Exception as e:  # noqa: BLE001 (the next steps still tell something)
             results.append((name, False, f'{type(e).__name__}: {e}'))
             traceback.print_exc()
+            failed = App.last_app
+            if failed:  # its own words, and its watch's, by the screenshot
+                print(f'  its log: {failed.log.name}', flush=True)
+                hangs = pathlib.Path(os.environ['APPDATA'], ID, 'hangs.log')
+                if hangs.exists():
+                    shutil.copy(hangs, out / f'{len(results):02d}-hangs.log')
         app = App.last_app
         robot = app and App.last.poll() is None and answers.after(pathlib.Path(os.environ['APPDATA'], ID, 'hangs.log'), out, len(results), app.center, pointer, move, lambda: page('robot.html', '1', 4))
         if robot and results[-1][1]:

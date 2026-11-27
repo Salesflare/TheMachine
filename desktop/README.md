@@ -394,7 +394,8 @@ CI also uses the Windows and the Mac build, with real mouse and keys against a m
 `smoke/mac.py` the robot, `smoke/window.py` the window, `smoke/text.py` Windows' Text size and scales,
 `smoke/signin.py` a sign-in with a second copy or an administrator's beside it,
 `smoke/updates.py` the installer and an update; on Ubuntu an older sandbox AppImage that puts a newer one in its place),
-and keeps the screenshots with the run. They move the mouse and
+and keeps the screenshots with the run. On Windows also each start's own log (`app-NN.log`: a sandbox build says when it
+looks, lists, opens the box and loads a page) and, by a failed step, `hangs.log`. They move the mouse and
 change the screen, so they are for a throwaway computer. `smoke/linux.sh` runs `window.py` on a screen that isn't there,
 with a home of its own: nothing of the desktop it is started on is seen or touched. Also over https, as a hosted Machine: with a certificate made for that run
 (`smoke/certificate.sh`), which only a sandbox build and that computer trust, until it ends.

@@ -46,6 +46,8 @@ fn build(app: &AppHandle, label: &str, title: &str, (w, h): (f64, f64)) -> tauri
         .disable_drag_drop_handler() // the page takes dropped files itself
         .additional_browser_args(&browser())
         .on_navigation(|url| url.scheme() == "tauri" || url.host_str() == Some("tauri.localhost")); // only its own pages
+    #[cfg(feature = "sandbox")]
+    let window = window.on_page_load(|w, page| trace!("page {}: {}", w.label(), if page.event() == tauri::webview::PageLoadEvent::Finished { "loaded" } else { "loads" }));
     // WebKitGTK asks the first page there is, for all of them
     #[cfg(target_os = "linux")]
     let window = {
@@ -268,6 +270,7 @@ pub fn show_or_not(app: &AppHandle) {
     let off = shared.picking.load(Ordering::Relaxed) || shared.saved.lock().unwrap().no_robot;
     let wanted = !off && (box_open(app) || !shared.away.load(Ordering::Relaxed) && !shared.full.load(Ordering::Relaxed));
     if robot.is_visible().unwrap_or(true) != wanted {
+        trace!("robot shown {wanted}: away {}, full screen {}", shared.away.load(Ordering::Relaxed), shared.full.load(Ordering::Relaxed));
         seen(&robot, wanted);
         if wanted {
             place(app);
@@ -305,6 +308,7 @@ pub fn open_box(app: &AppHandle) -> tauri::Result<()> {
     crate::speak::hush(app, false);
     show_or_not(app);
     shared.opened.fetch_add(1, Ordering::Relaxed);
+    trace!("open box: {}", if app.get_webview_window("box").is_some() { "there" } else { "made" });
     let window = match app.get_webview_window("box") {
         Some(w) => {
             let _ = w.emit("opened", ());
@@ -318,6 +322,7 @@ pub fn open_box(app: &AppHandle) -> tauri::Result<()> {
     place(app);
     focus(&window);
     let _ = app.emit_to("robot", "box", true);
+    trace!("open box: shown, visible {:?}", window.is_visible());
     Ok(())
 }
 
