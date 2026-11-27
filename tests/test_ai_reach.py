@@ -617,7 +617,7 @@ class SharedAddress(Base):
                 app.ai_reach_loop = types.SimpleNamespace(state=state)
                 reach = app.ai_reach()
                 self.assertEqual((reach['shared'], reach['address']), (shared, f'https://{HOST}/mcp'), state)
-        self.assertEqual(ai_app.SHARED_ADDRESS, 'https://mcp.themachine.computer/mcp')
+        self.assertEqual(ai_app.SHARED_ADDRESS, 'https://mcp.themachine.computer/mcp')  # also the skill's (test_ai_skill.py)
         with patch.object(ai_reach, 'AVAILABLE', False):
             self.assertIsNone(app.ai_reach()['shared'])
 

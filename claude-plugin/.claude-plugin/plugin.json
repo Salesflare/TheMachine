@@ -1,0 +1,11 @@
+{
+  "name": "the-machine",
+  "version": "1.0.0",
+  "description": "The Machine's MCP connection and a skill that tells Claude when to use it: the brief, the owner's learnings and voice, the Graph.",
+  "author": {
+    "name": "The Machine"
+  },
+  "homepage": "https://themachine.computer",
+  "repository": "https://github.com/Salesflare/TheMachine",
+  "license": "AGPL-3.0-only"
+}

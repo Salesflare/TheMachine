@@ -386,6 +386,27 @@ The same button pairs from Connections, where a sign-in needs a paired Machine. 
 credential and its file, stops the Fleet and the dial-back, and drops the certificate. The account keeps the device
 until it is disconnected there.
 
+## The skill
+
+`claude-plugin/skills/the-machine/SKILL.md` tells an AI when to use The Machine: read the brief when a chat starts,
+`get_learnings` before drafting for the owner, `search_graph` before answering about someone, `save_learning` or
+`save_fact` when the owner settles something in the chat, never a claim that it sent. It needs `ai_learnings` on (its
+tools), so it is published only once that is on everywhere. `tests/test_ai_skill.py` keeps it true to the server.
+
+`claude-plugin/` is a Claude Code plugin: the MCP server (`.mcp.json`, the official address) and the skill. Where it
+goes, each publish needing the owner's OK first:
+
+| Where | How | State |
+|---|---|---|
+| Claude Code | A marketplace file at the repository's root (`.claude-plugin/marketplace.json`, `source: ./claude-plugin`), then `/plugin marketplace add Salesflare/TheMachine` and `/plugin install the-machine`; or Anthropic's plugin directory | Not added |
+| claude.ai, Claude Desktop | A zip of `skills/the-machine/` uploaded in Settings, Capabilities, Skills (per person), or for a whole Team or Enterprise by its admin. The directory listing (Add in Claude) carries the MCP only | Per person |
+| OpenClaw | `clawhub publish` of the folder, with the same frontmatter (name, description). Our published `salesflare` skill is the model | Not published |
+| Codex | The folder in `~/.codex/skills/`, or its text in `AGENTS.md` | Per person |
+| Cursor | The text as a rule (`.cursor/rules/the-machine.mdc`) with the MCP in `mcp.json` | Per person |
+| ChatGPT | No skills: the app's instructions are the MCP `initialize` instructions and the brief, which say the same in short | Built in |
+
+Settings, Apps has no Add skill link next to Add in Claude: the settings part is at its size ceiling.
+
 ## Decided
 
 - One endpoint per Machine, end to end, and next to it the official app's shared address. On the shared address the
