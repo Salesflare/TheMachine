@@ -343,6 +343,11 @@ when it returns, the app quits or it next starts. After a crash in between, what
 `~/.local/share/applications/the-machine-desktop-handler.desktop` with its line in `~/.config/mimeapps.list`. On a Mac the
 app itself names them, as every Mac app does: they go with the app.
 
+Its own link, `computer.themachine.desktop://open`, brings it to the front, as starting it again does (`src/link.rs`). It
+carries nothing: any other link of that scheme, with a path, a query or a fragment, does nothing. Windows and Linux
+register it at every start (`HKCU\Software\Classes\computer.themachine.desktop`, which uninstalling removes; on Linux in
+that same handler file); a Mac app names it in its Info.plist.
+
 ## How it is made
 
 Tauri 2: a small Rust program and the system's own web view. Three parts, each replaceable without the others:

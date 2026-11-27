@@ -154,6 +154,8 @@ else:
         for pid in running():
             os.kill(pid, 9)
 
+if WINDOWS:  # the smoke runs before this started the build from its folder, which keeps its own link (nothing uninstalls it)
+    subprocess.run(['reg', 'delete', r'HKCU\Software\Classes\computer.themachine.desktop', '/f'], capture_output=True)
 before = left() if WINDOWS else None
 
 

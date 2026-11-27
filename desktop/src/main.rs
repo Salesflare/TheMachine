@@ -16,6 +16,7 @@ mod given;
 mod hangs;
 #[cfg(not(target_os = "macos"))]
 mod keys;
+mod link;
 #[cfg(target_os = "linux")]
 mod linux_app;
 mod login;
@@ -760,6 +761,7 @@ pub fn no_links(app: &AppHandle) {
         if let Some(name) = program.file_name() {
             let _ = std::fs::remove_file(data.join("applications").join(format!("{}-handler.desktop", name.to_string_lossy())));
         }
+        let _ = app.deep_link().register(link::SCHEME); // that file held the app's own link too (link.rs)
     }
 }
 
@@ -1180,10 +1182,14 @@ fn watch(app: AppHandle) {
     let _ = app;
 }
 
-/// Started again: --toggle (for a key the person binds), --quit, or just show the robot. Or a sign-in comes back.
+/// Started again: --toggle (for a key the person binds), --quit, or just show the robot. Or a sign-in comes back. Its own
+/// link (link.rs) is as a start again; one of its scheme with anything more does nothing.
 fn started_again(app: &AppHandle, args: Vec<String>) {
     if args.get(1).is_some_and(|a| a == "--quit") {
         return quit::quit(app);
+    }
+    if args.get(1).is_some_and(|a| link::ours(a) && !link::open(a)) {
+        return;
     }
     later(app, move |app| match args.get(1).map(String::as_str) {
         Some("--toggle") => toggle(app),
@@ -1192,14 +1198,19 @@ fn started_again(app: &AppHandle, args: Vec<String>) {
         Some(link) if link.starts_with(signin::SCHEME) => {
             came_back(app, link);
         }
-        _ if dash::here() => dash::show(app, ""),
-        _ => {
-            show(app);
-            if app.state::<Shared>().machine().is_none() {
-                open(app);
-            }
-        }
+        _ => front(app),
     });
+}
+
+/// To the front, as started again: the dashboard's window when it is there, else the robot (and the sign-in if needed).
+fn front(app: &AppHandle) {
+    if dash::here() {
+        return dash::show(app, "");
+    }
+    show(app);
+    if app.state::<Shared>().machine().is_none() {
+        open(app);
+    }
 }
 
 fn main() {
@@ -1330,6 +1341,14 @@ fn main() {
             if app.deep_link().is_registered(signin::SCHEME).unwrap_or(false) {
                 no_links(app.handle());
             }
+            // Its own link, at every start (on a Mac its Info.plist names it)
+            #[cfg(not(target_os = "macos"))]
+            {
+                let here = app.handle().clone();
+                std::thread::spawn(move || {
+                    let _ = here.deep_link().register(link::SCHEME);
+                });
+            }
             #[cfg(windows)]
             elevated::hears();
             #[cfg(windows)]
@@ -1376,12 +1395,16 @@ fn main() {
             match &event {
                 // The Dock icon, or started again from Finder
                 RunEvent::Reopen { .. } => later(app, |app| dash::show(app, "")),
-                // A sign-in comes back
+                // Its own link (link.rs) brings it to the front; else a sign-in comes back
                 RunEvent::Opened { urls } if app.try_state::<Shared>().is_some() => {
-                    for url in urls {
-                        came_back(app, url.as_str());
+                    if urls.iter().any(|url| link::open(url.as_str())) {
+                        later(app, front);
+                    } else {
+                        for url in urls.iter().filter(|url| !link::ours(url.as_str())) {
+                            came_back(app, url.as_str());
+                        }
+                        mac::give_back_soon(app);
                     }
-                    mac::give_back_soon(app);
                 }
                 _ => {}
             }

@@ -23,6 +23,7 @@
     DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "The Machine"
     DeleteRegKey HKCU "Software\Classes\AppUserModelId\computer.themachine.desktop"
     DeleteRegKey HKCU "Software\Classes\computer.themachine.app"
+    DeleteRegKey HKCU "Software\Classes\computer.themachine.desktop"
     DeleteRegKey HKCU "${MANUPRODUCTKEY}"
     DeleteRegKey /ifempty HKCU "${MANUKEY}"
     SetShellVarContext current
