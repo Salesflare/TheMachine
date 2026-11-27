@@ -52,14 +52,16 @@ def area(row, accounts):
 
 def rows(db, accounts, want):
     """The current rules and general facts (about no one in the Graph, not past their end day) this area sees, the ones
-    said or used last first: (rules, facts), each row with its origin."""
+    said or used last first: (rules, facts), each row with its origin. One the learning loop scoped to a person or
+    organization never goes out; one scoped to an area or a channel says so (item)."""
     found = [dict(r) for r in db.execute(
-        'SELECT f.id,f.text,f.kind,f.fact_kind,f.valid_until,f.created_at,f.confirmed_at,f.source,f.side,f.kept_at,f.decision_id,'
+        'SELECT f.id,f.text,f.kind,f.fact_kind,f.valid_until,f.created_at,f.confirmed_at,f.source,f.side,f.kept_at,f.decision_id,f.scope,'
         "f.suggestion_id,s.account_ids,s.area todo_area,max(f.created_at,coalesce(f.confirmed_at,''),coalesce(f.used_at,'')) last_use FROM facts f LEFT JOIN suggestions s ON s.id=f.suggestion_id "
         "WHERE f.removed_at IS NULL AND f.kind IN ('fact','draft') "
         'AND f.id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL)')]
     today = timeutil.clock().date().isoformat()
-    found = [r for r in found if not fact_store.fact_expired(r, today) and (want is None or area(r, accounts) in (None, want))]
+    found = [r for r in found if not fact_store.fact_expired(r, today) and (want is None or area(r, accounts) in (None, want))
+             and not str(r.get('scope') or '').startswith('with:')]
     for r in found:
         r['origin'] = origin(r)
     found.sort(key=lambda r: (r['last_use'] or '', r['id']), reverse=True)
@@ -90,6 +92,10 @@ def item(row, mark):
         out['sort'] = row['fact_kind']
     if row.get('valid_until'):
         out['until'] = row['valid_until']
+    if str(row.get('scope') or '').startswith('channel:'):  # where it holds (learning_loop.scope_of)
+        out['channel'] = row['scope'][8:]
+    elif row.get('scope') == 'area':
+        out['area'] = row['side']
     return out
 
 

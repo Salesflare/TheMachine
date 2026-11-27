@@ -102,7 +102,7 @@ class ProfileApp:
                                   share_history_prompt(run['run_id'], first['pages'], self.share_groups()) if run.get('kind') == 'share' else
                                   voices_prompt(run['run_id'], first['counts'], first['pages']) if run.get('kind') == 'voices' else
                                   team_learnings.prompt(run['run_id'], json.loads(run['evidence'])) if run.get('kind') == 'learnings' else
-                                  learning_loop.prompt(run['run_id']) if run.get('kind') == 'tune' else
+                                  learning_loop.prompt(run['run_id'], json.loads(run.get('evidence') or '{}')) if run.get('kind') == 'tune' else
                                   fleet_learnings.prompt(run['run_id']) if run.get('kind') == 'fleet_learn' else
                                   team_learnings.vote_prompt(run['run_id'], json.loads(run['evidence'])) if run.get('kind') == 'team_votes' else
                                   profile_prompt(run['run_id'], first['counts'], run.get('room') or PROFILE_ROOM))

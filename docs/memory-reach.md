@@ -123,7 +123,8 @@ gardening routine got the same block. A run now gets them as a preparation does 
 `facts_for`): all while they fit; else by closeness in meaning to the routine's name and words, or without embeddings
 (or with the server down) the ones that share its words first, then those that count most. Same budgets (1,200
 characters of facts, 600 of rules), no extra model call, logged as `match` or `closeness` and counted as used once the
-run is admitted, like a preparation's picks.
+run is admitted, like a preparation's picks. A rule the learning loop scoped (an area, a channel, one person or
+organization) goes in only where it holds, before any ranking ([Keeps learning](intelligence.md#keeps-learning)).
 
 ## One fact end to end
 

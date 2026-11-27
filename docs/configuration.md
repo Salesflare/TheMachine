@@ -105,6 +105,7 @@
 | `ai_learnings` | `false` | Connected AIs get `get_learnings`, `get_brief` and `save_learning`, and the brief at the start of each chat ([Learnings and the brief](ai-connections.md#learnings-and-the-brief)) |
 | `ai_training_off` | `[]` | The providers (`chatgpt`, `claude`) you pressed Done for on the line that asks you to turn off model training in a personal plan; the hosted setup page can set it too |
 | `agents` | none | Coding agents for **Hand off** ([Coding agents](agents.md)) |
+| `learning_scope` | `true` | Each rule or fact the learning loop writes says where it holds (everywhere, an area, a channel, or one person or organization), and goes only there ([Keeps learning](intelligence.md#keeps-learning)). Off: every one holds everywhere, as before |
 | `gbrain` | off | The [GBrain](gbrain.md) add-on, as **Connect GBrain** saves it |
 | `gh` | `gh` | The GitHub CLI the GitHub connection uses |
 | `clawhub_registry` | `https://clawhub.ai` | Where Skills searches and reads ClawHub skills |

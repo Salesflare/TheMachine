@@ -930,6 +930,21 @@ names you needs a to-do"). It costs no turn of its own.
   with **Undo**.
 - A voice the owner wrote is never changed by the loop, and an undo is refused when the owner changed that voice or fact
   since.
+- **Where it holds** (config `learning_scope`). Each signal keeps the context it came from (`learning_loop.contexts`):
+  its area (work or personal, as a preparation judges it), its channel, and the people and organizations on its to-do's
+  messages, a person with their organization so two people with one name stay apart. The page names them by short refs
+  (r1, r2...), never by the Graph's ids. A rule or fact the pass writes says where it holds: `global`, an area, a
+  channel, or one person or organization (`with:`, also tied to their record). A price, a discount or a form of address
+  for one of them is never a general rule.
+- A scope the signals don't bear out, or none, becomes what the signals it came from all share, narrowest first (the one
+  person or organization, the area, the channel). When they share nothing, the change is not kept: an unknown scope is
+  never global. The column is `facts.scope`; rules and facts from before (NULL) hold everywhere, as before. Edit and
+  Undo work as for any other; an edit keeps where it holds.
+- Every recall applies it before ranking (`Store.in_scope`): a preparation gets a person's or organization's rule only
+  on their to-dos, an area's only in that area, a channel's only when its draft goes out there. A routine's run has no
+  area, so it gets no area's rules; it gets a channel's for the channels its drafts go out on and a person's when its
+  words name them. `get_learnings` never gives a person's or organization's rule, and says the channel or area of one
+  scoped to it.
 
 ## What a prompt reads
 

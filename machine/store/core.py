@@ -366,7 +366,9 @@ class StoreCore:
             # before use was tracked count as used when tracking starts.
             # quote: the owner's own words the fact was found in, from the message it cites (Store.remember_fact checks
             # they are there); NULL on one from before, from a connected AI, from the owner's notes or condensed.
-            for column in ('fact_kind', 'valid_until', 'confirmed_at', 'source', 'side', 'used_at', 'kept_at', 'quote'):
+            # scope: where a rule or fact the learning loop wrote holds (learning_loop.scope_of): 'global', 'area' (its side),
+            # 'channel:<name>' or 'with:<node id>' (one person or organization, also in fact_about). NULL: everywhere, as before.
+            for column in ('fact_kind', 'valid_until', 'confirmed_at', 'source', 'side', 'used_at', 'kept_at', 'quote', 'scope'):
                 if column not in have_facts:
                     db.execute('ALTER TABLE facts ADD COLUMN ' + column + ' TEXT')
                     if column == 'used_at':
