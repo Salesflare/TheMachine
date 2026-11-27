@@ -4554,8 +4554,10 @@
  "Read photos": "Read photos",
  "Read result": "Read result",
  "Read skill instructions and {} notes": "Read skill instructions and {} notes",
+ "Read the brief": "Read the brief",
  "Read the change": "Read the change",
  "Read the change and {} notes": "Read the change and {} notes",
+ "Read the learnings": "Read the learnings",
  "Read the message": "Read the message",
  "Read the messages": "Read the messages",
  "Read the promises": "Read the promises",
@@ -8352,6 +8354,10 @@
  "{} kept the promise to {}": "{} kept the promise to {}",
  "{} knows someone at {}.": "{} knows someone at {}.",
  "{} last 24h": "{} last 24h",
+ "{} learnings": {
+  "one": "{} learning",
+  "other": "{} learnings"
+ },
  "{} learnings to share, if you like: ": {
   "one": "{} learning to share, if you like: ",
   "other": "{} learnings to share, if you like: "

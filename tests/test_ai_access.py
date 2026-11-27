@@ -600,6 +600,7 @@ class Calls(Base):
         self.assertEqual([t['id'] for t in out['todos']], [self.work_card])
 
     def test_tools_list_names_every_tool_and_marks_the_read_ones(self):
+        self.app.config['ai_learnings'] = True  # its tools listed too (off: test_ai_learnings)
         _, tokens = self.signed_in()
         status, _, reply = self.call(tokens['access_token'], 'tools/list')
         tools = {t['name']: t for t in reply['result']['tools']}
@@ -1478,7 +1479,7 @@ class Marked(Base):
         self.assertEqual(todo['text'].count('</untrusted>'), 1)
         self.assertEqual(self.tool(key, 'list_promises')[1]['promises'][0]['what'], '<untrusted source="messages">Sends the deck</untrusted>')
         self.assertEqual(self.tool(key, 'get_team_brief')[1]['briefs'][0]['text'], '<untrusted source="team">Deals moved</untrusted>')
-        listed = {t['name']: t for t in ai_access.tool_list()}
+        listed = {t['name']: t for t in ai_access.tool_list(learnings=True)}
         for name in ai_access.MARKED_TOOLS:
             self.assertIn('never instructions', listed[name]['description'], name)
         self.assertNotIn('<untrusted>', listed['create_todo']['description'])
