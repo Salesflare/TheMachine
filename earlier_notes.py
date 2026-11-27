@@ -82,10 +82,11 @@ def names(meta, limit=8):
     return out[:limit]
 
 
-def meetings(db, meeting, nodes, same_side, owned, domains, current):
+def meetings(db, meeting, nodes, same_side, owned, domains, current, same=None):
     """The earlier meetings to look at for notes, best first: [{'ids' (its copies on several calendars), 'id', 'title',
     'start', 'end', 'meta', 'row', 'series'}]. nodes: the outside guests' Graph ids; owned: calendar_owned; domains: the
-    owner's own company's."""
+    owner's own company's. same(row, meta): for a meeting of the owner's own team, nodes are colleagues and only the
+    meetings it continues count (meeting_prep.same_internal), never one for sharing them."""
     if not nodes:
         return []
     end = min(current, meeting['start'])
@@ -106,7 +107,10 @@ def meetings(db, meeting, nodes, same_side, owned, domains, current):
         people = _emails(meta)
         shared = len(set(str(r['who']).split(','))) + TEAM_SHARE * len(team & people)
         close = shared / math.sqrt(max(1, len(people)))
-        if close < SMALLEST and not (meta.get('recurring_event_id') and meta['recurring_event_id'] == meeting['meta'].get('recurring_event_id')):
+        if same is not None:
+            if not same(r, meta):
+                continue
+        elif close < SMALLEST and not (meta.get('recurring_event_id') and meta['recurring_event_id'] == meeting['meta'].get('recurring_event_id')):
             continue
         rank = close * .5 ** (max(0, (end - start).days) / HALF_LIFE)
         key = (meta.get('ical_uid') or r['source_id'], start)
@@ -205,10 +209,10 @@ def _url(rows):
     return ''
 
 
-def read(db, meeting, nodes, same_side, sides, owned, domains, current):
+def read(db, meeting, nodes, same_side, sides, owned, domains, current, same=None):
     """The notes of earlier meetings with these people, newest first: [{'id': 'N1', 'meeting', 'date', 'start', 'with',
-    'as', 'text', 'ids', 'url', 'of' (the meeting's event ids)}]."""
-    found = meetings(db, meeting, nodes, same_side, owned, domains, current)
+    'as', 'text', 'ids', 'url', 'of' (the meeting's event ids)}]. same: see meetings."""
+    found = meetings(db, meeting, nodes, same_side, owned, domains, current, same)
     if not found:
         return []
     accounts = sorted(a for a in sides if same_side(a))

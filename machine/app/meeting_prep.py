@@ -1,5 +1,6 @@
-"""Meeting prep, the App's part: the pass that turns an upcoming meeting with people from outside into one briefing
-to-do (meeting_prep.py has the rules). A mixin of assistant.App (APP_MIXINS)."""
+"""Meeting prep, the App's part: the pass that turns an upcoming meeting with people from outside, or one of the owner's
+own team that continues earlier notes, into one briefing to-do (meeting_prep.py has the rules). A mixin of assistant.App
+(APP_MIXINS)."""
 import datetime as dt
 import json
 import sqlite3
@@ -79,9 +80,11 @@ class MeetingPrepApp:
             series = lambda m: bool(m['meta'].get('recurring_event_id'))
             room = meeting_prep.recurring_today(db, (current - dt.timedelta(days=1)).isoformat()) < meeting_prep.RECURRING_PER_DAY
             research = self.config.get('meeting_prep_research') is not False and enrichment.people_on(db)
-            for meeting in sorted(found, key=lambda m: (wait.tries(m['key']), series(m))):  # one-offs first
+            for meeting in sorted(found, key=lambda m: (wait.tries(m['key']), 'team' in m, series(m))):  # with people from outside first, one-offs first
                 if meeting['key'] in done or wait.spent(meeting['key']) or series(meeting) and not room:
                     continue
+                if 'team' in meeting and sides.get(meeting['account_id']) == 'personal':
+                    continue  # their own team's meetings are work
                 if meeting_prep.taken(db, meeting['id'], CARD_OPEN):  # the review already made a to-do for it
                     meeting_prep.keep(db, meeting, 'taken', None, now())
                     continue
@@ -95,7 +98,7 @@ class MeetingPrepApp:
                     evidence['recurring'] = meeting_prep.news(db, meeting, evidence, again)
                 if not meeting_prep.worth_asking(evidence) and not meeting_prep.worth_looking(meeting, side, evidence, enrichment.shared_host, research):
                     continue  # quality or nothing: no turn, no to-do
-                if all(p.get('role') and graph.personal_relation(p['role']) for p in evidence['people']):
+                if evidence['people'] and all(p.get('role') and graph.personal_relation(p['role']) for p in evidence['people']):
                     meeting_prep.keep(db, meeting, 'family', None, now())  # family and friends only: their own life, no turn
                     continue
                 return {**meeting, 'side': side, 'evidence': evidence}

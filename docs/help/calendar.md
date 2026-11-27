@@ -131,7 +131,9 @@ So a first meeting you said yes to can get a briefing before you have exchanged 
 
 A meeting that repeats gets one only when there is something since the last time: a message, notes, a promise. It says what is new, not what the last briefing said. It comes once the time before is over, for two repeating meetings a day at most.
 
-With nothing useful to say, there's no to-do. Internal, personal and declined meetings get none. A meeting that moves keeps its one to-do, at the new time. A dismissed one doesn't come back, and a canceled meeting's closes by itself.
+A meeting with only your own team has a briefing only when the notes of its earlier meetings show an open decision, a step someone owes, or news since. Those come from the same series, or the same title with one of them on it, never from another meeting with the same colleagues. It doesn't introduce or look up your colleagues, and an ordinary stand-up has none.
+
+With nothing useful to say, there's no to-do. Personal and declined meetings get none. A meeting that moves keeps its one to-do, at the new time. A dismissed one doesn't come back, and a canceled meeting's closes by itself.
 
 When an update changes what a briefing holds, open briefings for meetings still ahead are written again once, in the new form. Their title, sources and place in your list stay. One you changed, snoozed or closed stays as it is, and so does one for a meeting starting in the next few minutes.
 
