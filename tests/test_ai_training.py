@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
-from machine import ai_training
+from machine import ai_training, claude_signin
 from machine.app.settings_actions import SettingsActionsApp
 from machine.model_usage import model_status
 from machine.owner_error import OwnerError
@@ -46,7 +46,8 @@ class State(unittest.TestCase):
 
 class ClaudePlan(unittest.TestCase):
     def setUp(self):
-        ai_training._claude_plan.update(at=float('-inf'), plan=None)
+        claude_signin.reset()
+        self.addCleanup(claude_signin.reset)
 
     def test_reads_only_the_plan_kind_and_keeps_it_an_hour(self):
         calls = []

@@ -10,6 +10,8 @@ order: 5
 
 On a hosted Machine with a ChatGPT sign-in, the main model is GPT-6.2 Sol: faster answers than GPT-6.1 Sol at the same price.
 
+A Claude sign-in ends about four weeks after you signed in. **Needs you** says so three days ahead, and once it ended you get one notification. **Sign in again** fixes it in one step.
+
 A personal ChatGPT or Claude plan may train on your chats by default: **Turn off training with your data** opens that setting at the provider, and **Done** hides the line.
 
 ## Model and thinking for chats
