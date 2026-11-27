@@ -81,8 +81,9 @@ Learning shows what The Machine learned from you and how well its to-dos work. E
 - **Shared**: learnings to share with The Machine team, and votes waiting for you, when there are any. See [Share learnings](share-learnings.md).
 - **How it's going**: four numbers for the last 30 days. Higher is better. They start after 3 decided to-dos (acted on or dismissed); until then it shows how many you've decided so far.
   - **Worth it**: of the to-dos you decided, how many you acted on (**Do it**, sent or done) instead of dismissing.
-  - **First try**: of the to-dos you started with **Do it**, how many needed no correction afterward.
-  - **Finished**: of the to-dos you started with **Do it**, how many finished without you asking it to keep going or try again.
+  - **Done**: of the to-dos you started with **Do it** that have closed, how many ended done: its step went out, you marked it done, or it closed as done by itself. Dismissed or expired ones count as not done. Ones still open aren't counted yet and show as **still open**.
+  - **First try**: of those done, how many needed no correction after **Do it**.
+  - **Done** and **First try** show a number from 3 to-dos on.
   - **Sent as is**: of the drafts you sent, how many went without an edit or **Ask for changes** first.
   - Each number compares with the 30 days before. The chart shows a bar per day for the first two weeks, then per week, up to 8 weeks.
   - **Worth it per source**: how many you acted on per source, like **Email**, **Added by you** (from **New to-do**), **Android notifications** or **The Machine itself** (problems like an error).

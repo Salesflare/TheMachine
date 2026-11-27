@@ -17,10 +17,11 @@ const EVENTS=[ev(1,'Invoice 4821 overdue','Robin Example <robin@acme.example>'),
 const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const trendOf=firstAgo=>{const today=new Date();today.setHours(12,0,0,0);const shift=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
  const first=shift(today,-firstAgo),mon=shift(today,-((today.getDay()+6)%7));
- const row=(start,end,i,gap)=>{const has=end>first&&i!==gap,w=has?3+i%4:0,d=has?2:0;return {start:ymd(start),worth_it:w,dismissed:d,open:0,hit_rate:w+d?Math.round(100*w/(w+d)):null,do_it:0,first_time_rate:null,finished_rate:null}};
+ const row=(start,end,i,gap)=>{const has=end>first&&i!==gap,w=has?3+i%4:0,d=has?2:0;return {start:ymd(start),worth_it:w,dismissed:d,open:0,hit_rate:w+d?Math.round(100*w/(w+d)):null,do_it:0,done_rate:null,first_time_rate:null}};
  return {first:ymd(first),daily:[...Array(14)].map((_,k)=>row(shift(today,k-13),shift(today,k-12),k,11)),weekly:[...Array(8)].map((_,k)=>row(shift(mon,7*(k-7)),shift(mon,7*(k-6)),k,6))}};
-const QUALITY={cards:12,worth_it:9,dismissed:3,open:2,hit_rate:75,do_it:4,first_time_rate:75,finished_rate:100,sent_as_written:3,sent_edited:1,
- previous:{hit_rate:60,first_time_rate:75,finished_rate:null},notes:{},by_source:{Email:{worth_it:8,dismissed:2},Slack:{worth_it:1,dismissed:1},WhatsApp:{worth_it:0,dismissed:0}},
+const QUALITY={cards:12,worth_it:9,dismissed:3,open:2,hit_rate:75,do_it:5,settled:4,done:4,done_rate:100,first_time:3,first_time_rate:75,sent_as_written:3,sent_edited:1,
+ outcomes:{confirmed:2,owner_done:1,elsewhere:1,not_needed:0,expired:0,open:1,reopened:0},
+ previous:{hit_rate:60,done_rate:80,first_time_rate:75},notes:{},by_source:{Email:{worth_it:8,dismissed:2},Slack:{worth_it:1,dismissed:1},WhatsApp:{worth_it:0,dismissed:0}},
  trend:trendOf(33)};
 let data,queries;
 const base0=()=>({suggestions:[{id:'aa'.repeat(8),title:'Send Sam the contract',body:'',status:'pending',scope:'work',created_at:now,event_ids:[1]}],promises:[],
@@ -95,7 +96,10 @@ try{
   const going=await page.locator('#quality').innerText();
   assert.match(going,/Last 30 days\. Higher is better\./);
   assert.match(going,/Worth it\s+75%\s+Of 12 to-dos you decided: acted on, not dismissed\s+Up from 60% the 30 days before/);
-  assert.match(going,/First try\s+75%\s+Of 4 to-dos started with Do it: no correction needed\s+Same as the 30 days before/);
+  // Done counts only the Do it to-dos that closed; the one still on its way is named, not counted as done
+  assert.match(going,/Done\s+100%\s+Of 4 to-dos closed after Do it: done\s+Up from 80% the 30 days before\s+1 still open/);
+  assert.match(going,/First try\s+75%\s+Of 4 to-dos done after Do it: no correction needed\s+Same as the 30 days before/);
+  assert.doesNotMatch(going,/Finished|without a nudge/);
   assert.match(going,/Sent as is\s+75%\s+Of 4 drafts sent: no edit or Change first/);
   // the chart starts at the first decided to-do: no empty weeks before it; an empty week inside is a baseline, its count only in the label
   const bars=page.locator('#quality .bars [role="listitem"]'),n=await bars.count();

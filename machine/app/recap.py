@@ -325,7 +325,11 @@ def weekly_recap_message(store, config, current=None):
     if q['hit_rate'] is not None:
         was = before['hit_rate']
         trend = '' if was is None else t(', same as the week before') if was == q['hit_rate'] else t(', up from {}%', was) if q['hit_rate'] > was else t(', down from {}%', was)
-        first = ' ' + t('Do it was right first time in {} of {}.', q['first_time'], q['do_it']) if q['do_it'] else ''
+        # Do it counts only what settled as done, never a to-do still on its way; the open ones are named
+        still = q['outcomes']['open'] + q['outcomes']['reopened']
+        first = (' ' + (t('Do it: {} of {} done, {} right first time, {} still open.', q['done'], q['settled'], q['first_time'], still) if still else
+                        t('Do it: {} of {} done, {} right first time.', q['done'], q['settled'], q['first_time'])) if q['settled'] else
+                 ' ' + t('Do it: {} still open.', still) if still else '')
         changed.append('• ' + t('{}% of to-dos worth it ({} of {})', q['hit_rate'], q['worth_it'], q['worth_it'] + q['dismissed']) + f"{trend}.{first}")
     learned = store.behaviour(7)
     rules = sum(1 for c in changes if c['kind'] == 'draft_rule' and not c['text'].startswith('Removed'))

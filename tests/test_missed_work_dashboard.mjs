@@ -9,8 +9,9 @@ const {chromium}=await import('./browser.mjs');
 // check (each opens the message, Real miss or Not a miss; Real miss adds the to-do, with Undo), how often the check is
 // right; nothing before the first check. All mocked; SHOTS=dir saves screenshots.
 const dashboard=await dashboardPage();
-const QUALITY={cards:12,worth_it:9,dismissed:3,open:2,hit_rate:75,do_it:4,first_time_rate:75,finished_rate:100,sent_as_written:3,sent_edited:1,
- previous:{hit_rate:60,first_time_rate:75,finished_rate:null},notes:{},by_source:{Email:{worth_it:8,dismissed:2}},trend:{first:null,daily:[],weekly:[]}};
+const QUALITY={cards:12,worth_it:9,dismissed:3,open:2,hit_rate:75,do_it:4,settled:4,done:4,done_rate:100,first_time:3,first_time_rate:75,sent_as_written:3,sent_edited:1,
+ outcomes:{confirmed:2,owner_done:1,elsewhere:1,not_needed:0,expired:0,open:0,reopened:0},
+ previous:{hit_rate:60,done_rate:null,first_time_rate:75},notes:{},by_source:{Email:{worth_it:8,dismissed:2}},trend:{first:null,daily:[],weekly:[]}};
 let missed,posts;
 const reset=()=>{posts=[];missed={at:'2026-11-02T08:00:00+00:00',population:2894,sampled:40,flagged:2,raw:{rate:.031,low:0,high:.127},adjusted:{rate:.031,low:0,high:.127},
  precision:1,recall:1,labeled:0,made_up:22,more:0,misses:[

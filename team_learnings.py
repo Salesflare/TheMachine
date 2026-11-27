@@ -565,7 +565,7 @@ def evidence(db, quality=None, current=None, accounts=None):
     q = {}
     if quality:
         try:
-            q = {k: v for k, v in quality().items() if k in ('cards', 'worth_it', 'dismissed', 'hit_rate', 'first_time_rate', 'finished_rate', 'by_source')}
+            q = {k: v for k, v in quality().items() if k in ('cards', 'worth_it', 'dismissed', 'hit_rate', 'do_it', 'outcomes', 'done_rate', 'first_time_rate', 'no_nudge_rate', 'by_source')}
         except Exception:
             q = {}
     rows = ([{'what': 'note', **n} for n in notes] + [{'what': 'fact', 'text': f} for f in facts] + [{'what': 'rule_change', 'text': r} for r in rules]

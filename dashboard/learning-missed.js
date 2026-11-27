@@ -23,25 +23,25 @@ function missedNodes(m){if(!m)return [];const est=m.adjusted||m.raw;if(!est||est
 // line on what it will show and how far along it is, the mascot as on other empty states, and the Change notes by kind.
 function qualityWait(decided,enough,notes){const done=Math.min(decided,enough),line=t('{} of {} to-dos decided',done,enough);
  return [make('div',{class:'empty all-clear q-wait'},make('img',{class:'sticker',src:'brand/thinking.webp',alt:''}),make('div',{},make('strong',{},t('Too early for numbers.')),
-  make('span',{},t('After {} decided to-dos, this shows how many were worth it, right the first try and sent as is.',enough)),
+  make('span',{},t('After {} decided to-dos, this shows how many were worth it, done, right the first try and sent as is.',enough)),
   make('span',{class:'fl-bar',role:'progressbar','aria-label':line,'aria-valuemin':'0','aria-valuemax':String(enough),'aria-valuenow':String(done)},make('i',{style:{width:Math.round(100*done/enough)+'%'}})),
   make('small',{class:'q-count'},line))),noteSplit(notes)].filter(x=>x!=='')}
 // How it's going and Missed to-dos, drawn again from state
 function noteSplit(n){if(!n)return'';const parts=[['style','style'],['fact','missing facts'],['continue','keep going'],['new_ask','new asks'],['unsorted','not sorted']].filter(([k])=>n[k]);
 return parts.length?make('div',{class:'notes-split'},make('span',{},'What your Change notes asked for'),make('div',{},parts.map(([k,t])=>make('span',{class:`chip t-${{style:'lavender',fact:'amber',continue:'orange',new_ask:'mint',unsorted:'muted'}[k]}`},`${n[k]} ${t}`)))):''}
 // How it's going (Learning): the last 30 days in four numbers, each saying what it counts (assistant.py quality():
-// Worth it = acted on (Do it, Send or Done) of those decided, dismissed ones being the rest; First try and Finished count
-// to-dos started with Do it; Sent as is = drafts sent without an edit, a Change or Try again first). Higher is better for
-// all four. Then Worth it week by week (8 weeks, each bar its own %), the Change notes by kind, and Worth it per source.
+// Worth it = acted on (Do it, Send or Done) of those decided, dismissed ones being the rest; Done = of the to-dos started
+// with Do it that closed, the ones done (open ones named, counted once they close); First try = of those done, no
+// correction; Sent as is = drafts sent without an edit, a Change or Try again first). Higher is better for all four. Then Worth it week by week (8 weeks, each bar its own %), the Change notes by kind, and Worth it per source.
 const qPct=(a,b)=>b?Math.round(100*a/b):null;
 function qWas(v,prev){if(v==null||prev==null)return'';return make('small',{class:'q-was'},v>prev?t('Up from {}% the 30 days before',prev):v<prev?t('Down from {}% the 30 days before',prev):t('Same as the 30 days before'))}
-function qTile(value,name,means,was=''){return make('div',{class:'q-tile'},make('span',{class:'q-name'},t(name)),make('b',{},value==null?'–':typeof value=='string'?value:value+'%'),make('small',{class:'q-means'},means),was)}
+function qTile(value,name,means,was='',more=''){return make('div',{class:'q-tile'},make('span',{class:'q-name'},t(name)),make('b',{},value==null?'–':typeof value=='string'?value:value+'%'),make('small',{class:'q-means'},means),was,more)}
 // Before enough decided to-dos (q.enough, QUALITY_ENOUGH in profile.py): qualityWait
 function qualityNodes(q){const decided=q?(q.worth_it||0)+(q.dismissed||0):0,enough=q?.enough||3;if(decided<enough)return qualityWait(decided,enough,q?.notes);
- const sent=(q.sent_as_written||0)+(q.sent_edited||0),few=t('Not enough to-dos yet');
+ const sent=(q.sent_as_written||0)+(q.sent_edited||0),few=t('Not enough to-dos yet'),still=(q.outcomes?.open||0)+(q.outcomes?.reopened||0);
  const tiles=[qTile(q.hit_rate,'Worth it',decided?t(['Of {} to-do you decided: acted on, not dismissed','Of {} to-dos you decided: acted on, not dismissed'],decided):few,qWas(q.hit_rate,q.previous?.hit_rate)),
-  qTile(q.first_time_rate,'First try',q.do_it?t(['Of {} to-do started with Do it: no correction needed','Of {} to-dos started with Do it: no correction needed'],q.do_it):few,qWas(q.first_time_rate,q.previous?.first_time_rate)),
-  qTile(q.finished_rate,'Finished',q.do_it?t(['Of {} to-do started with Do it: finished without a nudge','Of {} to-dos started with Do it: finished without a nudge'],q.do_it):few,qWas(q.finished_rate,q.previous?.finished_rate)),
+  qTile(q.done_rate,'Done',q.done_rate!=null?t(['Of {} to-do closed after Do it: done','Of {} to-dos closed after Do it: done'],q.settled):few,qWas(q.done_rate,q.previous?.done_rate),still?make('small',{class:'q-was'},t('{} still open',still)):''),
+  qTile(q.first_time_rate,'First try',q.first_time_rate!=null?t(['Of {} to-do done after Do it: no correction needed','Of {} to-dos done after Do it: no correction needed'],q.done):few,qWas(q.first_time_rate,q.previous?.first_time_rate)),
   qTile(qPct(q.sent_as_written||0,sent),'Sent as is',sent?t(['Of {} draft sent: no edit or Change first','Of {} drafts sent: no edit or Change first'],sent):t('No drafts sent yet'))];
  const src=Object.entries(q.by_source||{}).sort((a,b)=>(b[1].worth_it+b[1].dismissed)-(a[1].worth_it+a[1].dismissed));
  const srcRow=([k,n])=>{const d=n.worth_it+n.dismissed;return make('div',SOURCE_TIPS[k]?{title:SOURCE_TIPS[k]}:{},make('span',{class:'grow'},k,SOURCE_TIPS[k]?make('small',{},SOURCE_TIPS[k]):''),make('span',{class:'q-n'},d?[t('{} of {}',n.worth_it,d)+' ',make('b',{},qPct(n.worth_it,d)+'%')]:t('None decided yet')))};
