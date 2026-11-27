@@ -29,7 +29,7 @@ Each opens that step of your account, and a change in price shows the amount to 
 
 Ask "who knows someone at Acme?" from the Fleet tab, or **Ask the Fleet** on an organization in the [Graph](graph.md). Each teammate's Machine answers by their own sharing rules, and asks them first when the rule says so.
 
-For anything else, use **Ask anything** in your Work Fleet's pane. Each teammate gets a draft answer from their own work accounts, and nothing comes back until they send it.
+For anything else, use **Ask anything** in your Work Fleet's pane. Each teammate gets a draft answer from their own work accounts, and nothing comes back until they send it. The draft only counts what they wrote or met about. Mail that only came in, like a newsletter or a CC, shows as found but drafts nothing.
 
 ## Answered by itself in a Work Fleet
 

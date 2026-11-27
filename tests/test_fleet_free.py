@@ -47,9 +47,7 @@ class Free(unittest.TestCase):
         self.assertNotIn('‮', waiting['question'])
         self.assertNotIn('\n', waiting['question'])
         self.assertEqual(waiting['draft']['matches'][0]['title'], 'Stripe dispute opened')
-        self.assertIn('Yes, I have: 1 email', waiting['draft']['text'])
-        self.assertRegex(waiting['draft']['text'], r'most recently in [A-Z][a-z]+( \d{4})?\.')  # a month by its name, not 2026-11
-        self.assertNotIn('40k', waiting['draft']['text'])
+        self.assertEqual(waiting['draft']['text'], '')  # mail that only came in: found, but no "I have" for the owner
         # The question went nowhere else: no preparation, no card, no agent turn
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT COUNT(*) FROM suggestions').fetchone()[0], 0)
@@ -101,6 +99,10 @@ class Free(unittest.TestCase):
         self.assertEqual(self.ask('q9', 'one more about invoices'), 'declined')
 
     def test_telegram_offers_send_this_answer_and_dont_answer_only(self):
+        reply = mail('work', 1, 'Owner <owner@acme.example>', 'disputes@stripe.example')
+        reply.update(title='Re: Stripe dispute opened', body='Sent the evidence for the Stripe dispute.')
+        reply['metadata']['labels'] = ['SENT']
+        self.store.commit_page('work', {}, [reply])
         self.ask()
         with self.store.connect() as db:
             row = db.execute("SELECT * FROM fleet_in WHERE id='q1'").fetchone()
@@ -116,7 +118,7 @@ class Free(unittest.TestCase):
             self.fleet.decide_from_telegram('q1', 'always', '55')
         done = self.fleet.decide_from_telegram('q1', 'once', '55')
         self.assertEqual(done['status'], 'answered')
-        self.assertTrue(self.relay.sent('/answer')[-1]['answer']['text'].startswith('Yes, I have'))
+        self.assertTrue(self.relay.sent('/answer')[-1]['answer']['text'].startswith('I wrote 1 email on this'))
         self.assertEqual(fleet.push_payload([row], 'https://m.example/')['actions'], [{'action': 'open', 'title': 'Open draft'}])  # it opens the draft, nothing else
 
     def test_the_asker_sees_answers_per_teammate_and_no_answer_after_a_while(self):
@@ -146,6 +148,90 @@ class Free(unittest.TestCase):
         self.assertEqual(self.fleet.view()['asked'], [])  # free questions have their own list
         # an answer that doesn't fit (no text, another shape) is no answer
         self.assertIsNone(fleet.clean_answer('anything', {'names': ['x']}))
+
+
+class Evidence(unittest.TestCase):
+    """Found is not experience: only what the owner wrote, said in their own chat or met about makes a first-person
+    draft. A newsletter, a CC, someone else's group or channel message show up as matches and draft nothing."""
+    QUESTION = 'Has anyone dealt with Stripe chargeback disputes?'
+
+    def draft(self, *events):
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        store = machine_main.Store(Path(temp.name) / 'events.sqlite')
+        store.commit_page('work', {}, list(events))
+        with store.connect() as db:
+            return fleet.free_draft(db, ['work'], self.QUESTION, internal={'acme.example'}, mine={'owner@acme.example'}, slack={'UOWNER'})
+
+    def signal(self, kind, title, body, **metadata):
+        n = next(COUNT)
+        return {'account_id': 'work', 'source_id': f'e{n}', 'kind': kind, 'occurred_at': (NOW - dt.timedelta(days=2)).isoformat(),
+                'title': title, 'body': body, 'deleted': False, 'metadata': metadata}
+
+    def incoming(self, title, body, sender, to='owner@acme.example', cc='', **extra):
+        e = mail('work', 2, sender, to, cc)
+        e.update(title=title, body=body)
+        e['metadata'].update(extra)
+        return e
+
+    def sent(self):
+        e = mail('work', 2, 'Owner <owner@acme.example>', 'lee@client.example')
+        e.update(title='Re: Stripe chargeback dispute', body='I sent the evidence for the Stripe dispute and we won it.')
+        e['metadata']['labels'] = ['SENT']
+        return e
+
+    def test_received_material_makes_no_first_person_claim(self):
+        passive = {
+            'newsletter': self.incoming('Stripe newsletter: winning chargeback disputes', 'Tips on Stripe disputes.', 'Stripe <news@stripe.example>',
+                                        list_unsubscribe='<https://stripe.example/u>'),
+            'cc': self.incoming('Re: Stripe chargeback dispute', 'Looping in the team on this Stripe dispute.', 'Kim <kim@client.example>',
+                                to='finance@client.example', cc='owner@acme.example'),
+            'group': self.signal('whatsapp.message', 'Founders', 'Anyone seen Stripe chargeback disputes spike?', from_me=False,
+                                 chat_id='123@g.us', sender_id='555@s.whatsapp.net'),
+            'channel': self.signal('slack.message', '#finance', 'Stripe chargeback disputes are piling up.', user_id='UOTHER',
+                                   conversation_type='channel'),
+            'declined meeting': self.signal('calendar.event', 'Stripe chargeback disputes webinar', 'Stripe disputes.', status='confirmed',
+                                            attendees=[{'email': 'owner@acme.example', 'self': True, 'responseStatus': 'declined'}]),
+        }
+        for name, event in passive.items():
+            with self.subTest(name):
+                text, matches = self.draft(event)
+                self.assertEqual(text, '')
+                self.assertEqual(len(matches), 1)  # still shown to the owner, as found
+
+    def test_what_the_owner_wrote_or_met_about_makes_a_qualified_draft(self):
+        cases = {
+            'authored email': (self.sent(), 'I wrote 1 email on this, with client.example'),
+            'own slack message': (self.signal('slack.message', '#finance', 'I wrote the runbook for Stripe chargeback disputes.',
+                                              user_id='UOWNER', conversation_type='channel'), 'I wrote 1 message on this'),
+            'explicit statement': (self.signal('whatsapp.message', 'Sam', 'I handled Stripe chargeback disputes for two years.',
+                                               from_me=True, chat_id='777@s.whatsapp.net'), 'I wrote 1 message on this'),
+            'attended meeting': (self.signal('calendar.event', 'Stripe chargeback disputes review', 'Stripe disputes.', status='confirmed',
+                                             attendees=[{'email': 'owner@acme.example', 'self': True, 'responseStatus': 'accepted'},
+                                                        {'email': 'kim@client.example'}]), 'I was in 1 meeting on this, with client.example'),
+        }
+        for name, (event, said) in cases.items():
+            with self.subTest(name):
+                text, _ = self.draft(event)
+                self.assertTrue(text.startswith(said), text)
+                self.assertRegex(text, r'most recently in [A-Z][a-z]+( \d{4})?\. Happy to tell you more\.$')  # a month by its name
+                self.assertNotIn('two years', text)  # what they said stays on this Machine; the owner tells more themselves
+
+    def test_only_the_owners_part_is_counted(self):
+        news = self.incoming('Stripe newsletter: chargeback disputes', 'Stripe disputes.', 'Stripe <news@stripe.example>')
+        cc = self.incoming('Stripe chargeback dispute', 'Stripe dispute.', 'Kim <kim@client.example>', to='x@client.example', cc='owner@acme.example')
+        text, matches = self.draft(news, cc, self.sent())
+        self.assertEqual(len(matches), 3)
+        self.assertTrue(text.startswith('I wrote 1 email on this'), text)
+
+    def test_telegram_says_no_draft_when_only_received_mail_matched(self):
+        row = {'id': 'q1', 'kind': 'anything', 'status': 'waiting', 'choice': None, 'name': 'Pat', 'question': json.dumps({'text': 'Stripe disputes?'}),
+               'draft': json.dumps({'text': '', 'matches': [{'id': 1, 'title': 'Stripe newsletter'}]})}
+        text = fleet.telegram_message([row], 'https://m.example/')['text']
+        self.assertIn('No draft this time', text)
+        self.assertNotIn('Nothing found', text)
+
+
+COUNT = iter(range(1, 10**6))
 
 
 if __name__ == '__main__':
