@@ -11,7 +11,8 @@ So a turn here is Claude Code alone: no tools (`--tools ""`), no MCP servers, no
 files or CLAUDE.md, a one-line system prompt, nothing saved as a session, run in an empty folder. The prompt goes on
 stdin. Claude Code's own sign-in is used the way OpenClaw uses it: the variables OpenClaw clears before it starts
 Claude Code (an API key, a base URL, a token) are cleared here too. Its sign-in is never read, except a setup-token
-sign-in in its user settings, handed to it as OpenClaw's route gets it (env()).
+sign-in in its user settings, handed on to it (env()); never to the AI's check, which signs in only as OpenClaw's
+Gateway does.
 
 `search` is the same turn with one tool, Claude Code's own web search, for one search (machine/signin_search.py).
 """
@@ -56,11 +57,16 @@ def binary(config):
     return (config or {}).get('claude') or shutil.which('claude') or (str(local) if local.exists() else None)
 
 
-def env():
-    """The environment Claude Code runs in here: CLEAR_ENV cleared, as OpenClaw does. A setup-token sign-in (the cloud's
-    agent keeps it as CLAUDE_CODE_OAUTH_TOKEN in Claude Code's user settings, which OpenClaw's `--setting-sources
-    user` reads) is handed on, since a turn here reads no settings file. Passed to Claude Code only, never logged."""
+def env(hand_on=True):
+    """The environment Claude Code runs in here: CLEAR_ENV cleared, as OpenClaw does. With `hand_on`, a setup-token
+    sign-in the cloud's agent keeps as CLAUDE_CODE_OAUTH_TOKEN in Claude Code's user settings is handed on, since a turn
+    here reads no settings file. Passed to Claude Code only, never logged. Without it (gateway: the AI's check), Claude
+    Code signs in only as OpenClaw's Gateway starts it, with no settings files either: from its own credentials. The
+    Gateway never gets the settings' token, and a check that had it said ok while every Gateway turn was "Not logged
+    in" (2026-11-27)."""
     found = {k: v for k, v in os.environ.items() if k not in CLEAR_ENV}
+    if not hand_on:
+        return found
     try:
         settings = json.loads((Path.home() / '.claude' / 'settings.json').read_text())
     except (OSError, ValueError):
@@ -71,10 +77,10 @@ def env():
     return found
 
 
-def run(config, text, model, thinking=None, timeout=90, call=None):
-    """The reply's text for `text`, on the Claude model `model` (a `claude-cli/x` or `anthropic/x` ref). Raises Failed,
-    and subprocess.TimeoutExpired past `timeout` seconds."""
-    result = _call(config, text, model, ['--output-format', 'json', '--tools', ''], thinking, timeout, call)
+def run(config, text, model, thinking=None, timeout=90, call=None, gateway=False):
+    """The reply's text for `text`, on the Claude model `model` (a `claude-cli/x` or `anthropic/x` ref), signed in as
+    OpenClaw's Gateway is with `gateway` (env). Raises Failed, and subprocess.TimeoutExpired past `timeout` seconds."""
+    result = _call(config, text, model, ['--output-format', 'json', '--tools', ''], thinking, timeout, call, not gateway)
     try:
         data = json.loads(result.stdout or '{}')
     except ValueError:
@@ -87,7 +93,7 @@ def run(config, text, model, thinking=None, timeout=90, call=None):
     raise Failed((answer if data.get('is_error') else '') or ' '.join(lines[-3:]) or 'Claude Code gave an empty answer.')
 
 
-def _call(config, text, model, how, thinking, timeout, call):
+def _call(config, text, model, how, thinking, timeout, call, hand_on=True):
     claude = binary(config)
     if not claude:
         raise Failed(t('Claude Code is not installed.'))
@@ -97,7 +103,7 @@ def _call(config, text, model, how, thinking, timeout, call):
         args += ['--effort', EFFORT[thinking]]
     with tempfile.TemporaryDirectory(prefix='claude-turn-') as folder:
         try:
-            return (call or subprocess.run)(args, input=text, capture_output=True, text=True, timeout=timeout, env=env(), cwd=folder)
+            return (call or subprocess.run)(args, input=text, capture_output=True, text=True, timeout=timeout, env=env(hand_on), cwd=folder)
         except OSError:
             raise Failed(t('Claude Code could not be started.')) from None
 

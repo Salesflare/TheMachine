@@ -77,10 +77,20 @@ class ClaudePrint(unittest.TestCase):
             claude_print.run({'claude': 'c'}, 'x', 'claude-cli/m', call=call)
             self.assertEqual(seen['env']['CLAUDE_CODE_OAUTH_TOKEN'], 'sk-ant-oat01-kept')
             self.assertNotIn('OTHER', seen['env'])
+            # the AI's check signs in as OpenClaw's Gateway does, which never gets that token: it said ok while every
+            # Gateway turn was "Not logged in" (2026-11-27)
+            claude_print.run({'claude': 'c'}, 'x', 'claude-cli/m', call=call, gateway=True)
+            self.assertNotIn('CLAUDE_CODE_OAUTH_TOKEN', seen['env'])
             for broken in ('not json', '[]', '{"env": []}'):
                 (home / '.claude' / 'settings.json').write_text(broken)
                 claude_print.run({'claude': 'c'}, 'x', 'claude-cli/m', call=call)
                 self.assertNotIn('CLAUDE_CODE_OAUTH_TOKEN', seen['env'])
+
+    def test_the_ai_s_check_and_the_fallback_checks_sign_in_as_the_gateway_does(self):
+        import model_fallback
+        with mock.patch.object(claude_print, 'run', return_value='OK') as run:
+            self.assertTrue(model_fallback.turn(self.config('claude-cli/claude-opus-5-5'))[0])
+        self.assertIs(run.call_args.kwargs.get('gateway'), True)  # one-shot features keep the hand-on (the test above)
 
     def test_its_own_error_or_why_there_was_none(self):
         fail = lambda answer: (lambda args, **kw: answer)

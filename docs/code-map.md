@@ -256,7 +256,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `machine/sources/exclusions.py`, `salesflare.py` and `telegram.py` (the exclusion rules and the Salesflare and
   Telegram sources), `machine/sources/gmail.py` and `calendar.py` (the Gmail and Calendar sources with their sync,
   rooms, guests, owners and write helpers), `machine/model_usage.py` (the model's usage and resets, the Codex app
-  server, Node and Telegram environment helpers), `machine/ai_training.py` (whether the owner's AI plan trains on
+  server, Node and Telegram environment helpers), `machine/work_report.py` (how the background jobs went in the last
+  24 hours, counts only, for the hosted health report), `machine/ai_training.py` (whether the owner's AI plan trains on
   chats by default, the provider's setting to turn it off, and Done), `machine/sources/android.py` and `gateway.py` (the Android
   notification feed and the Gateway journal source), `machine/sources/connectors.py` (connector plugins and helpers,
   hosted sign-ins, silent failures, read windows, the connector prompt lines) and `whatsapp.py` (the WhatsApp source),
