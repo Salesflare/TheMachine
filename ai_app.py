@@ -344,7 +344,7 @@ class AiApp:
             message = json.loads(body or b'null')
         except ValueError:
             return self.ai_json(400, ai_access._error(None, -32700, 'Parse error'))
-        brief = self.ai_brief if self.config.get(ai_learnings.FLAG) else None
+        brief = self.ai_brief if ai_learnings.on(self.config) else None
         handle = lambda m: ai_access.handle(self.store.connect, m, connection, why, self.ai_tool, self.ai_limiter, brief)
         if isinstance(message, list):
             replies = [r for r in (handle(m) for m in message[:20]) if r]
@@ -701,7 +701,7 @@ class AiApp:
 
     def ai_rules_waiting(self):
         """Learning's rules from connected AIs that wait for the owner's OK (Approve runs ai_apply, Dismiss ai_dismiss)."""
-        if not self.config.get(ai_learnings.FLAG):
+        if not ai_learnings.on(self.config):
             return []
         with self.store.connect() as db:
             return ai_access.rules_waiting(db)

@@ -42,14 +42,14 @@ try{
   assert.equal(await add.getAttribute('href'),DIRECTORY);
   assert.equal(await add.getAttribute('target'),'_blank');
   assert.match(await add.getAttribute('rel'),/noopener/);
-  // Add in ChatGPT (The Machine's published ChatGPT app) and Add in Claude, nothing else on top
+  // Add in ChatGPT (The Machine's published ChatGPT app) and Add in Claude, then Claude's skill (a download), nothing else on top
   const chatgpt=page.locator('#ai-official a[data-ai-chatgpt]');
   assert.equal(await chatgpt.innerText(),'Add in ChatGPT');
   assert.equal(await chatgpt.getAttribute('href'),CHATGPT);
   assert.equal(await chatgpt.getAttribute('target'),'_blank');
   assert.match(await chatgpt.getAttribute('rel'),/noopener/);
   const rows=await page.locator('#ai-official>div').allInnerTexts();
-  assert.equal(rows.length,2);assert.match(rows[0],/ChatGPT/);assert.match(rows[1],/Claude/);
+  assert.equal(rows.length,3);assert.match(rows[0],/ChatGPT/);assert.match(rows[1],/Claude/);assert.match(rows[2],/Claude skill/);
   // Or add it by address, folded: the shared address and the private one with Copy, and the steps by hand
   const fold=page.locator('#ai-fold');
   assert.equal(await fold.locator('summary').innerText(),'Or add it by address');
@@ -71,7 +71,7 @@ try{
   reach={hosted:false,paired:true,name:'pat',address:'https://pat.mcp.themachine.computer/mcp',tls:'ready',shared:SHARED};
   await page.reload();await page.locator('#ai-official [data-ai-chatgpt]').waitFor();
   assert.equal(await page.locator('#ai-official [data-ai-claude]').count(),1);
-  assert.equal(await page.locator('#ai-official>div').count(),2);
+  assert.equal(await page.locator('#ai-official>div').count(),3);  // ChatGPT, Claude, Claude skill
   assert.equal(await page.locator('#settings-ai [data-ai-unpair], #settings-ai [data-acct-unpair]').count(),0);
   assert.ok(!/Unpair|Paired with|end-to-end/i.test(await page.locator('#settings-ai').textContent()),'no pairing in Apps');
   assert.equal(await page.locator('#ai-fold [data-copy-command]').count(),2);

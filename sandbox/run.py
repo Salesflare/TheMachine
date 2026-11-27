@@ -158,7 +158,8 @@ def fake_ask(config, prompt):
 def seed_ai(app):
     """Settings, Apps (ai_access.py): Claude connected through the official app for Work with Read & edit, ChatGPT for
     Work with Read (each signed in twice, shown once), and a key
-    for a script that only reads, with a few calls each and one refused. Writes only through ai_access."""
+    for a script that only reads, with a few calls each and one refused; Claude read the brief and the learnings, and
+    saved a fact and a rule that waits in Learning. Writes only through ai_access."""
     import ai_access
     from machine import todo_states
     now = dt.datetime.now(dt.timezone.utc)
@@ -177,7 +178,8 @@ def seed_ai(app):
         sign_in('claude', 'Claude', 'draft', 'work')
         cid = sign_in('claude', 'Claude', 'draft', 'work')
         key = ai_access.new_key(db, 'Morning script', 'read', 'both', '7d')['id']
-        lines = [(cid, 25, 'list_todos', 'ok', '6 to-dos'), (cid, 24, 'search_graph', 'ok', '2 found'),
+        lines = [(cid, 26, 'brief', 'ok', ''), (cid, 25.5, 'get_learnings', 'ok', '8 learnings'),
+                 (cid, 25, 'list_todos', 'ok', '6 to-dos'), (cid, 24, 'search_graph', 'ok', '2 found'),
                  (cid, 20, 'get_todo', 'ok', '“Send the renewal quote”'),
                  (cid, 15, 'create_draft', 'ok', 'To buyer@client.example: “Renewal quote”'),
                  (chatgpt, 30, 'list_promises', 'ok', '4 promises'), (key, 14, 'list_todos', 'ok', '9 to-dos'), (key, 13, 'create_todo', 'refused', 'Refused: this connection can only read')]
@@ -214,6 +216,14 @@ def seed_ai(app):
         with app.store.connect() as db:
             ai_access.log(db, cid, 'save_fact', 'ok', said, at=now - dt.timedelta(minutes=5), write=write)
         break
+    # What it learned in the chat (save_learning): a fact goes in with Undo; a rule waits in Learning for Approve
+    for kind, text, minutes in (('fact', 'Renewals go out in the first week of the quarter', 4), ('rule', 'Always copy the account manager on renewal emails', 3)):
+        try:
+            _, said, write = app.ai_tool(claude, 'save_learning', {'kind': kind, 'text': text})
+        except ValueError:
+            break
+        with app.store.connect() as db:
+            ai_access.log(db, cid, 'save_learning', 'ok', said, at=now - dt.timedelta(minutes=minutes), write=write)
 
 
 def seed_transcript(app):

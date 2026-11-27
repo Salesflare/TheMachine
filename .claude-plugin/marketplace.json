@@ -1,0 +1,19 @@
+{
+  "name": "the-machine",
+  "owner": {
+    "name": "The Machine"
+  },
+  "metadata": {
+    "description": "The Machine's plugin for Claude Code: its MCP connection and the skill that tells Claude when to use it."
+  },
+  "plugins": [
+    {
+      "name": "the-machine",
+      "source": "./claude-plugin",
+      "description": "The Machine's MCP connection and a skill that tells Claude when to use it: the brief, the owner's learnings and voice, the Graph.",
+      "homepage": "https://themachine.computer",
+      "license": "AGPL-3.0-only",
+      "category": "productivity"
+    }
+  ]
+}

@@ -136,9 +136,9 @@ brief their Fleet tab shows. Teammates' Team Graph records and threads never go 
 | `add_summary_line` | Read & edit | A line on a person's summary (`id`, `text`), shown "AI: <name>" (`person_summary.add_line`) |
 | `search_messages` | Read, with Messages on | Messages by words (`query`, optional), `channel`, `area`, newest first: who, when, subject and the first 300 characters, each with its thread. With `person` (an id from `search_graph`): only the messages with that person or organization, from every address and number merged into them, as their Graph page's timeline has them |
 | `read_thread` | Read, with Messages on | The thread or chat around one message (`id`), oldest first, up to 30 messages of up to 4000 characters |
-| `get_learnings` | Read, with `ai_learnings` on | The owner's rules, general facts and voice per channel, as Learning has them, in the connection's area; optional `query` (every word in it) and `limit` (30, at most 100 of each) ([Learnings and the brief](#learnings-and-the-brief)) |
-| `get_brief` | Read, with `ai_learnings` on | The brief the server's instructions end with, for apps that don't read those |
-| `save_learning` | Read & edit, with `ai_learnings` on | A general fact (in at once, Undo) or a rule (waits for the owner's OK) the owner settled in the chat (`kind`, `text`, a fact's optional `sort` and `until`); never a voice ([Learnings and the brief](#learnings-and-the-brief)) |
+| `get_learnings` | Read | The owner's rules, general facts and voice per channel, as Learning has them, in the connection's area; optional `query` (every word in it) and `limit` (30, at most 100 of each) ([Learnings and the brief](#learnings-and-the-brief)) |
+| `get_brief` | Read | The brief the server's instructions end with, for apps that don't read those |
+| `save_learning` | Read & edit | A general fact (in at once, Undo) or a rule (waits for the owner's OK) the owner settled in the chat (`kind`, `text`, a fact's optional `sort` and `until`); never a voice ([Learnings and the brief](#learnings-and-the-brief)) |
 
 Every tool is listed to every connection. A tool above the connection's level is refused with what to change and where,
 and the refusal is logged. The AI can't raise its own level.
@@ -192,8 +192,9 @@ AI](intelligence.md#import-from-another-ai)).
 
 ## Learnings and the brief
 
-Off until the config's `ai_learnings` is on (`ai_learnings.FLAG`). Off, the two tools are neither listed nor answered
-("Unknown tool") and the instructions are as before.
+On for everyone. A config with `ai_learnings` false turns it off (`ai_learnings.on`): then `get_learnings`, `get_brief`
+and `save_learning` are neither listed nor answered ("Unknown tool"), the instructions carry no brief and Learning shows
+no waiting rules.
 
 **get_learnings** (`ai_learnings.learnings`) gives what Learning, What I've learned has: the rules (How to do things),
 the general facts (about no one in the Graph; a fact about someone is on their record) and the voice of each channel.
@@ -396,22 +397,24 @@ until it is disconnected there.
 
 `claude-plugin/skills/the-machine/SKILL.md` tells an AI when to use The Machine: read the brief when a chat starts,
 `get_learnings` before drafting for the owner, `search_graph` before answering about someone, `save_learning` or
-`save_fact` when the owner settles something in the chat, never a claim that it sent. It needs `ai_learnings` on (its
-tools), so it is published only once that is on everywhere. `tests/test_ai_skill.py` keeps it true to the server.
+`save_fact` when the owner settles something in the chat, never a claim that it sent. `tests/test_ai_skill.py` keeps it
+true to the server.
 
-`claude-plugin/` is a Claude Code plugin: the MCP server (`.mcp.json`, the official address) and the skill. Where it
-goes, each publish needing the owner's OK first:
+`claude-plugin/` is a Claude Code plugin: the MCP server (`.mcp.json`, the official address) and the skill.
+`.claude-plugin/marketplace.json` at the repository's root lists it. `scripts/skill_package.py` packs the skill twice, and
+desktop.yml's publish puts both zips on each desktop release, from its tag (`release.py cut` starts that build when
+`claude-plugin/` changed too), so the newest is at `releases/latest/download/`: `the-machine-skill.zip` (the folder,
+for claude.ai) and `the-machine-clawhub.zip` (its files at the top, for ClawHub). Settings, Apps has **Claude skill**
+with **Download** under Add in Claude, which links the first.
 
 | Where | How | State |
 |---|---|---|
-| Claude Code | A marketplace file at the repository's root (`.claude-plugin/marketplace.json`, `source: ./claude-plugin`), then `/plugin marketplace add Salesflare/TheMachine` and `/plugin install the-machine`; or Anthropic's plugin directory | Not added |
-| claude.ai, Claude Desktop | A zip of `skills/the-machine/` uploaded in Settings, Capabilities, Skills (per person), or for a whole Team or Enterprise by its admin. The directory listing (Add in Claude) carries the MCP only | Per person |
-| OpenClaw | `clawhub publish` of the folder, with the same frontmatter (name, description). Our published `salesflare` skill is the model | Not published |
+| Claude Code | `/plugin marketplace add Salesflare/TheMachine`, then `/plugin install the-machine@the-machine`; or Anthropic's plugin directory (a submission) | Marketplace in the repository; directory needs the owner's OK |
+| claude.ai, Claude Desktop | `the-machine-skill.zip` uploaded in Customize, Skills (per person), or for a whole Team or Enterprise by its admin. The directory listing (Add in Claude) carries the MCP only | Per person, from Settings, Apps |
+| OpenClaw | `clawhub publish` of the folder (or `the-machine-clawhub.zip`), with the same frontmatter (name, description). Our published `salesflare` skill is the model | Needs the owner's OK |
 | Codex | The folder in `~/.codex/skills/`, or its text in `AGENTS.md` | Per person |
 | Cursor | The text as a rule (`.cursor/rules/the-machine.mdc`) with the MCP in `mcp.json` | Per person |
 | ChatGPT | No skills: the app's instructions are the MCP `initialize` instructions and the brief, which say the same in short | Built in |
-
-Settings, Apps has no Add skill link next to Add in Claude: the settings part is at its size ceiling.
 
 ## Decided
 

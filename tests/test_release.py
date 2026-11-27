@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest import mock
 
@@ -14,6 +15,9 @@ sys.path.insert(0, str(HERE))
 spec = importlib.util.spec_from_file_location('release', HERE / 'scripts' / 'release.py')
 release = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(release)
+spec = importlib.util.spec_from_file_location('skill_package', HERE / 'scripts' / 'skill_package.py')
+skill_package = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(skill_package)
 WHO = ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid']
 
 
@@ -348,7 +352,7 @@ class Releases(unittest.TestCase):
         self.assertEqual(release.releases(), tags)
         self.gate.assert_called_once()
 
-    def test_a_release_builds_the_desktop_app_only_when_it_changed(self):
+    def test_a_release_builds_the_desktop_app_only_when_it_or_the_skill_changed(self):
         self.tag('release-20261021-1200')
         (self.origin / 'desktop').mkdir()
         (self.origin / 'desktop' / 'main.rs').write_text('fn main() {}')
@@ -374,6 +378,16 @@ class Releases(unittest.TestCase):
             latest[0] = ''  # none published yet
             release.desktop_release('release-20261023-1200')
             self.assertIn(['workflow', 'run'], calls)
+        # the skill's zips go on the same release: a change to it builds one too
+        (self.origin / 'claude-plugin').mkdir()
+        (self.origin / 'claude-plugin' / 'SKILL.md').write_text('---\nname: the-machine\n---\n')
+        self.commit('only the skill changes')
+        self.tag('release-20261024-1200')
+        run('git', 'fetch', '-q', '--tags', 'origin', cwd=self.app)
+        latest[0], calls[:] = 'release-20261023-1200', []
+        with mock.patch.object(release.subprocess, 'run', side_effect=gh):
+            release.desktop_release('release-20261024-1200')
+        self.assertIn(['workflow', 'run'], calls)
 
     def test_cut_refuses_a_commit_with_translations_missing(self):
         # the commit's own translator decides, run on its own files: here one that finds a help article missing
@@ -582,6 +596,26 @@ class Releases(unittest.TestCase):
             release.main(['cut', '--key', str(self.other), '--no-push'])
         self.assertIn('Not released', str(refused.exception))
         self.assertEqual(release.releases(), [])
+
+
+class Skill(unittest.TestCase):
+    """The skill's zips each desktop release carries (scripts/skill_package.py, desktop.yml's publish), the first of which
+    Settings, Apps links."""
+
+    def test_the_zips_hold_the_skill_as_each_place_reads_it(self):
+        with tempfile.TemporaryDirectory() as out:
+            made = skill_package.pack(out)
+            again = {k: Path(v).read_bytes() for k, v in skill_package.pack(Path(out) / 'again').items()}
+            with zipfile.ZipFile(made['claude']) as box:  # claude.ai: one folder, its SKILL.md inside
+                self.assertEqual(box.namelist(), ['the-machine/SKILL.md'])
+                self.assertEqual(box.read('the-machine/SKILL.md'), HERE.joinpath('claude-plugin/skills/the-machine/SKILL.md').read_bytes())
+            with zipfile.ZipFile(made['clawhub']) as box:  # ClawHub: the folder's files at the top
+                self.assertEqual(box.namelist(), ['SKILL.md'])
+            self.assertEqual({k: Path(v).read_bytes() for k, v in made.items()}, again)  # the same bytes each time
+        workflow = HERE.joinpath('.github/workflows/desktop.yml').read_text(encoding='utf-8')
+        self.assertIn('python3 src/scripts/skill_package.py out', workflow)
+        settings = HERE.joinpath('dashboard/settings-ai.js').read_text(encoding='utf-8')
+        self.assertIn('releases/latest/download/' + skill_package.NAMES['claude'], settings)
 
 
 if __name__ == '__main__':

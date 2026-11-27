@@ -6,8 +6,6 @@
 [data-app-desk] .alt{background:var(--surface-2);border-color:var(--border-strong);color:var(--text)}
 [data-app-desk] .alt:hover{background:var(--c-hover);color:var(--text)}
 [data-app-desk] .dl{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.settings-list>.ai-conn{flex-wrap:wrap;gap:8px}
-.ai-conn .grow{flex-basis:100%}
 .ai-controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ai-controls .ghost{padding-inline:10px}
 .ai-controls select{width:auto;max-width:100%;field-sizing:content}

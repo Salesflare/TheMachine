@@ -260,8 +260,8 @@ own or an AppImage unpacked into a folder, is left as it is: take the newer file
 
 ## Releases
 
-`python3 scripts/release.py cut` signs a release of The Machine (`release-YYYYMMDD-HHMM`). When `desktop/` changed since
-the GitHub release that is the latest (or there is none), it starts `Desktop prototype` on main with that tag; else it says
+`python3 scripts/release.py cut` signs a release of The Machine (`release-YYYYMMDD-HHMM`). When `desktop/` or the skill
+(`claude-plugin/`) changed since the GitHub release that is the latest (or there is none), it starts `Desktop prototype` on main with that tag; else it says
 the app is as it was. By hand: `gh workflow run desktop.yml --ref main -f release=<tag>`.
 
 That run first checks the tag: signed with the release key as main's `deploy/release-signers` has it, and on main. Then
@@ -269,8 +269,9 @@ every job builds the tag, with its version (`tools/version.py`: `release-2026112
 release is a newer version), uses it as for a pull request, and signs it: Developer ID and Apple's notarization, Azure
 Artifact Signing, and the update key. Only when all of that passed, `publish` puts the files on a GitHub release of the tag,
 marked latest: `the-machine-desktop-setup.exe`, `the-machine-desktop-mac.zip`, `the-machine-desktop-mac.app.tar.gz` (for
-updates), `latest.json`, the AppImage and its `.sig`, the .deb, `PKGBUILD` with that release's tag and checksum, the Arch package and
-`SHA256SUMS`. A run that fails publishes nothing; the app stays at the release before.
+updates), `latest.json`, the AppImage and its `.sig`, the .deb, `PKGBUILD` with that release's tag and checksum, the Arch package, the
+skill's two zips (`scripts/skill_package.py`, from the tag: `the-machine-skill.zip` for claude.ai and
+`the-machine-clawhub.zip`) and `SHA256SUMS`. A run that fails publishes nothing; the app stays at the release before.
 
 Each of those files has GitHub's build provenance: a signed statement that this workflow made it, from that tag. To check a
 download: `gh attestation verify <file> -R Salesflare/TheMachine`.

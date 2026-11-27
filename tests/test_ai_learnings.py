@@ -1,5 +1,5 @@
 """Connected AIs, what the owner taught (ai-connections.md, Learnings and the brief): get_learnings, get_brief and the
-brief in initialize's instructions; save_learning. Off unless the config's ai_learnings is on; the area holds; a learning from another AI,
+brief in initialize's instructions; save_learning. On unless the config's ai_learnings is false; the area holds; a learning from another AI,
 an unedited import or the learning loop goes out marked untrusted, the owner's own rules, facts and voice don't; the
 brief says what changed since this connection's last visit and never carries a message's subject or text."""
 import datetime as dt
@@ -20,7 +20,7 @@ class Taught(Base):
 
     def setUp(self):
         super().setUp()
-        self.app.config.update(ai_learnings=True, owner_name='Pat Lee', timezone='Europe/Brussels')
+        self.app.config.update(owner_name='Pat Lee', timezone='Europe/Brussels')
         old = '2026-01-01T00:00:00+00:00'
         with self.db() as db:  # as the paths that save them store them (remember_fact, learning_loop.apply, voices)
             insert = 'INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,source,kept_at) VALUES(?,?,?,?,?,?,?,?)'
@@ -40,8 +40,8 @@ class Learnings(Taught):
         self.assertFalse(error, out)
         return out
 
-    def test_off_by_default_nothing_is_listed_answered_or_briefed(self):
-        self.app.config.pop('ai_learnings')
+    def test_switched_off_nothing_is_listed_answered_or_briefed(self):
+        self.app.config['ai_learnings'] = False
         _, tokens = self.signed_in('read')
         _, _, listed = self.call(tokens['access_token'], 'tools/list')
         names = {t['name'] for t in listed['result']['tools']}
@@ -54,7 +54,7 @@ class Learnings(Taught):
         self.assertEqual(reply['result']['instructions'], ai_access.INSTRUCTIONS)
         self.assertNotIn('brief', [r['tool'] for r in self.activity()])
 
-    def test_on_both_tools_are_listed_and_read_only(self):
+    def test_on_by_default_both_tools_are_listed_and_read_only(self):
         _, tokens = self.signed_in('read')
         _, _, listed = self.call(tokens['access_token'], 'tools/list')
         tools = {t['name']: t for t in listed['result']['tools']}
@@ -299,7 +299,7 @@ class Saves(Taught):
         self.assertIn('the most it can', text)
 
     def test_off_it_is_unknown(self):
-        self.app.config.pop('ai_learnings')
+        self.app.config['ai_learnings'] = False
         _, tokens = self.signed_in('draft')
         _, _, reply = self.call(tokens['access_token'], params={'name': 'save_learning', 'arguments': {'kind': 'fact', 'text': 'Likes tea'}})
         self.assertEqual(reply['error']['message'], 'Unknown tool')

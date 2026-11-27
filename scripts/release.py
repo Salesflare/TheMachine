@@ -373,16 +373,16 @@ def cut(args):
 
 
 def desktop_release(tag):
-    """Starts the desktop app's build for this release (desktop.yml on main), when desktop/ changed since the one on
-    GitHub's latest release, or there is none yet. That run checks the tag's signature, signs the builds and puts them
+    """Starts the desktop app's build for this release (desktop.yml on main), when desktop/ or the skill (claude-plugin/,
+    whose zips the release carries too) changed since the one on GitHub's latest release, or there is none yet. That run checks the tag's signature, signs the builds and puts them
     on a GitHub release of the tag, which the app's updater and the download links read. Never stops a cut."""
     hand = f'gh workflow run desktop.yml --repo {REPO} --ref main -f release={tag}'
     try:
         last = subprocess.run(['gh', 'release', 'view', '--repo', REPO, '--json', 'tagName', '--jq', '.tagName'],
                               capture_output=True, text=True, timeout=60)
         before = last.stdout.strip() if last.returncode == 0 else ''
-        if TAG.fullmatch(before) and git('diff', '--quiet', before, tag, '--', 'desktop', check=False).returncode == 0:
-            print(f'The desktop app is as in {before}: no new build of it.')
+        if TAG.fullmatch(before) and git('diff', '--quiet', before, tag, '--', 'desktop', 'claude-plugin', check=False).returncode == 0:
+            print(f'The desktop app and the skill are as in {before}: no new build of them.')
             return
         started = subprocess.run(['gh', 'workflow', 'run', 'desktop.yml', '--repo', REPO, '--ref', 'main', '-f', f'release={tag}'],
                                  capture_output=True, text=True, timeout=60)
