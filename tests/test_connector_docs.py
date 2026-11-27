@@ -338,6 +338,22 @@ class Microsoft(unittest.TestCase):
         with self.store.connect() as db:
             return [dict(r) | {'metadata': json.loads(r['metadata'])} for r in db.execute('SELECT * FROM events ORDER BY id')]
 
+    def test_an_expired_word_delta_starts_over_instead_of_failing_every_round(self):
+        asked = []
+
+        def call(method, params):
+            asked.append(params['token'])
+            if params['token'] == 'old-token':
+                raise sources.SourceError('docs_microsoft', 410)  # resync required: Microsoft no longer serves it
+            return {'value': [{'id': 'i1'}], '@odata.deltaLink': "https://graph.microsoft.com/v1.0/me/drive/root/delta(token='fresh')"}
+        me = types.SimpleNamespace(call=call, helpers=types.SimpleNamespace(SourceError=sources.SourceError))
+        me.delta = lambda token: docs.Microsoft.delta(me, token)
+        self.assertEqual(docs.Microsoft.delta(me, 'old-token'), ([], 'fresh'))
+        self.assertEqual(asked, ['old-token', 'latest'])
+        me.call = lambda method, params: (_ for _ in ()).throw(sources.SourceError('docs_microsoft', 410))
+        with self.assertRaises(sources.SourceError):  # a 410 on the starting point itself is no loop
+            docs.Microsoft.delta(me, None)
+
     def test_word_delta_waits_until_all_45_items_are_processed(self):
         changes = [{'id': f'i{i}', 'name': 'SOW.docx', 'parentReference': {'driveId': 'd1'}} for i in range(45)]
         with patch.object(docs.Microsoft, 'shared', return_value=[]), patch.object(docs.Microsoft, 'delta', return_value=(changes, 'next-token')) as delta, \

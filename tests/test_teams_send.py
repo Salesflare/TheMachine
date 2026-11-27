@@ -28,7 +28,7 @@ class Teams:
     """The fake connector: its Sender posts nowhere, records each post, and finds what it was told is in the chat."""
 
     def __init__(self):
-        self.posts, self.found, self.fail, self.granted = [], [], None, True
+        self.posts, self.found, self.fail, self.granted, self.chat_status = [], [], None, True, None
         teams = self
 
         class Sender:
@@ -39,6 +39,8 @@ class Teams:
             def ready(self, chat_id):
                 if not teams.granted:
                     raise CONNECTOR_HELPERS.SourceError('teams_send_not_granted', 403)
+                if teams.chat_status:
+                    raise CONNECTOR_HELPERS.SourceError('teams_http', teams.chat_status)
                 return {'id': chat_id}
 
             def post(self, chat_id, text):
@@ -167,6 +169,11 @@ class Send(unittest.TestCase):
         self.assertEqual(transport.send(action, job), {})
         self.teams.fail, self.teams.found = None, ['a', 'b']
         self.assertEqual(transport.reconcile(action, job), {})  # two alike: unclear, so neither is claimed
+        for status in (403, 404, 410):  # the chat refused, not found or deleted: said as that, not as Teams unreachable
+            self.teams.chat_status = status
+            with self.assertRaisesRegex(ValueError, 'can’t be reached from here anymore'):
+                transport.preflight(action)
+        self.teams.chat_status = None
         self.accounts[0]['shared'] = {'fleet': 'f1'}
         with self.assertRaises(ValueError):
             transport.preflight(action)
