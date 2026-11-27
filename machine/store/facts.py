@@ -1130,7 +1130,12 @@ class FactsStore:
         their to-dos (near: the records on its messages) or in a routine whose words name them. NULL and 'global':
         everywhere, as before."""
         area, channels = asked.get('area'), {str(c).casefold() for c in asked.get('channels') or ()}
-        words = ' '.join(filter(None, (asked.get('title'), asked.get('text')))).casefold()
+        fold = lambda text: [w.casefold() for w, _ in fact_links.words(text)]  # whole words, as fact_links reads a name
+        words = fold(' '.join(filter(None, (asked.get('title'), asked.get('text')))))
+
+        def names(node):  # its whole name among the words: "Era" is not in "general"
+            name = fold(who.get(node, {}).get('name'))
+            return bool(name) and any(words[i:i + len(name)] == name for i in range(len(words) - len(name) + 1))
 
         def holds(f):
             scope = f.get('scope') or 'global'
@@ -1142,7 +1147,7 @@ class FactsStore:
                 node = scope[5:]
                 if asked.get('todo'):  # a to-do: only its own records (another person with that name is someone else)
                     return node in near
-                return bool(who.get(node, {}).get('name')) and who[node]['name'].casefold() in words
+                return names(node)
             return True
         facts = [f for f in facts if holds(f)]
         if area is None:

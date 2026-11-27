@@ -129,6 +129,18 @@ class LearningScope(unittest.TestCase):
         self.assertNotIn('partner rate', self.routine_rules('weekly pipeline and pricing review'))
         self.assertIn('partner rate', self.routine_rules('pricing for Pat Lane this week'))  # a routine that names them
 
+    def test_a_routine_names_a_record_by_its_whole_name_not_by_letters_inside_a_word(self):
+        # as apply_tune stores a scoped rule: its scope, and the record it is about in fact_about
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('org-era','organization','Era',1,1,'{}')")
+            fact = db.execute("INSERT INTO facts(text,decision_id,created_at,kind,scope) VALUES('Invoice them in USD.','tune:r',?,'draft','with:org-era')",
+                              (self.stamp,)).lastrowid
+            db.execute("INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,'org-era','tune',?)", (fact, self.stamp))
+        self.assertNotIn('USD', self.routine_rules('general weekly review'))  # "Era" inside "general" names no one
+        self.assertNotIn('USD', self.routine_rules('operations sync'))
+        self.assertIn('USD', self.routine_rules('invoices for Era this week'))
+        self.assertIn('USD', self.routine_rules("check era's invoices"))  # any case, with a possessive, as before
+
     def test_a_missing_or_wrong_scope_narrows_to_what_its_signals_share_never_global(self):
         self.price_pass(lambda n, ref: [{'kind': 'draft', 'text': PRICE, 'why': 'x', 'from': n('Seat pricing', 'Renewal')},
                                         {'kind': 'draft', 'text': 'Answer within the day.', 'why': 'x', 'scope': 'with:r9',
