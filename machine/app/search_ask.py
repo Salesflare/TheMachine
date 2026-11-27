@@ -495,7 +495,7 @@ class SearchAskApp:
             return {'error': True}
         try:
             memory = recall(self, 'ask', {'question': question}, search_ask.PROMPT_CHARS)
-            kept, tags = '', {}
+            kept, tags, about = '', {}, None
             days = search_ask.bounds(scope['start'], scope['end'], scope['tz']) if scope and scope.get('start') else None  # also when no message is of those days
             # what the Machine keeps that matches it: on the question's records, or on what the search found for it
             if not (scope and scope.get('connections')):  # one about their own mailbox is answered from its messages alone
@@ -504,6 +504,15 @@ class SearchAskApp:
                 kept, tags = ask_memory.read(memory, about, search_ask.PROMPT_CHARS)
             found = memory.read('sources', question, rows, run, lang, body=lambda b: shown_body(b)[0], scope=scope, counted=counted, mine=mine,
                                 memory=kept, kept=tags, before=before)
+            short = found.pop('short', False) or not (found['sources'] or found.get('memory')) if found else not (rows or kept)  # None after a turn: NONE, no question
+            then = short and read and about and ask_memory.earlier(self, about)  # nothing kept answers it: what held earlier, for one that names no days
+            if then:
+                memory = recall(self, 'ask', {'question': question}, search_ask.PROMPT_CHARS)
+                kept, tags = ask_memory.read(memory, then, search_ask.PROMPT_CHARS)
+                found = memory.read('sources', question, rows, run, lang, body=lambda b: shown_body(b)[0], scope=scope, counted=True, mine=mine,
+                                    memory=kept, kept=tags, before=before)
+                if found:
+                    found.pop('short', None)
             memory_use.record(self.store, 'ask', memory.rows())  # what its prompt held: ids only
         except (search_ask.Unavailable, help_chat.Unavailable) as error:
             LOG.info('search ask not answered error=%s', type(error).__name__)

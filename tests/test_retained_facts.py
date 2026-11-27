@@ -227,6 +227,17 @@ class RetainedFactsTests(unittest.TestCase):
         memory.text('facts')
         self.assertIn((str(old), 'match'), [(r[1], r[2]) for r in memory.rows()])
 
+    def test_a_number_that_changed_is_history_worth_keeping(self):
+        old = self.learn('The Harbor Lofts deposit is 400 euros.')
+        new = self.store.remember_fact('The Harbor Lofts deposit is 460 euros.', 'owner-note', replaces=[old], quote='notes on the offsite')['id']
+        same = self.learn('Harbor Lofts has a terrace.')
+        self.store.remember_fact('Harbor Lofts has a terrace and a garden.', 'owner-note', replaces=[same], quote='notes on the offsite')
+        with self.store.connect() as db:
+            found = {f['id']: f for f in retained_facts.candidates(db, [old, same])}
+        self.assertEqual(set(found), {old})  # the one that says nothing new still never goes in
+        self.assertEqual(found[old]['now_says'], 'The Harbor Lofts deposit is 460 euros.')
+        self.assertTrue(new)
+
     def test_a_fact_of_the_other_area_stays_out(self):
         with self.store.connect() as db:
             db.execute("UPDATE facts SET side='personal' WHERE id=?", (self.ids[LAPSED],))  # as a connected AI's area would say

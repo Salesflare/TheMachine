@@ -28,6 +28,8 @@ An address you haven't connected, it says so: add it in Connections. A mailbox t
 
 It also reads what the Machine already keeps on the question: promises (open, or closed in the last 30 days), what it learned, the summary of the person, project or organization you ask about, and meeting notes. Each one the answer used shows under it, named as what it is (like Promise, Learned, Summary or Meeting notes), and opens where it lives. Only what matches is read, from the area you're viewing.
 
+Ask how something was, like “what did we pay Initech in June?” or “before the renewal”, and it also reads what it learned that no longer holds, marked as no longer current, with the day it learned it and the day that changed. Those are the days the Machine noticed, not surely when it became or stopped being true. What you removed never comes back.
+
 If several people have that name, it says which one it means. When another of them wrote in the last 3 hours, it gives what both wrote. The other messages it read show under Messages. The question an empty search suggests is only one it has messages for. The answer never sends anything or adds a to-do, and it needs a model (Settings, Model).
 
 ## Shortcuts

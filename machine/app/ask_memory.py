@@ -43,6 +43,10 @@ MEMORY_CHARS = 1600   # all four blocks together at most: about 400 tokens, insi
 PROMISES = 4
 PROMISE_HITS = 3          # a promise the question's records don't have: only on one of the search's best messages
 FACTS = 3
+PAST_FACTS = 2        # for a question about days that are over: facts no longer current, before the current ones
+PAST = 'No longer current'
+PAST_HEAD = (f'An F line marked {PAST} is how it was before the change it names. Its days are when The Machine learned it and noted '
+             'the change, not surely when it became or stopped being true: only when the time asked about is close to one of them, say the exact day is not known.')
 MEETINGS = 2
 CLOSED_DAYS = 30      # a promise closed longer ago is no longer brought up
 PROMISE_CHARS = 220
@@ -132,7 +136,8 @@ def named(db, question, accounts):
 
 def context(app, question, area, scope=None, hits=(), starts=None, days=None, best=()):
     """What the pickers go on, read once per question: the area's connections, the records it is about, the search's
-    own hits (event ids, best first, messages or not) and the days asked about."""
+    own hits (event ids, best first, messages or not) and the days asked about. past: it asks about days that are
+    over (or, set later, nothing kept answered it: earlier)."""
     accounts = app.search_ask_accounts(area)
     subjects = []
     try:
@@ -143,8 +148,9 @@ def context(app, question, area, scope=None, hits=(), starts=None, days=None, be
             subjects += named(db, question, accounts)
     except sqlite3.Error as error:  # no Graph yet: the question is then about no record
         LOG.info('ask memory subjects error=%s', type(error).__name__)
+    days = days if days and any(days) else None
     return {'question': question, 'area': area, 'accounts': accounts, 'subjects': subjects, 'hits': [int(i) for i in hits or ()], 'best': [int(i) for i in best or ()][:PROMISE_HITS],
-            'starts': dict(starts or {}), 'days': days if days and any(days) else None,
+            'starts': dict(starts or {}), 'days': days, 'past': bool(days and days[1] and days[1] <= now()),
             'keep': lambda rows: app.search_ask_keep(rows, area)}
 
 
@@ -239,10 +245,12 @@ def _closest(app, about, facts):
 
 def facts(app, about, room):
     """What was learned about the question's records, then what is closest in meaning to the question, or without
-    embeddings the owner's own facts that share its words (matching)."""
+    embeddings the owner's own facts that share its words (matching). For days that are over (about['past']), first
+    what held earlier and no longer does (_past), and the current ones marked current: what was learned is never
+    taken as true back then because of the day it was learned."""
     area, nodes, at = about['area'], [s['id'] for s in about['subjects']], now()
     known = [f for f in app.store.facts() if f['kind'] == 'fact' and (area is None or f.get('side') in (None, area)) and fact_weight(f, at) > 0]
-    if not known or not about['accounts']:
+    if not about['accounts'] or not (known or about.get('past')):
         return _block([], [])
     if area:  # a fact about people all on the other side stays out, as from a preparation (Store.facts_for)
         with app.store.connect() as db:
@@ -265,15 +273,59 @@ def facts(app, about, room):
     asked = {s['id'] for s in about['subjects']}
     found = sorted((f for f in known if f['id'] in tied), key=lambda f: (bool(asked & set(tied[f['id']])), f['created_at']), reverse=True) \
         + sorted((f for f in known if f['id'] in scores), key=lambda f: -scores[f['id']])
+    found = found[:FACTS]
+    past = _past(app, about, nodes) if about.get('past') else []
 
     def line_of(n, f):
         tag = f'F{n}'
-        line = f"[{tag}] Learned {str(f.get('confirmed_at') or f['created_at'])[:10]}: <<<{_data(fact_line(f)[2:])[:FACT_CHARS]}>>>"
-        note = lambda: memory_use.note('fact', f['id'], line, 'about' if f['id'] in tied else how, about=tied.get(f['id'], ()),
-                        source='ai' if ai_fact_by(f) else 'note' if f.get('suggestion_id') else 'review', at=f.get('created_at'),
-                        score=scores.get(f['id']), used=True)
+        if 'state' in f:  # no longer in the current list: history, with the days The Machine knows, never when it held
+            says = _data(f['now_says'])[:120].rstrip('.')
+            then = f"replaced {f['day']} by: {says}" if f['replaced'] else f"ended {f['day']}" + (f": {says}" if says else '')
+            line = f"[{tag}] {PAST}, learned {str(f.get('confirmed_at') or f['created_at'])[:10]}, {then}: <<<{_data(f['text'])[:FACT_CHARS]}>>>"
+            note = lambda: memory_use.note('fact', f['id'], line, f['how'], about=f.get('about', ()), source='note' if f.get('suggestion_id') else 'review',
+                                           at=f.get('created_at'), score=f['score'] if f['how'] == 'closeness' else None, used=False)
+        else:
+            line = f"[{tag}] {'Current, learned' if past else 'Learned'} {str(f.get('confirmed_at') or f['created_at'])[:10]}: <<<{_data(fact_line(f)[2:])[:FACT_CHARS]}>>>"
+            note = lambda: memory_use.note('fact', f['id'], line, 'about' if f['id'] in tied else how, about=tied.get(f['id'], ()),
+                                           source='ai' if ai_fact_by(f) else 'note' if f.get('suggestion_id') else 'review', at=f.get('created_at'),
+                                           score=scores.get(f['id']), used=True)
         return note, tag, line, {'type': 'fact', 'id': f['id'], 'title': _data(f['text'])[:160], 'from': '', 'at': str(f.get('created_at') or '')[:32]}
-    return _block(*_lines(found[:FACTS], room, line_of))
+    lines, entries = _lines(past + found, room - (len(PAST_HEAD) + 1 if past else 0), line_of)
+    if any(e['id'] in {f['id'] for f in past} for e in entries):
+        lines.insert(0, PAST_HEAD)
+    return _block(lines, entries)
+
+
+def earlier(app, about):
+    """The question's context for a second look when nothing kept answered it ("what did we pay before the renewal?"
+    names no days): with what held earlier too (past); None when nothing no longer current matches it, or it already had that."""
+    if about.get('past') or not about['accounts']:
+        return None
+    try:
+        return {**about, 'past': True} if _past(app, about, [s['id'] for s in about['subjects']]) else None
+    except (sqlite3.Error, ValueError, KeyError, TypeError, json.JSONDecodeError) as error:  # never costs the answer
+        LOG.warning('ask memory earlier error=%s', type(error).__name__)
+        return None
+
+
+def _past(app, about, nodes):
+    """For a question about days that are over: what was learned and is no longer in the current list (ended or
+    replaced, retained_facts.py), on the question's records, by its words, or close in meaning to the messages the
+    search found (their stored vectors: no embedding request). Only of the area in view, never one the owner removed or
+    a connected AI's; at most PAST_FACTS, best first."""
+    with app.store.connect() as db:
+        nodes = _on(db, nodes) if nodes else []
+        found, names, asked, close = retained_facts.find(db, nodes, about['question'], about['best'], embeddings.settings(app.config))
+        if not found:
+            return []
+        with_about(db, found)
+        if about['area']:
+            who = fact_links.records(db, {n for f in found for n in f['about']})
+            found = [f for f in found if f.get('side') in (None, about['area']) and fact_links.on_side(f['about'], who, about['area'])]
+        picked = retained_facts.matches(db, found, nodes, names, asked, close)[:PAST_FACTS]
+    for how, score, f in picked:
+        f.update(how=how, score=score, replaced=str(f['merged_into']).startswith('fact:'))
+    return [f for _, _, f in picked]
 
 
 def _record(db, subject, about):
@@ -331,7 +383,7 @@ def records(app, about, room):
     def line_of(n, item):
         subject, name, text = item
         tag = f'S{n}'
-        line = f'[{tag}] {text}'
+        line = f'[{tag}] {"As of today: " if about.get("past") else ""}{text}'  # a summary is of now, also when the days asked about are over
         note = lambda: memory_use.note('record', subject['id'], line, 'about' if subject.get('scoped') else 'match', about=(subject['id'],), source='signal')
         return note, tag, line, {'type': subject['kind'], 'id': subject['id'], 'title': name[:160], 'from': '', 'at': ''}
     return _block(*_lines(found, room, line_of))
