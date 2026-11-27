@@ -2232,7 +2232,8 @@ def card_people(db, event_ids, limit=3, first=None, unlinked=False):
                **({'photo': photo} if (photo := enrichment.node_picture(r['info'], 'photo')) else {}),
                **({'org': {'id': r['org_id'], 'name': r['org_name'], **({'logo': logo} if (logo := enrichment.node_picture(r['org_info'], 'logo')) else {})}}
                   if r['org_id'] and r['org_name'] else {})} for r in rows]
-    weight = max((r['strength'] + (2 if p['paying'] else 0) for r, p in zip(rows, people)), default=0.0)
+    # Also of those the chip leaves out (a meeting of the owner's own team: card_lead.ordered), so it ranks as before
+    weight = max((r['strength'] + (2 if r['org_info'] and json.loads(r['org_info']).get('paying') else 0) for r in [*rows, *found]), default=0.0)
     return people[:limit], round(weight, 3)
 
 
