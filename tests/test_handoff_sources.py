@@ -90,6 +90,26 @@ class HandoffSources(unittest.TestCase):
         self.fleet.hand_off(card, self.ref, 'pat1', drafted, 'Check the query.')
         self.assertEqual(self.sent()['title'], drafted)
 
+    def test_waiting_on_someone_else_with_the_teammates_first_name_stays_as_drafted(self):
+        """The Graph says who promised it: a client "Pat Jones" is not teammate Pat, so the to-do handed to Pat keeps
+        "Waiting on Pat: ..."; when the Graph has Pat themselves on that message, it is Pat's own task as before."""
+        def waiting(source, node, name):
+            card = self.card(source, title='Waiting on Pat: send the signed contract')
+            with self.store.connect() as db:  # as graph.py stores people and their links to messages
+                event = db.execute('SELECT id FROM events WHERE source_id=?', (source['source_id'],)).fetchone()[0]
+                db.execute("INSERT OR IGNORE INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,'person',?,1,1,?)",
+                           (node, name, json.dumps({'identifiers': [node]})))
+                db.execute('INSERT INTO graph_events(node_id,event_id,at,direct) VALUES(?,?,?,1)', (node, event, '2026-10-29T09:00:00+00:00'))
+                db.execute("INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,suggestion_id,created_at,updated_at) "
+                           "VALUES('theirs','Pat','send the signed contract','2026-10-30',?,'work','carded',?,'2026-10-29','2026-10-29')", (event, card))
+            drafted = self.fleet.handoff_draft(card)['title']
+            self.fleet.hand_off(card, self.ref, 'pat1', drafted, 'Can you chase this?')
+            return drafted, self.sent()['title']
+        drafted, sent = waiting(mail('work', 1, 'Pat Jones <pat.jones@client.example>', 'owner@acme.example'), 'email:pat.jones@client.example', 'Pat Jones')
+        self.assertEqual(sent, drafted)
+        _, sent = waiting(mail('work', 2, TEAM, 'owner@acme.example'), 'email:' + TEAM, 'Pat')
+        self.assertEqual(sent, 'Send the signed contract for Owner')
+
     def test_leaving_the_sources_out_sends_none_of_their_text(self):
         card = self.card(mail('work', 1, 'Sam Lee <sam@client.example>', 'owner@acme.example'))
         self.fleet.hand_off(card, self.ref, 'pat1', 'Send Sam the pricing', 'Send Sam the pricing.', sources=False)

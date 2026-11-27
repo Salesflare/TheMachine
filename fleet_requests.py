@@ -730,18 +730,29 @@ class Requests:
         from machine.store.promises import fit_title, PROMISE_TITLE_MAX
         if ' '.join(str(title or '').split()) != ' '.join(str(drafted or '').split()):
             return title
-        with self.connect() as db:
-            try:
-                promise = db.execute("SELECT who,what FROM promises WHERE suggestion_id=? AND direction='theirs' ORDER BY id DESC LIMIT 1",
-                                     (str(card_id),)).fetchone()
-            except sqlite3.OperationalError:  # no promises yet
-                promise = None
         member = self.member(fleet_ref, member_id) or {}
         names = {' '.join(str(member.get(k) or '').split()).casefold() for k in ('name', 'label')} - {''}
+        with self.connect() as db:
+            try:
+                promise = db.execute("SELECT who,what,event_id FROM promises WHERE suggestion_id=? AND direction='theirs' ORDER BY id DESC LIMIT 1",
+                                     (str(card_id),)).fetchone()
+                # who the Graph has on the promise's message, and which of them is this teammate (by their addresses)
+                on = db.execute("SELECT n.id,n.name FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id WHERE g.event_id=? AND g.direct=1 "
+                                "AND n.kind='person'", (promise['event_id'],)).fetchall() if promise else []
+                theirs = {n for n, _ in graph.people_by_email(db, member.get('emails') or ())} if on else set()
+            except sqlite3.OperationalError:  # no promises or Graph yet
+                promise, on, theirs = None, [], set()
         who = ' '.join(str(promise['who'] if promise else '').split()).casefold()
-        # That teammate by name: in full, or by a first name when one side only has that ("Pat", "Pat Lee")
-        single = len(who.split()) == 1 or any(len(n.split()) == 1 for n in names)
-        if not who or not (who in names or (single and who.split()[0] in {n.split()[0] for n in names})):
+
+        def named(known):  # who by name: in full, or by a first name when one side only has that ("Pat", "Pat Lee")
+            single = len(who.split()) == 1 or any(len(n.split()) == 1 for n in known)
+            return bool(who) and (who in known or (single and who.split()[0] in {n.split()[0] for n in known}))
+        if not named(names):
+            return title
+        # When the Graph has the people on that message, the one the name means must be this teammate: a client
+        # "Pat Jones" who promised it is someone else than teammate Pat
+        meant = {r['id'] for r in on if named({' '.join(str(r['name'] or '').split()).casefold()} - {''})}
+        if meant and not meant <= theirs:
             return title
         me = first_name(self.config.get('owner_name') or next((m.get('name') for m in (self.fleets().get(fleet_ref) or {}).get('members', []) if m.get('me')), ''))
         what = ' '.join(str(promise['what']).split())
