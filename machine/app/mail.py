@@ -34,6 +34,7 @@ from machine.owner_error import OwnerError
 import timeutil
 
 COMPOSE_ADDRESS = re.compile(r'[^\s<>@,;"]+@[^\s<>@,;"]+\.[^\s<>@,;"]+')
+SEARCHABLE = ('gmail', 'outlook')  # mailboxes mailbox_lookup can search with the provider's own search (an IMAP one can't yet)
 
 
 class MailApp:

@@ -54,6 +54,12 @@ class SearchAsk(unittest.TestCase):
                 raise self.reply
             return self.reply.pop(0) if isinstance(self.reply, list) else self.reply  # a list: one reply per answer turn
         self.app.ask_model = model
+        self.lookups, self.mailbox = [], ([], {})  # the mailboxes' own search (App.mailbox_lookup): what it is asked, what it finds
+
+        def lookup(ids, query, limit=5):
+            self.lookups.append((list(ids), query, limit))
+            return self.mailbox() if callable(self.mailbox) else self.mailbox
+        self.app.mailbox_lookup = lookup
         self.add(work_mail(2, 'Kim Vale <kim@initech.example>', 'Pilot timing', 'The pilot moves to March, budget unchanged.'),
                  work_mail(5, 'Lee Park <lee@initech.example>', 'Lunch', 'Lunch on Friday?'),
                  home_chat(1, 'Robin Hart', 'The pilot of the plane said we land at noon.'))
@@ -561,6 +567,96 @@ class AsItWas(unittest.TestCase):
         self.assertNotIn('flies the plane on Sundays', ''.join(self.prompts))  # only known from a personal chat
         self.asked('what did robin hart say about flying the plane in june?', None, **june)
         self.assertIn('flies the plane on Sundays', self.memory())
+
+
+class MailboxSearch(unittest.TestCase):
+    """Nothing kept here answers the question, or only part of it: the owner's own mailboxes of the area in view are
+    searched live once (App.mailbox_lookup), and what they find answers it, with exact links. Mail it already read is
+    not read again, old mail found is no news, a mailbox that can't be searched is said, and a question answered here
+    never waits on a search."""
+    add, setUp, ask = tg.Graph.add, SearchAsk.setUp, SearchAsk.ask
+    OLD = work_mail(400, 'Vandelay Legal <legal@vandelay.example>', 'Supply terms', 'Either side may end the supply agreement with 60 days notice.')
+
+    def asked(self, question='what notice did we agree with vandelay?', area='work', reply=('I found nothing about it. [0]', 'Either side may end it with 60 days notice [1].'), **plan):
+        self.plan = {'question': True, 'person': None, 'said_by': 'both', 'from': None, 'to': None, 'about': 'termination notice', **plan}
+        self.reply = list(reply)
+        return self.ask(question, area)
+
+    def kept(self):
+        return lambda: (self.store.keep_found('work', [self.OLD]), {})
+
+    def test_nothing_here_answers_it_so_the_mailbox_is_searched(self):
+        self.mailbox = self.kept()
+        with self.store.connect() as db:
+            todos = db.execute('SELECT count(*) FROM suggestions').fetchone()[0]
+        found = self.asked(reply=['Either side may end it with 60 days notice [1].'], **{'from': '2025-09-01', 'to': '2025-09-30'})  # nothing here: one turn
+        self.assertEqual(self.lookups, [(['work'], 'termination notice after:2025/09/01 before:2025/10/01', app_ask.MAILBOX_FOUND)])
+        self.assertEqual(found['answer'], 'Either side may end it with 60 days notice.')
+        self.assertEqual([s['title'] for s in found['sources']], ['Supply terms'])  # the exact mail, as a link
+        self.assertNotIn('short', found)
+        self.assertEqual(len(self.prompts), 1)
+        self.assertIn('<<<Either side may end the supply agreement with 60 days notice.>>>', self.prompts[-1])
+        with self.store.connect() as db:  # old mail is context, never news: no review, no to-do, no promise
+            self.assertEqual(1, db.execute("SELECT analyzed_version=version FROM events WHERE title='Supply terms'").fetchone()[0])
+            self.assertEqual(todos, db.execute('SELECT count(*) FROM suggestions').fetchone()[0])
+            self.assertEqual(0, db.execute('SELECT count(*) FROM promises').fetchone()[0])
+
+    def test_who_it_is_about_must_be_in_it(self):
+        self.asked(person='Vandelay Legal', about='termination notice period')
+        self.assertEqual(self.lookups[0][1], '"Vandelay Legal" {termination notice period}')
+
+    def test_answered_here_it_never_searches(self):
+        found = self.asked('what did kim say about the pilot?', reply=['Kim said the pilot moves to March [1].'], about='pilot')
+        self.assertEqual(self.lookups, [])
+        self.assertEqual([s['title'] for s in found['sources']], ['Pilot timing'])
+        self.asked('what did kim say about the pilot and its price?', reply=['Kim said the pilot moves to March [1]. [0]', 'Same [1].'], about='pilot')
+        self.assertEqual(len(self.lookups), 1)  # only part of it was here
+
+    def test_not_a_question_or_just_now_or_own_connection_never_searches(self):
+        self.plan = {'question': True}
+        self.plan, self.reply = {**self.plan, 'question': False}, []
+        self.ask('vandelay notice', 'work')  # not a question
+        self.asked(ago=30)
+        self.app.config = BOXES
+        self.asked(where='my work mail', connections=[1])
+        self.assertEqual(self.lookups, [])
+
+    def test_only_the_owners_own_searchable_mailboxes_of_the_area(self):
+        self.app.config = BOXES
+        self.asked(area='work')
+        self.asked(area=None)
+        self.asked(area='personal')  # an IMAP mailbox can't be searched with its own search yet: none
+        self.assertEqual([ids for ids, _, _ in self.lookups], [['work', 'birch'], ['work', 'birch']])  # never one shared from a Fleet
+
+    def test_mail_it_already_read_is_not_read_again(self):
+        with self.store.connect() as db:
+            pilot = db.execute("SELECT id FROM events WHERE title='Pilot timing'").fetchone()[0]
+        self.mailbox = ([pilot], {})
+        self.asked('what did kim say about the pilot budget?', about='pilot')
+        self.assertEqual(len(self.lookups), 1)
+        self.assertEqual(len(self.prompts), 1)  # nothing new: no second turn
+
+    def test_a_mailbox_that_could_not_be_searched_is_said(self):
+        self.mailbox = ([], {'work': 'auth'})
+        found = self.asked()
+        self.assertEqual(found['answer'], 'I found nothing about it. Older mail in Gmail sam@acme.example could not be searched just now.')
+        self.plan['about'] = 'nothing matches these words'
+        self.reply = []
+        found = self.ask('what did zyx qwv say?', 'work')  # nothing here at all: no answer turn, the search said all the same
+        self.assertEqual(found['answer'], 'I found nothing about it. Older mail in Gmail sam@acme.example could not be searched just now.')
+        self.assertEqual(found['sources'], [])
+
+    def test_a_slow_mailbox_is_one_that_could_not_be_searched(self):
+        import time
+        self.mailbox = lambda: time.sleep(0.5) or ([], {})
+        with mock.patch.object(app_ask, 'MAILBOX_SECONDS', 0.05):
+            found = self.asked()
+        self.assertTrue(found['answer'].endswith('could not be searched just now.'), found)
+
+    def test_a_mailbox_that_breaks_never_costs_the_answer(self):
+        self.mailbox = lambda: {}['transport']
+        found = self.asked()
+        self.assertTrue(found['answer'].startswith('I found nothing about it.'), found)
 
 
 BOXES = {'owner_emails': ['sam.old@post.example'], 'accounts': [
