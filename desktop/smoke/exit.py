@@ -113,10 +113,12 @@ def _():
     start()
     need(machine.tunnel.up.wait(60), 'the app takes the way out')
     del machine.tunnel.refused[:], seen[:]
-    browse(target)
+    browse(target)  # its port isn't 80 or 443, so refused for that first
+    browse('http://127.0.0.1/')  # on 80 only the address can refuse it
+    refused = {(host, port): why for host, port, why in machine.tunnel.refused}
     need(not seen, f'the site saw {seen}')
-    need(any(why == 'blocked' for *_, why in machine.tunnel.refused), f'refused: {machine.tunnel.refused}')
-    return machine.tunnel.refused
+    need(refused.get(('127.0.0.1', 80)) == 'blocked', f'refused: {refused}')  # names that lead home: exit.rs's unit tests
+    return refused
 
 
 @step('off in Settings')
