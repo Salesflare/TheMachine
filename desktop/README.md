@@ -93,7 +93,10 @@ The robot stands in the bottom right corner, and the first time the window opens
 
 The box greets you by the first name your Machine knows, by this computer's clock, and says so when nothing needs you; or
 that you aren't signed in, or that your Machine doesn't answer. Click the robot to open and close it, and drag the robot to
-move it, also to another monitor. The box comes above it, below it where that fits better, or else beside it.
+move it, also to another monitor. Until you drag it, it stands on the monitor the app's window is on, or was on when you
+minimized or closed it; else on the main one. Dragged, it stays where you put it, and goes back to that rule when that
+monitor isn't there. On Wayland's layer shell (Hyprland, Sway, KDE) a window can't tell where it is, so there it is the
+main one. The box comes above it, below it where that fits better, or else beside it.
 On Windows all of it grows with your Text size (Settings, Accessibility), as far as the screen has room. Right-click it, or **...** in the box, for where you are signed in, **Open dashboard**,
 **Hide**, **Sign out** and **Quit**. For a key of your own, bind it to the program with `--toggle`.
 
