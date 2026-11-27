@@ -41,3 +41,7 @@ Every file has GitHub's build provenance, which shows it was built from The Mach
 The first time, its window opens to sign in. For a hosted Machine or one on The Machine Network, it opens your account in your browser and comes back. A self-hosted Machine takes its own address, from a computer on your Tailscale network.
 
 To have the dashboard as an app of Chrome or Edge instead, see [Install the app](phone-app.md).
+
+## The robot
+
+The robot goes away while the app's window is in front, and comes back when another window is, or when you minimize or close it. With more than one monitor it stands on the one the app's window is on, until you drag it elsewhere (on Hyprland, Sway and KDE on the main one). To turn it off or on: Settings (Ctrl+comma, or Command-comma on a Mac), Show the robot.

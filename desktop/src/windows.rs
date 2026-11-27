@@ -424,14 +424,23 @@ pub fn areas(app: &AppHandle) -> Vec<(Rect, f64)> {
     all.into_iter().map(|s| (Rect { x: s.area.x * s.scale, y: s.area.y * s.scale, w: s.area.w * s.scale, h: s.area.h * s.scale }, s.scale)).collect()
 }
 
-/// The saved monitor when it is there, else the main one. Its place in the list, for layer-shell.
+/// The monitor the robot was dragged to when it is there; else the one the dashboard's window is on, or was on when it
+/// was minimized or closed, where the person works; else the main one. Its place in the list, for layer-shell.
 fn screen(app: &AppHandle) -> Option<(usize, Screen)> {
-    let wanted = app.state::<Shared>().saved.lock().unwrap().monitor.clone();
+    let shared = app.state::<Shared>();
+    let (wanted, window) = { let saved = shared.saved.lock().unwrap(); (saved.monitor.clone(), saved.window) };
     // On macOS those have other names: there the main one is the first
     let main = app.primary_monitor().ok().flatten().and_then(|m| m.name().cloned());
     let mut all: Vec<_> = screens(app).into_iter().enumerate().collect();
-    let found = [wanted, main].into_iter().flatten().find_map(|name| all.iter().position(|(_, s)| s.name == name)).unwrap_or(0);
+    // A layer-shell surface knows no place of its window on the whole desktop
+    let working = window.filter(|_| !shared.layer).and_then(|w| working(all.iter().map(|(_, s)| s), w));
+    let found = [wanted, working, main].into_iter().flatten().find_map(|name| all.iter().position(|(_, s)| s.name == name)).unwrap_or(0);
     (found < all.len()).then(|| all.swap_remove(found))
+}
+
+/// The screen with the middle of the dashboard's window, as saved: in what the window system counts in (dash.rs).
+fn working<'a>(mut all: impl Iterator<Item = &'a Screen>, [x, y, w, h]: [f64; 4]) -> Option<String> {
+    all.find(|s| s.has(x + w / 2.0, y + h / 2.0)).map(|s| s.name.clone())
 }
 
 /// Windows tells about a new scale, but not about a new resolution, a moved taskbar or a monitor that comes or goes (a
@@ -890,5 +899,10 @@ mod tests {
             assert!((r.x - wanted(x, s.area.x, s.area.w)).abs() < 0.01 && (r.y - wanted(y, s.area.y, s.area.h)).abs() < 0.01, "{x},{y} {r:?}");
         }
         assert!(!all.iter().any(|s| s.has(100.0, 1401.0))); // on the taskbar: it stays on the monitor it is on
+        // Not dragged: it stands where the dashboard's window is, by the window's middle
+        assert_eq!(working(all.iter(), [-1800.0, 100.0, 1200.0, 800.0]).as_deref(), Some("left"));
+        assert_eq!(working(all.iter(), [2000.0, 100.0, 1600.0, 900.0]).as_deref(), Some("right"));
+        assert_eq!(working(all.iter(), [300.0, 200.0, 1296.0, 899.0]).as_deref(), Some("main"));
+        assert_eq!(working(all.iter(), [90000.0, 0.0, 800.0, 600.0]), None); // a monitor that is gone: the main one then
     }
 }
