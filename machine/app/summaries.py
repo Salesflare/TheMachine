@@ -217,18 +217,33 @@ class SummariesApp:
                 owner.slack |= set(getattr(self.store, 'owner_user_ids', None) or ())
                 found = project_stall.pages(db, owner, items)
             text = project_stall.prompt(found, locale_prefs.language_of(self.config))
-            if stand_in:
-                answer = stand_in(self.config, text)
-            else:
+
+            def ask(text):
+                if stand_in:
+                    return stand_in(self.config, text)
                 swap = background_model(self.config)
-                answer = help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=self.STALL_SECONDS)
+                return help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=self.STALL_SECONDS)
+            answer = ask(text)
+            with self.store.connect() as db:
+                steps = project_stall.parse(db, answer, found)
+            # Prepared ahead only when a second check says the step is written work The Machine can do and the other
+            # side asked for it (project_stall.preparable); anything else stays the owner's step, as before.
+            per_day = int(self.config.get('prepare_ahead_per_day', 10)) if self.config.get('prepare_ahead', True) is not False else 0
+            check = project_stall.check_prompt(steps) if steps and per_day > 0 else None
+            try:
+                ready = project_stall.preparable(ask(check), steps) if check else set()
+            except help_chat.Unavailable:
+                ready = set()
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
-                for step in project_stall.parse(db, answer, found):
+                for step in steps:
+                    if project_stall.taken(db, step):
+                        continue
+                    ahead = step['item']['node'] in ready and self.store.ahead_room(per_day, _db=db)
                     db.execute('SAVEPOINT project_stall')
                     try:
                         card = self.store.suggest(project_stall.dedupe(step), step['title'], project_stall.body(step), step['event_ids'],
-                                                  project=step['item']['name'], owner_step=True, _db=db)
+                                                  project=step['item']['name'], owner_step=not ahead, ahead=ahead, _db=db)
                         if not card.get('duplicate'):
                             project_stall.made(db, run_id, step, card['id'])
                             made += 1

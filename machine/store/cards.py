@@ -1248,10 +1248,11 @@ class CardsStore:
             self.decide(other['id'], 'other', own['owner_words'], decision_id + ':note', source)
         return {'id': other['id'], 'merged': True, 'from': own['id']}
 
-    def ahead_room(self, per_day, urgent=False, due=None):
+    def ahead_room(self, per_day, urgent=False, due=None, _db=None):
         """Room to prepare one more to-do ahead today. The last AHEAD_HELD of per_day are held for pressing work
-        (urgent, or due within PRESSING_DAYS), so a busy morning of routine drafts doesn't leave none for it."""
-        with self.connect() as db:
+        (urgent, or due within PRESSING_DAYS), so a busy morning of routine drafts doesn't leave none for it.
+        _db: a caller's open transaction, so drafts it started and hasn't committed yet count."""
+        with contextlib.nullcontext(_db) if _db is not None else self.connect() as db:
             # Drafts that wait (ahead_hold.py) have their place already: a long catch-up never promises more than a day's
             return self.ahead_started_room(db, per_day if pressing(urgent, due) else per_day - min(AHEAD_HELD, per_day // 3), ahead_hold.kept(db))
 
