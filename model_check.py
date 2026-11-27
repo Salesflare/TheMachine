@@ -48,9 +48,10 @@ ANSI = re.compile(r'\x1b\[[0-9;]*[A-Za-z]')
 
 def sign_in_stamp(config):
     """When the sign-ins last changed, from the times of the files that hold them, never their contents: OpenClaw's
-    config (a key, a ChatGPT sign-in, the model) and Claude Code's credentials."""
+    config (a key, a ChatGPT sign-in, the model), Claude Code's credentials, and the end file of a setup-token sign-in
+    (machine/claude_signin.py TOKEN_ENDS, written with its token)."""
     paths = (Path((config or {}).get('openclaw_config') or Path.home() / '.openclaw' / 'openclaw.json'),
-             Path.home() / '.claude' / '.credentials.json')
+             Path.home() / '.claude' / '.credentials.json', Path.home() / '.claude' / 'the-machine-token.json')
     stamps = []
     for path in paths:
         try:

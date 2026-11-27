@@ -153,6 +153,8 @@ NOT_EXPORTED_HOME = [
     ('.local/share/wacli', "WhatsApp's device link and its own copy of your chats (your messages are in the export)"),
     ('.openclaw/credentials', 'keys; included only with keys'),
     ('.claude/.credentials.json', "Claude Code's sign-in, tied to this computer (only its date is read, to notice a new sign-in)"),
+    ('.claude/settings.json', "Claude Code's settings, with a hosted Machine's Claude sign-in"),
+    ('.claude/the-machine-token.json', "when a hosted Machine's Claude sign-in ends, kept with it"),
 ]
 
 DATA_HOME = '.local/share/personal-assistant'  # the data folder's usual place: exported whole, whatever is in it

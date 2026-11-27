@@ -62,6 +62,26 @@ class ClaudePrint(unittest.TestCase):
         self.assertFalse({'ANTHROPIC_API_KEY', 'ANTHROPIC_BASE_URL'} & set(seen['env']))
         self.assertFalse(os.path.exists(seen['cwd']))  # an empty folder, gone afterwards
 
+    def test_a_setup_token_sign_in_in_its_user_settings_is_handed_on_and_nothing_else(self):
+        # the cloud's agent keeps a hosted Machine's year-long sign-in there; a turn here reads no settings file
+        home = Path(self.temp.name) / 'home'
+        (home / '.claude').mkdir(parents=True)
+        seen = {}
+        def call(args, **kw):
+            seen.update(kw)
+            return reply('OK.')
+        with mock.patch.dict(os.environ, {'HOME': str(home), 'CLAUDE_CODE_OAUTH_TOKEN': 'from-the-environment'}):
+            claude_print.run({'claude': 'c'}, 'x', 'claude-cli/m', call=call)
+            self.assertNotIn('CLAUDE_CODE_OAUTH_TOKEN', seen['env'])  # cleared, as OpenClaw does
+            (home / '.claude' / 'settings.json').write_text(json.dumps({'env': {'CLAUDE_CODE_OAUTH_TOKEN': 'sk-ant-oat01-kept', 'OTHER': 'x'}}))
+            claude_print.run({'claude': 'c'}, 'x', 'claude-cli/m', call=call)
+            self.assertEqual(seen['env']['CLAUDE_CODE_OAUTH_TOKEN'], 'sk-ant-oat01-kept')
+            self.assertNotIn('OTHER', seen['env'])
+            for broken in ('not json', '[]', '{"env": []}'):
+                (home / '.claude' / 'settings.json').write_text(broken)
+                claude_print.run({'claude': 'c'}, 'x', 'claude-cli/m', call=call)
+                self.assertNotIn('CLAUDE_CODE_OAUTH_TOKEN', seen['env'])
+
     def test_its_own_error_or_why_there_was_none(self):
         fail = lambda answer: (lambda args, **kw: answer)
         with self.assertRaisesRegex(claude_print.Failed, 'selected model'):

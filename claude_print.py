@@ -10,7 +10,8 @@ have.
 So a turn here is Claude Code alone: no tools (`--tools ""`), no MCP servers, no skills or slash commands, no settings
 files or CLAUDE.md, a one-line system prompt, nothing saved as a session, run in an empty folder. The prompt goes on
 stdin. Claude Code's own sign-in is used the way OpenClaw uses it: the variables OpenClaw clears before it starts
-Claude Code (an API key, a base URL, a token) are cleared here too, and the sign-in is never read.
+Claude Code (an API key, a base URL, a token) are cleared here too. Its sign-in is never read, except a setup-token
+sign-in in its user settings, handed to it as OpenClaw's route gets it (env()).
 
 `search` is the same turn with one tool, Claude Code's own web search, for one search (machine/signin_search.py).
 """
@@ -55,6 +56,21 @@ def binary(config):
     return (config or {}).get('claude') or shutil.which('claude') or (str(local) if local.exists() else None)
 
 
+def env():
+    """The environment Claude Code runs in here: CLEAR_ENV cleared, as OpenClaw does. A setup-token sign-in (the cloud's
+    agent keeps it as CLAUDE_CODE_OAUTH_TOKEN in Claude Code's user settings, which OpenClaw's `--setting-sources
+    user` reads) is handed on, since a turn here reads no settings file. Passed to Claude Code only, never logged."""
+    found = {k: v for k, v in os.environ.items() if k not in CLEAR_ENV}
+    try:
+        settings = json.loads((Path.home() / '.claude' / 'settings.json').read_text())
+    except (OSError, ValueError):
+        return found
+    token = (settings.get('env') or {}).get('CLAUDE_CODE_OAUTH_TOKEN') if isinstance(settings, dict) else None
+    if isinstance(token, str) and token.strip():
+        found['CLAUDE_CODE_OAUTH_TOKEN'] = token.strip()
+    return found
+
+
 def run(config, text, model, thinking=None, timeout=90, call=None):
     """The reply's text for `text`, on the Claude model `model` (a `claude-cli/x` or `anthropic/x` ref). Raises Failed,
     and subprocess.TimeoutExpired past `timeout` seconds."""
@@ -79,10 +95,9 @@ def _call(config, text, model, how, thinking, timeout, call):
             '--disable-slash-commands', '--no-session-persistence', '--setting-sources', '']
     if EFFORT.get(thinking):
         args += ['--effort', EFFORT[thinking]]
-    env = {k: v for k, v in os.environ.items() if k not in CLEAR_ENV}
     with tempfile.TemporaryDirectory(prefix='claude-turn-') as folder:
         try:
-            return (call or subprocess.run)(args, input=text, capture_output=True, text=True, timeout=timeout, env=env, cwd=folder)
+            return (call or subprocess.run)(args, input=text, capture_output=True, text=True, timeout=timeout, env=env(), cwd=folder)
         except OSError:
             raise Failed(t('Claude Code could not be started.')) from None
 
