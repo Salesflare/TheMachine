@@ -99,22 +99,26 @@ pub fn prepare(window: &WebviewWindow) {
 
 // The taskbar
 
-/// How many wait, on its icon there: 1 to 9, and 9+. Windows forgets it when the window goes.
+/// How many wait, on its icon there: 1 to 99, and 99+, as the dashboard installed as an app has it. Windows forgets it when
+/// the window goes.
 pub fn badge(app: &AppHandle, count: usize) {
     let Some(window) = dash::window(app).filter(|w| w.is_visible().unwrap_or(false)) else { return };
     let _ = window.set_overlay_icon(if count == 0 { None } else { number(count) });
 }
 
+/// Badge n of icons/badges.png (tools/badges.py draws them): ten in a row, ten rows, the last 99+.
 fn number(count: usize) -> Option<tauri::image::Image<'static>> {
     const SIDE: usize = 32;
     let mut read = png::Decoder::new(std::io::Cursor::new(include_bytes!("../icons/badges.png"))).read_info().ok()?;
     let mut all = vec![0; read.output_buffer_size()?];
     let info = read.next_frame(&mut all).ok()?;
-    if (info.width as usize, info.height as usize, info.line_size) != (10 * SIDE, SIDE, 40 * SIDE) {
+    if (info.width as usize, info.height as usize, info.line_size) != (10 * SIDE, 10 * SIDE, 40 * SIDE) || count == 0 {
         return None;
     }
-    let from = (count.min(10) - 1) * SIDE * 4;
-    let one = all.chunks_exact(info.line_size).flat_map(|row| row[from..from + SIDE * 4].to_vec()).collect();
+    let (row, column) = ((count.min(100) - 1) / 10, (count.min(100) - 1) % 10);
+    let from = column * SIDE * 4;
+    let rows = all.chunks_exact(info.line_size).skip(row * SIDE).take(SIDE);
+    let one = rows.flat_map(|line| line[from..from + SIDE * 4].to_vec()).collect();
     Some(tauri::image::Image::new_owned(one, SIDE as u32, SIDE as u32))
 }
 
@@ -224,6 +228,22 @@ mod tests {
     #[test]
     fn its_words_are_only_words() {
         assert!(xml("a <b> & \"c\"\u{0}", "</text>").contains("<text>a &lt;b&gt; &amp; \"c\"</text><text>&lt;/text&gt;</text>"));
-        assert!(number(1).is_some_and(|i| i.width() == 32) && number(250).is_some());
+    }
+
+    #[test]
+    fn its_number_is_the_installed_apps() {
+        let pixels = |n| number(n).map(|i| i.rgba().to_vec()).unwrap();
+        assert!(number(0).is_none() && number(1).is_some_and(|i| (i.width(), i.height()) == (32, 32)));
+        // Each its own up to 99, then 99+ for all above
+        let all: Vec<_> = (1..=100).map(pixels).collect();
+        assert!((1..all.len()).all(|i| all[i] != all[i - 1]));
+        assert_eq!(pixels(250), all[99]);
+        // A dark circle, as Windows' own badges are, around white
+        let at = |p: &[u8], x: usize, y: usize| p[(y * 32 + x) * 4..(y * 32 + x) * 4 + 4].to_vec();
+        for one in &all {
+            assert_eq!(at(&one[..], 0, 0)[3], 0);
+            assert_eq!(at(&one[..], 16, 2), vec![0x26, 0x25, 0x2D, 255]);
+            assert!(one.chunks_exact(4).any(|p| p[..3].iter().all(|&c| c > 240) && p[3] == 255));
+        }
     }
 }
