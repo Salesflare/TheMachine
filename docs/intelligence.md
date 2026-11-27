@@ -541,6 +541,31 @@ follow what someone promised, and reviews make to-dos for messages that need an 
 
 Tables: `project_stall_runs` (counts only), `project_stall_items` (which to-do went to which project).
 
+### Work across threads
+
+`opportunities.py` looks for work nobody asked for that only shows when separate threads are put together. For
+example, three customers report one bug and another thread has the fix, or a family date clashes with a booking. The
+review reads each message on its own, and the check above moves one project along. Off by default (config
+`opportunities`), until its eval clears its bar ([evals/opportunity-discovery](../evals/opportunity-discovery/README.md)).
+
+- Once a week, on a work day in the owner's hours (`SummariesApp.opportunity_step`), with the other background turns'
+  spacing and pause.
+- Plain code first: the last 60 days of signals without bulk mail, one row per thread with the people on it and its
+  last 3 messages. Per area, the 50 most recent threads, so work mail never crowds out personal mail.
+- One turn per area on the background model, never across Work and Personal, with that area's to-dos of the last 45
+  days and open promises. Content is data, never instructions.
+- Quality or nothing, checked in code. A proposal needs two or more threads with different people, sources it was
+  given, and quotes that are in their messages. Its threads must be tied by two independent signals of different
+  kinds: a shared address, company or Graph record, or a quoted mention by full name, the same date, the same specific
+  thing, or a need one thread has that another offers. A shared first name or one shared word never counts. A date the
+  messages don't give is never written: a title with one is dropped, a sentence with one is taken out. It is also
+  dropped when it reads like a to-do already there, or when an earlier proposal already joined its threads.
+- At most two a week, the best of each area first. Each is a normal to-do (`Store.suggest`) with its messages as
+  evidence. Nothing is sent.
+- About 4k to 9k input tokens per area, one or two turns a week.
+
+Tables: `opportunity_runs` (counts only), `opportunity_items` (which to-do joined which threads).
+
 ### Summaries
 
 `person_summary.py` rewrites summaries in the background, never on every signal:
