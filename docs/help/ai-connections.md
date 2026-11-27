@@ -73,7 +73,7 @@ While Messages is on, a **Read & edit** AI's Graph changes wait for your OK. Pre
 
 Open **Settings**, **Apps** to see each AI that connected, once, with its access, area, end date and last use. **Messages** turns on and off right there. Press **Change** to change its access, its area or how long it lasts. The next call uses it. **Activity** lists every call, refused ones too. **Turn off now** pauses it: every sign-in ends, its history stays. **Remove** takes it away with its history.
 
-When you sign in to the same AI again, the new approval replaces the earlier one.
+When you sign in to the same AI again, the new approval replaces the earlier one. Where that AI was already signed in, it stays connected with the new access. An AI you use stays signed in until the end date; one unused for 90 days asks you to sign in again.
 
 An AI that can't sign in by itself can use a key. Under **Add a key**, name it, pick the access and how long, and press **Make key**. Copy the key right away: it shows only once. The AI sends it as `Authorization: Bearer <key>`.
 
