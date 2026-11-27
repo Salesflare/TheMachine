@@ -457,7 +457,7 @@ class BrowserApp:
 
     def exit_away(self, hosts):
         """{'exit': site} while a listed site's sign-in should wait for the owner's computer (browser_exit.away): the
-        dialog asks to open the desktop app, with a way to sign in from the Machine anyway. Nothing otherwise."""
+        dialog asks to open the desktop app, with a way to sign in without it. Nothing otherwise."""
         site = browser_exit.away(self.config, [h for h in hosts if isinstance(h, str)])
         return {'exit': site} if site else {}
 

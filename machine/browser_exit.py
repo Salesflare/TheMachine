@@ -10,7 +10,7 @@ only, same origin). A listed site (browser_exit_sites, a host and its subdomains
 other site goes straight out from here, as before. With no app connected, listed sites go straight out too, right away:
 browsing never stalls on the computer. Only the Machine's own sign-in dialog asks first (away()): while the owner has
 a desktop app with it on (`browser-exit.json` next to the database: when one was last connected, and whether it said it
-was turned off) but none is connected, it says to open the app, with a way to sign in from the Machine anyway. When an
+was turned off) but none is connected, it says to open the app, with a way to sign in without it. When an
 app connects, listed sites' direct connections are closed, so the browser opens them again through it.
 
 A listed site's way out (computer or direct) is kept per site; a challenge on it (a robot check, a verify-it's-you
