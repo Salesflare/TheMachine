@@ -105,7 +105,7 @@ function flNext(d){const steps=[...(d.connect||[]).map(c=>({key:'connect',servic
  const last=typeof palAskable==='function'&&palAskable()?'ask':typeof talkOk==='function'&&talkOk()?'talk':'todo';
  return [...steps,{key:last,label:t(FL_NEXT[last])}].slice(0,2)}
 // Whether What I've learned holds anything (learnedList draws these, learning-missed.js); the link goes only once it does
-const learnedAny=()=>['voices','facts','rules_waiting','facts_ended','moved','bring_in'].some(k=>state[k]?.length);
+const learnedAny=()=>['profile','voices','facts','rules_waiting','facts_ended','moved','bring_in'].some(k=>state[k]?.length);
 const flLearned=()=>learnedAny()?html`<a class="link fl-learned" href="#learning=learned">${t('See what I’ve learned')}</a>`:'';
 function firstLookEnd(){const d=state.first_look_done;if(!d||d.todos>1)return '';const kinds=flList(d.kinds,FL_KINDS),read=flList(d.read,FL_READ);
  const line=!kinds?t('Nothing came in from the past week yet.'):read?t('Read {} from the past week: {}.',kinds,read):t('Read {} from the past week.',kinds);

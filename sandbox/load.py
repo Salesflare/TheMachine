@@ -200,6 +200,8 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
             load_routines(store, base)
         if 'notes' in states:  # never part of `all`: the site's demo is recorded from `all` and shows no notes to bring in
             load_notes(store, config, directory)
+        if not fresh:  # a fresh Machine has no profile yet
+            load_profile('notes' in states)
     return config, config_path
 
 
@@ -642,6 +644,31 @@ NOTES = {'MEMORY.md': """# MEMORY.md
 
 - Northwind Freight is our oldest customer: their mails go first.
 """}
+# USER.md's profile section as the first profile writes it (onboarding.render_profile): What I've learned, Your profile
+PROFILE_MD = """
+## Observed from my messages
+<!-- assistant profile 2026-10-12 · edit freely; delete this line to keep later drafts out -->
+
+- Role: Runs sales and customer success at a small software company
+- Tone: Short and friendly; first names; no exclamation marks
+- Greeting: Hi + first name in English; Hoi in Dutch
+- Sign-off: Thanks, then the first name
+- Languages: English: customers and partners; Dutch: the team
+
+### What matters
+- Meridian Robotics: the renewal this quarter
+- Northwind Freight: the oldest customer
+"""
+
+
+def load_profile(notes=False):
+    """What the first profile turn wrote into USER.md, after the owner's own notes when the sandbox has them, in the
+    workspace the app reads (machine.config.WORKSPACE, under the sandbox's HOME)."""
+    from machine.config import WORKSPACE
+    WORKSPACE.mkdir(parents=True, exist_ok=True)
+    (WORKSPACE / 'USER.md').write_text((NOTES['USER.md'] if notes else '# About me\n') + PROFILE_MD)
+
+
 NOTES_PICKS = [(1, 'Thibault at Meridian Robotics wants every quote as a PDF, never a link.', 'preference'),
                (2, 'Ilse from the school board only reads messages after 8 pm.', 'fact'),
                (3, 'Customer calls are never booked on Friday afternoon.', 'preference'),
