@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
@@ -17,22 +18,23 @@ const start=[
 let profile=structuredClone(start);const posts=[];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
+ const asset={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'}[url.pathname];
+ if(asset){res.setHeader('Content-Type',asset.endsWith('png')?'image/png':'font/woff2');res.end(await readFile(new URL('../'+asset,import.meta.url)));return}
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},connectors:[],review_runs:[],voices:[],facts:[],profile}));return}
  if(url.pathname==='/api/action'){let body='';for await(const c of req)body+=c;const {action,args}=JSON.parse(body);posts.push({action,args});
   if(action==='profile_line_edit')profile=profile.map(p=>p.line===args.line?{...p,text:args.text,line:p.line.replace(p.text,args.text)}:p);
   if(action==='profile_line_remove')profile=profile.filter(p=>p.line!==args.line);
   res.end(JSON.stringify({profile}));return}
- if(url.pathname.startsWith('/brand/')){res.statusCode=404;res.end();return}
  res.end('{}');
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;const shots=process.env.PROFILE_SHOTS;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- for(const width of [1440,390]){
-  profile=structuredClone(start);
-  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage();
+ for(const [width,scheme] of [[1440,'light'],[390,'light'],[390,'dark']]){
+  profile=structuredClone(start);const name=`${width}${scheme==='dark'?'-dark':''}`;
+  const context=await browser.newContext({viewport:{width,height:900},colorScheme:scheme}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/#learning=learned');
@@ -44,20 +46,27 @@ try{
   assert.equal(await group.locator('h3').textContent(),'Your profile 5');
   assert.deepEqual(await group.locator('.fact-row strong').allTextContents(),['Role','Tone','Languages','What matters','Leave alone']);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal scroll at '+width);
-  if(shots){await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${shots}/profile-${width}.png`})}
+  // One intro for every group: each group says where it came from
+  assert.equal(await page.locator('#learn-pane-learned .learn-intro').textContent(),'Edit or remove anything that’s off.');
+  assert.ok(await page.evaluate(()=>[...document.images].filter(i=>i.checkVisibility()).every(i=>i.complete&&i.naturalWidth>0)),'every image on screen loads');
+  if(shots){await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${shots}/profile-${name}.png`})}
   if(width===1440){
    // Edit opens the words in place; Save sends the row's exact line with the new words (row n's id is ~n, below a fact's)
    await group.locator('[data-edit-fact="-2"]').click();
    const box=group.locator('#learned--2 textarea');assert.equal(await box.inputValue(),start[1].text);
    await box.fill('Warm, first names');
-   if(shots)await page.screenshot({path:`${shots}/profile-${width}-edit.png`});
+   if(shots)await page.screenshot({path:`${shots}/profile-${name}-edit.png`});
    await group.locator('#learned--2 [type=submit]').click();
    await page.locator('#toast',{hasText:'Saved.'}).waitFor({state:'attached'});
    assert.deepEqual(posts.at(-1),{action:'profile_line_edit',args:{line:start[1].line,text:'Warm, first names'}});
    await group.locator('#learned--2 textarea').waitFor({state:'detached'});
    await group.locator('#learned--2 .grow',{hasText:'Tone Warm, first names'}).waitFor();
-  }else{
+  }else if(scheme==='light'){
+   // On a phone Remove sits in the edit form, as it does for facts
+   assert.equal(await group.locator('#learned--5 [data-forget]').isVisible(),false);
    await group.locator('[data-edit-fact="-5"]').click();
+   await group.locator('#learned--5 [data-forget="-5"]').waitFor();
+   if(shots)await page.screenshot({path:`${shots}/profile-${name}-edit.png`});
    await group.locator('#learned--5 [data-forget="-5"]').click();
    await page.locator('#toast',{hasText:'Removed.'}).waitFor({state:'attached'});
    assert.deepEqual(posts.at(-1),{action:'profile_line_remove',args:{line:start[4].line}});
