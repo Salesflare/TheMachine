@@ -18,7 +18,7 @@ import login_import
 import todo_areas
 from machine.browser import (browser_lease_script, browser_link, browser_wait, preparation_steps, run_tab,
                              same_site, signin_address, signin_handoff, signin_kind, signin_look, signin_name, SIGNIN_WATCH,
-                             site_language, task_page, task_tabs)
+                             same_browser, site_language, task_page, task_tabs)
 from machine.config import BROWSER_LEASE, LOG
 import mail_attachments
 import next_actions
@@ -207,7 +207,7 @@ class BrowserApp:
         with self.store.connect() as db:
             tab = run_tab(db, job_id)
         base = (browser_login.endpoints(self.config) or [None])[0]
-        if not tab or not base or urllib.parse.urlsplit(base).port != tab[1]:
+        if not tab or not same_browser(base, tab[1]):
             return None
         return base, tab[0]
 
@@ -244,8 +244,7 @@ class BrowserApp:
         """Which of these runs' tabs (job ID: (target ID, port)) the browser shows now: the one whose page is visible,
         read over DevTools without bringing anything to the front. None when none is, or the browser can't say."""
         base = (browser_login.endpoints(self.config) or [None])[0]
-        port = urllib.parse.urlsplit(base).port if base else None
-        for tab in dict.fromkeys(t for t in tabs.values() if t and t[1] == port):
+        for tab in dict.fromkeys(t for t in tabs.values() if t and same_browser(base, t[1])):
             try:
                 with browser_login.browser_cdp.Session(base, tab[0], timeout=2) as session:
                     if session.call('Runtime.evaluate', {'expression': 'document.visibilityState', 'returnByValue': True})['result'].get('value') == 'visible':
@@ -345,7 +344,7 @@ class BrowserApp:
             tabs = self.signin_tabs()
         except (browser_login.browser_cdp.CdpError, OSError, TypeError, AttributeError):
             return {'shown': False, 'site': site, 'view': view, 'error': 'I couldn’t reach the browser on this computer'}
-        same_port = page['target'] and urllib.parse.urlsplit(base).port == page['port']
+        same_port = page['target'] and same_browser(base, page['port'])
         tab = (next((t for t in tabs if same_port and t['id'] == page['target']), None)
                or next((t for t in tabs if t['url'] == page['url']), None))
         opened = False

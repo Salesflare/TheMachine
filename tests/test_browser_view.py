@@ -197,6 +197,26 @@ class BrowserView(Fixture):
         open_tab.assert_not_called()
         self.assertEqual(focus.call_args.kwargs['target'], TAB)
 
+    def test_the_tasks_own_tab_also_when_the_open_answer_has_no_devtools_address(self):
+        # OpenClaw's newer open answers carry no wsUrl: the tab is still the task's own, looked for in the Machine's browser
+        self.steps(('browser', {'action': 'open', 'url': 'https://portal.example.org/login'}, answer(targetId=TAB, url='https://portal.example.org/login', label='report')),
+                   ('browser', {'action': 'act', 'targetId': 'report', 'kind': 'click'}, answer(ok=True, targetId=TAB, url=PAGE)))
+        with self.store.connect() as db:
+            self.assertEqual(machine_browser.task_page(db, self.sid)['target'], TAB)
+        self.save(outcome='your_step', step='submit')
+        # The tab moved on since (another page, same tab): found by its ID, not reopened from the address
+        shown, open_tab, focus = self.show([{'id': 'OTHER', 'url': PAGE}, {'id': TAB, 'url': 'https://portal.example.org/next'}])
+        self.assertTrue(shown['shown'])
+        open_tab.assert_not_called()
+        self.assertEqual(focus.call_args.kwargs['target'], TAB)
+
+    def test_an_open_answer_off_this_computer_names_no_tab_of_the_task(self):
+        far = answer(targetId=TAB, url='https://portal.example.org/login', wsUrl=f'ws://10.0.0.5:18800/devtools/page/{TAB}', label='report')
+        self.steps(('browser', {'action': 'open', 'url': 'https://portal.example.org/login'}, far),
+                   ('browser', {'action': 'act', 'targetId': 'report', 'kind': 'click'}, answer(ok=True, targetId=TAB, url=PAGE)))
+        with self.store.connect() as db:
+            self.assertIsNone(machine_browser.task_page(db, self.sid)['target'])
+
     def test_a_closed_tab_is_reopened_in_the_machine_browser(self):
         self.fill_in()
         self.save(outcome='your_step', step='submit')

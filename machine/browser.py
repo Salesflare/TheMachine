@@ -301,6 +301,29 @@ def browser_result(call):
     return found if isinstance(found, dict) else {}
 
 
+def opened_tab(call):
+    """The tab an open step's answer names, as (DevTools target ID, port, the answer), or None. The port is None when
+    the answer carries no DevTools address (OpenClaw's answers stopped carrying `wsUrl`): the tab is then looked for by
+    its ID in the Machine's own browser (same_browser), where an ID from another browser matches nothing. An answer
+    with an address off this computer names none."""
+    found = browser_result(call)
+    target, ws = found.get('targetId'), urllib.parse.urlsplit(str(found.get('wsUrl') or ''))
+    if not isinstance(target, str) or not re.fullmatch(r'[A-F0-9]{32}', target):
+        return None
+    if not ws.netloc:
+        return target, None, found
+    try:
+        port = ws.port
+    except ValueError:
+        return None
+    return (target, port, found) if ws.hostname in ('127.0.0.1', 'localhost', '::1') and port else None
+
+
+def same_browser(base, port):
+    """Whether a tab of `port` (opened_tab; None: no address given) is in the browser at DevTools address `base`."""
+    return bool(base) and (port is None or urllib.parse.urlsplit(base).port == port)
+
+
 def run_tab(db, job_id):
     """The tab a running preparation last worked in, as (DevTools target ID, port): the tab of its latest browser step,
     also between its browser steps (while it thinks, or runs a command in between), so the dashboard's live look at it
@@ -342,13 +365,13 @@ def own_tab(db, job_id, calls, want):
                 return []
             if given.get('action') != 'open':
                 continue
-            found = browser_result(call)
-            target, ws = found.get('targetId'), urllib.parse.urlsplit(str(found.get('wsUrl') or ''))
-            if not isinstance(target, str) or not re.fullmatch(r'[A-F0-9]{32}', target) or ws.hostname not in ('127.0.0.1', 'localhost', '::1') or not ws.port:
+            tab = opened_tab(call)
+            if not tab:
                 continue
+            target, port, found = tab
             names = {str(found.get(k)) for k in ('targetId', 'label', 'tabId', 'suggestedTargetId') if found.get(k)}
             if not want or str(want) in names:
-                tabs.append((target, ws.port, names))
+                tabs.append((target, port, names))
         return tabs
 
     mine = next(iter(opened(calls, want)), None)
@@ -370,9 +393,8 @@ def own_tab(db, job_id, calls, want):
 
 def task_tabs(db, job_id):
     """The DevTools target IDs of the tabs a task's runs opened: this run's and the earlier runs' of the same task (a
-    retry, after a sign-in or a Change), from the answers of their own open steps. Unlike own_tab, also when the answer
-    carries no DevTools address (OpenClaw's newer answers don't); one that does must be on loopback. Never another
-    task's tab: only this task's runs."""
+    retry, after a sign-in or a Change), from the answers of their own open steps (opened_tab, as own_tab reads them).
+    Never another task's tab: only this task's runs."""
     try:
         session = db.execute('SELECT session_job_id FROM preparation_runs WHERE job_id=?', (job_id,)).fetchone()
         jobs = [job_id] + [r[0] for r in db.execute('SELECT job_id FROM preparation_runs WHERE session_job_id=? AND job_id!=? ORDER BY started_at DESC LIMIT 10',
@@ -388,10 +410,9 @@ def task_tabs(db, job_id):
             continue
         if not isinstance(given, dict) or given.get('action') != 'open':
             continue
-        answer = browser_result(call)
-        target, ws = answer.get('targetId'), urllib.parse.urlsplit(str(answer.get('wsUrl') or ''))
-        if isinstance(target, str) and re.fullmatch(r'[A-F0-9]{32}', target) and (not ws.netloc or ws.hostname in ('127.0.0.1', 'localhost', '::1')):
-            found.add(target)
+        tab = opened_tab(call)
+        if tab:
+            found.add(tab[0])
     return found
 
 

@@ -25,6 +25,8 @@ OTHER = 'DF829ED2FFBB4631972AF70080134B94'
 def opened(target, label, port=18800):
     answer = {'targetId': target, 'url': 'https://example.org/', 'wsUrl': f'ws://127.0.0.1:{port}/devtools/page/{target}',
               'type': 'page', 'suggestedTargetId': label, 'tabId': 't1', 'label': label}
+    if port is None:  # OpenClaw's newer answers carry no DevTools address
+        del answer['wsUrl']
     text = '\n<<<EXTERNAL_UNTRUSTED_CONTENT id="x">>>\nSource: Browser\n---\n' + json.dumps(answer, indent=2) + '\n<<<END_EXTERNAL_UNTRUSTED_CONTENT id="x">>>'
     return json.dumps({'content': [{'type': 'text', 'text': text}]})
 
@@ -80,7 +82,22 @@ class PeekTabTest(unittest.TestCase):
                    (json.dumps({'action': 'close', 'targetId': 'bills'}),))
         self.assertIsNone(assistant.run_tab(db, 'job'))
 
+    def test_an_answer_without_a_devtools_address_still_names_the_runs_own_tab(self):
+        mine = ('browser', {'action': 'open', 'url': 'https://example.org/'}, opened(TAB, 'bills', port=None))
+        self.assertEqual(assistant.run_tab(journal(mine, ('browser', {'action': 'act', 'targetId': 'bills'}, None)), 'job'), (TAB, None))
+        # Still only this run's own tab, and gone once it closes it.
+        self.assertIsNone(assistant.run_tab(journal(mine, ('browser', {'action': 'act', 'targetId': 'theirs'}, None)), 'job'))
+        self.assertIsNone(assistant.run_tab(journal(mine, ('browser', {'action': 'close', 'targetId': 'bills'}, None)), 'job'))
+        listing = ('browser', {'action': 'tabs'}, opened(OTHER, 'theirs', port=None))
+        self.assertIsNone(assistant.run_tab(journal(listing, ('browser', {'action': 'act', 'targetId': 'theirs'}, None)), 'job'))
+
     def test_the_picture_comes_from_that_tab_only_when_it_is_in_front(self):
+        self.look(18800)
+
+    def test_the_picture_without_a_devtools_address_in_the_open_answer(self):
+        self.look(None)
+
+    def look(self, port):
         store_dir = tempfile.TemporaryDirectory()
         self.addCleanup(store_dir.cleanup)
         store = assistant.Store(Path(store_dir.name) / 'events.sqlite')
@@ -90,7 +107,7 @@ class PeekTabTest(unittest.TestCase):
             db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES('s1','d1','job','running',?,?)",
                        (assistant.now(), assistant.now()))
             db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,result,started_at) VALUES(?,?,?,?,?,?)',
-                       ('job', '1', 'browser', json.dumps({'action': 'open'}), opened(TAB, 'bills'), assistant.now()))
+                       ('job', '1', 'browser', json.dumps({'action': 'open'}), opened(TAB, 'bills', port=port), assistant.now()))
         shown = {'visible': 'hidden'}
         calls = []
 
@@ -117,7 +134,10 @@ class PeekTabTest(unittest.TestCase):
                 raise AssertionError(method)
 
         cdp = assistant.browser_login.browser_cdp
-        with patch.object(cdp, 'Session', Tab), patch.object(cdp, '_http', return_value=[{'id': TAB, 'type': 'page'}, {'id': OTHER, 'type': 'page'}]):
+        def listed(base, path, **kw):  # the run's tab is in the Machine's browser only; another browser has other tabs
+            return [{'id': TAB, 'type': 'page'}, {'id': OTHER, 'type': 'page'}] if base.endswith(':18800') else [{'id': OTHER, 'type': 'page'}]
+
+        with patch.object(cdp, 'Session', Tab), patch.object(cdp, '_http', side_effect=listed):
             self.assertTrue(app.preparation_progress('s1')['peek'])
             self.assertEqual(app.preparation_peek('s1'), {'on': True, 'image': None})  # in the background: never brought forward
             self.assertNotIn('Page.captureScreenshot', calls)
