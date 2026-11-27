@@ -57,7 +57,10 @@ To use your own Claude plan (Pro, Max or Team), install Claude Code with Anthrop
 - Usage counts against your plan. With a Claude model as main model, Settings → Model says "Uses your Claude plan".
 - Sign out with `claude auth logout`.
 - A Claude sign-in ends on a fixed day, about four weeks after you signed in: Claude Code's token refreshes never move
-  that day later. Three days ahead, Needs you says when it ends; once it ended, Needs you says Claude is signed out,
+  that day later. A hosted Machine's **Sign in again** uses `claude setup-token` instead (the cloud's agent): a token
+  for about a year, kept as `CLAUDE_CODE_OAUTH_TOKEN` in `~/.claude/settings.json`'s `env` (OpenClaw's Claude Code
+  route reads user settings; one-shot turns are handed it, `claude_print.env`), with its end and plan beside it in
+  `~/.claude/the-machine-token.json`, since `claude auth status` gives no end for it. Three days ahead, Needs you says when it ends; once it ended, Needs you says Claude is signed out,
   and a phone notification and Telegram tell it once (`machine/claude_signin.py`, `machine/app/ai_signin.py`). A
   sign-in whose refresh failed earlier ("OAuth session expired and could not be refreshed") counts as signed out the
   same way once the AI's short test fails with it, though `claude auth status` still says logged in. Sign in

@@ -69,7 +69,7 @@ def claude_code_usage(config, timeout=30, popen=subprocess.Popen):
         return None
     args = [str(binary), '-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--tools', '',
             '--strict-mcp-config', '--disable-slash-commands', '--no-session-persistence', '--setting-sources', '']
-    env = {k: v for k, v in os.environ.items() if k not in claude_print.CLEAR_ENV}
+    env = claude_print.env()
     with tempfile.TemporaryDirectory(prefix='claude-usage-') as folder:
         try:
             proc = popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,

@@ -16,7 +16,12 @@ check fails with Claude Code's words for a sign-in it can't use (said_signed_out
 read() runs the command at most once per SOON and keeps a reading HOLD seconds (shorter while signed out). It reads
 again sooner when Claude Code's credentials file changed (a sign-in: its time only, never what it holds) or the AI failed
 its check since (stale, from model_check_run). wait=False never runs it on the caller's thread (the status poll): the last
-reading, or None before the first, while one background thread reads it again."""
+reading, or None before the first, while one background thread reads it again.
+
+A hosted Machine signs in with `claude setup-token` (the cloud's agent, from agent 216): a token for about a year,
+kept as CLAUDE_CODE_OAUTH_TOKEN in Claude Code's user settings, beside a file with its end and plan and nothing secret
+(TOKEN_ENDS). `claude auth status` then says authMethod oauth_token without an end, so the end and plan come from that
+file."""
 from __future__ import annotations
 
 import datetime as dt
@@ -34,6 +39,7 @@ HOLD = {True: 3600, False: 300}  # seconds a reading holds, by whether it was si
 SOON = 60  # never two readings closer than this
 ENDS_SOON = 3 * 86400  # Claude Code itself warns this long before its sign-in ends
 TIMEOUT = 30
+TOKEN_ENDS = 'the-machine-token.json'  # in ~/.claude: {"expires_at", "plan"} of a setup-token sign-in (the cloud's agent)
 _lock = threading.Lock()
 _cache = {'at': float('-inf'), 'found': None, 'stamp': None, 'reading': False, 'stale': False, 'refused': None}
 # Claude Code's words for a sign-in it can't use, in a failed `claude -p` (the AI's check): signed out ("Not logged in ·
@@ -52,11 +58,25 @@ def binary(config):
 
 
 def stamp():
-    """When Claude Code's credentials last changed (the file's time, never its contents), or None."""
+    """When Claude Code's sign-in last changed (the latest time of its credentials file and of TOKEN_ENDS, never their
+    contents), or None."""
+    found = []
+    for name in ('.credentials.json', TOKEN_ENDS):
+        try:
+            found.append(int((Path.home() / '.claude' / name).stat().st_mtime))
+        except OSError:
+            pass
+    return max(found) if found else None
+
+
+def token_ends():
+    """(end, plan) of a setup-token sign-in from TOKEN_ENDS, each None when it doesn't say."""
     try:
-        return int((Path.home() / '.claude' / '.credentials.json').stat().st_mtime)
-    except OSError:
-        return None
+        data = json.loads((Path.home() / '.claude' / TOKEN_ENDS).read_text()[:2000])
+    except (OSError, ValueError):
+        return None, None
+    data = data if isinstance(data, dict) else {}
+    return _when(data.get('expires_at')), data.get('plan') if isinstance(data.get('plan'), str) else None
 
 
 def plan_kind(plan):
@@ -65,17 +85,21 @@ def plan_kind(plan):
 
 
 def parse(text, now):
-    """{'signed_in', 'plan', 'expires_at'} from what `claude auth status --json` printed; None when it isn't that.
-    signed_in is False once expires_at (ISO, UTC) passed, whatever loggedIn says."""
+    """{'signed_in', 'plan', 'expires_at'} from what `claude auth status --json` printed (and TOKEN_ENDS for a
+    setup-token sign-in); None when it isn't that. signed_in is False once expires_at (ISO, UTC) passed, whatever
+    loggedIn says."""
     try:
         data = json.loads(text)
     except (TypeError, ValueError):
         return None
     if not isinstance(data, dict) or not isinstance(data.get('loggedIn'), bool):
         return None
-    ends = _when(data.get('loginExpiresAt')) if data['loggedIn'] else None
+    ends, plan = _when(data.get('loginExpiresAt')) if data['loggedIn'] else None, data.get('subscriptionType')
+    if data['loggedIn'] and data.get('authMethod') == 'oauth_token':  # a setup-token sign-in: its end is in TOKEN_ENDS
+        kept_ends, kept_plan = token_ends()
+        ends, plan = ends or kept_ends, plan or kept_plan
     signed = data['loggedIn'] and not (ends and ends.timestamp() <= now)
-    return {'signed_in': signed, 'plan': plan_kind(data.get('subscriptionType')) if signed else None,
+    return {'signed_in': signed, 'plan': plan_kind(plan) if signed else None,
             'expires_at': ends.isoformat() if ends else None}
 
 

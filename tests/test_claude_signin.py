@@ -51,6 +51,25 @@ class Reading(unittest.TestCase):
         self.assertEqual((found['signed_in'], found['plan']), (False, None))
         self.assertFalse(claude_signin.parse(status_run(logged_in=False)(['x']).stdout, NOW)['signed_in'])
 
+    def test_a_setup_token_sign_in_ends_when_its_end_file_says(self):
+        # `claude auth status` says oauth_token without an end; the cloud's agent keeps the end and plan beside it
+        with tempfile.TemporaryDirectory() as home, mock.patch.object(Path, 'home', return_value=Path(home)):
+            (Path(home) / '.claude').mkdir()
+            said = json.dumps({'loggedIn': True, 'authMethod': 'oauth_token', 'apiProvider': 'firstParty', 'loginExpiresAt': None})
+            self.assertEqual(claude_signin.parse(said, NOW), {'signed_in': True, 'plan': None, 'expires_at': None})
+            self.assertIsNone(claude_signin.stamp())
+            ends = Path(home) / '.claude' / claude_signin.TOKEN_ENDS
+            ends.write_text(json.dumps({'expires_at': iso(2.5 * 86400)[:19] + 'Z', 'plan': 'max'}))
+            found = claude_signin.parse(said, NOW)
+            self.assertEqual((found['signed_in'], found['plan'], claude_signin.days_left(found, NOW)), (True, 'max', 2))
+            self.assertEqual(claude_signin.stamp(), int(ends.stat().st_mtime))  # a new token is a new sign-in
+            ends.write_text(json.dumps({'expires_at': iso(-60)[:19] + 'Z', 'plan': 'max'}))
+            self.assertEqual(claude_signin.parse(said, NOW)['signed_in'], False)
+            ends.write_text('[1]')
+            self.assertEqual(claude_signin.parse(said, NOW)['expires_at'], None)
+            # a /login sign-in keeps its own end, whatever the file says
+            self.assertEqual(claude_signin.parse(status_run(ends=10 * 86400)(['x']).stdout, NOW)['expires_at'], iso(10 * 86400)[:19] + '+00:00')
+
     def test_days_left_only_within_three_days(self):
         def left(seconds):
             return claude_signin.days_left(claude_signin.parse(status_run(ends=seconds)(['x']).stdout, NOW), NOW)
