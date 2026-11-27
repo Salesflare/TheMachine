@@ -156,10 +156,14 @@ reach the Machine's browser through the owner's desktop app, so they see the own
   ranges, nor the computer's own public address. It has caps on connections, speed and bytes a day.
 - The Machine's end is a SOCKS5 listener on `127.0.0.1` of the Machine's own host, for its browser.
 - What goes through is the browser's traffic as it is: for HTTPS sites that is TLS and the site's name. Nothing is
-  kept or logged but that a computer connected or went, which listed site waited for it, and why a connection was
-  refused (a word, no address).
-- While the owner's computer is away, listed sites wait for it and are then refused, so a sign-in doesn't come from
-  the Machine's address instead. Turned off in the app, or no app for 14 days: they go out from the Machine again.
+  kept or logged but that a computer connected or went, and why a connection was refused (a word, no address).
+- While the owner's computer is away, listed sites go out from the Machine, as before. Only the Machine's own sign-in
+  dialog first asks to open the desktop app, with a way to sign in from the Machine anyway; without a desktop app with
+  it on (none, turned off, or none for 14 days) it doesn't ask.
+- A robot check, a verify-it's-you page or a sign-in asked again on a listed site within a day after its way out
+  changed (computer or Machine) is counted in the error reports (Settings, Send error reports): the kind of check, the
+  way before and after, and the site's name if it is one of the built-in ones (else "other"). Never an address, a page's
+  text or an account.
 
 ### On the device
 

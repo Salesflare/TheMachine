@@ -140,15 +140,6 @@ BROWSER_WAIT = 45  # seconds on the browser before a card offers it to the owner
 SIGNIN_WATCH = 20  # seconds between looks at the browser while a task waits on the owner's sign-in
 
 
-def on_browser(db, job_id):
-    """Whether a run's latest recorded step is a browser one."""
-    try:
-        last = db.execute('SELECT tool FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 1', (job_id,)).fetchone()
-    except sqlite3.OperationalError:
-        return False
-    return bool(last) and last[0] == 'browser'
-
-
 def browser_wait(db, job_id, status, at=None, reason=None):
     """The browser a preparation waits on, as {since, page, sign_in}: it has been on the browser for BROWSER_WAIT seconds or
     more (a sign-in, a captcha, a code or a page that does not load), or it stopped right after a browser step and

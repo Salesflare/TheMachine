@@ -1,5 +1,6 @@
 """The Machine's browser going out through the owner's computer (machine/browser_exit.py): tm-exit/1's frames, which
-sites go that way, the owner-only upgrade at /api/exit, waiting while the computer is away, and a page Chromium opens
+sites go that way, the owner-only upgrade at /api/exit, straight out while the computer is away (the sign-in dialog
+asking for it), challenges counted after a site's way out changed, and a page Chromium opens
 through the Machine's listener, the real upgrade and a stand-in for the desktop app, where the site sees the stand-in's
 address. Offline: only 127.0.0.1 and 127.0.0.2."""
 import http.client
@@ -20,9 +21,10 @@ import unittest
 from unittest.mock import patch
 
 from machine import browser_exit as x
+import error_feed
+import machine.app.browser as machine_app_browser
 import machine.main as machine_main
 import served
-import test_browser_view
 
 CHROME = os.environ.get('CHROMIUM_PATH') or shutil.which('chromium') or shutil.which('google-chrome-stable') or shutil.which('chromium-browser')
 HOST = 'machine.example:8443'
@@ -91,7 +93,7 @@ class Remembered(unittest.TestCase):
         x.configure(temp.name)
         self.addCleanup(x.configure, None)
 
-    def test_listed_sites_wait_only_for_a_computer_that_has_it_on(self):
+    def test_an_app_is_expected_only_while_one_has_it_on(self):
         self.assertFalse(x.expected())  # never connected
         x._remember(at=time.time(), off=False)
         self.assertTrue(x.expected())
@@ -99,6 +101,43 @@ class Remembered(unittest.TestCase):
         self.assertFalse(x.expected())  # turned off in the app
         x._remember(at=time.time() - x.FORGET - 1, off=False)
         self.assertFalse(x.expected())  # gone too long
+
+    def test_the_sign_in_asks_for_the_computer_only_while_an_app_with_it_on_is_away(self):
+        config = {'browser_exit': True}
+        hosts = ['example.org', 'www.linkedin.com']
+        self.assertIsNone(x.away(config, hosts))  # no desktop app ever: signs in as today
+        x._remember(at=time.time(), off=False)
+        self.assertEqual(x.away(config, hosts), 'LinkedIn')
+        self.assertIsNone(x.away(config, ['example.org']))  # not a listed site
+        self.assertIsNone(x.away({'browser_exit': False}, hosts))
+        x._remember(off=True)
+        self.assertIsNone(x.away(config, hosts))  # turned off in the app
+        x._remember(off=False)
+        with patch.object(x, 'connected', lambda: True):
+            self.assertIsNone(x.away(config, hosts))  # it's there: the sign-in goes through it
+
+
+class Challenges(unittest.TestCase):
+    def setUp(self):
+        x.reset()
+        self.addCleanup(x.reset)
+
+    def test_counted_once_soon_after_a_sites_way_out_changed(self):
+        config, now = {'browser_exit': True}, 1_000_000.0
+        x.went('linkedin.com', 'computer', now)
+        self.assertIsNone(x.challenge(config, 'www.linkedin.com', 'signin', now + 5))  # always that way: nothing to tell
+        x.went('linkedin.com', 'direct', now + 10)
+        self.assertEqual(x.challenge(config, 'www.linkedin.com', 'captcha', now + 20), ('linkedin.com', 'computer', 'direct'))
+        self.assertIsNone(x.challenge(config, 'www.linkedin.com', 'captcha', now + 30))  # once per change
+        self.assertEqual(x.challenge(config, 'www.linkedin.com', 'checkpoint', now + 30), ('linkedin.com', 'computer', 'direct'))
+        self.assertIsNone(x.challenge(config, 'www.linkedin.com', 'wall', now + 10 + x.SWITCHED + 1))  # long after
+        self.assertIsNone(x.challenge(config, 'www.linkedin.com', 'something else', now + 20))
+        self.assertIsNone(x.challenge(config, 'example.org', 'signin', now + 20))  # not listed
+        self.assertIsNone(x.challenge({'browser_exit': False}, 'www.linkedin.com', 'wall', now + 20))
+        own = {'browser_exit': True, 'browser_exit_sites': ['intranet.example']}
+        x.went('intranet.example', 'computer', now)
+        x.went('intranet.example', 'direct', now + 1)
+        self.assertEqual(x.challenge(own, 'intranet.example', 'signin', now + 2), ('other', 'computer', 'direct'))  # never its name
 
 
 def socks(port, host, target_port):
@@ -214,6 +253,10 @@ class Seen(http.server.BaseHTTPRequestHandler):
         pass
 
 
+class KeptSeen(Seen):
+    protocol_version = 'HTTP/1.1'  # keeps the connection, as a browser's is
+
+
 class Served(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -289,44 +332,56 @@ class Served(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(Seen.peers, ['127.0.0.2', '127.0.0.1'])
 
-    def test_while_the_computer_is_away_a_listed_site_waits_then_is_refused(self):
-        port = self.listener()
-        x._remember(at=time.time(), off=False)  # an app with it on was there
-        with patch.object(x, 'WAIT', 0.5):
-            code, conn = socks(port, 'www.exit.test', 443)
-        conn.close()
-        self.assertEqual(code, 2)
-        self.assertEqual(x.waiting_step()['title'], 'Waiting for your computer to open exit.test')
-        # the computer comes back while one waits: it goes through it
-        site = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Seen)
+    def test_while_the_computer_is_away_a_listed_site_goes_straight_out_at_once(self):
+        site = http.server.ThreadingHTTPServer(('127.0.0.1', 0), KeptSeen)
         threading.Thread(target=site.serve_forever, daemon=True).start()
         self.addCleanup(site.server_close)
         self.addCleanup(site.shutdown)
+        port = self.listener()
+        x._remember(at=time.time(), off=False)  # an app with it on was there, and is away now
+        real = socket.create_connection
+        resolve = lambda address, *a, **k: real(('127.0.0.1' if address[0].endswith('exit.test') else address[0], address[1]), *a, **k)
+
+        def fetch(conn):
+            conn.sendall(b'GET / HTTP/1.1\r\nHost: www.exit.test\r\n\r\n')
+            got = b''
+            while b'The site page' not in got and (part := conn.recv(65536)):
+                got += part
+            return got
         Seen.peers.clear()
-        late = threading.Timer(0.5, lambda: setattr(self, 'peer', Peer(self.port, lambda host: '127.0.0.1').start()))
-        late.start()
-        code, conn = socks(port, 'www.exit.test', site.server_address[1])
-        late.join()
-        self.addCleanup(self.peer.close)
-        self.assertEqual(code, 0)
-        conn.sendall(b'GET / HTTP/1.1\r\nHost: www.exit.test\r\nConnection: close\r\n\r\n')
-        while conn.recv(65536):
-            pass
-        conn.close()
-        self.assertEqual(Seen.peers, ['127.0.0.2'])
-        self.assertIsNone(x.waiting_step())  # connected: nothing waits
-        # turned off in the app: listed sites go straight out again
-        self.peer.close(b'off')
-        for _ in range(50):
-            if not x.connected():
-                break
-            time.sleep(0.1)
-        self.assertFalse(x.expected())
-        begun = time.monotonic()
-        code, conn = socks(port, 'www.exit.test', site.server_address[1])  # straight out: a name nobody resolves
-        conn.close()
-        self.assertEqual(code, 4)
-        self.assertLess(time.monotonic() - begun, x.WAIT)
+        with patch.object(x.socket, 'create_connection', resolve):
+            begun = time.monotonic()
+            code, kept = socks(port, 'www.exit.test', site.server_address[1])
+            self.assertEqual(code, 0)
+            self.assertLess(time.monotonic() - begun, 5)  # no wait for the computer
+            self.assertIn(b'The site page', fetch(kept))  # a kept-alive connection, straight out
+            self.assertEqual(Seen.peers, ['127.0.0.1'])
+            # the computer connects: the direct one is closed, and the browser's next one goes through it
+            self.peer = Peer(self.port, lambda host: '127.0.0.1').start()
+            self.addCleanup(self.peer.close)
+            self.assertEqual(kept.recv(1), b'')
+            kept.close()
+            code, conn = socks(port, 'www.exit.test', site.server_address[1])
+            self.assertEqual(code, 0)
+            self.assertIn(b'The site page', fetch(conn))
+            conn.close()
+            self.assertEqual(Seen.peers, ['127.0.0.1', '127.0.0.2'])
+            # a challenge right after that switch is one to count, once; with the computer there all along, none
+            self.assertEqual(x.challenge(self.app.config, 'www.exit.test', 'signin'), ('other', 'direct', 'computer'))
+            self.assertIsNone(x.challenge(self.app.config, 'www.exit.test', 'signin'))
+            # turned off in the app: straight out again
+            self.peer.close(b'off')
+            for _ in range(50):
+                if not x.connected():
+                    break
+                time.sleep(0.1)
+            self.assertFalse(x.expected())
+            code, conn = socks(port, 'www.exit.test', site.server_address[1])
+            self.assertEqual(code, 0)
+            fetch(conn)
+            conn.close()
+            self.assertEqual(Seen.peers[-1], '127.0.0.1')
+            self.assertEqual(x.challenge(self.app.config, 'login.www.exit.test', 'wall'), ('other', 'computer', 'direct'))
 
     @unittest.skipUnless(CHROME and sys.platform.startswith('linux'), 'needs Chromium, and 127.0.0.2 (Linux)')
     def test_chromium_through_the_machine_and_the_computer_sees_the_computers_address(self):
@@ -372,23 +427,48 @@ class Served(unittest.TestCase):
         self.assertEqual(set(Seen.peers), {'127.0.0.1'})  # not listed: straight out from the Machine
 
 
-class OnTheTodo(test_browser_view.Fixture):
-    def test_a_run_on_the_browser_says_it_waits_for_the_computer(self):
+class SignInDialog(unittest.TestCase):
+    """What the sign-in dialog gets (browser_login_pages) and what the error feed counts, on the app itself."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
         x.reset()
         self.addCleanup(x.reset)
-        said = 'Waiting for your computer to open LinkedIn'
-        titles = lambda: [s['title'] for s in self.app.preparation_progress(self.sid)['steps']]
-        self.steps(('browser', {'action': 'open', 'url': 'https://www.linkedin.com/'}, test_browser_view.OPENED))
-        self.assertNotIn(said, titles())  # nothing waits
-        x._waiting['LinkedIn'] = time.time()
-        self.assertEqual(titles()[-1], said)
-        x._waiting['LinkedIn'] = time.time() - x.WAITING_SHOWN - 1  # over a minute ago: the run's own steps again
-        self.assertNotIn(said, titles())
-        x._waiting['LinkedIn'] = time.time()
-        with self.store.connect() as db:  # the run went on to something else than the browser
-            db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,result,started_at) VALUES(?,?,?,?,?,?)',
-                       (self.job(), 'later', 'exec', '{"command": "ls"}', None, '2026-10-22T08:12:00+00:00'))
-        self.assertNotIn(said, titles())
+        x.configure(self.temp.name)
+        self.addCleanup(x.configure, None)
+        self.app = object.__new__(machine_main.App)
+        self.app.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app.config = {'accounts': [], 'database': str(Path(self.temp.name) / 'events.sqlite'), 'browser_exit': True}
+        form = {'id': '0:t', 'host': 'www.linkedin.com', 'site': 'linkedin.com', 'username': True, 'password': True, 'code': False}
+        for name, value in (('pages', lambda *a, **k: [dict(form)]), ('walls', lambda *a, **k: [])):
+            patcher = patch.object(machine_app_browser.browser_login, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def pages(self):
+        return self.app.browser_login_action('browser_login_pages', {}, owner_dashboard=True)
+
+    def counted(self):
+        with self.app.store.connect() as db:
+            error_feed.ensure(db)
+            return [tuple(r) for r in db.execute('SELECT kind,location,message FROM error_feed')]
+
+    def test_it_asks_for_the_computer_only_while_an_app_with_it_on_is_away(self):
+        self.assertNotIn('exit', self.pages())  # no desktop app: as today
+        x._remember(at=time.time(), off=False)
+        self.assertEqual(self.pages()['exit'], 'LinkedIn')
+        with patch.object(x, 'connected', lambda: True):
+            self.assertNotIn('exit', self.pages())
+
+    def test_a_sign_in_asked_again_after_the_way_out_changed_is_counted_with_fixed_words(self):
+        x.went('linkedin.com', 'computer')
+        self.pages()
+        self.assertEqual(self.counted(), [])  # never changed: nothing
+        x.went('linkedin.com', 'direct')
+        self.pages()
+        self.pages()  # once per change
+        self.assertEqual(self.counted(), [('BrowserExit.signin.computer_to_direct', 'machine/browser_exit.py:linkedin.com', '')])
 
 
 if __name__ == '__main__':

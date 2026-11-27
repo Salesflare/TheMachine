@@ -7,10 +7,15 @@ opens what the Machine asks for after its own checks: public addresses only, aft
 Here: a SOCKS5 listener on 127.0.0.1 of the Machine's host (EXIT_PORT; a hosted Machine's gost chains its direct way
 out to it, the cloud agent), and the tunnels the owner's desktop apps opened with `GET /api/exit` (handler.py, owner
 only, same origin). A listed site (browser_exit_sites, a host and its subdomains) goes through the newest tunnel; every
-other site goes straight out from here, as before. A listed site while no app is connected waits WAIT seconds for one,
-then is refused, while the owner has a desktop app with it on (`browser-exit.json` next to the database: when one was
-last connected, and whether it said it was turned off); a to-do that runs meanwhile says so (waiting_step). Turned off,
-never connected or gone for FORGET seconds: listed sites go straight out too.
+other site goes straight out from here, as before. With no app connected, listed sites go straight out too, right away:
+browsing never stalls on the computer. Only the Machine's own sign-in dialog asks first (away()): while the owner has
+a desktop app with it on (`browser-exit.json` next to the database: when one was last connected, and whether it said it
+was turned off) but none is connected, it says to open the app, with a way to sign in from the Machine anyway. When an
+app connects, listed sites' direct connections are closed, so the browser opens them again through it.
+
+A listed site's way out (computer or direct) is kept per site; a challenge on it (a robot check, a verify-it's-you
+page, a sign-in asked again) soon after that way changed is counted in the error feed (challenge()), so the team sees
+per site whether going out from the Machine in between causes trouble.
 
 tm-exit/1, after `101 Switching Protocols`, both ways: frames of `type u8 | stream u32 BE | length u32 BE | payload`,
 payload at most MAX_FRAME. HELLO (JSON, first, stream 0), OPEN (Machine to app, JSON host and port), OPENED, REFUSED
@@ -27,7 +32,6 @@ import struct
 import threading
 import time
 
-import i18n
 from machine.config import LOG
 
 LAYER = 0
@@ -40,21 +44,22 @@ MAX_FRAME = 16384
 PING_EVERY = 20
 DEAD = 60  # seconds without a frame from the app: gone
 OPEN_WAIT = 15  # seconds the app has to say OPENED or REFUSED
-WAIT = 20  # seconds a listed site waits for a desktop app to connect
 WRITE = 30  # seconds a write to one stream's socket may take before that stream ends
 CONNECT = 10  # seconds to connect straight out
 CONNECTIONS = 256  # the listener's connections at once
 STREAMS = 64  # streams on one tunnel at once (the app's own cap too)
 TUNNELS = 4  # an owner's computers connected at once; the oldest gives way
-FORGET = 14 * 86400  # seconds after the last connected app that listed sites stop waiting for one
-WAITING_SHOWN = 60  # seconds a wait stays on a running to-do
+FORGET = 14 * 86400  # seconds after the last connected app that the sign-in dialog stops asking for it
+SWITCHED = 86400  # seconds after a listed site's way out changed that a challenge on it is counted
 SITES = {'linkedin.com': 'LinkedIn', 'facebook.com': 'Facebook', 'messenger.com': 'Messenger', 'instagram.com': 'Instagram',
          'x.com': 'X', 'twitter.com': 'X', 'threads.com': 'Threads', 'threads.net': 'Threads'}
 STATE = 'browser-exit.json'
 
 _lock = threading.Condition()
 _tunnels = []  # newest last
-_waiting = {}  # site name -> when a connection last waited for a computer
+_ways = {}  # listed site -> {'way': 'computer' or 'direct', 'before': the way before, 'at': when it changed}
+_told = set()  # (site, challenge, when its way changed): counted once
+_direct = set()  # listed sites' browser connections going straight out, closed when an app connects
 _state = {'path': None}
 
 
@@ -145,7 +150,7 @@ def _remember(**values):
 
 
 def expected(now=None):
-    """Whether listed sites wait for a computer: an app connected within FORGET seconds and wasn't turned off."""
+    """Whether the owner has a desktop app with it on: one connected within FORGET seconds and wasn't turned off."""
     data = _remembered()
     at = data.get('at') if isinstance(data.get('at'), (int, float)) else 0
     return not data.get('off') and (now or time.time()) - at < FORGET
@@ -306,6 +311,9 @@ def carry(rfile, connection, seen_as=None):
             old = _tunnels.pop(0)
             _close(old.sock)
         _lock.notify_all()
+        moved = list(_direct)
+    for conn in moved:  # the browser opens them again, through the computer
+        _close(conn)
     LOG.info('browser exit: a computer connected (%s)', str(tunnel.app.get('os') or '?')[:12])
     try:
         tunnel.welcome()  # once it is the one in use: what the app sends after this has a tunnel to go to
@@ -321,20 +329,11 @@ def carry(rfile, connection, seen_as=None):
         LOG.info('browser exit: a computer went')
 
 
-def tunnel(wait=0.0, site=None):
-    """The newest connected tunnel, waiting up to `wait` seconds for one (and saying so for `site`), or None."""
-    deadline = time.monotonic() + wait
+def tunnel():
+    """The newest connected tunnel, or None."""
     with _lock:
-        while True:
-            live = [t for t in _tunnels if not t.gone.is_set()]
-            if live:
-                return live[-1]
-            left = deadline - time.monotonic()
-            if left <= 0:
-                return None
-            if site:
-                _waiting[site] = time.time()
-            _lock.wait(min(left, 1.0))
+        live = [t for t in _tunnels if not t.gone.is_set()]
+        return live[-1] if live else None
 
 
 def connected():
@@ -342,17 +341,43 @@ def connected():
         return any(not t.gone.is_set() for t in _tunnels)
 
 
-def waiting_step(now=None):
-    """The step a running to-do shows while a listed site waits for the owner's computer, as {title, at}, or None."""
+def away(config, hosts):
+    """The listed site's name the sign-in dialog asks the owner's computer for: one of `hosts` is listed, the owner has
+    a desktop app with it on, and none is connected. None otherwise, and while `browser_exit` is off."""
+    if not config.get('browser_exit') or connected() or not expected():
+        return None
+    suffixes = sites(config)
+    site = next((s for s in (listed(h, suffixes) for h in hosts) if s), None)
+    return site_name(site) if site else None
+
+
+def went(site, way, now=None):
+    """A listed site's connection went out `way` ('computer' or 'direct')."""
     now = now or time.time()
-    if connected():
-        return None
     with _lock:
-        recent = [(at, site) for site, at in _waiting.items() if now - at < WAITING_SHOWN]
-    if not recent:
+        last = _ways.get(site)
+        if not last:
+            _ways[site] = {'way': way, 'before': None, 'at': now}
+        elif last['way'] != way:
+            _ways[site] = {'way': way, 'before': last['way'], 'at': now}
+
+
+CHALLENGES = ('signin', 'checkpoint', 'captcha', 'wall')  # a sign-in form, a code-only check, a robot check, a block page
+
+
+def challenge(config, host, what, now=None):
+    """A challenge (CHALLENGES) on `host` soon after its listed site's way out changed: (site, before, after) to count,
+    once per change; None otherwise. The site is one of SITES' own names or 'other', never an owner's own entry."""
+    if what not in CHALLENGES or not config.get('browser_exit'):
         return None
-    at, site = max(recent)
-    return {'title': i18n.t('Waiting for your computer to open {}', site), 'at': at}
+    site = listed(host, sites(config))
+    now = now or time.time()
+    with _lock:
+        last = _ways.get(site) if site else None
+        if not last or not last['before'] or now - last['at'] > SWITCHED or (site, what, last['at']) in _told:
+            return None
+        _told.add((site, what, last['at']))
+        return (site if site in SITES else 'other'), last['before'], last['way']
 
 
 def reset():
@@ -360,7 +385,9 @@ def reset():
         for t in _tunnels:
             _close(t.sock)
         _tunnels.clear()
-        _waiting.clear()
+        _ways.clear()
+        _told.clear()
+        _direct.clear()
 
 
 def _close(sock):
@@ -477,24 +504,22 @@ class _Handler(socketserver.BaseRequestHandler):
 
 
 def route(conn, host, port, config, direct=None):
-    """One browser connection: a listed site through the owner's computer (or waiting for it), anything else straight
-    out. `direct` connects straight out (socket.create_connection; tests give their own)."""
+    """One browser connection: a listed site through the owner's computer while one is connected, anything else (and a
+    listed site with none) straight out. `direct` connects straight out (socket.create_connection; tests give their own)."""
     site = listed(host, sites(config))
-    if site:
-        carrier = tunnel(WAIT if expected() else 0, site_name(site))
-        if carrier:
-            stream = carrier.open(host, port, conn)
-            if isinstance(stream, str):
-                LOG.info('browser exit: refused by the computer (%s)', stream)
-                conn.sendall(NOT_ALLOWED)
-                return
-            conn.sendall(OK_REPLY)
-            carrier.pump(stream)
-            return
-        if expected():
-            LOG.info('browser exit: %s waited for the computer', site_name(site))
+    carrier = tunnel() if site else None
+    if carrier:
+        went(site, 'computer')
+        stream = carrier.open(host, port, conn)
+        if isinstance(stream, str):
+            LOG.info('browser exit: refused by the computer (%s)', stream)
             conn.sendall(NOT_ALLOWED)
             return
+        conn.sendall(OK_REPLY)
+        carrier.pump(stream)
+        return
+    if site:
+        went(site, 'direct')
     try:
         out = (direct or socket.create_connection)((host, port), CONNECT)
     except OSError:
@@ -503,8 +528,13 @@ def route(conn, host, port, config, direct=None):
     try:
         out.settimeout(None)
         conn.sendall(OK_REPLY)
+        if site:
+            with _lock:
+                _direct.add(conn)
         splice(conn, out)
     finally:
+        with _lock:
+            _direct.discard(conn)
         _close(out)
 
 
