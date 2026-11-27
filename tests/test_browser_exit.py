@@ -32,7 +32,7 @@ UPGRADE = {**OWNER, 'Origin': 'https://' + HOST, 'Connection': 'Upgrade', 'Upgra
 
 class Frames(unittest.TestCase):
     def test_the_golden_open_frame(self):
-        # the same bytes desktop/src/exit.rs's tests decode
+        # the same bytes the desktop app's exit.rs tests decode
         payload = json.dumps({'host': 'a.example', 'port': 443}, separators=(',', ':')).encode()
         self.assertEqual(x.frame(x.OPEN, 1, payload).hex(),
                          '02000000010000001f7b22686f7374223a22612e6578616d706c65222c22706f7274223a3434337d')
@@ -118,7 +118,7 @@ def socks(port, host, target_port):
 
 
 class Peer:
-    """A stand-in for the desktop app's side (desktop/src/exit.rs): the upgrade with the owner's headers, HELLO, and the
+    """A stand-in for the desktop app's side (its exit.rs): the upgrade with the owner's headers, HELLO, and the
     streams it is asked for, connected from `source` (the app checks addresses itself; this stand-in allows these)."""
 
     def __init__(self, port, resolve, source='127.0.0.2', headers=UPGRADE):
@@ -195,12 +195,15 @@ class Peer:
 
 
 class Seen(http.server.BaseHTTPRequestHandler):
-    """The site: a page that says it, and the address each request came from."""
+    """The site: a page that loads a picture (asked for only once the page came back), and the address each request
+    came from."""
     peers = []
+    paths = []
 
     def do_GET(self):
         Seen.peers.append(self.client_address[0])
-        body = b'<!doctype html><title>Site</title><p>The site page</p>'
+        Seen.paths.append(self.path)
+        body = b'<!doctype html><title>Site</title><p>The site page</p><img src="/read.png">'
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
         self.send_header('Content-Length', str(len(body)))
@@ -234,7 +237,7 @@ class Served(unittest.TestCase):
         return conn.getresponse().status
 
     def listener(self):
-        server = x.start(self.app.config, self.temp.name)
+        server = self.server = x.start(self.app.config, self.temp.name)
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
         return server.server_address[1]
@@ -334,28 +337,38 @@ class Served(unittest.TestCase):
         port = self.listener()
         peer = Peer(self.port, lambda host: '127.0.0.1').start()
         self.addCleanup(peer.close)
-        profile = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, profile, True)
         Seen.peers.clear()
 
-        def dump(url):
-            # the Machine's browser as a hosted Machine starts it, its way out a SOCKS5 proxy (here the listener itself)
+        def load(url):
+            # the Machine's browser as a hosted Machine starts it, its way out a SOCKS5 proxy (here the listener itself);
+            # the page came back through it once the browser asks for its picture
+            Seen.peers.clear()
+            Seen.paths.clear()
+            profile = tempfile.mkdtemp()  # its own each time: nothing the last page taught it opens connections early
+            self.addCleanup(shutil.rmtree, profile, True)
             chrome = subprocess.Popen([CHROME, '--headless=new', '--no-sandbox', '--disable-gpu', '--use-mock-keychain', '--no-first-run',
                                        '--user-data-dir=' + profile, f'--proxy-server=socks5://127.0.0.1:{port}', '--proxy-bypass-list=<-loopback>',
-                                       '--disable-features=HttpsUpgrades,HttpsFirstBalancedModeAutoEnable', '--dump-dom', url],
-                                      stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, start_new_session=True)
+                                       '--disable-features=HttpsUpgrades,HttpsFirstBalancedModeAutoEnable', url],
+                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
             try:
-                return chrome.communicate(timeout=120)[0]
+                for _ in range(1200):
+                    if '/read.png' in Seen.paths or chrome.poll() is not None:
+                        break
+                    time.sleep(0.1)
             finally:  # its helper processes too, with their connections to the listener
                 try:
                     os.killpg(chrome.pid, signal.SIGKILL)
                 except OSError:
                     pass
                 chrome.wait(10)
-        self.assertIn('The site page', dump(f'http://page.exit.test:{site.server_address[1]}/'))
+                for _ in range(300):  # the listener let go of the browser's connections
+                    if not self.server.open:
+                        break
+                    time.sleep(0.1)
+            return Seen.paths
+        self.assertIn('/read.png', load(f'http://page.exit.test:{site.server_address[1]}/'))
         self.assertEqual(set(Seen.peers), {'127.0.0.2'})  # the site saw the computer's address only
-        Seen.peers.clear()
-        self.assertIn('The site page', dump(f'http://127.0.0.1:{site.server_address[1]}/'))
+        self.assertIn('/read.png', load(f'http://127.0.0.1:{site.server_address[1]}/'))
         self.assertEqual(set(Seen.peers), {'127.0.0.1'})  # not listed: straight out from the Machine
 
 
