@@ -102,10 +102,6 @@ def _threads(rows, who):
     return out
 
 
-def _rows(db, sql, args):
-    return db.execute('SELECT e.id,e.account_id,e.kind,e.occurred_at,e.metadata FROM events e ' + sql, args).fetchall()
-
-
 class Shape:
     """A project's groups: threads joined by a shared key."""
 
@@ -155,7 +151,8 @@ class Shape:
 def shape(db, pid, owner, who=None):
     """(Shape, threads with nobody outside): the groups on a project's labeled messages."""
     who = who or Who(db, owner)
-    rows = _rows(db, 'JOIN event_projects ep ON ep.event_id=e.id WHERE ep.project_id=? AND e.deleted=0 ORDER BY e.occurred_at DESC,e.id DESC LIMIT ?', (pid, READ))
+    rows = db.execute('SELECT e.id,e.account_id,e.kind,e.occurred_at,e.metadata FROM events e JOIN event_projects ep ON ep.event_id=e.id '
+                      'WHERE ep.project_id=? AND e.deleted=0 ORDER BY e.occurred_at DESC,e.id DESC LIMIT ?', (pid, READ)).fetchall()
     found, alone = Shape(), []
     for thread in _threads(rows, who).values():
         if thread['keys']:
@@ -193,8 +190,8 @@ def admit(db, name, event_ids, owner):
             return ids, []  # the owner kept it as one
     else:
         found = Shape()
-    marks = ','.join('?' * len(ids))
-    threads = sorted(_threads(_rows(db, f'WHERE e.id IN ({marks})', ids), who).values(), key=lambda t: t['at'] or '')
+    threads = sorted(_threads(db.execute('SELECT e.id,e.account_id,e.kind,e.occurred_at,e.metadata FROM events e WHERE e.id IN (SELECT value FROM json_each(?))',
+                                          (json.dumps(ids),)).fetchall(), who).values(), key=lambda t: t['at'] or '')
     admitted, refused = [], []
     for thread in threads:
         if not thread['keys'] or found.shares(thread):
