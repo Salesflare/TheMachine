@@ -522,10 +522,10 @@ class AsItWas(unittest.TestCase):
         found = self.asked('what did initech pay per seat in june?', **{'from': '2026-06-01', 'to': '2026-06-30'})
         memory = self.memory()
         self.assertIn(ask_memory.PAST_HEAD, memory)
-        replaced = re.search(r'\[F(\d)\] No longer current, learned 2026-10-16, replaced 2026-10-16 by: Initech pays 46 euros per seat since the renewal: '
-                             r'<<<Initech pays 40 euros per seat\.>>>', memory)
+        replaced = re.search(r'\[F(\d)\] No longer current: <<<Initech pays 40 euros per seat\.>>> Learned 2026-10-16, replaced 2026-10-16 by '
+                             r'<<<Initech pays 46 euros per seat since the renewal>>>\.', memory)
         self.assertTrue(replaced, memory)  # its days are when it was learned and replaced, said as such: never when it held
-        self.assertIn(f'No longer current, learned 2026-10-16, ended {tg.at(30)[:10]}: <<<Kim Vale runs procurement at Initech.>>>', memory)
+        self.assertIn(f'No longer current: <<<Kim Vale runs procurement at Initech.>>> Learned 2026-10-16, ended {tg.at(30)[:10]}.', memory)
         self.assertIn('Current, learned 2026-10-16: <<<Kim Vale is CFO at Initech.>>>', memory)
         self.assertNotIn('onboarding fee', memory)  # the owner removed it: it never comes back
         self.reply = f'Initech paid 40 euros a seat then [F{replaced[1]}].'
@@ -551,6 +551,45 @@ class AsItWas(unittest.TestCase):
         self.assertIn('[F1] Learned 2026-10-16: <<<', memory)
         self.asked('what did initech pay this month?', **{'from': '2026-10-01', 'to': '2026-10-16'})  # days not over yet: now
         self.assertNotIn(ask_memory.PAST, self.memory())
+
+    def changes(self):
+        """A price changed three times, each learned on its own day: only the last one is current."""
+        self.build()
+        said = [('Initech pays 30 euros per seat.', '2026-01-10'), ('Initech pays 35 euros per seat from March.', '2026-03-05'),
+                ('Initech pays 40 euros per seat after the May review.', '2026-05-20'), ('Initech pays 46 euros per seat since the renewal.', '2026-08-01')]
+        ids = []
+        for text, _ in said:
+            ids.append(self.fact(text, about=[self.ORG], **({'replaces': ids[-1:]} if ids else {}))['id'])
+        with self.store.connect() as db:  # learned on those days, and each replaced the day the next was learned
+            for n, (fact, (_, day)) in enumerate(zip(ids, said)):
+                db.execute('UPDATE facts SET created_at=?,removed_at=? WHERE id=?',
+                           (day + 'T09:00:00+00:00', said[n + 1][1] + 'T09:00:00+00:00' if n + 1 < len(said) else None, fact))
+
+    def past(self, month, start, end):
+        self.asked(f'what did initech pay per seat in {month}?', **{'from': start, 'to': end})
+        return [(learned, left, by, text) for text, learned, left, by in
+                re.findall(r'No longer current: <<<([^>]+)>>> Learned (\S+), replaced (\S+) by <<<([^>]+)>>>', self.memory())]
+
+    def test_of_several_changes_those_of_the_days_asked_about(self):
+        self.changes()
+        self.assertEqual([p[3] for p in self.past('february', '2026-02-01', '2026-02-28')],
+                         ['Initech pays 30 euros per seat.', 'Initech pays 35 euros per seat from March.'])  # the one known then, then the nearest
+        self.assertEqual([p[3] for p in self.past('march', '2026-03-01', '2026-03-31')],
+                         ['Initech pays 35 euros per seat from March.', 'Initech pays 30 euros per seat.'])  # a change inside it: both, as known
+        june = self.past('june', '2026-06-01', '2026-06-30')
+        self.assertEqual([p[3] for p in june], ['Initech pays 40 euros per seat after the May review.', 'Initech pays 35 euros per seat from March.'])
+        # each names what took its place then, with The Machine's own days, so the changes read in order
+        self.assertEqual(june[0], ('2026-05-20', '2026-08-01', 'Initech pays 46 euros per seat since the renewal', 'Initech pays 40 euros per seat after the May review.'))
+        self.assertEqual(june[1], ('2026-03-05', '2026-05-20', 'Initech pays 40 euros per seat after the May review', 'Initech pays 35 euros per seat from March.'))
+        self.assertIn('Current, learned 2026-08-01: <<<Initech pays 46 euros per seat since the renewal.>>>', self.memory())
+
+    def test_of_several_changes_without_days_the_latest_first(self):
+        self.changes()
+        self.plan = {'question': True, 'person': None, 'said_by': 'both', 'from': None, 'to': None, 'about': 'Initech price'}
+        self.reply = ['I found nothing about the price before the renewal. [0]', 'Initech paid 40 euros a seat [F1].']
+        self.ask('what did we pay initech before the renewal?', 'work')
+        self.assertEqual(re.findall(r'No longer current: <<<([^>]+)>>>', self.memory()),  # as before: most lately replaced
+                         ['Initech pays 40 euros per seat after the May review.', 'Initech pays 35 euros per seat from March.'])
 
     def test_never_one_of_the_other_area(self):
         with self.store.connect() as db:

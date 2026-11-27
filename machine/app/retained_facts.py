@@ -98,7 +98,8 @@ def _ids(items):
 
 def candidates(db, ids):
     """[fact] of these facts that are outside the current list and may still come back, each with state ('history'),
-    day (when it left) and now_says (what replaced it, '' for none), the most lately removed first."""
+    day (when it left) and now_says (what holds now in its place, '' for none), the most lately removed first. A replaced
+    one also has next_says: the fact that took its place then, which a later change may have replaced in turn."""
     rows = [dict(r) for r in db.execute(
         'SELECT id,text,kind,fact_kind,valid_until,created_at,confirmed_at,removed_at,merged_into,source,side,suggestion_id FROM facts '
         "WHERE id IN (SELECT value FROM json_each(?)) AND kind='fact' AND removed_at IS NOT NULL AND (merged_into='expired:'||id OR merged_into LIKE 'fact:%')", (_ids(ids),))]
@@ -122,7 +123,7 @@ def candidates(db, ids):
             head = _chain(lookup, into[5:])
             if head is None or fact_words(f['text']) <= fact_words(head['text']):  # removed by the owner, or the newer one says it all
                 continue
-            f.update(state='history', day=f['removed_at'][:10], now_says=head['text'])
+            f.update(state='history', day=f['removed_at'][:10], now_says=head['text'], next_says=lookup(into[5:])['text'])
         out.append(f)
     return out
 
