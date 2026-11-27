@@ -415,7 +415,7 @@ with **Download** under Add in Claude, which links the first.
 | OpenClaw | `clawhub publish` of the folder (or `the-machine-clawhub.zip`), with the same frontmatter (name, description). Our published `salesflare` skill is the model | Needs the owner's OK |
 | Codex | The folder in `~/.codex/skills/`, or its text in `AGENTS.md` | Per person |
 | Cursor | The text as a rule (`.cursor/rules/the-machine.mdc`) with the MCP in `mcp.json` | Per person |
-| ChatGPT | No skills: the app's instructions are the MCP `initialize` instructions and the brief, which say the same in short | Built in |
+| ChatGPT | ChatGPT has skills on Business, Enterprise and Edu, but we don't ship one for it: the app's tool descriptions, the MCP `initialize` instructions and the brief say the same in short | Built in |
 
 ## Decided
 
