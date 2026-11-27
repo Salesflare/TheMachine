@@ -17,7 +17,9 @@ sealed), like a project's success condition (project_success.py):
   its result then closes by itself, with Undo for a day (result_seen); one the owner hasn't done their part on only
   looks done, as before.
 - what brings it back: nothing by the time to chase (return_waiting): an open to-do again, "Still waiting on", with a
-  nudge offered as a chat tap. No new model turn: a nudge is drafted only when the owner asks for it.
+  nudge offered as a chat tap. No new model turn: a nudge is drafted only when the owner asks for it. When a public
+  page will show the result, its page is read first (done_checks.py): shown, it closes like a result in a message. A
+  new done when drops the check that went with the old one.
 
 No table of its own: two columns on suggestions."""
 import hashlib
@@ -53,7 +55,7 @@ def set_done_when(db, suggestion_id, text, by):
         return False
     if (row['done_when'] or '') == text:
         return False
-    db.execute('UPDATE suggestions SET done_when=?,done_when_by=? WHERE id=?', (text or None, by if text else None, suggestion_id))
+    db.execute('UPDATE suggestions SET done_when=?,done_when_by=?,done_check=NULL WHERE id=?', (text or None, by if text else None, suggestion_id))
     _follow_waiting(db, suggestion_id, row['done_when'], text)
     return True
 
@@ -168,7 +170,7 @@ def follow_project(db, todo_id, before, after):
     if not row or row['status'] in todo_states.CLOSED or row['done_when_by'] != 'project':
         return False
     after = clean(after)
-    db.execute('UPDATE suggestions SET done_when=?,done_when_by=? WHERE id=?', (after or None, 'project' if after else None, todo_id))
+    db.execute('UPDATE suggestions SET done_when=?,done_when_by=?,done_check=NULL WHERE id=?', (after or None, 'project' if after else None, todo_id))
     _follow_waiting(db, todo_id, row['done_when'], after)
     if after and before and row['body'] == i18n.t('Done when: {}', before)[:690]:
         db.execute('UPDATE suggestions SET body=? WHERE id=?', (i18n.t('Done when: {}', after)[:690], todo_id))

@@ -985,6 +985,7 @@
  },
  "Checked {} · next by {}": "Checked {} · next by {}",
  "Checked {} · next soon": "Checked {} · next soon",
+ "Checked {}: not there yet": "Checked {}: not there yet",
  "Checked. Nothing new.": "Checked. Nothing new.",
  "Checked. {} new to-dos.": {
   "one": "Checked. {} new to-do.",
@@ -1321,6 +1322,7 @@
  "Couldn’t make the to-do. The next run tries again.": "Couldn’t make the to-do. The next run tries again.",
  "Couldn’t open it": "Couldn’t open it",
  "Couldn’t open that project.": "Couldn’t open that project.",
+ "Couldn’t open {}": "Couldn’t open {}",
  "Couldn’t put {} more on a to-do. The next run tries again.": {
   "one": "Couldn’t put {} more on a to-do. The next run tries again.",
   "other": "Couldn’t put {} more on a to-do. The next run tries again."
@@ -8697,6 +8699,7 @@
  "{} shared a task with you": "{} shared a task with you",
  "{} shared this board with you": "{} shared this board with you",
  "{} shares a team Graph. Your Work contacts and client threads go to your teammates' Machines. Personal, sensitive and automated mail never does.": "{} shares a team Graph. Your Work contacts and client threads go to your teammates' Machines. Personal, sensitive and automated mail never does.",
+ "{} shows {}": "{} shows {}",
  "{} sign-ins found in {}.": "{} sign-ins found in {}.",
  "{} signal versions saved.{}": "{} signal versions saved.{}",
  "{} signals": {

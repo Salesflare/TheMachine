@@ -47,6 +47,7 @@ from machine.app.model_pacing import ModelPacingApp
 from machine.app.new_cards import NewCardsApp
 from machine.app.notifications import NotificationsApp
 from machine.app.page_watch import PageWatchApp
+from machine.app.done_checks import DoneChecksApp
 from machine.app.preparation import PreparationApp
 from machine.app.profile import ProfileApp
 from machine.app.handled_check import HandledCheckApp
@@ -154,7 +155,7 @@ APP_MIXINS += (CalendarClashesApp,)
 APP_MIXINS += (MeetingPrepApp,)
 APP_MIXINS += (TripsApp,)
 APP_MIXINS += (ConnectApp,)
-APP_MIXINS += (PageWatchApp,)
+APP_MIXINS += (PageWatchApp, DoneChecksApp)
 APP_MIXINS += (NotesApp,)
 APP_MIXINS += (LearnedSkillsApp,)
 

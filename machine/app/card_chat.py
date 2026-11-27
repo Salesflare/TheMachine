@@ -61,7 +61,7 @@ from machine.store.events import MAIL_KINDS
 from machine.store.machine_cards import parked_redo
 from machine.text import _address, clamp, encoded, mail_people, quoted_history, shown_body
 from models import background_model, claude_plan_route
-from machine.store import message_view, outcomes, promises
+from machine.store import done_checks, message_view, outcomes, promises
 import recurring
 import talk_live
 from timeutil import local_tz, now
@@ -365,7 +365,7 @@ class CardChatApp:
         # A note that answered the to-do's question (decision_asks): the question shows as its own line, the note alone
         answered = {r['decision_id']: json.loads(r['questions']) for r in db.execute('SELECT decision_id,questions FROM decision_asks WHERE suggestion_id=?', (suggestion_id,))}
         loose = []  # notes saved before that: one a quick pick glued to its question comes apart below (chat_unglued)
-        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND (source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','notion','linear','handled','plan','correction') OR id LIKE 'outcome-wait:%' OR id LIKE 'still-owed:%' OR id LIKE 'wrote-again:%') "
+        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND (source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','notion','linear','handled','plan','correction') OR id LIKE 'outcome-wait:%' OR id LIKE 'done-check:%' OR id LIKE 'still-owed:%' OR id LIKE 'wrote-again:%') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
             if r['source'] == 'expiry':  # its moment passed (Store.expire_passed); Undo takes this back like a tap
@@ -377,6 +377,9 @@ class CardChatApp:
             if r['id'].startswith('outcome-wait:'):  # its part went out, the result it is for hasn't come yet (outcomes.wait_for_result)
                 if card and card['done_when']:
                     owner.append({'kind': 'event', 'text': outcomes.chat_line(card['done_when']), 'at': at})
+                continue
+            if done_checks.chat_line(r):  # its page was read before it came back: not there yet, or couldn't open it
+                owner.append({'kind': 'event', 'text': clamp(r['feedback'], 200), 'at': at})
                 continue
             if r['id'].startswith(promises.OWED_PREFIX):  # the reply only promised the work: it stays open (promises.keep_owed)
                 owner.append({'kind': 'event', 'text': promises.owed_line(r['feedback']), 'at': at + 1})  # under its send, also in the same millisecond

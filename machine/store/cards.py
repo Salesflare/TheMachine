@@ -19,7 +19,7 @@ import locale_prefs
 import mail_senders
 import meeting_mail
 import meeting_prep
-from machine.store import graph_identifiers, message_view, outcomes
+from machine.store import done_checks, graph_identifiers, message_view, outcomes
 from machine.cards import current_title, delivery_time, group_sender
 from machine.config import LOG
 from machine.sources.android import android_app_shown
@@ -249,12 +249,13 @@ def wait_until(due, digest_at='08:30', current=None, due_at=None):
 def return_waiting(db):
     """To-dos the review left waiting on someone else (CardsStore.wait_on_others) whose time to chase has come: back as
     open to-dos that say whom they still wait on (outcome still_waiting, until a new message or a run), with one
-    notification each. Those waiting after a run (no `until`) stay. Returns how many."""
+    notification each. Those waiting after a run (no `until`) stay, and so does one whose page is still to be read first
+    (done_checks.holds). Returns how many."""
     stamp = now()
     # `until` is read here, not in SQL: on a sealed Machine only the outcome's state is in the clear
-    rows = [row for row in db.execute("SELECT id,outcome,done_when FROM suggestions WHERE status='prepared' AND handled_hint IS NULL "
+    rows = [row for row in db.execute("SELECT id,outcome,done_when,done_check FROM suggestions WHERE status='prepared' AND handled_hint IS NULL "
                                       "AND json_extract(outcome,'$.state')='waiting'").fetchall()
-            if '' < str(json.loads(row['outcome']).get('until') or '') <= stamp]
+            if '' < str(json.loads(row['outcome']).get('until') or '') <= stamp and not done_checks.holds(row, stamp)]
     for row in rows:
         who = str(json.loads(row['outcome']).get('waiting_on') or '')[:200]
         db.execute('UPDATE suggestions SET outcome=? WHERE id=?', (encoded({'state': 'still_waiting', 'waiting_on': who}), row['id']))
