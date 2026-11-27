@@ -12,6 +12,7 @@ from unittest.mock import patch
 import machine.main as machine_main
 
 import graph  # noqa: E402
+import person_summary  # noqa: E402
 import routine_templates  # noqa: E402
 import stay_in_touch  # noqa: E402
 from machine import todo_states  # noqa: E402
@@ -20,7 +21,8 @@ from pinned import pinned  # noqa: E402
 
 NOW = dt.datetime(2026, 11, 9, 9, 0, tzinfo=dt.timezone.utc)
 ACCOUNTS = [{'id': 'home', 'email': 'owner@mail.example', 'service': 'gmail', 'boundary': 'personal'},
-            {'id': 'wa', 'service': 'whatsapp', 'boundary': 'personal'}]
+            {'id': 'wa', 'service': 'whatsapp', 'boundary': 'personal'},
+            {'id': 'job', 'email': 'owner@larkspur.example', 'service': 'gmail', 'boundary': 'work:Larkspur'}]
 
 
 def ago(days, base=NOW):
@@ -184,6 +186,85 @@ class StayInTouch(unittest.TestCase):
         todos, _ = self.run_now()
         self.assertIn('unanswered', self.asked[0])
         self.assertEqual(len(todos), 1)
+
+    # --- news on their page, and a day still ahead ---
+
+    def summary(self, node, *lines):
+        """Their page's summary as a pass saves it: (kind, text, event id) lines, each event's account in its area."""
+        with self.store.connect() as db:
+            person_summary.save(db, node, [{'kind': kind, 'text': text, 'sources': [f'E{event}'] if event else ['ai']}
+                                           for kind, text, event in lines], ago(0), {'wa': 'personal', 'job': 'work'})
+
+    def test_news_on_their_summary_is_something_to_say(self):
+        # Sam said they're moving; the owner answered at the time, so nothing is unanswered and no fact was saved
+        sam = self.person('15550100', 'Sam Rivera')
+        told = self.chat('15550100', False, 61, 'We move to Lisbon on December 1!')
+        self.summary(sam, ('now', 'Sam moves to Lisbon on December 1', told), ('who', 'Sam is a friend from school', told))
+        self.pick(sam)
+        todos, _ = self.run_now()
+        self.assertEqual(len(self.asked), 1)
+        self.assertIn(f"news: <<<said {ago(61)[:10]}: Sam moves to Lisbon on December 1>>>", self.asked[0])
+        self.assertNotIn('friend from school', self.asked[0])  # only where things stand
+        self.assertIn('Today is 2026-11-09', self.asked[0])
+
+    def test_work_ai_and_deleted_summary_lines_stay_out(self):
+        sam = self.person('15550100', 'Sam Rivera')
+        with self.store.connect() as db:
+            work = db.execute("INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) "
+                              "VALUES('job','w1','gmail.message',?,'Re','Moving teams','{}','h',?)", (ago(70), ago(0))).lastrowid
+        gone = self.chat('15550100', False, 62, 'Moving soon')
+        self.summary(sam, ('now', 'Sam moves to the platform team in December', work), ('now', 'Sam moves house soon', gone),
+                     ('now', 'Sam may be moving abroad', None))
+        with self.store.connect() as db:
+            db.execute('UPDATE events SET deleted=1 WHERE id=?', (gone,))
+        self.pick(sam)
+        todos, run = self.run_now()
+        self.assertEqual((todos, self.asked, run['state']), ([], [], 'nothing'))
+
+    def test_their_mail_to_a_work_account_counts_as_contact_but_is_never_read(self):
+        sam = self.person('15550100', 'Sam Rivera')
+        with self.store.connect() as db:
+            mail = db.execute("INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) "
+                              "VALUES('job','w1','gmail.message',?,'Roadmap','Can you send the Q4 roadmap?',?,'h',?)",
+                              (ago(30), json.dumps({'from': 'Sam Rivera <sam@acme.example>', 'to': 'owner@larkspur.example'}), ago(0))).lastrowid
+            db.execute('INSERT INTO graph_events(node_id,event_id,at,direct) VALUES(?,?,?,1)', (sam, mail, ago(30)))
+            found = stay_in_touch.exchanges(db, sam, NOW, work={'job'})
+            everything = stay_in_touch.exchanges(db, sam, NOW)
+        self.assertEqual((found['last'], found['last_mine']), (everything['last'], True))
+        self.assertNotIn('roadmap', json.dumps([r['body'] for r, _ in found['latest']]))
+        self.assertFalse(everything['last_mine'])  # without the Work accounts it would be an unanswered message
+        self.pick(sam)
+        todos, run = self.run_now()
+        self.assertEqual((todos, self.asked), ([], []))  # nothing Personal to say: no model call
+
+    def test_a_day_still_ahead_is_read_again_the_day_after_it(self):
+        sam = self.person('15550100', 'Sam Rivera')
+        self.fact(sam, 'Sam moves to Lisbon on November 20')
+        self.pick(sam)
+        self.answer = {'nudges': [], 'later': [{'id': 'p1', 'on': '2026-11-21'}]}
+        todos, _ = self.run_now()
+        self.assertEqual((todos, len(self.asked)), ([], 1))
+        self.clock.move(days=5)
+        self.run_now()
+        self.assertEqual(len(self.asked), 1)  # the same material, before the day: not read again
+        self.clock.move(days=7)
+        self.answer = {'nudges': [], 'later': []}
+        self.run_now()
+        self.assertEqual(len(self.asked), 2)  # the day after the move: read once more, today's date with it
+        self.assertIn('Today is 2026-11-21', self.asked[1])
+        self.clock.move(days=1)
+        self.run_now()
+        self.assertEqual(len(self.asked), 2)  # nothing then, and no new day: back to the usual wait
+
+    def test_later_only_takes_a_near_day_for_someone_without_a_reason(self):
+        picked = [{'id': 'wa:1', 'kept': 'wa:1', 'name': 'Sam'}, {'id': 'wa:2', 'kept': 'wa:2', 'name': 'Kim'}]
+        today = dt.date(2026, 11, 9)
+        text = lambda *later, nudges=(): json.dumps({'nudges': list(nudges), 'later': [{'id': i, 'on': on} for i, on in later]})  # noqa: E731
+        self.assertEqual(stay_in_touch.later(text(('p1', '2026-11-21'), ('p2', '2026-12-09')), picked, today), {'wa:1': '2026-11-21', 'wa:2': '2026-12-09'})
+        self.assertEqual(stay_in_touch.later(text(('p1', '2026-11-09'), ('p2', '2026-12-10')), picked, today), {})  # today, or past the usual wait
+        self.assertEqual(stay_in_touch.later(text(('p3', '2026-11-21'), ('p1', 'soon')), picked, today), {})
+        self.assertEqual(stay_in_touch.later(text(('p1', '2026-11-21'), nudges=[{'id': 'p1', 'reason': 'Ask how the move went'}]), picked, today), {})
+        self.assertEqual(stay_in_touch.later('{"nudges": []}', picked, today), {})
 
     # --- the limits ---
 

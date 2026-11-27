@@ -3,7 +3,8 @@ ROUTINE_TEMPLATES (docs/code-map.md).
 
 Its run (run, from routines_app.routine_template_run): plain code shortlists the people due a nudge (stay_in_touch.py);
 none ends the run as nothing to say, without a model. Else one small model call (touch_pass: the background model, no
-agent, no tools) reads only them and names one specific reason per person, or none. Each reason becomes one quiet,
+agent, no tools) reads only them and names one specific reason per person, or none, or a day to look again when
+what they shared is still ahead (stay_in_touch.later). Each reason becomes one quiet,
 Personal to-do on the channel the owner usually writes to them on, prepared ahead: the draft is written in that
 conversation, so in their language and the owner's voice, and nothing is sent until the owner sends it. It never
 notifies by itself and is never shared with a Work Fleet. A nudge left alone lapses after a week. A test run only
@@ -14,6 +15,7 @@ import datetime as dt
 import json
 import logging
 
+import graph
 import help_chat
 import i18n
 import routine_templates
@@ -71,7 +73,8 @@ class StayInTouch(routine_templates.Template):
         with self.store.connect() as db:
             stay_in_touch.ensure(db)
             anyone = bool(stay_in_touch.people(db))
-            picked = stay_in_touch.shortlist(db, now, self.store.owner_user_ids) if anyone else []
+            work = {a['id'] for a in self.config.get('accounts', []) if a.get('id') and graph.account_side(a) == 'work'}
+            picked = stay_in_touch.shortlist(db, now, self.store.owner_user_ids, work=work) if anyone else []
         if not picked:
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
@@ -105,9 +108,10 @@ class StayInTouch(routine_templates.Template):
             if found is None:
                 routines.finish(db, run['id'], 'failed', stamp, error='no_result' if text else 'runtime_error')
                 return
-            if not test:  # read: the same material isn't read again for a while
+            if not test:  # read: the same material isn't read again for a while, or till the day the model named
+                again = stay_in_touch.later(text, picked, timeutil.local_day(timeutil.clock()))
                 for person in picked:
-                    stay_in_touch.asked(db, person['kept'], person['key'], stamp)
+                    stay_in_touch.asked(db, person['kept'], person['key'], stamp, again.get(person['kept']))
             if not found:
                 routines.report(db, run['id'], nothing=True, why=i18n.t('Nothing specific to say to anyone today'), stamp=stamp)
             elif test:  # Try it: the reasons as its result, no to-do
