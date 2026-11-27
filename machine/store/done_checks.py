@@ -50,7 +50,7 @@ LEASE = dt.timedelta(minutes=15)  # a claim older than this is taken again
 RETRY = dt.timedelta(hours=1)     # a page that couldn't be read is read again after this
 HOLD = dt.timedelta(hours=6)      # return_waiting waits for a check at most this long past its time
 PREFIX = 'done-check:'            # its chat lines (decisions), shown by card_chat
-VERIFIED = 'verified:'            # the close a page check made (its decision id)
+VERIFIED = outcomes.VERIFIED       # the close a page check made (its decision id)
 URLS = re.compile(r'(?i)\b(?:https?://)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:/[^\s"\'<>()\[\]]*)?')
 
 
@@ -298,14 +298,6 @@ def settle(db, job, result, stamp, why=None, fingerprint=None):
     db.execute('UPDATE suggestions SET done_check=? WHERE id=?', (encoded({**plan, 'run': run}), row['id']))
     _line(db, row['id'], i18n.t('Couldn’t open {}', page), stamp, f"{job['episode']}:unknown")
     return 'back'
-
-
-def summaries(cards):
-    """A to-do its page check closed says the result on the card and in its chat, not the wait it was in ("Done: <done
-    when>."); shown only while that close stands, so Undo or Reopen shows its own text again. Nothing is rewritten."""
-    for card in cards:
-        if card.get('status') == todo_states.COMPLETED and str(card.get('closed_decision_id') or '').startswith(VERIFIED) and card.get('done_when'):
-            card['body'] = i18n.t('Done: {}.', str(card['done_when']).rstrip('.'))
 
 
 def chat_line(row):

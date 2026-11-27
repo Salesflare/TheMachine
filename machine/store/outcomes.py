@@ -33,6 +33,8 @@ from machine import todo_states
 from machine.store import todo_moves
 
 MAX = 140  # one short line, like a project's condition
+HANDLED = 'handled:'    # a close because a message showed the result (result_seen)
+VERIFIED = 'verified:'  # a close because its page showed it (done_checks.py)
 BY = ('review', 'run', 'promise', 'project')  # who set it; the run's (and the owner's through it) word stands
 
 
@@ -129,7 +131,7 @@ def result_seen(db, row, reason, event_ids, stamp, undo_hours=24):
     ids = list(event_ids)
     if waits_for_result(row) and not db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')",
                                                 (row['id'],)).fetchone():
-        decision_id = 'handled:' + hashlib.sha256(f"{row['id']}:{sorted(int(i) for i in ids)}".encode()).hexdigest()[:32]
+        decision_id = HANDLED + hashlib.sha256(f"{row['id']}:{sorted(int(i) for i in ids)}".encode()).hexdigest()[:32]
         if not db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
             close_handled(db, row, decision_id, reason, stamp, undo_hours)
             db.execute('UPDATE suggestions SET handled_hint=NULL WHERE id=?', (row['id'],))
@@ -137,6 +139,16 @@ def result_seen(db, row, reason, event_ids, stamp, undo_hours=24):
     db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (encoded({'reason': reason, 'event_ids': ids, 'at': stamp}), row['id']))
     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
     return 'hint'
+
+
+def result_summaries(cards):
+    """A to-do that closed by itself because its result came (a message, its page) says the result on its card and in its
+    chat ("Done: <done when>."), not the wait it was in. Shown only while that close stands: Undo or Reopen shows its own
+    text again. Nothing is rewritten. views.card_views."""
+    for card in cards:
+        if card.get('status') == todo_states.COMPLETED and card.get('done_when') and _outcome(card).get('state') in ('waiting', 'still_waiting') \
+                and str(card.get('closed_decision_id') or '').startswith((HANDLED, VERIFIED)):
+            card['body'] = i18n.t('Done: {}.', str(card['done_when']).rstrip('.'))
 
 
 def close_handled(db, row, decision_id, reason, stamp, undo_hours=24):
