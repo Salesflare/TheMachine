@@ -611,6 +611,32 @@ fn put_down(app: &AppHandle, monitor: String, at: Corner) {
     place(app);
 }
 
+/// The newest GTK 3.24 that each gtk-layer-shell release is known to work with (its compatibility.md). It reads GTK's own
+/// structures as the GTK versions it knows lay them out, and it watches the popups of every window, not only its layer
+/// surfaces: on a newer GTK it can read a wrong field, and a tooltip, a right-click menu or a <select> of the dashboard
+/// crashed the whole app. Bump with LAYER_SHELL in desktop.yml.
+const LAYER_SHELL_KNOWS: [((u32, u32, u32), u32); 10] = [
+    ((0, 6, 0), 31),
+    ((0, 7, 0), 34),
+    ((0, 8, 0), 34),
+    ((0, 8, 1), 37),
+    ((0, 8, 2), 39),
+    ((0, 9, 0), 43),
+    ((0, 9, 1), 49),
+    ((0, 9, 2), 51),
+    ((0, 10, 0), 51),
+    ((0, 10, 1), 52),
+];
+
+/// Whether this gtk-layer-shell is known to work with this GTK 3. A release newer than the list is trusted, one older isn't.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+fn layer_shell_knows(layer: (u32, u32, u32), gtk: (u32, u32, u32)) -> bool {
+    if layer > LAYER_SHELL_KNOWS[LAYER_SHELL_KNOWS.len() - 1].0 {
+        return true;
+    }
+    LAYER_SHELL_KNOWS.iter().rev().find(|(release, _)| *release <= layer).is_some_and(|(_, newest)| gtk <= (3, 24, *newest))
+}
+
 #[cfg(target_os = "linux")]
 pub mod linux {
     use super::{Corner, Rect, Screen, ROBOT};
@@ -619,9 +645,24 @@ pub mod linux {
     use std::cell::RefCell;
     use tauri::{AppHandle, Manager, WebviewWindow};
 
-    /// Layer-shell when this is Wayland and its compositor has it. GNOME has not: there main() picks XWayland.
+    /// Layer-shell when this is Wayland, its compositor has it and the library knows this GTK. GNOME has not: there main()
+    /// picks XWayland, as it does for a library that doesn't know this GTK.
     pub fn has_layer_shell() -> bool {
-        gtk_layer_shell::is_supported()
+        layer_shell_fits() && gtk_layer_shell::is_supported()
+    }
+
+    extern "C" {
+        fn gtk_layer_get_major_version() -> std::ffi::c_uint;
+        fn gtk_layer_get_minor_version() -> std::ffi::c_uint;
+        fn gtk_layer_get_micro_version() -> std::ffi::c_uint;
+    }
+
+    /// Whether the gtk-layer-shell that was loaded (lib/ next to the program, or the system's) knows the GTK that was.
+    /// Before GTK starts: neither library is started by it.
+    pub fn layer_shell_fits() -> bool {
+        // SAFETY: plain getters of the library's version, which the program is linked to; no arguments and no state.
+        let layer = unsafe { (gtk_layer_get_major_version(), gtk_layer_get_minor_version(), gtk_layer_get_micro_version()) };
+        super::layer_shell_knows(layer, (gtk::major_version(), gtk::minor_version(), gtk::micro_version()))
     }
 
     /// The library next to the program can't be written over while it runs: Linux drops a library's pages when its file is
@@ -878,6 +919,27 @@ mod tests {
         std::fs::rename(file.with_extension("new"), &file).unwrap(); // a new one may take its place
         std::fs::remove_file(&file).unwrap();
         linux::keep(&file); // not there
+    }
+
+    #[test]
+    fn layer_shell_only_with_a_gtk_it_knows() {
+        for (layer, gtk, fits) in [
+            ((0, 7, 0), (3, 24, 52), false), // the AppImage's from Ubuntu 22.04 on Arch: every popup crashed
+            ((0, 7, 0), (3, 24, 33), true),  // on Ubuntu 22.04 itself
+            ((0, 7, 0), (3, 24, 34), true),
+            ((0, 7, 0), (3, 24, 35), false),
+            ((0, 8, 1), (3, 24, 41), false), // Ubuntu 24.04's own
+            ((0, 9, 2), (3, 24, 51), true),
+            ((0, 10, 1), (3, 24, 52), true), // the AppImage's now
+            ((0, 10, 1), (3, 24, 53), false),
+            ((0, 10, 1), (3, 22, 30), true),
+            ((0, 10, 1), (3, 25, 0), false),
+            ((0, 10, 2), (3, 24, 60), true), // newer than the list
+            ((1, 0, 0), (3, 24, 60), true),
+            ((0, 5, 2), (3, 24, 20), false), // older than the list
+        ] {
+            assert_eq!(layer_shell_knows(layer, gtk), fits, "{layer:?} {gtk:?}");
+        }
     }
 
     #[test]

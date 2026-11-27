@@ -60,7 +60,8 @@ Mac (macOS 13 or newer, Apple silicon or Intel): `the-machine-desktop-mac.zip`, 
 Linux (64-bit, x86_64). The AppImage updates itself; the .deb and the Arch package are updated as they were installed, and
 Settings says when a newer one is out.
 
-- **Any distribution**: `the-machine-desktop-x86_64.AppImage` brings what it needs, gtk-layer-shell too. `chmod +x` it and
+- **Any distribution**: `the-machine-desktop-x86_64.AppImage` brings what it needs, gtk-layer-shell too (built by CI from
+  its source, `LAYER_SHELL` in `desktop.yml`). `chmod +x` it and
   start it. It needs FUSE's `fusermount3` (or the older `fusermount`), which most desktops have; no libfuse. If it says
   FUSE is missing, install `fuse3`. Kept in a folder of yours (`~/Applications`, say), it updates itself.
 - **Ubuntu and Debian** (Ubuntu 22.04, Debian 12 or newer): `sudo apt install ./the-machine-desktop-amd64.deb`, which also
@@ -69,7 +70,8 @@ Settings says when a newer one is out.
   checks it against the checksum in the file, and installs it as `the-machine-desktop-bin` with WebKitGTK 4.1 and
   gtk-layer-shell. A newer release: the same with its `PKGBUILD`. It isn't in the AUR yet. On Hyprland (Omarchy's), Sway and
   KDE the robot is a layer surface, above other windows and without a window of its own (**How it is made**); nothing to set
-  for it.
+  for it. Where the gtk-layer-shell (the AppImage's or the system's) isn't known to work with the system's GTK, the app is an
+  XWayland window instead, as on GNOME: such a one crashed the app when a tooltip or menu opened.
 
 To try a build that isn't released: the newest run of
 [Desktop prototype](https://github.com/Salesflare/TheMachine/actions/workflows/desktop.yml) has

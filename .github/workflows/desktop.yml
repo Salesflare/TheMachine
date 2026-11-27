@@ -41,6 +41,10 @@ permissions:
 
 env:
   RELEASE: ${{ inputs.release }}
+  # The AppImage's gtk-layer-shell, built in the linux job: Ubuntu 22.04's (0.7.0) read a newer GTK's structures wrong, and
+  # a tooltip or menu of the dashboard crashed the app on Arch. A newer one goes with LAYER_SHELL_KNOWS in src/windows.rs
+  LAYER_SHELL: '0.10.1'
+  LAYER_SHELL_SHA256: 88c3a3e0a5300532f3d368d5df64838a87f1fb85273f22d41df0a6b8d0ec59c6
 
 concurrency:
   group: desktop-${{ github.event.pull_request.number || github.ref }}
@@ -737,7 +741,15 @@ jobs:
           grep -l packages.microsoft.com /etc/apt/sources.list.d/* 2>/dev/null | xargs -r sudo rm -f || true
           sudo apt-get update -qq
           # The tray icon is Windows' and the Mac's, but tauri bundle sees the feature and wants appindicator
-          sudo apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-dev libgtk-layer-shell-dev libayatana-appindicator3-dev librsvg2-dev file xdg-utils > /dev/null
+          sudo apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev file xdg-utils meson ninja-build libwayland-dev wayland-protocols > /dev/null
+          curl -sSfL -o "$RUNNER_TEMP/layer-shell.tar.gz" "https://github.com/wmww/gtk-layer-shell/archive/refs/tags/v$LAYER_SHELL.tar.gz"
+          echo "$LAYER_SHELL_SHA256  $RUNNER_TEMP/layer-shell.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/layer-shell.tar.gz" -C "$RUNNER_TEMP"
+          (cd "$RUNNER_TEMP/gtk-layer-shell-$LAYER_SHELL" \
+            && meson setup build --prefix=/usr/local --libdir=lib --buildtype=release -Dintrospection=false -Dvapi=false -Ddocs=false -Dtests=false -Dexamples=false > /dev/null \
+            && ninja -C build > /dev/null && sudo ninja -C build install > /dev/null)
+          sudo ldconfig
+          [ "$(pkg-config --modversion gtk-layer-shell-0)" = "$LAYER_SHELL" ]
           rustup toolchain install stable --profile minimal --no-self-update
           (cd tools && npm ci --ignore-scripts --no-audit --no-fund)
           tauri=tools/node_modules/.bin/tauri
@@ -782,6 +794,9 @@ jobs:
           (cd "$RUNNER_TEMP" && "$own" --appimage-extract > /dev/null)
           find "$RUNNER_TEMP/squashfs-root" -name 'libgtk-layer-shell.so*' -o -name 'libwebkit2gtk-4.1.so*' -o -name 'libwayland-*.so*'
           [ -n "$(find "$RUNNER_TEMP/squashfs-root" -name 'libgtk-layer-shell.so.0*')" ]
+          # The one built here, not the system's
+          layer="$(find "$RUNNER_TEMP/squashfs-root" -name 'libgtk-layer-shell.so.0' | head -1)"
+          [ "$(python3 -c 'import ctypes, sys; l = ctypes.CDLL(sys.argv[1]); print(f"{l.gtk_layer_get_major_version()}.{l.gtk_layer_get_minor_version()}.{l.gtk_layer_get_micro_version()}")' "$layer")" = "$LAYER_SHELL" ]
           # Wayland stays Wayland: on Hyprland and Sway the robot is a layer surface, not an X11 window
           if grep -rhE '^\s*export GDK_BACKEND' "$RUNNER_TEMP/squashfs-root/apprun-hooks"; then exit 1; fi
           echo "What it leaves to the system:"
@@ -946,6 +961,12 @@ jobs:
           pacman -U --noconfirm "$pkg"/the-machine-desktop-bin-*.pkg.tar.zst
           pacman -Qi the-machine-desktop-bin
           as bash "$home/desktop/smoke/wayland.sh" "$home/shots/package" python3 smoke/started.py "$home/shots/package" /usr/bin/the-machine-desktop || failed=1
+          # The AppImage's gtk-layer-shell with this GTK: a plain window's menu, <select>, tooltip and workspace move
+          pacman -S --noconfirm --needed python-gobject > /dev/null
+          as bash -c 'cd /home/builder && ./the-machine-desktop-x86_64.AppImage --appimage-extract > /dev/null && mkdir layer-shell'
+          as cp -L "$(find "$home/squashfs-root" -name libgtk-layer-shell.so.0 | head -1)" "$home/layer-shell/" # that one alone: GTK is Arch's
+          as bash "$home/desktop/smoke/wayland.sh" "$home/shots/popups" env LD_LIBRARY_PATH="$home/layer-shell" \
+            python3 smoke/popups.py "$LAYER_SHELL" || failed=1
           mkdir out
           cp "$pkg"/PKGBUILD "$pkg"/the-machine-desktop-bin-*.pkg.tar.zst out/
           exit $failed

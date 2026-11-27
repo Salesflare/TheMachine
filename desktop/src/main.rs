@@ -1171,10 +1171,12 @@ fn started_again(app: &AppHandle, args: Vec<String>) {
 
 fn main() {
     // GNOME's Wayland has no layer-shell, and a plain Wayland window can't stay on top or keep its place: XWayland can.
+    // So too where the gtk-layer-shell doesn't know this GTK: there a popup of any window could crash the app (windows.rs).
     #[cfg(target_os = "linux")]
     if std::env::var_os("GDK_BACKEND").is_none()
         && std::env::var_os("DISPLAY").is_some()
-        && std::env::var("XDG_CURRENT_DESKTOP").is_ok_and(|d| d.to_uppercase().contains("GNOME"))
+        && (std::env::var("XDG_CURRENT_DESKTOP").is_ok_and(|d| d.to_uppercase().contains("GNOME"))
+            || (std::env::var_os("WAYLAND_DISPLAY").is_some() && !windows::linux::layer_shell_fits()))
     {
         std::env::set_var("GDK_BACKEND", "x11");
     }
