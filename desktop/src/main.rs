@@ -4,6 +4,24 @@
 #[cfg(all(feature = "store", any(feature = "updates", not(target_os = "macos"))))]
 compile_error!("the Mac App Store's build is a Mac's, without updates: --no-default-features --features store");
 
+/// A sandbox build says what it does and when (UTC, as CI's own lines), on its error output: smoke/ keeps that as its log.
+/// Never in a build for people.
+#[cfg(feature = "sandbox")]
+macro_rules! trace {
+    ($($t:tt)*) => { $crate::traced(format_args!($($t)*)) };
+}
+#[cfg(not(feature = "sandbox"))]
+macro_rules! trace {
+    ($($t:tt)*) => { if false { let _ = format!($($t)*); } };
+}
+
+#[cfg(feature = "sandbox")]
+fn traced(what: std::fmt::Arguments) {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+    let (s, ms) = (now.as_secs() % 86_400, now.subsec_millis());
+    eprintln!("{:02}:{:02}:{:02}.{ms:03} {what}", s / 3600, s / 60 % 60, s % 60);
+}
+
 mod address;
 mod card;
 mod dash;
@@ -210,7 +228,10 @@ async fn with_machine<T: Send + 'static>(app: &AppHandle, work: impl FnOnce(Mach
 fn look(app: &AppHandle) -> Result<(), String> {
     let shared = app.state::<Shared>();
     let Some(machine) = shared.machine() else { return Ok(()) };
+    let since = std::time::Instant::now();
+    trace!("look: asks the Machine");
     let found = ask_status(app, &shared, &machine);
+    trace!("look: answered after {} ms, {}", since.elapsed().as_millis(), found.as_ref().err().map_or("ok", |e| e.as_str()));
     if shared.machine().is_none_or(|m| m.url != machine.url) {
         return Ok(()); // signed out meanwhile
     }
@@ -287,6 +308,7 @@ fn listed(app: &AppHandle, waiting: Waiting) {
     if std::mem::replace(&mut *shared.waiting.lock().unwrap(), waiting.clone()) == waiting {
         return;
     }
+    trace!("listed: {} to-dos, known {}", waiting.todos.len(), waiting.known);
     let _ = app.emit_to("box", "listed", ());
     follow_tray(app);
     badge(app);
@@ -351,6 +373,7 @@ fn set_dot(app: &AppHandle, dot: bool) {
 #[tauri::command]
 fn robot_take(shared: State<Shared>) -> Taken {
     let news = std::mem::take(&mut shared.held.lock().unwrap().news);
+    trace!("robot takes {} answers", news.len());
     let added = shared.added.lock().unwrap().clone();
     Taken { news, added }
 }
@@ -359,6 +382,7 @@ fn robot_take(shared: State<Shared>) -> Taken {
 #[tauri::command]
 fn robot_list(app: AppHandle, machine: String, todos: Option<Vec<machine::Todo>>, marks: Vec<seen::Mark>, name: String, hour12: bool, added: Vec<machine::Added>) {
     let shared = app.state::<Shared>();
+    trace!("robot list: {:?} to-dos, problem {:?}", todos.as_ref().map(Vec::len), shared.problem.lock().unwrap());
     if shared.machine().is_none_or(|m| m.url != machine) || shared.problem.lock().unwrap().is_some() {
         return;
     }
@@ -447,11 +471,13 @@ fn box_given(shared: State<Shared>) -> Option<Given> {
 
 #[tauri::command]
 fn robot_click(app: AppHandle) {
+    trace!("robot click");
     later(&app, show_or_toggle);
 }
 
 /// A hidden robot comes back; otherwise the box opens or closes.
 fn show_or_toggle(app: &AppHandle) {
+    trace!("robot click on the main thread: hidden {}, box open {}", app.state::<Shared>().hidden.load(Ordering::Relaxed), windows::box_open(app));
     if app.state::<Shared>().hidden.load(Ordering::Relaxed) {
         windows::close_box(app);
         show(app);
@@ -592,6 +618,7 @@ fn box_state(shared: State<Shared>) -> BoxState {
     let waiting = shared.waiting.lock().unwrap().clone();
     let speaks = shared.saved.lock().unwrap().speak;
     let wanted = shared.wanted.lock().unwrap().clone();
+    trace!("box state: machine {}, problem {problem:?}, {} to-dos", shared.machine().is_some(), waiting.todos.len());
     BoxState {
         machine: shared.machine().map(|m| m.url),
         problem,
@@ -1163,6 +1190,7 @@ fn watch(app: AppHandle) {
         let _ = app.run_on_main_thread(move || {
             windows::follow_screens(&here);
             if here.state::<Shared>().full.swap(full, Ordering::Relaxed) != full {
+                trace!("full screen: {full}");
                 here.state::<Shared>().look_soon(); // whether it speaks
             }
             windows::show_or_not(&here);

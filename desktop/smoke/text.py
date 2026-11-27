@@ -117,9 +117,16 @@ def robot():
 
 
 def box():
+    """Open, with its list. Each part on its own, so a failure says which one was missing."""
     if not window('box'):
         robot()
-    need(until(lambda: window('box') and page('box', 'document.querySelectorAll("#todos li").length') > 1, 12), 'the box with its list')
+    if not until(lambda: window('box'), 12):
+        mine = [(r.right - r.left, user.GetDpiForWindow(h) / 96) for h, r in app.all(True)]
+        need(False, f'a click on the robot opens the box: its windows (width, scale) {mine}, the box page {its("box")}')
+    rows = lambda: page('box', 'document.querySelectorAll("#todos li").length') or 0
+    if not until(lambda: rows() > 1, 12):
+        shown = said('box', '["signin", "notice", "compose"].filter(s => !document.getElementById(s).hidden)')
+        need(False, f'the box with its list: {rows()} rows, it shows {shown}, the Machine was asked {len(machine.desks)} times')
     time.sleep(0.6)
 
 
@@ -130,8 +137,11 @@ def start():
     folder.mkdir(parents=True)
     (folder / 'app.json').write_text(json.dumps({'machine': machine.at + '/'}))
     machine.todos, machine.notices = list(TODOS), []
+    before = len(machine.desks)
     app = App(program, window=False)
     need(until(lambda: window('robot'), 40), 'the robot')
+    # Its first look: until the Machine has said what waits, the box has nothing to list
+    need(until(lambda: len(machine.desks) > before, 40), 'it asks the Machine what waits')
     time.sleep(2)
 
 
