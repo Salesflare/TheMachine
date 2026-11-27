@@ -80,6 +80,13 @@ class DoneChecks(unittest.TestCase):
                 back = return_waiting(db)
         return kept, reads, back
 
+    def shown_body(self):
+        """The to-do's text as the list and its chat show it (the card views)."""
+        card = self.suggestion()
+        with self.store.connect() as db:
+            self.store.card_views(db, [card], jobs=False)
+        return card['body']
+
     def chat(self):
         with self.store.connect() as db:
             return json.dumps(self.app().card_chat_service(db, self.sid), ensure_ascii=False)
@@ -230,9 +237,13 @@ class DoneChecks(unittest.TestCase):
             self.assertEqual(done_checks.settle(db, job, 'met', at, fingerprint='f'), 'closed')
         with self.store.connect() as db:  # the same result kept twice (a retried write): nothing more
             self.assertIsNone(done_checks.settle(db, job, 'met', at, fingerprint='f'))
+        body = self.suggestion()['body']
+        self.assertEqual(self.shown_body(), f'Done: {RESULT}.')  # the card says the result, not the wait it was in
+        self.assertEqual(self.suggestion()['body'], body)  # only shown: its own text stays
         with patch_everywhere(timeutil, 'now', return_value=later(at, hours=1)):
             self.decide('undo', 'undo-1')  # the owner says it isn't done
         self.assertNotEqual(self.suggestion()['status'], 'completed')
+        self.assertEqual(self.shown_body(), body)
         kept, reads, _ = self.step(later(at, hours=2), LIVE)
         self.assertEqual((kept, reads), (None, []))  # never read or closed again for this wait
         self.assertNotEqual(self.suggestion()['status'], 'completed')
