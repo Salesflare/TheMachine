@@ -32,8 +32,10 @@ What reads what, and how often (Graph throttles Teams per app and tenant; every 
 Bots, apps and Teams' system messages are left out. The first import reads the last `bootstrap_days` (7); older chat
 messages come in as history only (machine/app/history.py), after the first look, one page at a time.
 
-Graph's 403 or 404 on one chat, channel or meeting is about that one (refused): it is set aside and the others are read,
-like Slack's refused conversations. Only the sign-in itself (expired, revoked, a scope not granted) asks to connect again.
+Graph's 403, 404 or 410 on one chat, channel, team or meeting is about that one (refused, or deleted): it is set aside
+and the others are read, like Slack's refused conversations. A 410 on a list's next page (its page token expired) reads
+that list again from its first page, once. Only the sign-in itself (expired, revoked, a scope not granted) asks to
+connect again.
 
 Personal Microsoft accounts have no Teams chats in Graph: work and school accounts only."""
 import datetime as dt
@@ -110,11 +112,14 @@ def teams_link(url):
 SET_ASIDE_KEEP = 100
 
 
+REFUSED = (403, 404, 410)  # one chat, channel, team or meeting refused (403), not found (404) or deleted (410)
+
+
 def refused(error):
-    """Graph's 403 or 404 on one chat, channel or meeting (the owner left it, it belongs to another organization, or a
-    policy keeps it from this app): about that one, not the sign-in. A scope not granted (teams_not_granted) and an
-    expired sign-in (teams_signin_expired, 401) stay the connection's."""
-    return getattr(error, 'category', None) == 'teams_http' and getattr(error, 'status', None) in (403, 404)
+    """Graph's 403, 404 or 410 on one chat, channel or meeting (the owner left it, it belongs to another organization,
+    a policy keeps it from this app, or it was deleted): about that one, not the sign-in. A scope not granted
+    (teams_not_granted) and an expired sign-in (teams_signin_expired, 401) stay the connection's."""
+    return getattr(error, 'category', None) == 'teams_http' and getattr(error, 'status', None) in REFUSED
 
 
 def set_aside(state, key, aside):
@@ -220,13 +225,24 @@ class Source:
         return SourceError('teams_http', error.status, retry_after=error.retry_after)
 
     def pages(self, method, params, most):
-        """Up to `most` pages of a list: (items, whether more were left)."""
-        seen = set()
-        for _ in range(most):
-            page = self.call(method, params)
+        """Up to `most` pages of a list: (items, whether more were left). A next link Graph no longer serves (410: its
+        page token expired) reads the list again from its first page, once, without giving an item twice: at most
+        2 * `most` + 1 calls."""
+        seen, given, first, again, n = set(), set(), params, True, 0
+        while n < most:
+            n += 1
+            try:
+                page = self.call(method, params)
+            except self.helpers.SourceError as error:
+                if not (again and '$link' in params and error.category == 'teams_http' and error.status == 410):
+                    raise
+                seen, params, again, n = set(), first, False, 0
+                continue
             if not isinstance(page, dict) or not isinstance(page.get('value', []), list):
                 raise self.helpers.SourceError('teams_invalid_page')
-            yield [i for i in page.get('value') or [] if isinstance(i, dict)]
+            items = [i for i in page.get('value') or [] if isinstance(i, dict) and not (i.get('id') and str(i['id']) in given)]
+            given.update(str(i['id']) for i in items if i.get('id'))
+            yield items
             link = page.get('@odata.nextLink')
             if not link:
                 return
@@ -399,10 +415,15 @@ def channel_list(source, state, now):
     items = []
     for teams in source.pages('teams.joined', {'$select': 'id,displayName'}, 5):
         for team in teams:
-            for channels in source.pages('teams.channels', {'team': team['id'], '$select': 'id,displayName,membershipType'}, 2):
-                items += [[str(team['id']), str(c['id']), f"{' '.join(str(team.get('displayName') or '').split())[:80]} / "
-                                                           f"{' '.join(str(c.get('displayName') or '').split())[:80]}"]
-                          for c in channels if c.get('id')]
+            try:
+                for channels in source.pages('teams.channels', {'team': team['id'], '$select': 'id,displayName,membershipType'}, 2):
+                    items += [[str(team['id']), str(c['id']), f"{' '.join(str(team.get('displayName') or '').split())[:80]} / "
+                                                               f"{' '.join(str(c.get('displayName') or '').split())[:80]}"]
+                              for c in channels if c.get('id')]
+            except source.helpers.SourceError as error:
+                if not refused(error) or error.status == 403:
+                    raise  # a 403 stays the admin's whole OK (missing['channels']), as before
+                continue  # one team deleted or archived (404, 410): the other teams' channels are read
     state['channel_list'] = {'at': now.isoformat(), 'items': items[:300]}
     return state['channel_list']['items']
 
@@ -526,7 +547,7 @@ def meeting_events(source, account, item, granted, missing):
                 again = True  # Copilot makes them a while after the meeting
             missing.pop('notes', None)
         except helpers.SourceError as error:
-            if error.status not in (403, 404):
+            if error.status not in REFUSED:
                 raise
             if error.status == 403:
                 missing['notes'] = 'license'  # granted, refused: Microsoft serves them only with a Copilot license
@@ -547,7 +568,7 @@ def meeting_events(source, account, item, granted, missing):
                 again = True  # none yet, or transcription was off: looked for again until MEETING_DAYS
             missing.pop('transcripts', None)
         except helpers.SourceError as error:
-            if error.status not in (403, 404):
+            if error.status not in REFUSED:
                 raise
             if error.status == 403:
                 missing['transcripts'] = 'blocked'  # granted, refused: the organization turned transcript access off
@@ -832,7 +853,7 @@ def history_channel(source, account, state, upper, target):
     try:
         page = source.call('teams.channel.messages', params)
     except source.helpers.SourceError as error:
-        if error.status not in (403, 404):
+        if error.status not in REFUSED:
             raise
         page = {}  # gone, or no longer the owner's: on to the next one
     events, old, me = [], False, source.whoami()

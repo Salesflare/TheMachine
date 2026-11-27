@@ -324,10 +324,17 @@ class Microsoft:
         return {'displayName': user.get('displayName'), 'emailAddress': user.get('email'), 'drive': drive.get('id')}
 
     def delta(self, token):
-        """Changed items in the owner's own drive since `token` (None: just a starting point), and the next token."""
+        """Changed items in the owner's own drive since `token` (None: just a starting point), and the next token. A
+        token Microsoft no longer serves (410: resync required) starts over from a new starting point; what was read
+        before stays."""
         items, params = [], ({'token': token} if token else {'token': 'latest'})
         for _ in range(20):
-            page = self.call('drive.delta', params)
+            try:
+                page = self.call('drive.delta', params)
+            except self.helpers.SourceError as error:
+                if not token or error.status != 410:
+                    raise
+                return self.delta(None)
             items += [i for i in page.get('value') or [] if isinstance(i, dict)]
             link = page.get('@odata.nextLink')
             if link:

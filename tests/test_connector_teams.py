@@ -153,7 +153,7 @@ class Store:
 class TeamsTests(unittest.TestCase):
     def setUp(self):
         self.fake = FakeGraph()
-        api = types.SimpleNamespace(READ=ms_graph.READ, GraphError=ms_graph.GraphError, personal=ms_graph.personal,
+        self.graph = api = types.SimpleNamespace(READ=ms_graph.READ, GraphError=ms_graph.GraphError, personal=ms_graph.personal,
                                     identity=ms_graph.identity, call=self.fake.call, scopes=self.fake.scopes, token=self.fake.token,
                                     budget=self.budget, ROUND_SECONDS=ms_graph.ROUND_SECONDS)
         self.rounds = []
@@ -286,6 +286,65 @@ class TeamsTests(unittest.TestCase):
         self.assertNotIn('channels', self.store.state['missing'])  # one channel is not the admin's whole OK
         self.assertEqual(self.store.state['meetings'], [])  # the meeting chat is what there is
         self.assertFalse([e for e in self.store.events if e['kind'] != 'teams.message'])
+
+    def test_a_deleted_chat_team_or_meeting_is_gone_not_a_failed_round(self):
+        # Graph's 410 Gone on one deleted chat raised the round's SourceError, and the chat stayed first in the queue:
+        # every round failed on it again.
+        self.fake.granted = set(ALL_SCOPES)
+        self.fake.joined = [{'id': 'team-gone', 'displayName': 'Old'}, {'id': 'team-1', 'displayName': 'Acme'}]
+        self.fake.channels = {'team-1': [{'id': 'chan-2', 'displayName': 'Sales', 'membershipType': 'standard'}]}
+        self.fake.channel_pages = {'chan-2': [[message('t1', '2026-11-05T08:00:00Z', user(SAM, 'Sam Sender'), 'Pipeline review')]]}
+        self.fake.fail[('teams.chat.messages', CHAT_1)] = 410
+        original = self.fake.call
+
+        def call(config, credential, signin, method, params=None, **kw):
+            if method == 'teams.channels' and params['team'] == 'team-gone':
+                raise ms_graph.GraphError('graph_http', 410)  # an archived or deleted team
+            return original(config, credential, signin, method, params, **kw)
+        self.graph.call = call
+        self.fake.fail['teams.transcripts'] = self.fake.fail['teams.insights'] = 410  # the meeting's records deleted
+        result = self.sync()
+        self.assertEqual(sorted(e['body'] for e in self.store.events if e['kind'] == 'teams.message'),
+                         ['Notes in the deck', 'Pipeline review'])
+        self.assertFalse(result['more'])
+        self.assertEqual(self.store.state['set_aside'], [CHAT_1])
+        self.assertNotIn('queue', self.store.state)
+        self.assertNotIn('channels', self.store.state['missing'])
+        self.assertEqual(self.store.state['meetings'], [])  # done with it: nothing left to look for
+        self.now = '2026-11-05T12:05:00+00:00'
+        self.sync()  # the next round is no failure either
+
+    def test_an_expired_next_link_reads_the_list_again_once(self):
+        self.fake.granted = set(ALL_SCOPES)
+        self.fake.joined = [{'id': 'team-1', 'displayName': 'Acme'}]
+        self.fake.channels = {'team-1': [{'id': 'chan-2', 'displayName': 'Sales', 'membershipType': 'standard'}]}
+        self.fake.channel_pages = {'chan-2': [[message('t2', '2026-11-05T09:00:00Z', user(SAM, 'Sam Sender'), 'Newer')],
+                                              [message('t1', '2026-11-05T08:00:00Z', user(SAM, 'Sam Sender'), 'Older')]]}
+        original, expired = self.fake.call, []
+
+        def call(config, credential, signin, method, params=None, **kw):
+            if method == 'teams.channel.messages' and (params or {}).get('$link') and not expired:
+                expired.append(params['$link'])
+                raise ms_graph.GraphError('graph_http', 410)  # its page token expired
+            return original(config, credential, signin, method, params, **kw)
+        self.graph.call = call
+        self.sync()
+        self.assertEqual([e['body'] for e in self.store.events if e['body'] in ('Newer', 'Older')], ['Newer', 'Older'])  # each once
+        self.assertEqual(len(expired), 1)
+        # a second 410 after starting over is the connection's: no endless loop
+        source = teams.Source(self.config, ACCOUNT, self.helpers)
+        expired.clear()
+
+        def always(config, credential, signin, method, params=None, **kw):
+            if (params or {}).get('$link'):
+                expired.append(params['$link'])
+                raise ms_graph.GraphError('graph_http', 410)
+            return original(config, credential, signin, method, params, **kw)
+        self.graph.call = always
+        with self.assertRaises(CONNECTOR_HELPERS.SourceError) as caught:
+            list(source.pages('teams.channel.messages', {'team': 'team-1', 'channel': 'chan-2', '$top': 50, '$expand': 'replies'}, 5))
+        self.assertEqual(caught.exception.status, 410)
+        self.assertEqual(len(expired), 2)
 
     def test_many_channels_take_turns_without_rerunning_right_away(self):
         # More channels than a run reads: once each has been read, the rest wait for the next regular run. Before,

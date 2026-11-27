@@ -69,7 +69,7 @@ class TeamsTransport:
         try:
             self.sender(action).ready(action['chat_id'])
         except self.helpers.SourceError as error:
-            if error.category == 'teams_http' and error.status in (403, 404):
+            if error.category == 'teams_http' and error.status in (403, 404, 410):  # refused, not found or deleted
                 raise ValueError('That Teams chat can’t be reached from here anymore. Nothing was sent.') from None
             raise ValueError(self.REFUSED.get(error.category, 'I couldn’t reach Teams. Nothing was sent; tap Send again.')) from None
 
