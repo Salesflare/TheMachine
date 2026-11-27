@@ -24,7 +24,8 @@ the error reports); a failed one is retried after 1, 2, then every 5 minutes, an
 failed test passes again, the next check of new messages starts at once instead of after its back-off. With an API key or a ChatGPT sign-in
 that is `openclaw infer model run --gateway`, a raw model call. A Claude model that runs through Claude Code goes
 through Claude Code's own print mode (`claude_print.py`, about 550 tokens), since `infer model run` never takes the
-Claude Code route. Only that model can answer: no fallback stands in. When a Claude plan fails it, the dashboard adds
+Claude Code route. It signs in only the way OpenClaw's Gateway starts Claude Code (no settings files: its own
+credentials), so a sign-in the Gateway can't use fails the test too. Only that model can answer: no fallback stands in. When a Claude plan fails it, the dashboard adds
 that this needs a paid plan, unless Claude reports the plan as paid. When a ChatGPT sign-in fails it, it adds that the
 account is on the free plan only if ChatGPT reports so (not in the phone app). Neither when a limit is reached or
 nothing answered (`model_check.plan_note`).

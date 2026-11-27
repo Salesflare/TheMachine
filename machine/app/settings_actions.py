@@ -16,7 +16,7 @@ import fleet
 import help_topics
 import load_speed
 import locale_prefs
-from machine import ai_training
+from machine import ai_training, work_report
 from machine.app.card_chat import save_hours
 from machine.config import LOG
 from machine.faults import code_version, running_release
@@ -53,13 +53,15 @@ def activity_report(db, timezone=None, current=None):
     """Per local day, the last 7 days: plain counts of what the owner did (to-dos shown and opened, Do it, Send,
     sent, Mark done, Not needed, snoozed, chat messages, visits, active hours), for the hosted health report next to
     first_cards_report. Counts only, never content (activity.py). With them, `load`: how fast the dashboard opened per
-    day and kind, as count, median and p90 (load_speed.py). `db`: a plain sqlite3 connection to the events database."""
+    day and kind, as count, median and p90 (load_speed.py), and `work`: how the background jobs went in the last 24
+    hours (machine/work_report.py, for the cloud's daily check). `db`: a plain sqlite3 connection to the events database."""
     try:
         tz = ZoneInfo(timezone) if timezone else local_tz()
     except (ValueError, KeyError):
         tz = local_tz()
     current = current or now()
-    return {**activity.report(db, tz, current), 'load': load_speed.report(db, activity.local(current, tz).date().isoformat())}
+    return {**activity.report(db, tz, current), 'load': load_speed.report(db, activity.local(current, tz).date().isoformat()),
+            'work': work_report.report(db, current)}
 
 
 class SettingsActionsApp:

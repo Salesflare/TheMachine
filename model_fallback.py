@@ -76,12 +76,12 @@ def turn(config, model=None, run=subprocess.run):
 
     API keys and the ChatGPT sign-in: `openclaw infer model run --gateway`, a raw model call (no tools, no session).
     The Claude CLI route: Claude Code's own print mode on that model (claude_print.py), the executable and sign-in
-    reviews run on, with no tools, skills or workspace files: about 550 tokens, where a Gateway agent turn took about
+    reviews run on (signed in only as the Gateway is: claude_print.env), with no tools, skills or workspace files: about 550 tokens, where a Gateway agent turn took about
     48,000. It has no fallbacks, so only that model can answer. Raises OSError and TimeoutExpired."""
     claude = claude_print.ref(config, model or configured(config)[0] or None)
     if claude:
         try:
-            return True, {'outputs': [{'text': claude_print.run(config, PROMPT, claude, 'off', TIMEOUT, run)}]}, ''
+            return True, {'outputs': [{'text': claude_print.run(config, PROMPT, claude, 'off', TIMEOUT, run, gateway=True)}]}, ''
         except claude_print.Failed as error:
             return False, {'error': {'message': str(error)}}, ''
     binary = str((config or {}).get('openclaw') or 'openclaw')
