@@ -13,7 +13,8 @@ What comes in (each an event, linked to people like mail), from the pages the in
   heads-up, never a buzz (machine/todo_kinds.py notion_edits).
 The first sync goes back 7 days (bootstrap_days). A 403 or 404 on one page, block, database, comment thread or person
 (GONE: deleted, or no longer shared with the integration) leaves that one out and the rest are read; a search cursor
-kept from an earlier run that Notion no longer takes starts the search over, once.
+kept from an earlier run that Notion no longer takes starts the search over, once. A database Notion refuses to this
+API version (several data sources: 400) gives no schema; its tasks are read from their own properties.
 
 Two ways in:
 - Sign in with Notion (the usual one): The Machine's public integration, through the hosting control plane, which
@@ -434,12 +435,15 @@ class Source:
         return self.call('GET', 'pages/' + plain_id(page_id))
 
     def database(self, database_id, cache):
+        """A database's schema (its status groups and options), or {} when Notion won't give it for this one: gone, or
+        a database with several data sources, which Notion refuses to API version VERSION (400 validation_error). The
+        task is still read from its own properties."""
         key = plain_id(database_id)
         if key not in cache:
             try:
                 cache[key] = self.call('GET', 'databases/' + key)
             except self.helpers.SourceError as error:
-                if error.status not in GONE:
+                if error.status not in GONE + (400,):
                     raise
                 cache[key] = {}
         return cache[key]

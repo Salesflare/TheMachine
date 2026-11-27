@@ -265,6 +265,22 @@ class NotionTests(unittest.TestCase):
             with self.assertRaises(sources.SourceError):
                 self.sync()
 
+    def test_a_task_in_a_database_with_several_data_sources_is_still_read(self):
+        # Notion refuses such a database to API version 2022-06-28 (400 validation_error). Reading the task's schema
+        # raised notion_http:HTTP_400 as the round's failure, every round the task was listed.
+        self.api.fail[('GET', 'databases/' + DB, None)] = 400
+        self.assertEqual(self.sync()['events'], 3)
+        work = next(e for e in self.events() if e['kind'] == 'notion.task')
+        self.assertEqual((work['metadata']['status'], work['metadata']['done']), ('In progress', False))  # from its own properties
+        self.api.pages[TASK] = task('Done', option='o9')
+        self.api.pages[TASK]['last_edited_time'] = '2026-11-16T11:00:00.000Z'
+        self.sync()
+        self.assertTrue([e for e in self.events() if e['kind'] == 'notion.task'][-1]['metadata']['done'])  # done by its name
+        self.api.fail[('GET', 'blocks/' + MINE + '/children', None)] = 400  # a 400 elsewhere stays the connection's
+        self.api.pages[MINE]['last_edited_time'] = '2026-11-16T11:30:00.000Z'
+        with self.assertRaises(sources.SourceError):
+            self.sync()
+
     def test_a_search_cursor_notion_no_longer_takes_starts_the_search_over_once(self):
         self.store.commit_page(self.account['id'], {'cycle': {'at': '2026-11-16T11:00:00+00:00', 'cursor': 'run-out', 'pending': []}}, [])
         self.api.fail[('POST', 'search', 'run-out')] = 400
