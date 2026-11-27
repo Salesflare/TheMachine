@@ -19,7 +19,11 @@ The turn reads the series' last briefing and says only what is new; one that say
 
 When (due): on the morning of a work day, at the owner's `morning` (work_hours): the meeting's own day when it starts at
 noon or later, else the work day before it. Never outside the owner's hours or on a day off, and never later than
-MIN_LEAD before the start. A meeting booked after that moment is prepared at once, if it is still far enough ahead.
+MIN_LEAD before the start. A meeting booked after that moment is prepared at once, if it is still far enough ahead. A
+meeting of the owner's own team waits for its own morning when that is still MIN_LEAD ahead (a Monday stand-up's
+briefing never comes on the Friday before), and its briefing needs something for the owner: their own open step, a
+question to them, a decision the meeting still has to take or an open promise of theirs (owner_point). Steps only
+colleagues owe give none.
 
 What it reads (evidence), all of it already on this Machine and the owner's own: each outside guest's Graph record
 (their role and organization, their summary lines of the meeting's area: person_summary.prep_lines, the looked-up
@@ -271,12 +275,15 @@ def eligible(meta, owned, owner_emails, owner_domains):
     return True, guests
 
 
-def prep_moment(start_local, hours=None):
+def prep_moment(start_local, hours=None, team=False):
     """When the briefing is due: the owner's morning on the meeting's day when it starts at noon or later, else on the
-    work day before it (a Monday 9:00 meeting: the Friday before)."""
+    work day before it (a Monday 9:00 meeting: the Friday before). A meeting of the owner's own team (team): that morning
+    whenever it is still MIN_LEAD ahead then, so a Monday stand-up's briefing never comes on the Friday before."""
     hours = hours or timeutil.WORK_HOURS
     day = start_local.date()
-    if start_local.timetz().replace(tzinfo=None) < NOON or not timeutil.is_work_day(day, hours):
+    morning = dt.datetime.combine(day, dt.time(*timeutil.hour_minute(hours['morning'])), start_local.tzinfo)
+    early = start_local - morning < MIN_LEAD if team else start_local.timetz().replace(tzinfo=None) < NOON
+    if early or not timeutil.is_work_day(day, hours):
         day -= dt.timedelta(days=1)
         for _ in range(7):
             if timeutil.is_work_day(day, hours):
@@ -285,12 +292,12 @@ def prep_moment(start_local, hours=None):
     return dt.datetime.combine(day, dt.time(*timeutil.hour_minute(hours['morning'])), start_local.tzinfo)
 
 
-def due(start, current, tz, hours=None):
+def due(start, current, tz, hours=None, team=False):
     """Whether a meeting starting at `start` gets its briefing now: past its prep moment, still MIN_LEAD ahead, and
     now within the owner's hours on a work day."""
     hours = hours or timeutil.WORK_HOURS
     local = current.astimezone(tz)
-    if start - current < MIN_LEAD or current < prep_moment(start.astimezone(tz), hours):
+    if start - current < MIN_LEAD or current < prep_moment(start.astimezone(tz), hours, team):
         return False
     return timeutil.is_work_day(local, hours) and timeutil.in_hours(local, hours)
 
@@ -310,7 +317,7 @@ def upcoming(db, current, owned, owner_emails, owner_domains, tz, hours=None, da
         start = _at(r['occurred_at'])
         ok, guests = eligible(meta, owned, owner_emails, owner_domains)
         team = colleagues(meta, owner_emails, owner_domains) if guests == 'internal' else []
-        if not (ok or 0 < len(team) <= TEAM_MOST) or not start or not due(start, current, tz, hours):
+        if not (ok or 0 < len(team) <= TEAM_MOST) or not start or not due(start, current, tz, hours, not ok):
             continue
         key = meeting_key(r, meta)
         if key in seen:
@@ -882,7 +889,10 @@ INTERNAL_RULE = ('- This is a meeting of the owner\'s own team (colleagues), who
                  'It is worth a briefing only for what moves this meeting on: a decision still open, a step someone still owes, or something new or '
                  'changed since (a number, a date, a choice) that bears on it. A round of status updates with nothing pending, or only what is settled, '
                  'is useful: false. A message since that bears on an open point (a number or update someone was to bring) goes in changed, as what is known '
-                 'now, with its E id; one with no bearing on this meeting stays out. bring: the next decision for this meeting, when the data shows one.\n')
+                 'now, with its E id; one with no bearing on this meeting stays out. bring: the next decision for this meeting, when the data shows one.\n'
+                 '- Each open point also gets "for": "owner" for a step the owner still owes or a question put to the owner, "meeting" for a '
+                 'decision this meeting still has to take, "other" for a step only someone else owes (the owner only informed or on copy is "other"). '
+                 'A briefing needs at least one "owner" or "meeting" point, or an open promise of the owner\'s: steps others owe alone are useful: false.\n')
 
 
 NOTES_RULE = ('- earlier_meetings: the notes of earlier meetings with the same people, newest first (N ids, quoted between <<< and >>>), and since: '
@@ -936,7 +946,8 @@ def prompt(meeting, found, tz, lang_rule, note=''):
             'Answer with one JSON object and nothing else:\n'
             '{"useful": true or false, "area": "work" or "personal", "title": "...", "who": "...", "background": "...", '
             '"background_sources": ["W1"], "company": "...", "company_sources": ["W2"], "last": "...", "promises": [{"id": "P3", "text": "..."}], '
-            + ('"agreed": [{"text": "...", "source": "N1"}], "open": [{"text": "...", "source": "N1"}], "changed": [{"text": "...", "source": "E12"}], ' if notes else '') +
+            + ('"agreed": [{"text": "...", "source": "N1"}], "open": [{"text": "...", "source": "N1"' + (', "for": "owner"' if found.get('internal') else '')
+               + '}], "changed": [{"text": "...", "source": "E12"}], ' if notes else '') +
             '"questions": "...", "bring": "...", "sources": ["E12", ...]}\n'
             '- useful: false when the data holds nothing specific to prepare (only names and a time, small talk, '
             'newsletters or automated mail): then leave the rest empty. Never pad.\n'
@@ -990,7 +1001,8 @@ def _promised(items, known, clean):
 
 def _points(data, found, clean):
     """The points from earlier meetings' notes: {'agreed', 'open', 'changed': [{'text', 'ref'}]}, each once, with the one
-    source it was given (notes or a message). One without is dropped."""
+    source it was given (notes or a message). One without is dropped. Of a team meeting an open point also says whom it is
+    'for' (INTERNAL_RULE: 'owner', 'meeting' or 'other'; anything else counts as 'other')."""
     messages = {f'E{i}' for i in (*found['messages'], *(found.get('later') or ()))}
     notes = {n['id'] for n in found.get('notes') or ()}
     out, seen = {}, set()
@@ -1002,7 +1014,7 @@ def _points(data, found, clean):
             ref, text = str(item.get('source') or '').strip(), clean(item.get('text'), POINT_CHARS).rstrip('.')
             if text and text.casefold() not in seen and (ref in notes or ref in messages):
                 seen.add(text.casefold())
-                kept.append({'text': text, 'ref': ref})
+                kept.append({'text': text, 'ref': ref, **({'for': str(item.get('for') or '').strip().lower()} if key == 'open' and found.get('internal') else {})})
         out[key] = kept
     return out
 
@@ -1048,8 +1060,10 @@ def parse(reply, found):
             fields['last'] = ''
         if _repeats(fields, points, again['before']):
             return None
-    if found.get('internal'):  # their own team: no one to introduce, and a briefing only with a point from the notes or a promise
+    if found.get('internal'):  # their own team: no one to introduce, and a briefing only with something for the owner
         fields['who'] = fields['background'] = fields['company'] = ''
+        if not owner_point(points, listed(data.get('promises')), found['promises']):
+            return None
     said = any(fields[k] for k in ('last', 'promises', 'questions')) or any(points.values())
     about = any(fields[k] for k in ('background', 'company')) and any(p.get('first_meeting') for p in found.get('people') or ())
     if not (said or about or fields['bring'] and not again and not found.get('internal') and (found['messages'] or found['promises'] or found.get('notes'))):
@@ -1057,6 +1071,18 @@ def parse(reply, found):
     title = clean(data.get('title'), 80)
     return {'title': title, 'area': 'personal' if data.get('area') == 'personal' else 'work', 'fields': {**fields, **points}, 'sources': [i for i in shown if i not in older][:3],
             'links': {k: v for k, v in links.items() if v and fields[k]}}
+
+
+def owner_point(points, promised, known):
+    """Whether a team meeting's briefing gives the owner something of their own: an open point for the owner or for the
+    meeting to decide, or an open promise of the owner's (one the turn named, by its P id). Steps only others owe don't."""
+    if any(p.get('for') in ('owner', 'meeting') for p in points['open']):
+        return True
+    for item in promised:
+        ref = re.fullmatch(r'P(\d+)', str(item.get('id') or '').strip()) if isinstance(item, dict) else None
+        if ref and int(ref[1]) in known and known[int(ref[1])]['direction'] == 'mine':
+            return True
+    return False
 
 
 def _repeats(fields, points, before):

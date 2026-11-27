@@ -12,6 +12,7 @@ Portuguese, Japanese.
 | development | 29 | what the prompt and limits were tuned on |
 | held-out | 32 | the same kinds of case, never tuned on |
 | internal-development, internal-held-out | 3, 14 | meetings of the owner's own team (below) |
+| team-heldout | 14 | the same, for whether a briefing has something for the owner (below) |
 
 The kinds: plain notes, long notes, a point settled later (by mail, in passing, by a promise or a to-do), newer notes or
 a mail that changes older ones, only an agenda, a transcript, notes the meeting app mailed, a series, another address of
@@ -110,3 +111,22 @@ Where this is weak: the cases were written with the change, and one model wrote 
 have long notes, so the limit rests on little. "Wrong or stale" counts only the statements a case names. One held-out
 case gets no briefing in both runs (about a lease, probably taken for the owner's own life). Notes the model provider's
 own filter refuses give no briefing.
+
+Something for the owner (set `team-heldout`, written by another agent and frozen before the first run, two runs each,
+2026-11-28; before: a team meeting's briefing with only steps colleagues owe was made). Seven stand-ups, syncs and a
+retro whose notes hold only colleagues' steps, or the owner's step done since, need none; seven with the owner's own step,
+a question to them, an open decision or the owner's open promise need one. A team meeting's briefing also waits for its
+own morning now (the eval asks at Tuesday 8:00 when Monday 9:00 has none).
+
+| | Team, before | Team, now | Internal held-out, before | Internal held-out, now |
+| --- | --- | --- | --- | --- |
+| facts recalled | 15 of 16 | 15 of 16 | 28 of 28 | 22 of 28 |
+| wrong or stale | 0 of 18 | 0 of 18 | 0 of 22 | 0 of 22 |
+| statements not supported | 2 | 2 | 0 | 0 |
+| briefings made where one is right | 14 of 14 | 14 of 14 | 12 of 12 | 10 of 12 |
+| briefings with nothing for the owner | 14 of 14 | 0 of 14 | 0 of 16 | 0 of 16 |
+| turn tokens in, average (largest) | 1,769 (1,858) | 1,869 (1,958) | 1,725 (1,856) | 1,825 (1,956) |
+
+The internal held-out set was written for the rule before: `i-settled` (a choice made, a colleague sets it up) has nothing
+for the owner and gets no briefing now, by design (4 of the 6 facts); one other fact is a deadline the briefing kept
+without its day. The two "not supported" statements in both are the owner's own surname.

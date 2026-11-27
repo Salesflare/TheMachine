@@ -221,7 +221,7 @@ def briefing(case, text, folder, turn, history=False, kept=None):
     app.meeting_prep_model = model
     if kept is not None and case.get('web'):
         app.meeting_prep_search = search_turn(case, turn, kept)
-    found = app.meeting_prep_next(NOW)
+    found = app.meeting_prep_next(NOW) or app.meeting_prep_next(NOW.replace(day=10, hour=8))  # a team meeting's: its own morning
     if not found:
         return '', used
     from machine import model_reply
