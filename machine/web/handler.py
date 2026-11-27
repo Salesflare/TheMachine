@@ -32,6 +32,7 @@ import locale_prefs
 import login_import
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS, UPLOAD_ACTIONS
 from machine.browser import browser_link, PANE_QUERY
+from machine import browser_exit
 from machine.config import BRAND_ASSETS, LOG, ROOT
 from machine.delivery import desk
 from machine.delivery.push import app_notice, push_key, shown
@@ -43,7 +44,7 @@ from machine.store import message_view
 from machine.store.review import own_message
 from machine.store.views import DONE_FIRST
 from machine.text import ATTACHMENT_INLINE, encoded, shown_body
-from machine.timing import _REQUEST_TIMING, SLOW_REQUEST_SECONDS, aside, close_kept
+from machine.timing import _REQUEST_TIMING, SLOW_REQUEST_SECONDS, aside, close_kept, waited
 from machine.web import status_delta
 from machine.web.serving import (
     compress_body,
@@ -335,6 +336,7 @@ def make_handler(app):
             '/api/omarchy-theme': 'get_api_omarchy_theme',
             **dict.fromkeys(BRAND_ASSETS, 'get_brand_asset'),
             '/api/session': 'get_api_session',
+            '/api/exit': 'get_api_exit',
             '/api/notice': 'get_api_notice',
             '/api/status': 'get_api_status',
             '/api/merge-diff': 'get_api_merge_diff',
@@ -491,6 +493,29 @@ def make_handler(app):
             self.etag = etag
             self.output(200, data, {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg',
                                     '.svg': 'image/svg+xml'}.get(asset.suffix, 'image/png'), cache=BRAND_CACHE)
+
+        def get_api_exit(self, path):
+            """The owner's desktop app as the browser's way out (machine/browser_exit.py): an upgrade to tm-exit/1 from
+            the Machine's own origin, only while `browser_exit` is on. A web page can't ask for this upgrade."""
+            if not app.config.get('browser_exit'):
+                self.output(404, {'error': 'Not found'})
+                return
+            if self.headers.get('Origin') != 'https://' + self.headers.get('Host', ''):
+                self.output(403, {'error': 'This opens from the desktop app.'})
+                return
+            if (self.headers.get('Upgrade', '').lower() != browser_exit.PROTOCOL
+                    or 'upgrade' not in self.headers.get('Connection', '').lower()):
+                self.output(426, {'error': 'This opens from the desktop app.'})
+                return
+            self.close_connection = True
+            begun = time.monotonic()
+            seen = self.headers.get('X-Forwarded-For', '').split(',')[0]  # the computer's address, as the front saw it
+            try:
+                browser_exit.carry(self.rfile, self.connection, seen)
+            except OSError:
+                pass
+            finally:
+                waited(time.monotonic() - begun)  # as long as the app stays: not a slow request
 
         def get_api_session(self, path):
             # Asked once by a page: the CSRF token (a page started from the app's on-device copy has none, that

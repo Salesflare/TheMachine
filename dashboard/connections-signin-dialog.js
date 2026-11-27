@@ -39,7 +39,7 @@ $('#signin-user-row').hidden=!page.username;$('#signin-pass-row').hidden=!page.p
 $('#signin-saved').hidden=true;lazyRun('logins',()=>signinAccounts(page));
 if(!d.open)d.showModal();(page.username&&!$('#signin-user').value?$('#signin-user'):page.password?$('#signin-pass'):page.code?$('#signin-code'):$('#signin-go')).focus()}
 // `task`: the card waiting on this sign-in; once the page is past it, that task carries on by itself. `page`: its tab.
-let signinTask=null,signinTab=null,signinRun=0,signinArgs=[],signinSite=null,signinApproving=null,signinAfter=null,signinFresh=false;
+let signinDirect=false,signinWas='',signinTask=null,signinTab=null,signinRun=0,signinArgs=[],signinSite=null,signinApproving=null,signinAfter=null,signinFresh=false;
 const siteName=page=>signinSite?.name||Object.values(SIGNIN_SITES).find(s=>onSite(page,s))?.name||page?.site||'the site';
 function signinDone(resumed){signinApproving=null;
 if(signinAfter){const go=signinAfter,name=signinSite?.name||'the site';signinAfter=null;$('#signin-dialog').close();toast(go.says||`Signed in to ${name}. Looking there now.`);go();return}
@@ -62,18 +62,23 @@ for(let first=true;run===signinRun&&$('#signin-dialog').open&&signinApproving===
  else if(Date.now()-since>SIGNIN_STALL&&$('#signin-retry').hidden){signinStatus(t('{} hasn’t moved on. If it stopped the sign-in, press Try again.',siteName(page)),false);signinFresh=true;$('#signin-retry').hidden=false;$('#signin-retry').className='primary';$('#signin-continue').className='ghost'}}}
 const signinWithin=(promise,ms)=>Promise.race([promise,new Promise((_,no)=>setTimeout(()=>no(Error('The browser took too long to answer.')),ms))]);
 const SIGNIN_SAYS={eid:n=>t('{} signs in with itsme or eID.',n),passkey:n=>t('{} wants a passkey.',n),captcha:n=>t('{} wants a quick check that you’re not a robot.',n),account:n=>t('{} wants you to pick the right account.',n),code:n=>t('{} wants a one-time code.',n)};
-async function signinOpen(account,wait,task,page,site,after){const run=++signinRun;signinFresh=false;signinArgs=[account,wait,task,page,site,after];signinAfter=after||null;signinTask=task||null;signinTab=page||null;signinSite=SIGNIN_SITES[site]||null;signinApproving=null;$('#signin-continue').className='ghost';$('#signin-retry').className='ghost';$('#signin-browser').hidden=false;const d=$('#signin-dialog');$('#signin-user').value='';$('#signin-save').checked=false;$('#signin-pick').hidden=true;
+async function signinOpen(account,wait,task,page,site,after){const run=++signinRun;signinFresh=false;signinDirect=false;signinWas='';signinAway(false);signinArgs=[account,wait,task,page,site,after];signinAfter=after||null;signinTask=task||null;signinTab=page||null;signinSite=SIGNIN_SITES[site]||null;signinApproving=null;$('#signin-continue').className='ghost';$('#signin-retry').className='ghost';$('#signin-browser').hidden=false;const d=$('#signin-dialog');$('#signin-user').value='';$('#signin-save').checked=false;$('#signin-pick').hidden=true;
 $('#signin-title').textContent=signinSite?`Sign in to ${signinSite.name} on your Machine`:'Sign in';signinMode('wait');if(!d.open)d.showModal();let info=null;
 if(task){signinStatus('Opening the sign-in page…',true);
 try{info=await signinWithin(signinPost('browser_login_open',{suggestion_id:task}),20000)}catch(err){errCaught(err);if(run===signinRun)signinFail(err.message);return}
 if(run!==signinRun||!d.open)return;if(info.site){$('#signin-title').textContent='Sign in to '+info.site;signinStatus(`Opening ${info.site} sign-in…`,true)}}
 else signinStatus('Looking for the sign-in page…',true);
 // Nothing to type for itsme or eID, a passkey, a captcha or choosing an account: straight to the browser.
-const until=Date.now()+(info&&['eid','passkey','captcha','account'].includes(info.kind)||info?.state==='unknown'?0:task||wait?15000:0);
+let until=Date.now()+(info&&['eid','passkey','captcha','account'].includes(info.kind)||info?.state==='unknown'?0:task||wait?15000:0);
 let walls=[];
-for(;;){try{const r=await signinWithin(signinPost('browser_login_pages',task?{suggestion_id:task}:account?{account}:{}),20000);signinPages=r.pages;walls=Array.isArray(r.walls)?r.walls:[]}catch(err){errCaught(err);if(run===signinRun)signinFail(err.message);return}
+let away='';
+for(;;){try{const r=await signinWithin(signinPost('browser_login_pages',task?{suggestion_id:task}:account?{account}:{}),20000);signinPages=r.pages;walls=Array.isArray(r.walls)?r.walls:[];away=!signinDirect&&typeof r.exit==='string'?r.exit:''}catch(err){errCaught(err);if(run===signinRun)signinFail(err.message);return}
 if(signinSite){signinPages=signinPages.filter(p=>onSite(p,signinSite));walls=walls.filter(p=>onSite(p,signinSite))}
-if(run!==signinRun||!d.open)return;if(signinPages.length||walls.length||Date.now()>=until)break;await new Promise(r=>setTimeout(r,2500));if(run!==signinRun||!d.open)return}
+if(run!==signinRun||!d.open)return;
+// A site that goes out through the owner's computer while the desktop app isn't connected: ask to open it first, with
+// a quiet way to sign in without it (browser_exit.py). It goes on by itself once the app connects. On a phone, a short sheet.
+if(away){signinExit(away);await new Promise(r=>setTimeout(r,2500));if(run!==signinRun||!d.open)return;continue}
+if(!$('#signin-direct').hidden||signinDirect===1){signinDirect=!!signinDirect;if(signinWas)$('#signin-title').textContent=signinWas;signinWas='';until=Math.max(until,Date.now()+15000);signinAway(false);$('#signin-browser').hidden=false;signinStatus(t('Looking for the sign-in page…'),true)}if(signinPages.length||walls.length||Date.now()>=until)break;await new Promise(r=>setTimeout(r,2500));if(run!==signinRun||!d.open)return}
 setHTML($('#signin-page'),html`${signinPages.map((p,i)=>html`<option value="${i}">${p.site}${p.title?' · '+p.title:''}</option>`)}`);$('#signin-pick').hidden=signinPages.length<2;
 if(signinPages.length){signinShow(signinPages[0]);if(signinSite)$('#signin-title').textContent=`Sign in to ${signinSite.name} on your Machine`;return}
 // no form, but a robot check or block page in front of the site: finish it in the browser
@@ -82,6 +87,13 @@ if(signinAfter){signinBrowser({site:signinSite?.name},run);return}
 if(signinSite){signinFail(`No ${signinSite.name} sign-in page is open on your Machine. Signed in already? Then go back to setup; it connects by itself. Otherwise press Try again.`);return}
 if(!task){signinFail('No sign-in page is open right now. Open the browser to see what it shows.');return}
 signinBrowser(info,run)}
+function signinExit(site){signinMode('wait');if(!signinWas)signinWas=$('#signin-title').textContent;$('#signin-title').textContent=t('Open The Machine on your computer');
+signinStatus(t('So {} sees you signing in from home, not from a server.',site)+' '+t('It goes on by itself once the app is open.'),false);signinAway(true);$('#signin-browser').hidden=true}
+// Open the app: the desktop app's own link only brings it to the front, it carries nothing. Not on a phone: no desktop app there.
+const SIGNIN_APP='computer.themachine.desktop://open',signinPhone=/iPhone|iPad|iPod|Android|Mobi/.test(navigator.userAgent);
+function signinAway(on){$('#signin-direct').hidden=!on;$('#signin-app').hidden=!on||signinPhone}
+$('#signin-app').onclick=()=>{location.href=SIGNIN_APP};
+$('#signin-direct').onclick=()=>{signinDirect=1;signinAway(false);$('#signin-browser').hidden=false;signinStatus(t('Looking for the sign-in page…'),true)};
 // The task's sign-in in the browser itself, in the dialog when this dashboard has the live view; it carries on once you're in.
 function signinBrowser(info,run){const link=state.browser_link||info?.view||'';let view=false;try{view=!!link&&new URL(link,location.href).origin===location.origin}catch{}
 signinMode('browser',view);const name=info?.site||t('This site'),says=SIGNIN_SAYS[info?.kind];

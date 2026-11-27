@@ -52,6 +52,9 @@
 | `browser_cdp_url` | `http://127.0.0.1:9222` | That browser's DevTools address on this machine; **Open the browser** brings the tab a task uses to the front through it (also when it opens a viewer), and a Preparing to-do's live look at its tab is taken through it |
 | `browser_vnc` | unset | Optional VNC server showing this computer's screen, as a unix socket path or a `127.0.0.1:port`; the dashboard then shows that screen live at `/browser` (see [browser setup](sources.md)) |
 | `browser_novnc` | `~/.local/share/machine-browser/web` | The noVNC files the dashboard serves for `browser_vnc` (`python3 browser_viewer.py web DIR [NOVNC]` builds them) |
+| `browser_exit` | `false` | The Machine's browser goes out through the owner's desktop app for the sites below, so they see the owner's own address (SECURITY.md, The browser through the owner's computer). Its end is a SOCKS5 listener for the browser on `127.0.0.1:browser_exit_port`; a hosted Machine's browser goes through it by itself, elsewhere start the browser with `--proxy-server=socks5://127.0.0.1:1056` |
+| `browser_exit_port` | `1056` | Where that listener is, on 127.0.0.1 |
+| `browser_exit_sites` | LinkedIn, Facebook, Messenger, Instagram, X, Twitter, Threads | The sites (a host and its subdomains, such as `linkedin.com`) that go through the owner's computer while its desktop app is connected; otherwise, and other sites always, they go out from the Machine. While an app with it on is away, the sign-in dialog asks to open it first, with a way to sign in without it |
 | `browser_upload_dir` | `/tmp/openclaw/uploads` | Where the files of a step the owner confirmed are copied for the browser's upload, one folder per run |
 | `browser_lease_script` | `integrations/browser-lease.py` | Lease helper Do it runs use for the shared browser |
 | `delivery_enabled` | `false` | Send to-dos to Telegram (leave off while you test) |

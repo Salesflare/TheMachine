@@ -11,6 +11,7 @@ import browser_login
 import embeddings
 import error_feed
 from machine.actions import DASHBOARD_ACTIONS
+from machine import browser_exit
 from machine.browser import AGENT_DB
 from machine.config import LOG
 from machine.model_usage import node_bin
@@ -59,6 +60,9 @@ class ServeApp:
         Handler = make_handler(app)
 
         server = loopback.Server(('127.0.0.1', self.config.get('port', 8787)), Handler)
+        # the browser's way out through the owner's computer, while browser_exit is on (machine/browser_exit.py)
+        if self.config.get('browser_exit'):
+            browser_exit.start(self.config, Path(self.config['database']).expanduser().parent)
         watch_faults(self.store)
         if getattr(self, 'agents', None):
             self.agents.version = self.store.code_version  # failed jobs in the error reports carry it

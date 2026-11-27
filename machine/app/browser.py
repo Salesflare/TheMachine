@@ -12,6 +12,7 @@ import time
 import urllib.parse
 
 import browser_login
+import error_feed
 import browser_viewer
 import login_export_mail
 import login_import
@@ -19,6 +20,7 @@ import todo_areas
 from machine.browser import (browser_lease_script, browser_link, browser_wait, preparation_steps, run_tab,
                              same_site, signin_address, signin_handoff, signin_kind, signin_look, signin_name, SIGNIN_WATCH,
                              same_browser, site_language, task_page, task_tabs)
+from machine import browser_exit
 from machine.config import BROWSER_LEASE, LOG
 import mail_attachments
 import next_actions
@@ -125,6 +127,8 @@ class BrowserApp:
         if name == 'browser_login_pages' and isinstance(args.get('watch'), str):
             # the dialog after a sign-in it sent waits on the owner elsewhere (approving it in the site's app)
             seen = browser_login.watch(self.config, args['watch'])
+            if seen['state'] == 'captcha' and isinstance(args.get('host'), str):
+                self.exit_challenges([(args['host'], 'captcha')])
             if seen['state'] == 'done' and isinstance(args.get('host'), str):
                 task = args.get('suggestion_id') if isinstance(args.get('suggestion_id'), str) else None
                 seen['resumed'] = self.resume_signed_in(host=args['host'], suggestion_id=task)
@@ -134,6 +138,8 @@ class BrowserApp:
             found = browser_login.pages(self.config, logins, account)
             # No form, but a bot wall in front of the site: the dialog says so (and, hosted, how to get past it)
             walls = [] if found else browser_login.walls(self.config, account)
+            self.exit_challenges([(p['host'], 'checkpoint' if p.get('code') and not (p.get('username') or p.get('password')) else 'signin')
+                                  for p in found] + [(w['host'], 'wall') for w in walls])
             if isinstance(args.get('suggestion_id'), str):
                 # For a task, only the sign-in on the site its own run left off at; unknown: none, never a guess.
                 page = self.signin_page(args['suggestion_id'])
@@ -146,8 +152,10 @@ class BrowserApp:
                 for p in found:
                     p['pick'] = logins.pick(p.get('origin'), args['suggestion_id'], area) if p.get('accounts') else None
                     p['side'] = browser_login.side_of(area)
-                return {'pages': found, 'walls': walls, 'task_site': browser_login.site(urllib.parse.urlsplit(page).hostname) if page else None}
-            return {'pages': found, 'walls': walls}
+                hosts = [p['host'] for p in found] + [w['host'] for w in walls] + ([urllib.parse.urlsplit(page).hostname] if page else [])
+                return {'pages': found, 'walls': walls, 'task_site': browser_login.site(urllib.parse.urlsplit(page).hostname) if page else None,
+                        **self.exit_away(hosts)}
+            return {'pages': found, 'walls': walls, **self.exit_away([p['host'] for p in found] + [w['host'] for w in walls])}
         if name == 'browser_logins':
             store = getattr(self, 'store', None)
             if store is None:
@@ -447,6 +455,29 @@ class BrowserApp:
             resumed.append(task)
         return resumed
 
+    def exit_away(self, hosts):
+        """{'exit': site} while a listed site's sign-in should wait for the owner's computer (browser_exit.away): the
+        dialog asks to open the desktop app, with a way to sign in without it. Nothing otherwise."""
+        site = browser_exit.away(self.config, [h for h in hosts if isinstance(h, str)])
+        return {'exit': site} if site else {}
+
+    def exit_challenges(self, seen):
+        """Count challenges on listed sites soon after their way out changed (browser_exit.challenge), in the error feed:
+        fixed words only, the way before and after; never an address, a name or what the page says."""
+        store = getattr(self, 'store', None)
+        found = [(what, *c) for host, what in seen if (c := browser_exit.challenge(self.config, host, what))]
+        if not found or store is None:
+            return
+        try:
+            with store.connect() as db:
+                for what, site, before, after in found:
+                    LOG.warning('browser exit: %s on %s after %s to %s', what, site, before, after)
+                    # the words in the kind (a message's words are scrubbed): BrowserExit.captcha.computer_to_direct
+                    error_feed.record(db, 'service', f'BrowserExit.{what}.{before}_to_{after}', '', 'machine/browser_exit.py', site,
+                                      None, store.code_version)
+        except Exception as failed:  # counting it never stands in the sign-in's way
+            LOG.error('browser exit challenge record error=%s', type(failed).__name__)
+
     def watch_sign_ins(self, every=SIGNIN_WATCH, now=False):
         """Signing in in the browser itself carries on too. While a task waits on a sign-in, look every `every` seconds
         at the shared browser (read-only: which sign-in fields show, never what is in them, and the tabs' addresses).
@@ -467,6 +498,7 @@ class BrowserApp:
             tabs = self.signin_tabs()
         except Exception:  # no browser right now: look again later
             return []
+        self.exit_challenges([(f.get('host'), 'signin') for f in forms])  # a run stopped at a sign-in: asked again?
         resumed = []
         for task, job, page in waits:
             at, past = signin_look(self.signin_tabs_of(task, job, page, tabs)[1], page, forms)
