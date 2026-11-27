@@ -332,6 +332,8 @@ LEARNING_ACTIONS = {
     'memory_import_review',
     'memory_import_save',
     'missed_work_label',
+    'profile_line_edit',
+    'profile_line_remove',
     'set_error_reports',
     'set_help_topics',
     'set_learnings_auto',

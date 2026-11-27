@@ -432,6 +432,7 @@ SERVER_TEXT = {
     'onboarding.py': ['WHAT', 'LABELS'],
     'machine/services.py': ['SERVICES'],  # each service's names and what its card counts (the page's SERVICE_ROWS)
     'machine/app/status.py': ['claude_signin_item'],  # Needs you's line for a Claude sign-in that ended or ends soon
+    'machine/app/profile.py': ['PROFILE_LINES', 'PROFILE_ITEMS'],  # Your profile's labels, under What I've learned
     'machine/app/ai_signin.py': ['TEXT', 'SOON'],  # and the same, told on Telegram and by email
     # + Add's calendars beyond Google and Outlook: their names, lines, form notes and fields, and what setup says
     'machine/sources/calendar_setup.py': ['LABELS', 'WHAT', 'NOTES', 'SECRETS', 'ASKS', 'FIELDS', 'REFUSED', 'MISSING'],
@@ -456,7 +457,7 @@ SERVER_TEXT = {
     'doc_writes.py': ['FORMATS'],  # a doc edit's formatting change: what it does (todos-docwrite.js)
 }
 # Constants the dashboard also shows capitalized (cap()) as a label
-CAPITALIZED = {'fleet.py': ['KIND_LABEL'], 'family.py': ['LABELS']}
+CAPITALIZED = {'fleet.py': ['KIND_LABEL'], 'family.py': ['LABELS'], 'machine/app/profile.py': ['PROFILE_LINES', 'PROFILE_ITEMS']}
 # Every connector's SETUP (its label, what it brings in, the setup form's text; not its account record) and KINDS (a
 # card's source line names its kind)
 CONNECTOR_TEXT = ['SETUP', 'KINDS']

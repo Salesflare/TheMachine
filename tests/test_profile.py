@@ -332,6 +332,39 @@ class Profile(unittest.TestCase):
         self.finish_first_profile(run_id, {'tone': 'Warm'})
         self.assertEqual(path.read_text(), '# About me\n\n- Tone: terse, no greeting\n')
 
+    def test_what_the_profile_learned_shows_and_the_owner_edits_or_removes_one_line(self):
+        path = self.first_profile_app('# About me\n\n- Name: Alex Example\n- Role: \n- Tone: \n\n## Mine\n\n- my own line\n')
+        run_id = self.app.first_profile_step()['run_id']
+        with self.store.connect() as db:
+            db.execute("INSERT INTO milestones(name,at) VALUES('first_card_shown',?)", (timeutil.now(),))
+        self.finish_first_profile(run_id, {'role': 'Runs a garden shop', 'tone': 'Short and warm', 'examples': ['See you then'],
+                                           'voices': {'Email': 'Short'}, 'matters': ['Sam: supplier', 'Spring catalog'], 'leave_alone': ['Deals digest']})
+        shown = self.app.profile_lines_view()
+        self.assertEqual([(p['label'], p['text']) for p in shown], [('Role', 'Runs a garden shop'), ('Tone', 'Short and warm'),
+                         ('What matters', 'Sam: supplier'), ('What matters', 'Spring catalog'), ('Leave alone', 'Deals digest')])  # no examples, voices
+        before = path.read_text()
+        with self.assertRaises(machine_app_profile.OwnerError):  # the owner's, on their dashboard only
+            self.app.action('profile_line_edit', {'line': shown[1]['line'], 'text': 'x'})
+        done = self.app.action('profile_line_edit', {'line': shown[1]['line'], 'text': '  Warm,\nfirst names '}, owner_dashboard=True)
+        self.assertEqual(path.read_text(), before.replace('- Tone: Short and warm', '- Tone: Warm, first names'))  # only that line
+        self.assertEqual(done['profile'][1]['text'], 'Warm, first names')
+        self.app.action('profile_line_remove', {'line': '- Deals digest'}, owner_dashboard=True)
+        text = path.read_text()
+        self.assertNotIn('Leave alone', text)  # a list left empty loses its heading
+        self.assertIn('- my own line', text); self.assertIn('<!-- assistant profile ', text)
+        # The owner changed that line in the file since the page showed it: nothing is written over theirs
+        path.write_text(text.replace('- Sam: supplier', '- Sam: our main supplier'))
+        with self.assertRaisesRegex(machine_app_profile.OwnerError, 'changed since'):
+            self.app.action('profile_line_remove', {'line': '- Sam: supplier'}, owner_dashboard=True)
+        self.assertIn('- Sam: our main supplier', path.read_text())
+        with self.assertRaisesRegex(machine_app_profile.OwnerError, 'Write something'):
+            self.app.action('profile_line_edit', {'line': '- Spring catalog', 'text': ' '}, owner_dashboard=True)
+        # Removing every line keeps the section (its marker): the first profile does not come back
+        for p in self.app.profile_lines_view():
+            self.app.action('profile_line_remove', {'line': p['line']}, owner_dashboard=True)
+        self.assertEqual(self.app.profile_lines_view(), [])
+        self.assertTrue(self.app.user_md_says_how(path))
+
     def test_first_profile_waits_for_enough_own_messages_and_gives_up_after_a_few_tries(self):
         self.first_profile_app('# About me\n\n- Tone: \n')
         with self.store.connect() as db: db.execute('UPDATE events SET deleted=1')

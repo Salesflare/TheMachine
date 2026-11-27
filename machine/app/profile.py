@@ -31,11 +31,99 @@ PROFILE_SECONDS = 900
 FIRST_PROFILE_TRIES, FIRST_PROFILE_RETRY_SECONDS = 3, 6 * 3600
 
 
+# What I've learned, Your profile: the lines of USER.md's profile section (onboarding.render_profile), the owner's own
+# lines under its heading too: "- Title: value" on top, the items under What matters and Leave alone. Sounds like and
+# Per channel stay out (How you write shows the voices). Each row keeps its exact line, which an edit looks for, and
+# its label as USER.md says it (a catalog key: the page shows it in the owner's language).
+PROFILE_LINES = ('Role', 'Languages', 'Tone', 'Greeting', 'Sign-off', 'Habits')
+PROFILE_ITEMS = ('What matters', 'Leave alone')
+
+
+def _profile_section(text):
+    import onboarding
+    return re.search(r'^' + re.escape(onboarding.PROFILE_HEADING) + r'\n(.*?)(?=^## |\Z)', text or '', re.M | re.S)
+
+
+def profile_lines(text):
+    """[{label, text, line}] of the profile section in USER.md, in its order; [] without one."""
+    found, out, under = _profile_section(text), [], ''
+    for line in (found[1] if found else '').split('\n'):
+        if line.startswith('### '):
+            under = line[4:].strip() if line[4:].strip() in PROFILE_ITEMS else None  # None: a list not shown (Per channel)
+            continue
+        item = re.fullmatch(r'- (.*\S)\s*', line)
+        if not item or under is None:
+            continue
+        if under:
+            out.append({'label': under, 'text': item[1], 'line': line})
+        elif (pair := re.fullmatch(r'([A-Za-z-]+): *(.*\S)', item[1])) and pair[1] in PROFILE_LINES:
+            out.append({'label': pair[1], 'text': pair[2], 'line': line})
+    return out
+
+
+def edit_profile_line(text, line, new=None):
+    """USER.md with one line of its profile section (as profile_lines gave it) changed to new, or removed when new
+    is None; a list left empty loses its heading. Every other byte stays. None when the line is no longer there
+    (the owner changed the file since): nothing is overwritten."""
+    item = next((i for i in profile_lines(text) if i['line'] == line), None)
+    if not item:
+        return None
+    found = _profile_section(text)
+    lines = found[1].split('\n')
+    at = lines.index(line)
+    if new is not None:
+        lines[at] = f'- {item["label"]}: {new}' if item['label'] in PROFILE_LINES else f'- {new}'
+        return text[:found.start(1)] + '\n'.join(lines) + text[found.end(1):]
+    del lines[at]
+    # a ### heading with no item left goes, and so does the blank line that set it apart
+    section = '\n'.join(lines)
+    kept = '\n'.join(b for b in re.split(r'\n(?=### )', section) if not b.startswith('### ') or re.search(r'^- ', b, re.M))
+    tail = section[len(section.rstrip('\n')):]
+    return text[:found.start(1)] + re.sub(r'\n{3,}', '\n\n', kept.rstrip('\n') + tail) + text[found.end(1):]
+
+
 class ProfileApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'roles_start': 'roles_start_action', 'profile_start': 'profile_start_action',
                'profile_status': 'profile_status_action', 'profile_evidence': 'profile_evidence_action',
-               'save_profile': 'save_profile_action', 'skills_found': 'skills_found_action'}
+               'save_profile': 'save_profile_action', 'skills_found': 'skills_found_action',
+               'profile_line_edit': 'profile_line_action', 'profile_line_remove': 'profile_line_action'}
+
+    def profile_lines_view(self):
+        """What I've learned's profile rows: the lines of USER.md's profile section (profile_lines), [] without one. The
+        owner's own: only their dashboard's status has it, nothing shares it."""
+        try:
+            return profile_lines(self.user_md().read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            return []
+
+    def profile_line_action(self, name, args, owner_dashboard=False):
+        """The owner edits or removes one line of their profile in USER.md, from What I've learned. Only that line
+        changes, found by its exact text: when the file no longer has it (they edited it since), nothing is written."""
+        import onboarding
+        if not owner_dashboard:
+            raise OwnerError('Only the owner can edit what was learned, on the dashboard')
+        line, text = args.get('line'), None
+        if not isinstance(line, str) or not line:
+            raise ValueError('line is required')
+        if name == 'profile_line_edit':
+            text = ' '.join(str(args.get('text') or '').split())
+            if not text:
+                raise OwnerError('Write something, or remove it.')
+            text = text[:250]
+        path = self.user_md()
+        try:
+            before = path.read_text(encoding='utf-8')
+        except OSError:
+            before = ''
+        changed = edit_profile_line(before, line, text)
+        if changed is None:
+            raise OwnerError('USER.md changed since. Reload to see it.')
+        if path.read_text(encoding='utf-8') != before:  # changed while this one was made: theirs stays
+            raise OwnerError('USER.md changed since. Reload to see it.')
+        onboarding.write_private(path, changed)
+        LOG.info('profile line %s', 'edited' if text else 'removed')
+        return {'profile': self.profile_lines_view()}
 
     def roles_start_action(self, name, args, owner_dashboard=False):
         return self.store.roles_start(bool(args.get('again')))

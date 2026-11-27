@@ -513,6 +513,7 @@ class StatusApp:
             LOG.warning('setup card error=%s', type(error).__name__); result['setup_card'] = None
         owner = self.owner_full_name()
         result['first_name'] = notify.first_name(owner)  # as the digest greets them ('' when none is known)
+        result['profile'] = self.profile_lines_view()  # What I've learned, Your profile: USER.md's profile lines (status_mark watches the file)
         try:  # the hello on a new owner's first views, with who has waited longest on them (Store.greeting)
             result['greeting'] = self.store.greeting(owner)
         except sqlite3.Error as error:
