@@ -42,10 +42,11 @@ class Opportunities(unittest.TestCase):
         with self.store.connect() as db:
             return db.execute('SELECT id FROM events WHERE source_id=?', (f's{self.n}',)).fetchone()[0]
 
-    def run_once(self):
+    def run_once(self, current=NOW):
+        timeutil.pin(current)
         with self.store.connect() as db:
             run_id = opportunities.begin(db)
-        made = self.app.opportunity_run(run_id, NOW)
+        made = self.app.opportunity_run(run_id, current)
         with self.store.connect() as db:
             cards = [dict(r) for r in db.execute("SELECT title,body,event_ids FROM suggestions WHERE dedupe_key LIKE 'opportunity:%'")]
         return made, cards
@@ -138,6 +139,39 @@ class Opportunities(unittest.TestCase):
                        {'kind': 'need_offer', 'quotes': [{'source': f'E{a}', 'quote': 'we need a new supplier'}, {'source': f'E{b}', 'quote': 'We can supply'}]}]}
         self.answers = [self.answer(p)]
         self.assertEqual(0, self.run_once()[0])
+
+    def session(self, work, title='Run one onboarding session for both teams'):
+        a = self.mail('w', 'a', 'Mara Lind <mara@fernhill.example>', 'Training', 'Could you train our team on the planner in the first week of November?', days=20)
+        b = self.mail('w', 'b', 'Liesel Penn <liesel@penrose.example>', 'Onboarding', 'We need onboarding for the new planner tool in the first week of November.', days=19)
+        return {'title': title, 'why': 'Both teams asked for planner training.', 'work': work, 'sources': [f'E{a}', f'E{b}'],
+                'links': [{'kind': 'item', 'quotes': [{'source': f'E{a}', 'quote': 'on the planner'}, {'source': f'E{b}', 'quote': 'the new planner tool'}]},
+                          {'kind': 'need_offer', 'quotes': [{'source': f'E{a}', 'quote': 'Could you train our team'}, {'source': f'E{b}', 'quote': 'We need onboarding'}]}]}
+
+    def test_a_time_already_over_is_history_not_work(self):
+        self.answers = [self.answer(self.session('Hi Mara, shall we hold the session in the first week of November?'))]
+        self.assertEqual(0, self.run_once()[0])
+        self.assertIn('is history: use a newer date', self.prompts[-1])
+        self.assertTrue(opportunities.past_timing('a shared session in the first week of November', NOW))
+        self.assertTrue(opportunities.past_timing('Send it by 30 October.', NOW))
+        self.assertFalse(opportunities.past_timing('the invoice of 3 November shows the old rate', NOW))  # when it happened, not when to act
+        self.assertFalse(opportunities.past_timing('book it for Thursday 10 December', NOW))
+        self.assertFalse(opportunities.past_timing('before November 20', NOW))
+        self.assertFalse(opportunities.past_timing('by the end of November', NOW))
+
+    def test_several_organizations_get_one_message_each(self):
+        self.answers = [self.answer(self.session('Draft to all three: Hi all, we run one planner session for your teams.'))]
+        self.assertEqual(0, self.run_once(NOW - dt.timedelta(days=12))[0])  # before that week, so only the group mail drops it
+        self.assertIn('never one message to people of different companies', self.prompts[-1])
+        people = {'mara@fernhill.example': 'Mara Lind', 'liesel@penrose.example': 'Liesel Penn'}
+        self.assertTrue(opportunities.group_mail('Hi Mara and Liesel, we run one session.', people))
+        self.assertTrue(opportunities.group_mail('Send it with Liesel in cc.', people))
+        self.assertFalse(opportunities.group_mail('Write to each separately. Hi Mara, we run a session.', people))
+        self.assertFalse(opportunities.group_mail('Hi Mara and Liesel', {'mara@fernhill.example': 'Mara Lind', 'liesel@fernhill.example': 'Liesel Penn'}))
+
+    def test_separate_messages_to_several_organizations_pass(self):
+        self.answers = [self.answer(self.session('Write to each separately. To Mara: Hi Mara, we can train your team on the planner. '
+                                                 'To Liesel: Hi Liesel, we can run the planner onboarding for you.'))]
+        self.assertEqual(1, self.run_once(NOW - dt.timedelta(days=12))[0])
 
     def test_the_best_of_each_area_first_and_two_at_most(self):
         picked = opportunities.pick({'work': [{'title': 'w1'}, {'title': 'w2'}], 'personal': [{'title': 'p1'}]})

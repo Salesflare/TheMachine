@@ -315,7 +315,7 @@ class SummariesApp:
                     swap = background_model(self.config)
                     answer = help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=opportunities.TIMEOUT)
                 with self.store.connect() as db:
-                    per_area[area] = opportunities.parse(db, answer, found[area], todos, before, dropped)
+                    per_area[area] = opportunities.parse(db, answer, found[area], todos, before, dropped, current)
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 for p in opportunities.pick(per_area):

@@ -559,7 +559,10 @@ review reads each message on its own, and the check above moves one project alon
   kinds: a shared address, company or Graph record, or a quoted mention by full name, the same date, the same specific
   thing, or a need one thread has that another offers. A shared first name or one shared word never counts. A date the
   messages don't give is never written: a title with one is dropped, a sentence with one is taken out. It is also
-  dropped when it reads like a to-do already there, or when an earlier proposal already joined its threads.
+  dropped when it reads like a to-do already there, or when an earlier proposal already joined its threads. It is
+  dropped when it puts the work at a time already over ("by 30 October", "in the first week of November" on November
+  27), and when it writes one message to people of several organizations ("to all three", "Hi Mara and Liesel", a cc)
+  instead of one each, since a group mail shows each customer to the others.
 - At most two a week, the best of each area first. Each is a normal to-do (`Store.suggest`) with its messages as
   evidence. Nothing is sent.
 - One or two turns a week, about 6k to 13k input tokens in all.

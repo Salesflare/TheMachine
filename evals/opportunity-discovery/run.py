@@ -39,7 +39,9 @@ Label each proposal with exactly one of:
 - "false": not supported by the messages, or wrong;
 - "cross_area": it joins personal and work matters;
 - "trap": it falls into one of the key's traps (give its id in "of").
-Also say "work_ok": true when its prepared work would be usable by the owner with at most light edits.
+Also say "work_ok": true when its prepared work would be usable by the owner with at most light edits. It is false when the
+work puts something at a time already over by the proposal's week, or writes one message to people of different organizations
+(which shows each customer to the others) where one message each was needed.
 Answer with one JSON object: {"P1": {"label": "...", "of": "...", "work_ok": true, "why": "a few words"}, ...}
 
 '''
@@ -199,8 +201,8 @@ def discover_week(replay, turn, moment):
     replay.app.opportunity_model = model
     shipped = opportunities.parse
 
-    def parse(db, answer, found, todos, earlier=(), dropped=None):  # the shipped parse, its drop reasons kept for the log
-        got = shipped(db, answer, found, todos, earlier, DROPPED)
+    def parse(db, answer, found, todos, earlier=(), dropped=None, current=None):  # the shipped parse, its drop reasons kept for the log
+        got = shipped(db, answer, found, todos, earlier, DROPPED, current)
         try:
             for p in json.loads(answer[answer.find('{'):answer.rfind('}') + 1]).get('proposals') or ():
                 print('   proposed:', str(p.get('title'))[:90], '| links:', ','.join(str(x.get('kind')) for x in p.get('links') or ()),
