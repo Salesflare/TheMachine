@@ -188,6 +188,16 @@ def offered():
     return page('settings', '!document.querySelector("#update").hidden')
 
 
+def top(app, selector):
+    """Where something in Settings is on the screen, from the top of its page: with no bar above it, and the window may
+    still be taller than its page (on_linux.here counts from the bottom, for the dashboard's bar that finds)."""
+    at = page('settings', f'(() => {{ const e = document.querySelector({json.dumps(selector)}).getBoundingClientRect(); return [e.x + e.width / 2, e.y + e.height / 2, innerWidth] }})()')
+    r = app.settings()
+    need(r, 'its Settings')
+    by = r.width / at[2]
+    return round(r.left + at[0] * by), round(r.top + at[1] * by)
+
+
 def _quiet(what):
     """What a page says, or None while it isn't there yet."""
     try:
@@ -227,8 +237,11 @@ def _():
     png('an-update')
     was = running()
     need(page('settings', 'document.querySelector("#update-hint").innerText') == f'{NEW} is ready', 'says so')
-    on.click(*on.here(app, '#update', 'settings'))
-    need(until(lambda: version() == NEW, 90), f'it is in place: {version()}')
+    on.click(*(top(app, '#update') if LINUX else on.here(app, '#update', 'settings')))
+    if not until(lambda: version() == NEW, 90):
+        png('not-in-place')
+        said = _quiet(lambda: page('settings', 'document.querySelector("#error").innerText'))
+        need(False, f'it is in place: {version()}; it says {said!r}')
     again = lambda: running() and not set(running()) & set(was)
     if not until(lambda: again() or refused(), 60) or not again():
         png('updated')

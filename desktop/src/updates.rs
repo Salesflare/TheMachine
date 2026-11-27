@@ -178,7 +178,8 @@ mod there {
     /// Windows: its installer takes over, and starts it again. A Mac's app and an AppImage are replaced, and it starts again.
     /// A package: its file opens in the browser, for the package manager. Not on the main thread.
     pub fn apply(app: &AppHandle) -> Result<(), String> {
-        if let Some(out) = OUT.lock().unwrap().clone() {
+        let out = OUT.lock().unwrap().clone();
+        if let Some(out) = out {
             use tauri_plugin_opener::OpenerExt;
             let file = if out.how == "arch" { "PKGBUILD" } else { "the-machine-desktop-amd64.deb" };
             return app.opener().open_url(format!("{FILES}{file}"), None::<&str>).map_err(|_| "browser".to_string());
