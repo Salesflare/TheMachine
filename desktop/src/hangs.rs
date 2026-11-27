@@ -143,7 +143,7 @@ fn note(file: &Path, line: &str) {
 }
 
 fn about() -> String {
-    format!("{} {}, {} {}", env!("CARGO_PKG_VERSION"), std::env::consts::ARCH, std::env::consts::OS, system()).trim_end().to_string()
+    format!("{} {}, {} {}", crate::version(), std::env::consts::ARCH, std::env::consts::OS, system()).trim_end().to_string()
 }
 
 #[cfg(target_os = "macos")]

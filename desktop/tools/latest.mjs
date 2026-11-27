@@ -10,8 +10,8 @@ if (!given) throw new Error('which folder?');
 if (tag && !/^release-\d{8}-\d{4}$/.test(tag)) throw new Error(`${tag} is not a release tag`);
 const folder = resolve(given);
 const at = tag ? `https://github.com/Salesflare/TheMachine/releases/download/${tag}/` : conf.plugins.updater.endpoints[0];
-// Only these two signatures are read, and only from inside the folder.
-const SIGNED = {mac: 'the-machine-desktop-mac.app.tar.gz', windows: 'the-machine-desktop-setup.exe'};
+// Only these three signatures are read, and only from inside the folder.
+const SIGNED = {mac: 'the-machine-desktop-mac.app.tar.gz', windows: 'the-machine-desktop-setup.exe', linux: 'the-machine-desktop-x86_64.AppImage'};
 const of = which => {
   const file = SIGNED[which];
   const path = resolve(folder, `${file}.sig`);
@@ -19,5 +19,5 @@ const of = which => {
   if (!inside || inside.startsWith('..') || inside.includes(sep)) throw new Error(`${path} is not in ${folder}`);
   return {signature: readFileSync(path, 'utf8').trim(), url: new URL(file, at).href};
 };
-const mac = of('mac'), windows = of('windows');
-console.log(JSON.stringify({version: conf.version, platforms: {'darwin-aarch64': mac, 'darwin-x86_64': mac, 'windows-x86_64': windows}}, null, 2));
+const mac = of('mac'), windows = of('windows'), linux = of('linux'); // linux: the AppImage, which alone replaces itself (updates.rs)
+console.log(JSON.stringify({version: conf.version, platforms: {'darwin-aarch64': mac, 'darwin-x86_64': mac, 'windows-x86_64': windows, 'linux-x86_64': linux}}, null, 2));

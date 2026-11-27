@@ -10,7 +10,7 @@ default = ["updates"]
 # Adds http://127.0.0.1:<port> as a Machine address, for scripts/sandbox.sh, and a stand-in for the account's sign-in
 # (MACHINE_SANDBOX_ACCOUNT). Never in a build for people.
 sandbox = []
-# It updates itself (updates.rs), on Windows and a Mac. Not in the Mac App Store's build, which the store updates.
+# It updates itself (updates.rs), on Windows, a Mac and as an AppImage. Not in the Mac App Store's build, which the store updates.
 updates = ["dep:tauri-plugin-updater"]
 # The Mac App Store's build (README.md, Mac App Store): in the App Sandbox, macOS 14 and later. Built with
 # --no-default-features: then it has no updater at all.
@@ -31,6 +31,7 @@ url = "2"
 sha2 = "0.11"
 base64 = "0.23"
 getrandom = "0.4"
+tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "zip"], optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 gdkx11 = "0.18"
@@ -42,9 +43,6 @@ wayland-client = "0.31"
 wayland-protocols = { version = "0.32", features = ["client", "staging"] }
 x11rb = { version = "0.13", features = ["screensaver"] }
 zbus = "5"
-
-[target.'cfg(any(windows, target_os = "macos"))'.dependencies]
-tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "zip"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 tauri = { version = "2.12", features = ["tray-icon"] }

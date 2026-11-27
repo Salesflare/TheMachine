@@ -2,7 +2,7 @@
 title: The desktop app
 area: getting-started
 summary: The Machine on Windows, Mac and Linux: your dashboard in a window of its own, and a robot in a corner of the screen.
-code: desktop/README.md, desktop/windows/hooks.nsh, desktop/linux/PKGBUILD, desktop/tools/version.py
+code: desktop/README.md, desktop/src/updates.rs, desktop/windows/hooks.nsh, desktop/linux/PKGBUILD, desktop/tools/version.py
 order: 3
 keywords: desktop, computer, windows, mac, macos, linux, omarchy, arch, ubuntu, debian, appimage, robot, download, install
 ---
@@ -32,7 +32,7 @@ Unpack the zip, move The Machine to Applications and open it there. macOS asks o
 - Ubuntu 22.04, Debian 12 or newer: `sudo apt install ./the-machine-desktop-amd64.deb`. It brings WebKitGTK and gtk-layer-shell with it.
 - Arch and Omarchy: put the PKGBUILD in an empty folder and run `makepkg -si` there. It downloads that version, checks it against the checksum in the file, and installs it. On Hyprland, as Omarchy has it, the robot stays above other windows without a window of its own.
 
-On Linux the app doesn't update itself. For a newer version, download the file again, or the newer PKGBUILD.
+The AppImage updates itself when it is in a folder of yours, such as ~/Applications: its Settings say when a new version is ready. The .deb and the Arch package stay with apt and pacman: Settings says when a newer version is out, with Download for its .deb or PKGBUILD. An AppImage unpacked into a folder doesn't update itself; use the AppImage as it is.
 
 ## Check a download
 

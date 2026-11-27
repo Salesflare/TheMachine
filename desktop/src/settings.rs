@@ -25,9 +25,12 @@ pub struct Settings {
     /// Nothing is said here: a browser here may tell (speak.rs).
     browser: bool,
     machine: Option<String>,
-    version: &'static str,
+    /// A release's (crate::version).
+    version: String,
     /// The version that is fetched and waits for a restart (updates.rs).
     update: Option<String>,
+    /// A newer version that the package manager puts in place.
+    out: Option<updates::Out>,
 }
 
 pub fn open(app: &AppHandle) {
@@ -133,8 +136,9 @@ pub async fn settings_state(app: AppHandle) -> Result<Settings, String> {
             blocked: saved.notify == Some(true) && notices == notify::Lets::No,
             browser: shared.browser.load(Ordering::Relaxed) > 0 && (!saved.no_robot || saved.notify == Some(true) && notices == notify::Lets::Yes),
             machine: saved.machine.clone(),
-            version: env!("CARGO_PKG_VERSION"),
+            version: crate::version().to_string(),
             update: updates::ready(),
+            out: updates::out(),
         })
     }).await
 }

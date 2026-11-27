@@ -1071,9 +1071,17 @@ fn dotted(image: &tauri::image::Image<'_>) -> tauri::image::Image<'static> {
     tauri::image::Image::new_owned(px, w, h)
 }
 
+/// A release's version: tauri.conf.json's, which tools/version.py writes and the updater compares. Cargo.toml's stays 0.0.1.
+static VERSION: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+pub fn version() -> &'static str {
+    VERSION.get().map_or(env!("CARGO_PKG_VERSION"), String::as_str)
+}
+
 fn context() -> tauri::Context {
     #[allow(unused_mut)]
     let mut made = tauri::generate_context!();
+    let _ = VERSION.set(made.package_info().version.to_string());
     #[cfg(feature = "sandbox")] // a stand-in's updates come over http
     made.config_mut().plugins.0.insert("updater".into(), serde_json::json!({"pubkey": "", "dangerousInsecureTransportProtocol": true}));
     made
@@ -1299,7 +1307,7 @@ fn main() {
             }
             #[cfg(all(feature = "sandbox", not(windows)))]
             debug(app.handle());
-            #[cfg(all(feature = "updates", any(windows, target_os = "macos")))]
+            #[cfg(feature = "updates")]
             app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
             hangs::watch(app.handle());
             #[cfg(target_os = "macos")]

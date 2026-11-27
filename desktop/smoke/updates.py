@@ -1,8 +1,10 @@
 """A newer version in place of the one that runs, and on Windows its installer: for throwaway computers only.
 
-  updates.py <the app; on Windows its installer> <the newer one to fetch, its .sig beside it> <folder for the pictures>
+  updates.py <the app; on Windows its installer; on Linux its AppImage> <the newer one to fetch, its .sig beside it> <folder for the pictures>
 
-Both are sandbox builds, signed with the made-up key whose other half is MACHINE_SANDBOX_UPDATES_KEY. See desktop.yml."""
+Both are sandbox builds, signed with the made-up key whose other half is MACHINE_SANDBOX_UPDATES_KEY. See desktop.yml. On
+Linux in linux.sh, with the AppImage on FUSE as people start it."""
+import hashlib
 import http.server
 import importlib
 import json
@@ -18,11 +20,11 @@ import time
 
 from standin import Machine
 
-on = importlib.import_module({'darwin': 'on_mac', 'win32': 'on_windows'}[sys.platform])
+on = importlib.import_module({'darwin': 'on_mac', 'win32': 'on_windows', 'linux': 'on_linux'}[sys.platform])
 App, SYSTEM, PORT, need, out, page, png, step, until = on.App, on.SYSTEM, on.PORT, on.need, on.out, on.page, on.png, on.step, on.until
 newer = pathlib.Path(sys.argv[2]).resolve()
 NEW = '9999.0.0'  # newer than a release's own version too (tools/version.py)
-WINDOWS = SYSTEM == 'windows'
+WINDOWS, LINUX = SYSTEM == 'windows', SYSTEM == 'linux'
 on.fresh()
 machine = Machine(PORT)
 machine.window = machine.compact = True
@@ -37,7 +39,7 @@ class Updates(http.server.BaseHTTPRequestHandler):
         if self.path == '/latest.json':
             chip = {'arm64': 'aarch64', 'AMD64': 'x86_64'}.get(platform.machine(), platform.machine())
             of = {'signature': newer.with_name(newer.name + '.sig').read_text(), 'url': f'http://127.0.0.1:{served.server_port}/newer'}
-            body = json.dumps({'version': NEW, 'platforms': {f'{"windows" if WINDOWS else "darwin"}-{chip}': of}}).encode()
+            body = json.dumps({'version': NEW, 'platforms': {f'{"windows" if WINDOWS else SYSTEM if LINUX else "darwin"}-{chip}': of}}).encode()
         elif spoiled:
             body = body[:-1] + bytes([body[-1] ^ 1])
         self.send_response(200)
@@ -99,6 +101,37 @@ if WINDOWS:
 
     def refused():
         return ''
+elif LINUX:
+    # In the made-up home (linux.sh), a folder of the person's own: there it may replace itself
+    HOME = on.HOME / 'Applications'
+    program = HOME / 'the-machine-desktop-x86_64.AppImage'
+    sha = lambda file: hashlib.sha256(pathlib.Path(file).read_bytes()).hexdigest()
+    WHICH = {sha(on.sandbox): '0.0.1', sha(newer): NEW}
+
+    def version():
+        return WHICH.get(sha(program), 'another') if program.exists() else None
+
+    def running():
+        """The app's own processes, from whichever AppImage is mounted: not the runtime that mounts it."""
+        found = []
+        for p in pathlib.Path('/proc').glob('[0-9]*'):
+            try:
+                if os.readlink(p / 'exe').endswith('/usr/bin/the-machine-desktop'):
+                    found.append(int(p.name))
+            except OSError:
+                pass
+        return found
+
+    def start():
+        return App(str(program))
+
+    def refused():
+        return ''
+
+    def stop():
+        app.kill()
+        for pid in running():
+            os.kill(pid, 9)
 else:
     HOME = out.parent / 'applications' / 'The Machine.app'
     program = HOME
@@ -126,6 +159,11 @@ before = left() if WINDOWS else None
 
 @step('it is installed')
 def _():
+    if LINUX:
+        HOME.mkdir(exist_ok=True)
+        shutil.copy(on.sandbox, program)
+        program.chmod(0o755)
+        return version()
     if not WINDOWS:
         shutil.rmtree(HOME.parent, ignore_errors=True)
         HOME.parent.mkdir()
@@ -148,6 +186,35 @@ def settings():
 
 def offered():
     return page('settings', '!document.querySelector("#update").hidden')
+
+
+def press_update(app):
+    """A real click on Restart to update. On Linux the window manager may count Settings' place with its title bar, and
+    its window may still be taller than its page: each likely spot is tried until the button says it was pressed (it
+    turns off at once), so it is never pressed twice."""
+    if not LINUX:
+        return on.click(*on.here(app, '#update', 'settings'))
+    pressed = lambda: version() == NEW or _quiet(lambda: page('settings', 'document.querySelector("#update").disabled', 2)) is not False
+    box = page('settings', '(() => { const e = document.querySelector("#update").getBoundingClientRect(); return [e.x + e.width / 2, e.y + e.height / 2, innerWidth, innerHeight] })()')
+    r = app.settings()
+    need(r, 'its Settings')
+    scale = r.width / box[2]
+    across = round(r.left + box[0] * scale)
+    spots = [round(r.top + box[1] * scale), round(r.top + (r.height - box[3] * scale) + box[1] * scale)]
+    spots += [y + d for d in (-21, 19) for y in spots]  # openbox under Xvfb has told it 21 lower than it is
+    for y in dict.fromkeys(spots):
+        on.click(across, y)
+        if until(pressed, 3):
+            return f'{across},{y} of {r}'
+    need(False, f'pressed at none of {spots} in {r}, page {box}')
+
+
+def _quiet(what):
+    """What a page says, or None while it isn't there yet."""
+    try:
+        return what()
+    except (OSError, ValueError):
+        return None
 
 
 @step('one that was changed on the way is not used')
@@ -181,8 +248,11 @@ def _():
     png('an-update')
     was = running()
     need(page('settings', 'document.querySelector("#update-hint").innerText') == f'{NEW} is ready', 'says so')
-    on.click(*on.here(app, '#update', 'settings'))
-    need(until(lambda: version() == NEW, 90), f'it is in place: {version()}')
+    where = press_update(app)
+    if not until(lambda: version() == NEW, 90):
+        png('not-in-place')
+        said = _quiet(lambda: page('settings', 'document.querySelector("#error").innerText'))
+        need(False, f'it is in place: {version()}; it says {said!r}; pressed at {where}')
     again = lambda: running() and not set(running()) & set(was)
     if not until(lambda: again() or refused(), 60) or not again():
         png('updated')
@@ -193,6 +263,15 @@ def _():
     time.sleep(6)
     png('updated')
     need(len(running()) == 1, running())
+    if LINUX:  # the one that runs is the newer one: it says so, and finds nothing newer than itself to fetch
+        had = len(asked)
+        shown = lambda: on.page('settings', 'document.querySelector("#update-name").innerText', 2)
+        opened = lambda: on.hit('settings') or until(lambda: _quiet(shown), 4)
+        need(until(opened, 40, 1), 'its Settings')
+        time.sleep(5)
+        png('updated-settings')
+        need(shown() == f'Version {NEW}' and not offered(), f'{shown()}, offered: {offered()}')
+        need(not any(p == '/newer' for p, _ in asked[had:]), f'nothing fetched again {asked[had:]}')
     return f'{was} {running()}'
 
 
@@ -200,8 +279,8 @@ def _():
 def _():
     if not WINDOWS:
         stop()
-        shutil.rmtree(HOME.parent)  # so that nothing after this opens it
-        return 'NOT TESTED: a Mac app is deleted by the person'
+        shutil.rmtree(HOME if LINUX else HOME.parent)  # so that nothing after this opens it
+        return f'NOT TESTED: {"an AppImage" if LINUX else "a Mac app"} is deleted by the person'
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\Windows\CurrentVersion\Run') as key:
         winreg.SetValueEx(key, 'The Machine', 0, winreg.REG_SZ, f'"{program}" --login')
     had = left()

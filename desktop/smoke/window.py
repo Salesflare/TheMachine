@@ -537,6 +537,8 @@ def _():
     no_browser()
     back_to_it()
     settings()
+    on.settings_open(app)  # in front: the dashboard may still be, and take the click
+    time.sleep(1)
     tap('#browser-no', 'settings')
     need(until(lambda: not asks(), 5) and saved()['none'] == 7, f'answered {saved()["none"]}')
     other()
