@@ -283,7 +283,8 @@ is the same app, except:
 The `mac-store` job (a run by hand with **mac-store-only**) uses it in the sandbox, signed ad hoc (`smoke/store.py`).
 `mac-store-sign` then signs it and makes the `.pkg`, in the `mac-store` environment: `MAS_APP_P12` (Apple Distribution) and
 `MAS_INSTALLER_P12` (Mac Installer Distribution) with their `_PASSWORD`s, `MAS_PROVISIONING_PROFILE` (base64), and
-`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` to check it with App Store Connect. **mac-store-upload** sends it there too.
+`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` to check it with App Store Connect. **mac-store-upload** sends it there too,
+as the version in **mac-store-version** (App Store Connect's, `1.0` unless given) with the run's number as its build.
 Without them nothing is signed. Its ID is `computer.themachine.app`, one listing with the phone app (`mac/bundle.sh`, or the
 repository variable `MAS_BUNDLE_ID`); the direct download keeps `computer.themachine.desktop`.
 
