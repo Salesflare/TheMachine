@@ -1,0 +1,3671 @@
+{
+ "id": "hx-1",
+ "about": "Owner and principal designer of Brackwater Studio, a three-person residential and small-commercial interior architecture studio; also uses a personal mailbox for family and friends.",
+ "owner": {
+  "name": "Ines Halloran",
+  "email": "ines@brackwater.example"
+ },
+ "accounts": [
+  {
+   "id": "wmail",
+   "boundary": "work:Brackwater Studio",
+   "email": "ines@brackwater.example"
+  },
+  {
+   "id": "pmail",
+   "boundary": "personal:home",
+   "email": "ines.halloran@mail.example"
+  }
+ ],
+ "messages": [
+  {
+   "key": "m1",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 34,
+   "hour": 9,
+   "from": [
+    "Claire Hartwell",
+    "claire.hartwell@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Marks on the new kitchen floor",
+   "body": "Hi Ines,\n\nWe are loving the kitchen, truly. One thing though: after I mopped the floor on Sunday (with the soap the installer left us) there are these cloudy white patches on the Hearth Oak, mostly near the sink and the island. They don't wipe off. Is that normal for a matte finish or did I do something wrong?\n\nThanks,\nClaire",
+   "bulk": false,
+   "project": "Hartwell kitchen"
+  },
+  {
+   "key": "m2",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 33,
+   "hour": 8,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Claire Hartwell",
+     "claire.hartwell@mail.example"
+    ]
+   ],
+   "subject": "Re: Marks on the new kitchen floor",
+   "body": "Hi Claire,\n\nYou definitely didn't do anything wrong, that soap is what we recommend. Could you send me a few photos in daylight? I'll come by Thursday afternoon to take a look in person.\n\nBest,\nInes",
+   "bulk": false,
+   "project": "Hartwell kitchen"
+  },
+  {
+   "key": "m3",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 31,
+   "hour": 19,
+   "from": [
+    "Claire Hartwell",
+    "claire.hartwell@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Marks on the new kitchen floor",
+   "body": "Photos attached, sorry for the delay. You can see the haze best in the third one by the dishwasher. Thanks for coming by Thursday, it was good to see you. Let me know what the flooring people say.\n\nClaire",
+   "bulk": false,
+   "project": "Hartwell kitchen"
+  },
+  {
+   "key": "m4",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 18,
+   "hour": 21,
+   "from": [
+    "Dev Okafor",
+    "dev@okaforlofts.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Hazy spots on the loft floor",
+   "body": "Hey Ines, hope you're well. Quick one: the Hearth Oak boards in the main room have developed whitish blotches, mostly where we mop. We used the cleaner from the care sheet, nothing else. It looks a bit like water rings on a table. The rest of the loft is perfect so I hate to complain, but it's the first thing you see when you walk in. Any idea?\n\nDev",
+   "bulk": false,
+   "project": "Okafor loft"
+  },
+  {
+   "key": "m5",
+   "account": "wmail",
+   "thread": "t3",
+   "day": 9,
+   "hour": 11,
+   "from": [
+    "Dana Whitcomb",
+    "dana@timberline.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Sample boards for Linden Court",
+   "body": "Hi Ines,\n\nSample boards for the two Linden Court units go out Monday, three finishes each.\n\nSeparate heads-up while I have you: we found that Hearth Oak matte from production lots 2207 and 2208 (shipped September and October) has a finish curing problem. On some floors it shows as a white haze after wet cleaning. We cover a free re-oil by our own technician, but the claim needs the lot numbers and photos and has to be filed by December 15. If any of your clients see it, send them our way.\n\nDana Whitcomb\nTimberline Floors, trade accounts",
+   "bulk": false
+  },
+  {
+   "key": "m6",
+   "account": "wmail",
+   "thread": "t3",
+   "day": 12,
+   "hour": 10,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Dana Whitcomb",
+     "dana@timberline.example"
+    ]
+   ],
+   "subject": "Sample boards for Linden Court",
+   "body": "Hi Dana,\n\nCould you send sample boards for two apartments at Linden Court? Light and mid tones, matte and satin. Same shipping address as usual.\n\nThanks!\nInes",
+   "bulk": false
+  },
+  {
+   "key": "m7",
+   "account": "wmail",
+   "thread": "t4",
+   "day": 50,
+   "hour": 14,
+   "from": [
+    "Maura Kitt",
+    "accounts@lumenhall.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Invoice LH-3381",
+   "body": "Dear Ines,\n\nPlease find attached invoice LH-3381 for order 7712 (Okafor loft):\n4 x Arden pendant, spun brass, 12 in, at $410.00 = $1,640.00\nShipping $45.00\nTotal due $1,685.00, net 30.\n\nKind regards,\nMaura Kitt\nLumenhall Lighting, accounts",
+   "bulk": false,
+   "project": "Okafor loft"
+  },
+  {
+   "key": "m8",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 22,
+   "hour": 13,
+   "from": [
+    "Maura Kitt",
+    "accounts@lumenhall.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Invoice LH-3502",
+   "body": "Dear Ines,\n\nAttached is invoice LH-3502 for order 7790 (Sato office):\n2 x Arden pendant, spun brass, 12 in, at $468.00 = $936.00\nShipping $45.00\nTotal due $981.00, net 30.\n\nPlease note our new price list took effect November 1.\n\nKind regards,\nMaura Kitt\nLumenhall Lighting, accounts",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m9",
+   "account": "wmail",
+   "thread": "t6",
+   "day": 25,
+   "hour": 16,
+   "from": [
+    "Jonah Reyes",
+    "jonah@coppicelighting.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Alternative to a brass dome pendant",
+   "body": "Hi Ines,\n\nThanks for the call. Our Wren pendant is the closest match: 12 in spun brass dome, same cord length options, dimmable. Trade price $395 each for orders of 6 or more, lead time about 3 weeks. Spec sheet attached. Happy to send a sample if you want to see the finish next to the other one.\n\nCheers,\nJonah Reyes\nCoppice Lighting",
+   "bulk": false
+  },
+  {
+   "key": "m10",
+   "account": "wmail",
+   "thread": "t7",
+   "day": 27,
+   "hour": 10,
+   "from": [
+    "Bea Ferreira",
+    "bea@ferreiracafe.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Lighting plan - yes!",
+   "body": "Ines!! The lighting plan is perfect. Go ahead and order the 8 Arden pendants over the long counter, same as the ones in your mockup. Budget is tight after the espresso machine, so if anything changes price-wise just tell me.\n\nBea",
+   "bulk": false,
+   "project": "Ferreira café"
+  },
+  {
+   "key": "m11",
+   "account": "wmail",
+   "thread": "t7",
+   "day": 26,
+   "hour": 9,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Bea Ferreira",
+     "bea@ferreiracafe.example"
+    ]
+   ],
+   "subject": "Re: Lighting plan - yes!",
+   "body": "So glad you like it! I'll place the pendant order this week and send you the delivery date once I have it.\n\nInes",
+   "bulk": false,
+   "project": "Ferreira café"
+  },
+  {
+   "key": "m12",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 29,
+   "hour": 18,
+   "from": [
+    "Marguerite Osei",
+    "m.osei@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Linden Court 4B - the wall",
+   "body": "Dear Ines,\n\nWe have decided: the wall between the kitchen and the living room goes. The building board told us they need a letter from a structural engineer before they approve anything, and they asked whether the original structural drawings of the building are available. I have no idea where to get those. Can you take care of this part?\n\nWarmly,\nMarguerite Osei\nUnit 4B, Linden Court",
+   "bulk": false,
+   "project": "Osei 4B"
+  },
+  {
+   "key": "m13",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 28,
+   "hour": 8,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Marguerite Osei",
+     "m.osei@mail.example"
+    ]
+   ],
+   "subject": "Re: Linden Court 4B - the wall",
+   "body": "Dear Marguerite,\n\nGreat news, it will make a big difference. Yes, I'll handle the engineer and the drawings and come back to you with costs before we commit to anything.\n\nBest,\nInes",
+   "bulk": false,
+   "project": "Osei 4B"
+  },
+  {
+   "key": "m14",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 15,
+   "hour": 20,
+   "from": [
+    "Tomas Lindqvist",
+    "tomas@lindqvistdesign.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "6A hallway wall",
+   "body": "Hi Ines,\n\nFollowing up on our walkthrough: we'd like to open up the wall between the hallway and the kitchen after all. The board at Linden Court says we need a structural engineer's letter plus the original building drawings before they'll even look at it. Can you add that to your scope? Let me know what it costs.\n\nThanks,\nTomas\n6A",
+   "bulk": false,
+   "project": "Lindqvist 6A"
+  },
+  {
+   "key": "m15",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 20,
+   "hour": 15,
+   "from": [
+    "Harriet Coyle",
+    "hcoyle@lindenmgmt.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Freight elevator for 4B",
+   "body": "Hello Ines,\n\nThe freight elevator is yours on December 3 from 9 to 1, pads will be up.\n\nTo your other question: we do not have the original structural drawings on file. The city records archive can retrieve them, it is $350 per request and takes two to three weeks. For what it's worth, the units in the 4 and 6 lines sit on the same bearing walls, so one set of drawings covers that whole stack.\n\nRegards,\nHarriet Coyle\nLinden Court Management",
+   "bulk": false,
+   "project": "Osei 4B"
+  },
+  {
+   "key": "m16",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 21,
+   "hour": 11,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Harriet Coyle",
+     "hcoyle@lindenmgmt.example"
+    ]
+   ],
+   "subject": "Freight elevator for 4B",
+   "body": "Hi Harriet,\n\nCould we book the freight elevator for a delivery to 4B in early December? Also, do you happen to have the building's original structural drawings? The board is asking for them.\n\nThank you,\nInes Halloran\nBrackwater Studio",
+   "bulk": false,
+   "project": "Osei 4B"
+  },
+  {
+   "key": "m17",
+   "account": "wmail",
+   "thread": "t11",
+   "day": 17,
+   "hour": 12,
+   "from": [
+    "Sam Adeyemi",
+    "sam@adeyemieng.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Wall removal letter, Linden Court",
+   "body": "Ines,\n\nHappy to help. My fee is $600 per site visit plus $400 per letter. I would need the original structural drawings before the visit, otherwise I have to open up the ceiling to check. I'll send you my available dates next week.\n\nSam Adeyemi, PE\nAdeyemi Engineering",
+   "bulk": false,
+   "project": "Osei 4B"
+  },
+  {
+   "key": "m18",
+   "account": "wmail",
+   "thread": "t12",
+   "day": 3,
+   "hour": 14,
+   "from": [
+    "Bea Ferreira",
+    "bea@ferreiracafe.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "it's loud in here",
+   "body": "Hi Ines, three weeks open and people love the space. The one complaint we keep getting is the noise at lunch, with the concrete floor and all the glass you can't hear the person across from you. Two regulars told me they go elsewhere for meetings now. Do you know anyone who does acoustic stuff? Panels, ceiling, whatever helps.\n\nxx Bea",
+   "bulk": false,
+   "project": "Ferreira café"
+  },
+  {
+   "key": "m19",
+   "account": "wmail",
+   "thread": "t13",
+   "day": 11,
+   "hour": 9,
+   "from": [
+    "Ravi Menon",
+    "ravi@menonacoustics.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Nice meeting you at design night",
+   "body": "Hi Ines,\n\nIt was great to chat at Thursday's design night, and thanks for the tip about the bookshop on Wharf Lane. As I mentioned, I'm an acoustic consultant and I'm trying to do more small hospitality work: cafés, restaurants, wine bars. If you ever come across a client with a noise problem, I'd really appreciate an introduction. I do a free first visit.\n\nBest,\nRavi Menon\nMenon Acoustics",
+   "bulk": false
+  },
+  {
+   "key": "m20",
+   "account": "wmail",
+   "thread": "t13",
+   "day": 10,
+   "hour": 17,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Ravi Menon",
+     "ravi@menonacoustics.example"
+    ]
+   ],
+   "subject": "Re: Nice meeting you at design night",
+   "body": "Hi Ravi, likewise! I'll keep you in mind, a lot of our hospitality clients end up with hard surfaces everywhere. Enjoy the bookshop.\n\nInes",
+   "bulk": false
+  },
+  {
+   "key": "m21",
+   "account": "pmail",
+   "thread": "t14",
+   "day": 31,
+   "hour": 20,
+   "from": [
+    "Hollis Brandt",
+    "hollis@pinecrestcabins.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Your stay at Larch cabin, Dec 18-21",
+   "body": "Hi Ines,\n\nThanks for booking with us! You're in Larch cabin from Friday December 18 to Monday December 21, three nights, sleeps four. The wood stove will be stocked. The balance of $280 is due by December 1.\n\nSee you in the snow,\nHollis\nPinecrest Cabins",
+   "bulk": false
+  },
+  {
+   "key": "m22",
+   "account": "pmail",
+   "thread": "t14",
+   "day": 9,
+   "hour": 10,
+   "from": [
+    "Hollis Brandt",
+    "hollis@pinecrestcabins.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Re: Your stay at Larch cabin, Dec 18-21",
+   "body": "Hi Ines, just a friendly note since a few guests asked: you can change your dates for free until December 4. After that we keep 50% if dates change. Larch is still open the weekend before and after, if that ever helps.\n\nHollis",
+   "bulk": false
+  },
+  {
+   "key": "m23",
+   "account": "pmail",
+   "thread": "t15",
+   "day": 5,
+   "hour": 21,
+   "from": [
+    "Lena Halloran",
+    "lena.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Mom's 70th!!",
+   "body": "Ines! It's decided: Mom's 70th birthday dinner is at our place on Sunday December 20, 6 pm. Everyone is coming, even Uncle Pat. She thinks it's just a small lunch so don't say a word. Can you do dessert? The lemon cake she loves would be perfect.\n\nLove, Lena",
+   "bulk": false
+  },
+  {
+   "key": "m24",
+   "account": "pmail",
+   "thread": "t15",
+   "day": 4,
+   "hour": 7,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Lena Halloran",
+     "lena.halloran@mail.example"
+    ]
+   ],
+   "subject": "Re: Mom's 70th!!",
+   "body": "Oh she's going to cry. Yes, I'll bring the lemon cake! Lips sealed.\n\nx",
+   "bulk": false
+  },
+  {
+   "key": "m25",
+   "account": "pmail",
+   "thread": "t16",
+   "day": 19,
+   "hour": 22,
+   "from": [
+    "Felix Halloran",
+    "felix.h@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "flights booked",
+   "body": "Hey sis, flights are booked. I land at Harborview on December 22 at 2:10 pm, terminal B. Any chance someone can grab me? Not a big deal if not, I can take the train.\n\nF",
+   "bulk": false
+  },
+  {
+   "key": "m26",
+   "account": "pmail",
+   "thread": "t17",
+   "day": 16,
+   "hour": 13,
+   "from": [
+    "Mae Lindgren",
+    "mae.lindgren@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Christmas arrival",
+   "body": "Hi Ines!\n\nI finally booked my flight for Christmas. I land at Harborview on December 22 at 3:05 pm, terminal B. Would you or someone be able to pick me up? I don't want to bother your mom with the airport traffic. If it's a hassle I'll get a cab, really.\n\nHugs,\nMae",
+   "bulk": false
+  },
+  {
+   "key": "m27",
+   "account": "pmail",
+   "thread": "t16",
+   "day": 18,
+   "hour": 8,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Felix Halloran",
+     "felix.h@mail.example"
+    ]
+   ],
+   "subject": "Re: flights booked",
+   "body": "Yay! I'll figure out the pickup and let you know. Don't take the train with all your bags.",
+   "bulk": false
+  },
+  {
+   "key": "m28",
+   "account": "wmail",
+   "thread": "t18",
+   "day": 24,
+   "hour": 10,
+   "from": [
+    "Nadia Brooks",
+    "nadia@brooksbakery.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Quote for a new front counter",
+   "body": "Hello Ines,\n\nA friend recommended you. I run Brooks Bakery on Mill Street and I want to replace our front counter: it's too low, the glass case is cracked and there's nowhere to put the register. Would you be able to give me a rough quote for designing a new counter? I can send measurements.\n\nThank you,\nNadia Brooks",
+   "bulk": false
+  },
+  {
+   "key": "m29",
+   "account": "wmail",
+   "thread": "t19",
+   "day": 23,
+   "hour": 15,
+   "from": [
+    "Nadia Kowal",
+    "nadia.kowal@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Returning the counter stool sample",
+   "body": "Hi Ines, thanks for lending us the counter stool sample. We've decided against stools for the kitchen island after all, so I'd like to send it back. What address should I ship it to, the studio or the showroom?\n\nNadia",
+   "bulk": false
+  },
+  {
+   "key": "m30",
+   "account": "wmail",
+   "thread": "t20",
+   "day": 37,
+   "hour": 9,
+   "from": [
+    "Otto Fenn",
+    "otto@ellerypaints.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Juniper backorder",
+   "body": "Hi Ines,\n\nBad news on the Pruitt order: Juniper (the deep green eggshell) is backordered until mid January. I can offer Fernhollow, which is a shade lighter, or hold the order. Let me know which.\n\nOtto Fenn\nEllery Paints, trade desk",
+   "bulk": false,
+   "project": "Pruitt bathroom"
+  },
+  {
+   "key": "m31",
+   "account": "wmail",
+   "thread": "t21",
+   "day": 35,
+   "hour": 19,
+   "from": [
+    "Gil Navarro",
+    "gil.navarro@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "We closed on Juniper Street!",
+   "body": "Hi Ines,\n\nWe officially closed on the house at 22 Juniper Street today. As discussed at the open house, we'd love your help with the whole ground floor. When can we start planning? We're flexible on evenings.\n\nGil",
+   "bulk": false
+  },
+  {
+   "key": "m32",
+   "account": "wmail",
+   "thread": "t21",
+   "day": 34,
+   "hour": 11,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Gil Navarro",
+     "gil.navarro@mail.example"
+    ]
+   ],
+   "subject": "Re: We closed on Juniper Street!",
+   "body": "Congratulations Gil! How about Tuesday at 6 at the house? I'll bring a measuring kit and we can walk through what you have in mind. Could you send a rough budget beforehand?\n\nInes",
+   "bulk": false
+  },
+  {
+   "key": "m33",
+   "account": "wmail",
+   "thread": "t22",
+   "day": 13,
+   "hour": 16,
+   "from": [
+    "Hal Ostrander",
+    "hal@ostrandergroup.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Deck builder?",
+   "body": "Ines, off-topic from the office job: our backyard deck at home is rotting through. Do you know a good deck builder you trust? Thanks, Hal",
+   "bulk": false
+  },
+  {
+   "key": "m34",
+   "account": "pmail",
+   "thread": "t23",
+   "day": 12,
+   "hour": 18,
+   "from": [
+    "Gwen Tully",
+    "gwen.tully@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "deck",
+   "body": "Hi neighbor! Our deck finally gave up, Doug put his foot through a board last night. You must know a deck builder with your job? Wine on me if you do.\n\nGwen",
+   "bulk": false
+  },
+  {
+   "key": "m35",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 54,
+   "hour": 8,
+   "from": [
+    "Bruno Salas",
+    "bruno@salasbuild.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Pruitt rough-in inspection",
+   "body": "Ines, city rough-in inspection for the Pruitt bathroom is booked October 6, morning window. I'll be there. Bruno",
+   "bulk": false,
+   "project": "Pruitt bathroom"
+  },
+  {
+   "key": "m36",
+   "account": "wmail",
+   "thread": "t25",
+   "day": 53,
+   "hour": 20,
+   "from": [
+    "June Pruitt",
+    "june.pruitt@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Inspection",
+   "body": "Hi Ines, can I be there when the inspector comes? I want to ask about the vent fan placement. June",
+   "bulk": false,
+   "project": "Pruitt bathroom"
+  },
+  {
+   "key": "m37",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 51,
+   "hour": 13,
+   "from": [
+    "Bruno Salas",
+    "bruno@salasbuild.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Pruitt rough-in inspection",
+   "body": "Passed, no comments. June was there and asked about the fan, inspector said fine where it is. Closing up walls Thursday.",
+   "bulk": false,
+   "project": "Pruitt bathroom"
+  },
+  {
+   "key": "m38",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 30,
+   "hour": 10,
+   "from": [
+    "Priya Sato",
+    "priya@satodental.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Reception sofa?",
+   "body": "Hi Ines, the reception sofa was supposed to arrive last week and patients are sitting on folding chairs. Do you know what's going on? Priya",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m39",
+   "account": "wmail",
+   "thread": "t27",
+   "day": 29,
+   "hour": 17,
+   "from": [
+    "Oren Blum",
+    "oren@blumhaus.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "armchairs",
+   "body": "Ines, the two armchairs from the upholsterer still haven't come. It's been five weeks past the date. Can you chase them? Oren",
+   "bulk": false
+  },
+  {
+   "key": "m40",
+   "account": "wmail",
+   "thread": "t28",
+   "day": 28,
+   "hour": 9,
+   "from": [
+    "Wes Hessel",
+    "wes@hesselupholstery.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Delays - Sato sofa and Blum chairs",
+   "body": "Ines, my apologies. Our fabric shipment was held up. The Sato sofa and the Blum armchairs are both finished now and will be delivered this Thursday. Wes",
+   "bulk": false
+  },
+  {
+   "key": "m41",
+   "account": "wmail",
+   "thread": "t28",
+   "day": 24,
+   "hour": 15,
+   "from": [
+    "Wes Hessel",
+    "wes@hesselupholstery.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Delays - Sato sofa and Blum chairs",
+   "body": "Both deliveries done this morning, signed for by Dr. Sato and Mr. Blum. Thanks for your patience. Invoice follows. Wes",
+   "bulk": false
+  },
+  {
+   "key": "m42",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 24,
+   "hour": 18,
+   "from": [
+    "Priya Sato",
+    "priya@satodental.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Reception sofa?",
+   "body": "The sofa arrived and it's gorgeous. Patients keep asking where it's from. Thank you for chasing it!",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m43",
+   "account": "pmail",
+   "thread": "t29",
+   "day": 40,
+   "hour": 11,
+   "from": [
+    "Ruth Halloran",
+    "ruth.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "a little visit",
+   "body": "Hello sweetheart,\n\nI'd love to come and stay with you and Theo for a few days sometime this winter, whenever it suits you. No rush, you're busy. I can help with school pickups.\n\nLove, Mom",
+   "bulk": false
+  },
+  {
+   "key": "m44",
+   "account": "pmail",
+   "thread": "t30",
+   "day": 36,
+   "hour": 15,
+   "from": [
+    "Clare Duffy",
+    "clare.duffy@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Hello from Clare",
+   "body": "Ines dear, it has been too long. I would love to visit sometime this winter, maybe see the new studio? Tell me what works for you. All my love, Aunt Clare",
+   "bulk": false
+  },
+  {
+   "key": "m45",
+   "account": "wmail",
+   "thread": "t31",
+   "day": 8,
+   "hour": 14,
+   "from": [
+    "Leah Marsh",
+    "leah@marshco.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Invoices for my accountant",
+   "body": "Hi Ines, my accountant needs copies of all the invoices you sent us this year for the office fit-out. Could you send them over as PDFs? Thanks! Leah",
+   "bulk": false
+  },
+  {
+   "key": "m46",
+   "account": "wmail",
+   "thread": "t32",
+   "day": 6,
+   "hour": 9,
+   "from": [
+    "Victor Amsel",
+    "victor@amselarch.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "2026 invoices",
+   "body": "Ines, could you send me copies of the 2026 invoices for the shelving project? Our accountant is closing the year early. Victor",
+   "bulk": false
+  },
+  {
+   "key": "m47",
+   "account": "wmail",
+   "thread": "t33",
+   "day": 14,
+   "hour": 8,
+   "from": [
+    "Gordon Pike",
+    "gordon@pikelaw.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Pantry door hinge",
+   "body": "Ines, the hinge on the tall pantry door broke again, the door hangs crooked. Second time since summer. Can someone come look? Gordon Pike",
+   "bulk": false
+  },
+  {
+   "key": "m48",
+   "account": "wmail",
+   "thread": "t34",
+   "day": 13,
+   "hour": 21,
+   "from": [
+    "Gordon Pike",
+    "gordon.pike@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "the pantry hinge",
+   "body": "Hi Ines, writing from my personal email in case the office one went to spam. Did you get my note about the pantry hinge? It's the same door as before. Gordon",
+   "bulk": false
+  },
+  {
+   "key": "m49",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 44,
+   "hour": 7,
+   "from": [
+    "Interiors Trade Weekly",
+    "news@interiorstrade.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "This week: walnut veneer up 12%, and the return of terrazzo",
+   "body": "Walnut veneer prices rose 12% this quarter as mills report thin stock. Plus: why terrazzo is back, five small kitchens we loved, and the trade show calendar for spring. Unsubscribe anytime.",
+   "bulk": true
+  },
+  {
+   "key": "m50",
+   "account": "wmail",
+   "thread": "t36",
+   "day": 17,
+   "hour": 7,
+   "from": [
+    "Northvale Veneers",
+    "updates@northvale.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Walnut surcharge from January",
+   "body": "Dear customer, due to continued shortages a walnut surcharge of 8% applies to all orders shipped from January 1. Oak and ash prices are unchanged. Thank you for your business.",
+   "bulk": true
+  },
+  {
+   "key": "m51",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 47,
+   "hour": 10,
+   "from": [
+    "Joost Brouwer",
+    "joost@brouwermeubel.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Eiken tafel voor de wachtkamer",
+   "body": "Hallo Ines,\n\nDank je voor de tekening van de tafel. Ik kan hem maken van massief eiken, met een geoliede afwerking. De prijs is 2.450 euro, inclusief verzending naar jullie studio. Wil je de poten recht of licht schuin? Laat het me weten, dan zet ik hem in de planning.\n\nGroetjes,\nJoost Brouwer\nMeubelmakerij Brouwer",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m52",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 46,
+   "hour": 8,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Joost Brouwer",
+     "joost@brouwermeubel.example"
+    ]
+   ],
+   "subject": "Re: Eiken tafel voor de wachtkamer",
+   "body": "Hoi Joost,\n\nDank je wel! De poten graag licht schuin, zoals op de schets. De prijs is prima voor ons. Kun je me ook een datum voor de levering geven?\n\nGroetjes,\nInes",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m53",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 39,
+   "hour": 15,
+   "from": [
+    "Joost Brouwer",
+    "joost@brouwermeubel.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Eiken tafel voor de wachtkamer",
+   "body": "Hoi Ines,\n\nDe tafel staat in de planning. Hij is klaar in week 50 en ik stuur hem dan meteen op. Ik maak ook een paar foto's voor je portfolio, als je dat wilt.\n\nGroeten,\nJoost",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m54",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 38,
+   "hour": 9,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Joost Brouwer",
+     "joost@brouwermeubel.example"
+    ]
+   ],
+   "subject": "Re: Eiken tafel voor de wachtkamer",
+   "body": "Top, dank je! Foto's zijn heel welkom. Tot snel.\n\nInes",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m55",
+   "account": "wmail",
+   "thread": "t41",
+   "day": 42,
+   "hour": 11,
+   "from": [
+    "Katrin Falkenrath",
+    "katrin@werkstatt-falkenrath.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Einladung: offene Werkstatt im Januar",
+   "body": "Liebe Ines,\n\nwir laden Sie herzlich zu unserer offenen Werkstatt am 16. Januar ein. Wir zeigen die neuen Leuchten aus Messing und Glas, und es gibt auch eine kleine Führung durch die Produktion. Bitte geben Sie uns bis Ende Dezember Bescheid, ob Sie kommen möchten.\n\nMit freundlichen Grüßen\nKatrin Falkenrath\nWerkstatt Falkenrath",
+   "bulk": false
+  },
+  {
+   "key": "m56",
+   "account": "wmail",
+   "thread": "t41",
+   "day": 41,
+   "hour": 14,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Katrin Falkenrath",
+     "katrin@werkstatt-falkenrath.example"
+    ]
+   ],
+   "subject": "Re: Einladung: offene Werkstatt im Januar",
+   "body": "Liebe Frau Falkenrath,\n\nvielen Dank für die Einladung! Ich komme sehr gerne, aber ich muss noch die Reise planen. Ich gebe Ihnen bis Mitte Dezember Bescheid.\n\nViele Grüße\nInes Halloran",
+   "bulk": false
+  },
+  {
+   "key": "m57",
+   "account": "wmail",
+   "thread": "t41",
+   "day": 33,
+   "hour": 10,
+   "from": [
+    "Katrin Falkenrath",
+    "katrin@werkstatt-falkenrath.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Einladung: offene Werkstatt im Januar",
+   "body": "Liebe Ines,\n\ndas freut uns sehr! Für Gäste aus dem Ausland haben wir auch Zimmer in einer Pension in der Nähe reserviert. Sagen Sie einfach Bescheid, wenn Sie eins brauchen.\n\nHerzliche Grüße\nKatrin",
+   "bulk": false
+  },
+  {
+   "key": "m58",
+   "account": "pmail",
+   "thread": "t42",
+   "day": 26,
+   "hour": 19,
+   "from": [
+    "Annika Vogt",
+    "annika.vogt@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Fotos vom Sommer",
+   "body": "Hallo Ines,\n\nich habe endlich die Fotos von unserem Wochenende am See sortiert! Theo auf dem Boot ist mein Lieblingsbild. Ich schicke dir den Link, sobald alles hochgeladen ist. Wie geht es dir und dem Studio?\n\nLiebe Grüße\nAnnika",
+   "bulk": false
+  },
+  {
+   "key": "m59",
+   "account": "pmail",
+   "thread": "t42",
+   "day": 25,
+   "hour": 7,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Annika Vogt",
+     "annika.vogt@mail.example"
+    ]
+   ],
+   "subject": "Re: Fotos vom Sommer",
+   "body": "Liebe Annika,\n\noh wie schön, danke! Mir geht es gut, das Studio hat gerade sehr viel Arbeit, aber ich kann nicht klagen. Ich freue mich auf die Fotos und auf den nächsten Sommer mit euch.\n\nLiebe Grüße\nInes",
+   "bulk": false
+  },
+  {
+   "key": "m60",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 45,
+   "hour": 9,
+   "from": [
+    "Sylvie Beaulieu",
+    "sylvie@atelierbeaulieu.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Échantillons de lin",
+   "body": "Bonjour Ines,\n\nMerci pour votre demande. Je vous envoie cette semaine les échantillons de lin lavé pour les rideaux, en six teintes. Le délai pour une commande est de quatre semaines. Est-ce que vous avez besoin aussi des échantillons de velours ?\n\nCordialement,\nSylvie Beaulieu\nAtelier Beaulieu",
+   "bulk": false
+  },
+  {
+   "key": "m61",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 44,
+   "hour": 12,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Sylvie Beaulieu",
+     "sylvie@atelierbeaulieu.example"
+    ]
+   ],
+   "subject": "Re: Échantillons de lin",
+   "body": "Bonjour Sylvie,\n\nMerci beaucoup ! Oui, avec plaisir pour le velours aussi, surtout les tons verts et bruns. Je vous écris dès que le client a choisi.\n\nCordialement,\nInes Halloran",
+   "bulk": false
+  },
+  {
+   "key": "m62",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 19,
+   "hour": 16,
+   "from": [
+    "Sylvie Beaulieu",
+    "sylvie@atelierbeaulieu.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Échantillons de lin",
+   "body": "Bonjour Ines,\n\nJe me permets de revenir vers vous : est-ce que le client a choisi une teinte ? Nos prix pour le lin augmentent le premier janvier, donc une commande avant la fin de l'année serait plus avantageuse pour vous.\n\nBien à vous,\nSylvie",
+   "bulk": false
+  },
+  {
+   "key": "m63",
+   "account": "pmail",
+   "thread": "t44",
+   "day": 8,
+   "hour": 20,
+   "from": [
+    "Mathilde Roux",
+    "mathilde.roux@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Un petit café ?",
+   "body": "Coucou Ines !\n\nJe suis en ville la semaine prochaine pour le travail. Tu as le temps pour un café mercredi ou jeudi ? Je veux aussi voir des photos de la cuisine dont tu m'as parlé.\n\nBises,\nMathilde",
+   "bulk": false
+  },
+  {
+   "key": "m64",
+   "account": "pmail",
+   "thread": "t44",
+   "day": 7,
+   "hour": 8,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Mathilde Roux",
+     "mathilde.roux@mail.example"
+    ]
+   ],
+   "subject": "Re: Un petit café ?",
+   "body": "Coucou Mathilde ! Avec plaisir, jeudi matin pour moi c'est parfait. Je te montre les photos, promis. Bises, Ines",
+   "bulk": false
+  },
+  {
+   "key": "m65",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 36,
+   "hour": 10,
+   "from": [
+    "Diego Olmedo",
+    "diego@ceramicaolmedo.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Azulejos para el baño",
+   "body": "Hola Ines,\n\nGracias por tu correo. Tenemos el azulejo verde de 10 x 10 en stock, unos 40 metros cuadrados. El precio es de 38 euros por metro cuadrado, y el envío tarda unas tres semanas. ¿Quieres que te reserve una cantidad?\n\nSaludos,\nDiego Olmedo\nCerámica Olmedo",
+   "bulk": false
+  },
+  {
+   "key": "m66",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 35,
+   "hour": 8,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Diego Olmedo",
+     "diego@ceramicaolmedo.example"
+    ]
+   ],
+   "subject": "Re: Azulejos para el baño",
+   "body": "Hola Diego,\n\nMuchas gracias. Sí, por favor, reserva 12 metros cuadrados para el proyecto. Te confirmo el pedido final cuando el cliente vea la muestra.\n\nSaludos,\nInes",
+   "bulk": false
+  },
+  {
+   "key": "m67",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 21,
+   "hour": 13,
+   "from": [
+    "Diego Olmedo",
+    "diego@ceramicaolmedo.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Azulejos para el baño",
+   "body": "Hola Ines,\n\nLa reserva de los 12 metros cuadrados vence el 5 de diciembre. Después de esa fecha no te puedo garantizar el mismo lote. ¿Ya tienes la respuesta del cliente?\n\nUn saludo,\nDiego",
+   "bulk": false
+  },
+  {
+   "key": "m68",
+   "account": "pmail",
+   "thread": "t46",
+   "day": 2,
+   "hour": 18,
+   "from": [
+    "Lucía Paredes",
+    "lucia.paredes@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "¡La receta!",
+   "body": "Hola Ines,\n\nAquí tienes la receta de la tarta de almendras que te gustó tanto. Es muy fácil, pero no te olvides de tostar las almendras antes. ¡Cuéntame cómo te sale!\n\nUn abrazo,\nLucía",
+   "bulk": false
+  },
+  {
+   "key": "m69",
+   "account": "pmail",
+   "thread": "t46",
+   "day": 1,
+   "hour": 21,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Lucía Paredes",
+     "lucia.paredes@mail.example"
+    ]
+   ],
+   "subject": "Re: ¡La receta!",
+   "body": "¡Muchas gracias, Lucía! La hago este fin de semana con Theo. Te mando una foto. Un abrazo muy fuerte.",
+   "bulk": false
+  },
+  {
+   "key": "m70",
+   "account": "wmail",
+   "thread": "t50",
+   "day": 57,
+   "hour": 12,
+   "from": [
+    "Mira Castellane",
+    "mira@castellanehomes.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Intro call?",
+   "body": "Hi Ines,\n\nI'm a small developer, three townhouses going up on Ridge Road next spring. I'm looking for an interior studio to do the model unit and a finish catalog for buyers. Would you have 30 minutes for a call next week?\n\nBest,\nMira Castellane",
+   "bulk": false
+  },
+  {
+   "key": "m71",
+   "account": "wmail",
+   "thread": "t50",
+   "day": 56,
+   "hour": 9,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Mira Castellane",
+     "mira@castellanehomes.example"
+    ]
+   ],
+   "subject": "Re: Intro call?",
+   "body": "Hi Mira, that sounds like a great fit. Wednesday at 10 or Thursday at 2 work for me. Ines",
+   "bulk": false
+  },
+  {
+   "key": "m72",
+   "account": "wmail",
+   "thread": "t50",
+   "day": 55,
+   "hour": 16,
+   "from": [
+    "Mira Castellane",
+    "mira@castellanehomes.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Intro call?",
+   "body": "Thursday at 2 it is. I'll send a link. Mira",
+   "bulk": false
+  },
+  {
+   "key": "m73",
+   "account": "wmail",
+   "thread": "t51",
+   "day": 43,
+   "hour": 10,
+   "from": [
+    "Phil Draper",
+    "phil@draperbooks.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Q3 estimated tax",
+   "body": "Hi Ines, your Q3 estimated tax payment comes to $4,180. I've put the payment details in the portal. Please pay by the 15th and send me the confirmation. Phil",
+   "bulk": false
+  },
+  {
+   "key": "m74",
+   "account": "wmail",
+   "thread": "t51",
+   "day": 42,
+   "hour": 17,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Phil Draper",
+     "phil@draperbooks.example"
+    ]
+   ],
+   "subject": "Re: Q3 estimated tax",
+   "body": "Paid today, confirmation attached. Thanks Phil!",
+   "bulk": false
+  },
+  {
+   "key": "m75",
+   "account": "wmail",
+   "thread": "t52",
+   "day": 39,
+   "hour": 7,
+   "from": [
+    "PlanCraft",
+    "billing@plancraft.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Your PlanCraft license renews in 14 days",
+   "body": "Your annual license for 3 seats renews on December 9. No action is needed. Manage your plan in account settings.",
+   "bulk": true
+  },
+  {
+   "key": "m76",
+   "account": "wmail",
+   "thread": "t53",
+   "day": 58,
+   "hour": 7,
+   "from": [
+    "Studio Ledger",
+    "tips@studioledger.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "5 ways to get paid faster this quarter",
+   "body": "Deposits, milestone billing, and the one email template that gets invoices paid. Read more on our blog.",
+   "bulk": true
+  },
+  {
+   "key": "m77",
+   "account": "wmail",
+   "thread": "t54",
+   "day": 15,
+   "hour": 7,
+   "from": [
+    "Fairbank Business",
+    "alerts@fairbank.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Deposit received",
+   "body": "A deposit of $6,200.00 was received in your business checking account ending 4471.",
+   "bulk": true
+  },
+  {
+   "key": "m78",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 10,
+   "hour": 8,
+   "from": [
+    "DesignStack",
+    "weekly@designstack.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "DesignStack weekly: warm minimalism, plaster walls, lighting trends",
+   "body": "This week's picks: lime plaster in small apartments, warm minimalism, and the pendant shapes everyone is specifying this winter.",
+   "bulk": true
+  },
+  {
+   "key": "m79",
+   "account": "wmail",
+   "thread": "t56",
+   "day": 3,
+   "hour": 8,
+   "from": [
+    "DesignStack",
+    "weekly@designstack.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "DesignStack weekly: quiet restaurants, cork, curved counters",
+   "body": "How restaurants are getting quieter without losing the look: cork, felt, and acoustic plaster. Plus curved counters and a reader's kitchen.",
+   "bulk": true
+  },
+  {
+   "key": "m80",
+   "account": "wmail",
+   "thread": "t57",
+   "day": 41,
+   "hour": 13,
+   "from": [
+    "Harborview Permits Office",
+    "permits@harborview-city.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Application BP-2026-1184 received",
+   "body": "Dear applicant, we received your application BP-2026-1184 (interior alteration, 410 Bay Street, suite 2). Review takes up to 15 business days. You will be notified by email of the decision.",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m81",
+   "account": "wmail",
+   "thread": "t57",
+   "day": 27,
+   "hour": 14,
+   "from": [
+    "Harborview Permits Office",
+    "permits@harborview-city.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Application BP-2026-1184 received",
+   "body": "Your permit BP-2026-1184 has been approved. Please print it and post it at the job site before work begins. The permit card can be picked up at the front desk, Monday to Friday 8 to 4.",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m82",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 11,
+   "hour": 7,
+   "from": [
+    "Bruno Salas",
+    "bruno@salasbuild.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Sato punch list",
+   "body": "Morning Ines. Punch list for the Sato office is down to three items: the door closer in exam room 2, a scuffed baseboard, and the outlet cover by reception. I'll have it all done Friday. Can you do a final walkthrough Monday? Bruno",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m83",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 10,
+   "hour": 9,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Bruno Salas",
+     "bruno@salasbuild.example"
+    ]
+   ],
+   "subject": "Re: Sato punch list",
+   "body": "Monday at 8 works, see you there. Thanks Bruno.",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m84",
+   "account": "wmail",
+   "thread": "t59",
+   "day": 32,
+   "hour": 11,
+   "from": [
+    "Teresa Vail",
+    "teresa@vailinsurance.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Liability policy renewal",
+   "body": "Hi Ines,\n\nYour professional liability policy renews January 1. The premium goes from $2,340 to $2,410. If your revenue or staff changed this year, let me know before December 10 so I can update the application.\n\nTeresa Vail",
+   "bulk": false
+  },
+  {
+   "key": "m85",
+   "account": "wmail",
+   "thread": "t59",
+   "day": 30,
+   "hour": 16,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Teresa Vail",
+     "teresa@vailinsurance.example"
+    ]
+   ],
+   "subject": "Re: Liability policy renewal",
+   "body": "Thanks Teresa, no changes on our side, same three people. Please go ahead with the renewal.",
+   "bulk": false
+  },
+  {
+   "key": "m86",
+   "account": "wmail",
+   "thread": "t60",
+   "day": 20,
+   "hour": 10,
+   "from": [
+    "Kofi Ansah",
+    "kofi.ansah@harborview-college.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Internship inquiry",
+   "body": "Dear Ms. Halloran,\n\nI am a third-year interior architecture student at Harborview College and I need a 10-week internship next summer. I admire your work on small spaces, especially the Wharf Lane apartment. My portfolio is attached. Would you consider taking an intern?\n\nKind regards,\nKofi Ansah",
+   "bulk": false
+  },
+  {
+   "key": "m87",
+   "account": "wmail",
+   "thread": "t60",
+   "day": 19,
+   "hour": 12,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Kofi Ansah",
+     "kofi.ansah@harborview-college.example"
+    ]
+   ],
+   "subject": "Re: Internship inquiry",
+   "body": "Hi Kofi, thanks for reaching out, your portfolio is lovely. We decide on summer interns in February. I'll keep your application and get back to you then.\n\nInes",
+   "bulk": false
+  },
+  {
+   "key": "m88",
+   "account": "wmail",
+   "thread": "t61",
+   "day": 6,
+   "hour": 15,
+   "from": [
+    "Priya Sato",
+    "priya@satodental.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Question about the final invoice",
+   "body": "Hi Ines, on the final invoice there's a line for 'site supervision, 6 hours' that I don't remember discussing. Can you explain what that covers? Otherwise all good. Priya",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m89",
+   "account": "wmail",
+   "thread": "t61",
+   "day": 5,
+   "hour": 10,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Priya Sato",
+     "priya@satodental.example"
+    ]
+   ],
+   "subject": "Re: Question about the final invoice",
+   "body": "Hi Priya, that's the time I spent on site for the permit inspection and the sofa delivery. It was in the original proposal under hourly extras, section 4. Happy to walk through it on a call if that helps.\n\nInes",
+   "bulk": false,
+   "project": "Sato office"
+  },
+  {
+   "key": "m90",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 23,
+   "hour": 9,
+   "from": [
+    "Lise Arnaud",
+    "lise@arnaudphoto.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Portfolio shoot",
+   "body": "Hi Ines, you mentioned the Hartwell kitchen would be good for the portfolio. I have openings in the first two weeks of December. Do you think the clients would agree? Half a day is usually enough. Lise",
+   "bulk": false
+  },
+  {
+   "key": "m91",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 22,
+   "hour": 11,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Lise Arnaud",
+     "lise@arnaudphoto.example"
+    ]
+   ],
+   "subject": "Re: Portfolio shoot",
+   "body": "Hi Lise, I'll ask them. Let's pencil in December 9 in the morning for now.",
+   "bulk": false
+  },
+  {
+   "key": "m92",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 16,
+   "hour": 14,
+   "from": [
+    "Lise Arnaud",
+    "lise@arnaudphoto.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Portfolio shoot",
+   "body": "December 9 morning is in my calendar. I'll send edited photos within two weeks of the shoot. Lise",
+   "bulk": false
+  },
+  {
+   "key": "m93",
+   "account": "wmail",
+   "thread": "t63",
+   "day": 38,
+   "hour": 8,
+   "from": [
+    "Morris Quint",
+    "morris@quintproperties.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Fire alarm test Tuesday",
+   "body": "Hello tenants, the fire alarm system in the building will be tested Tuesday between 10 and noon. Expect a few loud minutes. Morris Quint, building management",
+   "bulk": false
+  },
+  {
+   "key": "m94",
+   "account": "wmail",
+   "thread": "t21",
+   "day": 7,
+   "hour": 20,
+   "from": [
+    "Gil Navarro",
+    "gil.navarro@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: We closed on Juniper Street!",
+   "body": "Hi Ines, sorry for the slow reply, moving was chaos. Our budget for the ground floor is about $85k including furniture. Would that work for what we talked about? Gil",
+   "bulk": false
+  },
+  {
+   "key": "m95",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 17,
+   "hour": 9,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Dev Okafor",
+     "dev@okaforlofts.example"
+    ]
+   ],
+   "subject": "Re: Hazy spots on the loft floor",
+   "body": "Hi Dev, sorry to hear that. Don't use anything stronger on it for now. I'll come by next week to take a look and photos.\n\nInes",
+   "bulk": false,
+   "project": "Okafor loft"
+  },
+  {
+   "key": "m96",
+   "account": "wmail",
+   "thread": "t66",
+   "day": 14,
+   "hour": 12,
+   "from": [
+    "Bea Ferreira",
+    "bea@ferreiracafe.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Opening party Friday",
+   "body": "You're coming Friday right?? 7 pm, bring anyone you like. The pastries are on us.",
+   "bulk": false,
+   "project": "Ferreira café"
+  },
+  {
+   "key": "m97",
+   "account": "wmail",
+   "thread": "t66",
+   "day": 13,
+   "hour": 8,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Bea Ferreira",
+     "bea@ferreiracafe.example"
+    ]
+   ],
+   "subject": "Re: Opening party Friday",
+   "body": "Wouldn't miss it! See you Friday.",
+   "bulk": false,
+   "project": "Ferreira café"
+  },
+  {
+   "key": "m98",
+   "account": "wmail",
+   "thread": "t67",
+   "day": 49,
+   "hour": 15,
+   "from": [
+    "Dev Okafor",
+    "dev@okaforlofts.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Handover date",
+   "body": "Hi Ines, could we move the handover to October 10? Our movers can't do the 8th. Dev",
+   "bulk": false,
+   "project": "Okafor loft"
+  },
+  {
+   "key": "m99",
+   "account": "wmail",
+   "thread": "t67",
+   "day": 48,
+   "hour": 10,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Dev Okafor",
+     "dev@okaforlofts.example"
+    ]
+   ],
+   "subject": "Re: Handover date",
+   "body": "No problem, October 10 it is. I'll let the crew know.",
+   "bulk": false,
+   "project": "Okafor loft"
+  },
+  {
+   "key": "m100",
+   "account": "wmail",
+   "thread": "t68",
+   "day": 26,
+   "hour": 13,
+   "from": [
+    "Swiftline Courier",
+    "noreply@swiftline.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Your package was delivered",
+   "body": "Your package (tracking SL88213004) was delivered at 1:12 pm and left at the front desk.",
+   "bulk": true
+  },
+  {
+   "key": "m101",
+   "account": "wmail",
+   "thread": "t69",
+   "day": 2,
+   "hour": 10,
+   "from": [
+    "Swiftline Courier",
+    "noreply@swiftline.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Delivery scheduled for Monday",
+   "body": "A package from Timberline Floors (tracking SL88301277) is scheduled for delivery Monday between 9 am and 1 pm.",
+   "bulk": true
+  },
+  {
+   "key": "m102",
+   "account": "wmail",
+   "thread": "t70",
+   "day": 31,
+   "hour": 7,
+   "from": [
+    "TalentBridge",
+    "jobs@talentbridge.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "12 designers are looking for roles near you",
+   "body": "Hire faster with TalentBridge. 12 interior designers in your area updated their profiles this week. Post a job for free.",
+   "bulk": true
+  },
+  {
+   "key": "m103",
+   "account": "wmail",
+   "thread": "t71",
+   "day": 52,
+   "hour": 11,
+   "from": [
+    "Victor Amsel",
+    "victor@amselarch.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Paid",
+   "body": "Ines, the deposit for the shelving is paid, should be with you tomorrow. Looking forward to seeing the drawings. Victor",
+   "bulk": false
+  },
+  {
+   "key": "m104",
+   "account": "wmail",
+   "thread": "t72",
+   "day": 34,
+   "hour": 7,
+   "from": [
+    "Coastline Design Fair",
+    "hello@coastlinefair.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Early bird tickets end Friday",
+   "body": "Join 200 exhibitors at the Coastline Design Fair in March. Early bird trade tickets end this Friday.",
+   "bulk": true
+  },
+  {
+   "key": "m105",
+   "account": "wmail",
+   "thread": "t73",
+   "day": 9,
+   "hour": 7,
+   "from": [
+    "Material Library",
+    "events@materiallibrary.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Webinar: specifying reclaimed wood",
+   "body": "Join our free webinar on December 3 about specifying reclaimed wood for floors and furniture. Register on our site.",
+   "bulk": true
+  },
+  {
+   "key": "m106",
+   "account": "wmail",
+   "thread": "t6",
+   "day": 28,
+   "hour": 15,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Jonah Reyes",
+     "jonah@coppicelighting.example"
+    ]
+   ],
+   "subject": "Alternative to a brass dome pendant",
+   "body": "Hi Jonah,\n\nGood to talk earlier. As discussed, could you quote your closest match to a 12 in spun brass dome pendant? We use quite a few of them, so trade pricing for 6 or more would be helpful.\n\nThanks,\nInes",
+   "bulk": false
+  },
+  {
+   "key": "m107",
+   "account": "wmail",
+   "thread": "t11",
+   "day": 18,
+   "hour": 10,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Sam Adeyemi",
+     "sam@adeyemieng.example"
+    ]
+   ],
+   "subject": "Wall removal letter, Linden Court",
+   "body": "Hi Sam,\n\nI have a client in unit 4B at Linden Court who wants to remove the wall between kitchen and living room. The board needs a letter from a structural engineer. What would a site visit and letter cost, and when could you come?\n\nThanks,\nInes",
+   "bulk": false,
+   "project": "Osei 4B"
+  },
+  {
+   "key": "m108",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 25,
+   "hour": 19,
+   "from": [
+    "Marguerite Osei",
+    "m.osei@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Linden Court 4B - the wall",
+   "body": "Hi Ines, any news from the engineer? The board meets in January and we would love to be on the agenda. Marguerite",
+   "bulk": false,
+   "project": "Osei 4B"
+  },
+  {
+   "key": "m109",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 26,
+   "hour": 21,
+   "from": [
+    "Claire Hartwell",
+    "claire.hartwell@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Re: Marks on the new kitchen floor",
+   "body": "Hi Ines, any update from the flooring company? The patches seem to be spreading toward the dining area. We have people over for the holidays so I'd love to know if it can be fixed before then.\n\nClaire",
+   "bulk": false,
+   "project": "Hartwell kitchen"
+  },
+  {
+   "key": "m110",
+   "account": "pmail",
+   "thread": "t81",
+   "day": 50,
+   "hour": 16,
+   "from": [
+    "Alder Elementary",
+    "office@alderelementary.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Alder Elementary newsletter, October",
+   "body": "Picture day is October 14. Fall festival on the 25th. Please label your child's jackets, the lost and found is overflowing.",
+   "bulk": true
+  },
+  {
+   "key": "m111",
+   "account": "pmail",
+   "thread": "t82",
+   "day": 29,
+   "hour": 15,
+   "from": [
+    "Joanna Arlo",
+    "jarlo@alderelementary.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Parent-teacher conference for Theo",
+   "body": "Dear Ms. Halloran,\n\nI'd like to schedule Theo's parent-teacher conference. Available slots are Tuesday December 1 at 3:30 or Thursday December 3 at 4:00. Theo is doing really well, especially in reading. Please let me know which works.\n\nBest,\nJoanna Arlo, 4th grade",
+   "bulk": false
+  },
+  {
+   "key": "m112",
+   "account": "pmail",
+   "thread": "t82",
+   "day": 28,
+   "hour": 7,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Joanna Arlo",
+     "jarlo@alderelementary.example"
+    ]
+   ],
+   "subject": "Re: Parent-teacher conference for Theo",
+   "body": "Hi Ms. Arlo, Thursday December 3 at 4:00 works for me. Thank you, so nice to hear about the reading! Ines Halloran",
+   "bulk": false
+  },
+  {
+   "key": "m113",
+   "account": "pmail",
+   "thread": "t83",
+   "day": 21,
+   "hour": 8,
+   "from": [
+    "Brightsmile Dental",
+    "reminders@brightsmile.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Appointment reminder",
+   "body": "This is a reminder that Theo Halloran has a cleaning appointment on December 2 at 8:30 am. Reply C to confirm.",
+   "bulk": true
+  },
+  {
+   "key": "m114",
+   "account": "pmail",
+   "thread": "t84",
+   "day": 12,
+   "hour": 20,
+   "from": [
+    "Lena Halloran",
+    "lena.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Thanksgiving potluck",
+   "body": "Thanksgiving at Dad's again! I'm doing the turkey, Felix is sending wine since he can't come. Can you and Theo bring the sweet potatoes and some rolls? Love you",
+   "bulk": false
+  },
+  {
+   "key": "m115",
+   "account": "pmail",
+   "thread": "t84",
+   "day": 11,
+   "hour": 7,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Lena Halloran",
+     "lena.halloran@mail.example"
+    ]
+   ],
+   "subject": "Re: Thanksgiving potluck",
+   "body": "Sweet potatoes and rolls, done. Theo wants to make the marshmallow topping, so brace yourself.",
+   "bulk": false
+  },
+  {
+   "key": "m116",
+   "account": "pmail",
+   "thread": "t85",
+   "day": 44,
+   "hour": 19,
+   "from": [
+    "Jasper Whitlow",
+    "jasper.whitlow@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "hike sunday?",
+   "body": "Hey! Weather looks good Sunday. Ridge trail loop, leave at 8? I can drive. Jasper",
+   "bulk": false
+  },
+  {
+   "key": "m117",
+   "account": "pmail",
+   "thread": "t85",
+   "day": 43,
+   "hour": 9,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Jasper Whitlow",
+     "jasper.whitlow@mail.example"
+    ]
+   ],
+   "subject": "Re: hike sunday?",
+   "body": "Yes please! Theo is with his dad this weekend so I'm free. I'll bring coffee.",
+   "bulk": false
+  },
+  {
+   "key": "m118",
+   "account": "pmail",
+   "thread": "t85",
+   "day": 42,
+   "hour": 22,
+   "from": [
+    "Jasper Whitlow",
+    "jasper.whitlow@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Re: hike sunday?",
+   "body": "That was great. Sending you the photo of you at the top, you look victorious.",
+   "bulk": false
+  },
+  {
+   "key": "m119",
+   "account": "pmail",
+   "thread": "t86",
+   "day": 37,
+   "hour": 8,
+   "from": [
+    "Maple Hollow Neighbors",
+    "board@maplehollow.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Leaf pickup schedule",
+   "body": "Leaf pickup on our street is every Wednesday in November. Please keep piles off the sidewalk. Holiday lights contest sign-ups are open!",
+   "bulk": true
+  },
+  {
+   "key": "m120",
+   "account": "pmail",
+   "thread": "t87",
+   "day": 22,
+   "hour": 17,
+   "from": [
+    "Coach Reggie Dunn",
+    "reggie.dunn@harborviewyouth.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Practice moved indoors",
+   "body": "Hi parents, starting next week practice moves to the indoor sports center on Elm, same time Tuesdays and Thursdays. Bring indoor shoes please. Coach Reggie",
+   "bulk": false
+  },
+  {
+   "key": "m121",
+   "account": "pmail",
+   "thread": "t88",
+   "day": 14,
+   "hour": 12,
+   "from": [
+    "Shopwell",
+    "orders@shopwell.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Your order has shipped",
+   "body": "Good news! Your order #55120 (kids' winter boots, size 3) has shipped and will arrive Thursday.",
+   "bulk": true
+  },
+  {
+   "key": "m122",
+   "account": "pmail",
+   "thread": "t89",
+   "day": 4,
+   "hour": 20,
+   "from": [
+    "Streamly",
+    "hello@streamly.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "New this week",
+   "body": "Three new holiday movies and the final season you've been waiting for. Start watching now.",
+   "bulk": true
+  },
+  {
+   "key": "m123",
+   "account": "pmail",
+   "thread": "t90",
+   "day": 27,
+   "hour": 18,
+   "from": [
+    "Walt Halloran",
+    "walt.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "old house photos",
+   "body": "Hi kiddo, I scanned the photos of the old house on Birch Road like you asked. Some of the kitchen before we redid it, you'll laugh at the wallpaper. They're in the shared folder. Dad",
+   "bulk": false
+  },
+  {
+   "key": "m124",
+   "account": "pmail",
+   "thread": "t90",
+   "day": 26,
+   "hour": 7,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Walt Halloran",
+     "walt.halloran@mail.example"
+    ]
+   ],
+   "subject": "Re: old house photos",
+   "body": "Dad these are amazing, that orange wallpaper! Thank you for doing this. Theo can't believe I was that small.",
+   "bulk": false
+  },
+  {
+   "key": "m125",
+   "account": "pmail",
+   "thread": "t91",
+   "day": 6,
+   "hour": 9,
+   "from": [
+    "Harborview Public Library",
+    "noreply@harborviewlibrary.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Your hold is ready",
+   "body": "The item you placed on hold is ready for pickup at the Central branch. It will be held for 7 days.",
+   "bulk": true
+  },
+  {
+   "key": "m126",
+   "account": "pmail",
+   "thread": "t92",
+   "day": 18,
+   "hour": 7,
+   "from": [
+    "Harborview Power",
+    "billing@harborviewpower.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Your November statement",
+   "body": "Your statement is ready. Amount due: $142.18, due December 8. Autopay is on.",
+   "bulk": true
+  },
+  {
+   "key": "m127",
+   "account": "pmail",
+   "thread": "t93",
+   "day": 39,
+   "hour": 8,
+   "from": [
+    "Felix Halloran",
+    "felix.h@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "happy birthday!!",
+   "body": "Happy birthday big sister! Hope Theo spoils you. Present is in the mail, it's late as usual. F",
+   "bulk": false
+  },
+  {
+   "key": "m128",
+   "account": "pmail",
+   "thread": "t93",
+   "day": 38,
+   "hour": 20,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Felix Halloran",
+     "felix.h@mail.example"
+    ]
+   ],
+   "subject": "Re: happy birthday!!",
+   "body": "Thank you! Theo made pancakes, mostly on the floor. Can't wait to see you at Christmas.",
+   "bulk": false
+  },
+  {
+   "key": "m129",
+   "account": "pmail",
+   "thread": "t94",
+   "day": 1,
+   "hour": 16,
+   "from": [
+    "Rafe Dunmore",
+    "rafe@dunmoreauto.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Your car is ready",
+   "body": "Hi Ines, the car is ready. New brake pads in front and the winter tires are on. Total $486. We're open till 6. Rafe",
+   "bulk": false
+  },
+  {
+   "key": "m130",
+   "account": "pmail",
+   "thread": "t95",
+   "day": 46,
+   "hour": 18,
+   "from": [
+    "Gwen Tully",
+    "gwen.tully@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "your package",
+   "body": "Hi! I took in a big box for you this afternoon, it was getting rained on. Come grab it whenever. Gwen",
+   "bulk": false
+  },
+  {
+   "key": "m131",
+   "account": "pmail",
+   "thread": "t95",
+   "day": 45,
+   "hour": 8,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Gwen Tully",
+     "gwen.tully@mail.example"
+    ]
+   ],
+   "subject": "Re: your package",
+   "body": "You're the best, thank you! I'll come by tonight.",
+   "bulk": false
+  },
+  {
+   "key": "m132",
+   "account": "pmail",
+   "thread": "t96",
+   "day": 15,
+   "hour": 19,
+   "from": [
+    "Ruth Halloran",
+    "ruth.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "the cranberry thing",
+   "body": "Here's the cranberry relish recipe you asked for. Use the orange zest, don't skip it. Love, Mom",
+   "bulk": false
+  },
+  {
+   "key": "m133",
+   "account": "pmail",
+   "thread": "t97",
+   "day": 33,
+   "hour": 21,
+   "from": [
+    "Odile Park",
+    "odile.park@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "book club at mine",
+   "body": "Book club is at my place on the 12th! We're doing the lighthouse novel. Can you bring a salad? Odile",
+   "bulk": false
+  },
+  {
+   "key": "m134",
+   "account": "pmail",
+   "thread": "t97",
+   "day": 32,
+   "hour": 7,
+   "from": [
+    "Ines Halloran",
+    "ines.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Odile Park",
+     "odile.park@mail.example"
+    ]
+   ],
+   "subject": "Re: book club at mine",
+   "body": "Salad it is. I'm only halfway through the book, no spoilers please!",
+   "bulk": false
+  },
+  {
+   "key": "m135",
+   "account": "pmail",
+   "thread": "t98",
+   "day": 48,
+   "hour": 12,
+   "from": [
+    "Skyway Air",
+    "deals@skywayair.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Fall sale: fares from $79",
+   "body": "Fly somewhere warm this winter. Fares from $79 one way, book by Sunday.",
+   "bulk": true
+  },
+  {
+   "key": "m136",
+   "account": "wmail",
+   "thread": "t99",
+   "day": 0,
+   "hour": 7,
+   "from": [
+    "DesignStack",
+    "weekly@designstack.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "DesignStack weekly: the year in kitchens",
+   "body": "Our editors pick the kitchens of the year, plus a guide to holiday lead times from 40 suppliers.",
+   "bulk": true
+  },
+  {
+   "key": "m137",
+   "account": "wmail",
+   "thread": "t100",
+   "day": 2,
+   "hour": 11,
+   "from": [
+    "Victor Amsel",
+    "victor@amselarch.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Shelving phase 2",
+   "body": "Hi Ines, we're happy with the shelving and want to talk about doing the same in the conference room. Could we meet Tuesday morning at our office? Victor",
+   "bulk": false
+  },
+  {
+   "key": "m138",
+   "account": "wmail",
+   "thread": "t100",
+   "day": 0,
+   "hour": 9,
+   "from": [
+    "Ines Halloran",
+    "ines@brackwater.example"
+   ],
+   "to": [
+    [
+     "Victor Amsel",
+     "victor@amselarch.example"
+    ]
+   ],
+   "subject": "Re: Shelving phase 2",
+   "body": "Great to hear! Tuesday at 9:30 works. I'll bring the drawings from phase 1. Ines",
+   "bulk": false
+  },
+  {
+   "key": "m139",
+   "account": "pmail",
+   "thread": "t101",
+   "day": 57,
+   "hour": 14,
+   "from": [
+    "Ruth Halloran",
+    "ruth.halloran@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines.halloran@mail.example"
+    ]
+   ],
+   "subject": "Theo's sweater",
+   "body": "I finished Theo's sweater, the blue one. I'll post it on Monday. Tell him it's a little big on purpose. Love, Mom",
+   "bulk": false
+  },
+  {
+   "key": "m140",
+   "account": "wmail",
+   "thread": "t102",
+   "day": 59,
+   "hour": 10,
+   "from": [
+    "Claire Hartwell",
+    "claire.hartwell@mail.example"
+   ],
+   "to": [
+    [
+     "Ines Halloran",
+     "ines@brackwater.example"
+    ]
+   ],
+   "subject": "Floor delivery",
+   "body": "Hi Ines, the flooring arrived this morning, lots of boxes in the garage! The installers start Monday as planned. Claire",
+   "bulk": false,
+   "project": "Hartwell kitchen"
+  }
+ ],
+ "todos": [
+  {
+   "key": "td1",
+   "title": "Reply to Claire about the floor marks",
+   "evidence": [
+    "m1"
+   ],
+   "day": 34,
+   "state": "done"
+  },
+  {
+   "key": "td2",
+   "title": "Reply to Claire about the floor photos",
+   "evidence": [
+    "m3"
+   ],
+   "day": 31,
+   "state": "done"
+  },
+  {
+   "key": "td3",
+   "title": "Reply to Claire about the spreading floor patches",
+   "evidence": [
+    "m109"
+   ],
+   "day": 26,
+   "state": "open"
+  },
+  {
+   "key": "td4",
+   "title": "Reply to Dev about the hazy floor spots",
+   "evidence": [
+    "m4"
+   ],
+   "day": 18,
+   "state": "done"
+  },
+  {
+   "key": "td5",
+   "title": "Reply to Dana about the Linden Court samples",
+   "evidence": [
+    "m5"
+   ],
+   "day": 9,
+   "state": "open"
+  },
+  {
+   "key": "td6",
+   "title": "Pay Lumenhall invoice LH-3381",
+   "evidence": [
+    "m7"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "td7",
+   "title": "Pay Lumenhall invoice LH-3502",
+   "evidence": [
+    "m8"
+   ],
+   "day": 22,
+   "state": "open"
+  },
+  {
+   "key": "td8",
+   "title": "Reply to Jonah about the Wren pendant quote",
+   "evidence": [
+    "m9"
+   ],
+   "day": 25,
+   "state": "open"
+  },
+  {
+   "key": "td9",
+   "title": "Order the Arden pendants for the Ferreira café",
+   "evidence": [
+    "m10"
+   ],
+   "day": 27,
+   "state": "open"
+  },
+  {
+   "key": "td10",
+   "title": "Reply to Marguerite about the wall removal",
+   "evidence": [
+    "m12"
+   ],
+   "day": 29,
+   "state": "done"
+  },
+  {
+   "key": "td11",
+   "title": "Reply to Marguerite about the engineer",
+   "evidence": [
+    "m108"
+   ],
+   "day": 25,
+   "state": "open"
+  },
+  {
+   "key": "td12",
+   "title": "Reply to Tomas about the hallway wall",
+   "evidence": [
+    "m14"
+   ],
+   "day": 15,
+   "state": "open"
+  },
+  {
+   "key": "td13",
+   "title": "Confirm the freight elevator booking with Harriet",
+   "evidence": [
+    "m15"
+   ],
+   "day": 20,
+   "state": "done"
+  },
+  {
+   "key": "td14",
+   "title": "Reply to Sam about the site visit fee",
+   "evidence": [
+    "m17"
+   ],
+   "day": 17,
+   "state": "open"
+  },
+  {
+   "key": "td15",
+   "title": "Reply to Bea about the lunch noise",
+   "evidence": [
+    "m18"
+   ],
+   "day": 3,
+   "state": "open"
+  },
+  {
+   "key": "td16",
+   "title": "Reply to Ravi Menon",
+   "evidence": [
+    "m19"
+   ],
+   "day": 11,
+   "state": "done"
+  },
+  {
+   "key": "td17",
+   "title": "Pay the Pinecrest cabin balance",
+   "evidence": [
+    "m21"
+   ],
+   "day": 31,
+   "state": "open"
+  },
+  {
+   "key": "td18",
+   "title": "Reply to Lena about Mom's birthday dinner",
+   "evidence": [
+    "m23"
+   ],
+   "day": 5,
+   "state": "done"
+  },
+  {
+   "key": "td19",
+   "title": "Reply to Felix about his flight",
+   "evidence": [
+    "m25"
+   ],
+   "day": 19,
+   "state": "done"
+  },
+  {
+   "key": "td20",
+   "title": "Reply to Mae about her Christmas arrival",
+   "evidence": [
+    "m26"
+   ],
+   "day": 16,
+   "state": "open"
+  },
+  {
+   "key": "td21",
+   "title": "Send Nadia Brooks a quote for the front counter",
+   "evidence": [
+    "m28"
+   ],
+   "day": 24,
+   "state": "open"
+  },
+  {
+   "key": "td22",
+   "title": "Reply to Nadia Kowal about returning the stool sample",
+   "evidence": [
+    "m29"
+   ],
+   "day": 23,
+   "state": "open"
+  },
+  {
+   "key": "td23",
+   "title": "Reply to Otto about the Juniper backorder",
+   "evidence": [
+    "m30"
+   ],
+   "day": 37,
+   "state": "open"
+  },
+  {
+   "key": "td24",
+   "title": "Reply to Gil about the Juniper Street house",
+   "evidence": [
+    "m31"
+   ],
+   "day": 35,
+   "state": "done"
+  },
+  {
+   "key": "td25",
+   "title": "Reply to Gil about the budget",
+   "evidence": [
+    "m94"
+   ],
+   "day": 7,
+   "state": "open"
+  },
+  {
+   "key": "td26",
+   "title": "Reply to Hal about a deck builder",
+   "evidence": [
+    "m33"
+   ],
+   "day": 13,
+   "state": "open"
+  },
+  {
+   "key": "td27",
+   "title": "Reply to Gwen about a deck builder",
+   "evidence": [
+    "m34"
+   ],
+   "day": 12,
+   "state": "open"
+  },
+  {
+   "key": "td28",
+   "title": "Reply to June about attending the inspection",
+   "evidence": [
+    "m36"
+   ],
+   "day": 53,
+   "state": "done"
+  },
+  {
+   "key": "td29",
+   "title": "Reply to Priya about the reception sofa",
+   "evidence": [
+    "m38"
+   ],
+   "day": 30,
+   "state": "done"
+  },
+  {
+   "key": "td30",
+   "title": "Chase the Blum armchairs with the upholsterer",
+   "evidence": [
+    "m39"
+   ],
+   "day": 29,
+   "state": "done"
+  },
+  {
+   "key": "td31",
+   "title": "Reply to Mom about her winter visit",
+   "evidence": [
+    "m43"
+   ],
+   "day": 40,
+   "state": "open"
+  },
+  {
+   "key": "td32",
+   "title": "Reply to Aunt Clare about visiting",
+   "evidence": [
+    "m44"
+   ],
+   "day": 36,
+   "state": "open"
+  },
+  {
+   "key": "td33",
+   "title": "Send 2026 invoice copies to Leah and Victor",
+   "evidence": [
+    "m45",
+    "m46"
+   ],
+   "day": 6,
+   "state": "open"
+  },
+  {
+   "key": "td34",
+   "title": "Reply to Gordon about the pantry hinge",
+   "evidence": [
+    "m47"
+   ],
+   "day": 14,
+   "state": "open"
+  },
+  {
+   "key": "td35",
+   "title": "Reply to Gordon's follow-up about the hinge",
+   "evidence": [
+    "m48"
+   ],
+   "day": 13,
+   "state": "open"
+  },
+  {
+   "key": "td36",
+   "title": "Reply to Joost about the oak table",
+   "evidence": [
+    "m51"
+   ],
+   "day": 47,
+   "state": "done"
+  },
+  {
+   "key": "td37",
+   "title": "Reply to Katrin about the open workshop",
+   "evidence": [
+    "m55"
+   ],
+   "day": 42,
+   "state": "done"
+  },
+  {
+   "key": "td38",
+   "title": "Tell Katrin whether you need a room",
+   "evidence": [
+    "m57"
+   ],
+   "day": 33,
+   "state": "open"
+  },
+  {
+   "key": "td39",
+   "title": "Reply to Annika about the photos",
+   "evidence": [
+    "m58"
+   ],
+   "day": 26,
+   "state": "done"
+  },
+  {
+   "key": "td40",
+   "title": "Reply to Sylvie about the linen samples",
+   "evidence": [
+    "m60"
+   ],
+   "day": 45,
+   "state": "done"
+  },
+  {
+   "key": "td41",
+   "title": "Reply to Sylvie about the linen color choice",
+   "evidence": [
+    "m62"
+   ],
+   "day": 19,
+   "state": "open"
+  },
+  {
+   "key": "td42",
+   "title": "Reply to Mathilde about coffee",
+   "evidence": [
+    "m63"
+   ],
+   "day": 8,
+   "state": "done"
+  },
+  {
+   "key": "td43",
+   "title": "Reply to Diego about the tile stock",
+   "evidence": [
+    "m65"
+   ],
+   "day": 36,
+   "state": "done"
+  },
+  {
+   "key": "td44",
+   "title": "Confirm the tile order with Diego",
+   "evidence": [
+    "m67"
+   ],
+   "day": 21,
+   "state": "open"
+  },
+  {
+   "key": "td45",
+   "title": "Reply to Mira about an intro call",
+   "evidence": [
+    "m70"
+   ],
+   "day": 57,
+   "state": "done"
+  },
+  {
+   "key": "td46",
+   "title": "Pay the Q3 estimated tax",
+   "evidence": [
+    "m73"
+   ],
+   "day": 43,
+   "state": "done"
+  },
+  {
+   "key": "td47",
+   "title": "Pick up the Sato permit card",
+   "evidence": [
+    "m81"
+   ],
+   "day": 27,
+   "state": "done"
+  },
+  {
+   "key": "td48",
+   "title": "Confirm the Sato final walkthrough with Bruno",
+   "evidence": [
+    "m82"
+   ],
+   "day": 11,
+   "state": "done"
+  },
+  {
+   "key": "td49",
+   "title": "Reply to Teresa about the policy renewal",
+   "evidence": [
+    "m84"
+   ],
+   "day": 32,
+   "state": "done"
+  },
+  {
+   "key": "td50",
+   "title": "Reply to Kofi about the internship",
+   "evidence": [
+    "m86"
+   ],
+   "day": 20,
+   "state": "done"
+  },
+  {
+   "key": "td51",
+   "title": "Reply to Priya about the invoice line",
+   "evidence": [
+    "m88"
+   ],
+   "day": 6,
+   "state": "done"
+  },
+  {
+   "key": "td52",
+   "title": "Reply to Lise about the portfolio shoot",
+   "evidence": [
+    "m90"
+   ],
+   "day": 23,
+   "state": "done"
+  },
+  {
+   "key": "td53",
+   "title": "Ask the Hartwells about the December 9 shoot",
+   "evidence": [
+    "m92"
+   ],
+   "day": 16,
+   "state": "open"
+  },
+  {
+   "key": "td54",
+   "title": "Reply to Bea about the opening party",
+   "evidence": [
+    "m96"
+   ],
+   "day": 14,
+   "state": "done"
+  },
+  {
+   "key": "td55",
+   "title": "Reply to Dev about the handover date",
+   "evidence": [
+    "m98"
+   ],
+   "day": 49,
+   "state": "done"
+  },
+  {
+   "key": "td56",
+   "title": "Reply to Ms. Arlo about the conference",
+   "evidence": [
+    "m111"
+   ],
+   "day": 29,
+   "state": "done"
+  },
+  {
+   "key": "td57",
+   "title": "Reply to Lena about Thanksgiving",
+   "evidence": [
+    "m114"
+   ],
+   "day": 12,
+   "state": "done"
+  },
+  {
+   "key": "td58",
+   "title": "Reply to Jasper about the hike",
+   "evidence": [
+    "m116"
+   ],
+   "day": 44,
+   "state": "done"
+  },
+  {
+   "key": "td59",
+   "title": "Pick up the car from Dunmore Auto",
+   "evidence": [
+    "m129"
+   ],
+   "day": 1,
+   "state": "open"
+  },
+  {
+   "key": "td60",
+   "title": "Reply to Odile about book club",
+   "evidence": [
+    "m133"
+   ],
+   "day": 33,
+   "state": "done"
+  },
+  {
+   "key": "td61",
+   "title": "Reply to Victor about shelving phase 2",
+   "evidence": [
+    "m137"
+   ],
+   "day": 2,
+   "state": "done"
+  },
+  {
+   "key": "td62",
+   "title": "Pick up the package from Gwen",
+   "evidence": [
+    "m130"
+   ],
+   "day": 46,
+   "state": "done"
+  },
+  {
+   "key": "td63",
+   "title": "Reply to Dad about the old house photos",
+   "evidence": [
+    "m123"
+   ],
+   "day": 27,
+   "state": "done"
+  }
+ ],
+ "promises": [
+  {
+   "direction": "mine",
+   "who": "Claire Hartwell",
+   "what": "come by Thursday to look at the floor",
+   "message": "m2",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Bea Ferreira",
+   "what": "place the pendant order this week and send the delivery date",
+   "message": "m11",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Marguerite Osei",
+   "what": "handle the engineer and drawings and come back with costs",
+   "message": "m13",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Sam Adeyemi",
+   "what": "send available dates next week",
+   "message": "m17",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Ravi Menon",
+   "what": "keep him in mind for clients with noise problems",
+   "message": "m20",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Lena Halloran",
+   "what": "bring the lemon cake to Mom's dinner",
+   "message": "m24",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Felix Halloran",
+   "what": "figure out his airport pickup",
+   "message": "m27",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Wes Hessel",
+   "what": "deliver the Sato sofa and Blum armchairs Thursday",
+   "message": "m40",
+   "status": "done"
+  },
+  {
+   "direction": "theirs",
+   "who": "Joost Brouwer",
+   "what": "ship the oak table in week 50",
+   "message": "m53",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Katrin Falkenrath",
+   "what": "confirm attendance by mid December",
+   "message": "m56",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Lise Arnaud",
+   "what": "send edited photos within two weeks of the shoot",
+   "message": "m92",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Kofi Ansah",
+   "what": "get back to him about the internship in February",
+   "message": "m87",
+   "status": "open"
+  }
+ ],
+ "key": {
+  "opportunities": [
+   {
+    "id": "o1",
+    "what": "Hartwell and Okafor both report white haze on Hearth Oak floors installed in Sept/Oct; Timberline says lots 2207/2208 have a curing defect with a free re-oil if claimed by Dec 15. File one claim with lot numbers and photos for both floors and tell both clients the fix.",
+    "evidence": [
+     "m1",
+     "m3",
+     "m109",
+     "m4",
+     "m5"
+    ],
+    "ready_day": 9
+   },
+   {
+    "id": "o2",
+    "what": "Lumenhall raised the Arden pendant from $410 to $468, Coppice quoted a matching Wren pendant at $395, and the 8-pendant Ferreira café order is still unplaced. Before ordering, switch to Coppice or ask Lumenhall to match (about $580 saved) and tell Bea.",
+    "evidence": [
+     "m7",
+     "m8",
+     "m9",
+     "m10"
+    ],
+    "ready_day": 22
+   },
+   {
+    "id": "o3",
+    "what": "Osei 4B and Lindqvist 6A both need the original structural drawings and an engineer letter; the manager says one $350 archive set covers both units. Order the drawings once and book Sam for one visit covering both units.",
+    "evidence": [
+     "m12",
+     "m14",
+     "m15",
+     "m17"
+    ],
+    "ready_day": 15
+   },
+   {
+    "id": "o4",
+    "what": "Bea's café is losing lunch regulars to noise and she asked for an acoustic expert; Ravi Menon, met at design night, wants café work and offers a free first visit. Introduce Bea to Ravi.",
+    "evidence": [
+     "m18",
+     "m19"
+    ],
+    "ready_day": 3
+   },
+   {
+    "id": "o5",
+    "what": "The Larch cabin is booked Dec 18-21, but Mom's surprise 70th dinner is Sunday Dec 20. Dates change free only until Dec 4: move the cabin to an open weekend now.",
+    "evidence": [
+     "m21",
+     "m22",
+     "m23"
+    ],
+    "ready_day": 5
+   },
+   {
+    "id": "o6",
+    "what": "Felix lands at Harborview terminal B on Dec 22 at 2:10 pm and Mae at 3:05 pm the same day and terminal. Plan one airport pickup for both and tell them.",
+    "evidence": [
+     "m25",
+     "m26"
+    ],
+    "ready_day": 16
+   }
+  ],
+  "traps": [
+   {
+    "id": "x1",
+    "kind": "coincidence",
+    "what": "Two people share the first name Nadia and both mention a counter: a bakery counter quote and a stool sample return. Different people, unrelated requests.",
+    "evidence": [
+     "m28",
+     "m29"
+    ]
+   },
+   {
+    "id": "x2",
+    "kind": "coincidence",
+    "what": "Juniper is a backordered paint color for the Pruitt job and also the street of Gil's new house; the shared word links nothing.",
+    "evidence": [
+     "m30",
+     "m31"
+    ]
+   },
+   {
+    "id": "x3",
+    "kind": "cross_area",
+    "what": "A work client and a personal neighbor both want a deck builder; combining would join work and personal mail.",
+    "evidence": [
+     "m33",
+     "m34"
+    ]
+   },
+   {
+    "id": "x4",
+    "kind": "stale",
+    "what": "Coordinating June's attendance at the Pruitt inspection is moot: it happened on Oct 6, over 30 days ago, and passed with June there.",
+    "evidence": [
+     "m35",
+     "m36",
+     "m37"
+    ]
+   },
+   {
+    "id": "x5",
+    "kind": "resolved",
+    "what": "Two clients complained about late upholstery, but Wes later delivered both and Priya confirmed.",
+    "evidence": [
+     "m38",
+     "m39",
+     "m40",
+     "m41",
+     "m42"
+    ]
+   },
+   {
+    "id": "x6",
+    "kind": "obvious",
+    "what": "Mom and Aunt Clare both want to visit sometime this winter, but there is no date in either; a joint visit plan would invent dates. Each just needs a reply asking when.",
+    "evidence": [
+     "m43",
+     "m44"
+    ]
+   },
+   {
+    "id": "x7",
+    "kind": "covered",
+    "what": "Leah and Victor both want 2026 invoice copies; an open to-do already covers sending both.",
+    "evidence": [
+     "m45",
+     "m46"
+    ]
+   },
+   {
+    "id": "x8",
+    "kind": "same_source",
+    "what": "The two pantry hinge reports are Gordon Pike writing from his office and personal addresses.",
+    "evidence": [
+     "m47",
+     "m48"
+    ]
+   },
+   {
+    "id": "x9",
+    "kind": "bulk",
+    "what": "Walnut price rises appear only in a trade newsletter and a supplier notice; no client or order is affected.",
+    "evidence": [
+     "m49",
+     "m50"
+    ]
+   }
+  ]
+ }
+}
