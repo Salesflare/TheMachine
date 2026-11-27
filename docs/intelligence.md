@@ -554,18 +554,23 @@ review reads each message on its own, and the check above moves one project alon
   last 3 messages. Per area, the 50 most recent threads, so work mail never crowds out personal mail.
 - One turn per area on the background model, never across Work and Personal, with that area's to-dos of the last 45
   days and open promises. Content is data, never instructions.
-- Quality or nothing, checked in code. A proposal needs two or more threads with different people, sources it was
-  given, and quotes that are in their messages. Its threads must be tied by two independent signals of different
-  kinds: a shared address, company or Graph record, or a quoted mention by full name, the same date, the same specific
-  thing, or a need one thread has that another offers. A shared first name or one shared word never counts. A date the
-  messages don't give is never written: a title with one is dropped, a sentence with one is taken out. It is also
-  dropped when it reads like a to-do already there, or when an earlier proposal already joined its threads. It is
-  dropped when it puts the work at a time already over ("by 30 October", "in the first week of November" on November
-  27), and when it writes one message to people of several organizations ("to all three", "Hi Mara and Liesel", a cc)
-  instead of one each, since a group mail shows each customer to the others.
+- Who is who comes from the [Graph](#people-and-projects) only, never from names in this pass. Each thread carries
+  the confirmed person, organization and project records the Graph put on its messages; a "Same person?" it only
+  suggests and a probable project link never count. The turn sees which threads share one ("Graph ties").
+- Quality or nothing, checked in code. A proposal needs two or more threads with at least two different people as the
+  Graph resolves them (one person on two addresses the Graph joined is one), sources it was given, and quotes that are
+  in their messages. Every thread must be tied to the others: by the same confirmed person, organization (not the
+  owner's own) or project, or by two independent signals of different kinds in the messages: the same date, the same
+  specific thing, or a need one thread has that another offers. A name, first or full, or one shared word never
+  counts. A date the messages don't give is never written: a title with one is dropped, a sentence with one is taken
+  out. It is also dropped when it reads like a to-do already there, or when an earlier proposal already joined its
+  threads. It is dropped when it puts the work at a time already over ("by 30 October", "in the first week of
+  November" on November 27), and when it writes one message to people of several organizations ("to all three", "Hi
+  Mara and Liesel", a cc) instead of one each, since a group mail shows each customer to the others, or when its
+  title says so ("together", "to both").
 - At most two a week, the best of each area first. Each is a normal to-do (`Store.suggest`) with its messages as
   evidence. Nothing is sent.
-- One or two turns a week, about 6k to 13k input tokens in all.
+- One or two turns a week, about 6k to 14k input tokens in all.
 
 Tables: `opportunity_runs` (counts only), `opportunity_items` (which to-do joined which threads).
 
