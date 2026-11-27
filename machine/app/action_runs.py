@@ -131,7 +131,7 @@ class ActionRunsApp:
                 self.feedback_prompt_step()
                 deliver(self.store, self.config)
                 self.notify_step()
-                ai_signin.step(self)  # a Claude sign-in that ended: told once on the phone and in Telegram
+                ai_signin.step(self)  # a Claude sign-in that ends soon or ended: told once (phone, Telegram, email)
                 self.digest_step()
                 self.evening_step()
                 app_clear_step(self.store, self.config)  # notifications on phones for what no longer waits

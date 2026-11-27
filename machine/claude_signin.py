@@ -6,7 +6,7 @@ A Claude sign-in ends on a fixed day: Claude Code keeps the end its sign-in got,
 and after it Claude Code asks for /login again. Until its next refresh fails it still says loggedIn, so a reading past
 its end counts as signed out. Two hosted Machines lost theirs about four weeks after signing in, and every review
 failed for hours with nothing on the dashboard (2026-11): Needs you says it now (machine/app/status.py needs_you), three
-days ahead too, and a lapse is told once on the phone and in Telegram (machine/app/ai_signin.py).
+days ahead too, and a lapse is told once on the phone, in Telegram and by email (machine/app/ai_signin.py).
 
 A sign-in can also end before that day: its refresh fails ("OAuth session expired and could not be refreshed"), and
 `claude auth status` still says loggedIn with the old end, since it only looks for a token (2026-11-27). So when the AI's

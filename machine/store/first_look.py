@@ -163,9 +163,10 @@ def note_review_pause(db, name, at, detail):
     db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)', (name, at, json.dumps(detail, sort_keys=True)))
 
 
-def note_ai_signin_told(db, at, lapse):
-    """The Claude sign-in lapse that was told on the phone and in Telegram (machine/app/ai_signin.py), so it's told once."""
-    db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)', ('claude_signin_told', at, json.dumps({'lapse': lapse})))
+def note_ai_signin_told(db, at, lapse, mailed=None):
+    """The Claude sign-in lapse that was told on the phone and in Telegram, and the sign-in that was emailed
+    (machine/app/ai_signin.py), so each is told once."""
+    db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)', ('claude_signin_told', at, json.dumps({'lapse': lapse, 'mailed': mailed})))
 
 
 def first_magic_done(db):

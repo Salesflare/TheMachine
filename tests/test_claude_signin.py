@@ -1,5 +1,5 @@
 """A Claude sign-in that ended (machine/claude_signin.py): read without blocking the poll, said on Needs you with the
-one step that signs in again, and told once on the phone and in Telegram (machine/app/ai_signin.py)."""
+one step that signs in again, and told once on the phone, in Telegram and by email (machine/app/ai_signin.py)."""
 import datetime as dt
 import json
 from pathlib import Path
@@ -205,7 +205,8 @@ class ToldOnce(unittest.TestCase):
                            'telegram_owner': '1', 'database': str(Path(folder.name, 'a.sqlite'))}
         self.app.store = assistant.Store(self.app.config['database'])
         self.app.notify_on.return_value = True
-        self.pushes, self.telegrams = [], []
+        self.app.notify_mail_target.return_value = ('https://cp.example/api/fleet', 'token')
+        self.pushes, self.telegrams, self.mails = [], [], []
         reach = mock.patch.object(ai_signin, 'push_reach', return_value=([{'endpoint': 'x'}], 1))
         reach.start()
         self.addCleanup(reach.stop)
@@ -213,17 +214,59 @@ class ToldOnce(unittest.TestCase):
 
     def step(self, when=None):
         return ai_signin.step(self.app, when or self.noon, push=lambda *a, **k: self.pushes.append((a, k)) or [{'status': 201}],
-                              telegram=lambda config, message: self.telegrams.append(message))
+                              telegram=lambda config, message: self.telegrams.append(message),
+                              mail=lambda *a, **k: self.mails.append((a, k)) or True)
 
-    def test_a_lapse_is_told_once_on_the_phone_and_in_telegram(self):
+    def test_a_lapse_is_told_once_on_the_phone_in_telegram_and_by_email(self):
         claude_signin.read(self.app.config, status_run(ends=-60))
-        self.assertEqual(self.step(), ['push', 'telegram'])
+        self.assertEqual(self.step(), ['push', 'telegram', 'email'])
         payload = self.pushes[0][0][3]
         self.assertEqual((payload['title'], payload['url']), ('Claude is signed out', 'https://app.example.com/setup#model'))
         self.assertEqual(self.pushes[0][1]['kind'], 'result')
         self.assertEqual(self.telegrams[0]['buttons'], [[{'text': 'Sign in again', 'url': 'https://app.example.com/setup#model'}]])
+        (url, token, subject, text), kw = self.mails[0]
+        self.assertEqual((url, token, subject), ('https://cp.example/api/fleet', 'token', 'Claude is signed out'))
+        self.assertEqual(text, 'Claude is signed out\n\nSign in again to keep things running.\n\n'
+                               'Sign in again: https://app.example.com/setup#model')
+        self.assertRegex(kw['delivery'], r'^[0-9a-f]{32}$')  # the control plane sends it once, whatever happens to its answer
         self.assertEqual(self.step(), [])
-        self.assertEqual((len(self.pushes), len(self.telegrams)), (1, 1))
+        self.assertEqual((len(self.pushes), len(self.telegrams), len(self.mails)), (1, 1, 1))
+
+    def test_one_email_three_days_ahead_and_none_again_when_it_ends(self):
+        noon = self.noon.timestamp() - NOW  # the ends below are from the step's noon
+        claude_signin.read(self.app.config, status_run(ends=noon + 30 * 3600))
+        self.assertEqual(self.step(), ['email'])  # ahead: only the email (and Needs you), no phone or Telegram yet
+        (_, _, subject, text), kw = self.mails[0]
+        self.assertEqual(subject, 'Your Claude sign-in ends tomorrow.')
+        self.assertEqual(text, 'Your Claude sign-in ends tomorrow.\n\nSign in again to keep things running.\n\n'
+                               'Sign in again: https://app.example.com/setup#model')
+        self.assertEqual(self.step(), [])
+        claude_signin.reset()
+        with mock.patch.object(claude_signin.time, 'time', return_value=NOW + noon + 30 * 3600 + 60):  # the same sign-in, past its end
+            found = claude_signin.read(self.app.config, status_run(ends=noon + 30 * 3600))
+        self.assertFalse(found['signed_in'])
+        self.assertEqual(self.step(), ['push', 'telegram'])  # told on the phone and in Telegram, the email not again
+        self.assertEqual(len(self.mails), 1)
+        claude_signin.reset()
+        claude_signin.read(self.app.config, status_run(ends=noon + 2 * 86400 + 12 * 3600))  # signed in again, and that one ends too
+        self.assertEqual(self.step(), ['email'])
+        self.assertEqual(self.mails[-1][0][2], 'Your Claude sign-in ends in 2 days.')
+        self.assertNotEqual(self.mails[-1][1]['delivery'], self.mails[0][1]['delivery'])
+
+    def test_email_follows_the_owners_choice_and_needs_a_way_to_mail(self):
+        self.app.notify_on.side_effect = lambda kind, channel: channel != 'email'
+        claude_signin.read(self.app.config, status_run(ends=30 * 3600))
+        self.assertEqual(self.step(), [])
+        self.app.notify_on.side_effect = None
+        self.app.notify_mail_target.return_value = None  # self-hosted, not paired: no mailer to hand it to
+        self.assertEqual(self.step(), [])
+        self.assertEqual(self.mails, [])
+
+    def test_a_machine_without_its_setup_page_links_its_dashboard(self):
+        self.app.config.update(manage_url='', dashboard_host='machine.example.com')
+        claude_signin.read(self.app.config, status_run(ends=-60))
+        self.step()
+        self.assertTrue(self.mails[0][0][3].endswith('\n\nOpen The Machine: https://machine.example.com/'))
 
     def test_nothing_while_signed_in_and_a_lapse_waits_for_work_hours(self):
         claude_signin.read(self.app.config, status_run())
@@ -231,12 +274,12 @@ class ToldOnce(unittest.TestCase):
         claude_signin.reset()
         claude_signin.read(self.app.config, status_run(ends=-60))
         self.assertEqual(self.step(self.noon.replace(hour=3)), [])
-        self.assertEqual(self.step(), ['push', 'telegram'])
+        self.assertEqual(self.step(), ['push', 'telegram', 'email'])
 
     def test_telegram_follows_the_owners_choice(self):
-        self.app.notify_on.return_value = False
+        self.app.notify_on.side_effect = lambda kind, channel: channel != 'telegram'
         claude_signin.read(self.app.config, status_run(ends=-60))
-        self.assertEqual(self.step(), ['push'])
+        self.assertEqual(self.step(), ['push', 'email'])
 
 
 if __name__ == '__main__':
