@@ -455,7 +455,7 @@ STORE_PARTS = {'machine/store/cards.py', 'machine/store/core.py', 'machine/store
                'machine/store/facts.py', 'machine/store/first_look.py', 'machine/store/machine_cards.py', 'machine/store/profile.py', 'machine/store/promises.py',
                'machine/store/review.py', 'machine/store/views.py', 'machine/store/voices.py', 'machine/store/whats_new.py',
                'machine/store/done_milestones.py', 'machine/store/outcomes.py', 'machine/store/review_whys.py', 'machine/store/todo_moves.py', 'machine/store/send_later.py',
-               'machine/store/done_checks.py', 'machine/main.py'}  # Store and App themselves, out of assistant.py
+               'machine/store/done_checks.py', 'machine/store/result_checks.py', 'machine/main.py'}  # Store and App themselves, out of assistant.py
 
 
 @functools.lru_cache(maxsize=None)

@@ -1,6 +1,7 @@
 """Done checks (machine/store/done_checks.py): a to-do waiting for a result a public page will show reads that page when
 its time to chase comes, before it comes back to the owner. Shown: it closes by itself with Undo. Not there, unread or
-moved on meanwhile: it comes back as before, never closed on a guess. Made-up data; fake page reads; nothing is sent."""
+moved on meanwhile: it comes back as before, never closed on a guess. Shown is checked against what was agreed first
+(test_result_checks.py); here that turn says it matches. Made-up data; fake page reads; nothing is sent."""
 import datetime as dt
 import json
 import unittest
@@ -19,6 +20,7 @@ RESULT = 'partner.example/best-crm-tools lists Example CRM'
 CHECK = {'url': URL, 'expect': ['Example CRM']}
 LIVE = ['Best CRM tools', 'Other CRM: for teams', 'Example CRM: for small teams']
 BEFORE = ['Best CRM tools', 'Other CRM: for teams']
+MATCHES = {'state': 'matches', 'checked': 'with the description you sent'}
 
 
 def later(stamp, **delta):
@@ -27,7 +29,7 @@ def later(stamp, **delta):
 
 class DoneChecks(unittest.TestCase):
     row, decide, shown_body = to.Outcomes.row, to.Outcomes.decide, to.Outcomes.shown_body
-    app, suggestion, send = to.Outcomes.app, to.Outcomes.suggestion, to.Outcomes.send
+    app, suggestion, send, checked = to.Outcomes.app, to.Outcomes.suggestion, to.Outcomes.send, to.Outcomes.checked
 
     def setUp(self):
         to.Outcomes.setUp(self)
@@ -65,7 +67,8 @@ class DoneChecks(unittest.TestCase):
         kept, reads, back = self.step(later(until, minutes=1), LIVE)
         self.assertEqual((kept, reads, back), (None, [], 1))
 
-    def step(self, at, lines=None, error=None):
+    def step(self, at, lines=None, error=None, answer=MATCHES):
+        """One done-check step at `at`; a page that shows the words is then checked (a stand-in turn), then return_waiting."""
         reads = []
 
         def read(url):
@@ -76,6 +79,8 @@ class DoneChecks(unittest.TestCase):
         app = self.app()
         with patch_everywhere(timeutil, 'now', return_value=at):
             kept = app.done_check_step(read=read)
+            if kept == 'checking':
+                kept = self.checked(answer)
             with self.store.connect() as db:
                 back = return_waiting(db)
         return kept, reads, back
@@ -227,11 +232,13 @@ class DoneChecks(unittest.TestCase):
             db.execute('BEGIN IMMEDIATE')
             job = done_checks.claim(db, at)[0]
         with self.store.connect() as db:
-            self.assertEqual(done_checks.settle(db, job, 'met', at, fingerprint='f'), 'closed')
+            self.assertEqual(done_checks.settle(db, job, 'met', at, fingerprint='f'), 'checking')
         with self.store.connect() as db:  # the same result kept twice (a retried write): nothing more
             self.assertIsNone(done_checks.settle(db, job, 'met', at, fingerprint='f'))
+        with patch_everywhere(timeutil, 'now', return_value=at):
+            self.assertEqual(self.checked(MATCHES), 'closed')
         body = self.suggestion()['body']
-        self.assertEqual(self.shown_body(), f'Done: {RESULT}.')  # the card says the result, not the wait it was in
+        self.assertEqual(self.shown_body(), f'Done: {RESULT}, with the description you sent.')  # the card says the result, not the wait it was in
         self.assertEqual(self.suggestion()['body'], body)  # only shown: its own text stays
         with patch_everywhere(timeutil, 'now', return_value=later(at, hours=1)):
             self.decide('undo', 'undo-1')  # the owner says it isn't done

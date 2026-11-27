@@ -57,7 +57,7 @@ def set_done_when(db, suggestion_id, text, by):
         return False
     if (row['done_when'] or '') == text:
         return False
-    db.execute('UPDATE suggestions SET done_when=?,done_when_by=?,done_check=NULL WHERE id=?', (text or None, by if text else None, suggestion_id))
+    db.execute('UPDATE suggestions SET done_when=?,done_when_by=?,done_check=NULL,result_check=NULL WHERE id=?', (text or None, by if text else None, suggestion_id))
     _follow_waiting(db, suggestion_id, row['done_when'], text)
     return True
 
@@ -101,7 +101,7 @@ def wait_for_result(db, row, who, stamp, decision_id=None, source='assistant'):
     Waiting on others, nothing drafted left on it, and comes back to chase them at until. Its chat says what it waits for."""
     waiting_on = ' '.join(str(who or '').split())[:200] or row['done_when'][:200]
     until = until_for(row)
-    db.execute("UPDATE suggestions SET outcome=?,next_action=NULL,early=0,snoozed_until=NULL,resume_status=NULL,"
+    db.execute("UPDATE suggestions SET outcome=?,result_check=NULL,next_action=NULL,early=0,snoozed_until=NULL,resume_status=NULL,"
                'undo_until=NULL,deliver_after=NULL,feedback_until=NULL WHERE id=?',
                (encoded({'state': 'waiting', 'waiting_on': waiting_on, 'until': until}), row['id']))
     todo_moves.transition(db, row['id'], todo_states.PREPARED, 'wait_for_result', at=stamp)
@@ -123,9 +123,9 @@ def nudge_ask():
 
 
 def result_seen(db, row, reason, event_ids, stamp, undo_hours=24):
-    """A signal shows the result. A to-do that waits for it closes by itself (Done, "Closed by itself: <reason>", Undo
-    for a day), once for the same messages; any other open one looks done (handled_hint), for the owner to close.
-    Not while a send of it is under way. Returns 'closed', 'hint' or None."""
+    """A signal shows the result. A to-do that waits for it is checked against what was agreed first, once for the same
+    messages (result_checks.py: it closes by itself only when it matches); any other open one looks done (handled_hint),
+    for the owner to close. Not while a send of it is under way. Returns 'checking', 'hint' or None."""
     if row['status'] in todo_states.CLOSED:
         return None
     ids = list(event_ids)
@@ -133,9 +133,9 @@ def result_seen(db, row, reason, event_ids, stamp, undo_hours=24):
                                                 (row['id'],)).fetchone():
         decision_id = HANDLED + hashlib.sha256(f"{row['id']}:{sorted(int(i) for i in ids)}".encode()).hexdigest()[:32]
         if not db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
-            close_handled(db, row, decision_id, reason, stamp, undo_hours)
+            from machine.store import result_checks
             db.execute('UPDATE suggestions SET handled_hint=NULL WHERE id=?', (row['id'],))
-            return 'closed'
+            return result_checks.request(db, row, 'message', reason, decision_id, stamp, event_ids=ids)
     db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (encoded({'reason': reason, 'event_ids': ids, 'at': stamp}), row['id']))
     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
     return 'hint'
@@ -143,12 +143,21 @@ def result_seen(db, row, reason, event_ids, stamp, undo_hours=24):
 
 def result_summaries(cards):
     """A to-do that closed by itself because its result came (a message, its page) says the result on its card and in its
-    chat ("Done: <done when>."), not the wait it was in. Shown only while that close stands: Undo or Reopen shows its own
-    text again. Nothing is rewritten. views.card_views."""
+    chat ("Done: <done when>, <what was checked>."), not the wait it was in; shown only while that close stands, so Undo or
+    Reopen shows its own text again. One its result check brought back says why (result_checks.py) while still open.
+    Nothing is rewritten. views.card_views."""
     for card in cards:
+        try:
+            check = json.loads(card.get('result_check') or '{}')
+        except (TypeError, ValueError):
+            check = {}
+        check = check if isinstance(check, dict) else {}
         if card.get('status') == todo_states.COMPLETED and card.get('done_when') and _outcome(card).get('state') in ('waiting', 'still_waiting') \
                 and str(card.get('closed_decision_id') or '').startswith((HANDLED, VERIFIED)):
-            card['body'] = i18n.t('Done: {}.', str(card['done_when']).rstrip('.'))
+            done = str(card['done_when']).rstrip('.')
+            card['body'] = i18n.t('Done: {}.', f"{done}, {check['checked'].rstrip('.')}" if check.get('verdict') == 'matches' and check.get('checked') else done)
+        elif card.get('status') in todo_states.OPEN and check.get('line') and check.get('verdict') != 'matches':
+            card['body'] = check['line']
 
 
 def close_handled(db, row, decision_id, reason, stamp, undo_hours=24):
@@ -182,7 +191,7 @@ def follow_project(db, todo_id, before, after):
     if not row or row['status'] in todo_states.CLOSED or row['done_when_by'] != 'project':
         return False
     after = clean(after)
-    db.execute('UPDATE suggestions SET done_when=?,done_when_by=?,done_check=NULL WHERE id=?', (after or None, 'project' if after else None, todo_id))
+    db.execute('UPDATE suggestions SET done_when=?,done_when_by=?,done_check=NULL,result_check=NULL WHERE id=?', (after or None, 'project' if after else None, todo_id))
     _follow_waiting(db, todo_id, row['done_when'], after)
     if after and before and row['body'] == i18n.t('Done when: {}', before)[:690]:
         db.execute('UPDATE suggestions SET body=? WHERE id=?', (i18n.t('Done when: {}', after)[:690], todo_id))

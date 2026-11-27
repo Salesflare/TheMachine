@@ -34,7 +34,9 @@ A to-do still waiting on someone else, like a review or a reply, says **Waiting 
 
 When a to-do is for a result someone else delivers, like a signed contract, **Details** shows it as **Done when**. Sending your part doesn't close it: it waits in **Waiting on others** until a message shows the result, then closes by itself with the result and **Undo**. If nothing comes by the time to chase them, it returns with **Write a short nudge** in its chat. To change what counts as done, tell it in the chat.
 
-When the result will show on a public web page that its messages name, like an article that will list you, your Machine reads that page when it is time to chase them. If the page shows it, and didn't when the to-do started waiting, the to-do closes by itself and says the result, with **Undo**. It only reads the page, as any visitor would, and never sends anything.
+Before it closes, your Machine checks the result against what was agreed in its thread, like the price, text or link you sent. It closes only when they match, and says what it checked. If something differs, they skipped your OK, or your own part of a swap is still open, the to-do comes back and says what.
+
+When the result will show on a public web page that its messages name, like an article that will list you, your Machine reads that page when it is time to chase them. If the page shows it, and didn't when the to-do started waiting, it is checked the same way before it closes. It only reads the page, as any visitor would, and never sends anything.
 
 If the page doesn't show it and the deadline is still ahead, it reads the page once more the morning after the deadline. Otherwise it comes back as before, with "Checked" or "Couldn’t open" and the page in its chat.
 

@@ -37,9 +37,10 @@ class DoneChecksApp:
             jobs = done_checks.claim(db, now())
         if not jobs:
             return None
-        job, why, fingerprint = jobs[0], None, None
+        job, why, fingerprint, lines = jobs[0], None, None, None
         try:
-            result, fingerprint = done_checks.judge((read or read_page)(job['url']), job['expect'])
+            lines = (read or read_page)(job['url'])
+            result, fingerprint = done_checks.judge(lines, job['expect'])
         except SourceError as error:
             result, why = 'unknown', error.category
         except Exception as error:  # noqa: BLE001 - any other failure to read is unknown too, never a close
@@ -47,6 +48,6 @@ class DoneChecksApp:
             LOG.warning('done check read error=%s', why)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            kept = done_checks.settle(db, job, result, now(), why, fingerprint)
+            kept = done_checks.settle(db, job, result, now(), why, fingerprint, lines)
         LOG.info('done check result=%s kept=%s', result, kept)
         return kept
