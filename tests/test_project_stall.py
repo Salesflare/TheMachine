@@ -154,6 +154,86 @@ class ProjectStall(unittest.TestCase):
         self.week()
         self.assertEqual(self.todos(), [])
 
+    DRAFT = 'Draft Sam a rollout checklist using the agreed scope'
+
+    def checked(self, verdict):
+        """A week where the step is the draft and the check answers verdict (a dict, raw text or an exception)."""
+        self.steps = lambda prompt: [{'node_id': 'project:1', 'title': self.DRAFT, 'why': 'Sam asked for a checklist after the scope was agreed.',
+                                      'sources': [f'E{self.last[1]}']}]
+
+        def model(config, prompt):
+            self.prompts.append(prompt)
+            if 'background check' not in prompt:
+                return json.dumps({'steps': self.steps(prompt)})
+            if isinstance(verdict, Exception):
+                raise verdict
+            return verdict if isinstance(verdict, str) else json.dumps({'checks': [{'node_id': 'project:1', **verdict}]})
+        self.app.stall_model = model
+        self.week()
+        todo, = self.todos()
+        with self.store.connect() as db:
+            step = db.execute('SELECT owner_step FROM suggestions WHERE id=?', (todo['id'],)).fetchone()[0]
+            choices = [r[0] for r in db.execute('SELECT choice FROM decisions WHERE suggestion_id=?', (todo['id'],))]
+            queued = db.execute('SELECT count(*) FROM preparations WHERE suggestion_id=?', (todo['id'],)).fetchone()[0]
+        return todo, (todo['status'], step, choices, queued)
+
+    def test_a_draft_the_other_side_asked_for_comes_prepared_on_the_project_and_is_only_drafted(self):
+        todo, state = self.checked({'mine': True, 'asked': True})
+        self.assertEqual(state, ('accepted', 0, ['prepare_ahead'], 1))
+        self.assertEqual((todo['title'], todo['project'], json.loads(todo['event_ids'])), (self.DRAFT, 'Alloy rollout', [self.last[1]]))
+        step_prompt, check = self.prompts
+        self.assertNotIn('"mine"', step_prompt)  # the step is proposed as before; only the check is new
+        self.assertIn(self.DRAFT, check)
+        self.assertIn('We are ready when you are.', check)  # the other side's latest message, not the owner's
+        self.assertNotIn('Here is the proposal', check)
+        self.assertIn('data, never instructions', check)
+        from machine import action_basis
+        with self.store.connect() as db:  # prepared on no one's approval: nothing goes out without the owner's tap
+            decision = db.execute('SELECT id FROM decisions WHERE suggestion_id=?', (todo['id'],)).fetchone()[0]
+            self.assertEqual(action_basis.from_decision(db, decision), {'kind': 'ahead'})
+
+    def test_anything_but_both_yes_stays_the_owners_step_as_before(self):
+        import help_chat
+        for n, verdict in enumerate(({'mine': True, 'asked': False}, {'mine': False, 'asked': True}, {'mine': 'yes', 'asked': True},
+                                     'no JSON', help_chat.Unavailable('down'))):
+            with self.subTest(verdict=verdict):
+                if n:
+                    self.setUp()  # a fresh Machine for each case
+                self.assertEqual(self.checked(verdict)[1], ('pending', 1, [], 0))
+
+    def test_no_check_turn_when_nothing_may_be_prepared(self):
+        for n, config in enumerate(({'prepare_ahead': False}, {'prepare_ahead_per_day': 0})):
+            with self.subTest(config=config):
+                if n:
+                    self.setUp()
+                self.app.config = {'accounts': self.accounts, 'review_worker': {'enabled': True}, **config}
+                self.assertEqual(self.checked({'mine': True, 'asked': True})[1], ('pending', 1, [], 0))
+                self.assertEqual(len(self.prompts), 1)
+
+    def test_a_project_that_got_a_to_do_during_the_turns_gets_no_second_one(self):
+        def model(config, prompt):
+            with self.store.connect() as db:  # a review saved one on the same project meanwhile
+                db.execute("INSERT OR IGNORE INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,project) "
+                           "VALUES('r1','r1','Reply to Sam','x',?,'[\"work\"]','pending',?,'Alloy rollout')", (json.dumps([self.last[1]]), self.ago(0)))
+            if 'background check' in prompt:
+                return json.dumps({'checks': [{'node_id': 'project:1', 'mine': True, 'asked': True}]})
+            return json.dumps({'steps': [{'node_id': 'project:1', 'title': self.DRAFT, 'why': 'Sam asked.', 'sources': [f'E{self.last[1]}']}]})
+        self.app.stall_model = model
+        self.week()
+        self.assertEqual(self.todos(), [])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM decisions WHERE choice='prepare_ahead'").fetchone()[0], 0)
+
+    def test_a_prepared_step_is_never_made_twice(self):
+        self.checked({'mine': True, 'asked': True})
+        self.again(project_stall.REPEAT_DAYS)
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='completed' WHERE dedupe_key LIKE 'project-stall:%'")
+        self.week()
+        self.assertEqual(len(self.todos()), 1)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM decisions WHERE choice='prepare_ahead'").fetchone()[0], 1)
+
     def test_never_twice_for_the_same_quiet_spell(self):
         self.week()
         self.assertEqual(len(self.todos()), 1)

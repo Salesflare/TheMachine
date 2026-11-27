@@ -50,6 +50,8 @@ A project's page lists its to-dos under **To-dos**, open ones first, and the boa
 
 Once a week, your Machine looks for projects that went quiet: nothing new for 10 days or more, no open to-do, nothing promised. For at most three, it adds a to-do with one specific next step, like "Send Sam the signed order form", linked to the message it picks up from. When it sees no clear step, it adds none. Dismiss one and that project isn't suggested again for four weeks.
 
+When the step is something written they asked you for, like a plan or answers, it comes **Prepared**; nothing is sent until you approve. Anything else, like a choice or something you do in person, stays yours.
+
 ## A project's organization
 
 Each project can be linked to one organization. Its page, the list and the board show it, with a link.
