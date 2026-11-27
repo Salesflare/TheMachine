@@ -201,7 +201,7 @@ def press_update(app):
     scale = r.width / box[2]
     across = round(r.left + box[0] * scale)
     spots = [round(r.top + box[1] * scale), round(r.top + (r.height - box[3] * scale) + box[1] * scale)]
-    spots += [y + 19 for y in spots]
+    spots += [y + d for d in (-21, 19) for y in spots]  # openbox under Xvfb has told it 21 lower than it is
     for y in dict.fromkeys(spots):
         on.click(across, y)
         if until(pressed, 3):
