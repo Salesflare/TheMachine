@@ -11,10 +11,17 @@ const {chromium}=await import('./browser.mjs');
 // All mocked; SHOTS=dir saves screenshots of both states at 390 and 1440, light and dark.
 const dashboard=await dashboardPage();
 const trend={first:null,daily:[],weekly:[]};
-const EARLY={cards:4,worth_it:1,dismissed:0,open:3,hit_rate:100,do_it:0,first_time_rate:null,finished_rate:null,sent_as_written:0,sent_edited:0,enough:3,
- previous:{hit_rate:null,first_time_rate:null,finished_rate:null,cards:0},notes:{},by_source:{Email:{worth_it:1,dismissed:0,open:3}},trend};
-const FULL={cards:12,worth_it:6,dismissed:2,open:4,hit_rate:75,do_it:3,first_time_rate:67,finished_rate:100,sent_as_written:2,sent_edited:1,enough:3,
- previous:{hit_rate:null,first_time_rate:null,finished_rate:null,cards:0},notes:{style:1},by_source:{Email:{worth_it:6,dismissed:2,open:3},WhatsApp:{worth_it:0,dismissed:0,open:1}},trend};
+const none={confirmed:0,owner_done:0,elsewhere:0,not_needed:0,expired:0,open:0,reopened:0};
+const EARLY={cards:4,worth_it:1,dismissed:0,open:3,hit_rate:100,do_it:0,settled:0,done:0,done_rate:null,first_time:0,first_time_rate:null,outcomes:none,sent_as_written:0,sent_edited:0,enough:3,
+ previous:{hit_rate:null,done_rate:null,first_time_rate:null,cards:0},notes:{},by_source:{Email:{worth_it:1,dismissed:0,open:3}},trend};
+// Three Do it to-dos, two closed (one sent, one dismissed) and one still being prepared: too few closed for a share
+const FULL={cards:12,worth_it:6,dismissed:2,open:4,hit_rate:75,do_it:3,settled:2,done:1,done_rate:null,first_time:1,first_time_rate:null,
+ outcomes:{...none,confirmed:1,not_needed:1,open:1},sent_as_written:2,sent_edited:1,enough:3,
+ previous:{hit_rate:null,done_rate:null,first_time_rate:null,cards:0},notes:{style:1},
+ by_source:{Email:{worth_it:6,dismissed:2,open:3},WhatsApp:{worth_it:0,dismissed:0,open:1}},trend};
+// Enough closed for shares: 4 of 5 done (one dismissed), one still open, compared with the 30 days before
+const DONE={...FULL,do_it:6,settled:5,done:4,done_rate:80,first_time:3,first_time_rate:75,
+ outcomes:{...none,confirmed:2,owner_done:1,elsewhere:1,not_needed:1,open:1},previous:{hit_rate:70,done_rate:60,first_time_rate:75,cards:10}};
 let quality;
 const status=()=>({suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},connectors:[],review_runs:[],quality});
 const server=createServer(async(req,res)=>{
@@ -41,7 +48,7 @@ try{
   assert.equal(await wait.locator('img.sticker').getAttribute('src'),'brand/thinking.webp');
   const text=await wait.innerText();
   assert.match(text,/Too early for numbers\./);
-  assert.match(text,/After 3 decided to-dos, this shows how many were worth it, right the first try and sent as is\./);
+  assert.match(text,/After 3 decided to-dos, this shows how many were worth it, done, right the first try and sent as is\./);
   assert.match(text,/1 of 3 to-dos decided/);
   const bar=wait.locator('[role="progressbar"]');
   assert.deepEqual([await bar.getAttribute('aria-valuenow'),await bar.getAttribute('aria-valuemax')],['1','3']);
@@ -63,7 +70,16 @@ try{
   assert.equal(await pane.locator('.q-tile').count(),4);
   const text=await pane.innerText();
   assert.match(text,/Worth it\s+75%\s+Of 8 to-dos you decided: acted on, not dismissed/);
+  // Too few Do it to-dos closed: no share yet, and the one still open is named, never counted as done
+  assert.match(text,/Done\s+–\s+Not enough to-dos yet\s+1 still open/);
+  assert.match(text,/First try\s+–\s+Not enough to-dos yet/);
   assert.match(text,/Worth it per source[\s\S]*Email\s+6 of 8 75%/);
+  await context.close()}
+ {const {context,pane}=await open(DONE);
+  await pane.locator('.q-tiles').waitFor();
+  const text=await pane.innerText();
+  assert.match(text,/Done\s+80%\s+Of 5 to-dos closed after Do it: done\s+Up from 60% the 30 days before\s+1 still open/);
+  assert.match(text,/First try\s+75%\s+Of 4 to-dos done after Do it: no correction needed\s+Same as the 30 days before/);
   await context.close()}
  // ...and without any source decided (a report with no per-source counts), no table
  {const {context,pane}=await open({...FULL,by_source:{Email:{worth_it:0,dismissed:0,open:2}}});
@@ -71,7 +87,7 @@ try{
   assert.doesNotMatch(await pane.innerText(),/Worth it per source/);
   await context.close()}
  // Both states fit a phone and a computer, light and dark, with no sideways scroll
- for(const [width,height] of [[390,844],[1440,900]])for(const scheme of ['light','dark'])for(const [name,q] of [['empty',EARLY],['populated',FULL]]){
+ for(const [width,height] of [[390,844],[1440,900]])for(const scheme of ['light','dark'])for(const [name,q] of [['empty',EARLY],['populated',FULL],['done',DONE]]){
   const {context,page}=await open(q,width,height,scheme);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${name} ${width} ${scheme}: no sideways scroll`);
   if(shots){await page.waitForTimeout(300);await page.screenshot({path:`${shots}/learning-${name}-${width}-${scheme}.png`})}

@@ -128,9 +128,39 @@ QUALITY = stamps.Kept(4)
 QUALITY_ENOUGH = 3
 
 
+OWNER_SOURCES = ('telegram', 'dashboard')
+# How a to-do the owner started with Do it ended up, as it stands now (so a late result counts once it comes, in the
+# period the to-do was made). Done: confirmed (a step of it went out: a sent message or a verified receipt), owner_done
+# (the owner's Mark done, no step went out), elsewhere (it closed by itself: looked done, they replied, a connector
+# closed it). Not done: not_needed (dismissed after Do it), expired (its moment passed). Not settled, so not counted
+# either way: open (still being prepared or waiting for the owner) and reopened (closed, then reopened).
+DO_IT_OUTCOMES = ('confirmed', 'owner_done', 'elsewhere', 'not_needed', 'expired', 'open', 'reopened')
+DONE_OUTCOMES = ('confirmed', 'owner_done', 'elsewhere')
+
+
+def do_it_outcome(card, made):
+    """One Do it to-do's outcome (DO_IT_OUTCOMES), from its row as _quality_rows reads it and the owner's choices on it."""
+    if card['status'] in todo_states.OPEN:
+        return 'reopened' if {'reopen', 'not_done'} & set(made) else 'open'
+    if card['status'] == todo_states.REJECTED:
+        return 'not_needed'
+    if card['expired_at']:
+        return 'expired'
+    if card['stepped']:
+        return 'confirmed'
+    return 'owner_done' if card['closed_by'] in OWNER_SOURCES else 'elsewhere'
+
+
+def _share(part, whole):
+    """part of whole in %, or None under QUALITY_ENOUGH: one or two to-dos say nothing yet."""
+    return round(100 * part / whole) if whole >= QUALITY_ENOUGH else None
+
+
 def _quality_of(rows, days, since, end):
     """quality() from _quality_rows read for this period or a longer one around it."""
-    cards = [c for c in rows[0] if since <= c['created_at'] < end and c['kind'] != 'assistant.test']
+    made_in = [c for c in rows[0] if since <= c['created_at'] < end and c['kind'] != 'assistant.test']
+    # Worth it leaves out the to-dos that closed by themselves (a follow-up that arrived, a moment that passed)
+    cards = [c for c in made_in if not c['by_itself']]
     choices = collections.defaultdict(list)
     for d in rows[1]:
         if d['created_at'] >= since:
@@ -143,24 +173,36 @@ def _quality_of(rows, days, since, end):
         if {'accept', 'send'} & set(made) or c['status'] == 'completed':
             return 'worth_it'
         return 'open'
-    result = {'days': days, 'cards': len(cards), 'worth_it': 0, 'dismissed': 0, 'open': 0, 'do_it': 0, 'first_time': 0, 'finished': 0, 'by_source': {}}
+    result = {'days': days, 'cards': len(cards), 'worth_it': 0, 'dismissed': 0, 'open': 0, 'do_it': 0,
+              'outcomes': dict.fromkeys(DO_IT_OUTCOMES, 0), 'first_time': 0, 'no_nudge': 0, 'by_source': {}}
     for c in cards:
         o = outcome(c)
         result[o] += 1
         source = result['by_source'].setdefault(todo_source(c['kind']), {'worth_it': 0, 'dismissed': 0, 'open': 0})
         source[o] += 1
+    # Do it: once per to-do (a second Do it or Try again is no second success), whatever closed it; one folded into
+    # the to-do it repeated counts there.
+    for c in made_in:
         made = choices.get(c['id'], [])
-        if 'accept' in made:
-            result['do_it'] += 1
+        if 'accept' not in made or c['merged']:
+            continue
+        result['do_it'] += 1
+        ended = do_it_outcome(c, made)
+        result['outcomes'][ended] += 1
+        if ended in DONE_OUTCOMES:
             after = set(made[made.index('accept') + 1:])
-            # First try: no correction (style, a missing fact, or a Change not sorted yet).
+            # Of the done ones, how much the owner had to step in: no correction (style, a missing fact, or a Change
+            # not sorted yet), and no keep-going nudge or Try again.
             result['first_time'] += not ({'other:', 'other:style', 'other:fact'} & after)
-            # Finished: no keep-going nudge and no Try again.
-            result['finished'] += not ({'other:continue', 'retry'} & after)
+            result['no_nudge'] += not ({'other:continue', 'retry'} & after)
+    out = result['outcomes']
+    result['done'] = sum(out[k] for k in DONE_OUTCOMES)
+    result['settled'] = result['do_it'] - out['open'] - out['reopened']
     decided = result['worth_it'] + result['dismissed']
     result['hit_rate'] = round(100 * result['worth_it'] / decided) if decided else None
-    result['first_time_rate'] = round(100 * result['first_time'] / result['do_it']) if result['do_it'] else None
-    result['finished_rate'] = round(100 * result['finished'] / result['do_it']) if result['do_it'] else None
+    result['done_rate'] = _share(result['done'], result['settled'])
+    result['first_time_rate'] = _share(result['first_time'], result['done'])
+    result['no_nudge_rate'] = _share(result['no_nudge'], result['done'])
     return result
 
 
@@ -615,9 +657,10 @@ class ProfileStore:
     def quality(self, days=30, until=None, since=None):
         """How good the cards were, so changes to the rules can be judged by results.
 
-        Worth it: the owner tapped Do it or Send, or marked it done. Not needed: dismissed. Do it right
-        first time: no Change and no Try again after the first Do it. Cards that closed themselves (a
-        follow-up that arrived) don't count."""
+        Worth it: the owner tapped Do it or Send, or marked it done. Not needed: dismissed. Cards that closed
+        themselves (a follow-up that arrived) don't count there. Done: of the Do it to-dos that settled, the ones that
+        ended done (outcomes, do_it_outcome); open ones count once they settle. First try: of those done, no
+        correction after the first Do it."""
         end = until or now()
         since = since or (dt.datetime.fromisoformat(end) - dt.timedelta(days=days)).isoformat()
         return self._quality_of(self._quality_rows(since, end), days, since, end)
@@ -626,9 +669,15 @@ class ProfileStore:
         """The to-dos made from since until end, and the owner's decisions from since on (quality reads both): one read
         for every period inside, as quality_trend counts 22 of them."""
         with self.connect() as db:
+            # by_itself: closed by itself as a follow-up or past its moment (not in Worth it); closed_by: the source of the
+            # decision that closed it; stepped: a step of it went out (a sent message, a verified receipt)
             cards = [dict(r) for r in db.execute(
-                "SELECT s.id,s.status,s.created_at,(SELECT e.kind FROM events e WHERE e.id=json_extract(s.event_ids,'$[0]')) kind FROM suggestions s "
-                "WHERE s.created_at>=? AND s.created_at<? AND s.id NOT IN (SELECT suggestion_id FROM decisions WHERE id LIKE 'followed-up:%' OR id LIKE 'expired:%')", (since, end))]
+                "SELECT s.id,s.status,s.created_at,s.expired_at,(SELECT e.kind FROM events e WHERE e.id=json_extract(s.event_ids,'$[0]')) kind,"
+                "EXISTS(SELECT 1 FROM decisions d WHERE d.suggestion_id=s.id AND (d.id LIKE 'followed-up:%' OR d.id LIKE 'expired:%')) by_itself,"
+                "EXISTS(SELECT 1 FROM decisions d WHERE d.suggestion_id=s.id AND d.choice='merge') merged,"
+                "(SELECT d.source FROM decisions d WHERE d.id=s.closed_decision_id) closed_by,"
+                "EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status IN ('sent','done')) stepped FROM suggestions s "
+                "WHERE s.created_at>=? AND s.created_at<?", (since, end))]
             decisions = [dict(d) for d in db.execute(
                 "SELECT d.suggestion_id,d.choice,k.kind,d.created_at FROM decisions d LEFT JOIN note_kinds k ON k.decision_id=d.id "
                 "WHERE d.source IN ('telegram','dashboard') AND d.created_at>=? ORDER BY d.created_at", (since,))]
@@ -650,7 +699,7 @@ class ProfileStore:
         before = self.quality(days, (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat())
         b = self.behaviour(days)
         current['by_source'] = {TODO_SOURCE_SHOWN.get(k, k): n for k, n in current['by_source'].items()}
-        return {**current, 'previous': {k: before[k] for k in ('hit_rate', 'first_time_rate', 'finished_rate', 'cards')},
+        return {**current, 'previous': {k: before[k] for k in ('hit_rate', 'done_rate', 'first_time_rate', 'cards')},
                 'sent_as_written': b['sent_as_written'], 'sent_edited': b['sent_edited'], 'trend': self.quality_trend(),
                 'notes': self.note_kind_counts(days), 'enough': QUALITY_ENOUGH}
 
@@ -668,7 +717,7 @@ class ProfileStore:
                                   utc(max(today + dt.timedelta(days=1), monday + dt.timedelta(weeks=1))))
         def bucket(start, end):
             q = self._quality_of(rows, 30, utc(start), utc(end))
-            return {'start': start.isoformat(), **{k: q[k] for k in ('worth_it', 'dismissed', 'open', 'hit_rate', 'do_it', 'first_time_rate', 'finished_rate')}}
+            return {'start': start.isoformat(), **{k: q[k] for k in ('worth_it', 'dismissed', 'open', 'hit_rate', 'do_it', 'done_rate', 'first_time_rate')}}
         with self.connect() as db:  # decided as quality() counts it: dismissed, done, or Do it or Send by the owner
             first = db.execute(
                 f"SELECT min(s.created_at) FROM suggestions s WHERE (s.status IN {todo_states.sql(todo_states.CLOSED)} OR EXISTS(SELECT 1 FROM decisions d "

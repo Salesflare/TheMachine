@@ -10,6 +10,7 @@ from seams import patch_everywhere  # noqa: E402
 spec = importlib.util.spec_from_file_location('quality_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
+from machine.store import decisions as store_decisions, todo_moves  # noqa: E402
 
 
 def mail(source_id, at, sender='Sam <sam@example.com>', thread='t1', labels=('INBOX',), title='Contract'):
@@ -105,7 +106,9 @@ class HitRate(Base):
         self.card('g', 'gmail.message')
         q = self.store.quality()
         self.assertEqual((q['cards'], q['worth_it'], q['dismissed'], q['open'], q['hit_rate']), (7, 3, 3, 1, 50))
-        self.assertEqual((q['do_it'], q['first_time'], q['first_time_rate']), (2, 1, 50))
+        # Both Do it to-dos are still on their way: open, so neither counts as done or right first time yet
+        self.assertEqual((q['do_it'], q['settled'], q['done'], q['first_time'], q['outcomes']['open']), (2, 0, 0, 0, 2))
+        self.assertEqual((q['done_rate'], q['first_time_rate']), (None, None))
         self.assertEqual(q['by_source']['WhatsApp'], {'worth_it': 0, 'dismissed': 3, 'open': 0})
         summary = self.store.preference_summary()
         self.assertTrue(summary.startswith('Cards in the last 30 days by source'))
@@ -113,7 +116,7 @@ class HitRate(Base):
         self.assertIn('- Email: 3 of 3 worth it', summary)
         self.assertEqual(self.store.snapshot(self.app.config['accounts'])['quality']['previous']['hit_rate'], None)
         recap = a.weekly_recap(self.store, self.app.config)
-        self.assertIn('**What changed**\n• 50% of to-dos worth it (3 of 6). Do it was right first time in 1 of 2.', recap)
+        self.assertIn('**What changed**\n• 50% of to-dos worth it (3 of 6). Do it: 2 still open.', recap)
 
     def test_each_row_says_where_the_to_dos_came_from_in_plain_words(self):
         """Feedback's rows: no internal kinds ("note", "phone", "OpenClaw"), every email in one row, The Machine's own
@@ -175,6 +178,78 @@ class HitRate(Base):
             self.assertEqual((self.store.quality_report()['dismissed'], read.call_count), (1, 6))  # read again
         with patch_everywhere(a, 'now', return_value=(at + a.dt.timedelta(minutes=1)).isoformat()):
             self.assertEqual(self.store.quality_report()['dismissed'], 1)  # the next minute: read again, same counts
+
+
+class DoItOutcomes(HitRate):
+    """Done counts a Do it to-do only once it settled as done: Do it with nothing finished yet is open, not a success."""
+
+    def sent(self, sid):
+        with self.store.connect() as db:
+            job = 'job-' + sid
+            db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
+                       "VALUES(?,?,?,'{}','sent',?,?,'ap','dashboard','r')", (job, sid, 'rev-' + sid, a.now(), a.now()))
+            self.store._decide(db, sid, 'complete', 'Sent', 'sent:' + job, 'assistant')
+
+    def by_itself(self, sid, prefix, source, lapsed=False):
+        with self.store.connect() as db:
+            row = db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone()
+            store_decisions.close_by_itself(db, row, prefix + sid, 'Looks done', source, a.now(), 24, lapsed=lapsed)
+
+    def test_each_way_a_do_it_to_do_ends_counts_once_and_as_what_it_was(self):
+        self.card('open', 'gmail.message', 'accept')  # its run never finished
+        self.sent(self.card('sent', 'gmail.message', 'accept'))
+        self.sent(self.card('changed', 'gmail.message', 'accept', 'other'))
+        self.card('marked', 'gmail.message', 'accept', 'complete')
+        self.by_itself(self.card('elsewhere', 'gmail.message', 'accept'), 'handled:', 'handled')
+        self.card('dismissed', 'gmail.message', 'accept', 'reject')
+        self.by_itself(self.card('lapsed', 'gmail.message', 'accept'), 'expired:', 'expiry', lapsed=True)
+        self.card('reopened', 'gmail.message', 'accept', 'complete', 'reopen')
+        self.card('twice', 'gmail.message', 'accept', 'snooze', 'accept', 'complete')  # a second Do it is no second success
+        q = self.store.quality()
+        self.assertEqual(q['outcomes'], {'confirmed': 2, 'owner_done': 2, 'elsewhere': 1, 'not_needed': 1, 'expired': 1, 'open': 1, 'reopened': 1})
+        self.assertEqual((q['do_it'], q['settled'], q['done'], q['done_rate']), (9, 7, 5, 71))
+        self.assertEqual((q['first_time'], q['first_time_rate']), (4, 80))  # of the 5 done, the changed one needed a correction
+        # Worth it reads as before: a to-do that lapsed by itself stays out of it
+        self.assertEqual((q['cards'], q['worth_it'], q['dismissed']), (8, 7, 1))
+
+    def test_a_to_do_folded_into_another_counts_there_only(self):
+        sid = self.card('own', 'gmail.message', 'accept')
+        with self.store.connect() as db:
+            todo_moves.transition(db, sid, 'rejected', 'merged')
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('m1',?,'merge','','dashboard',?)", (sid, a.now()))
+        self.assertEqual((self.store.quality()['do_it'], self.store.quality()['outcomes']['not_needed']), (0, 0))
+
+    def test_a_late_result_counts_in_the_period_the_to_do_was_made(self):
+        start = a.dt.datetime.fromisoformat('2026-10-15T10:00:00+00:00')
+        with patch_everywhere(a, 'now', return_value=(start - a.dt.timedelta(days=40)).isoformat()):
+            old = self.card('old', 'gmail.message', 'accept')
+        with patch_everywhere(a, 'now', return_value=start.isoformat()):
+            before = self.store.quality(30, (start - a.dt.timedelta(days=30)).isoformat())
+            self.assertEqual((before['do_it'], before['done'], before['outcomes']['open']), (1, 0, 1))
+            self.sent(old)  # the step went out 40 days later
+            before, current = self.store.quality(30, (start - a.dt.timedelta(days=30)).isoformat()), self.store.quality(30)
+        self.assertEqual((before['done'], before['outcomes']['confirmed'], before['outcomes']['open']), (1, 1, 0))
+        self.assertEqual((current['do_it'], current['done']), (0, 0))  # not again in the period it settled in
+
+    def test_too_few_closed_to_dos_show_no_share(self):
+        for key in ('a', 'b'):
+            self.card(key, 'gmail.message', 'accept', 'complete')
+        self.card('c', 'gmail.message', 'accept')
+        q = self.store.quality()
+        self.assertEqual((q['done'], q['settled'], q['done_rate'], q['first_time_rate']), (2, 2, None, None))
+        self.card('d', 'gmail.message', 'accept', 'reject')
+        q = self.store.quality()
+        self.assertEqual((q['settled'], q['done_rate'], q['first_time_rate']), (3, 67, None))  # 2 done: still too few for First try
+        report = self.store.quality_report()
+        self.assertEqual(set(report['previous']), {'hit_rate', 'done_rate', 'first_time_rate', 'cards'})
+        self.assertTrue({'done_rate', 'first_time_rate'} <= set(report['trend']['weekly'][-1]))
+
+    def test_the_recap_names_what_is_done_and_what_is_still_open(self):
+        for key in ('a', 'b', 'c'):
+            self.card(key, 'gmail.message', 'accept', 'complete')
+        self.card('d', 'gmail.message', 'accept')
+        recap = a.weekly_recap(self.store, self.app.config)
+        self.assertIn('Do it: 3 of 3 done, 3 right first time, 1 still open.', recap)
 
 
 class CheckBeforeSaving(Base):
@@ -302,12 +377,15 @@ class NotesRulesAndOutcome(Base):
         with self.store.connect() as db:
             self.assertEqual([tuple(r) for r in db.execute('SELECT decision_id,kind FROM note_kinds ORDER BY decision_id')], [('n1', 'style'), ('n2', 'continue')])
         q = self.store.quality()
-        self.assertEqual((q['do_it'], q['first_time'], q['finished']), (1, 0, 0))
+        self.assertEqual((q['do_it'], q['done'], q['first_time'], q['no_nudge'], q['outcomes']['open']), (1, 0, 0, 0, 1))  # prepared, not done
         self.assertEqual(self.store.quality_report()['notes'], {'style': 1, 'fact': 0, 'continue': 1, 'new_ask': 0, 'unsorted': 0})
-        with self.store.connect() as db:  # keep going alone: right first time, not finished
+        self.store.decide(self.sid, 'complete', '', 'n3', 'dashboard')
+        q = self.store.quality()
+        self.assertEqual((q['done'], q['first_time'], q['no_nudge'], q['outcomes']['owner_done']), (1, 0, 0, 1))
+        with self.store.connect() as db:  # keep going alone: right first time, but nudged
             db.execute("DELETE FROM decisions WHERE id='n1'")
         q = self.store.quality()
-        self.assertEqual((q['first_time'], q['finished'], q['first_time_rate'], q['finished_rate']), (1, 0, 100, 0))
+        self.assertEqual((q['first_time'], q['no_nudge'], q['first_time_rate']), (1, 0, None))  # one done to-do: too few for a share
 
     def test_draft_rules_reach_drafts_and_mark_the_chart(self):
         self.store.decide(self.sid, 'other', 'Always use my HTML signature. Sam left Example Corp by the way', 'n1', 'telegram')

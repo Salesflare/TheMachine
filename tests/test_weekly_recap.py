@@ -167,7 +167,7 @@ class WeeklyRecap(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("INSERT INTO rule_changes(at,kind,text) VALUES(?,'draft_rule','Draft rule: keep it short')", (ago(3),))
         text = machine_app_recap.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1))
-        self.assertIn('**What changed**\n• 67% of to-dos worth it (2 of 3). Do it was right first time in 1 of 2.\n• Adjusted: 1 writing rule.\n', text)
+        self.assertIn('**What changed**\n• 67% of to-dos worth it (2 of 3). Do it: 2 still open.\n• Adjusted: 1 writing rule.\n', text)
         self.assertNotIn('got it right the first time', text)
         recap = machine_app_recap.weekly_recap_message(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1))['text']
         self.assertEqual(recap.split('\n')[-1], '_Behind the scenes: 0 signals checked this week, 61 still waiting._')  # one short line, at the end

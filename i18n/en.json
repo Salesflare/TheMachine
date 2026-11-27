@@ -400,6 +400,7 @@
  "After you choose, you go back to {}.": "After you choose, you go back to {}.",
  "After you save, The Machine sorts its projects into stages from your messages.": "After you save, The Machine sorts its projects into stages from your messages.",
  "After your OK": "After your OK",
+ "After {} decided to-dos, this shows how many were worth it, done, right the first try and sent as is.": "After {} decided to-dos, this shows how many were worth it, done, right the first try and sent as is.",
  "After {} decided to-dos, this shows how many were worth it, right the first try and sent as is.": "After {} decided to-dos, this shows how many were worth it, right the first try and sent as is.",
  "Afternoons": "Afternoons",
  "Agenda": "Agenda",
@@ -1488,6 +1489,9 @@
  "Do it runs {}.": "Do it runs {}.",
  "Do it tapped": "Do it tapped",
  "Do it was right first time in {} of {}.": "Do it was right first time in {} of {}.",
+ "Do it: {} of {} done, {} right first time, {} still open.": "Do it: {} of {} done, {} right first time, {} still open.",
+ "Do it: {} of {} done, {} right first time.": "Do it: {} of {} done, {} right first time.",
+ "Do it: {} still open.": "Do it: {} still open.",
  "Doc": "Doc",
  "Doc changes": "Doc changes",
  "Doc comment": "Doc comment",
@@ -3786,6 +3790,14 @@
  "Of {} messages with no to-do": {
   "one": "Of {} message with no to-do",
   "other": "Of {} messages with no to-do"
+ },
+ "Of {} to-dos closed after Do it: done": {
+  "one": "Of {} to-do closed after Do it: done",
+  "other": "Of {} to-dos closed after Do it: done"
+ },
+ "Of {} to-dos done after Do it: no correction needed": {
+  "one": "Of {} to-do done after Do it: no correction needed",
+  "other": "Of {} to-dos done after Do it: no correction needed"
  },
  "Of {} to-dos started with Do it: finished without a nudge": {
   "one": "Of {} to-do started with Do it: finished without a nudge",
@@ -8742,6 +8754,7 @@
  "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.",
  "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.",
  "{} still has this. Check in drafts a short nudge for you to send.": "{} still has this. Check in drafts a short nudge for you to send.",
+ "{} still open": "{} still open",
  "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.",
  "{} still waiting.": "{} still waiting.",
  "{} stopped after failing to start": "{} stopped after failing to start",
