@@ -562,7 +562,7 @@ review reads each message on its own, and the check above moves one project alon
   dropped when it reads like a to-do already there, or when an earlier proposal already joined its threads.
 - At most two a week, the best of each area first. Each is a normal to-do (`Store.suggest`) with its messages as
   evidence. Nothing is sent.
-- About 4k to 9k input tokens per area, one or two turns a week.
+- One or two turns a week, about 6k to 13k input tokens in all.
 
 Tables: `opportunity_runs` (counts only), `opportunity_items` (which to-do joined which threads).
 
