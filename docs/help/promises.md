@@ -23,7 +23,7 @@ Each one has a **⋯** menu:
 
 An open promise also becomes a to-do by itself around its date (yours the morning before, so there's a day to do it; theirs the morning after, if it's still open), and shows on its day in the [Calendar](calendar.md). One that is a to-do now links to it, and **Mark done** or **Not happening** closes that to-do too. When your Machine sees it done, both close, with a line saying so.
 
-A reply that only promises the work, like "I'll send the files by Tuesday", doesn't finish its to-do. The to-do stays open with that date, and the promise links to it. The send review says so before you send.
+A reply that only promises the work, like "I'll send the files by Tuesday", doesn't finish its to-do. The to-do stays open with that date, and the promise links to it. The send review says so before you send. If you change the words first, the old promise and date go: the to-do stays open until your Machine sees the work done, and a promise in what you sent joins it.
 
 Already kept, like a reply you sent or a meeting that covered it? It closes by itself, with no to-do.
 

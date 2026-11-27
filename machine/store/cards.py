@@ -322,9 +322,11 @@ def same_thread_card(db, rows, days=60):
     return None
 
 
-def promise_closed_at(db, card):
-    """When a closed to-do was last marked done or not needed."""
-    return db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice IN ('complete','reject')", (card['id'],)).fetchone()[0]
+def promise_closed_at(db, card, owner=False):
+    """When a closed to-do was last marked done or not needed. owner: only a close that judged the work, not the one its
+    own send made (settle_sent's 'sent:'): that send's words may be the very promise."""
+    return db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice IN ('complete','reject')"
+                      + (" AND id NOT LIKE 'sent:%'" if owner else ''), (card['id'],)).fetchone()[0]
 
 
 def owner_card_alike(db, own, rows, event_ids, project=None, limit=4):
