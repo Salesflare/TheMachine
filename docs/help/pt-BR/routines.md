@@ -1,172 +1,174 @@
 ---
 title: Rotinas
 area: cards
-summary: Trabalho que sua Machine faz sozinha, em um ritmo definido, como um resumo das suas negociações em aberto às segundas-feiras. Ela só lê.
+summary: Trabalhos que sua Machine faz sozinha, em uma frequência definida, como um resumo das suas oportunidades em aberto às segundas-feiras. Ela só lê.
 covers: tab:routines
 code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, stay_in_touch.py, stay_in_touch_app.py, secondhand.py, secondhand_app.py, reorder.py, reorder_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js, dashboard/todos-reorder.js
 order: 10
 keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays, subscriptions, free trial, renewal, cancel subscription, stay in touch, keep in touch, reach out, check in, second-hand, secondhand, marketplace, listings, every 3 hours, reorder, reorders, buy again, running low, order confirmation, shopify
-translated: 3b0405616881de74
+translated: 57b97c44b031845f
 ---
 ## Criar uma rotina
 
-Abra **Rotinas** na barra lateral e diga em uma linha o que ela deve fazer e quando: «toda segunda-feira às 9h, resuma minhas negociações em aberto» ou «todas as manhãs dos dias úteis, liste os e-mails que ainda preciso responder». Depois, toque em **Adicionar**.
+Abra **Rotinas** na barra lateral e diga, em uma linha, o que ela deve fazer e quando: "toda segunda-feira às 9h, faça um resumo das minhas oportunidades em aberto" ou "todas as manhãs dos dias úteis, liste os e-mails que ainda preciso responder". Depois, toque em **Adicionar**.
 
-Se você não definir um horário, ela será executada às 8h. O horário segue o relógio da sua Machine. Na primeira execução, ela recebe um nome curto.
+Se você não definir um horário, ela será executada às 8h. O horário segue o relógio da sua Machine. A primeira execução dá um nome curto à rotina.
 
-Ao tocar em **Adicionar**, primeiro é feita uma execução de teste para você ver o resultado antes de manter a rotina. Nada é enviado nem salvo. Depois, **Adicionar** mantém a rotina no ritmo definido, **Mudar** testa outras palavras ou um novo nome, e **Cancelar** descarta a rotina.
+Primeiro, **Adicionar** faz um teste para você ver o resultado antes de manter a rotina. Nada é enviado nem salvo. Depois, **Adicionar** mantém a rotina na frequência definida, **Mudar** testa outras palavras ou um nome novo, e **Cancelar** exclui a rotina.
 
 ## Modelos
 
-Em **Modelos**, no fim de Rotinas, toque em **Adicionar** para ativar uma rotina pronta. Ela é executada uma vez na hora e, depois, todas as manhãs às 7h30 (Limpeza de spam, a cada hora; Achados de usados, a cada 3 horas; Assinaturas e testes, uma vez por mês). O cartão mostra as instruções da rotina, como em qualquer outra, e **Editar** permite mudar as instruções ou o nome.
+Em **Modelos**, no fim de Rotinas, toque em **Adicionar** para ativar uma rotina pronta. Ela é executada uma vez na hora e, depois, todas as manhãs às 7h30. A Limpeza de spam é executada de hora em hora, Achados de usados a cada 3 horas, e Assinaturas e testes uma vez por mês. O cartão mostra as instruções da rotina, e **Editar** permite alterá-las ou mudar o nome.
 
-Quando você recebe muitas newsletters e a Limpeza de newsletters está desativada (25 ou mais em uma semana, de pelo menos 5 remetentes), uma linha acima das tarefas informa quantas chegaram e o que a rotina faria, com as opções **Ativar** e **Não, obrigado**.
+Quando chegam muitas newsletters e a Limpeza de newsletters está desativada, aparece uma linha acima das suas tarefas informando quantas chegaram e o que a rotina faria, com as opções **Ativar** e **Não, obrigado**. Isso acontece quando chegam 25 ou mais newsletters de pelo menos 5 remetentes em uma semana.
 
-A Limpeza de spam é oferecida da mesma forma quando 5 ou mais e-mails foram movidos manualmente para spam em uma semana. **Ativar** adiciona a rotina, assim como **Adicionar** faz aqui. **Não, obrigado** significa que ela não será oferecida de novo. Um modelo que você já recusou também não será oferecido novamente.
+A Limpeza de spam é oferecida da mesma forma quando 5 ou mais e-mails foram movidos manualmente para spam em uma semana. **Ativar** adiciona a rotina, assim como **Adicionar** nesta seção. Ao tocar em **Não, obrigado**, ela não será oferecida novamente. Isso também vale para um modelo que você já tenha usado.
 
-A **Limpeza de newsletters** cria uma tarefa para cada área (trabalho e pessoal) com as newsletters do último dia. Cada uma tem as opções **Manter** e **Cancelar inscrição**. Para cancelar a inscrição, é usado o link de cancelamento com um clique da lista ou, se o envio estiver ativado, o e-mail de cancelamento enviado do seu endereço. Caso contrário, a The Machine cancela sua inscrição na página da lista, usando o próprio navegador. Se a página exigir login, captcha ou escolhas, isso fica por sua conta: a tarefa explica o motivo e mostra **Abrir página de cancelamento**.
+A **Limpeza de newsletters** cria uma tarefa para cada área, trabalho e pessoal, com as newsletters do dia anterior. Cada uma tem as opções **Manter** ou **Cancelar inscrição**. Para cancelar a inscrição, a rotina usa o link de cancelamento com um clique da lista ou, se o envio estiver ativado, envia uma mensagem de cancelamento do seu endereço. Caso contrário, The Machine cancela sua inscrição na página da lista, usando o próprio navegador. Se for preciso fazer login, resolver um CAPTCHA ou escolher alguma opção, você cuida disso. A tarefa explica o motivo e mostra **Abrir página de cancelamento**.
 
-Se você só quer evitar tarefas de uma lista, mas continuar recebendo os e-mails, diga «Nenhuma mensagem desta lista precisa virar tarefa» no chat de uma delas.
+Se você só quer parar de receber tarefas de uma lista, sem deixar de receber os e-mails dela, diga "Nenhum e-mail desta lista precisa virar uma tarefa" no chat de uma mensagem da lista.
 
-Recibos, pedidos e avisos de pagamento ficam de fora. E-mails recebidos por um endereço de grupo, como um Google Group, aparecem com o nome de quem escreveu e nunca cancelam sua inscrição no grupo. Se o remetente não tiver uma opção própria para cancelar a inscrição, a tarefa mostra **Cancelar manualmente**.
+Recibos, pedidos e avisos de pagamento são ignorados. E-mails enviados por um endereço de grupo, como um Google Group, aparecem com o nome de quem os escreveu e nunca cancelam sua inscrição no grupo. Quando o remetente não oferece uma forma própria de cancelamento, a tarefa mostra **Cancelar manualmente**.
 
-A **Limpeza de spam** cria uma tarefa para cada área com e-mails de remetentes desconhecidos que parecem spam. Cada e-mail tem as opções **Spam** e **Não é spam**. O Outlook move o spam para a pasta Lixo eletrônico, e o Gmail marca como spam. A rotina verifica os e-mails a cada hora, então o spam geralmente já está lá quando você chega. Enquanto a tarefa estiver aberta, novos e-mails de spam são adicionados a ela.
+A **Limpeza de spam** cria uma tarefa por área com e-mails de remetentes desconhecidos que parecem spam. Cada um tem as opções **Spam** e **Não é spam**. O Outlook move o spam para a pasta Lixo Eletrônico, e o Gmail marca o e-mail como spam. A rotina verifica os e-mails de hora em hora, então o spam geralmente já está lá antes de você. Enquanto a tarefa estiver aberta, novos e-mails de spam são adicionados a ela.
 
-Uma conta do Gmail conectada somente para leitura, como em uma Machine hospedada, não pode mover e-mails para spam. Nesse caso, **Spam** mostra um link para marcar o e-mail como spam no Gmail, e a The Machine memoriza o remetente como spam. Se nenhuma conta de e-mail estiver conectada, o modelo mostra **Conectar e-mail** no lugar de **Adicionar**.
+Uma conta do Gmail conectada com acesso somente para leitura, como em uma Machine hospedada, não pode mover e-mails para spam. Nesse caso, **Spam** mostra um link para marcar o e-mail como spam no Gmail, e The Machine memoriza o remetente como spam. Se nenhuma conta de e-mail estiver conectada, o modelo mostra **Conectar e-mail** no lugar de **Adicionar**.
 
-Remetentes desconhecidos são aqueles para quem você nunca escreveu. Um «Re:» só conta como conversa em uma troca de mensagens na qual você escreveu. Se voltar a chegar um e-mail de alguém que você marcou como spam, na tarefa ou na sua caixa de entrada, ele aparece na próxima tarefa como **Já marcado como spam**. Os e-mails que você mesmo moveu para spam também ajudam a rotina a identificar mensagens parecidas.
+Um remetente é desconhecido quando você nunca escreveu para ele. Um "Re:" só conta como conversa em uma conversa por e-mail na qual você escreveu. Se um e-mail de um remetente que você marcou como spam, na tarefa ou na caixa de entrada, chegar de novo, ele será incluído na próxima tarefa com o aviso **Já marcado como spam**. Os e-mails que você mesma marcou como spam também ajudam a rotina a identificar mensagens parecidas.
 
-Nada muda até você confirmar na tarefa. Toque no remetente para ler o e-mail primeiro: ele continua não lido e nada muda. Na Limpeza de spam, as imagens da internet não carregam, então o remetente não consegue saber que você abriu o e-mail. Os remetentes sobre os quais você já decidiu não são perguntados de novo. Se não houver newsletters ou spam em um dia, nenhuma tarefa será criada. Essas tarefas nunca enviam notificações.
+Nada muda até você confirmar na tarefa. Toque em um remetente para ler o e-mail primeiro. Ele continua como não lido e nada muda. Na Limpeza de spam, as imagens da internet não são carregadas, para que o remetente não saiba que o e-mail foi aberto. A rotina não pergunta de novo sobre remetentes que você já avaliou. Se não houver newsletters ou spam em um dia, nenhuma tarefa será criada. Essas tarefas nunca enviam notificações.
 
-Depois que você decidir sobre todos os remetentes, a tarefa indica que foi concluída e mostra **Marcar como concluída**.
+Depois que você avaliar todos os remetentes, a tarefa informa que foi concluída e mostra **Marcar como feito**.
 
-O **Resumo diário** seleciona, uma vez por dia e em uma única tarefa, algumas newsletters que valem a pena. Cada uma explica em uma linha por que é importante para você. Toque para ler o e-mail ou use **Abrir no seu e-mail**. Só entram newsletters, nunca e-mails de pessoas, recibos ou remetentes dos quais você cancelou a inscrição, nem e-mails que você já leu. Se nada se destacar, nenhuma tarefa será criada.
+O **Resumo diário** escolhe, uma vez por dia, as poucas matérias de newsletters que valem seu tempo e as reúne em uma tarefa. Cada uma explica em uma linha por que é relevante para você. Toque em uma matéria para ler o e-mail ou use **Abrir no seu e-mail**. A rotina considera apenas newsletters, nunca e-mails de pessoas, recibos ou mensagens de remetentes dos quais você cancelou a inscrição, e nunca inclui algo que você já leu. Se nada se destacar, nenhuma tarefa será criada.
 
-A rotina aprende o que interessa para você com base no que abre, marca com estrela ou arquiva sem ler, além das opções **Mais assim** e **Menos assim** em cada seleção. Os temas escolhidos aparecem no cartão da rotina, em **Mais de** e **Menos de**. Remova um tema com × ou adicione o seu. Os temas tracejados foram identificados pela rotina. Um novo resumo substitui o que estiver aberto e nunca envia uma notificação.
+A rotina aprende o que é importante para você com base no que abre, marca com estrela ou arquiva sem ler, além do que você indica com **Mais assim** e **Menos assim** em cada sugestão. Os temas que ela seleciona aparecem no cartão da rotina, em **Mais de** e **Menos de**. Toque em × para remover um tema ou adicione o seu. Os temas com linha tracejada foram aprendidos pela rotina. Um novo resumo substitui o anterior que ainda estiver aberto e nunca envia notificações.
 
-A rotina lê somente o remetente, o assunto e o começo de cada newsletter nova, e faz uma pergunta curta à sua IA sobre elas, com um limite diário para reduzir os custos. **Mudar quando** define o horário. Depois que você mudar as instruções, a rotina será executada como qualquer outra, seguindo as instruções que você definiu.
+A rotina lê apenas o remetente, o assunto e o início de cada newsletter nova e faz uma pergunta curta à sua IA sobre elas, com um limite diário para manter o custo baixo. **Mudar quando** altera o horário. Depois que você muda as instruções, a rotina passa a funcionar como qualquer outra, seguindo o que você escreveu.
 
-**Aniversários** cria uma tarefa para cada pessoa próxima cujo aniversário seja hoje: pessoas para quem você mesmo escreve, como amigos, familiares e contatos frequentes. Cada pessoa vem com uma saudação curta, escrita no idioma dela e preparada no lugar em que você costuma conversar, como o chat do WhatsApp ou uma conversa por e-mail. A mensagem só é enviada quando você envia. Se não houver aniversários no dia, nenhuma tarefa será criada.
+**Aniversários** cria uma tarefa para cada contato próximo que faz aniversário hoje: pessoas para quem você mesma escreve, como amigos, familiares e contatos frequentes. Cada tarefa inclui uma mensagem curta de felicitação, escrita no lugar em que você costuma conversar com a pessoa, como o chat dela no WhatsApp ou a conversa por e-mail, no idioma dela. A mensagem só é enviada quando você a envia. Se ninguém fizer aniversário, nenhuma tarefa será criada.
 
-Os aniversários vêm dos seus calendários (eventos de aniversário e o calendário Birthdays do Google, lidos todas as manhãs mesmo quando não estão sincronizados, e o calendário Birthdays do Outlook), dos seus contatos do Google em uma Machine auto-hospedada e de um campo de data chamado Birthday para uma pessoa no Graph. Se ainda não houver nenhum aniversário nessas fontes, o resultado informa **Ainda não há informações de aniversário** e explica como adicionar.
+Os aniversários vêm dos seus calendários: eventos de aniversário do Google e o calendário Aniversários, que são lidos todas as manhãs mesmo quando não estão sincronizados, e o calendário Aniversários do Outlook. Também podem vir dos seus contatos do Google em uma Machine auto-hospedada e de um campo de data chamado Birthday de uma pessoa no Graph. Se ainda não houver aniversários nessas fontes, o resultado mostrará **Ainda não há informações de aniversário** e explicará como adicionar algumas.
 
-**Importar aniversários do Facebook**: depois que Aniversários estiver ativado, uma tarefa oferece a opção de ler a página de aniversários do Facebook. Toque em **Importar** e a The Machine abre a página no próprio navegador, rola até carregar todos os meses e lê o nome e a data de aniversário de cada amigo. Ela mostra quantos aniversários encontrou e quem corresponde a pessoas no seu Graph, com base no nome e sobrenome. Se mais de uma pessoa tiver o mesmo nome, ela será ignorada e listada.
+**Importar aniversários do Facebook**: depois que Aniversários estiver ativado, uma tarefa oferece a opção de ler a página de aniversários do Facebook. Toque em **Importar** e The Machine abre a página no próprio navegador, rola até carregar todos os meses e lê o nome e a data de aniversário de cada amizade. Ela informa quantos aniversários encontrou e quais pessoas correspondem a contatos no seu Graph, usando o nome e o sobrenome. Se mais de uma pessoa tiver o mesmo nome, ela não será incluída e aparecerá na lista.
 
-Só **Salvar** adiciona as informações, na página de cada pessoa: a data de aniversário e a foto de perfil do Facebook, caso ela ainda não tenha uma foto. A data de aniversário ou a foto que você adicionar ali será mantida, e uma foto que a pessoa já tenha nunca será substituída. Nada é escrito no Facebook.
+Só **Salvar** adiciona os dados à página de cada pessoa: o aniversário e a foto do perfil do Facebook, se a pessoa ainda não tiver uma foto. Um aniversário ou uma foto que você definir na página da pessoa será mantido, e uma foto que ela já tenha nunca será substituída. Nada é escrito no Facebook.
 
-A rotina não lê os dados novamente por conta própria. Para isso, toque em **Importar de novo** na tarefa. O navegador precisa estar conectado ao Facebook. Se não estiver, toque em **Entrar no Facebook** na tarefa e faça login ali. Depois que você entrar, a rotina lê a página automaticamente. A The Machine nunca faz login por você.
+A rotina não lê os dados de novo sozinha. Para isso, toque em **Importar de novo** na tarefa. O navegador precisa estar conectado ao Facebook. Se não estiver, toque em **Entrar no Facebook** na tarefa e faça login. Depois que você entrar, a rotina lê a página automaticamente. The Machine nunca faz login por você.
 
-Os amigos que não estão no seu Graph são contados, e alguns nomes são mostrados. **Adicionar … como contatos pessoais** adiciona todos de uma vez, inclusive depois de tocar em Salvar: cada pessoa fica com o nome e a data de aniversário, e nunca é compartilhada com um Fleet de Trabalho. Uma pessoa cujo nome já esteja no seu Graph, ou que você tenha excluído permanentemente, é ignorada. Os lembretes de aniversário continuam sendo enviados somente para pessoas com quem você conversa.
+A rotina conta as amizades que não correspondem a ninguém no seu Graph e mostra alguns nomes. **Adicionar … como contatos pessoais** adiciona todas de uma vez, também depois de tocar em Salvar: cada pessoa com nome e aniversário, sem compartilhar os dados com um Fleet de Trabalho. A rotina ignora nomes que já pertençam a alguém no seu Graph ou a alguém que você tenha excluído permanentemente. Você só recebe lembretes de aniversário de pessoas para quem escreve.
 
-**Desfazer** na tarefa remove exatamente essas pessoas, inclusive depois de **Importar de novo**.
+**Desfazer** na tarefa remove exatamente aquelas pessoas, mesmo depois de tocar em **Importar de novo**.
 
-**Assinaturas e testes** lê seus recibos, faturas e avisos de renovação uma vez por mês e reúne suas assinaturas em uma tarefa: o custo de cada uma, a próxima data de cobrança e um aviso quando um período de teste termina ou o preço aumenta. Só são listadas as assinaturas sobre as quais a rotina tem certeza. Se nada for encontrado, nenhuma tarefa será criada.
+**Assinaturas e testes** lê recibos, faturas e avisos de renovação uma vez por mês e reúne suas assinaturas em uma tarefa. A tarefa mostra o custo de cada uma, a próxima data de cobrança e um aviso quando um período de teste termina ou o preço aumenta. Só aparecem as assinaturas que a rotina consegue identificar com segurança. Se nenhuma for encontrada, nenhuma tarefa será criada.
 
-Escolha **Manter** ou **Cancelar** para cada assinatura. Uma assinatura mantida não será perguntada de novo, a menos que o preço mude. **Cancelar** mostra a página de cancelamento ou um rascunho pedindo o cancelamento. A mensagem só é enviada quando você envia. Entre uma execução e outra, a rotina verifica as assinaturas todos os dias e cria uma tarefa quando um período de teste ou uma renovação estiver a até 7 dias de ser cobrado.
+Escolha **Manter** ou **Cancelar** para cada assinatura. A rotina não pergunta de novo sobre uma assinatura mantida, a menos que o preço mude. **Cancelar** mostra a página de cancelamento ou um rascunho pedindo o cancelamento, que só é enviado quando você o envia. Entre as execuções mensais, a rotina verifica tudo diariamente e cria uma tarefa quando um período de teste termina ou uma cobrança de renovação acontece em até 7 dias.
 
-**Manter contato** lembra você de vez em quando de falar com alguém próximo, mas só quando houver um motivo real. No cartão da rotina, escolha quem incluir em uma lista curta de pessoas com quem você mesmo conversa há alguns meses, nos dois sentidos. Remova alguém com ×.
+**Manter contato** lembra você de falar com alguém próximo de vez em quando, mas só quando há um motivo concreto. No cartão da rotina, escolha quem incluir a partir de uma lista curta de pessoas com quem você mesma conversa há meses, nos dois sentidos. Toque em × para remover alguém.
 
-Você só recebe um lembrete quando faz muito mais tempo do que o habitual desde a última conversa e há algo específico para dizer: uma novidade que a pessoa compartilhou, uma promessa ainda pendente ou uma mensagem que você nunca respondeu. A rotina cria uma tarefa com o motivo e uma mensagem curta no idioma da pessoa, preparada no lugar em que você costuma conversar. A mensagem só é enviada quando você envia. Se não houver nada a dizer, nenhuma tarefa será criada.
+A rotina só envia um lembrete quando faz muito mais tempo que o normal desde a última conversa e há algo específico a dizer: novidades que a pessoa compartilhou, inclusive as do resumo na página dela, uma promessa ainda pendente ou uma mensagem que você nunca respondeu.
 
-A rotina envia no máximo dois lembretes por semana e um por pessoa por mês. Ela não envia lembretes para alguém com quem você conversou recentemente. **Não precisa** em um lembrete faz a rotina esperar mais tempo antes de lembrar você daquela pessoa, e cada vez ela espera ainda mais. A rotina nunca envia notificações e permanece pessoal: nunca é compartilhada com um Fleet de Trabalho.
+Se uma novidade tem uma data futura, como uma mudança no mês que vem, a rotina volta a verificá-la logo depois dessa data, junto com as mensagens mais recentes da pessoa. A novidade aparece em uma tarefa com o motivo e uma mensagem curta escrita no lugar em que você costuma conversar com a pessoa, no idioma dela. A mensagem só é enviada quando você a envia. Se não houver nada a dizer, nenhuma tarefa será criada.
 
-**Achados de usados** acompanha uma busca em um site de produtos usados, como Marktplaats, Vinted, eBay ou Facebook Marketplace. Faça a busca no site com os filtros desejados, copie o endereço dos resultados e cole-o depois de tocar em **Adicionar**. Se quiser, escreva filtros com suas próprias palavras, como «menos de 300, até 30 km, sem “para peças”». Cada busca é uma rotina independente, então adicione outra para fazer uma nova busca.
+A rotina envia no máximo dois lembretes por semana e um por pessoa por mês. Ela não envia lembretes para quem recebeu uma mensagem sua recentemente. Ao tocar em **Não precisa** em um lembrete, você aumenta o intervalo até o próximo lembrete para aquela pessoa. Esse intervalo aumenta de novo a cada vez. A rotina nunca envia notificações e permanece pessoal: não é compartilhada com um Fleet de Trabalho e nunca se baseia no que chegou às suas contas de trabalho.
 
-A cada 3 horas, a rotina abre a busca no próprio navegador da The Machine e procura anúncios que ainda não viu. Primeiro, verifica o preço, a distância e as palavras que você excluiu, usando código simples.
+**Achados de usados** acompanha uma busca em um site de produtos usados, como Marktplaats, Vinted, eBay ou Facebook Marketplace. Faça a busca com os filtros que quiser, copie o endereço dos resultados e cole-o depois de tocar em **Adicionar**. Se quiser, inclua filtros nas suas próprias palavras, como “menos de 300, até 30 km, sem ‘para peças’”. Cada busca é uma rotina separada, então adicione uma nova para acompanhar outra busca.
 
-Cada anúncio novo que passar por esses filtros é aberto. Sua IA avalia o estado do produto com base na foto e na descrição, e o vendedor com base nas avaliações, na classificação e no tempo de existência da conta. Os anúncios promissores aparecem em uma única tarefa, cada um com foto, título, preço e uma avaliação em uma linha. Toque em um anúncio para abri-lo no navegador da The Machine.
+A cada 3 horas, a rotina abre a busca no navegador da própria The Machine e procura anúncios que ainda não viu. O preço, a distância e os termos que você quer excluir são verificados primeiro, com código simples.
 
-Enquanto a tarefa estiver aberta, novos anúncios são adicionados no início, o número de anúncios aumenta e você recebe outra notificação, porque boas ofertas não duram muito. Marque a tarefa como concluída e o próximo achado começa uma nova tarefa. Se uma execução não encontrar nada bom, nada muda.
+Cada novo anúncio que passar por essa verificação é aberto. Sua IA avalia o estado do produto com base na foto e na descrição, e avalia o vendedor com base nas avaliações, na classificação e no tempo de existência da conta. Os anúncios que parecem bons são reunidos em uma tarefa, cada um com foto, título, preço e uma avaliação em uma linha. Toque em um anúncio para abri-lo no navegador da The Machine.
 
-A rotina é cuidadosa e econômica: uma leitura da busca por execução, no máximo 6 anúncios abertos por execução, com uma pausa entre eles, e no máximo 40 anúncios verificados por dia em todas as suas buscas. Cada verificação é uma pergunta curta à sua IA, com uma foto. Na primeira execução, a rotina verifica os anúncios mais recentes e considera os demais como vistos, para que as execuções seguintes mostrem somente novidades.
+Enquanto a tarefa estiver aberta, novos achados são adicionados ao início da lista, a quantidade aumenta e você recebe outra notificação, porque as boas ofertas acabam rápido. Marque a tarefa como feita para que o próximo achado inicie uma nova. Se uma execução não encontrar nada bom, nada muda.
 
-Se o site pedir que você faça login, mostrar uma verificação de robô ou impedir a leitura, uma tarefa avisará, com a opção **Abrir** para ver a página no navegador da The Machine. Faça login ou conclua a verificação por conta própria. Na próxima execução, a rotina tentará ler a página de novo. A The Machine nunca faz login nem resolve uma verificação por você, e nunca entra em contato com vendedores, faz lances ou compra.
+A rotina é cuidadosa e econômica: lê a busca uma vez por execução, abre no máximo 6 anúncios por execução, com uma pausa entre eles, e verifica no máximo 40 anúncios por dia em todas as suas buscas. Cada verificação é uma pergunta curta à sua IA com uma foto. Na primeira execução, a rotina verifica os anúncios mais recentes e marca os demais como vistos, para que as próximas execuções tragam apenas novidades.
 
-**Alterar busca** no cartão da rotina permite usar outro endereço ou mudar os filtros. **Mudar quando** permite escolher outro ritmo, como «a cada 6 horas».
+Se o site pedir que você entre, mostrar uma verificação de robô ou impedir a leitura, uma tarefa avisa você e mostra **Abrir** para ver a página no navegador da The Machine. Entre ou resolva a verificação você mesma. A próxima execução fará uma nova leitura. The Machine nunca faz login nem resolve verificações por você, e nunca entra em contato com vendedores, dá lances ou compra.
 
-**Recompras** lê as confirmações de pedidos de lojas on-line na sua caixa de e-mail e identifica o que você compra com frequência, como café, ração ou vitaminas. Quando estiver na hora provável de comprar algo de novo, ela cria uma tarefa com o produto, a loja, o último preço e a data da última compra. **Abrir na loja** leva você à página do produto para comprar por conta própria. Nada é comprado por você.
+**Alterar busca** no cartão da rotina permite usar outro endereço ou outros filtros. **Mudar quando** altera a frequência, por exemplo, para “a cada 6 horas”.
 
-A rotina precisa identificar pelo menos três pedidos do mesmo produto em intervalos regulares. Por isso, uma compra única ou um intervalo fora do comum não cria uma tarefa. Por enquanto, ela lê lojas que usam o Shopify. Sua IA lê somente novos e-mails de pedidos dessas lojas, com uma pergunta curta por execução. Essas tarefas nunca enviam notificações. Fazer um novo pedido do produto fecha a tarefa que estiver aberta.
+**Recompras** lê as confirmações de pedidos de lojas on-line no seu e-mail e identifica os produtos que você compra repetidamente, como café, ração ou vitaminas. Quando provavelmente estiver na hora de comprar um deles de novo, a rotina cria uma tarefa com o produto, a loja, o último preço e a data da última compra. **Abrir na loja** leva você à página do produto para comprá-lo. A rotina não compra nada por você.
 
-Enquanto a rotina de um modelo mantiver as instruções do modelo, ela será executada com o próprio código, sem usar seu plano de IA. A Limpeza de spam, por exemplo, primeiro lista por código os novos e-mails de remetentes desconhecidos e só faz uma pergunta curta à sua IA se encontrar algum. Manter contato só pergunta sobre uma ou duas pessoas selecionadas. Quando você mudar as instruções, a rotina será executada como qualquer outra, seguindo as instruções que você definiu.
+A rotina precisa encontrar pelo menos três pedidos do mesmo produto em intervalos regulares. Por isso, uma compra única ou um intervalo incomum não cria uma tarefa. Por enquanto, ela lê e-mails de lojas que usam Shopify. Sua IA lê apenas e-mails novos de pedidos dessas lojas, com uma pergunta curta por execução. Essas tarefas nunca enviam notificações. Fazer um novo pedido do produto fecha a tarefa aberta.
 
-A Limpeza de newsletters e a Limpeza de spam continuam criando uma tarefa com uma opção para cada e-mail. Uma rotina Aniversários editada mostra o resultado e no máximo um rascunho, em vez de criar uma tarefa por pessoa. **Voltar ao modelo**, em **Editar**, restaura as instruções do modelo.
+Enquanto uma rotina de modelo mantiver as instruções do modelo, ela será executada com código próprio, sem usar o plano da sua IA. A Limpeza de spam, por exemplo, primeiro lista com código os e-mails novos de remetentes desconhecidos e só faz uma pergunta curta à sua IA quando encontra algum. Manter contato só pergunta sobre uma ou duas pessoas que selecionou. Quando você muda as instruções, a rotina passa a funcionar como qualquer outra, seguindo o que você escreveu.
 
-## O que uma rotina faz
+A Limpeza de newsletters e a Limpeza de spam continuam criando uma única tarefa, com uma opção para cada e-mail. Uma rotina Aniversários editada mostra o resultado e, no máximo, um rascunho, em vez de criar uma tarefa por pessoa. Em **Editar**, toque em **Voltar ao modelo** para restaurar as instruções originais.
 
-No horário definido, sua Machine lê o que precisa, como suas mensagens, reuniões e o Graph, e mostra o resultado na página Rotinas. Cada resultado indica **Para revisar**, **Nada de novo** (com o motivo) ou **Não funcionou** (com o motivo). Uma execução que termina sem resultado conta como uma execução que não funcionou, nunca como concluída.
+## Como uma rotina funciona
 
-As rotinas só leem: suas mensagens, páginas da web, GitHub e sites como X no navegador. Elas não enviam mensagens, respondem, publicam nem alteram nada. Elas abrem páginas encontradas no que leram ou em uma busca, endereços de páginas simples e sites conhecidos, nunca um endereço inventado para carregar o que leram. Só um modelo pode alterar e-mails, e apenas o que você confirmar na tarefa correspondente.
+No horário definido, sua Machine lê o que precisa, como suas mensagens, reuniões e o Graph, e coloca o resultado na página Rotinas. Cada resultado mostra **Para revisar**, **Nada de novo** com o motivo ou **Não funcionou** com o motivo. Uma execução que termina sem resultado conta como uma falha, nunca como concluída.
 
-Quando o trabalho de uma rotina termina com uma publicação ou mensagem, ela executa todas as etapas até esse ponto e mostra o rascunho, por exemplo, **Publicaria no X:**. Depois de uma execução real, o rascunho vira uma tarefa para você aprovar. Uma execução de teste só mostra o rascunho.
+As rotinas só leem: suas mensagens, páginas da Web, GitHub e sites como X no navegador. Elas não enviam mensagens, respondem, publicam nem alteram nada. Elas abrem páginas encontradas no que leram ou em uma busca, endereços simples de páginas e sites conhecidos. Nunca abrem um endereço inventado para transportar o conteúdo que leram. Só um modelo pode alterar e-mails, e apenas aquilo que você confirmar na tarefa correspondente.
 
-O nome da rotina indica o assunto e onde o resultado será publicado. A opção **Da sua rotina**, logo abaixo, abre a rotina. O botão indica a etapa, como **Preparar publicação**: ele prepara o conteúdo, mas não publica nada. Você publica pelo resultado. Se a The Machine não puder publicar por você, o botão abre a página em que você pode fazer isso.
+Quando a tarefa de uma rotina termina com uma publicação ou mensagem, ela faz tudo até essa etapa e mostra o rascunho, por exemplo, **Publicaria no X:**. Depois de uma execução real, o rascunho vira uma tarefa para você aprovar. Uma execução de teste só mostra o rascunho.
 
-A tarefa começa na área da conta de onde será enviada, como Trabalho para a conta X da sua empresa, então você nunca precisa pedir para movê-la.
+O nome da rotina informa do que ela trata e onde o resultado será publicado. **Da sua rotina**, abaixo do nome, abre a rotina. O botão indica a etapa, como **Preparar publicação**. Ele prepara o conteúdo, mas não publica nada. Você publica a partir do resultado. Se The Machine não puder publicar por você, o botão abre a página em que você pode fazer isso.
 
-Uma execução pode seguir suas [habilidades](skills.md) ativadas, escolhidas de acordo com o que a rotina faz. Só as que se aplicam são lidas por completo. O resultado lista as habilidades em **Usadas:**. Uma habilidade nunca faz uma rotina enviar ou alterar nada.
+A tarefa começa na área da conta pela qual será enviada, como Trabalho para a conta da sua empresa no X. Assim, a rotina nunca pede que você a mova.
 
-Suas rotinas aparecem em **Suas rotinas**, abaixo de qualquer sugestão. Um resultado longo é recolhido e mostra uma prévia curta. Toque em **Mostrar mais** ou no próprio resultado para abri-lo.
+Uma execução pode seguir suas [habilidades](skills.md) ativadas, selecionadas de acordo com o que a rotina faz. Ela lê por inteiro apenas as habilidades pertinentes. O resultado lista essas habilidades em **Usadas:**. Uma habilidade nunca faz uma rotina enviar ou alterar algo.
 
-Cada execução conhece o resultado anterior e pode indicar o que mudou desde então.
+Suas rotinas aparecem em **Suas rotinas**, abaixo de qualquer sugestão. Resultados longos são recolhidos em uma prévia curta. Toque em **Mostrar mais** ou no resultado para abri-lo.
 
-Depois de uma execução bem-sucedida, sua Machine pode criar por conta própria uma receita para as partes da leitura que se repetem, como quais e-mails ou alterações no GitHub devem ser verificadas. Nas próximas execuções, essas partes são lidas primeiro, usando código simples. A IA seleciona e redige somente o que importa, com menos tokens. Uma receita só lê. Se parar de funcionar, a rotina lê por conta própria e corrige a receita. Ela aparece em **Avançado: etapas de script**, no menu ⋯.
+Cada execução conhece o resultado anterior e pode dizer o que mudou desde então.
+
+Depois de uma execução bem-sucedida, sua Machine pode criar uma receita para fazer a leitura que se repete da mesma forma, como verificar determinados e-mails ou alterações no GitHub. Nas próximas execuções, ela lê esses dados primeiro, usando código simples. Depois, a IA seleciona o que importa e escreve o resultado, com menos tokens. Uma receita só lê. Se deixar de funcionar, a execução faz a leitura por conta própria e corrige o problema. A receita aparece em **Avançado: etapas de script**, no menu ⋯.
 
 ## Dias sem execução
 
-Se sua Machine estiver desligada ou ocupada, as execuções perdidas não se acumulam. Só a mais recente é executada, uma vez. Cada data é processada uma única vez, mesmo depois de uma reinicialização.
+Se sua Machine estiver desligada ou ocupada, as execuções perdidas não se acumulam. Só a mais recente é executada, uma vez. Cada data é processada uma vez, mesmo depois de uma reinicialização.
 
-As rotinas são executadas uma de cada vez e aguardam quando há pouco uso disponível no seu plano de IA, como todo trabalho em segundo plano. **Rodar agora** executa a rotina imediatamente. O resultado aparece no cartão quando estiver pronto.
+As rotinas são executadas uma de cada vez e aguardam quando o uso do plano da sua IA está baixo, assim como qualquer tarefa em segundo plano. **Rodar agora** executa a rotina imediatamente. O resultado aparece no cartão quando estiver pronto.
 
-## Mudar ou parar uma rotina
+## Alterar ou interromper uma rotina
 
-As opções ficam no menu ⋯ da rotina. **Editar** muda o nome e o que a rotina faz. O horário e os resultados anteriores são mantidos. **Mudar quando** permite definir outro ritmo com suas próprias palavras, como «todos os dias úteis às 8h». As duas opções mostram **Salvar** e **Cancelar**. No computador, você também pode cancelar com Esc ou clicando fora.
+Essas opções estão no menu ⋯ da rotina. **Editar** permite mudar o nome e o que ela faz. O horário e os resultados anteriores são mantidos. **Mudar quando** permite definir outra frequência com suas próprias palavras, como “todos os dias úteis às 8h”. As duas opções têm **Salvar** e **Cancelar**. No computador, você também pode cancelar com Esc ou clicando fora da janela.
 
 Em **Editar**, **Testar** executa as novas instruções uma vez e mostra o resultado ali. A rotina continua como estava até você tocar em **Salvar**.
 
-**Pausar** interrompe as execuções até você tocar em **Retomar** no cartão. As rotinas pausadas ficam em **Pausado**, abaixo das suas rotinas, e as execuções perdidas durante a pausa não são realizadas depois. **Parar** encerra a rotina definitivamente.
+**Pausar** interrompe as execuções até você tocar em **Retomar** no cartão. Rotinas pausadas ficam em **Pausado**, abaixo das suas rotinas, e as execuções perdidas durante a pausa não são retomadas. **Parar** encerra uma rotina definitivamente.
 
-É possível ter até 20 rotinas, incluindo as pausadas. Pare uma para adicionar outra.
+Você pode ter até 20 rotinas, incluindo as pausadas. Pare uma rotina para adicionar outra.
 
-Quando você usa **Pedir mudanças** na tarefa de uma rotina ou escreve no chat dela, e o comentário vale para todas as execuções, como «nunca use emojis», a tarefa oferece **Mudar também a rotina**, na própria tarefa e no chat, abaixo da resposta. A opção mostra o que vai mudar nas instruções da rotina. A rotina só muda quando você toca em **Mudar**. **Deixar como está** mantém tudo igual. Se o ajuste valer só para aquele rascunho, a opção não aparece.
+Quando você usa **Pedir mudanças** na tarefa de uma rotina ou escreve no chat dela, e sua observação vale para todas as execuções, como “nunca use emojis”, a tarefa oferece **Mudar também a rotina**. Essa opção aparece na tarefa e no chat, abaixo da resposta. Ela mostra as alterações nas instruções da rotina, que só são aplicadas quando você toca em **Mudar**. **Deixar como está** mantém tudo igual. Se a alteração servir apenas para aquele rascunho, a opção não será oferecida.
 
 ## Avançado: etapas de script
 
-Não é preciso usar scripts: diga com suas próprias palavras o que a rotina deve fazer, e sua Machine cuida do resto.
+Não precisa escrever um script: diga com suas próprias palavras o que a rotina deve fazer, e sua Machine cuida do resto.
 
-Para usuários avançados, uma rotina também pode executar comandos próprios na sua Machine. No menu ⋯, escolha **Avançado: etapas de script**. **Editar** só aparece quando a rotina já tem etapas. **Buscar dados** executa um comando primeiro, na pasta correspondente (sua pasta pessoal, se o campo estiver vazio), pelo número de segundos definido. O que o comando exibir fica disponível para a rotina usar. Se você não escrever instruções, o resultado será o que o comando exibir.
+Usuários avançados também podem executar comandos próprios na sua Machine. No menu ⋯, escolha **Avançado: etapas de script**. **Editar** só mostra as etapas quando a rotina já tem alguma. **Buscar dados** executa um comando primeiro, na pasta definida, ou na sua pasta pessoal se o campo estiver vazio, por no máximo o número de segundos indicado. O que o comando imprimir será usado pela execução. Se você não escrever instruções, o que ele imprimir será o resultado.
 
-**Verificação** recebe o resultado como entrada depois da execução. Se o comando terminar com um erro, o resultado da rotina será **Não funcionou**, com a mensagem da verificação. Se um comando de Buscar dados falhar, o resultado será o mesmo.
+**Verificação** recebe o resultado como entrada depois da execução. Se o comando terminar com um erro, a execução mostrará **Não funcionou** com a mensagem da verificação. Um comando de Buscar dados que falhar também mostrará a mesma mensagem.
 
-Um comando deve ocupar uma linha e é executado sem um shell: não use pipes nem variáveis. As etapas de script são suas e só podem ser configuradas no seu painel. Uma execução de teste e **Testar** também executam Buscar dados e avisam você. Mesmo assim, elas não enviam nem guardam nada. Uma rotina nunca envia nada, então uma etapa de script deve apenas ler.
+Cada comando deve ficar em uma linha e é executado sem um shell. Não use pipes nem variáveis. As etapas de script são suas e só podem ser configuradas no seu painel. Uma execução de teste e uma execução de **Testar** também executam Buscar dados e informam isso. Elas continuam sem enviar nem manter nada. Uma rotina nunca envia nada, então uma etapa de script só deve ler.
 
-## Dos jobs do OpenClaw
+## Dos seus jobs do OpenClaw
 
-Se você criou jobs programados no OpenClaw, sua Machine os lê, sem alterá-los, e oferece como rotinas, em **Sugerido**, os que se encaixam. Cada job foi executado uma vez, então você pode ver um resultado real.
+Se você já criou jobs programados no OpenClaw, sua Machine os lê, sem alterá-los, e oferece como rotinas em **Sugerido** aqueles que forem adequados. Cada um foi executado uma vez para que você veja um resultado real.
 
-A rotina mantém suas correções ao job e exclui o que ele enviou ou publicou. Se o job executou um script ou leu dados coletados por um job de script, o script é incluído como Buscar dados. **Adicionar** transforma o job em uma rotina. **Não, obrigado** faz com que o job não seja oferecido novamente. Um job que lembrava você de fazer algo aparece em Tarefas como uma sugestão de tarefa recorrente.
+A rotina mantém as correções que você fez no job e exclui o que ele enviou ou publicou. Se o job executava um script ou lia dados coletados por um job de script, esse conteúdo é incluído como Buscar dados. **Adicionar** cria uma rotina. **Não, obrigado** impede que a rotina pergunte de novo sobre aquele job. Um job que lembrava você de fazer algo é oferecido como uma tarefa recorrente em Tarefas.
 
-Antes de adicionar uma sugestão, use **Editar** e **Mudar quando**, no menu ⋯, para alterá-la como qualquer outra rotina. **Rodar de novo** executa a rotina agora, com as instruções atuais, para mostrar resultados mais recentes, por exemplo, depois de um fim de semana tranquilo. Ela só lê, é executada uma vez por toque e substitui o resultado anterior pelo novo.
+Antes de adicionar uma sugestão, **Editar** e **Mudar quando**, no menu ⋯, permitem alterá-la como qualquer rotina. **Rodar de novo** executa a rotina imediatamente com as instruções atuais para mostrar resultados mais recentes, por exemplo, depois de um fim de semana tranquilo. Ela só lê, executa uma vez por toque e substitui o resultado anterior pelo novo.
 
-No máximo três sugestões ficam disponíveis de cada vez. Depois de uma semana de execuções bem-sucedidas, a rotina pergunta **Desativar o antigo job do OpenClaw?**. O job só é desativado quando você toca em **Desativar**. Você pode reativá-lo no OpenClaw. **Manter** deixa os dois em execução.
+No máximo três sugestões podem ficar pendentes ao mesmo tempo. Depois de uma semana de execuções bem-sucedidas, a rotina pergunta **Desativar o antigo job do OpenClaw?**. O job só é desativado se você tocar em **Desativar**. Você pode reativá-lo no OpenClaw. **Manter** deixa os dois em execução.
 
 ## Com base no que você faz
 
-Sua Machine também identifica tarefas que você faz com frequência e as oferece como rotinas em **Sugerido**, mesmo que você não use o OpenClaw. Ela procura:
+Sua Machine também percebe tarefas que você faz com frequência e as oferece como rotinas em **Sugerido**, mesmo sem o OpenClaw. Ela procura:
 
-- o mesmo pedido feito três vezes seguidas ou mais, como «resuma os chamados de suporte em aberto» toda segunda-feira;
-- um e-mail que você envia com frequência, como um relatório semanal para a equipe;
+- o mesmo pedido feito três vezes seguidas ou mais, como “resuma os chamados de suporte em aberto” toda segunda-feira;
+- um e-mail que você envia com frequência, como um relatório semanal para sua equipe;
 - newsletters e e-mails de atualização que chegam toda semana;
 - um canal movimentado do Slack em que outras pessoas escrevem toda semana;
-- e-mails que você encaminha um por um para a mesma pessoa, como mensagens da escola e do clube para sua pessoa parceira: um resumo semanal evita que você precise encaminhá-los;
-- o mesmo pedido ao qual você responde com frequência, como uma aprovação mensal para a mesma pessoa.
+- e-mails que você encaminha um por um para a mesma pessoa, como mensagens da escola e do clube para seu parceiro. Um resumo semanal poupa o trabalho de encaminhá-las;
+- o mesmo pedido que você atende com frequência, como uma aprovação mensal para a mesma pessoa.
 
-Cada sugestão explica o que a rotina identificou, como «Pedido 4 vezes seguidas» ou «Encaminhou 6 e-mails para Sam em 3 semanas», e foi executada uma vez para mostrar um resultado real. Considere um resumo da equipe, um informe antes de uma reunião semanal, um resumo de suporte ou desenvolvimento, uma visão geral dos seus números ou um resumo das newsletters que você recebe.
+Cada sugestão explica o que a rotina identificou, como “Pedido feito 4 vezes seguidas” ou “6 e-mails encaminhados para Sam em 3 semanas”, e já foi executada uma vez para que você veja um resultado real. Experimente criar um resumo da equipe, um briefing antes de uma reunião semanal, um resumo de suporte ou desenvolvimento, um acompanhamento dos seus números ou um resumo das newsletters que você recebe.
 
-A rotina só sugere o que é específico para você e claramente útil: um resumo de notícias feito somente com as suas próprias newsletters, nunca um resumo genérico. Se nada se encaixar, nenhuma sugestão será criada.
+A rotina só sugere algo específico para você e claramente útil. Por exemplo, um resumo de notícias inclui apenas as suas newsletters, nunca um resumo genérico. Se nada for adequado, nenhuma sugestão será criada.
 
-A rotina verifica essas atividades no máximo uma vez por dia e apresenta no máximo uma nova sugestão por semana, sem enviar notificações. **Não, obrigado** impede que aquela sugestão apareça de novo. Encaminhamentos e respostas continuam na conta de onde foram enviados, então Trabalho e Pessoal não se misturam. Tudo permanece na sua Machine. Uma tarefa que você conclui com frequência aparece como uma sugestão de tarefa recorrente.
+A rotina procura sugestões no máximo uma vez por dia e mostra no máximo uma nova sugestão por semana, sem enviar notificações. **Não, obrigado** impede que aquela sugestão apareça de novo. Os encaminhamentos e as respostas permanecem na conta pela qual foram enviados, então Trabalho e Pessoal não se misturam. Tudo permanece na sua Machine. Uma tarefa que você conclui com frequência é oferecida como tarefa recorrente.
 
 ## Rotinas e tarefas recorrentes
 
-Uma [tarefa recorrente](recurring.md) lembra você de fazer algo. Uma rotina é um trabalho que sua Machine faz sozinha e mostra para você. Use uma tarefa recorrente para «pagar o aluguel no dia 1» e uma rotina para «toda sexta-feira, me diga quais negociações ficaram paradas».
+Uma [tarefa recorrente](recurring.md) lembra você de fazer algo. Uma rotina é um trabalho que sua Machine faz sozinha e mostra para você. Use uma tarefa recorrente para “pagar o aluguel no dia 1º” e uma rotina para “toda sexta-feira, me diga quais oportunidades estão paradas”.

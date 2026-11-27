@@ -389,6 +389,7 @@
  "After you choose, you go back to {}.": "选择后，你会返回{}。",
  "After you save, The Machine sorts its projects into stages from your messages.": "保存后，The Machine会根据你的消息将项目分类到不同阶段。",
  "After your OK": "等你确认后",
+ "After {} decided to-dos, this shows how many were worth it, done, right the first try and sent as is.": "决定了{}项待办后，这里会显示其中值得处理、已完成、首次就做对和原样发送的数量。",
  "After {} decided to-dos, this shows how many were worth it, right the first try and sent as is.": "处理{}个待办后，这里会显示其中有多少值得做、第一次就做对了，并且无需修改就已发送。",
  "Afternoons": "下午",
  "Agenda": "日程",
@@ -970,6 +971,7 @@
  },
  "Checked {} · next by {}": "已于{}检查 · 下次检查时间不晚于{}",
  "Checked {} · next soon": "已于{}检查 · 很快再次检查",
+ "Checked {}: not there yet": "已检查{}：还没找到",
  "Checked. Nothing new.": "已检查。没有新内容。",
  "Checked. {} new to-dos.": {
   "other": "已检查。新增{}条待办。"
@@ -1054,6 +1056,7 @@
  "Claude is signed out, so nothing new gets checked or prepared.": "Claude已退出登录，因此不会检查或准备任何新内容。",
  "Claude results need The Machine Network.": "Claude的结果需要The Machine Network。",
  "Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector:": "Claude会通过The Machine连接器发回结果。在claude.ai的Settings、Connectors、Add custom connector中添加一次：",
+ "Claude skill": "Claude技能",
  "Claude, ChatGPT, Cursor and other AIs that use your Machine over MCP. They read, and at most add to-dos and drafts that wait for you.": "Claude、ChatGPT、Cursor和其他通过MCP使用你的Machine的AI。它们可以读取信息，最多只能添加待办和草稿，供你处理。",
  "ClawHub did not answer; try again in a minute": "ClawHub未响应，请一分钟后重试",
  "ClawHub doesn't have that skill": "ClawHub没有这个技能",
@@ -1300,6 +1303,7 @@
  "Couldn’t make the to-do. The next run tries again.": "无法创建待办。下次运行时会重试。",
  "Couldn’t open it": "无法打开",
  "Couldn’t open that project.": "无法打开此项目。",
+ "Couldn’t open {}": "无法打开{}",
  "Couldn’t put {} more on a to-do. The next run tries again.": {
   "other": "无法再将{}项添加到待办中。下次运行时会重试。"
  },
@@ -1463,6 +1467,9 @@
  "Do it runs {}.": "执行会运行{}。",
  "Do it tapped": "已点击“执行”",
  "Do it was right first time in {} of {}.": "执行首次就成功了{}次，共{}次。",
+ "Do it: {} of {} done, {} right first time, {} still open.": "执行：共{}项，已完成{}项，首次就做对{}项，还有{}项待办。",
+ "Do it: {} of {} done, {} right first time.": "执行：共{}项，已完成{}项，首次就做对{}项。",
+ "Do it: {} still open.": "执行：还有{}项待办。",
  "Doc": "文档",
  "Doc changes": "文档更改",
  "Doc comment": "文档评论",
@@ -2301,6 +2308,7 @@
  "I don’t sleep. I just snooze things.": "我不睡觉，只会把事情推迟处理。",
  "I drafted it. Now you just have to be brave.": "我已经把草稿写好了。现在就看你有没有勇气了。",
  "I dreamt in binary again.": "我又梦见二进制了。",
+ "I found nothing about it. Older mail in {} could not be searched just now.": "没有找到相关内容。暂时无法搜索{}中的较早邮件。",
  "I found the email you were avoiding.": "我找到那封你一直在回避的邮件了。",
  "I never forget a promise. Not even yours.": "我从不忘记承诺。你的承诺也一样。",
  "I nudge because I care. And because you asked.": "我提醒你，是因为我在乎。也是因为你这么要求。",
@@ -2370,6 +2378,7 @@
  "Importing…": "正在导入…",
  "In 2 hours": "2小时后",
  "In ChatGPT: Skills, Installed, a skill’s ⋯ menu, Download. Upload the .zip here.": "在ChatGPT中：依次选择“技能”“已安装”，点击技能的⋯菜单，再选“下载”。将.zip文件上传到这里。",
+ "In Claude, add it under Customize, Skills.": "在Claude中，将其添加到“自定义”>“技能”下。",
  "In Claude: Customize, Skills, open your skill and download it as a .skill file. Upload it here.": "在Claude中：依次选择“自定义”“技能”，打开你的技能并下载为.skill文件。然后上传到这里。",
  "In Granola: Settings, Connectors, API keys. Needs a Business or Enterprise plan. Only reads.": "在Granola中依次选择：设置、连接器、API密钥。需要Business或Enterprise套餐。仅读取数据。",
  "In Intercom's Developer Hub, open your app, then Authentication, and copy its access token.": "在Intercom的Developer Hub中打开你的应用，然后选择“身份验证”并复制访问令牌。",
@@ -2502,6 +2511,7 @@
  "It finished without a result.": "它已结束，但没有结果。",
  "It follows its board now.": "它现在会跟随自己的看板。",
  "It goes by itself within the hour. Nothing to confirm.": "它会在一小时内自动开始，无需确认。",
+ "It goes on by itself once the app is open.": "应用打开后，它会自动继续。",
  "It has install steps: The Machine may install tools for it.": "它有安装步骤，The Machine可能会为它安装工具。",
  "It has no search page. Stop it and add the template again.": "它没有搜索页面。请先停用，再重新添加模板。",
  "It is in that area already": "它已经在那个区域",
@@ -2634,6 +2644,7 @@
  "Kept both": "两者都已保留",
  "Kept both to-dos": "两个待办都已保留",
  "Kept open for the work the reply promised": "为回复中承诺的工作保持开启状态",
+ "Kept open in case the edited reply left work to do": "暂时保留为待办，以防修改后的回复还有后续工作。",
  "Kept private": "已设为私密",
  "Kept private, or a personal conversation is on them. New projects go within the hour.": "已设为私密，或其中涉及私人对话。新项目会在一小时内处理。",
  "Kept private.": "已设为私密。",
@@ -3724,6 +3735,12 @@
  "Of {} messages with no to-do": {
   "other": "在{}条未创建待办的消息中"
  },
+ "Of {} to-dos closed after Do it: done": {
+  "other": "执行后关闭的{}项待办中：已完成"
+ },
+ "Of {} to-dos done after Do it: no correction needed": {
+  "other": "执行后完成的{}项待办中：无需修改"
+ },
  "Of {} to-dos started with Do it: finished without a nudge": {
   "other": "以“执行”开始的{}项待办中：无需提醒即可完成"
  },
@@ -3765,6 +3782,7 @@
  "Okay. Turn it on any time in the Fleet tab.": "好的。你可以随时在Fleet标签页中开启。",
  "Old job turned off": "旧任务已停用",
  "Older": "较早",
+ "Older mail in {} could not be searched just now.": "暂时无法搜索{}中的较早邮件。",
  "Oldest contact": "最早的联系人",
  "Omarchy theme": "Omarchy主题",
  "On": "已开启",
@@ -3989,6 +4007,7 @@
  "Open Search": "打开搜索",
  "Open Settings": "打开设置",
  "Open Tailscale": "打开Tailscale",
+ "Open The Machine on your computer": "在电脑上打开The Machine",
  "Open The Machine: {}": "打开The Machine：{}",
  "Open To-dos": "打开待办",
  "Open a folded list": "打开折叠的列表",
@@ -4035,6 +4054,7 @@
  "Open the OpenClaw app on the phone.": "在手机上打开OpenClaw应用。",
  "Open the PDF below to read it.": "打开下方的PDF阅读。",
  "Open the PDF to read this result.": "打开PDF查看此结果。",
+ "Open the app": "打开应用",
  "Open the brief": "打开简报",
  "Open the browser": "打开浏览器",
  "Open the browser to use it there.": "打开浏览器，在那里使用。",
@@ -4758,6 +4778,7 @@
  "Replaced": "已替换",
  "Replaced. Teammates get the new one.": "已替换。队友会收到新的内容。",
  "Replaces the saved {} sign-in": "替换已保存的{}登录信息",
+ "Replied to {} on {}. Kept open in case the work is still to do.": "已于{}回复{}。暂时保留为待办，以防还有后续工作。",
  "Replied to {} on {}. The work is still to do.": "已回复{}，日期为{}。这项工作仍是待办。",
  "Replies are not on for this Intercom account: the owner turns them on by signing in with Intercom themselves (a Fleet-shared token only reads). Give the reply text in the body instead.": "此Intercom账号未启用回复功能：所有者需要亲自登录Intercom才能启用（Fleet分享令牌只能读取）。请改为在正文中提供回复内容。",
  "Replies as {}, only after you press Send.": "以{}身份回复，只有你点击“发送”后才会发出。",
@@ -5371,6 +5392,7 @@
  "Sign in with {} isn’t available yet. Paste an integration token instead.": "暂不支持使用{}登录。请改为粘贴集成令牌。",
  "Sign in with {} isn’t available yet. Use a Maton API key instead.": "暂时无法使用{}登录。请改用Maton API密钥。",
  "Sign in with {} isn’t available yet. Use your own app instead.": "暂时无法使用{}登录。请改用自己的应用。",
+ "Sign in without it": "不用它登录",
  "Sign out": "退出登录",
  "Sign-in": "登录",
  "Sign-in email": "登录邮箱",
@@ -5488,6 +5510,7 @@
  "Snoozed.": "已推迟。",
  "Snoozes and waits coming back": "推迟和等待后的返回",
  "Snoozes land at": "推迟的待办会在此时间返回",
+ "So {} sees you signing in from home, not from a server.": "这样{}会看到你是从家里而不是服务器登录的。",
  "Some conversation history or text is omitted; check the original.": "部分对话记录或文本已省略，请查看原文。",
  "Some formatting can’t go in an email, so it was taken out. Check the message, then send.": "部分格式无法用于邮件，已移除。检查邮件后再发送。",
  "Some lines in your Hyprland settings could not be read, so those settings are not applied.": "无法读取Hyprland设置中的部分行，因此这些设置不会生效。",
@@ -5877,6 +5900,7 @@
  "That didn’t work. Try again.": "操作未成功，请重试。",
  "That doc is not one of this task’s own doc events": "这个文档不属于此待办自身的文档事件",
  "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc linked in its messages)": "这份文档不属于此待办的文档（为此待办创建的文档、它的文档事件，或消息中链接的Google文档）",
+ "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, Sheet or Slides file linked in its messages or its chat)": "这份文档不属于此待办的文档（为此待办创建的文档、它的文档事件，或在其消息或聊天中链接的Google文档、Sheets或Slides文件）。",
  "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, Sheet or Slides file linked in its messages)": "该文档不属于此待办（为其创建的文档、其文档事件，或消息中关联的Google Docs、Sheets或Slides文件）",
  "That doesn’t look like a Granola API key": "这看起来不像Granola API密钥",
  "That doesn’t look like a Linear API key": "这看起来不像Linear API密钥",
@@ -6463,6 +6487,7 @@
  "This message is not the one sent for that request, so nothing was done. Please use the dashboard.": "此消息不是针对该请求发送的消息，因此未执行任何操作。请使用控制面板。",
  "This morning’s digest": "今天早上的摘要",
  "This needs a paid Claude plan.": "这需要付费Claude套餐。",
+ "This opens from the desktop app.": "请在桌面应用中打开。",
  "This page expired. Connect again from your AI.": "此页面已过期。请从你的AI中重新连接。",
  "This photo is encrypted and {} is missing": "此照片已加密，缺少{}",
  "This preparation is owned by its already-running turn": "此准备工作由已在运行的对话轮次负责",
@@ -8501,6 +8526,7 @@
  "{} shared a task with you": "{}与你分享了一个待办",
  "{} shared this board with you": "{}与你分享了这个看板",
  "{} shares a team Graph. Your Work contacts and client threads go to your teammates' Machines. Personal, sensitive and automated mail never does.": "{}分享Team Graph。你的工作联系人和客户对话会同步到队友的Machine。个人邮件、敏感邮件和自动邮件绝不会同步。",
+ "{} shows {}": "{}显示{}",
  "{} sign-ins found in {}.": "在{}中找到{}个登录。",
  "{} signal versions saved.{}": "已保存{}个信号版本。{}",
  "{} signals": {
@@ -8535,6 +8561,7 @@
  "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{}仍在你的Machine浏览器中要求使用通行密钥。请在浏览器中使用，我会继续处理。",
  "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{}仍在你的Machine浏览器中要求输入登录验证码。请在浏览器中输入，我会继续处理。",
  "{} still has this. Check in drafts a short nudge for you to send.": "{}还在处理这件事。跟进功能会为你准备一条简短提醒草稿，供你发送。",
+ "{} still open": "{}项待办仍未完成",
  "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{}仍在你的Machine浏览器中显示登录页面。请在那里完成登录，我会继续处理。",
  "{} still waiting.": "仍有{}项待处理。",
  "{} stopped after failing to start": "{}启动失败后已停止",
