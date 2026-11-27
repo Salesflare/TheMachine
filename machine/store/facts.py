@@ -332,6 +332,37 @@ def link_fact(db, fact_id, node_ids, by):
                    [(fact_id, n, by, now()) for n in dict.fromkeys(node_ids)])
 
 
+HISTORY_SOURCE = 'history:email'  # a note from the owner's own older email (history_notes.py)
+
+
+def history_fact(db, text, rule, preference, event_id, day, quote, side, node=None):
+    """One note from the owner's own older email (history_notes.py): a fact (preference: one of how they like things
+    done) or a rule, in their words (quote: the stretch of that message it says), from that message (decision_id
+    'history:<day>:<event id>', day YYYY-MM-DD: the dashboard says when they wrote it). side: its area by meaning, work
+    or personal; node: the one person or organization it is an arrangement with (scope 'with:<node>', fact_about by
+    'history'), else it holds in its area (scope 'area'). Never twice: one with the same text that is current, or that
+    the owner removed, is left as it is. The new id, else None."""
+    text = ' '.join(str(text or '').split())
+    if not 5 <= len(text) <= 240 or side not in ('work', 'personal') or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', str(day)):
+        raise ValueError('A note from history is one short sentence with its area and its day')
+    if db.execute('SELECT 1 FROM facts WHERE lower(text)=lower(?) AND (removed_at IS NULL OR merged_into IS NULL)', (text,)).fetchone():
+        return None
+    if not node:
+        keep_in_bounds(db, general_count(db))
+    fact_id = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,source,side,quote,scope) '
+                         'VALUES(?,?,NULL,?,?,?,?,?,?,?)',
+                         (text, f'history:{day}:{event_id}', now(), 'draft' if rule else 'fact', None if rule else ('preference' if preference else 'fact'),
+                          HISTORY_SOURCE, side, clamp_quote(quote), 'with:' + node if node else 'area')).lastrowid
+    if node:
+        link_fact(db, fact_id, [node], 'history')
+    return fact_id
+
+
+def clamp_quote(quote):
+    quote = ' '.join(str(quote or '').split())
+    return quote if len(quote) <= 600 else quote[:599] + '…'
+
+
 def link_named(db, fact_id, text, suggestion_id=None, names=None, config=None):
     """Tie a fact about no one to the one record its own words name (fact_links.named). (that record's id or None,
     why). One tied already, or that the owner said isn't about someone, is left alone."""

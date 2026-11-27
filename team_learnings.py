@@ -499,7 +499,8 @@ def _owner_facts(db):
     tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('fact_about','graph_nodes')")}
     personal = ("AND id NOT IN (SELECT a.fact_id FROM fact_about a JOIN graph_nodes n ON n.id=a.node_id WHERE a.removed_at IS NULL "
                 "AND n.kind='person' AND json_extract(n.info,'$.side')='personal')") if len(tables) == 2 else ''
-    return ("AND coalesce(source,'') NOT LIKE 'ai:%' " if has else '') + personal
+    # a note from the owner's older email in their Personal area (history_notes.py) stays theirs too
+    return ("AND coalesce(source,'') NOT LIKE 'ai:%' AND NOT (coalesce(source,'') LIKE 'history:%' AND coalesce(side,'')='personal') " if has else '') + personal
 
 
 def personal_cards(db, ids, accounts):

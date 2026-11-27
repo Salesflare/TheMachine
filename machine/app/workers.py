@@ -427,6 +427,7 @@ class WorkersApp:
             self.learned_step()  # what Do it runs handed in, checked by meaning before it becomes a skill (learned_skills.py)
             self.bring_in_step({'model': background_model})  # once a day at most: new lines in the owner's OpenClaw notes worth keeping (bring_in.py)
             self.notes_people_step({'model': background_model})  # facts kept from those notes: on who they are about, in the owner's words (notes_people.py)
+            self.history_notes_step({'model': background_model})  # once per connection, after its history is in: how the owner works, from their older email (history_notes.py)
             self.missed_work_step({'owned': calendar_owned, 'bulk': bulk_kind, 'model': background_model})  # once a week: how many reviewed signals without a to-do needed one (missed_work.py)
             if self.fleet:  # learnings go to the team over the Network: without it there is nobody to offer them to
                 self.store.learnings_due()

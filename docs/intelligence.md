@@ -1090,6 +1090,37 @@ Learning, and saves only the ones the owner ticks.
   fact about a Personal person stays out of Work prompts and out of the learnings sent to the team, like any fact about
   them. One entry under Learning, Changes undoes it all.
 
+## Notes from your older email
+
+History brings in a year of older mail after the first look, and on its own no model reads it. Once a mailbox's history
+and its live sync are in (`history_backfill.done_at`, `history.first_import_done`), one bounded pass
+(`history_notes.py`, `history_notes_app.py`) reads what the owner wrote themselves in it and keeps their standing ways
+of working as notes: how they like things done, what they handle, rates and terms, who their accountant is, how a kind
+of task goes. Once per mailbox (`learning_state` `history_notes:<account>`), on the background model, after
+`background_pause` like all background work, in at most 9 small turns (some 12,000 tokens in). `history_notes: false`
+in config.json turns it off.
+
+- Plain code first: only history rows of mail the owner sent, no bulk mail, only their own lines (quoted mail and a
+  forward cut), newest first, at most 300 messages and 60,000 characters.
+- Extract, one turn per batch: at most 8 notes, each with the owner's exact words from one message, its kind, its area
+  by meaning (family and health are personal also when told to a colleague) and who it is about.
+- Code decides over the model's words: the quote must be in the message and the note says no more than it does
+  (numbers and telling words); a note the owner removed never comes back, and one said already is not said twice.
+- A rule told to one person is how the owner works for everyone, unless their own words keep it to that person or
+  organization ("for you", "except", "as agreed", "for Walter only", "under your agreement"). Then it holds only with
+  them (scope `with:<node>`, on their Graph page).
+- The newer wins: one turn shows each note with the owner's newer messages that share its words (keep, drop or
+  update), and code drops a general note whose number a newer message changes, or that a newer general note on the
+  same thing with other numbers replaces. A last turn merges notes that say the same.
+- Saved through `machine/store/facts.py` `history_fact`: source `history:email`, the message's day in `decision_id`
+  (Learning shows "Your email," that day, and the owner's words), their area as `side` and scope `area`. A
+  Personal note stays out of Work prompts and out of the learnings sent to the team. Never a to-do, a promise or a
+  reply.
+
+Measured before it shipped on blind, hashed held-out Machines against a control with nothing learned: answers and
+preparations that used the notes won far more often than the control's own noise, lost no more often than it, with no
+note from after the cutoff, no third-party rule and no old task.
+
 ## Import from another AI
 
 Someone who used ChatGPT, Claude or Gemini has years of context there. Import from another AI (`memory_import.py`,

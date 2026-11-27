@@ -102,6 +102,7 @@ from reorder_app import ReorderTemplate
 from birthdays_app import Birthdays
 from birthdays_facebook_app import BirthdaysFacebook
 from bring_in_app import BringInApp
+from history_notes_app import HistoryNotesApp
 from memory_import_app import MemoryImportApp
 from missed_work_app import MissedWorkApp
 import next_actions
@@ -128,7 +129,7 @@ class Store(CardsStore, DecisionsStore, DoneMilestonesStore, EventsStore, FactsS
 
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
-APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp, BringInApp,
+APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp, BringInApp, HistoryNotesApp,
               MemoryImportApp, WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp, RoutinesApp)
 # App's mixins in machine/app/: methods moved out of App as is (docs/code-map.md)
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
