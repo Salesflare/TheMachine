@@ -5,9 +5,23 @@ import json
 import re
 
 import lookalike
-from graph import FLOOR, name_match, name_words, shown_id
+from graph import FLOOR, FREEMAIL, name_match, name_words, shown_id
 
 SAME_BUCKET = 60         # more people than this with one first name: too common to compare
+SMALL_PROJECT = 8        # people on a project before being on it together starts to say less
+PROJECT_EVIDENCE = 0.3   # what a project's weight must reach before "on the same project" counts at all
+
+
+def project_weights(on_projects, people):
+    """How much two people on one project says they may be one, per project: 1 for a small project at one organization,
+    falling with its people (8 / people) and divided by the organizations (company domains) on it. A catch-all project
+    (testers from many companies) says nothing."""
+    members = collections.defaultdict(set)
+    for node, pids in on_projects.items():
+        for pid in pids:
+            members[pid].add(node)
+    return {pid: min(1.0, SMALL_PROJECT / len(nodes)) / max(1, len({d for n in nodes for d in people.get(n, {}).get('domains', ())}))
+            for pid, nodes in members.items()}
 
 
 def phone_key(value):
@@ -22,19 +36,23 @@ def first_name_only(a, b):
     return not (len(a) >= 2 and len(b) >= 2 and a[-1] == b[-1] and len(a[-1]) >= 2)
 
 
-def likely_same(people, union, together, projects, never=lambda a, b: False):
+def likely_same(people, union, together, projects, never=lambda a, b: False, weights=None):
     """Pairs of people who may be one, for the owner to Merge or keep apart: [(a, b, why, score)]. The same full name at a
     domain in common (or no address on one side) is enough to ask; a similar name, or one across domains, needs something
-    shared: people seen with both, a project, the same role. Only a first name in common ("Gary" and "Gary Wilson") at
-    domains with none in common needs strong evidence instead: the same company domain, phone number or LinkedIn profile.
-    A name read from an address (jane.doe@) is only ever similar; never(a, b): pairs never asked (machine/graph/same_person.py)."""
+    shared: people seen with both, a small project (weights: project_weights), the same role. Only a first name in common
+    ("Gary" and "Gary Wilson") needs strong evidence instead: the same company domain, phone number or LinkedIn profile,
+    unless both write from a company domain in common (the owner's own); and a full name that several such first-name-only
+    people at other domains match is none of theirs. A name read from an address (jane.doe@) is only ever similar;
+    never(a, b): pairs never asked (machine/graph/same_person.py)."""
+    weights = weights or {}
+    company = lambda p: (p.get('mail') or set()) - FREEMAIL  # a free-mail domain in common says nothing
     buckets = collections.defaultdict(list)
     for node, p in people.items():
         if p['words']:
             buckets[p['words'][0]].append(node)
             if len(p['words'][0]) >= 3:
                 buckets[p['words'][0][:3]].append(node)  # "Alex" and "Alexander"
-    seen, out = set(), []
+    seen, out, first_only = set(), [], collections.defaultdict(list)
     for members in buckets.values():
         if len(members) > SAME_BUCKET:
             continue
@@ -57,19 +75,31 @@ def likely_same(people, union, together, projects, never=lambda a, b: False):
                     shared.append('the same phone number')
                 if pa.get('linkedin', set()) & pb.get('linkedin', set()):
                     shared.append('the same LinkedIn profile')
-                if match == 'similar' and first_name_only(pa['words'], pb['words']) and pa.get('mail') and pb.get('mail') \
-                        and not pa['mail'] & pb['mail'] and not shared:
-                    continue  # only a first name in common, at other domains: a project, a role or people around them are no evidence
+                first = match == 'similar' and first_name_only(pa['words'], pb['words'])
+                on_both = max((weights.get(pid, 1.0) for pid in projects.get(pair[0], set()) & projects.get(pair[1], set())), default=0)
+                if first and not shared and not company(pa) & company(pb) and (on_both < 1 or pa.get('mail') and pb.get('mail')):
+                    continue  # only a first name in common, and no company domain: a role, people around them or a project are no
+                    # evidence, unless one has no address at all and both are on a small project at one organization
+                weight = len(shared)
                 if pa['role'] and pa['role'] == pb['role']:
                     shared.append('the same role')
+                    weight += 1
                 if together(pair[0]) & together(pair[1]):
                     shared.append('with the same people')
-                if projects.get(pair[0], set()) & projects.get(pair[1], set()):
+                    weight += 1
+                if on_both >= PROJECT_EVIDENCE:
                     shared.append('on the same project')
+                    weight += on_both
                 if match == 'same' and len(pa['words']) >= 2 and (not (pa.get('mail') and pb.get('mail')) or pa['mail'] & pb['mail']) or shared:
                     why = ', '.join([('Same name' if match == 'same' else 'Similar name')] + shared)
-                    out.append((*pair, why, round(len(shared) + (2 if match == 'same' else 0) + min(pa['strength'], pb['strength']), 4)))
-    return sorted(out, key=lambda s: -s[3])[:300]
+                    out.append((*pair, why, round(weight + (2 if match == 'same' else 0) + min(pa['strength'], pb['strength']), 4)))
+                    if first and not (pa.get('phones', set()) & pb.get('phones', set()) or pa.get('linkedin', set()) & pb.get('linkedin', set())):
+                        fuller = max(pair, key=lambda n: len(people[n]['words']))
+                        first_only[fuller].append((pair, frozenset(company(people[pair[0] if fuller == pair[1] else pair[1]]))))
+    # One full name that first-name-only people at several companies all match ("Scott" at five domains and one "Scott
+    # Lee"): none of them is a credible guess, unless a number or a profile says so
+    crowd = {frozenset(pair) for asks in first_only.values() if len({at for _, at in asks}) >= 2 for pair, _ in asks}
+    return sorted((s for s in out if frozenset(s[:2]) not in crowd), key=lambda s: -s[3])[:300]
 
 
 def find_same_people(event_people, node_events, project_people, alike, union, infos, x_names, nodes, owner_names=(), asked=()):
@@ -97,7 +127,7 @@ def find_same_people(event_people, node_events, project_people, alike, union, in
     for (node, pid), value in project_people.items():
         if value >= FLOOR:
             on_projects[node].add(pid)
-    same_rows = likely_same(alike, union, together, on_projects, never)
+    same_rows = likely_same(alike, union, together, on_projects, never, project_weights(on_projects, alike))
     paired = {frozenset(row[:2]) for row in same_rows}
     for (one, other), why in (asked or {}).items():  # what a chat shows about an address, not enough to join by itself (chat_proof.py)
         a, b = sorted((union.find(one), union.find(other)))
