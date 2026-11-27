@@ -102,6 +102,15 @@ class GraphFixes(unittest.TestCase):
         with self.store.connect() as db:
             detail=tg.graph.detail(db,'email:ann@client.com')
         self.assertEqual(detail['role_event_id'],eid);self.assertEqual(detail['role_quote'],'Hi');self.assertEqual((detail['role'],detail['role_by']),('friend','review'))
+    def test_a_role_or_org_quote_in_any_script_must_be_in_the_message(self):
+        # A Cyrillic quote folded to no words and was "in" every message; Latin words left over from a mixed one were enough
+        e=tg.mail(1,'Ivan Petrov <ivan@client.com>','sam@acme.com',title='Встреча');e['body']='Иван Петров, Генеральный директор, Acme. Ivan, CEO';self.add(e);self.build();eid=self.ids([e['source_id']])[0]
+        with self.store.connect() as db:
+            for quote in ('Финансовый директор','Директор по продажам Acme'):
+                with self.assertRaises(ValueError):tg.graph.set_role(db,'email:ivan@client.com','CFO','review',tg.NOW.isoformat(),eid,quote)
+            with self.assertRaises(ValueError):tg.graph.set_org(db,'email:ivan@client.com','Acme','review',tg.NOW.isoformat(),eid,'Финансовый Acme')
+            for quote in ('Генеральный директор','CEO','"Ivan, CEO."'):tg.graph.set_role(db,'email:ivan@client.com','CEO','review',tg.NOW.isoformat(),eid,quote)
+            self.assertEqual(tg.graph.set_org(db,'email:ivan@client.com','Acme','review',tg.NOW.isoformat(),eid,'Генеральный директор, Acme'),{'org':'Acme'})
     def test_graph_build_does_not_publish_mixed_snapshot(self):
         import threading
         self.add(tg.mail(1,'Ann <ann@client.com>','sam@acme.com'));self.build()
