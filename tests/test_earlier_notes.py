@@ -14,6 +14,7 @@ from test_meeting_prep import ANSWER, ME, MONDAY, SAM, MeetingPrep as Base, meet
 
 NOW = dt.datetime.fromisoformat(MONDAY)
 ANA = 'ana@initech.example'
+KIM, LEE = 'kim@acme.example', 'lee@acme.example'  # the owner's colleagues
 
 
 class EarlierNotes(Base):
@@ -303,6 +304,66 @@ class EarlierNotes(Base):
         told = lambda *days: meeting_prep.body_text(fields, lambda text, *a: text.format(*a), {}, meeting_prep.cites({'notes': notes(*days), 'messages': {}}, str)).split('\n\n')
         self.assertEqual(told('Nov 9', 'Nov 10'), ['**Agreed earlier:** A (Call 1, Nov\u00a09)', '**Still open:** \n• B (Nov\u00a09)\n• C (Call 2, Nov\u00a010)'])
         self.assertEqual(told('Nov 9', 'Nov 9')[1], '**Still open:** \n• B (Call 1, Nov\u00a09)\n• C (Call 2, Nov\u00a09)')
+
+    # A meeting of the owner's own team -----------------------------------------------------------------------------
+
+    def team(self, source, title, people=(KIM, LEE), **meta):
+        """An upcoming meeting of the owner's own team on Tue Nov 10 at 10:00."""
+        self.add({**meeting(source, '10:00', people, **meta), 'title': title, 'body': ''})
+
+    def test_a_team_meeting_reads_only_its_own_series_even_with_the_same_colleagues(self):
+        self.past('d1', 7, (KIM, LEE), title='Design review', notes='Open: whether the import step is optional.', recurring_event_id='dsg')
+        self.past('h1', 2, (KIM, LEE), title='Hiring sync', notes='Open: whether the role is remote.', recurring_event_id='hir')
+        self.graph()
+        self.team('n1', 'Design review (new time)', recurring_event_id='dsg_R20261110T100000')  # the series split at a later date, renamed
+        self.assertEqual(self.notes(), [('Design review', 'Open: whether the import step is optional.')])
+        self.answer = {'useful': True, 'who': 'Kim Park and Lee Moss.', 'background': 'Was at Initech.', 'open': [{'text': 'Decide whether the import step is optional', 'source': 'N1'}]}
+        self.run_pass()
+        [card] = self.cards()
+        self.assertEqual(card['body'].replace(' ', ' '), '**Still open:** Decide whether the import step is optional (Design review, Nov 2)')  # no one introduced
+        self.assertIn('"colleagues": ["kim", "lee"]', self.prompts[0])  # by name only: no profile, messages or research
+        self.assertNotIn('outside_guests', self.prompts[0])
+        self.assertIn('own team', self.prompts[0])
+
+    def test_a_one_off_team_meeting_continues_one_of_its_title_with_a_colleague_on_it(self):
+        self.past('p1', 20, (KIM,), title='Pricing review', notes='Not decided: 12 or 15 per seat.')
+        self.past('p2', 10, (LEE,), title='Pricing review', notes='Another team.')
+        self.past('r1', 5, (KIM,), title='Roadmap chat', notes='Another subject.')
+        self.graph()
+        self.team('n1', 'Pricing review', (KIM,))
+        self.assertEqual(self.notes(), [('Pricing review', 'Not decided: 12 or 15 per seat.')])
+
+    def test_a_team_meeting_without_notes_of_its_own_gets_no_turn(self):
+        self.past('r1', 5, (KIM, LEE), title='Roadmap chat', notes='Not decided: the new engine.')
+        self.past('s1', 3, (KIM, LEE), title='Stand-up', recurring_event_id='su')  # held, no notes
+        self.graph()
+        self.team('n1', 'Catch up')
+        self.team('n2', 'Stand-up', recurring_event_id='su')
+        self.assertIsNone(self.run_pass())
+        self.assertEqual((self.prompts, self.cards()), ([], []))
+
+    def test_a_big_or_personal_team_meeting_gets_none_and_one_with_people_from_outside_comes_first(self):
+        many = tuple(f'colleague{i}@acme.example' for i in range(meeting_prep.TEAM_MOST + 1))
+        self.past('a1', 7, many, title='All hands', notes='Open: the office move.', recurring_event_id='ah')
+        self.past('d1', 6, (KIM,), title='Design review', notes='Open: the import step.', recurring_event_id='dsg')
+        self.past('k1', 20, notes='Agreed: start in January.')
+        self.graph()
+        self.team('n1', 'All hands', many, recurring_event_id='ah')
+        self.add({**meeting('n2', '09:00', (KIM,), recurring_event_id='dsg'), 'title': 'Design review', 'account_id': 'pcal'})
+        self.assertIsNone(self.found())
+        self.team('n3', 'Design review', (KIM,), recurring_event_id='dsg')
+        self.add(meeting('g1', '11:00'))
+        self.assertEqual(self.found()['title'], 'Pilot review with Globex')  # with people from outside first
+        self.run_pass()
+        self.assertEqual(self.found()['title'], 'Design review')
+
+    def test_a_team_briefing_needs_a_point_from_its_notes(self):
+        self.past('d1', 7, (KIM,), title='Design review', notes='Kim: on the mockups. No blockers.', recurring_event_id='dsg')
+        self.graph()
+        self.team('n1', 'Design review', (KIM,), recurring_event_id='dsg')
+        self.answer = {'useful': True, 'who': 'Kim Park.', 'bring': 'Ask how the mockups are going.'}
+        self.assertIsNone(self.run_pass())
+        self.assertEqual((len(self.prompts), self.cards(), self.verdicts()), (1, [], ['nothing']))
 
     def test_an_open_briefing_of_the_format_before_is_written_again_only_when_there_are_notes(self):
         asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)

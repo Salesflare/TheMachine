@@ -11,6 +11,7 @@ Portuguese, Japanese.
 | --- | --- | --- |
 | development | 29 | what the prompt and limits were tuned on |
 | held-out | 32 | the same kinds of case, never tuned on |
+| internal-development, internal-held-out | 3, 14 | meetings of the owner's own team (below) |
 
 The kinds: plain notes, long notes, a point settled later (by mail, in passing, by a promise or a to-do), newer notes or
 a mail that changes older ones, only an agenda, a transcript, notes the meeting app mailed, a series, another address of
@@ -83,6 +84,27 @@ Chats (the 4 cases, two runs each, 2026-11-24; before: each chat message counted
 | statements not supported | 5 | 0 | 4 | 0 |
 | briefings made | 2 of 4 | 4 of 4 | 2 of 4 | 4 of 4 |
 | turn tokens in, average (largest) | 1,083 (1,089) | 1,191 (1,254) | 1,081 (1,088) | 1,152 (1,200) |
+
+Meetings of the owner's own team (`i-`, sets `internal-development` 3 and `internal-held-out` 14, two runs each,
+2026-11-27; before: no briefing for a meeting with no one from outside). The held-out set was written and frozen before
+the first run. Its kinds: a planning meeting with an open decision and news since, a point settled in a later meeting, a
+series split and renamed, a one-off continuing one of its title, two series with the same colleagues (each must keep the
+other's notes out), and eight where no briefing is right: stand-ups with and without notes, one with chatter since, a 1:1
+with nothing pending, an all-hands, a catch-up with no notes of its own, an agenda with no earlier notes, and the same
+title with other people. Meetings with people from outside get the same turn as before, byte for byte (all 61 cases).
+
+| | Held-out, before | Held-out, now | Development, now |
+| --- | --- | --- | --- |
+| facts recalled | 0 of 28 | 27 of 28 | 10 of 10 |
+| wrong, stale or from the other series | 0 of 22 | 0 of 22 | 0 of 6 |
+| statements not supported | 0 | 0 | 0 |
+| briefings made where one is right | 0 of 12 | 12 of 12 | 4 of 4 |
+| briefings with nothing to say | 0 of 16 | 0 of 16 | 0 of 2 |
+| turns, of which useful: false | 0 | 18, 6 | 6, 2 |
+| turn tokens in, average (largest) | 0 | 1,725 (1,856) | 1,757 (1,835) |
+
+One line of the instructions (news since goes in Changed since) came from the development set, before the held-out run.
+A stand-up with notes, or a 1:1, still costs a turn that finds nothing (about 1,750 tokens in, 50 out).
 
 Where this is weak: the cases were written with the change, and one model wrote and checked the briefings. Only two cases
 have long notes, so the limit rests on little. "Wrong or stale" counts only the statements a case names. One held-out
