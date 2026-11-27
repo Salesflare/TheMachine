@@ -5,7 +5,8 @@ Its run (run, from routines_app.routine_template_run): plain code shortlists the
 none ends the run as nothing to say, without a model. Else one small model call (touch_pass: the background model, no
 agent, no tools) reads only them and names one specific reason per person, or none, or a day to look again when
 what they shared is still ahead (stay_in_touch.later). Each reason becomes one quiet,
-Personal to-do on the channel the owner usually writes to them on, prepared ahead: the draft is written in that
+Personal to-do on the channel the owner usually writes to them on off their Work accounts (one of those only when
+there is no other), prepared ahead: the draft is written in that
 conversation, so in their language and the owner's voice, and nothing is sent until the owner sends it. It never
 notifies by itself and is never shared with a Work Fleet. A nudge left alone lapses after a week. A test run only
 shows its reasons.

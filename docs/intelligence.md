@@ -569,7 +569,9 @@ Tables: `project_stall_runs` (counts only), `project_stall_items` (which to-do w
   gives it back.
 - Preparations add a "summary:" part with only the lines whose sources are in the to-do's area (a personal line never
   reaches a Work to-do). The Stay in touch template reads up to two "where things stand" lines from Personal accounts
-  or the owner, never a connected AI's (`person_summary.news_lines`). The Team Graph and Fleets never get it.
+  or the owner, never a connected AI's (`person_summary.news_lines`), and its facts and promises by the same
+  source check (`person_summary.sides_of`: a promise the review placed in an area counts there, whatever mailbox it
+  came on). The Team Graph and Fleets never get it.
 
 Tables: `person_summaries` (`lines` and `proposal` sealed), `person_summary_runs`.
 

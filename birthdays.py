@@ -363,16 +363,17 @@ def _mine(kind, meta, owner_slack):
     return bool(meta.get('from_me'))
 
 
-def usual_channel(db, node_id, now, owner_slack=()):
+def usual_channel(db, node_id, now, owner_slack=(), work=()):
     """(kind, event id) where the owner usually writes to this person one to one: the channel with most of their own
     messages in the past year, and its latest message (theirs or the owner's). None when the owner never wrote to them
-    one to one."""
+    one to one. work: the owner's Work account ids, for a Personal to-do (Stay in touch): their messages are left out
+    while the owner writes to them one to one on another account too, so its draft is never written in a work thread."""
     since = (now - dt.timedelta(days=CHANNEL_DAYS)).isoformat()
     marks = ','.join('?' * len(CHANNELS))
-    rows = db.execute(f'SELECT e.id,e.kind,e.occurred_at,e.metadata FROM graph_events g JOIN events e ON e.id=g.event_id '
+    rows = db.execute(f'SELECT e.id,e.account_id,e.kind,e.occurred_at,e.metadata FROM graph_events g JOIN events e ON e.id=g.event_id '
                       f'WHERE g.node_id=? AND g.direct=1 AND e.deleted=0 AND e.occurred_at>=? AND e.kind IN ({marks}) ORDER BY e.occurred_at',
                       (node_id, since, *CHANNELS)).fetchall()
-    sent, latest = {}, {}
+    every, rest = ({}, {}), ({}, {})  # (the owner's messages, the latest) per kind: on any account, and off the Work ones
     for row in rows:
         try:
             meta = json.loads(row['metadata'] or '{}')
@@ -380,9 +381,11 @@ def usual_channel(db, node_id, now, owner_slack=()):
             continue
         if not _one_to_one(row['kind'], meta, owner_slack):
             continue
-        latest[row['kind']] = row['id']
-        if _mine(row['kind'], meta, owner_slack):
-            sent[row['kind']] = sent.get(row['kind'], 0) + 1
+        for sent, latest in (every, rest) if row['account_id'] not in work else (every,):
+            latest[row['kind']] = row['id']
+            if _mine(row['kind'], meta, owner_slack):
+                sent[row['kind']] = sent.get(row['kind'], 0) + 1
+    sent, latest = rest if rest[0] else every
     if not sent:
         return None
     kind = max(sent, key=lambda k: (sent[k], latest[k]))

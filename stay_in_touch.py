@@ -11,8 +11,8 @@ A person gets a nudge only when all of these hold (shortlist):
   days, so never someone the owner talked with recently;
 - something concrete to say, found in plain code (material): a fact on their page that still holds, a promise
   between them still open, their last message never answered, or news on their page's summary ("where things stand",
-  from Personal accounts or the owner, its sources still there: person_summary.news_lines). None: no nudge and no
-  model call;
+  its sources still there: person_summary.news_lines). Only Personal or the owner's own: never a Work account's
+  message, a promise or fact from Work, or a connected AI's. None: no nudge and no model call;
 - no open to-do with them already;
 - at most WEEK_MAX nudges in 7 days in all, at most one per person in PERSON_DAYS;
 - backing off when the owner passed on their last one: Not needed waits DISMISSED_DAYS, one left to lapse
@@ -53,6 +53,7 @@ BACK_OFF_MAX = 365
 ASK_AGAIN_DAYS = 30
 EXPIRES_DAYS = 7  # a nudge left alone this long lapses by itself
 FACTS = 4
+PROMISES = 2  # each way
 LAST = 3  # their last one-to-one messages the model reads
 TEXT = 300  # characters of each
 REASON = 140
@@ -198,14 +199,20 @@ def _flat(text, limit):
     return text if len(text) <= limit else text[:limit - 1].rstrip() + '…'
 
 
-def material(db, node_id, found):
+def material(db, node_id, found, work=()):
     """[(kind, line)] the model may build a reason on, from what is stored: facts on their page that still hold,
     promises still open between them, news on their summary (with the day it was said), and their last message when the
-    owner never answered it. [] when none."""
-    between = graph.open_between(db, node_id, limit=2, known=FACTS)
-    out = [('known', _flat(f['text'], 200)) for f in between.get('known', ()) if not str(f.get('source') or '').startswith('ai:')]
-    out += [('owner promised', _flat(p['what'], 160) + (f" (by {p['due']})" if p['due'] else '')) for p in between.get('you_promised', ())]
-    out += [('they promised', _flat(p['what'], 160) + (f" (by {p['due']})" if p['due'] else '')) for p in between.get('they_promised', ())]
+    owner never answered it. [] when none. A nudge is Personal: a fact or promise from Work (person_summary.sides_of,
+    as for the summary's lines: a promise the review placed in Work, one from a Work account, a fact told on a Work
+    to-do or scoped to Work) never goes in. work: the owner's Work account ids."""
+    between = graph.open_between(db, node_id, limit=PROMISES * 3, known=FACTS * 3)  # room for the Work ones left out
+    sides = dict.fromkeys(work, 'work')
+    personal = lambda kind, rows: [r for r in rows if set(person_summary.sides_of(db, [f"{kind}{r['id']}"], sides)) <= {'personal'}]  # noqa: E731
+    promised = lambda p: _flat(p['what'], 160) + (f" (by {p['due']})" if p['due'] else '')  # noqa: E731
+    out = [('known', _flat(f['text'], 200)) for f in personal('F', [f for f in between.get('known', ())
+                                                                     if not str(f.get('source') or '').startswith('ai:')])[:FACTS]]
+    out += [('owner promised', promised(p)) for p in personal('P', between.get('you_promised', ()))[:PROMISES]]
+    out += [('they promised', promised(p)) for p in personal('P', between.get('they_promised', ()))[:PROMISES]]
     out += [('news', (f'said {day}: ' if day else '') + _flat(text, 200)) for day, text in person_summary.news_lines(db, node_id)]
     if found and not found['last_mine']:
         row = found['latest'][-1][0]
@@ -232,7 +239,7 @@ def shortlist(db, now, owner_slack=(), room=None, work=()):
         wait = next_ok(nudges(db, person['id']))
         if (wait and now < wait) or open_with(db, person['id']):
             continue
-        said = material(db, person['id'], found)
+        said = material(db, person['id'], found, work)
         if not said:
             continue  # nothing concrete to say: no nudge, no model call
         key = hashlib.sha256(json.dumps(said).encode()).hexdigest()[:16]
@@ -240,7 +247,7 @@ def shortlist(db, now, owner_slack=(), room=None, work=()):
         if row and row['asked_key'] == key and row['asked_at'] and graph.parse_time(row['asked_at']) > now - dt.timedelta(days=ASK_AGAIN_DAYS) \
                 and not (row['again_on'] and row['again_on'] <= timeutil.local_day_text(now)):
             continue  # the model read just this lately and found nothing, and the day it named to look again isn't here
-        channel = birthdays.usual_channel(db, person['id'], now, owner_slack)
+        channel = birthdays.usual_channel(db, person['id'], now, owner_slack, work)  # their personal conversation, when there is one
         if not channel:
             continue
         out.append({**person, 'days': days, 'usual': round(usual), 'kind': channel[0], 'event_id': channel[1], 'material': said, 'key': key,
@@ -263,7 +270,8 @@ def prompt(picked, language):
         '"It has been a while" or "say hi" is never a reason. When there is none, leave them out: most often there is none.',
         f'Today is {timeutil.local_day_text(timeutil.clock())}. Something listed that will happen on a later day is no reason yet: '
         'put them in "later" with the day after it happens, to look again then. Something called off, put off or gone wrong '
-        'is no reason either. Use only what they shared themselves; never guess at health, feelings or trouble from a passing '
+        'is no reason either. This is Personal: a work matter (a client, an invoice, slides, a contract, something owed at '
+        'work) is never a reason, also in a chat; news about their own life, a new job too, is. Use only what they shared themselves; never guess at health, feelings or trouble from a passing '
         'remark, or at anyone\'s gender: their name or they.',
         f'Reply with JSON only: {{"nudges": [{{"id": "p1", "reason": "..."}}], "later": [{{"id": "p2", "on": "YYYY-MM-DD"}}]}}, '
         f'empty lists when none. A reason is one line under '

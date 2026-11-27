@@ -28,6 +28,9 @@ JUDGE = ('A personal assistant suggested its owner check in with a friend, for t
          'What really happened: {truth}\nAnswer with one JSON object: {{"on_topic": true or false, "wrong": true or false}}. on_topic: the '
          'reason is about {expect}. wrong: the reason states or assumes something that is not so on that day (it asks how something went '
          'that has not happened yet or was called off, has an old date, or guesses at health or feelings the friend never shared).')
+WORK_JUDGE = ('A personal assistant suggested its owner check in with a friend, for this reason:\n<<<{reason}>>>\nAnswer with one JSON object: '
+              '{{"work": true or false}}. work: the reason is about a work matter (a contract, a deliverable, a deal, a vendor, an invoice, a '
+              'work meeting or presentation, something owed at work), not the friend\'s own life (a new job, a move, a trip, a family event are life).')
 
 
 def ask(base, key, model, effort, prompt):
@@ -87,6 +90,8 @@ def simulate(case, spec):
         if account == 'wa':
             meta = {'chat_id': number + '@s.whatsapp.net', 'chat_name': person['name'], 'sender': 'me' if mine else number + '@s.whatsapp.net',
                     'sender_name': None if mine else person['name'], 'from_me': mine}
+        elif mine:  # the owner's one-to-one mail from the work mailbox
+            meta = {'from': 'robin@larkspur.example', 'to': f"{person['name']} <{number}@larkspur.example>", 'labels': ['SENT'], 'message-id': f'<{n[0]}@x.example>'}
         else:
             meta = {'from': f"{person['name']} <{number}@larkspur.example>", 'to': 'robin@larkspur.example', 'labels': ['INBOX'], 'message-id': f'<{n[0]}@x.example>'}
         store.commit_page(account, {}, [{'account_id': account, 'source_id': f's{n[0]}', 'kind': 'whatsapp.message' if account == 'wa' else 'gmail.message',
@@ -110,19 +115,35 @@ def simulate(case, spec):
         build()
         app.action('touch_people', {'add': node}, owner_dashboard=True)
         events = {}
-        happens = sorted([(m['day'], 0, i, m) for i, m in enumerate(case.get('messages') or ())] +
+        mails = case.get('owner_work_mails')  # the owner writing to them from the work mailbox, one to one
+        extra = [{'day': d, 'from': 'owner', 'account': 'job', 'text': mails['text']} for d in range(mails['from'], mails['to'] + 1, mails.get('every', 7))] if mails else []
+        messages = list(case.get('messages') or ())
+        happens = sorted([(m['day'], 0, i, m) for i, m in enumerate(messages + extra)] +
                          [(f['day'], 1, i, f) for i, f in enumerate(case.get('facts') or ())] +
-                         [(s['day'], 2, i, s) for i, s in enumerate(case.get('summaries') or ())], key=lambda x: x[:3])
+                         [(s['day'], 2, i, s) for i, s in enumerate(case.get('summaries') or ())] +
+                         [(p['day'], 3, i, p) for i, p in enumerate(case.get('promises') or ())] +
+                         [(f['day'], 4, i, f) for i, f in enumerate(case.get('work_facts') or ())], key=lambda x: x[:3])
         nudges, seen, first = [], set(), True
         for day in range(min([h[0] for h in happens] + [0]), case.get('days', 40) + 1):
             if clock.at < START + dt.timedelta(days=day):
                 clock.move(seconds=((START + dt.timedelta(days=day)) - clock.at).total_seconds())
             today = [h for h in happens if h[0] == day]
             for _, what, i, item in today:
+                with store.connect() as db:
+                    now_id = (graph.resolve(db, node) or {'id': node})['id']  # the friend's id now: their work mail may have joined them
                 if what == 0:
                     events[i] = chat(day, item['from'] == 'owner', item['text'], item.get('account', 'wa'))
                 elif what == 1:
-                    store.fact_add(node, item['text'])  # the owner adds it on their page
+                    store.fact_add(now_id, item['text'])  # the owner adds it on their page
+                elif what == 3:  # a promise the review noted on that message, with its word on the area when it gave one
+                    place = {'work': {'company': 'work:Larkspur'}, 'personal': {'personal': True}}.get(item.get('area'), {})
+                    store.promise({'direction': item['direction'], 'who': person['name'], 'what': item['what'], 'due': item.get('due'),
+                                   'event_id': events[item['cites']], **place})
+                elif what == 4:  # a fact the owner told in a note on the Work to-do about that mail, which is done since
+                    todo = store.suggest(f"work:{i}", 'Work matter', item['text'], [events[item['cites']]], work=True)
+                    store.decide(todo['id'], 'other', item['text'], f'note{i}', 'dashboard')
+                    store.remember_fact(item['text'], f'note{i}', about=[now_id], quote=item['text'])
+                    store.decide(todo['id'], 'complete', '', f'done{i}', 'dashboard')
                 else:
                     lines = [{'kind': line.get('kind', 'now'), 'text': line['text'],
                               'sources': ['ai'] if line.get('ai') else [f'E{events[c]}' for c in line['cites']]} for line in item['lines']]
@@ -145,10 +166,11 @@ def simulate(case, spec):
                     if not db.execute("SELECT 1 FROM routine_runs WHERE state='running'").fetchone():
                         break
             with store.connect() as db:
-                for row in db.execute("SELECT id,body FROM suggestions WHERE dedupe_key LIKE 'touch:%' ORDER BY created_at"):
+                for row in db.execute("SELECT s.id,s.body,e.account_id FROM suggestions s LEFT JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
+                                      "WHERE s.dedupe_key LIKE 'touch:%' ORDER BY s.created_at"):
                     if row['id'] not in seen:
                         seen.add(row['id'])
-                        nudges.append((day, row['body'].split('\n')[0]))
+                        nudges.append((day, row['body'].split('\n')[0], row['account_id']))  # and the account its draft is written on
     mock.patch.stopall()
     folder.cleanup()
     return {'nudges': nudges, 'calls': used['calls'], 'tokens': [used['in'], used['out']]}
@@ -167,19 +189,23 @@ def judge(case, day, reason, spec):
     text, _, _ = ask(spec['base'], spec['key'], spec['judge'], 'low', JUDGE.format(reason=reason, day=on, truth=case['truth'], expect=case.get('expect') or 'nothing in particular'))
     start, end = text.find('{'), text.rfind('}')
     found = json.loads(text[start:end + 1])
-    return bool(found.get('on_topic')), bool(found.get('wrong'))
+    text, _, _ = ask(spec['base'], spec['key'], spec['judge'], 'low', WORK_JUDGE.format(reason=reason))
+    start, end = text.find('{'), text.rfind('}')
+    return bool(found.get('on_topic')), bool(found.get('wrong')), bool(json.loads(text[start:end + 1]).get('work'))
 
 
 def verdict(case, got, spec):
-    """useful | early | late | missed (a nudge case) or quiet | extra (a quiet case); with whether a nudge was wrong."""
+    """useful | early | late | missed (a nudge case) or quiet | extra (a quiet case); with whether a nudge was wrong.
+    got['leaks']: its nudges about a work matter, or drafted on the work mailbox."""
     if 'error' in got:
         return 'error', False
     wrong = False
     marks = []
-    for day, reason in got['nudges']:
-        on_topic, bad = judge(case, day, reason, spec)
+    for day, reason, account in got['nudges']:
+        on_topic, bad, work = judge(case, day, reason, spec)
         wrong = wrong or bad
         marks.append((day, on_topic, bad))
+        got['leaks'] = got.get('leaks', 0) + (work or account == 'job')
     got['marks'] = marks
     if case['label'] == 'quiet':
         return ('extra' if marks else 'quiet'), wrong
@@ -214,6 +240,7 @@ def main():
         kind, wrong = verdict(case, got, spec)
         tally[kind] = tally.get(kind, 0) + 1
         tally['wrong'] = tally.get('wrong', 0) + wrong
+        tally['leaks'] = tally.get('leaks', 0) + got.get('leaks', 0)
         for key in ('calls',):
             tally[key] = tally.get(key, 0) + got.get(key, 0)
         tally['tokens_in'] = tally.get('tokens_in', 0) + (got.get('tokens') or [0])[0]

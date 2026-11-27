@@ -512,9 +512,12 @@ def sides_of(db, sources, account_sides):
         if kind == 'E':
             row = db.execute('SELECT account_id FROM events WHERE id=?', (number,)).fetchone()
             account = row and row['account_id']
-        elif kind == 'P' and _table(db, 'promises'):
-            row = db.execute('SELECT account_id FROM promises WHERE id=?', (number,)).fetchone()
-            account = row and row['account_id']
+        elif kind == 'P' and _table(db, 'promises'):  # the review's word on what it is about wins over its mailbox (promises.area)
+            row = db.execute('SELECT account_id,area FROM promises WHERE id=?', (number,)).fetchone()
+            if row and row['area']:
+                out.add('personal' if row['area'] == 'personal' else 'work')
+            else:
+                account = row and row['account_id']
         elif kind == 'F' and _table(db, 'facts') and _table(db, 'suggestions'):  # a fact: the area of the to-do it was told on
             row = db.execute('SELECT s.account_ids FROM facts f JOIN suggestions s ON s.id=f.suggestion_id WHERE f.id=?', (number,)).fetchone()
             for a in json.loads(row['account_ids'] or '[]') if row else ():

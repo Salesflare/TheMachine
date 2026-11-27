@@ -190,6 +190,15 @@ class PersonSummary(unittest.TestCase):
         self.assertIn('Legal reviews the contract next week.', prep)
         self.assertNotIn('birthday', prep)
 
+    def test_a_promise_is_in_the_area_the_review_placed_it_whatever_mailbox_it_came_on(self):
+        sides = {'work': 'work', 'home': 'personal'}
+        with self.store.connect() as db:
+            self.assertEqual(person_summary.sides_of(db, [f'P{self.promise}'], sides), ['work'])  # none said: its mailbox's
+            db.execute("UPDATE promises SET area='personal' WHERE id=?", (self.promise,))
+            self.assertEqual(person_summary.sides_of(db, [f'P{self.promise}'], sides), ['personal'])
+            db.execute("UPDATE promises SET area='work:Acme',account_id='home' WHERE id=?", (self.promise,))
+            self.assertEqual(person_summary.sides_of(db, [f'P{self.promise}'], sides), ['work'])
+
     def test_a_deleted_signal_drops_its_line_and_the_person_is_due_again(self):
         self.answer = lambda prompt: json.dumps(self.lines())
         self.run_pass()
