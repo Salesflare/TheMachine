@@ -36,10 +36,14 @@ From 00:00 until 06:30, checks pause and new messages wait. They're checked toge
 
 ## A run failed
 
-**Recent runs** under **Connections**, **Checks** shows each run. A failed one is tried again by itself.
+**Recent runs** under **Connections**, **Checks** shows each run. A failed one is tried again by itself. When your AI stops answering, for example because its sign-in ran out, sign in again under **Settings**, **Model**: checks start again right after.
 
 A run that stopped at your AI plan's usage limit says **The AI usage limit was reached.** and when it lifts. That is a pause, not a failure: its messages wait and are checked after the reset. Nothing goes to [error reports](error-reports.md).
 
 ## Set aside
 
-When a check puts a message off twice, it is set aside. **Connections**, **Checks** shows how many, and **Set aside** lists them. One from a person writing to you, someone you know or a customer gets one more look about 3 days after it came in. That look makes a to-do or closes it. What you dismissed or snoozed stays that way.
+When a check puts a message off twice, it is set aside. **Connections**, **Checks** shows how many, and **Set aside** lists them.
+
+A message that makes every check fail while your AI works is set aside the same way, so the rest is checked.
+
+One from a person writing to you, someone you know or a customer gets one more look about 3 days after it came in. That look makes a to-do or closes it. What you dismissed or snoozed stays that way.

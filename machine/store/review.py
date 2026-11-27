@@ -23,7 +23,7 @@ import next_actions
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
-from machine.store import evidence_moments, first_pass, graph_identifiers, message_view, review_catch_up, review_last_look, review_saves, review_wait, review_whys, todo_likely
+from machine.store import evidence_moments, first_pass, graph_identifiers, message_view, review_catch_up, review_last_look, review_saves, review_split, review_wait, review_whys, todo_likely
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import UNREADABLE, _address, clamp, encoded, mail_people
 import own_addresses
@@ -720,10 +720,20 @@ class ReviewStore:
                 original_accounts = {r['account_id'] for r in db.execute('SELECT account_id FROM events WHERE id IN (' + ','.join('?' for _ in items) + ')', [i['id'] for i in items])} if items else set()
                 if not original_accounts <= set(accounts):
                     raise OwnerError('Resume with all accounts from the claimed review')
-                items, pages = self.review_claim(rows)
-                db.execute("UPDATE analyses SET status='running',owner_session=?,owner_run=?,resumed_at=?,attempts=attempts+1,items=? WHERE id=?",
-                           (owner_session, owner_run, now(), encoded(items), active['id']))
-                return self.review_result(active['id'], pages, resumed=True, last_error=active['last_error'])
+                # A batch that failed run after run is split, its one signal behind it set aside (review_split.py)
+                set_aside = None
+                if active['status'] == 'retryable':
+                    rows, set_aside = review_split.resume(db, active, rows)
+                if set_aside:
+                    db.execute('UPDATE events SET deferrals=? WHERE id=? AND version=?',
+                               (review_split.aside(set_aside['deferrals']), set_aside['id'], set_aside['version']))
+                    db.execute("UPDATE analyses SET status='abandoned',finished_at=? WHERE id=?", (now(), active['id']))
+                    LOG.warning('review set aside a signal its runs kept failing on failures=%s', active['failures'])
+                else:
+                    items, pages = self.review_claim(rows)
+                    db.execute("UPDATE analyses SET status='running',owner_session=?,owner_run=?,resumed_at=?,attempts=attempts+1,items=? WHERE id=?",
+                               (owner_session, owner_run, now(), encoded(items), active['id']))
+                    return self.review_result(active['id'], pages, resumed=True, last_error=active['last_error'])
             # Legacy/abruptly killed claims still have a conservative one-hour expiry.
             db.execute("UPDATE analyses SET status='abandoned',finished_at=? WHERE status='running' AND coalesce(resumed_at,started_at)<? AND NOT EXISTS(SELECT 1 FROM review_runs r WHERE r.run_id=analyses.owner_run AND analyses.owner_session=?||r.run_id AND r.status IN ('starting','running','recovering'))",
                        (now(), (timeutil.clock() - dt.timedelta(hours=1)).isoformat(), REVIEW_SESSION_PREFIX))

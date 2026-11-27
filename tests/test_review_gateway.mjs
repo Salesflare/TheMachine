@@ -77,6 +77,25 @@ for(const [text,reason] of [
   assert.equal(r.result.error,'runtime_error');assert.equal(r.result.reason,reason);assert.ok(!JSON.stringify(r.result).includes('private'));
 }
 r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:'HTTP 429 rate limit'}]);assert.equal(r.result.reason,undefined);
+// A Claude sign-in that lapsed (2026-11-27: two Machines' reviews failed for hours as "unclassified"): Claude Code's and
+// OpenClaw's own words, and OpenClaw's failover class when the words say nothing
+for(const [response,reason] of [
+  [{status:'error',error:'Not logged in · Please run /login private'},'auth_failed'],
+  [{status:'error',error:'OAuth token has expired. Please obtain a new token private'},'auth_failed'],
+  [{status:'error',error:'CLI backend "claude-cli" could not materialize selected auth profile "x". Re-authenticate with: openclaw models auth login. private'},'auth_failed'],
+  [{status:'error',error:'no auth profile for anthropic private'},'auth_missing'],
+  [{status:'error',error:'Your credit balance is too low to access the Anthropic API. private'},'billing'],
+  [{status:'error',error:'LLM request failed.',errorObservation:{failoverReason:'auth'}},'auth_failed'],
+  [{status:'error',error:'LLM request failed.',errorObservation:{failoverReason:'overloaded'}},'provider_overloaded'],
+  [{status:'error',error:'LLM request failed.',errorObservation:{failoverReason:'server_error'}},'provider_error'],
+  [{status:'error',error:'LLM request failed.',failoverReason:'billing'},'billing'],
+  [{status:'error',error:'LLM request failed.',errorObservation:{failoverReason:'format'}},'unclassified'],
+  [{status:'error',error:'LLM request failed.',errorObservation:{failoverReason:'toString'}},'unclassified'],
+  [{status:'error',error:'LLM request failed.'},'unclassified'],
+]){
+  r=await run({kind:'review',job_id:id,action:'status'},[response]);
+  assert.equal(r.result.error,'runtime_error');assert.equal(r.result.reason,reason,JSON.stringify(response));assert.ok(!JSON.stringify(r.result).includes('private'));
+}
 // A finished review, profile or skills run releases its one-off session's MCP connections; a pending one and a
 // preparation (a to-do's chat, used again) keep theirs, and a failed release changes nothing.
 for(const [kind,prefix] of [['review','signals'],['profile','profile'],['skills','skills']]){

@@ -22,6 +22,7 @@ import project_org_checks
 import i18n
 import meeting_prep
 import memory_use
+import model_check
 from machine.app import claim_reply
 from machine.app.first_look import (
     FIRST_DIG_HOURS,
@@ -46,7 +47,7 @@ from machine.faults import loop_failed
 from machine.prompts.profile import VOICE_TEXT
 from machine.prompts.review import FACT_KIND_HINT, FACT_QUOTE_HINT, review_prompt, source_notes
 from machine.sources.connectors import companies_prompt
-from machine.store import review_backoff, review_pause, review_wait
+from machine.store import review_backoff, review_pause, review_split, review_wait
 from machine.store.cards import active_preview
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
@@ -483,6 +484,13 @@ class ReviewApp:
                 # limit is no failure: the limit holds the next one until its reset (background_pause), then it goes.
                 failed = self.store.reviews_failing(db)
                 retry = min(settings.get('retry_seconds', 60) * 2 ** max(failed - 1, 0), settings.get('max_retry_seconds', 1800))
+                # A batch being split while the AI answers goes on after the first gap (review_split.retry_soon); once the
+                # AI failed its check and answers again (a sign-in back, an outage over) the next review goes at once,
+                # not up to half an hour later (model_check.recovered_since: once per comeback)
+                if failed and review_split.retry_soon(db):
+                    retry = min(retry, settings.get('retry_seconds', 60))
+                if failed and last and model_check.recovered_since(db, last['finished_at']):
+                    retry = 0
                 # The first review digs on (first_dig): its next batch right away, after a failure within the backoff above
                 dig = None if recovery else self.first_dig(db, stamp)
                 dig = dig if dig and 'left' in dig else None
@@ -716,20 +724,35 @@ class ReviewApp:
                 db.execute('UPDATE review_runs SET status=?,error=?,error_phase=?,last_error=coalesce(?,last_error),last_error_phase=coalesce(?,last_error_phase),error_at=CASE WHEN ? IS NOT NULL THEN ? ELSE error_at END,finished_at=?,updated_at=?,retry_at=NULL,unavailable_since=NULL WHERE run_id=?',
                            (status,None if status == 'ok' else error,None if status == 'ok' else phase,error,phase,error,now(),now(),now(),run['run_id']))
                 # Terminal runtime proof makes its unfinished claim immediately
-                # transferable. No event is marked reviewed by this recovery.
-                db.execute("UPDATE analyses SET status='retryable',last_error=coalesce(last_error,'run_interrupted'),error_at=? WHERE owner_session=? AND owner_run=? AND status IN ('running','retryable')",
-                           (now(), REVIEW_SESSION_PREFIX + run['run_id'], run['run_id']))
+                # transferable. No event is marked reviewed by this recovery. A failure that may be the batch's own
+                # counts on it: from review_split.SPLIT_AFTER on, the next run takes half of it (machine/store/review_split.py).
+                # Only while the AI answers its check: a failure while it doesn't (a sign-in gone) is the AI's, not the batch's.
+                reason = receipt.get('reason') if receipt.get('reason') in REVIEW_REASONS else None
+                on_batch = status != 'ok' and review_split.batch_failure(error, reason) and model_check.answering(db)
+                db.execute("UPDATE analyses SET status='retryable',last_error=coalesce(last_error,'run_interrupted'),error_at=?,failures=failures+? WHERE owner_session=? AND owner_run=? AND status IN ('running','retryable')",
+                           (now(), int(on_batch), REVIEW_SESSION_PREFIX + run['run_id'], run['run_id']))
                 if resumed:
                     LOG.info('review runtime outcome=lost resumed=ok')
                 elif error == 'usage_limited':
                     # The plan's usage limit: an expected state, not an error. Its batch goes back (above) and the next
                     # review waits for the reset (note_usage_limit, background_pause), like the rest of the background work.
                     LOG.info('review paused for the usage limit')
-                elif error:  # the error reports: its error code and phase, both from fixed lists (error_feed.py)
-                    error_feed.record(db, 'review', error, phase or '', 'assistant.py', 'review_step', None, self.store.code_version)
+                elif error:
+                    # The error reports: its error code with its reason, and its phase with what follows, all from fixed
+                    # lists (error_feed.py), as a preparation's (machine/app/preparation.py); a bare "runtime" told nothing
+                    # ("retry chunk": its next run takes half the batch; words error_words.py keeps, like the cloud's copy)
+                    after = 'retry chunk' if on_batch and review_split.splitting(db.execute(
+                        'SELECT failures FROM analyses WHERE owner_run=? AND status=? LIMIT 1', (run['run_id'], 'retryable')).fetchone()) else 'retry'
+                    error_feed.record(db, 'review', error + ('.' + reason if reason else ''), f'{phase or "runtime"} {after}', 'assistant.py', 'review_step',
+                                      None, self.store.code_version)
+                    # A generic runtime error may be a sign-in that lapsed since the AI's last check passed: checked again,
+                    # so it shows with the provider's words, and its comeback restarts the reviews (model_check.py). A
+                    # limit or a dropped connection says what it is already. A failure on the batch itself is checked too:
+                    # only an AI that answers lets review_split set a signal aside.
+                    if error == 'runtime_error' or on_batch:
+                        model_check.ask_recheck(db)
                     saved = db.execute("SELECT count(*) FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete'",
                                        (run['run_id'],REVIEW_SESSION_PREFIX+run['run_id'])).fetchone()[0]
-                    reason = receipt.get('reason') if receipt.get('reason') in REVIEW_REASONS else None
                     LOG.warning('review runtime outcome=%s error=%s phase=%s saved_claims=%s' + (' reason=%s' if reason else '') + (' counted=ok' if status == 'ok' else ''),
                                 result, error, phase, saved, *([reason] if reason else []))
                 result = status

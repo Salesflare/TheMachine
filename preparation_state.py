@@ -17,8 +17,12 @@ REVIEW_FAILURE_PHASES = {'runtime','model','bridge','connection','queue','provid
 
 
 # Why a generic runtime_error happened, from a fixed list (REASONS in preparation-run.mjs): logged, never the raw text.
-REVIEW_REASONS = {'mcp_runtime_limit','context_overflow','model_unavailable','auth_failed','auth_missing',
+REVIEW_REASONS = {'mcp_runtime_limit','context_overflow','model_unavailable','auth_failed','auth_missing','billing',
                   'provider_overloaded','provider_error','repeated_tool_error','unclassified'}
+
+# Reasons that are the AI's or the Gateway's, never one batch's: the same for every signal, so a review that failed for
+# one is never split up or blamed on a signal (machine/store/review_split.py).
+ACCOUNT_REASONS = {'mcp_runtime_limit','model_unavailable','auth_failed','auth_missing','billing','provider_overloaded','provider_error'}
 
 # Automatic retries of one to-do's runs (a run that failed, timed out, ended without a result, or was lost or cut off
 # by a restart; the one after a new release): at most AUTO_RETRIES in all, the first after AUTO_RETRY_BACKOFF[0]
