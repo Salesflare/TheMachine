@@ -87,6 +87,8 @@ IMPORT = re.compile(r'^[ \t]*(?:import[ \t]+(?P<plain>[\w.]+(?:[ \t]+as[ \t]+\w+
 # The files that can depend on another one: code and the page's parts. Docs, catalogs and data only get read.
 QUOTED_PY = re.compile(r'''['"`/]([\w.-]+\.py)['"`]''')
 IMPORTED = re.compile(r'\b(?:import|from)\s+([\w.]+(?:\s*,\s*[\w.]+)*)')
+# from a package, a module by name (python -c 'from machine.delivery import desk' in a Node test): that module too
+FROM_IMPORTED = re.compile(r'\bfrom\s+([\w.]+)\s+import\s+(\w+(?:\s*,\s*\w+)*)')
 CODE = {'.py', '.mjs', '.js', '.ts', '.html', '.css', '.sh'}
 NOT_CODE = ('docs/', 'mobile/', 'brand/', 'source-notes/', 'i18n/')
 
@@ -201,6 +203,9 @@ class Repo:
             for found in set(IMPORTED.findall(text)):
                 for name in re.split(r'\s*,\s*', found):
                     self.imported.setdefault(name, set()).add(path)
+            for package, names in set(FROM_IMPORTED.findall(text)):
+                for name in re.split(r'\s*,\s*', names):
+                    self.imported.setdefault(f'{package}.{name}', set()).add(path)
 
     def _resolve(self, name, here):
         """The repository files a dotted import name loads: the module and the packages above it."""
