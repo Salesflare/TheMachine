@@ -192,6 +192,34 @@ class SamePerson(unittest.TestCase):
         with self.store.connect() as db:
             self.assertFalse(db.execute('SELECT 1 FROM graph_merges').fetchone())  # nor kept apart as Not the same
 
+    def test_a_project_across_many_companies_is_no_evidence_and_a_small_one_is(self):
+        # A catch-all project (testers from many companies): first-name-only senders at three domains and one full name in a
+        # chat. Being on it says nothing, and one full name several of them match is none of theirs.
+        fillers = ['Quinn Avery', 'Rufus Bell', 'Selma Cho', 'Tibor Dahl', 'Ugo Ekström', 'Vera Fox', 'Wes Grant', 'Yoko Hale']
+        testers = [f'email:{n.split()[0].lower()}@co{i}.example' for i, n in enumerate(fillers)]
+        scotts = [f'email:scott@{d}.example' for d in ('kadima', 'salesq', 'steel')]
+        self.add(*(tg.mail(3, f'{n} <{t[6:]}>', 'sam@acme.com') for n, t in zip(fillers, testers)),
+                 *(tg.mail(2, f'Scott <{s[6:]}>', 'sam@acme.com') for s in scotts),
+                 tg.chat(2, '00000000061', 'Scott Lee'),
+                 # a small project at one organization: a first name at its domain and a full name in a chat
+                 tg.mail(1, 'Nia <nia@harbor.example>', 'sam@acme.com'), tg.mail(1, 'Bo Berg <bo@harbor.example>', 'sam@acme.com'),
+                 tg.chat(1, '00000000062', 'Nia Holt'))
+        with self.store.connect() as db:
+            db.execute("INSERT INTO projects(id,name,created_at) VALUES(8,'Early testers',?)", (STAMP,))
+            db.execute("INSERT INTO projects(id,name,created_at) VALUES(9,'Harbor rollout',?)", (STAMP,))
+            db.executemany('INSERT INTO project_people(project_id,node_id,created_at) VALUES(8,?,?)',
+                           [(n, STAMP) for n in testers + scotts + ['wa:00000000061']])
+            db.executemany('INSERT INTO project_people(project_id,node_id,created_at) VALUES(9,?,?)',
+                           [(n, STAMP) for n in ('email:nia@harbor.example', 'email:bo@harbor.example', 'wa:00000000062')])
+            db.executemany("INSERT INTO graph_same(a,b,why,score) VALUES(?,'wa:00000000061','Similar name, on the same project',1.5)",
+                           [(s,) for s in scotts])  # what an older build asked
+        self.build()
+        self.assertEqual(self.same_pairs(), {('email:nia@harbor.example', 'wa:00000000062')})
+        self.assertEqual(self.node('wa:00000000061')['same'], [])  # its page asks nothing either
+        self.assertEqual(self.node('wa:00000000062')['same'][0]['why'], 'Similar name, on the same project')
+        with self.store.connect() as db:
+            self.assertFalse(db.execute('SELECT 1 FROM graph_merges').fetchone())  # the old questions just go: nothing kept apart
+
     def test_her_number_in_her_own_mail_joins_a_colleagues_does_not(self):
         own = tg.mail(3, 'Ann Ito <ann@client.example>', 'sam@acme.com')
         own['body'] = 'Thanks!\n\nAnn Ito\nClient Co\n+32 470 00 00 41'
@@ -310,6 +338,41 @@ class SamePerson(unittest.TestCase):
         self.assertEqual(graph.name_words(None, 'email:jane.doe@mail.example'), ['jane', 'doe'])
         self.assertEqual(graph.name_match(['alex', 'lee'], ['alexander', 'lee']), 'similar')
         self.assertIsNone(graph.name_match(['ann', 'lee'], ['ann', 'berg']))
+
+
+class FirstNameOnly(unittest.TestCase):
+    """likely_same on people as machine/graph/people.py stores them: only a first name in common takes strong evidence."""
+
+    def asked(self, people, projects=None, around=None):
+        from machine.graph import same_person
+        union = type('Union', (), {'find': staticmethod(lambda n: n), 'kept_apart': staticmethod(lambda a, b: False)})
+        alike = {n: {'derived': False, 'strength': 0.5, 'role': None, 'phones': set(), 'linkedin': set(), **p,
+                     'words': graph.name_words(p['name'])} for n, p in people.items()}
+        projects = projects or {}
+        rows = same_person.likely_same(alike, union, lambda n: (around or {}).get(n, set()), projects, weights=same_person.project_weights(projects, alike))
+        return {(a, b): why for a, b, why, _ in rows}
+
+    def test_free_mail_or_people_around_them_is_no_evidence(self):
+        self.assertEqual(self.asked({'email:bo@gmail.com': {'name': 'Bo', 'mail': {'gmail.com'}, 'domains': set()},
+                                     'email:bo.stone@gmail.com': {'name': 'Bo Stone', 'mail': {'gmail.com'}, 'domains': set()},
+                                     'wa:1': {'name': 'Lee', 'mail': set(), 'domains': set()},
+                                     'wa:2': {'name': 'Lee Park', 'mail': set(), 'domains': set()}},
+                                    around={'email:bo@gmail.com': {'x'}, 'email:bo.stone@gmail.com': {'x'}, 'wa:1': {'y'}, 'wa:2': {'y'}}), {})
+
+    def test_the_owners_own_domain_with_a_small_project_is(self):
+        people = {'email:ivy@owner.example': {'name': 'Ivy', 'mail': {'owner.example'}, 'domains': set()},
+                  'email:ivy.ito@owner.example': {'name': 'Ivy Ito', 'mail': {'owner.example'}, 'domains': set()}}
+        self.assertEqual(self.asked(people, {n: {1} for n in people}),
+                         {('email:ivy.ito@owner.example', 'email:ivy@owner.example'): 'Similar name, on the same project'})
+
+    def test_one_full_name_several_first_names_at_other_companies_match_is_none_of_theirs(self):
+        # each "Ray" on a small project of their own company, the full name (no address) on all three
+        people = {f'email:ray@r{i}.example': {'name': 'Ray', 'mail': {f'r{i}.example'}, 'domains': {f'r{i}.example'}} for i in range(3)}
+        projects = {n: {i} for i, n in enumerate(people)}
+        people['wa:3'], projects['wa:3'] = {'name': 'Ray Hunt', 'mail': set(), 'domains': set()}, {0, 1, 2}
+        self.assertEqual(self.asked(people, projects), {})
+        del people['email:ray@r1.example'], people['email:ray@r2.example']  # one of them alone: a fair question
+        self.assertEqual(list(self.asked(people, projects).values()), ['Similar name, on the same project'])
 
 
 if __name__ == '__main__':

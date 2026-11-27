@@ -153,7 +153,9 @@ the owner's own edit), both are on one project, both are at one organization, or
 
 Weaker evidence is only a question: the same full name on a work contact and a personal chat, the same full name that two
 people on one channel carry (when they write from a domain in common, or one of them has no address), or a similar name ("Ann" and "Ann Lee", a nameless jane.doe@ and Jane Doe) with something
-shared besides (the same company domain, people seen with both, a project, the same role). A name read from an address
+shared besides (the same company domain, people seen with both, a small project, the same role). A project counts for
+less the more people it has and is divided by the organizations (company domains) on it: one with up to 8 people at one
+organization counts fully, and below 0.3 (a catch-all project of testers from many companies) it is no evidence. A name read from an address
 (jane.doe@ with no name given) is only ever similar, so the same local part at two domains is never asked by itself; an
 initial ("P") is no name, and a sender named for their own company ("Blue Harbor" at blueharbor.com) has no person's
 name to compare.
@@ -161,11 +163,14 @@ name to compare.
 A name is what anyone can type, so it never pairs two addresses across domains by itself (`machine/graph/same_person.py`):
 
 - two people who write from no domain in common (free mail and the owner's own domains count as domains here) are
-  asked only with something shared besides the name: people seen with both, a project, the same role;
-- when those two have only a first name in common ("Sam" and "Sam", "Sam" and "Sam Lee"), people, a project or a role
-  are no evidence (a big project or a common role takes in many strangers): only the same phone number or LinkedIn
-  profile on record for both is. Each build works the questions out again, so one an older version asked just goes;
-  nothing is merged or marked Not the same;
+  asked only with something shared besides the name: people seen with both, a small project, the same role;
+- two with only a first name in common ("Sam" and "Sam", "Sam" and "Sam Lee"), also when one has no address (a
+  LinkedIn or WhatsApp chat), need the same company domain, phone number or LinkedIn profile on record for both; people,
+  a role or a free-mail domain are no evidence. Only two who write from a company domain in common that is no
+  organization of theirs (the owner's own), or one with no address on a small project at one organization with the
+  other, are asked on what they share besides. A full name that several such first-name-only people at other companies
+  match is asked with none of them, unless a phone number or profile says so. Each build works the questions out again,
+  so one an older version asked just goes; nothing is merged or marked Not the same;
 - two whose domains imitate one another (Lookalike senders, below), or carry the same name at another ending
   (acme.co next to acme.com), are never asked;
 - a person marked as a lookalike is never asked with anyone;

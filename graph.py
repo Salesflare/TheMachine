@@ -15,7 +15,7 @@ profile for both, their WhatsApp number is in their own mail, the same full name
 different channels (one person with it per channel; never through a shared address, graph_joins.py), their own chat shows the
 address is theirs (machine/graph/chat_proof.py), or the owner or agent says so (merges). Weaker
 evidence (that name shared by two people on one channel or by a work contact and a personal chat, a similar name with the same company, people,
-project or role; only a first name in common across domains, with the same company domain, phone or LinkedIn) is only offered as "Same person?" (graph_same); the owner's Merge or Not the same is
+small project or role; only a first name in common, with the same company domain, phone or LinkedIn) is only offered as "Same person?" (graph_same); the owner's Merge or Not the same is
 kept in graph_merges, and Not the same also undoes a merge for good. Projects are named
 by the review agent and the owner, and spread to the rest of their threads; a signal that reads like
 a labeled one and shares a person with it is probably part of it too (weaker, until a review
