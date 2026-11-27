@@ -8724,7 +8724,10 @@
   "one": "Manca {} passaggio",
   "other": "Mancano {} passaggi"
  },
+ "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{} continua a chiedere una passkey nel browser della tua Machine. Usala lì e continuerò da sola.",
+ "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{} continua a chiedere un codice di accesso nel browser della tua Machine. Inseriscilo lì e continuerò da sola.",
  "{} still has this. Check in drafts a short nudge for you to send.": "{} ce l’ha ancora. «Chiedi un aggiornamento» prepara la bozza di un breve sollecito da inviare tu.",
+ "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{} mostra ancora la schermata di accesso nel browser della tua Machine. Completa l’accesso lì e continuerò da sola.",
  "{} still waiting.": "{} ancora in attesa.",
  "{} stopped after failing to start": "{} si è fermato dopo non essere riuscito ad avviarsi",
  "{} stopped the search for {}": "{} ha interrotto la ricerca di {}",

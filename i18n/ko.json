@@ -8531,7 +8531,10 @@
  "{} steps left": {
   "other": "남은 단계 {}개"
  },
+ "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{}에서 아직 내 Machine의 브라우저에서 패스키를 요청해요. 거기서 사용하면 제가 알아서 계속 진행할게요.",
+ "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{}에서 아직 내 Machine의 브라우저에서 로그인 코드를 요청해요. 거기서 입력하면 제가 알아서 계속 진행할게요.",
  "{} still has this. Check in drafts a short nudge for you to send.": "{}이(가) 아직 이 일을 맡고 있어요. ‘확인하기’를 누르면 보낼 짧은 알림 초안을 작성해요.",
+ "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{}의 로그인 화면이 아직 내 Machine의 브라우저에 표시돼요. 거기서 마치면 제가 알아서 계속 진행할게요.",
  "{} still waiting.": "{}개가 아직 대기 중이에요.",
  "{} stopped after failing to start": "{}개가 시작에 실패한 뒤 중지됐어요",
  "{} stopped the search for {}": "{}이(가) {} 검색을 중단했어요",

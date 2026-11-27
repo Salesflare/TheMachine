@@ -8724,7 +8724,10 @@
   "one": "Falta {} etapa",
   "other": "Faltam {} etapas"
  },
+ "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{} ainda está pedindo uma chave de acesso no navegador da sua Machine. Use-a por lá e eu continuo sozinha.",
+ "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{} ainda está pedindo um código de login no navegador da sua Machine. Digite-o por lá e eu continuo sozinha.",
  "{} still has this. Check in drafts a short nudge for you to send.": "{} ainda está com isso. Fazer follow-up escreve um rascunho curto para você enviar.",
+ "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{} ainda mostra a tela de login no navegador da sua Machine. Conclua o login por lá e eu continuo sozinha.",
  "{} still waiting.": "{} ainda aguardando.",
  "{} stopped after failing to start": "{} parou depois de falhar ao iniciar",
  "{} stopped the search for {}": "{} interrompeu a busca por {}",

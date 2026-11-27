@@ -5,22 +5,22 @@ summary: Als er iets misgaat, vertelt je Machine het team van The Machine wat er
 covers: error-reports
 code: error_feed.py, error_words.py, pacing.py, dashboard.html, sw.js
 order: 4
-translated: e1d4d602255cde39
+translated: d474cfa6bcefd25a
 ---
+## Wat het is
+
+Als er iets misgaat in The Machine, stuurt je Machine ons team een korte, anonieme melding over de fout. Zo kunnen we het probleem oplossen voordat iemand het meldt. Dit staat standaard aan en vereist [The Machine Network](/network).
+
 ## Wat wordt verstuurd
 
-Als er iets misgaat in The Machine, stuurt je Machine ons team een kort, anoniem bericht over de fout. Zo kunnen we het probleem oplossen voordat iemand het meldt. Dit staat standaard aan en vereist [The Machine Network](/network).
+Alleen dit, per type fout:
 
-## Wat wordt verstuurd
+- het type fout, zoals `KeyError`;
+- de foutmelding, zonder specifieke informatie zoals cijfers, ID's, geciteerde tekst, e-mailadressen, links, bestandspaden, sleutels en woorden die een naam kunnen zijn;
+- waar in de eigen code van The Machine de fout optrad, nooit een map op je computer;
+- de appversie, hoe vaak de fout optrad en wanneer dat voor het eerst en het laatst was.
 
-Per soort fout wordt alleen dit verstuurd:
-
-- de soort fout, zoals `KeyError`;
-- het foutbericht, waaruit specifieke gegevens zijn verwijderd: getallen, ID's, geciteerde tekst, e-mailadressen, links, bestandspaden, sleutels en woorden die een naam kunnen zijn;
-- waar in de eigen code van The Machine de fout is opgetreden, nooit een map op je computer;
-- de appversie, hoe vaak de fout is opgetreden en wanneer dat voor het eerst en het laatst was.
-
-Bijvoorbeeld: `IndexError`, `list index out of range`, bij `machine/faults.py:fault_event:246`, versie `05b17ee6ac79`, 1 keer.
+Bijvoorbeeld: `IndexError`, `list index out of range`, op `machine/faults.py:fault_event:246`, versie `05b17ee6ac79`, 1 keer.
 
 ## Wat nooit wordt verstuurd
 
@@ -28,26 +28,26 @@ De inhoud van je berichten, to-do's, concepten of chats. Namen, e-mailadressen, 
 
 ## Waar fouten vandaan komen
 
-- achtergrondtaken: nieuwe berichten controleren, to-do's voorbereiden, chatten, Koppelingen en synchronisaties;
-- het dashboard, in je browser of de app, inclusief fouten die je te zien kreeg;
-- mislukte of verlopen aanvragen vanuit het dashboard: welke aanvraag, nooit wat die heeft verstuurd;
-- mislukte taken van codeeragenten: alleen de tool en de soort fout;
-- de korte test van je AI als die mislukt: de fout van de AI, zonder specifieke gegevens.
+- werk op de achtergrond: nieuwe berichten controleren, to-do's voorbereiden, chats, koppelingen en synchronisaties;
+- het dashboard in je browser of de app, inclusief fouten die daar worden getoond;
+- mislukte of verlopen verzoeken vanuit het dashboard: om welk verzoek het gaat, nooit wat het heeft verstuurd;
+- mislukte taken van codeeragents: alleen de tool en het type fout;
+- de korte test van je AI als die mislukt: de fout van de AI, zonder specifieke informatie.
 
-Een controle die stopt omdat je de gebruikslimiet van je AI-plan hebt bereikt, is geen fout en wordt niet verstuurd. De controle wacht tot de limiet opnieuw is ingesteld.
+Een controle die stopt omdat je AI-abonnement de gebruikslimiet heeft bereikt, is geen fout en wordt niet verstuurd. De controle wacht tot de limiet is gereset. Ook een controle die mislukt omdat je AI is uitgelogd, is geen fout: **Wacht op jou** vraagt je om opnieuw in te loggen.
 
-Een connector die je zelf hebt toegevoegd (je eigen bestand in `connectors/`) verstuurt alleen de naam van de service en het foutlabel, zoals `notes` en `notes_http: HTTP unauthorized`, zodat we kunnen helpen het probleem op te lossen. Verder wordt niets uit de code verstuurd. De kaart van de koppeling toont de volledige fout.
+Een connector die je zelf hebt toegevoegd (je eigen bestand in `connectors/`) verstuurt alleen de naam van de dienst en het foutlabel, zoals `notes` en `notes_http: HTTP unauthorized`, zodat we kunnen helpen het probleem op te lossen. Er wordt verder niets uit de code verstuurd. Op de kaart van de koppeling staat de volledige fout.
 
-Dezelfde fout wordt niet opnieuw verstuurd, maar wel geteld. Er wordt hoogstens één batch per 10 minuten verstuurd. We bewaren de rapporten 30 dagen.
+Herhaalde fouten worden geteld, maar niet opnieuw verstuurd. Er wordt maximaal één batch per 10 minuten verstuurd. We bewaren die 30 dagen.
 
-## Spreiding
+## Tempo
 
-Achtergrondtaken wachten als de limieten van je AI-plan bijna bereikt zijn, zodat er ruimte blijft voor je eigen chats (zie [Je AI-model](model.md)).
+Als de limieten van je AI-abonnement bijna bereikt zijn, wacht werk op de achtergrond. Zo blijft er ruimte voor je eigen chats (zie [Je AI-model](model.md)).
 
-Als foutrapporten aanstaan, vertelt je Machine ons ook één keer per dag hoe vaak dat is gebeurd: per pauze het uur, de betreffende limiet, hoe lang de pauze duurde en hoeveel taken hebben gewacht. Niet wat die taken deden.
+Als foutrapporten aanstaan, laat je Machine ons ook eenmaal per dag weten hoe vaak dit gebeurde: per pauze het uur, welke limiet werd bereikt, hoelang de pauze duurde en hoeveel taken wachtten. Er wordt niets verteld over de taken zelf.
 
-## Uitschakelen
+## Uitzetten
 
-Schakel in **Instellingen** onder **Beveiliging** de optie **Foutrapporten versturen** uit. Er worden dan geen nieuwe gegevens vastgelegd of verstuurd en gegevens die nog klaarstonden, worden verwijderd. Fouten blijven zichtbaar op je eigen Machine. Die kan een oplossing voorstellen.
+Ga naar **Instellingen** en kies **Beveiliging**. Zet **Foutrapporten versturen** uit. Er wordt niets meer vastgelegd of verstuurd en wat nog klaarstond, wordt verwijderd. Fouten blijven zichtbaar op je eigen Machine, waar je een oplossing kunt krijgen.
 
 Zie [Beveiliging en privacy](security-and-privacy.md).

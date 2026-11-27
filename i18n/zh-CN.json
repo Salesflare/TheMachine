@@ -8531,7 +8531,10 @@
  "{} steps left": {
   "other": "还剩{}步"
  },
+ "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{}仍在你的Machine浏览器中要求使用通行密钥。请在浏览器中使用，我会继续处理。",
+ "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{}仍在你的Machine浏览器中要求输入登录验证码。请在浏览器中输入，我会继续处理。",
  "{} still has this. Check in drafts a short nudge for you to send.": "{}还在处理这件事。跟进功能会为你准备一条简短提醒草稿，供你发送。",
+ "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{}仍在你的Machine浏览器中显示登录页面。请在那里完成登录，我会继续处理。",
  "{} still waiting.": "仍有{}项待处理。",
  "{} stopped after failing to start": "{}启动失败后已停止",
  "{} stopped the search for {}": "{}停止了对{}的搜索",

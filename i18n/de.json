@@ -8724,7 +8724,10 @@
   "one": "Noch {} Schritt",
   "other": "Noch {} Schritte"
  },
+ "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{} fragt im Browser deiner Machine weiterhin nach einem Passkey. Verwende ihn dort, dann mache ich allein weiter.",
+ "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{} fragt im Browser deiner Machine weiterhin nach einem Anmeldecode. Gib ihn dort ein, dann mache ich allein weiter.",
  "{} still has this. Check in drafts a short nudge for you to send.": "{} hat das noch. Nachfragen schreibt einen kurzen Entwurf, den du selbst sendest.",
+ "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{} zeigt im Browser deiner Machine weiterhin die Anmeldung an. Schließ sie dort ab, dann mache ich allein weiter.",
  "{} still waiting.": "{} warten noch.",
  "{} stopped after failing to start": "{} ist nach Startfehlern aus",
  "{} stopped the search for {}": "{} hat die Suche für {} beendet",
