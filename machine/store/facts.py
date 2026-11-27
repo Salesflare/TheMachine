@@ -989,42 +989,55 @@ class FactsStore:
         return cls.facts_block(out, ids)
 
     def facts_for(self, suggestion_id, kind='fact', settings=None, limit=3000, all_under=FACTS_ALL_UNDER, top=FACTS_TOP, floor=FACTS_FLOOR, accounts=None):
-        """The facts (or draft rules) a preparation needs, not everything learned: all of them while they are few;
-        else the ones learned on this card plus those closest in meaning to it (embeddings), else those that share its
-        words (word_match on its title, text and latest note) and then those that count most.
+        """The facts (or draft rules) a preparation needs, not everything learned (facts_picked, for this to-do: its
+        title, text and latest note, its own facts and those about the records on its signals). accounts (the
+        configured ones): the to-do's area (suggestion_scope) keeps the other area's out."""
+        with self.connect() as db:
+            card = db.execute('SELECT account_ids,area,title,body FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND feedback!='' ORDER BY created_at DESC LIMIT 1", (suggestion_id,)).fetchone()
+        area = None if accounts is None else suggestion_scope(card['account_ids'] if card else '[]', accounts, card['area'] if card else None)
+        asked = {'todo': suggestion_id, 'area': area, 'title': card['title'] if card else '',
+                 'text': ' '.join(filter(None, (card['body'], note['feedback'] if note else ''))) if card else ''}
+        return self.facts_picked(asked, kind, settings, limit, all_under, top, floor)
+
+    def facts_picked(self, asked, kind='fact', settings=None, limit=3000, all_under=FACTS_ALL_UNDER, top=FACTS_TOP, floor=FACTS_FLOOR):
+        """What was learned (kind fact, or draft rules) that one piece of work needs, the one selector of a
+        preparation (facts_for) and a routine's run (recall routine). asked: {'title', 'text'}: what the work is about;
+        'todo': a to-do's id (its own facts first, and those about the records on its signals); 'area': work or
+        personal, None for both.
+        First what may go in at all (in_scope): with an area, a connected AI's fact of the other area stays out, and so
+        does a fact about a person on the other side only. Then all of them while they are few (all_under); else the
+        to-do's own, those about its records, then those closest in meaning to what is asked (embeddings), else those
+        that share its words (word_match) and then those that count most.
         Each counts by its decayed weight (fact_weight): an event fades in weeks, a preference or commitment in months, a
         fact in a year; one past its end day is gone. Closeness picks (at least floor), the weight orders. A fact about
-        a record on this to-do's signals (fact_about) comes before the closeness picks, within the same top: it takes
-        the place of the least close one. accounts (the configured ones): a connected AI's fact in the other area than
-        this to-do's (suggestion_scope) stays out, and so does a fact about a person on the other side only."""
-        at = now()
+        a record on the to-do's signals (fact_about) comes before the closeness picks, within the same top: it takes
+        the place of the least close one. At most limit characters."""
+        at, todo = now(), asked.get('todo')
         facts = [f for f in self.facts() if f['kind'] == kind]
         with self.connect() as db:
             with_about(db, facts)
-            near = fact_links.todo_records(db, suggestion_id) if any(f['about'] for f in facts) else set()
+            near = fact_links.todo_records(db, todo) if todo and any(f['about'] for f in facts) else set()
             who = fact_links.records(db, {n for f in facts for n in f['about']})
-            card = db.execute('SELECT account_ids,area,title,body FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
-            note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND feedback!='' ORDER BY created_at DESC LIMIT 1", (suggestion_id,)).fetchone()
-        if accounts is not None and (who or any(f.get('side') for f in facts)):
-            area = suggestion_scope(card['account_ids'] if card else '[]', accounts, card['area'] if card else None)
-            facts = [f for f in facts if f.get('side') in (None, area) and fact_links.on_side(f['about'], who, area)]
+        facts = self.in_scope(facts, asked, who)
         for f in facts:  # a line says who it is about when its own words don't
             f['who'] = fact_links.unnamed(f['text'], f['about'], who)
-        tied = sorted((f for f in reversed(facts) if f['suggestion_id'] != suggestion_id and near.intersection(f['about'])), key=lambda f: -fact_weight(f, at))
+        own = [f for f in facts if todo and f['suggestion_id'] == todo]
+        tied = sorted((f for f in reversed(facts) if f not in own and near.intersection(f['about'])), key=lambda f: -fact_weight(f, at))
         if sum(len(self.fact_line(f)) + 1 for f in facts) + (len(AI_FACTS_HEAD) + 9 if any(ai_fact_by(f) for f in facts) else 0) <= all_under:
             return self.facts_within(facts, limit)
-        own = [f for f in facts if f['suggestion_id'] == suggestion_id]
         weight = {f['id']: fact_weight(f, at) for f in facts}
+        about = ' '.join(filter(None, (asked.get('title'), asked.get('text'))))
         ranked = None
-        if settings:
+        if settings and about:
             try:
-                ranked = self.rank_facts(suggestion_id, facts, settings)
-            except Exception as error:  # the embedding server is down: those that count most instead
+                ranked = self.facts_ranked(embeddings.document(asked.get('title') or '', asked.get('text') or ''), facts, settings)
+            except Exception as error:  # the embedding server is down: those that share its words, then those that count most
                 LOG.error('fact ranking error=%s', type(error).__name__)
         said = {}
-        if ranked is None:  # no meaning search: the ones that share the to-do's words first, then those that count most
-            asked = key_words(' '.join(filter(None, (card['title'], card['body'], note['feedback'] if note else '')))) if card else set()
-            said = {f['id']: word_match(f['text'], asked) for f in facts if f not in own and f not in tied}
+        if ranked is None:  # no meaning search: the ones that share the work's words first, then those that count most
+            words = key_words(about)
+            said = {f['id']: word_match(f['text'], words) for f in facts if f not in own and f not in tied}
             said = {i: s for i, s in said.items() if s}
             picked = own + tied + sorted((f for f in reversed(facts) if f not in own and f not in tied), key=lambda f: (-said.get(f['id'], 0), -weight[f['id']]))
         else:
@@ -1047,14 +1060,15 @@ class FactsStore:
                 LOG.error('fact use error=%s', type(error).__name__)
         return self.facts_block(out)
 
-    def rank_facts(self, suggestion_id, facts, settings, timeout=15):
-        """[(similarity, fact)] best first, between each fact and what this card is about (its title, text and latest note)."""
-        with self.connect() as db:
-            card = db.execute('SELECT title,body FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
-            note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND feedback!='' ORDER BY created_at DESC LIMIT 1", (suggestion_id,)).fetchone()
-        if not card:
-            return None
-        return self.facts_ranked(embeddings.document(card['title'], (card['body'] or '') + (' ' + note['feedback'] if note else '')), facts, settings, timeout)
+    @staticmethod
+    def in_scope(facts, asked, who):
+        """The facts that may go in a prompt for this work at all, before any ranking: with an area (asked['area']), a
+        connected AI's fact of the other area stays out, and so does a fact about a person on the other side only
+        (fact_links.on_side). Without one, all."""
+        area = asked.get('area')
+        if area is None:
+            return facts
+        return [f for f in facts if f.get('side') in (None, area) and fact_links.on_side(f['about'], who, area)]
 
     def facts_ranked(self, asked, facts, settings, timeout=15):
         """[(similarity, fact)] best first, between each fact and the text asked (as it is embedded): one embedding

@@ -15,8 +15,8 @@ from machine.app import retained_facts
 from machine.app import senders
 from machine.app.review_facts import ReviewFacts
 
-# A routine's run gets what was learned, said or used most lately first, in this many characters: about 300 and 150
-# tokens. Everything learned is in a review; a routine is one read-only turn, often daily, so it gets the front of it.
+# A routine's run gets what was learned that its work needs, picked as a preparation picks (Store.facts_picked), in
+# this many characters: about 300 and 150 tokens. While all of it fits, all of it.
 ROUTINE_FACTS = 1200
 ROUTINE_RULES = 600
 # A run that leaves a draft also gets how the owner writes on its channel: All and that channel's block, about 200
@@ -26,7 +26,8 @@ ROUTINE_VOICE = 800
 
 def recall(app, purpose, about=None, budget=0):
     """The memory for one prompt. purpose: review, preparation, ask, routine, talk, chat or todo_chat. about: what it is for
-    ({'todo': id}, {'run': id}, {'run': id, 'analysis': id} for the batch a review claimed, {'question': text}). budget: the prompt's character limit,
+    ({'todo': id}, {'run': id, 'title': its routine's name, 'text': its words}, {'run': id, 'analysis': id} for the batch a review claimed,
+    {'question': text}). budget: the prompt's character limit,
     for Recalled.fit. Returns a memory_use.Recalled: text(block) or fit(block, used, reserve) for the prompt,
     picked() for the items per kind, rows() for the log.
 
@@ -41,8 +42,10 @@ def recall(app, purpose, about=None, budget=0):
     - ask: sources (search_ask.ask with its own arguments: the messages that fit the prompt), and what matches the
       question of promises, facts, records (a person's summary, a named project or organization) and meetings
       (machine/app/ask_memory.py, each with (what it goes on, room)).
-    - routine: facts and rules (what was learned and the draft rules, said or used most lately first, up to
-      ROUTINE_FACTS and ROUTINE_RULES characters), so a run and the draft it may leave follow them; voice(channels):
+    - routine: facts and rules (what was learned and the draft rules its work needs: all while they fit, else by
+      closeness in meaning to its name and words, or without embeddings the ones that share its words, then those
+      that count most; Store.facts_picked, as a preparation; up to ROUTINE_FACTS and ROUTINE_RULES characters), so a
+      run and the draft it may leave follow them; voice(channels):
       the owner's voice for the channels a draft of the run may go out on (Store.voice_text, up to ROUTINE_VOICE
       characters), read for a routine that left a draft before (routines_app.routine_draft_channels) or when a run
       hands its first one in (routines_app.routine_draft_voice).
@@ -83,8 +86,9 @@ def recall(app, purpose, about=None, budget=0):
         memory.add('sources', search_ask.ask)
         ask_memory.add(memory, app)
     elif purpose == 'routine':
-        memory.add('facts', lambda: store.facts_text(ROUTINE_FACTS))
-        memory.add('rules', lambda: store.facts_text(ROUTINE_RULES, 'draft'))
+        known, asked = embeddings.settings(app.config), {'title': about.get('title') or '', 'text': about.get('text') or ''}
+        memory.add('facts', lambda: store.facts_picked(asked, 'fact', known, ROUTINE_FACTS, ROUTINE_FACTS))
+        memory.add('rules', lambda: store.facts_picked(asked, 'draft', known, ROUTINE_RULES, ROUTINE_RULES))
         memory.add('voice', lambda channels: store.voice_text(channels, ROUTINE_VOICE))
     elif purpose == 'chat':
         memory.add('learned', lambda question: ask_memory.for_chat(app, question, budget or ask_memory.CHAT_CHARS))
