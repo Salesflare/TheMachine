@@ -53,7 +53,7 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 | Routine | facts and rules block (`recall` `routine`); a run that leaves a draft: the voice for its channel | `events` and `graph` tools; voice | facts and rules block, `USER.md`, memory search, birthdays |
 | Morning digest | through the to-dos it lists | promises due today | through the to-dos it lists |
 
-Fixed here, each with its test: a routine's run read no fact or rule (it now gets the front of what a review gets:
+Fixed here, each with its test: a routine's run read no fact or rule (it now gets those its work needs, see below:
 1,200 characters of facts and 600 of rules, logged as `routine` in `memory_use`), and Talk's `recall` only searched
 OpenClaw's memory files, so a fact the owner told the chat never came back by voice (it now gets up to three of the
 owner's own facts and rules that share the words, logged as `talk`). A correction said in the owner's chat ("the
@@ -116,6 +116,14 @@ routine that left a draft before gets it in its turn's message (`routines_app.ro
 hands in its first draft gets it back once, nothing saved, to follow it (`routine_draft_voice`). A service its words
 or the draft's title name (Slack, LinkedIn) only goes first. A run that hands in no draft gets nothing. Logged as
 `voice` (by channel) under `routine` in `memory_use`.
+
+A routine's facts and rules were the newest ones, the same block for every routine: once the owner had taught it more
+than fits, an older rule its work needed (what recurring revenue counts) was left out of a revenue routine, and a
+gardening routine got the same block. A run now gets them as a preparation does (`Store.facts_picked`, shared with
+`facts_for`): all while they fit; else by closeness in meaning to the routine's name and words, or without embeddings
+(or with the server down) the ones that share its words first, then those that count most. Same budgets (1,200
+characters of facts, 600 of rules), no extra model call, logged as `match` or `closeness` and counted as used once the
+run is admitted, like a preparation's picks.
 
 ## One fact end to end
 

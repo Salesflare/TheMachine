@@ -64,6 +64,16 @@ def plane(settings, texts, timeout=120):
             [0.0, 0.0, 1.0] if t.startswith(embeddings.QUERY_PREFIX) else [0.0, 1.0, 0.0] for t in texts]
 
 
+REVENUE = 'Recurring revenue leaves out setup fees.'
+GARDEN = 'The vegetable garden gets sun only in the afternoon.'
+
+
+def money(settings, texts, timeout=120):
+    """Made-up vectors: revenue and MRR are close; gardening close to the garden fact; the rest far from both."""
+    return [[1.0, 0.0, 0.0] if 'revenue' in t.casefold() or 'mrr' in t.casefold() else
+            [0.0, 1.0, 0.0] if 'garden' in t or 'plant' in t else [0.0, 0.0, 1.0] for t in texts]
+
+
 class MemoryReach(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
@@ -650,6 +660,73 @@ class MemoryReach(unittest.TestCase):
         self.assertNotIn('Email line', text)  # a whole block or none: Email's doesn't fit next to All's
         self.store.save_voice('All', '', 'owner')
         self.assertEqual('', recall(self.app, 'routine', {'run': 'r'}).text('voice', ['Telegram']))  # no voice there: nothing
+
+    def many_rules(self):
+        """An older rule about recurring revenue, a gardening fact, and many newer rules about something else, more than
+        a routine's rules fit."""
+        with self.store.connect() as db:
+            old = (NOW - dt.timedelta(days=90)).isoformat()
+            db.execute("INSERT INTO facts(text,decision_id,created_at,kind) VALUES(?,'note-1',?,'draft')", (REVENUE, old))
+            db.execute("INSERT INTO facts(text,decision_id,created_at,kind) VALUES(?,'note-1',?,'fact')", (GARDEN, old))
+            for n in range(20):
+                db.execute("INSERT INTO facts(text,decision_id,created_at,kind) VALUES(?,'note-1',?,'draft')",
+                           (f'Replies to supplier {n} go out before noon on weekdays.', (NOW - dt.timedelta(hours=n)).isoformat()))
+
+    @staticmethod
+    def rules_block(message):
+        head = 'How the owner wants things done (draft rules; follow them in a draft):\n'
+        if head not in message:
+            return ''
+        lines = message[message.index(head) + len(head):].split('\n')
+        return '\n'.join(lines[:next((i for i, x in enumerate(lines) if not x.startswith(('- ', '…'))), len(lines))])
+
+    def test_a_routine_gets_the_rules_its_work_needs(self):
+        self.many_rules()
+        # main read the newest: the revenue rule was left out of a revenue routine, the same block went to every routine
+        self.assertNotIn(REVENUE, self.store.facts_text(recall_module.ROUTINE_RULES, 'draft'))
+        # now: picked by its words, under the same budget
+        _, revenue_run, revenue = self.routine_message('every monday at 9, sum up the recurring revenue of last week')
+        _, garden_run, garden = self.routine_message('every saturday at 9, tell me what to do in the vegetable garden')
+        self.assertIn(REVENUE, self.rules_block(revenue))
+        self.assertNotIn(REVENUE, garden)
+        self.assertIn(GARDEN, garden)  # few facts: all of them, as before
+        for message in (revenue, garden):
+            self.assertLessEqual(len(self.rules_block(message)), recall_module.ROUTINE_RULES + 2)
+        with self.store.connect() as db:  # logged as a preparation's picks: by its words, used once admitted
+            ids = {r[0] for r in db.execute("SELECT id FROM facts WHERE text=?", (REVENUE,))}
+            self.assertEqual({('match',)}, {tuple(r) for r in db.execute("SELECT how FROM memory_use WHERE purpose='routine' AND run_id=? AND row_id IN (%s)"
+                                                                       % ','.join('?' * len(ids)), (revenue_run, *[str(i) for i in ids]))})
+            self.assertTrue(db.execute('SELECT used_at FROM facts WHERE text=?', (REVENUE,)).fetchone()[0])
+
+    def test_a_routine_picks_by_meaning_and_without_the_embedding_server(self):
+        self.many_rules()
+        self.app.config = {**self.config, 'embeddings': SETTINGS}
+        with patch.object(embeddings, 'embed', side_effect=money):
+            _, _, revenue = self.routine_message('every monday at 9, tell me our MRR')  # no shared word: by meaning
+            _, _, garden = self.routine_message('every saturday at 9, what to plant this week')
+        self.assertIn(REVENUE, revenue)
+        self.assertNotIn(REVENUE, garden)
+        self.assertNotIn('supplier 3 ', garden)  # nothing close: no rules block, the run goes on without
+        self.assertEqual('', self.rules_block(garden))
+        self.assertIn('You are running a routine', garden)
+        with patch.object(embeddings, 'embed', side_effect=embeddings.EmbeddingError('down')):  # the server is down: by words
+            _, _, revenue = self.routine_message('every monday at 9, sum up the recurring revenue of last week')
+        self.assertIn(REVENUE, self.rules_block(revenue))
+
+    def test_a_routine_follows_its_new_words_and_the_rule_that_replaced_one(self):
+        self.many_rules()
+        made, _, before = self.routine_message('every saturday at 9, tell me what to do in the vegetable garden')
+        self.assertNotIn(REVENUE, before)
+        self.app.action('routine_edit', {'id': made, 'words': 'every saturday at 9, sum up the recurring revenue of last week'}, owner_dashboard=True)
+        _, _, after = self.routine_message('', made)
+        self.assertIn(REVENUE, after)
+        new = 'Recurring revenue leaves out setup fees and refunds.'
+        with self.store.connect() as db:
+            old = db.execute('SELECT id FROM facts WHERE text=?', (REVENUE,)).fetchone()[0]
+        self.store.remember_fact(new, 'note-1', kind='draft', replaces=[old])
+        _, _, after = self.routine_message('', made)
+        self.assertIn(new, after)
+        self.assertNotIn(REVENUE + '\n', after)
 
     def test_the_morning_digest_has_the_promise_a_review_read_in_the_mail(self):
         digest = self.app.digest(NOW)
