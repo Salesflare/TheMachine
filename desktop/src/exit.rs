@@ -300,7 +300,8 @@ pub fn offered() -> bool {
 pub fn set(on: bool) {
     let was = exit().on.swap(on, Ordering::Relaxed);
     if was && !on {
-        if let Some(wire) = exit().wire.lock().unwrap().take() {
+        let wire = exit().wire.lock().unwrap().take(); // let go of before the send, which may wait
+        if let Some(wire) = wire {
             let _ = wire.send(&frame(BYE, 0, b"off"));
             wire.end();
         }
@@ -310,11 +311,13 @@ pub fn set(on: bool) {
 
 /// Signed in to another Machine, or out: the connection is made afresh.
 pub fn again() {
-    if let Some(wire) = exit().wire.lock().unwrap().take() {
+    let wire = exit().wire.lock().unwrap().take();
+    if let Some(wire) = wire {
         wire.end();
     }
     exit().offered.store(false, Ordering::Relaxed);
-    if let Some(thread) = exit().thread.lock().unwrap().as_ref() {
+    let thread = exit().thread.lock().unwrap().clone();
+    if let Some(thread) = thread {
         thread.unpark();
     }
 }
@@ -349,9 +352,17 @@ pub fn start(on: bool, machine: impl Fn() -> Option<Machine> + Send + 'static, c
     // Pings every PINGS, and says when carrying ended
     std::thread::spawn(|| loop {
         std::thread::sleep(Duration::from_secs(5));
-        if let Some(wire) = exit().wire.lock().unwrap().clone() {
-            if wire.pinged.lock().unwrap().elapsed() >= PINGS {
-                *wire.pinged.lock().unwrap() = Instant::now();
+        let wire = exit().wire.lock().unwrap().clone(); // let go of before the ping, which may wait
+        if let Some(wire) = wire {
+            let due = {
+                let mut pinged = wire.pinged.lock().unwrap();
+                let due = pinged.elapsed() >= PINGS;
+                if due {
+                    *pinged = Instant::now();
+                }
+                due
+            };
+            if due {
                 if wire.send(&frame(PING, 0, b"")).is_err() {
                     wire.end();
                 }
@@ -578,7 +589,10 @@ fn keep(to: &Machine, changed: &Arc<dyn Fn() + Send + Sync>) -> Ended {
             OPEN if id != 0 => {
                 let asked: Value = serde_json::from_slice(&payload).unwrap_or_default();
                 let (host, port) = (asked["host"].as_str().unwrap_or_default().to_string(), asked["port"].as_u64().unwrap_or(0));
-                let busy = streams.lock().unwrap().len() >= STREAMS || streams.lock().unwrap().contains_key(&id);
+                let busy = {
+                    let open = streams.lock().unwrap();
+                    open.len() >= STREAMS || open.contains_key(&id)
+                };
                 let reason = if busy { Some("busy") } else if !spend(0) { Some("cap") } else { None };
                 if let Some(reason) = reason {
                     let _ = wire.send(&frame(REFUSED, id, reason.as_bytes()));
@@ -604,7 +618,8 @@ fn keep(to: &Machine, changed: &Arc<dyn Fn() + Send + Sync>) -> Ended {
                 }
             }
             END => {
-                if let Some(stream) = streams.lock().unwrap().remove(&id) {
+                let stream = streams.lock().unwrap().remove(&id);
+                if let Some(stream) = stream {
                     let _ = stream.to.shutdown(Shutdown::Both);
                 }
             }
@@ -631,7 +646,8 @@ fn spend(n: u64) -> bool {
 }
 
 fn close(id: u32, wire: &Wire, streams: &Mutex<HashMap<u32, Stream>>) {
-    if let Some(stream) = streams.lock().unwrap().remove(&id) {
+    let stream = streams.lock().unwrap().remove(&id); // let go of before the send, which may wait
+    if let Some(stream) = stream {
         let _ = stream.to.shutdown(Shutdown::Both);
         let _ = wire.send(&frame(END, id, b""));
     }
