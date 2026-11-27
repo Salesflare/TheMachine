@@ -28,7 +28,7 @@ Besides messages, the answer reads what the Machine already keeps on the questio
 promises, facts, the summary of the person, project or organization asked about, and meeting notes, each fitted to a
 small share of the same prompt (never a larger one) and cited as what it is ([P1], [F1], [S1], [M1]), never as a
 message. Nothing matches: the prompt is the one without them. A question about days that are over also gets what was
-learned and no longer holds, marked as such. When nothing here answers it, or only part of it (the answer ends with
+learned and no longer holds, marked as such, those The Machine knew in those days first. When nothing here answers it, or only part of it (the answer ends with
 SHORT), and something no longer current matches it ("before the renewal" names no days), it is answered once more with that.
 
 On that same SHORT, the owner's own searchable mailboxes of the area are also searched once, live and bounded

@@ -45,8 +45,9 @@ PROMISE_HITS = 3          # a promise the question's records don't have: only on
 FACTS = 3
 PAST_FACTS = 2        # for a question about days that are over: facts no longer current, before the current ones
 PAST = 'No longer current'
-PAST_HEAD = (f'An F line marked {PAST} is how it was before the change it names. Its days are when The Machine learned it and noted '
-             'the change, not surely when it became or stopped being true: only when the time asked about is close to one of them, say the exact day is not known.')
+PAST_HEAD = (f'An F line marked {PAST} is how it was before the change it names. Its two days are when The Machine learned it and when it '
+             'noted the change: it held at least in between. For a time in between, answer with it; close to one of those days, say the exact day '
+             'of the change is not known. Never give them as the day something changed.')
 MEETINGS = 2
 CLOSED_DAYS = 30      # a promise closed longer ago is no longer brought up
 PROMISE_CHARS = 220
@@ -279,9 +280,9 @@ def facts(app, about, room):
     def line_of(n, f):
         tag = f'F{n}'
         if 'state' in f:  # no longer in the current list: history, with the days The Machine knows, never when it held
-            says = _data(f['now_says'])[:120].rstrip('.')
-            then = f"replaced {f['day']} by: {says}" if f['replaced'] else f"ended {f['day']}" + (f": {says}" if says else '')
-            line = f"[{tag}] {PAST}, learned {str(f.get('confirmed_at') or f['created_at'])[:10]}, {then}: <<<{_data(f['text'])[:FACT_CHARS]}>>>"
+            says = _data(f.get('next_says') or f['now_says'])[:120].rstrip('.')  # what took its place then: a chain of changes reads in order
+            then = f"replaced {f['day']} by <<<{says}>>>" if f['replaced'] else f"ended {f['day']}" + (f", now <<<{says}>>>" if says else '')
+            line = f"[{tag}] {PAST}: <<<{_data(f['text'])[:FACT_CHARS]}>>> Learned {str(f.get('confirmed_at') or f['created_at'])[:10]}, {then}."
             note = lambda: memory_use.note('fact', f['id'], line, f['how'], about=f.get('about', ()), source='note' if f.get('suggestion_id') else 'review',
                                            at=f.get('created_at'), score=f['score'] if f['how'] == 'closeness' else None, used=False)
         else:
@@ -312,7 +313,8 @@ def _past(app, about, nodes):
     """For a question about days that are over: what was learned and is no longer in the current list (ended or
     replaced, retained_facts.py), on the question's records, by its words, or close in meaning to the messages the
     search found (their stored vectors: no embedding request). Only of the area in view, never one the owner removed or
-    a connected AI's; at most PAST_FACTS, best first."""
+    a connected AI's; at most PAST_FACTS, best first, and for days asked about those The Machine knew then first (_gap):
+    of a price that changed three times, the one of March for a question about March."""
     with app.store.connect() as db:
         nodes = _on(db, nodes) if nodes else []
         found, names, asked, close = retained_facts.find(db, nodes, about['question'], about['best'], embeddings.settings(app.config))
@@ -322,10 +324,26 @@ def _past(app, about, nodes):
         if about['area']:
             who = fact_links.records(db, {n for f in found for n in f['about']})
             found = [f for f in found if f.get('side') in (None, about['area']) and fact_links.on_side(f['about'], who, about['area'])]
-        picked = retained_facts.matches(db, found, nodes, names, asked, close)[:PAST_FACTS]
+        picked = retained_facts.matches(db, found, nodes, names, asked, close)
+    if about['days']:  # of several that match, those The Machine knew in the days asked about, then the nearest to them
+        picked.sort(key=lambda m: _gap(m[2], about['days']))
+    picked = picked[:PAST_FACTS]
     for how, score, f in picked:
         f.update(how=how, score=score, replaced=str(f['merged_into']).startswith('fact:'))
     return [f for _, _, f in picked]
+
+
+def _gap(f, days):
+    """Days between the time asked about and the time The Machine had this fact (from when it learned it to the day it
+    left the list: replaced, or ended): 0 when they overlap. Only the days The Machine has, never a guess at when the
+    fact really held."""
+    day = lambda value: dt.date.fromisoformat(str(value)[:10])
+    try:
+        known, left = day(f['created_at']), day(f['day'])
+        start, until = (day(d) if d else None for d in days)
+    except (TypeError, ValueError, KeyError):
+        return float('inf')
+    return max(0, (start - left).days if start else 0, (known - until).days if until else 0)
 
 
 def _record(db, subject, about):
