@@ -331,6 +331,24 @@ class NewCard(unittest.TestCase):
         with self.store.connect() as db:
             self.assertIsNone(db.execute('SELECT 1 FROM graph_events WHERE event_id=?', (plain['event_id'],)).fetchone())
 
+    def test_an_address_in_its_words_places_it_where_the_graph_has_that_person(self):
+        # The person is found by the address the Graph holds for them (from their messages, or one the owner added in
+        # Edit), stored as graph.py stores it: identifiers, and info.emails as {'value', 'by'}
+        from machine.app.new_cards import owner_card_area
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,?,?,?,?,?),(?,?,?,?,?,?)",
+                       ('email:kai@freemail.example', 'person', 'Kai Rivera', 1, 1,
+                        json.dumps({'identifiers': ['email:kai@freemail.example'], 'side': 'personal',
+                                    'emails': [{'value': 'kai@freemail.example', 'by': 'messages'}]}),
+                        'email:sam@client.example', 'person', 'Sam Lee', 1, 1,
+                        json.dumps({'identifiers': ['email:sam@client.example'], 'accounts': ['w'], 'side': 'work',
+                                    'emails': [{'value': 'sam@client.example', 'by': 'messages'}, {'value': 'sam.lee@home.example', 'by': 'owner'}]})))
+            accounts = self.app.config['accounts']
+            self.assertEqual(owner_card_area(db, accounts, [], 'Ask kai@freemail.example about Saturday'), ('p', []))
+            self.assertEqual(owner_card_area(db, accounts, [], 'Send the deck to Sam.Lee@home.example'), ('w', []))
+            # nobody the Graph knows by that address: open, as before
+            self.assertCountEqual(owner_card_area(db, accounts, [], 'Ask nobody@freemail.example')[1], ['work:acme.example', 'personal'])
+
     def test_old_cards_are_unaffected(self):
         self.store.commit_page('w', {}, [mail('m1')])
         old = self.review(event_ids=[1], dedupe_key='w:sam')

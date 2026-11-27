@@ -13,6 +13,7 @@ import threading
 import time
 
 import abilities
+import graph
 import handoff_mail
 from i18n import t
 from machine.app.promise_checks import activity_since
@@ -352,9 +353,9 @@ class MailApp:
 
     @staticmethod
     def compose_person(db, address):
-        """The person in the Graph with this address: (node id, name), else (None, '')."""
-        row = db.execute("SELECT id,name FROM graph_nodes n WHERE kind='person' AND EXISTS (SELECT 1 FROM json_each(n.info,'$.emails') e "
-                         'WHERE lower(e.value)=?) ORDER BY id LIMIT 1', (address.lower(),)).fetchone()
+        """The person in the Graph with this address (graph.people_by_email): (node id, name), else (None, '')."""
+        found = graph.people_by_email(db, [address])
+        row = db.execute('SELECT id,name FROM graph_nodes WHERE id=?', (found[0][0],)).fetchone() if found else None
         return (row['id'], row['name'] or '') if row else (None, '')
 
     def compose_from_action(self, name, args, owner_dashboard=False):
