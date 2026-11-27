@@ -12,15 +12,20 @@ SMALL_PROJECT = 8        # people on a project before being on it together start
 PROJECT_EVIDENCE = 0.3   # what a project's weight must reach before "on the same project" counts at all
 
 
+def project_weight(people, orgs):
+    """How much two people on one project says they may be one: 1 for a small project at one organization, falling with
+    its people (8 / people) and divided by the organizations (company domains) on it. A catch-all project (testers from
+    many companies) says nothing. Both "Same person?" (project_weights) and a name join (graph_joins.Keys.agree) use it."""
+    return min(1.0, SMALL_PROJECT / max(1, people)) / max(1, orgs)
+
+
 def project_weights(on_projects, people):
-    """How much two people on one project says they may be one, per project: 1 for a small project at one organization,
-    falling with its people (8 / people) and divided by the organizations (company domains) on it. A catch-all project
-    (testers from many companies) says nothing."""
+    """project_weight per project, for people as machine/graph/people.py stores them."""
     members = collections.defaultdict(set)
     for node, pids in on_projects.items():
         for pid in pids:
             members[pid].add(node)
-    return {pid: min(1.0, SMALL_PROJECT / len(nodes)) / max(1, len({d for n in nodes for d in people.get(n, {}).get('domains', ())}))
+    return {pid: project_weight(len(nodes), len({d for n in nodes for d in people.get(n, {}).get('domains', ())}))
             for pid, nodes in members.items()}
 
 

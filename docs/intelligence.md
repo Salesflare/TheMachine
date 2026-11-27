@@ -149,7 +149,9 @@ personal chat (WhatsApp, Telegram, a personal account): the side is the account'
 never placed a company address, Slack and the CRM are work, WhatsApp and Telegram personal. They are one person when
 something besides the name agrees: the work contact is a colleague (an address at the owner's own domain, or the
 owner's company as their stated organization), the chat's number is known for the work contact (a connector's profile,
-the owner's own edit), both are on one project, both are at one organization, or one signal has both.
+the owner's own edit), both are on one small project (the same project weight as "Same person?" below: a catch-all
+project across many companies agrees with nothing), both are at one organization, or one signal has both. Otherwise
+the pair is asked as "Same person?"; the owner's own Merge keeps them one whatever the project.
 
 Weaker evidence is only a question: the same full name on a work contact and a personal chat, the same full name that two
 people on one channel carry (when they write from a domain in common, or one of them has no address), or a similar name ("Ann" and "Ann Lee", a nameless jane.doe@ and Jane Doe) with something
