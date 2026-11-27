@@ -12,7 +12,7 @@ import fact_links
 import learning_loop
 from machine.config import LOG
 from machine.text import quoted_in
-from machine.store.voices import voice_channel
+from machine.store.voices import EVENT_CHANNELS, card_channels, voice_channel
 import memory_use
 from timeutil import now
 import todo_areas
@@ -949,7 +949,7 @@ class FactsStore:
     def facts(self):
         """What is learned now: past their end day they are left out (the condense pass retires them)."""
         with self.connect() as db:
-            rows = [dict(r) for r in db.execute('SELECT id,text,suggestion_id,created_at,kind,fact_kind,valid_until,confirmed_at,source,side,kept_at,'
+            rows = [dict(r) for r in db.execute('SELECT id,text,suggestion_id,created_at,kind,fact_kind,valid_until,confirmed_at,source,side,kept_at,scope,'
                                                 + LAST_USE + ' last_use FROM facts WHERE removed_at IS NULL ORDER BY created_at')]
         today = now()[:10]
         return [f for f in rows if not fact_expired(f, today)]
@@ -995,8 +995,9 @@ class FactsStore:
         with self.connect() as db:
             card = db.execute('SELECT account_ids,area,title,body FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND feedback!='' ORDER BY created_at DESC LIMIT 1", (suggestion_id,)).fetchone()
+            channels = [voice_channel(EVENT_CHANNELS[k]) for k in card_channels(db, suggestion_id)[0] if k in EVENT_CHANNELS]
         area = None if accounts is None else suggestion_scope(card['account_ids'] if card else '[]', accounts, card['area'] if card else None)
-        asked = {'todo': suggestion_id, 'area': area, 'title': card['title'] if card else '',
+        asked = {'todo': suggestion_id, 'area': area, 'channels': channels, 'title': card['title'] if card else '',
                  'text': ' '.join(filter(None, (card['body'], note['feedback'] if note else ''))) if card else ''}
         return self.facts_picked(asked, kind, settings, limit, all_under, top, floor)
 
@@ -1019,7 +1020,7 @@ class FactsStore:
             with_about(db, facts)
             near = fact_links.todo_records(db, todo) if todo and any(f['about'] for f in facts) else set()
             who = fact_links.records(db, {n for f in facts for n in f['about']})
-        facts = self.in_scope(facts, asked, who)
+        facts = self.in_scope(facts, asked, who, near)
         for f in facts:  # a line says who it is about when its own words don't
             f['who'] = fact_links.unnamed(f['text'], f['about'], who)
         own = [f for f in facts if todo and f['suggestion_id'] == todo]
@@ -1061,11 +1062,30 @@ class FactsStore:
         return self.facts_block(out)
 
     @staticmethod
-    def in_scope(facts, asked, who):
-        """The facts that may go in a prompt for this work at all, before any ranking: with an area (asked['area']), a
+    def in_scope(facts, asked, who, near=frozenset()):
+        """The facts that may go in a prompt for this work at all, before any ranking. With an area (asked['area']), a
         connected AI's fact of the other area stays out, and so does a fact about a person on the other side only
-        (fact_links.on_side). Without one, all."""
-        area = asked.get('area')
+        (fact_links.on_side). A rule or fact the learning loop scoped (scope, learning_loop.scope_of) goes only where it
+        holds: one for an area only in that area's work (never in work of no known area, like a routine), one for a
+        channel only where the work goes out on it (asked['channels']), one for a person or organization only on
+        their to-dos (near: the records on its messages) or in a routine whose words name them. NULL and 'global':
+        everywhere, as before."""
+        area, channels = asked.get('area'), {str(c).casefold() for c in asked.get('channels') or ()}
+        words = ' '.join(filter(None, (asked.get('title'), asked.get('text')))).casefold()
+
+        def holds(f):
+            scope = f.get('scope') or 'global'
+            if scope == 'area':
+                return area is not None and f.get('side') == area
+            if scope.startswith('channel:'):
+                return scope[8:].casefold() in channels
+            if scope.startswith('with:'):
+                node = scope[5:]
+                if asked.get('todo'):  # a to-do: only its own records (another person with that name is someone else)
+                    return node in near
+                return bool(who.get(node, {}).get('name')) and who[node]['name'].casefold() in words
+            return True
+        facts = [f for f in facts if holds(f)]
         if area is None:
             return facts
         return [f for f in facts if f.get('side') in (None, area) and fact_links.on_side(f['about'], who, area)]

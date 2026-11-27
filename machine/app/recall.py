@@ -26,7 +26,7 @@ ROUTINE_VOICE = 800
 
 def recall(app, purpose, about=None, budget=0):
     """The memory for one prompt. purpose: review, preparation, ask, routine, talk, chat or todo_chat. about: what it is for
-    ({'todo': id}, {'run': id, 'title': its routine's name, 'text': its words}, {'run': id, 'analysis': id} for the batch a review claimed,
+    ({'todo': id}, {'run': id, 'title': its routine's name, 'text': its words, 'channels': its drafts' channels}, {'run': id, 'analysis': id} for the batch a review claimed,
     {'question': text}). budget: the prompt's character limit,
     for Recalled.fit. Returns a memory_use.Recalled: text(block) or fit(block, used, reserve) for the prompt,
     picked() for the items per kind, rows() for the log.
@@ -44,7 +44,8 @@ def recall(app, purpose, about=None, budget=0):
       (machine/app/ask_memory.py, each with (what it goes on, room)).
     - routine: facts and rules (what was learned and the draft rules its work needs: all while they fit, else by
       closeness in meaning to its name and words, or without embeddings the ones that share its words, then those
-      that count most; Store.facts_picked, as a preparation; up to ROUTINE_FACTS and ROUTINE_RULES characters), so a
+      that count most; Store.facts_picked, as a preparation, with the same scopes: no area's own rules, a channel's
+      only for the channels its drafts go out on; up to ROUTINE_FACTS and ROUTINE_RULES characters), so a
       run and the draft it may leave follow them; voice(channels):
       the owner's voice for the channels a draft of the run may go out on (Store.voice_text, up to ROUTINE_VOICE
       characters), read for a routine that left a draft before (routines_app.routine_draft_channels) or when a run
@@ -71,7 +72,7 @@ def recall(app, purpose, about=None, budget=0):
         memory.add('retained', lambda: retained_facts.for_review(app))
     elif purpose == 'preparation':
         known = embeddings.settings(app.config)  # what was learned that this to-do needs, not all of it
-        memory.add('rules', lambda: store.facts_for(todo, 'draft', known))
+        memory.add('rules', lambda: store.facts_for(todo, 'draft', known, accounts=app.config.get('accounts', [])))
         memory.add('facts', lambda: store.facts_for(todo, 'fact', known, accounts=app.config.get('accounts', [])))
         memory.add('retained', lambda: retained_facts.for_todo(app, todo))
         # a fact about a record on the to-do is in the facts block (picked by record): the record's line doesn't say it again
@@ -86,7 +87,8 @@ def recall(app, purpose, about=None, budget=0):
         memory.add('sources', search_ask.ask)
         ask_memory.add(memory, app)
     elif purpose == 'routine':
-        known, asked = embeddings.settings(app.config), {'title': about.get('title') or '', 'text': about.get('text') or ''}
+        known = embeddings.settings(app.config)
+        asked = {'title': about.get('title') or '', 'text': about.get('text') or '', 'channels': about.get('channels') or ()}
         memory.add('facts', lambda: store.facts_picked(asked, 'fact', known, ROUTINE_FACTS, ROUTINE_FACTS))
         memory.add('rules', lambda: store.facts_picked(asked, 'draft', known, ROUTINE_RULES, ROUTINE_RULES))
         memory.add('voice', lambda channels: store.voice_text(channels, ROUTINE_VOICE))

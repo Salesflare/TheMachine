@@ -97,7 +97,8 @@ WORDS = {
         self_record_backups.identifier share_rules.name slack_members.label suggestions.org suggestions.done_elsewhere
         suggestions.handoff_to suggestions.awaiting promises.watch suggestions.project team_sources.name telegram_photo_asks.identifier
         voice_prefs.value whatsapp_photo_asks.identifier meeting_prep_web.query meeting_prep_web.results ai_folded.saved
-        board_fit_undo.steps project_splits.steps recurring_series.project projects.stage projects.about_basis project_moves.stage crm_tags.tag''',
+        board_fit_undo.steps project_splits.steps recurring_series.project projects.stage projects.about_basis project_moves.stage crm_tags.tag
+        facts.scope''',
     "the owner's own setup: boards, fields, searches and settings": '''
         boards.name boards.stages boards.about board_suggestions.name board_suggestions.stages crm_fields.name crm_fields.choices
         bring_in_state.value enrich_prefs.value error_feed_prefs.value fleet_meta.value gbrain_meta.value handoff_mail_prefs.value

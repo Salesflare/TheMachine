@@ -496,7 +496,8 @@ class VoicesStore:
                 LOG.warning('learning pass gave up signals=%s', skipped)
             if not learning_loop.due(db, current):
                 return None
-            evidence = learning_loop.evidence(db, self.voices(db), current)
+            config = self.own_config()  # where each signal came from, and where what it learns holds (off: global, as before)
+            evidence = learning_loop.evidence(db, self.voices(db), current, config.get('accounts'), config.get(learning_loop.FLAG, True) is not False)
             run_id, started = uuid.uuid4().hex, now()
             db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'tune',1)",
                        (run_id, started, started, json.dumps(evidence)))

@@ -580,10 +580,14 @@ class RoutinesApp:
         """What the Machine learned (the `routine` recall: facts and draft rules its name and words need, picked as a preparation's), so a
         run and its draft follow what the owner told it in a chat, on a to-do or in their notes. Its items go on the
         run (_memory) and are logged once the turn is admitted. '' when nothing was learned yet."""
-        memory = recall(self, 'routine', {'run': run['id'], 'title': run['name'], 'text': self.routine_words(run)})
-        facts, rules = memory.text('facts'), memory.text('rules')
-        try:  # a routine that left a draft before: how the owner writes where it goes out (a first one: routine_draft_voice)
+        try:  # a routine that left a draft before: where it goes out, for the voice and a channel's rules
             channels = self.routine_draft_channels(run)
+        except Exception as error:  # a run without the owner's voice beats no run
+            LOG.error('routine voice error=%s', type(error).__name__)
+            channels = []
+        memory = recall(self, 'routine', {'run': run['id'], 'title': run['name'], 'text': self.routine_words(run), 'channels': channels})
+        facts, rules = memory.text('facts'), memory.text('rules')
+        try:  # how the owner writes where it goes out (a first one: routine_draft_voice)
             voice = memory.text('voice', channels) if channels else ''
         except Exception as error:  # a run without the owner's voice beats no run
             LOG.error('routine voice error=%s', type(error).__name__)

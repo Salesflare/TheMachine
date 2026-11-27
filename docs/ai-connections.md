@@ -201,7 +201,8 @@ Removed and ended ones never go. Used or said last first.
 
 - **Area.** A rule or fact learned on a to-do has that to-do's area (`suggestion_scope`), so a rule from a Personal
   to-do never reaches a Work-only connection. One learned elsewhere (the owner's chat, their notes, the learning loop)
-  is for both. Voices are for both.
+  is for both. Voices are for both. One the learning loop scoped to one person or organization never goes; one scoped to
+  a channel or an area says so (`channel`, `area`) ([Keeps learning](intelligence.md#keeps-learning)).
 - **Who wrote it.** The owner's own (a note on a to-do, their chat, their OpenClaw notes, anything they edited) and their
   voices go out as they are. A connected AI's or an import the owner didn't edit (`facts.ai_fact_by`) goes inside
   `<untrusted source="ai">`, and one the learning loop wrote from what happened (`tune:`, other people's messages among
