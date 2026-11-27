@@ -54,6 +54,22 @@ def old_cases():
     return out
 
 
+LABEL = re.compile(r'^(The owner sent: |From ([^:]{1,80}): )')
+
+
+def thread(case):
+    """The case's thread as result_checks.thread gives it, {at, who, mine, text}: cases-fresh.json's messages, or
+    cases.json's lines ("The owner sent: ...", "From Dana (Toolbench): ...")."""
+    out = []
+    for m in case.get('messages') or []:
+        out.append({'at': m.get('at') or '', 'who': re.sub(r'\s*<[^>]*>', '', m.get('from') or '').strip(), 'mine': bool(m.get('own')), 'text': m['body']})
+    for t in case.get('thread') or []:
+        m = LABEL.match(t)
+        mine = bool(m and m.group(1) == 'The owner sent: ')
+        out.append({'at': '', 'who': m.group(2) if m and not mine else '', 'mine': mine, 'text': t[m.end():] if m else t})
+    return out
+
+
 def parsed(reply):
     start, end = reply.find('{'), reply.rfind('}')
     try:
@@ -85,21 +101,22 @@ def main():
     p.add_argument('--effort', default='low')
     p.add_argument('--runs', type=int, default=3)
     p.add_argument('--jobs', type=int, default=4)
-    p.add_argument('--cases', default='cases.json')
+    p.add_argument('--cases', nargs='+', default=['cases.json'])
     p.add_argument('--old', action='store_true')
     p.add_argument('--main', action='store_true', help="main's rule: the words found close it")
     p.add_argument('--out', help='write every reply and score here (JSON)')
     a = p.parse_args()
     from machine.prompts.result_check import result_check_prompt, verdict
-    cases = json.loads((HERE / a.cases).read_text(encoding='utf-8')) + (old_cases() if a.old else [])
+    cases = [c for name in a.cases for c in json.loads((HERE / name).read_text(encoding='utf-8'))] + (old_cases() if a.old else [])
     base, key = os.environ.get('OPENAI_BASE_URL', ''), os.environ.get('OPENAI_API_KEY', '')
 
     def one(case):
         if a.main:
             return {'id': case['id'], 'did': 'close', 'tokens': (0, 0), 'found': None}
-        text, tin, tout = ask(base, key, a.model, a.effort, result_check_prompt(case))
+        job = {**case, 'thread': thread(case), 'promises': case.get('promises') or []}
+        text, tin, tout = ask(base, key, a.model, a.effort, result_check_prompt(job))
         answer = parsed(text)
-        found = verdict(answer) if answer is not None else {'state': 'unsure', 'checked': '', 'difference': '', 'owed': ''}
+        found = verdict(answer, job) if answer is not None else {'state': 'unsure', 'checked': '', 'difference': '', 'owed': ''}
         return {'id': case['id'], 'did': outcome(case, found), 'tokens': (tin, tout), 'found': found, 'reply': text}
     jobs = [c for _ in range(a.runs if not a.main else 1) for c in cases]
     with concurrent.futures.ThreadPoolExecutor(a.jobs) as pool:

@@ -129,7 +129,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     `machine/prompts/result_check.py`: what came for a waiting to-do (its page, a message, `outcomes.result_seen`)
     read against what was agreed in its thread in one small background turn (`suggestions.result_check`, sealed).
     Closes only on a match with nothing owed in return; a difference, a skipped OK, the owner's half of an exchange
-    or can't tell comes back with its line. Eval: `evals/result-checks`.
+    or can't tell comes back with its line. The thread says who wrote each message and when (`review.own_message`);
+    a match quotes the page and the thread, and code checks both quotes are there (`machine.text.quoted_in`).
+    Eval: `evals/result-checks`.
   - `note_pages_app.py` (`NotesApp`): trips and events for Calendar: their bands (`calendar_notes`) and a trip's or an
     event's page on `api/graph?node=note:<id>`, opened from its band (dashboard: `dashboard/graph-notes.js`). Nothing
     on it is edited. `note_pages.sync` keeps them under Trips and Events, with what an owner changed before on top.

@@ -140,7 +140,8 @@ class Outcomes(unittest.TestCase):
         self.assertEqual(self.suggestion()['status'], 'pending')
         asked = []
         with patch_everywhere(timeutil, 'now', return_value='2026-12-02T09:00:00+00:00'):
-            self.assertEqual(self.checked({'state': 'matches', 'checked': 'signed as sent'}, asked), 'closed')
+            self.assertEqual(self.checked({'state': 'matches', 'checked': 'signed as sent', 'shows': 'Signed form attached.',
+                                           'agreed': 'Here is the order form.'}, asked), 'closed')
         self.assertIn('Signed form attached.', asked[0])  # what came, and what the owner sent
         self.assertIn('Here is the order form.', asked[0])
         row = self.suggestion()
@@ -195,7 +196,7 @@ class Outcomes(unittest.TestCase):
         self.send()
         with self.store.connect() as db:
             outcomes.project_proof(db, self.sid, 'Listing is live', self.event, '2026-10-18T09:00:00+00:00')
-        self.assertEqual(self.checked({'state': 'matches', 'checked': ''}), 'closed')
+        self.assertEqual(self.checked({'state': 'matches', 'checked': '', 'shows': 'send the order form', 'agreed': 'send the order form'}), 'closed')
         self.assertEqual(self.suggestion()['status'], 'completed')
 
     def test_a_changed_goal_moves_the_waiting_line_that_was_the_old_goal_only(self):
