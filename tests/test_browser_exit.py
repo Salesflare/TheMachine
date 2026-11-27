@@ -470,6 +470,14 @@ class SignInDialog(unittest.TestCase):
         self.pages()  # once per change
         self.assertEqual(self.counted(), [('BrowserExit.signin.computer_to_direct', 'machine/browser_exit.py:linkedin.com', '')])
 
+    def test_a_run_stopped_at_a_sign_in_counts_it_too(self):
+        x.went('linkedin.com', 'direct')
+        x.went('linkedin.com', 'computer')
+        with patch.object(self.app, 'signin_waits', lambda: [('task', 'job', 'https://www.linkedin.com/feed')], create=True), \
+             patch.object(self.app, 'signin_tabs', lambda: [], create=True):
+            self.app.watch_sign_ins(now=True)
+        self.assertEqual(self.counted(), [('BrowserExit.signin.direct_to_computer', 'machine/browser_exit.py:linkedin.com', '')])
+
 
 if __name__ == '__main__':
     unittest.main()
