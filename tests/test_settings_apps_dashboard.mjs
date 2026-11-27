@@ -105,7 +105,9 @@ try{
     assert.equal(await page.locator('#settings-apps h2').innerText(),'The Machine apps');
     // the apps come first, above ChatGPT and Claude
     const [apps,ai]=await Promise.all(['#settings-apps','#ai-official'].map(s=>page.locator(s).boundingBox()));assert.ok(apps.y<ai.y,name+': apps on top')}
-   assert.deepEqual(await page.locator('#ai-official small').allInnerTexts(),['One click from ChatGPT’s plugins.','One click from Claude’s directory.']);
+   assert.deepEqual(await page.locator('#ai-official small').allInnerTexts(),['One click from ChatGPT’s plugins.','One click from Claude’s directory.','In Claude, add it under Customize, Skills.']);
+   // the skill: the claude.ai zip each desktop release carries
+   assert.equal(await page.locator('#ai-official a[data-ai-skill]').getAttribute('href'),'https://github.com/Salesflare/TheMachine/releases/latest/download/the-machine-skill.zip');
    // how the app signs in, under the stores; nothing without a store (inside the app)
    assert.equal(await page.locator('#apps-signin').isVisible(),want.length>0,name+': sign-in line');
    if(want.length)assert.equal(await page.locator('#apps-signin').innerText(),SIGNIN);

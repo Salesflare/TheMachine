@@ -17,6 +17,12 @@ Each change shows in **Activity** with **Undo**. They never merge, delete or sha
 
 A draft waits until you read it and press Send yourself. A connected AI never sends anything and never acts for you.
 
+## What it learns from you
+
+When a chat starts, the AI gets a short brief: who you are, your top rules, and what changed since its last visit. It can also read what **Learning** has: your rules, general facts and how you write in each channel. So it writes the way you would.
+
+With **Read & edit**, it can save what you settle in the chat. A fact goes in right away, with **Undo** in **Activity**. A rule steers your Machine's own work, so it waits in **Learning** until you press **Approve** or **Dismiss**. It never changes how you write.
+
 A draft with something left to fill in, a file it mentions but doesn't have, or only your own address on it goes back to the AI to fix first. When an AI asks for the same to-do or draft twice in a row, you get one.
 
 ## Connect one
@@ -28,6 +34,8 @@ On a Machine on your own computer, press **Set up** under **Get your address** f
 Your Machine then sets up its secure address by itself. That takes a few minutes.
 
 For Claude, press **Add in Claude** or open [The Machine in Claude's directory](https://claude.ai/directory/the-machine), then press Connect. On Team and Enterprise, an owner adds it in Organization settings.
+
+The Machine's skill tells Claude when to use your Machine: the brief first, your rules and voice before it drafts anything. Press **Download** next to **Claude skill**, then in Claude open Customize, Skills and upload it.
 
 To use an address in Claude instead, open Customize, Connectors, press + Add, then Add custom connector. Name it The Machine, paste the address, press Continue, then Add.
 

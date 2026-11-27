@@ -20,7 +20,7 @@ function aiConnection(c){const both=(aiView.areas||[]).length>1,lines=aiLines[c.
 <span class="ai-controls"><button type="button" class="ghost" data-ai-activity aria-expanded="${open}">Activity</button>${c.level!=='off'?'<button type="button" class="ghost" data-ai-off>Turn off now</button>':''}<button type="button" class="ghost" data-ai-remove>Remove</button></span>
 <small class="ai-msg-note"><strong>Messages</strong> Reads your email and chats. Its changes then wait for your OK.</small></div>`:''}${open?`<div class="ai-activity">${!lines?`<p class="muted">${esc(t('Loading…'))}</p>`:lines.length?`<ol class="act-list">${actRows(lines)}</ol>`:`<p class="muted">${esc(t('Nothing yet.'))}</p>`}</div>`:''}`}
 // After an Undo in an AI's own activity: its lines read again
-async function aiActivityReload(){const id=aiOpen;if(!id)return;try{aiLines[id]=(await request('api/activity?kind=ai&actor='+encodeURIComponent(id))).items||[]}catch(err){errCaught(err)}renderAi()}
+async function aiActivityReload(){const id=aiOpen;if(!id)return;try{aiLines[id]=(await request('api/activity?kind=ai&actor='+encodeURIComponent(id))).items||[]}catch(err){errCaught(err);aiLines[id]=aiLines[id]||[]}renderAi()}
 function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=aiView,list=v.connections||[],both=(v.areas||[]).length>1;
  const r=v.reach||{};$('#ai-official').innerHTML=aiOfficial(r);const listed=aiAddresses(r);$('#ai-addresses').innerHTML=listed;$('#ai-addresses').hidden=!listed;$('#ai-private-note').hidden=!r.address;
  $('#ai-list').innerHTML=list.length?list.map(aiConnection).join(''):'<div><span class="grow"><small>No AI connected yet.</small></span></div>';
@@ -38,7 +38,8 @@ const AI_CHATGPT_APP='https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d081
 function aiApps(ready){
  if(!ready)return '<div class="ai-later"><span class="grow"><strong translate="no">ChatGPT · Claude</strong><small>Ready once this Machine has its address.</small></span></div>';
  return `<div><span class="grow"><strong translate="no">ChatGPT</strong><small>One click from ChatGPT’s plugins.</small></span><a class="btn-link primary" href="${AI_CHATGPT_APP}" target="_blank" rel="noopener" data-ai-chatgpt>Add in ChatGPT</a></div>`
-  +`<div><span class="grow"><strong translate="no">Claude</strong><small>One click from Claude’s directory.</small></span><a class="btn-link primary" href="${AI_CLAUDE_DIRECTORY}" target="_blank" rel="noopener" data-ai-claude>Add in Claude</a></div>`}
+  +`<div><span class="grow"><strong translate="no">Claude</strong><small>One click from Claude’s directory.</small></span><a class="btn-link primary" href="${AI_CLAUDE_DIRECTORY}" target="_blank" rel="noopener" data-ai-claude>Add in Claude</a></div>`
+  +`<div><span class="grow"><strong>Claude skill</strong><small>In Claude, add it under Customize, Skills.</small></span><a class="store-badge" href="https://github.com/Salesflare/TheMachine/releases/latest/download/the-machine-skill.zip" data-ai-skill>${DL_ICON}<span>Download</span></a></div>`}
 function aiOfficial(r){
  if(r.shared)return aiApps(true);
  if(!r.address)return aiApps(false)+aiAddress(r);
@@ -70,7 +71,7 @@ $('#ai-list').addEventListener('click',async e=>{const row=e.target.closest('[da
  const sw=e.target.closest('[data-ai-messages]');if(sw){const on=sw.getAttribute('aria-checked')!=='true';sw.setAttribute('aria-checked',on);aiDo('ai_change',{id,messages:on},on?'Messages on':'Messages off');return}
  if(e.target.closest('[data-ai-off]'))aiDo('ai_off',{id},'Turned off now');
  else if(e.target.closest('[data-ai-remove]')){if(confirm(t('Remove {}? It can’t reach your Machine until it connects again.',name)))aiDo('ai_remove',{id},'Removed')}
- else if(e.target.closest('[data-ai-activity]')){aiOpen=aiOpen===id?'':id;renderAi();if(aiOpen){try{aiLines[id]=(await request('api/activity?kind=ai&actor='+encodeURIComponent(id))).items||[]}catch(err){errCaught(err);aiLines[id]=[]}renderAi()}}});
+ else if(e.target.closest('[data-ai-activity]')){aiOpen=aiOpen===id?'':id;renderAi();if(aiOpen)aiActivityReload()}});
 $('#ai-key-form').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,b=f.querySelector('button');b.disabled=true;
  try{const r=await aiPost('ai_key',{name:$('#ai-key-name').value,level:$('#ai-key-level').value,area:$('#ai-key-area').value,expiry:$('#ai-key-expiry').value});aiView=r;aiMade=r.made?.key||null;$('#ai-key-name').value='';renderAi()}
  catch(err){errCaught(err);notice(err.message,true)}finally{b.disabled=false}};

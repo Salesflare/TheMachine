@@ -189,7 +189,7 @@ TOOLS = {
                                          'until': {'type': 'string', 'description': 'A fact only, YYYY-MM-DD: the day it stops holding'}},
         'required': ['kind', 'text']}),
 }
-LEARNING_TOOLS = ('get_learnings', 'get_brief', 'save_learning')  # only with the config's ai_learnings on (ai_learnings.FLAG): else unknown
+LEARNING_TOOLS = ('get_learnings', 'get_brief', 'save_learning')  # unless the config's ai_learnings is false (ai_learnings.on): then unknown
 # Each tool's title, as the AI's app shows it (MCP tool title and annotations.title)
 TITLES = {'list_todos': 'List to-dos', 'get_todo': 'Get a to-do', 'list_promises': 'List promises', 'search_graph': 'Search the Graph',
           'get_graph_record': 'Get a Graph record', 'get_team_brief': 'Get team briefs', 'create_todo': 'Add a to-do',

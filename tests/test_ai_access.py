@@ -690,7 +690,6 @@ class Calls(Base):
         self.assertEqual([t['id'] for t in out['todos']], [self.work_card])
 
     def test_tools_list_names_every_tool_and_marks_the_read_ones(self):
-        self.app.config['ai_learnings'] = True  # its tools listed too (off: test_ai_learnings)
         _, tokens = self.signed_in()
         status, _, reply = self.call(tokens['access_token'], 'tools/list')
         tools = {t['name']: t for t in reply['result']['tools']}

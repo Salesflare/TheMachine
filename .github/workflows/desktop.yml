@@ -1020,11 +1020,22 @@ jobs:
         with:
           name: the-machine-desktop-arch
           path: arch
+      # The skill that ships with the MCP connection, from the tag: the claude.ai zip and the ClawHub one (scripts/skill_package.py)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: refs/tags/${{ inputs.release }}
+          path: src
+          sparse-checkout: |
+            claude-plugin
+            scripts/skill_package.py
+          sparse-checkout-cone-mode: false
       - name: The files
         env:
           VERSION: ${{ needs.release.outputs.version }}
         run: |
           set -euo pipefail
+          python3 src/scripts/skill_package.py out
           cp linux/the-machine-desktop-x86_64.AppImage linux/the-machine-desktop-amd64.deb arch/PKGBUILD arch/the-machine-desktop-bin-*.pkg.tar.zst out/
           [ "$(jq -r .version out/latest.json)" = "$VERSION" ]
           grep -q "^_tag=$RELEASE$" out/PKGBUILD
@@ -1040,4 +1051,4 @@ jobs:
         run: |
           set -euo pipefail
           gh release create "$RELEASE" out/* --repo "$GITHUB_REPOSITORY" --verify-tag --latest --title "The Machine desktop app $VERSION" \
-            --notes "The desktop app of $RELEASE (desktop/README.md). Windows: the-machine-desktop-setup.exe, signed. Mac: the-machine-desktop-mac.zip, signed and notarized. Linux: the AppImage, the .deb, and PKGBUILD for Arch. The newest is always at releases/latest/download/ with the same file names."
+            --notes "The desktop app of $RELEASE (desktop/README.md). Windows: the-machine-desktop-setup.exe, signed. Mac: the-machine-desktop-mac.zip, signed and notarized. Linux: the AppImage, the .deb, and PKGBUILD for Arch. The skill for Claude: the-machine-skill.zip; for ClawHub: the-machine-clawhub.zip. The newest is always at releases/latest/download/ with the same file names."

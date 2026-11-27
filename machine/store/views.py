@@ -101,9 +101,10 @@ CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'd
 CARD_KEEP_S = 120
 CARDS = stamps.Kept(4)
 # The status is kept between polls by the change counters of every table but these (StatusApp.status_kept): tables it
-# never reads that are written all day in the background (meaning search, logs, the Network's transport, runs). A
+# never reads that are written all day in the background (meaning search, logs, the Network's transport, runs; not
+# ai_writes: Learning's waiting rules are read from it). A
 # test checks a status build reads none of them; a table not listed is counted, so a new one never leaves it stale.
-STATUS_QUIET = ('activity_accounts', 'activity_blocks', 'agent_result_receipts', 'ai_activity', 'ai_folded', 'ai_tokens', 'ai_writes',
+STATUS_QUIET = ('activity_accounts', 'activity_blocks', 'agent_result_receipts', 'ai_activity', 'ai_folded', 'ai_tokens',
                 'android_inbox', 'android_receipts', 'chat_fast_sessions', 'digest_spend', 'draft_seen', 'email_bounce_cc_scan',
                 'email_bounce_scan', 'event_passages', 'event_vector_changes', 'event_vector_skips', 'event_vectors', 'fact_vectors', 'fleet_learn_vectors',
                 'gateway_starts', 'meet_log', 'network_aliases', 'network_looked', 'network_outbox', 'network_pins', 'network_replies',

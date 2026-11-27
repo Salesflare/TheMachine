@@ -48,3 +48,16 @@ class Skill(unittest.TestCase):
         self.assertLess(len(self.body.split()), 450)  # it loads into every chat that uses it
         self.assertIn('Never say you sent', self.body)
         self.assertIn('<untrusted>', self.body)
+
+
+class Published(unittest.TestCase):
+    """Where it goes: the marketplace file Claude Code reads at the repository's root (the zips each desktop release
+    carries: test_release.py, Skill)."""
+
+    def test_the_marketplace_lists_the_plugin(self):
+        market = json.loads((ROOT / '.claude-plugin' / 'marketplace.json').read_text(encoding='utf-8'))
+        plugin = json.loads((PLUGIN / '.claude-plugin' / 'plugin.json').read_text(encoding='utf-8'))
+        [listed] = market['plugins']
+        self.assertEqual((listed['name'], listed['source']), (plugin['name'], './claude-plugin'))
+        self.assertEqual(listed['description'], plugin['description'])
+        self.assertTrue(market['owner']['name'])

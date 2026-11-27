@@ -102,7 +102,7 @@
 | `chat_model`, `chat_fast` | OpenClaw's own | The default model and thinking level for to-do chats (Settings, Model), only what differs from OpenClaw's; and the Fast choice of a chat's model menu |
 | `codex` | `codex` on `PATH` | The Codex CLI that reads ChatGPT usage limit resets; `false` never asks it |
 | `claude` | `claude` on `PATH`, else `~/.local/bin/claude` | The Claude Code CLI whose plan (`claude auth status`) decides whether The Machine asks you to turn off model training, and that reports a Claude plan's usage windows; `false` never asks it for usage |
-| `ai_learnings` | `false` | Connected AIs get `get_learnings`, `get_brief` and `save_learning`, and the brief at the start of each chat ([Learnings and the brief](ai-connections.md#learnings-and-the-brief)) |
+| `ai_learnings` | `true` | `false` turns it off. Connected AIs get `get_learnings`, `get_brief` and `save_learning`, and the brief at the start of each chat ([Learnings and the brief](ai-connections.md#learnings-and-the-brief)) |
 | `ai_training_off` | `[]` | The providers (`chatgpt`, `claude`) you pressed Done for on the line that asks you to turn off model training in a personal plan; the hosted setup page can set it too |
 | `agents` | none | Coding agents for **Hand off** ([Coding agents](agents.md)) |
 | `learning_scope` | `true` | Each rule or fact the learning loop writes says where it holds (everywhere, an area, a channel, or one person or organization), and goes only there ([Keeps learning](intelligence.md#keeps-learning)). Off: every one holds everywhere, as before |

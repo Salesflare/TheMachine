@@ -1,5 +1,5 @@
 """Connected AIs, what the owner taught The Machine: get_learnings and the brief (docs/ai-connections.md, Learnings and
-the brief). Off unless the config's FLAG is on.
+the brief). On unless the config's FLAG is false (on()).
 
 get_learnings gives the owner's rules, general facts (about no one in the Graph) and voice per channel, as Learning,
 What I've learned has them, in the connection's area. The brief is a few lines for the start of a chat: who the owner
@@ -19,7 +19,7 @@ import sqlite3
 from machine.store import facts as fact_store
 import timeutil
 
-FLAG = 'ai_learnings'  # config: get_learnings, get_brief and the brief in the server's instructions
+FLAG = 'ai_learnings'  # config: get_learnings, get_brief, save_learning and the brief in the server's instructions
 LIMIT, MOST = 30, 100  # rules and facts per list: given, and the most asked
 VOICE_CHARS = 1500  # of one channel's voice
 FIRST_DAYS = 7  # a first visit's brief looks back this far
@@ -28,6 +28,11 @@ AGAIN_MINUTES = 10  # a brief within this of the last one is no new line in Acti
 BRIEF_RULES, BRIEF_FACTS, BRIEF_TODOS, BRIEF_PEOPLE, BRIEF_PROMISES = 4, 3, 3, 5, 3
 LINE_CHARS = 140  # of a rule, fact, to-do or promise in the brief
 SCAN = 500  # newest to-dos and people looked at for the brief
+
+
+def on(config):
+    """Whether connected AIs get the learnings tools and the brief: yes, unless the config says false."""
+    return config.get(FLAG, True) is not False
 
 
 def origin(row):
