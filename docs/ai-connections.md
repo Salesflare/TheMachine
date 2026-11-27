@@ -101,8 +101,11 @@ Settings, Apps lists the connections with their activity, and **Add a key** for 
 Through the official app there is one connection per app. The account registers anew for each sign-in (one Machine
 client per AI registration), so the owner's Connect for Claude or ChatGPT (`ai_access.app_key`: every return address
 of the registration is the account's callback for that app) folds any earlier connection of the same app into the one
-just approved (`ai_access.fold`): its tokens and codes go, so its sign-ins end; its activity and Graph changes move over,
-Undo included; the connection and its registration go, after what it had is kept in `ai_folded`. The approved one keeps
+just approved (`ai_access.fold`): its activity and Graph changes move over, Undo included, and the connection goes,
+after what it had is kept in `ai_folded`. Its sign-ins keep working, now under the approved one, with its access and
+never past its end: the same app signed in from a second place (another account of it, another device) stays
+connected instead of dropping at its next refresh. Its unused codes go; its registration goes once its last sign-in
+has ended (`prune`, or **Remove**). **Turn off now** ends them all. The approved one keeps
 exactly the access, area, expiry and Messages the owner picked: a fold never widens or narrows it. Connections from
 before this fold once at start (`fold_duplicates`, from `ensure`): per app the one that still works and was approved
 last stays as it is. Direct and unverified AIs (`other`, the private address) never fold: two of them can be two
@@ -307,8 +310,11 @@ one more client of it.
   token.
 - `POST /oauth/token`: `authorization_code` with the `code_verifier` (checked against the challenge, constant time), the
   same `redirect_uri` and `client_id`. A code works once, for 5 minutes; a code used twice revokes what it gave. Access
-  tokens last an hour. Refresh tokens rotate on every use and end with the connection; one used twice revokes the
-  connection's tokens. `refresh_token` checks the client too.
+  tokens last an hour. Refresh tokens rotate on every use; each lasts 90 days (`REFRESH_DAYS`), so an AI used at
+  least that often stays signed in until the connection ends, never longer. One sent again within 2 minutes by its own
+  client is a retry whose answer got lost (a restart, a dropped line) and gets a new pair, 3 at most; used again later
+  or more often, it revokes the connection's tokens. Tokens are rows in the database, so a restart or an update keeps
+  them. `refresh_token` checks the client too.
 - `POST /oauth/revoke` (RFC 7009).
 
 Codes, tokens, keys and client secrets are 32 random bytes, kept only as their SHA-256 and compared by it. None is

@@ -281,10 +281,62 @@ class Tokens(Base):
         form = {'grant_type': 'refresh_token', 'refresh_token': tokens['refresh_token'], 'client_id': client['client_id']}
         status, fresh = self.token(form)
         self.assertEqual(status, 200)
-        self.assertEqual(self.token(form)[0], 400)  # the stolen copy
-        self.assertEqual(self.call(fresh['access_token'], 'ping')[0], 401)
-        self.assertEqual(self.token({**form, 'refresh_token': fresh['refresh_token']})[0], 400)
+        later = ai_access._now() + dt.timedelta(seconds=ai_access.AGAIN_SECONDS + 5)
+        with patch.object(ai_access, '_now', return_value=later):
+            self.assertEqual(self.token(form)[0], 400)  # the stolen copy, past the time a lost answer is retried in
+            self.assertEqual(self.call(fresh['access_token'], 'ping')[0], 401)
+            self.assertEqual(self.token({**form, 'refresh_token': fresh['refresh_token']})[0], 400)
         self.assertIn('refused', [x['outcome'] for x in self.activity() if x['tool'] == 'sign-in'])
+
+    def test_a_refresh_retried_after_its_answer_got_lost_stays_signed_in(self):
+        # The AI refreshes, the answer never reaches it (a restart, a dropped connection), it sends the same token again
+        client, tokens = self.signed_in()
+        form = {'grant_type': 'refresh_token', 'refresh_token': tokens['refresh_token'], 'client_id': client['client_id']}
+        lost = self.token(form)[1]
+        status, again = self.token(form)
+        self.assertEqual(status, 200, again)
+        self.assertEqual(self.call(again['access_token'], 'ping')[0], 200)
+        self.assertEqual(self.call(lost['access_token'], 'ping')[0], 200)  # nothing ended
+        self.assertEqual(self.token({**form, 'refresh_token': again['refresh_token']})[0], 200)  # and it goes on
+        self.assertNotIn('refused', [x['outcome'] for x in self.activity() if x['tool'] == 'sign-in'])
+
+    def test_a_refresh_token_sent_again_too_often_is_a_stolen_copy(self):
+        client, tokens = self.signed_in()
+        form = {'grant_type': 'refresh_token', 'refresh_token': tokens['refresh_token'], 'client_id': client['client_id']}
+        answers = [self.token(form)[0] for _ in range(ai_access.AGAIN_ANSWERS + 1)]
+        self.assertEqual(answers, [200] * ai_access.AGAIN_ANSWERS + [400])
+        with self.db() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM ai_tokens').fetchone()[0], 0)
+
+    def test_a_used_ai_stays_signed_in_and_an_unused_refresh_token_ends(self):
+        client, tokens = self.signed_in(expiry='1y')
+        start = ai_access._now()
+        for month in range(1, 7):  # refreshed once a month for half a year: never asked to sign in again
+            with patch.object(ai_access, '_now', return_value=start + dt.timedelta(days=30 * month)):
+                status, tokens = self.token({'grant_type': 'refresh_token', 'refresh_token': tokens['refresh_token'], 'client_id': client['client_id']})
+                self.assertEqual(status, 200, tokens)
+                self.assertEqual(self.call(tokens['access_token'], 'ping')[0], 200)
+        idle = start + dt.timedelta(days=180 + ai_access.REFRESH_DAYS + 1)
+        with patch.object(ai_access, '_now', return_value=idle):
+            status, out = self.token({'grant_type': 'refresh_token', 'refresh_token': tokens['refresh_token'], 'client_id': client['client_id']})
+        self.assertEqual((status, out['error']), (400, 'invalid_grant'))
+
+    def test_a_refresh_token_never_outlasts_its_connection(self):
+        client, tokens = self.signed_in(expiry='7d')
+        with self.db() as db:
+            cid, ends = db.execute('SELECT id,expires_at FROM ai_connections').fetchone()
+            self.assertEqual(db.execute("SELECT expires_at FROM ai_tokens WHERE kind='refresh'").fetchone()[0], ends)
+            ai_access.change(db, cid, expiry='1y')  # Extend: up to the sliding limit, not a year
+            until = db.execute("SELECT expires_at FROM ai_tokens WHERE kind='refresh'").fetchone()[0]
+        self.assertLess(until, ai_access.stamp(ai_access._now() + dt.timedelta(days=ai_access.REFRESH_DAYS + 1)))
+        self.assertGreater(until, ai_access.stamp(ai_access._now() + dt.timedelta(days=ai_access.REFRESH_DAYS - 1)))
+
+    def test_a_sign_in_outlasts_a_restart_of_the_machine(self):
+        client, tokens = self.signed_in()
+        self.app.store = a.Store(Path(self.temp.name) / 'events.sqlite')  # a new process on the same data
+        self.app.ai_limiter = ai_access.Limiter()
+        self.assertEqual(self.call(tokens['access_token'], 'ping')[0], 200)
+        self.assertEqual(self.token({'grant_type': 'refresh_token', 'refresh_token': tokens['refresh_token'], 'client_id': client['client_id']})[0], 200)
 
     def test_a_refresh_token_belongs_to_its_client(self):
         _, tokens = self.signed_in()
@@ -550,19 +602,57 @@ class Calls(Base):
         with self.db() as db:
             shown = ai_access.connections(db)
             kept = db.execute("SELECT * FROM ai_connections WHERE client_id=?", (second['client_id'],)).fetchone()
-            self.assertIsNone(db.execute('SELECT 1 FROM ai_clients WHERE id=?', (first['client_id'],)).fetchone())
             moved = {r[0] for r in db.execute('SELECT connection_id FROM ai_activity')}
             saved = json.loads(db.execute('SELECT saved FROM ai_folded WHERE connection_id=?', (was,)).fetchone()[0])
         self.assertEqual(sorted(c['name'] for c in shown), ['ChatGPT', 'Claude'])
         self.assertEqual((kept['level'], kept['area']), ('read', 'work'))  # exactly what was approved last, nothing wider
         self.assertNotIn(was, moved)
         self.assertEqual(saved['connection']['level'], 'draft')
-        self.assertEqual(self.call(old['access_token'], 'ping')[0], 401)  # the earlier sign-in ended
-        self.assertEqual(self.token({'grant_type': 'refresh_token', 'refresh_token': old['refresh_token'], 'client_id': first['client_id']})[0], 401)
         self.assertFalse(self.tool(new['access_token'], 'list_todos')[0])
         with self.db() as db:
             lines = a.activity_log.page(db, self.app.config, kind='ai', actor=kept['id'])['items']
         self.assertGreaterEqual([x['what'] for x in lines].count('Connected'), 2)  # its history came along
+
+    def test_the_same_app_signed_in_elsewhere_stays_connected_after_a_fold(self):
+        # The same AI in two places (two accounts of it, two devices): signing in on the second folds the first
+        # connection into the new one, and the first stays signed in instead of dropping at its next refresh
+        back = ai_access.OFFICIAL_CALLBACK + 'claude'
+        first, old = self.sign_in_at(back, level='draft', area='both', expiry='1y')
+        second, new = self.sign_in_at(back, level='read', area='work', expiry='30d')
+        with self.db() as db:
+            kept = dict(db.execute('SELECT * FROM ai_connections').fetchone())
+            self.assertEqual(db.execute('SELECT count(*) FROM ai_connections').fetchone()[0], 1)
+        later = ai_access._now() + dt.timedelta(seconds=ai_access.ACCESS_SECONDS + 5)
+        with patch.object(ai_access, '_now', return_value=later):
+            self.assertEqual(self.call(old['access_token'], 'ping')[0], 401)  # its hour is over: it refreshes
+            status, fresh = self.token({'grant_type': 'refresh_token', 'refresh_token': old['refresh_token'], 'client_id': first['client_id']})
+            self.assertEqual(status, 200, fresh)
+            self.assertEqual(fresh['scope'], 'read')  # with the access approved last, nothing wider
+            error, text = self.tool(fresh['access_token'], 'create_todo', text='Call Sam')
+            self.assertTrue(error)
+            self.assertIn('can only read', text)
+            self.assertEqual(self.activity()[-1]['connection_id'], kept['id'])  # one row, both in its activity
+        with self.db() as db:
+            ends = db.execute("SELECT max(expires_at) FROM ai_tokens WHERE client_id=?", (first['client_id'],)).fetchone()[0]
+        self.assertLessEqual(ends, kept['expires_at'])  # its sign-in ends with the kept one, not with the year it had
+        # Turn off now ends both sign-ins; Remove also drops the earlier registration
+        self.app.action('ai_off', {'id': kept['id']}, owner_dashboard=True)
+        for client, tokens in ((first, fresh), (second, new)):
+            self.assertEqual(self.call(tokens['access_token'], 'ping')[0], 401)
+            self.assertEqual(self.token({'grant_type': 'refresh_token', 'refresh_token': tokens['refresh_token'], 'client_id': client['client_id']})[0], 400)
+        with self.db() as db:
+            ai_access.remove(db, kept['id'])
+            self.assertEqual(db.execute('SELECT count(*) FROM ai_clients').fetchone()[0], 0)
+
+    def test_a_folded_registration_goes_once_its_last_sign_in_ends(self):
+        back = ai_access.OFFICIAL_CALLBACK + 'claude'
+        first, old = self.sign_in_at(back)
+        self.sign_in_at(back)
+        with self.db() as db:
+            self.assertIsNotNone(ai_access.client(db, first['client_id']))  # still signed in
+        with patch.object(ai_access, '_now', return_value=ai_access._now() + dt.timedelta(days=31)), self.db() as db:
+            ai_access.prune(db)  # its tokens ended with the 30-day connection
+            self.assertIsNone(ai_access.client(db, first['client_id']))
 
     def test_direct_and_unverified_ais_are_never_folded(self):
         for uri in (CLAUDE, CLAUDE, ai_access.OFFICIAL_CALLBACK + 'other', ai_access.OFFICIAL_CALLBACK + 'other'):

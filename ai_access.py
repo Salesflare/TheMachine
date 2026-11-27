@@ -42,6 +42,9 @@ AREAS = ('both', 'work', 'personal')
 EXPIRY_DAYS = {'1d': 1, '7d': 7, '30d': 30, '1y': 365}
 SCOPES = {'read': 'read', 'draft': 'read draft'}
 ACCESS_SECONDS = 3600          # an access token
+REFRESH_DAYS = 90              # a refresh token unused this long ends; each use gives a new one (never past the connection's end)
+AGAIN_SECONDS = 120            # a refresh token sent again this soon after its use is a retry whose answer got lost
+AGAIN_ANSWERS = 3              # at most this many answers per refresh token in that time; more is a stolen copy
 CODE_SECONDS = 300             # an authorization code
 CLIENT_UNUSED_HOURS = 24       # a registration nobody connected with goes after this
 REGISTRATIONS_PER_HOUR = 30
@@ -581,9 +584,11 @@ def _same_app(db, app):
 
 
 def fold(db, connection_id, into_id):
-    """An earlier connection of the same official app goes into the one the owner approved last: its sign-ins end
-    (tokens and codes), its activity and Graph changes move over (Undo keeps working), and the connection and its
-    registration go. What it had is kept in ai_folded first. The kept one's access stays exactly as approved: a fold
+    """An earlier connection of the same official app goes into the one the owner approved last: its activity and Graph
+    changes move over (Undo keeps working), and the connection goes. Its sign-ins keep working, now under the kept one
+    and with its access: the same app signed in elsewhere too (another account of the AI, another device) stays
+    connected instead of dropping at its next refresh. Its registration stays while one of them lasts (prune); its
+    unused codes go. What it had is kept in ai_folded first. The kept one's access stays exactly as approved: a fold
     never widens or narrows it."""
     row = _connection(db, connection_id)
     take = lambda sql: [dict(r) for r in db.execute(sql, (row['id'],))]  # noqa: E731
@@ -596,10 +601,18 @@ def fold(db, connection_id, into_id):
     db.execute('UPDATE ai_activity SET connection_id=? WHERE connection_id=?', (into_id, row['id']))
     db.execute('UPDATE ai_writes SET connection_id=? WHERE connection_id=?', (into_id, row['id']))
     db.execute('UPDATE ai_connections SET used_at=? WHERE id=? AND (used_at IS NULL OR used_at<?)', (row['used_at'], into_id, row['used_at'] or ''))
-    for sql in ('DELETE FROM ai_tokens WHERE connection_id=?', 'DELETE FROM ai_codes WHERE connection_id=?', 'DELETE FROM ai_connections WHERE id=?'):
+    db.execute('UPDATE ai_tokens SET connection_id=? WHERE connection_id=?', (into_id, row['id']))
+    ends = db.execute('SELECT expires_at FROM ai_connections WHERE id=?', (into_id,)).fetchone()['expires_at']
+    db.execute("UPDATE ai_tokens SET expires_at=? WHERE connection_id=? AND expires_at>?", (ends, into_id, ends))
+    for sql in ('DELETE FROM ai_codes WHERE connection_id=?', 'DELETE FROM ai_connections WHERE id=?'):
         db.execute(sql, (row['id'],))
-    if row['client_id']:
-        db.execute('DELETE FROM ai_clients WHERE id=?', (row['client_id'],))
+    _drop_unused_clients(db)
+
+
+def _drop_unused_clients(db):
+    """Registrations that were used once and now have no connection and no token left (folded or removed)."""
+    db.execute('DELETE FROM ai_clients WHERE used_at IS NOT NULL AND id NOT IN (SELECT client_id FROM ai_connections WHERE client_id IS NOT NULL) '
+               'AND id NOT IN (SELECT client_id FROM ai_tokens WHERE client_id IS NOT NULL)')
 
 
 def fold_duplicates(db):
@@ -640,6 +653,11 @@ def pkce_ok(verifier, challenge):
     return hmac.compare_digest(made, challenge)
 
 
+def _refresh_until(issued, connection_ends):
+    """A refresh token lasts REFRESH_DAYS from when it was given, and never past its connection's end."""
+    return min(stamp(issued + dt.timedelta(days=REFRESH_DAYS)), connection_ends)
+
+
 def _issue(db, connection, client_id, code_hash=None):
     at = _now()
     ends = dt.datetime.fromisoformat(connection['expires_at'])
@@ -648,7 +666,7 @@ def _issue(db, connection, client_id, code_hash=None):
     db.execute('INSERT INTO ai_tokens(hash,kind,connection_id,client_id,code_hash,expires_at,created_at) VALUES(?,?,?,?,?,?,?)',
                (digest(access), 'access', connection['id'], client_id, code_hash, stamp(access_until), stamp(at)))
     db.execute('INSERT INTO ai_tokens(hash,kind,connection_id,client_id,code_hash,expires_at,created_at) VALUES(?,?,?,?,?,?,?)',
-               (digest(refresh), 'refresh', connection['id'], client_id, code_hash, connection['expires_at'], stamp(at)))
+               (digest(refresh), 'refresh', connection['id'], client_id, code_hash, _refresh_until(at, connection['expires_at']), stamp(at)))
     return {'access_token': access, 'token_type': 'Bearer', 'expires_in': max(1, int((access_until - at).total_seconds())),
             'refresh_token': refresh, 'scope': SCOPES.get(connection['level'], 'read')}
 
@@ -686,7 +704,13 @@ def token(db, form, basic=None):
         row = db.execute("SELECT * FROM ai_tokens WHERE hash=? AND kind='refresh'", (digest(form.get('refresh_token') or ''),)).fetchone()
         if not row or row['client_id'] != found['id']:
             raise OAuthError('invalid_grant', 'Unknown refresh token')
-        if row['used_at']:  # rotated already: someone else has an old one, so every token of it goes
+        # Rotated already. Sent again within AGAIN_SECONDS by its own client, it is a retry whose answer got lost (a
+        # restart, a dropped connection): it gets another pair, AGAIN_ANSWERS at most. Later or more often, someone else
+        # has an old one, so every token of it goes.
+        again = row['used_at'] and row['used_at'] > stamp(at - dt.timedelta(seconds=AGAIN_SECONDS)) and db.execute(
+            "SELECT count(*) FROM ai_tokens WHERE connection_id=? AND client_id=? AND kind='refresh' AND created_at>=? AND hash!=?",
+            (row['connection_id'], row['client_id'], row['used_at'], row['hash'])).fetchone()[0] < AGAIN_ANSWERS
+        if row['used_at'] and not again:
             db.execute('DELETE FROM ai_tokens WHERE connection_id=?', (row['connection_id'],))
             log(db, row['connection_id'], 'sign-in', 'refused', i18n.t('An old sign-in was used again, so all its sign-ins were ended'))
             raise OAuthError('invalid_grant', 'Refresh token already used')
@@ -695,7 +719,8 @@ def token(db, form, basic=None):
             if connection:
                 log(db, connection['id'], 'sign-in', 'refused', i18n.t(REFUSED['off' if connection['level'] == 'off' else 'expired']))
             raise OAuthError('invalid_grant', 'This connection is off or expired')
-        db.execute('UPDATE ai_tokens SET used_at=? WHERE hash=?', (stamp(at), row['hash']))
+        if not row['used_at']:
+            db.execute('UPDATE ai_tokens SET used_at=? WHERE hash=?', (stamp(at), row['hash']))
         return _issue(db, connection, found['id'], row['code_hash'])
     raise OAuthError('unsupported_grant_type', 'authorization_code or refresh_token')
 
@@ -845,7 +870,9 @@ def change(db, connection_id, level=None, area=None, expiry=None, messages=None,
             raise ValueError('Unknown expiry')
         until = stamp(_now() + dt.timedelta(days=EXPIRY_DAYS[expiry]))
         db.execute('UPDATE ai_connections SET expires_at=? WHERE id=?', (until, row['id']))
-        db.execute("UPDATE ai_tokens SET expires_at=? WHERE connection_id=? AND kind='refresh'", (until, row['id']))
+        for token_row in db.execute("SELECT hash,created_at FROM ai_tokens WHERE connection_id=? AND kind='refresh'", (row['id'],)).fetchall():
+            db.execute('UPDATE ai_tokens SET expires_at=? WHERE hash=?',
+                       (_refresh_until(dt.datetime.fromisoformat(token_row['created_at']), until), token_row['hash']))
         said.append(i18n.t('Expires in {}', i18n.t(EXPIRY_WORDS[expiry])))
     if messages is not None:
         if not isinstance(messages, bool):
@@ -873,6 +900,7 @@ def remove(db, connection_id):
         db.execute(sql, (row['id'],))
     if row['client_id']:
         db.execute('DELETE FROM ai_clients WHERE id=?', (row['client_id'],))
+    _drop_unused_clients(db)  # the registrations of what folded into it
 
 
 def new_key(db, name, level, area, expiry):
@@ -983,6 +1011,7 @@ def prune(db):
     at = _now()
     db.execute('DELETE FROM ai_codes WHERE expires_at<?', (stamp(at - dt.timedelta(hours=1)),))
     db.execute('DELETE FROM ai_tokens WHERE expires_at<?', (stamp(at),))
+    _drop_unused_clients(db)
     db.execute('DELETE FROM ai_clients WHERE used_at IS NULL AND created_at<? AND id NOT IN (SELECT client_id FROM ai_connections WHERE client_id IS NOT NULL)',
                (stamp(at - dt.timedelta(hours=CLIENT_UNUSED_HOURS)),))
     db.execute('DELETE FROM ai_activity WHERE at<?', (stamp(at - dt.timedelta(days=KEEP_DAYS)),))
