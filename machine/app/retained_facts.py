@@ -8,7 +8,8 @@ being used):
 - ended: past its end day, or a newer message overturned it ('expired:<id>'). Shown only as history: "Historical, not
   current", with the day it ended and, when a review ended it, what it says now (rule_changes 'Ended: … Updated: …').
 - replaced: a newer fact took its place in a condense ('fact:<id>'). Shown as history with the day and the fact that
-  replaced it. One whose words the newer fact all holds says nothing the newer one doesn't, so it never goes in.
+  replaced it. One whose words the newer fact all holds says nothing the newer one doesn't, so it never goes in. Its
+  numbers and short words count too (fact_words): "pays 40 euros" replaced by "pays 46 euros" is history worth keeping.
 
 A fact the owner removed (forget_fact: removed with nothing it went into), or one whose replacement they removed, is
 never read here. Neither is a connected AI's fact, nor a contact detail moved to a person's record, a voice or a skill
@@ -50,7 +51,7 @@ import fact_links
 import memory_use
 from machine.app.review_facts import waiting
 from machine.config import LOG
-from machine.store.facts import FACTS_ALL_UNDER, MATCH_WORDS, ai_fact_by, fact_line, key_words as words, suggestion_scope, word_match
+from machine.store.facts import FACTS_ALL_UNDER, MATCH_WORDS, ai_fact_by, fact_line, fact_words, key_words as words, suggestion_scope, word_match
 
 CHARS = 600           # about 150 tokens, only when something matches
 CHAT_CHARS = 400      # a chat turn's message stays short
@@ -119,7 +120,7 @@ def candidates(db, ids):
             f.update(state='history', day=(f['valid_until'] or f['removed_at'])[:10], now_says=reasons.get(into, ''))
         else:
             head = _chain(lookup, into[5:])
-            if head is None or words(f['text']) <= words(head['text']):  # removed by the owner, or the newer one says it all
+            if head is None or fact_words(f['text']) <= fact_words(head['text']):  # removed by the owner, or the newer one says it all
                 continue
             f.update(state='history', day=f['removed_at'][:10], now_says=head['text'])
         out.append(f)

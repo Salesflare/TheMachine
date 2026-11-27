@@ -52,7 +52,7 @@ class SearchAsk(unittest.TestCase):
             self.prompts.append(text)
             if isinstance(self.reply, Exception):
                 raise self.reply
-            return self.reply
+            return self.reply.pop(0) if isinstance(self.reply, list) else self.reply  # a list: one reply per answer turn
         self.app.ask_model = model
         self.add(work_mail(2, 'Kim Vale <kim@initech.example>', 'Pilot timing', 'The pilot moves to March, budget unchanged.'),
                  work_mail(5, 'Lee Park <lee@initech.example>', 'Lunch', 'Lunch on Friday?'),
@@ -486,6 +486,81 @@ class AskMemory(unittest.TestCase):
             self.ask('what is the state of the initech pilot?', 'work')
         self.assertLessEqual(len(ask_memory.INTRO) + len(self.memory()), 300)
         self.assertEqual({'signal'}, {r[0] for r in self.log()[before:] if r[2] == 'search'} | {'signal'})
+
+
+class AsItWas(unittest.TestCase):
+    """A question about days that are over, or how something was before a change, also reads what was learned and no
+    longer holds (ended or replaced: machine/app/retained_facts.py), marked as such, and the current facts marked
+    current; never one the owner removed, nor one of the other area. A question about now reads as before."""
+    add, build, setUp, ask, memory, log, fact, event = tg.Graph.add, tg.Graph.build, SearchAsk.setUp, SearchAsk.ask, AskMemory.memory, AskMemory.log, AskMemory.fact, AskMemory.event
+    ORG = 'org:initech.example'
+
+    def history(self):
+        self.build()
+        old = self.fact('Initech pays 40 euros per seat.', about=[self.ORG])
+        self.store.remember_fact('Initech pays 46 euros per seat since the renewal.', 'owner-note', replaces=[old['id']], quote='we stopped using them')
+        ended = self.fact('Kim Vale runs procurement at Initech.', about=[AskMemory.KIM])
+        with self.store.connect() as db:  # past its end day, as retire_expired finds it
+            db.execute('UPDATE facts SET valid_until=? WHERE id=?', (tg.at(30)[:10], ended['id']))
+        self.store.retire_expired()
+        self.store.forget_fact(self.fact('Initech pays a 500 euros onboarding fee.', about=[self.ORG])['id'])
+        self.fact('Kim Vale is CFO at Initech.', about=[AskMemory.KIM])
+
+    def asked(self, question, area='work', **plan):
+        self.plan = {'question': True, 'person': None, 'said_by': 'both', 'from': None, 'to': None, 'about': 'Initech price', **plan}
+        self.reply = 'Initech paid 40 euros a seat then [F1].'
+        return self.ask(question, area)
+
+    def test_days_that_are_over_read_what_no_longer_holds(self):
+        self.history()
+        found = self.asked('what did initech pay per seat in june?', **{'from': '2026-06-01', 'to': '2026-06-30'})
+        memory = self.memory()
+        self.assertIn(ask_memory.PAST_HEAD, memory)
+        replaced = re.search(r'\[F(\d)\] No longer current, learned 2026-10-16, replaced 2026-10-16 by: Initech pays 46 euros per seat since the renewal: '
+                             r'<<<Initech pays 40 euros per seat\.>>>', memory)
+        self.assertTrue(replaced, memory)  # its days are when it was learned and replaced, said as such: never when it held
+        self.assertIn(f'No longer current, learned 2026-10-16, ended {tg.at(30)[:10]}: <<<Kim Vale runs procurement at Initech.>>>', memory)
+        self.assertIn('Current, learned 2026-10-16: <<<Kim Vale is CFO at Initech.>>>', memory)
+        self.assertNotIn('onboarding fee', memory)  # the owner removed it: it never comes back
+        self.reply = f'Initech paid 40 euros a seat then [F{replaced[1]}].'
+        found = self.ask('what did initech pay per seat in june?', 'work')
+        self.assertEqual([m['title'] for m in found['memory']], ['Initech pays 40 euros per seat.'])  # cited as what it is
+
+    def test_how_it_was_before_a_change_without_days(self):
+        self.history()
+        self.plan = {'question': True, 'person': None, 'said_by': 'both', 'from': None, 'to': None, 'about': 'Initech price'}
+        self.reply = ['I found nothing about the price before the renewal. [0]', 'Initech paid 40 euros a seat [F1].']
+        found = self.ask('what did we pay initech before the renewal?', 'work')  # no days: nothing kept answered it, so a second look
+        self.assertNotIn(ask_memory.PAST, self.memory(self.prompts[0]))
+        self.assertIn('<<<Initech pays 40 euros per seat.>>>', self.memory())
+        self.assertEqual(found['answer'], 'Initech paid 40 euros a seat.')
+        self.assertEqual(len(self.prompts), 2)
+
+    def test_a_question_about_now_reads_as_before(self):
+        self.history()
+        self.asked('what does initech pay per seat?')
+        memory = self.memory()
+        self.assertNotIn(ask_memory.PAST, memory)
+        self.assertNotIn('40 euros', memory)
+        self.assertIn('[F1] Learned 2026-10-16: <<<', memory)
+        self.asked('what did initech pay this month?', **{'from': '2026-10-01', 'to': '2026-10-16'})  # days not over yet: now
+        self.assertNotIn(ask_memory.PAST, self.memory())
+
+    def test_never_one_of_the_other_area(self):
+        with self.store.connect() as db:
+            db.isolation_level = None
+            graph.build(db, CONFIG, tg.NOW.isoformat())
+            robin = db.execute("SELECT id FROM graph_nodes WHERE kind='person' AND name='Robin Hart'").fetchone()[0]
+        self.fact('The owner flies with Robin Hart to Lisbon.')  # a current one, so the area check runs on a list
+        gone = self.fact('Robin Hart flies the plane on Sundays.', about=[robin])
+        with self.store.connect() as db:
+            db.execute('UPDATE facts SET valid_until=? WHERE id=?', (tg.at(30)[:10], gone['id']))
+        self.store.retire_expired()
+        june = {'from': '2026-06-01', 'to': '2026-06-30', 'about': 'Robin Hart plane'}
+        self.asked('what did robin hart say about flying the plane in june?', 'work', **june)
+        self.assertNotIn('flies the plane on Sundays', ''.join(self.prompts))  # only known from a personal chat
+        self.asked('what did robin hart say about flying the plane in june?', None, **june)
+        self.assertIn('flies the plane on Sundays', self.memory())
 
 
 BOXES = {'owner_emails': ['sam.old@post.example'], 'accounts': [
