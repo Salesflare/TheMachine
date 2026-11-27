@@ -243,6 +243,19 @@ def signin_address(url, page):
     return not same_site(parts.hostname, page) or bool(SIGNIN_ADDRESS.search(parts.path + '?' + parts.query))
 
 
+def signin_look(tabs, page, forms):
+    """Where a task's sign-in stands in the browser, from its tabs ([{id, url}]) and the sign-in forms showing
+    (browser_login.pages): (the tabs still at a sign-in, past). A tab is at a sign-in on a sign-in address (also its
+    identity provider's site) or with a form in it. `past`: a tab of the task's site is beyond it while no form shows
+    on that site, even with an older tab of the task's left on a sign-in step it no longer needs (2026-11-27: the code
+    step on the identity provider's site, the owner signed in through another tab)."""
+    formed = {str(f.get('id') or '').split(':', 1)[-1] for f in forms}
+    at = [t for t in tabs if signin_address(t['url'], page) or t['id'] in formed]
+    past = (not any(same_site(f.get('host'), page) for f in forms)
+            and any(same_site(t['url'], page) and t not in at for t in tabs))
+    return at, past
+
+
 def signin_kind(reason, urls=()):
     """What a sign-in with nothing to type in the dialog wants (eid, passkey, captcha, account, code), from the task's
     blocker and its tab's address, or None. The blocker says it best; a code it offers next to another way ("an
@@ -353,6 +366,33 @@ def own_tab(db, job_id, calls, want):
                 mine = found[0]
                 break
     return (mine[0], mine[1]) if mine else None
+
+
+def task_tabs(db, job_id):
+    """The DevTools target IDs of the tabs a task's runs opened: this run's and the earlier runs' of the same task (a
+    retry, after a sign-in or a Change), from the answers of their own open steps. Unlike own_tab, also when the answer
+    carries no DevTools address (OpenClaw's newer answers don't); one that does must be on loopback. Never another
+    task's tab: only this task's runs."""
+    try:
+        session = db.execute('SELECT session_job_id FROM preparation_runs WHERE job_id=?', (job_id,)).fetchone()
+        jobs = [job_id] + [r[0] for r in db.execute('SELECT job_id FROM preparation_runs WHERE session_job_id=? AND job_id!=? ORDER BY started_at DESC LIMIT 10',
+                                                    (session[0], job_id))] if session else [job_id]
+        calls = [c for j in jobs for c in db.execute("SELECT tool,params,result FROM preparation_calls WHERE job_id=? AND tool='browser' ORDER BY started_at DESC,rowid DESC LIMIT 200", (j,))]
+    except sqlite3.OperationalError:
+        return set()
+    found = set()
+    for call in calls:
+        try:
+            given = json.loads(call['params'] or '{}')
+        except ValueError:
+            continue
+        if not isinstance(given, dict) or given.get('action') != 'open':
+            continue
+        answer = browser_result(call)
+        target, ws = answer.get('targetId'), urllib.parse.urlsplit(str(answer.get('wsUrl') or ''))
+        if isinstance(target, str) and re.fullmatch(r'[A-F0-9]{32}', target) and (not ws.netloc or ws.hostname in ('127.0.0.1', 'localhost', '::1')):
+            found.add(target)
+    return found
 
 
 def browser_link(config):

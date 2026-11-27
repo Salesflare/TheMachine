@@ -8724,7 +8724,10 @@
   "one": "{} step left",
   "other": "{} steps left"
  },
+ "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.",
+ "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.",
  "{} still has this. Check in drafts a short nudge for you to send.": "{} still has this. Check in drafts a short nudge for you to send.",
+ "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.",
  "{} still waiting.": "{} still waiting.",
  "{} stopped after failing to start": "{} stopped after failing to start",
  "{} stopped the search for {}": "{} stopped the search for {}",

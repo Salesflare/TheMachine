@@ -58,6 +58,15 @@ NEEDS_TOO_LONG = ("Not saved: outcome:'{}' is fine, but needs is {} characters a
                   'things named together, the list in the body) and save again with the rest unchanged')
 
 
+def signin_still(kind, site):
+    """What Continue says when the Machine's browser still shows a task's sign-in in every tab (fresh_signin)."""
+    if kind == 'code':
+        return i18n.t('{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.', site)
+    if kind == 'passkey':
+        return i18n.t('{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.', site)
+    return i18n.t('{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.', site)
+
+
 NOT_A_PERSON = re.compile(r'(?i)^(?:no-?reply|do-?not-?reply|mailer-daemon|postmaster|notifications?|bounces?)[@+.-]')
 
 
@@ -577,6 +586,12 @@ class CardActionsApp:
         feedback=args.get('feedback', '')
         if files and isinstance(feedback,str) and not feedback.strip():
             feedback=CHAT_FILES_ONLY[len(files)>1]
+        if args.get('choice') == 'retry' and hasattr(self, 'fresh_signin') and isinstance(args.get('suggestion_id'), str):
+            # Continue on a sign-in: looked at fresh first. Still at the sign-in in every tab: said once, here, rather
+            # than a run that reads the same page and says it again (the watcher carries on once it is done).
+            seen = self.fresh_signin(args['suggestion_id'])
+            if seen and seen['state'] == 'waiting':
+                raise OwnerError(signin_still(seen['kind'], seen['site']))
         result=self.store.decide(args['suggestion_id'], args['choice'], feedback,
                                  args['decision_id'], source, args.get('snooze_hours', 24),
                                  owner_snooze_until(args.get('snoozed_until')), args.get('snooze_option'),terminal_job,self.is_work_suggestion(args['suggestion_id']),

@@ -17,8 +17,8 @@ import login_export_mail
 import login_import
 import todo_areas
 from machine.browser import (browser_lease_script, browser_link, browser_wait, preparation_steps, run_tab,
-                             same_site, signin_address, signin_handoff, signin_kind, signin_name, SIGNIN_WATCH,
-                             site_language, task_page)
+                             same_site, signin_address, signin_handoff, signin_kind, signin_look, signin_name, SIGNIN_WATCH,
+                             site_language, task_page, task_tabs)
 from machine.config import BROWSER_LEASE, LOG
 import mail_attachments
 import next_actions
@@ -383,14 +383,62 @@ class BrowserApp:
         """The address a task's blocked sign-in waits on, from its own run steps (run_page), or None."""
         return next((page for task, job, page in self.signin_waits() if task == suggestion_id), None)
 
+    def signin_tabs_of(self, suggestion_id, job, page, tabs):
+        """A blocked task's tabs among `tabs`, as (its own tab IDs, the tabs): the ones its runs opened (also on its
+        identity provider's site, as Exact's login.exact.com for exactonline.be), the one its sign-in dialog opened,
+        and any tab of its site."""
+        with self.store.connect() as db:
+            own = task_tabs(db, job)
+        opened = self.__dict__.get('signin_opened', {}).get(suggestion_id)
+        return own, [t for t in tabs if t['id'] in own or t['id'] == opened or same_site(t['url'], page)]
+
+    def fresh_signin(self, suggestion_id, waits=None):
+        """What the Machine's browser shows now for the site a task's blocked sign-in waits on, read fresh (Continue,
+        or its sign-in seen done), as {state, site, kind} or None when that can't be told (no browser, no site, none
+        of its tabs open). 'done': a tab of the site is past its sign-in (signin_look). The task's own tabs still on
+        the sign-in step it left there (2026-11-27: the code step, while the owner had signed in in another tab) are
+        then opened at the task's address again, so its run reads the page as it is now. 'waiting': no tab of it is
+        past the sign-in. Reads addresses and whether a form shows, never what is in one."""
+        wait = next(((job, page) for task, job, page in (self.signin_waits() if waits is None else waits) if task == suggestion_id and page), None)
+        if not wait:
+            return None
+        job, page = wait
+        try:
+            forms = browser_login.pages(self.config)
+            tabs = self.signin_tabs()
+        except Exception:  # no browser right now: the run looks for itself, as before
+            return None
+        own, mine = self.signin_tabs_of(suggestion_id, job, page, tabs)
+        if not mine:
+            return None
+        at_signin, past = signin_look(mine, page, forms)
+        reason = self.signin_reason(suggestion_id)
+        seen = {'site': signin_name(reason, page), 'kind': signin_kind(reason, [t['url'] for t in at_signin])}
+        if not past:
+            return {**seen, 'state': 'waiting'}
+        # Signed in: back to where the task was going (its sign-in page itself only to the site's front page)
+        parts = urllib.parse.urlsplit(page)
+        again = page if not signin_address(page, page) else urllib.parse.urlunsplit((parts.scheme, parts.netloc, '/', '', ''))
+        base = browser_login.endpoints(self.config)[0]
+        for tab in at_signin:
+            if tab['id'] in own:
+                try:
+                    browser_login.browser_cdp.navigate(base, tab['id'], again, timeout=15)
+                except (browser_login.browser_cdp.CdpError, OSError, ValueError):
+                    LOG.info('sign-in tab not reopened suggestion=%s', suggestion_id)
+        return {**seen, 'state': 'done'}
+
     def resume_signed_in(self, host=None, suggestion_id=None, source='signed_in'):
         """Carries on the tasks blocked on a sign-in that is now done: the one named, and those waiting on `host`'s site.
-        The same as tapping Continue; nothing here signs in or touches the site. Returns the resumed task ids."""
+        The same as tapping Continue; nothing here signs in or touches the site, but the task's own tabs left on the
+        sign-in step open its page again (fresh_signin). Returns the resumed task ids."""
         resumed = []
-        for task, job, page in self.signin_waits():
+        waits = self.signin_waits()
+        for task, job, page in waits:
             # Keyed on each task's own site: a sign-in elsewhere never carries a task on, named or not.
             if not (bool(page) and same_site(host, page) if host else task == suggestion_id):
                 continue
+            self.fresh_signin(task, waits)
             try:
                 self.store.decide(task, 'retry', '', 'signed-in:' + job, source)
             except ValueError as error:
@@ -416,20 +464,19 @@ class BrowserApp:
             state['seen'].clear()
             return []
         try:
-            shown = [p['host'] for p in browser_login.pages(self.config)]
+            forms = browser_login.pages(self.config)
             tabs = self.signin_tabs()
         except Exception:  # no browser right now: look again later
             return []
         resumed = []
-        opened = self.__dict__.get('signin_opened', {})
         for task, job, page in waits:
-            mine = [t['url'] for t in tabs if t['id'] == opened.get(task) or same_site(t['url'], page)]
-            if any(same_site(host, page) for host in shown) or any(signin_address(url, page) for url in mine):
-                state['seen'].add(job)
-            elif job in state['seen'] and any(same_site(url, page) for url in mine):
+            at, past = signin_look(self.signin_tabs_of(task, job, page, tabs)[1], page, forms)
+            if job in state['seen'] and past:
                 state['seen'].discard(job)
                 state['done'].add(job)
                 resumed += self.resume_signed_in(suggestion_id=task)
+            elif at or any(same_site(f.get('host'), page) for f in forms):
+                state['seen'].add(job)
         return resumed
 
     def release_finished_browser_lease(self, lease_file=BROWSER_LEASE):
