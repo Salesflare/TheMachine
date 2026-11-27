@@ -59,7 +59,7 @@ Wanneer er een grotere functie of verbetering uitkomt, krijg je daar hoogstens �
 
 Open Zoeken met `⌘K` op een Mac of `Ctrl K` op Windows en Linux, of tik op het zoekpictogram op een telefoon. Typ twee of meer letters. **Berichten** toont de beste overeenkomsten uit alles wat je Machine heeft gelezen, op basis van betekenis of woorden. Oudere overeenkomsten in de [geschiedenis](history.md) zijn gebaseerd op woorden.
 
-Je kunt daar ook een vraag stellen, zoals de suggestie die je bij een lege zoekopdracht ziet, en een kort antwoord krijgen op basis van je eigen berichten ([Toetsenbord en het opdrachtenmenu](keyboard.md)).
+Je kunt daar ook een vraag stellen, zoals de suggestie die je bij een lege zoekopdracht ziet, en een kort antwoord krijgen op basis van je eigen berichten ([Toetsenbord en het opdrachtenvenster](keyboard.md)).
 
 Met **Alle resultaten bekijken** open je de volledige lijst, voor alle accounts of één account. Elk resultaat opent in een lezer, met een link naar de oorspronkelijke plek. Bij een lege zoekopdracht worden de nieuwste berichten getoond.
 

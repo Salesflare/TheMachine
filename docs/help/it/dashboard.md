@@ -59,7 +59,7 @@ Quando viene rilasciata una funzionalità o un miglioramento importante, una bre
 
 Apri la ricerca con `⌘K` su Mac o `Ctrl K` su Windows e Linux, oppure tocca l'icona di ricerca sul telefono. Digita almeno due lettere: **Messaggi** mostra le corrispondenze migliori tra tutto ciò che la tua Machine ha letto, per significato o per parole. Le corrispondenze nella [cronologia](history.md) meno recente si basano sulle parole.
 
-Puoi anche fare una domanda, come quella suggerita quando la ricerca è vuota, per ricevere una risposta breve dai tuoi messaggi ([Tastiera e palette dei comandi](keyboard.md)).
+Puoi anche fare una domanda, come quella suggerita quando la ricerca è vuota, per ricevere una risposta breve dai tuoi messaggi ([Tastiera e tavolozza dei comandi](keyboard.md)).
 
 **Vedi tutti i risultati** apre l'elenco completo, per tutti gli account o per uno solo. Ogni risultato si apre in una vista di lettura con un link alla fonte. Se la ricerca è vuota, vengono mostrati i messaggi più recenti.
 
