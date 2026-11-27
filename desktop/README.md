@@ -215,6 +215,23 @@ and nothing on the screen, needs no permission, and stores, logs and sends none 
 and on Hyprland, which tells what comes to the front on a socket of its own: the robot takes the class from it and drops
 the rest. Other Wayland desktops tell a program nothing about other windows, so there the robot stays.
 
+## Browsing through this computer
+
+Sites like LinkedIn refuse sign-ins from a data center, so a hosted Machine's browser can go out through the computer
+the app runs on (src/exit.rs, help: browse-through-this-computer). While signed in, the app keeps one connection to its
+Machine: `GET /api/exit` with its cookie, upgraded to `tm-exit/1`, over TLS (rustls, the Mozilla roots). On that
+connection the Machine asks for a host and port, and the app connects there and carries the bytes both ways, in frames
+of a type byte, a stream number and a length (at most 16 KB). The app opens no port of its own.
+
+The app connects only to ports 80 and 443 on public internet addresses, checked after its own DNS lookup: never this
+computer, its local network or its IPv6 /64, private, shared, link-local (cloud metadata), test or multicast ranges,
+nor the Machine's own address. It keeps to 64 streams, 4 MB/s down, 1 MB/s up and 2 GB a day; a connection gets 10
+seconds to open and is dropped after 5 minutes idle. A Machine without it answers 404, and the app asks again in 10
+minutes; Settings shows the switch, Let my Machine browse through this computer (on by default), only once its Machine
+took the connection. Off says so to the Machine and closes it. While a stream was open in the last 30 seconds, the box
+and the icon's tooltip say Your Machine is browsing through this computer. smoke/exit.py runs a real browser through
+it on Windows, with `MACHINE_SANDBOX_EXIT_FROM` (sandbox builds only) to let loopback through from 127.0.0.2.
+
 ## Quit
 
 To quit: the menu above; on Windows also its icon by the clock, or Alt+F4 after a click on the robot; on a Mac its menu bar

@@ -9,7 +9,7 @@ publish = false
 default = ["updates"]
 # Adds http://127.0.0.1:<port> as a Machine address, for scripts/sandbox.sh, and a stand-in for the account's sign-in
 # (MACHINE_SANDBOX_ACCOUNT). Never in a build for people.
-sandbox = []
+sandbox = ["dep:socket2"]
 # It updates itself (updates.rs), on Windows, a Mac and as an AppImage. Not in the Mac App Store's build, which the store updates.
 updates = ["dep:tauri-plugin-updater"]
 # The Mac App Store's build (README.md, Mac App Store): in the App Sandbox, macOS 14 and later. Built with
@@ -32,6 +32,11 @@ sha2 = "0.11"
 base64 = "0.23"
 getrandom = "0.4"
 tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "zip"], optional = true }
+# The way out for the Machine's browser (exit.rs): the TLS and the roots ureq has, for a connection that stays open
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+webpki-roots = "1"
+# A sandbox build's connections from an address of its own, for smoke/exit.py
+socket2 = { version = "0.6", optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 gdkx11 = "0.18"

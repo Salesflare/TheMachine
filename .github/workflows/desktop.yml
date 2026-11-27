@@ -125,6 +125,7 @@ jobs:
         run: | # its own certificate is trusted on this runner while this runs, for 127.0.0.1 only, and never by the build for people
           grep -q MACHINE_SANDBOX_ROOT sandbox-build/the-machine-desktop.exe
           if grep -q MACHINE_SANDBOX_ROOT out/the-machine-desktop.exe; then exit 1; fi
+          if grep -q MACHINE_SANDBOX_EXIT_FROM out/the-machine-desktop.exe; then exit 1; fi
           smoke/certificate.sh "$RUNNER_TEMP/certificate"
           trap 'certutil -delstore Root "Made-up Machine root"' EXIT
           certutil -addstore -f Root "$(cygpath -w "$RUNNER_TEMP/certificate/root.pem")"
@@ -134,6 +135,7 @@ jobs:
           python smoke/window.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/window || failed=1
           python smoke/text.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/text || failed=1
           python smoke/signin.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/signin || failed=1
+          python smoke/exit.py sandbox-build/the-machine-desktop.exe out/the-machine-desktop.exe shots/exit || failed=1
           MACHINE_SANDBOX_UPDATES_KEY="$(cat "$RUNNER_TEMP/made-up.key.pub")" python smoke/updates.py sandbox-build/setup-0.0.1.exe sandbox-build/setup-9999.0.0.exe shots/updates || failed=1
           exit $failed
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

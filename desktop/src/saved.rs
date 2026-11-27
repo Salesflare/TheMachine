@@ -32,6 +32,10 @@ pub struct Saved {
     /// of them); and for which it was asked in a notification.
     pub none: u64,
     pub asked: u64,
+    /// Settings: the Machine's browser doesn't go out through this computer (exit.rs); and the Machine that took it,
+    /// for Settings to show the switch only where there is one.
+    pub no_exit: bool,
+    pub exit_at: Option<String>,
     /// A random name for this robot, for its Machine to know which computer's it is (speak.rs).
     pub desk: String,
     /// What the pages' own keys are kept under (mac_app.rs).

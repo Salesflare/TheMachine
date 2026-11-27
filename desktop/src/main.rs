@@ -9,6 +9,7 @@ mod card;
 mod dash;
 #[cfg(windows)]
 mod elevated;
+mod exit;
 mod files;
 mod front;
 mod given;
@@ -529,6 +530,7 @@ fn chosen(app: &AppHandle, id: &str) {
                 (saved.machine, saved.cookie, saved.seen) = (None, None, None);
             }
             shared.save();
+            exit::again();
             *shared.held.lock().unwrap() = Held::default();
             *shared.problem.lock().unwrap() = None;
             shared.now.lock().unwrap().clear();
@@ -579,6 +581,8 @@ struct BoxState {
     open: bool,
     speaks: speak::Speak,
     wanted: Option<String>,
+    /// The Machine's browser is going out through this computer (exit.rs).
+    exit: bool,
 }
 
 #[tauri::command]
@@ -599,6 +603,7 @@ fn box_state(shared: State<Shared>) -> BoxState {
         open: shared.open.load(Ordering::Relaxed),
         speaks,
         wanted,
+        exit: exit::carrying(),
     }
 }
 
@@ -702,6 +707,7 @@ fn signed_in(app: &AppHandle, machine: Machine) -> Result<(), String> {
         (saved.machine, saved.cookie, saved.seen) = (Some(machine.url), machine.cookie, None);
     }
     shared.save();
+    exit::again();
     shared.now.lock().unwrap().clear();
     *shared.held.lock().unwrap() = Held::default();
     *shared.problem.lock().unwrap() = None;
@@ -1052,7 +1058,11 @@ fn follow_tray(app: &AppHandle) {
         }
         let count = shared.count();
         let _ = icon.set_icon(Some(if shared.dot.load(Ordering::Relaxed) { dotted(image) } else { image.clone() }));
-        let _ = icon.set_tooltip(Some(if count > 0 { format!("The Machine. {count} for you.") } else { "The Machine".into() }));
+        let mut tip = if count > 0 { format!("The Machine. {count} for you.") } else { "The Machine".into() };
+        if exit::carrying() {
+            tip = format!("{}. Your Machine is browsing through this computer.", tip.trim_end_matches('.'));
+        }
+        let _ = icon.set_tooltip(Some(tip));
     }
     #[cfg(not(any(windows, target_os = "macos")))]
     let _ = app;
@@ -1110,6 +1120,29 @@ fn debug(app: &AppHandle) {
             };
             let _ = stream.write_all(answer.as_bytes());
         }
+    });
+}
+
+/// The Machine's browser out through this computer (exit.rs), while signed in and on in Settings. When that starts or
+/// ends, the box and the icon by the clock say so; a Machine that has it is kept, for Settings to show its switch.
+fn way_out(app: &AppHandle) {
+    let (asks, told) = (app.clone(), app.clone());
+    let on = !app.state::<Shared>().saved.lock().unwrap().no_exit;
+    exit::start(on, move || asks.state::<Shared>().machine(), move || {
+        let shared = told.state::<Shared>();
+        let url = shared.machine().map(|m| m.url).filter(|_| exit::offered());
+        let kept = url.is_some_and(|url| {
+            let mut saved = shared.saved.lock().unwrap();
+            let new = saved.exit_at.as_ref() != Some(&url);
+            saved.exit_at = Some(url);
+            new
+        });
+        if kept {
+            shared.save();
+            let _ = told.emit_to("settings", "settings", ());
+        }
+        later(&told, follow_tray);
+        let _ = told.emit_to("box", "listed", ());
     });
 }
 
@@ -1329,6 +1362,7 @@ fn main() {
                 open(app.handle()); // it says what it is, and signs in
             }
             watch(app.handle().clone());
+            way_out(app.handle());
             let here = app.handle().clone();
             std::thread::spawn(move || here.state::<Shared>().snip.store(snip::there(), Ordering::Relaxed));
             front::watch(app.handle());

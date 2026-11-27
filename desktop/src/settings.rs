@@ -1,5 +1,6 @@
-//! Settings, a small window of the app's own: the robot, starting at login, what closing the dashboard's window does, and
-//! notifications when there is no robot. What the Machine itself does is set in the dashboard.
+//! Settings, a small window of the app's own: the robot, starting at login, what closing the dashboard's window does,
+//! notifications when there is no robot, and whether the Machine's browser may go out through this computer. What the
+//! Machine itself does is set in the dashboard.
 use crate::{away, later, login, notify, speak, updates, windows, Shared};
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -25,6 +26,8 @@ pub struct Settings {
     /// Nothing is said here: a browser here may tell (speak.rs).
     browser: bool,
     machine: Option<String>,
+    /// The Machine's browser goes out through this computer; None where the Machine has no such thing (exit.rs).
+    exit: Option<bool>,
     /// A release's (crate::version).
     version: String,
     /// The version that is fetched and waits for a restart (updates.rs).
@@ -136,6 +139,7 @@ pub async fn settings_state(app: AppHandle) -> Result<Settings, String> {
             blocked: saved.notify == Some(true) && notices == notify::Lets::No,
             browser: shared.browser.load(Ordering::Relaxed) > 0 && (!saved.no_robot || saved.notify == Some(true) && notices == notify::Lets::Yes),
             machine: saved.machine.clone(),
+            exit: (saved.machine.is_some() && saved.exit_at == saved.machine).then_some(!saved.no_exit),
             version: crate::version().to_string(),
             update: updates::ready(),
             out: updates::out(),
@@ -167,6 +171,11 @@ pub async fn settings_set(app: AppHandle, id: String, on: bool) -> Result<(), St
             }
         }
         "quits" => shared.saved.lock().unwrap().quits = on,
+        // Off tells the Machine at once, so it doesn't ask for this computer
+        "exit" => {
+            shared.saved.lock().unwrap().no_exit = !on;
+            crate::exit::set(on);
+        }
         // The browser tells the Machine that it is here, as it opens; or none is
         "browser" if on => {
             let (machine, alone) = shared.signed_in().ok_or("notowner")?;

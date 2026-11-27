@@ -46,6 +46,8 @@
     if (!connected) asked = []; // of who was signed in
     if (was && !machine) { $('text').value = ''; files = []; draft = ''; mine = []; went.clear(); seenWorking.clear(); $('live').textContent = ''; showFiles(); } // signed out
     showReady(connected && !notice ? s.waiting : {todos: [], count: 0});
+    $('exit').textContent = t.exitOn; // a quiet line while the Machine's browser goes out through this computer (src/exit.rs)
+    $('exit').hidden = !(s.exit && connected);
     if (was && !connected) signinBy(byAddress);
     ready();
     return s;
