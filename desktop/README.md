@@ -122,7 +122,8 @@ same page as in a browser, signed in as the robot is, with no second sign-in and
 - **Notifications**, without the robot: what the robot would have said, as the system's own, while the app runs and isn't in
   front. A click opens the to-do. They turn on when you turn the robot off (macOS asks you then), unless you turned them off
   before. With the robot there are none, so nothing comes twice. The number on its Dock icon (Mac) or taskbar button (Windows)
-  is For you's.
+  is For you's. On Windows it looks as the dashboard's does when installed as an app: white on a dark circle, up to 99, then
+  99+ (drawn by tools/badges.py).
 - **Not reachable, off or starting, signed out, or moved to another address**: the window says so and how to go on. A Machine
   that is off (a hosted one that is paused, or still starting) is not signed out: your sign-in stays on this computer, and
   the box and the window are back by themselves within half a minute of it being on. A hosted Machine's window has a link to
