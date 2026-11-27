@@ -389,6 +389,7 @@
  "After you choose, you go back to {}.": "選択すると、{}に戻ります。",
  "After you save, The Machine sorts its projects into stages from your messages.": "保存すると、メッセージをもとにThe Machineがプロジェクトをステージに分類します。",
  "After your OK": "承認後",
+ "After {} decided to-dos, this shows how many were worth it, done, right the first try and sent as is.": "決定済みのToDoが{}件になった時点で、価値があったもの、完了したもの、初回で正しくできたもの、そのまま送信したものの数を表示します。",
  "After {} decided to-dos, this shows how many were worth it, right the first try and sent as is.": "{}件のToDoを判断すると、価値があったもの、一度で正しく実行できたもの、そのまま送信できたものの割合が表示されます。",
  "Afternoons": "午後",
  "Agenda": "予定表",
@@ -970,6 +971,7 @@
  },
  "Checked {} · next by {}": "{}に確認済み・次回は{}まで",
  "Checked {} · next soon": "{}に確認済み・まもなく次回",
+ "Checked {}: not there yet": "{}を確認しました：まだありません",
  "Checked. Nothing new.": "確認しました。新しい情報はありません。",
  "Checked. {} new to-dos.": {
   "other": "確認しました。新しいToDoが{}件あります。"
@@ -1054,6 +1056,7 @@
  "Claude is signed out, so nothing new gets checked or prepared.": "Claudeはログアウト中のため、新しい内容の確認や準備は行われません。",
  "Claude results need The Machine Network.": "Claudeの結果を利用するにはThe Machine Networkが必要です。",
  "Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector:": "ClaudeはThe Machineコネクタを通じて結果を返します。claude.aiの「設定」→「コネクタ」→「カスタムコネクタを追加」から、一度追加してください：",
+ "Claude skill": "Claudeのスキル",
  "Claude, ChatGPT, Cursor and other AIs that use your Machine over MCP. They read, and at most add to-dos and drafts that wait for you.": "Claude、ChatGPT、Cursorなど、MCP経由でMachineを使うAIです。読み取りのほか、確認待ちのToDoと下書きの追加まで行えます。",
  "ClawHub did not answer; try again in a minute": "ClawHubから応答がありません。1分後にもう一度お試しください",
  "ClawHub doesn't have that skill": "ClawHubにそのスキルはありません",
@@ -1300,6 +1303,7 @@
  "Couldn’t make the to-do. The next run tries again.": "ToDoを作成できませんでした。次回の実行時に再試行します。",
  "Couldn’t open it": "開けませんでした",
  "Couldn’t open that project.": "このプロジェクトを開けませんでした。",
+ "Couldn’t open {}": "{}を開けませんでした",
  "Couldn’t put {} more on a to-do. The next run tries again.": {
   "other": "ToDoに追加できなかった項目が{}件あります。次回の実行時に再試行します。"
  },
@@ -1463,6 +1467,9 @@
  "Do it runs {}.": "実行すると{}が起動します。",
  "Do it tapped": "「実行」がタップされました",
  "Do it was right first time in {} of {}.": "初回で正しく実行できたのは、{1}回中{0}回です。",
+ "Do it: {} of {} done, {} right first time, {} still open.": "実行：{} / {}件が完了、{}件は初回で正しくでき、{}件は未完了です。",
+ "Do it: {} of {} done, {} right first time.": "実行：{} / {}件が完了、{}件は初回で正しくできました。",
+ "Do it: {} still open.": "実行：{}件が未完了です。",
  "Doc": "ドキュメント",
  "Doc changes": "ドキュメントの変更",
  "Doc comment": "ドキュメントへのコメント",
@@ -2301,6 +2308,7 @@
  "I don’t sleep. I just snooze things.": "眠りません。いろいろスヌーズするだけです。",
  "I drafted it. Now you just have to be brave.": "下書きを作成しました。あとは勇気を出すだけです。",
  "I dreamt in binary again.": "また二進数の夢を見ました。",
+ "I found nothing about it. Older mail in {} could not be searched just now.": "関連情報は見つかりませんでした。{}内の古いメールは現在検索できませんでした。",
  "I found the email you were avoiding.": "避けていたメールを見つけました。",
  "I never forget a promise. Not even yours.": "約束は決して忘れません。そちらの約束も。",
  "I nudge because I care. And because you asked.": "気にかけているからリマインドします。頼まれたからでもあります。",
@@ -2370,6 +2378,7 @@
  "Importing…": "インポート中…",
  "In 2 hours": "2時間後",
  "In ChatGPT: Skills, Installed, a skill’s ⋯ menu, Download. Upload the .zip here.": "ChatGPTで「スキル」から「インストール済み」を開き、スキルの⋯メニューで「ダウンロード」を選びます。.zipをここにアップロードしてください。",
+ "In Claude, add it under Customize, Skills.": "Claudeで、「カスタマイズ」>「スキル」に追加してください。",
  "In Claude: Customize, Skills, open your skill and download it as a .skill file. Upload it here.": "Claudeで「カスタマイズ」から「スキル」を開き、スキルを選んで.skillファイルとしてダウンロードします。ここにアップロードしてください。",
  "In Granola: Settings, Connectors, API keys. Needs a Business or Enterprise plan. Only reads.": "Granolaで「設定」から「コネクタ」、「APIキー」の順に開きます。BusinessまたはEnterpriseプランが必要です。読み取り専用です。",
  "In Intercom's Developer Hub, open your app, then Authentication, and copy its access token.": "IntercomのDeveloper Hubでアプリを開き、「Authentication」に進んでアクセストークンをコピーします。",
@@ -2502,6 +2511,7 @@
  "It finished without a result.": "結果なしで終了しました。",
  "It follows its board now.": "現在はボードに従います。",
  "It goes by itself within the hour. Nothing to confirm.": "1時間以内に自動で開始します。確認は不要です。",
+ "It goes on by itself once the app is open.": "アプリを開くと自動で続行します。",
  "It has install steps: The Machine may install tools for it.": "インストール手順があります。The Machineが必要なツールをインストールする場合があります。",
  "It has no search page. Stop it and add the template again.": "検索ページがありません。停止して、テンプレートをもう一度追加してください。",
  "It is in that area already": "すでにそのエリアにあります",
@@ -2634,6 +2644,7 @@
  "Kept both": "両方保持しました",
  "Kept both to-dos": "両方のToDoを保持しました",
  "Kept open for the work the reply promised": "返信で約束した作業のため、開いたままにしています",
+ "Kept open in case the edited reply left work to do": "編集した返信に作業が残っている可能性があるため、未完了のままにしました",
  "Kept private": "非公開にしました",
  "Kept private, or a personal conversation is on them. New projects go within the hour.": "非公開のままか、個人的な会話が含まれています。新しいプロジェクトは1時間以内に送信されます。",
  "Kept private.": "非公開にしました。",
@@ -3724,6 +3735,12 @@
  "Of {} messages with no to-do": {
   "other": "ToDoのないメッセージ{}件"
  },
+ "Of {} to-dos closed after Do it: done": {
+  "other": "「実行」後にクローズした{}件のToDo：完了"
+ },
+ "Of {} to-dos done after Do it: no correction needed": {
+  "other": "「実行」後に完了した{}件のToDo：修正不要"
+ },
  "Of {} to-dos started with Do it: finished without a nudge": {
   "other": "「実行」で開始したToDo{}件：リマインドなしで完了"
  },
@@ -3765,6 +3782,7 @@
  "Okay. Turn it on any time in the Fleet tab.": "わかりました。Fleetタブでいつでもオンにできます。",
  "Old job turned off": "古いジョブをオフにしました",
  "Older": "以前の項目",
+ "Older mail in {} could not be searched just now.": "{}内の古いメールは現在検索できませんでした。",
  "Oldest contact": "最も古い連絡先",
  "Omarchy theme": "Omarchyテーマ",
  "On": "オン",
@@ -3989,6 +4007,7 @@
  "Open Search": "検索を開く",
  "Open Settings": "設定を開く",
  "Open Tailscale": "Tailscaleを開く",
+ "Open The Machine on your computer": "コンピューターでThe Machineを開く",
  "Open The Machine: {}": "The Machineを開く：{}",
  "Open To-dos": "ToDoを開く",
  "Open a folded list": "折りたたまれたリストを開く",
@@ -4035,6 +4054,7 @@
  "Open the OpenClaw app on the phone.": "スマートフォンでOpenClawアプリを開いてください。",
  "Open the PDF below to read it.": "下のPDFを開いて読んでください。",
  "Open the PDF to read this result.": "PDFを開いて、この結果を読んでください。",
+ "Open the app": "アプリを開く",
  "Open the brief": "ブリーフを開く",
  "Open the browser": "ブラウザーを開く",
  "Open the browser to use it there.": "ブラウザーを開いて、そちらで使用してください。",
@@ -4758,6 +4778,7 @@
  "Replaced": "置き換えました",
  "Replaced. Teammates get the new one.": "置き換えました。チームメンバーには新しいものが表示されます。",
  "Replaces the saved {} sign-in": "保存済みの{}のログイン情報を置き換えます",
+ "Replied to {} on {}. Kept open in case the work is still to do.": "{}に{}で返信しました。作業がまだ残っている可能性があるため、未完了のままにしました。",
  "Replied to {} on {}. The work is still to do.": "{}に返信しました（{}）。作業はまだ残っています。",
  "Replies are not on for this Intercom account: the owner turns them on by signing in with Intercom themselves (a Fleet-shared token only reads). Give the reply text in the body instead.": "このIntercomアカウントでは返信が有効になっていません。オーナー本人がIntercomにログインすると有効になります（Fleetで共有されたトークンは読み取り専用です）。代わりに、本文に返信文を入力してください。",
  "Replies as {}, only after you press Send.": "「送信」を押した後にのみ、{}として返信します。",
@@ -5371,6 +5392,7 @@
  "Sign in with {} isn’t available yet. Paste an integration token instead.": "{}でのログインにはまだ対応していません。代わりにインテグレーショントークンを貼り付けてください。",
  "Sign in with {} isn’t available yet. Use a Maton API key instead.": "{}でのログインはまだ利用できません。代わりにMaton APIキーを使ってください。",
  "Sign in with {} isn’t available yet. Use your own app instead.": "{}でのログインはまだ利用できません。代わりに独自のアプリを使ってください。",
+ "Sign in without it": "これを使わずにログイン",
  "Sign out": "ログアウト",
  "Sign-in": "ログイン",
  "Sign-in email": "ログイン用メールアドレス",
@@ -5488,6 +5510,7 @@
  "Snoozed.": "スヌーズしました。",
  "Snoozes and waits coming back": "スヌーズと待機の再開",
  "Snoozes land at": "スヌーズの通知時刻",
+ "So {} sees you signing in from home, not from a server.": "これにより、{}にはサーバーからではなく自宅からログインしているように見えます。",
  "Some conversation history or text is omitted; check the original.": "会話履歴やテキストの一部が省略されています。元の内容を確認してください。",
  "Some formatting can’t go in an email, so it was taken out. Check the message, then send.": "メールでは一部の書式を使えないため、削除しました。内容を確認してから送信してください。",
  "Some lines in your Hyprland settings could not be read, so those settings are not applied.": "Hyprlandの設定の一部を読み取れなかったため、適用されていません。",
@@ -5877,6 +5900,7 @@
  "That didn’t work. Try again.": "うまくいきませんでした。もう一度お試しください。",
  "That doc is not one of this task’s own doc events": "そのドキュメントは、このタスク固有のドキュメントイベントではありません",
  "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc linked in its messages)": "このドキュメントは、このToDoのドキュメント（このToDo用に作成されたもの、ドキュメントイベント、メッセージにリンクされたGoogle Doc）ではありません",
+ "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, Sheet or Slides file linked in its messages or its chat)": "そのドキュメントは、このToDoのドキュメントではありません（このToDo用に作成されたもの、そのドキュメントのイベント、またはメッセージやチャットにリンクされたGoogleドキュメント、Sheets、Slidesのファイルではありません）",
  "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, Sheet or Slides file linked in its messages)": "このドキュメントはこのToDoに属するものではありません（このToDo用に作成されたもの、ドキュメントイベント、またはメッセージ内でリンクされたGoogle Docs、Sheets、Slidesのファイルではありません）",
  "That doesn’t look like a Granola API key": "有効なGranola APIキーではないようです",
  "That doesn’t look like a Linear API key": "有効なLinear APIキーではないようです",
@@ -6463,6 +6487,7 @@
  "This message is not the one sent for that request, so nothing was done. Please use the dashboard.": "このメッセージはそのリクエストに対して送信されたものではないため、何も行われませんでした。ダッシュボードをお使いください。",
  "This morning’s digest": "今朝のダイジェスト",
  "This needs a paid Claude plan.": "有料のClaudeプランが必要です。",
+ "This opens from the desktop app.": "これはデスクトップアプリから開きます。",
  "This page expired. Connect again from your AI.": "このページの有効期限が切れました。AIからもう一度接続してください。",
  "This photo is encrypted and {} is missing": "この写真は暗号化されており、{}が見つかりません",
  "This preparation is owned by its already-running turn": "この準備は、すでに実行中のターンに属しています",
@@ -8501,6 +8526,7 @@
  "{} shared a task with you": "{}がタスクを共有しました",
  "{} shared this board with you": "{}がこのボードを共有しました",
  "{} shares a team Graph. Your Work contacts and client threads go to your teammates' Machines. Personal, sensitive and automated mail never does.": "{}はチームのGraphを共有しています。仕事の連絡先と顧客とのスレッドはチームメンバーのMachineに共有されます。個人的なメール、機密メール、自動送信メールは共有されません。",
+ "{} shows {}": "{}に{}が表示されます",
  "{} sign-ins found in {}.": "{}件のログイン情報が{}で見つかりました。",
  "{} signal versions saved.{}": "{}件のシグナルのバージョンを保存しました。{}",
  "{} signals": {
@@ -8535,6 +8561,7 @@
  "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{}はまだMachineのブラウザーでパスキーを求めています。そこでパスキーを使えば、こちらで続けます。",
  "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{}はまだMachineのブラウザーでログインコードを求めています。そこで入力すれば、こちらで続けます。",
  "{} still has this. Check in drafts a short nudge for you to send.": "{}はまだこの件を抱えています。「状況を確認」を押すと、送信用の短いリマインドを下書きします。",
+ "{} still open": "{}件が未完了です",
  "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{}はまだMachineのブラウザーにログイン画面を表示しています。そこでログインを完了すれば、こちらで続けます。",
  "{} still waiting.": "{}件がまだ待機中です。",
  "{} stopped after failing to start": "{}は起動に失敗し、停止しました",

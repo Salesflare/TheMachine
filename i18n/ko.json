@@ -389,6 +389,7 @@
  "After you choose, you go back to {}.": "선택하면 {}(으)로 돌아가요.",
  "After you save, The Machine sorts its projects into stages from your messages.": "저장하면 The Machine이 메시지를 바탕으로 프로젝트를 단계별로 정리해요.",
  "After your OK": "승인 후",
+ "After {} decided to-dos, this shows how many were worth it, done, right the first try and sent as is.": "할 일 {}개를 결정한 뒤, 가치 있었던 것, 완료된 것, 첫 시도에 성공한 것, 그대로 보낸 것이 각각 몇 개인지 보여 줘요.",
  "After {} decided to-dos, this shows how many were worth it, right the first try and sent as is.": "할 일 {}개를 결정한 후, 가치가 있었고 첫 시도부터 정확했으며 그대로 전송된 항목이 몇 개인지 여기에 표시돼요.",
  "Afternoons": "오후",
  "Agenda": "일정",
@@ -970,6 +971,7 @@
  },
  "Checked {} · next by {}": "확인 시각 {} · 다음 확인은 {}까지",
  "Checked {} · next soon": "확인 시각 {} · 곧 다시 확인해요",
+ "Checked {}: not there yet": "{} 확인: 아직 없어요",
  "Checked. Nothing new.": "확인했어요. 새로운 내용은 없어요.",
  "Checked. {} new to-dos.": {
   "other": "확인했어요. 새 할 일이 {}개 있어요."
@@ -1054,6 +1056,7 @@
  "Claude is signed out, so nothing new gets checked or prepared.": "Claude에서 로그아웃했어요. 새로운 항목을 확인하거나 준비하지 않아요.",
  "Claude results need The Machine Network.": "Claude 결과를 보려면 The Machine Network가 필요해요.",
  "Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector:": "Claude는 The Machine 커넥터를 통해 결과를 보내요. claude.ai의 설정, 커넥터, 사용자 지정 커넥터 추가에서 한 번만 추가하면 돼요:",
+ "Claude skill": "Claude 스킬",
  "Claude, ChatGPT, Cursor and other AIs that use your Machine over MCP. They read, and at most add to-dos and drafts that wait for you.": "MCP를 통해 내 Machine을 사용하는 Claude, ChatGPT, Cursor 등의 AI예요. 내용을 읽고, 많아야 할 일과 초안을 추가할 수 있어요. 추가된 항목은 확인을 기다려요.",
  "ClawHub did not answer; try again in a minute": "ClawHub에서 응답이 없어요. 잠시 후 다시 시도해 주세요",
  "ClawHub doesn't have that skill": "ClawHub에 해당 스킬이 없어요",
@@ -1300,6 +1303,7 @@
  "Couldn’t make the to-do. The next run tries again.": "할 일을 만들지 못했어요. 다음 실행 때 다시 시도돼요.",
  "Couldn’t open it": "열지 못했어요",
  "Couldn’t open that project.": "프로젝트를 열지 못했어요.",
+ "Couldn’t open {}": "{} 열기에 실패했어요",
  "Couldn’t put {} more on a to-do. The next run tries again.": {
   "other": "할 일에 {}개를 더 추가하지 못했어요. 다음 실행에서 다시 시도해요."
  },
@@ -1463,6 +1467,9 @@
  "Do it runs {}.": "실행하면 {}을(를) 실행해요.",
  "Do it tapped": "실행을 탭함",
  "Do it was right first time in {} of {}.": "‘실행’이 처음부터 제대로 된 횟수는 {1}번 중 {0}번이에요.",
+ "Do it: {} of {} done, {} right first time, {} still open.": "실행: {}개 중 {}개 완료, {}개는 첫 시도에 성공, {}개는 아직 열려 있어요.",
+ "Do it: {} of {} done, {} right first time.": "실행: {}개 중 {}개 완료, {}개는 첫 시도에 성공했어요.",
+ "Do it: {} still open.": "실행: {}개가 아직 열려 있어요.",
  "Doc": "문서",
  "Doc changes": "문서 변경 사항",
  "Doc comment": "문서 댓글",
@@ -2301,6 +2308,7 @@
  "I don’t sleep. I just snooze things.": "잠은 안 자요. 그냥 이것저것 미뤄요.",
  "I drafted it. Now you just have to be brave.": "초안은 작성했어요. 이제 용기만 내면 돼요.",
  "I dreamt in binary again.": "또 이진수로 꿈을 꿨어요.",
+ "I found nothing about it. Older mail in {} could not be searched just now.": "관련 내용을 찾지 못했어요. 지금은 {}의 이전 메일을 검색할 수 없어요.",
  "I found the email you were avoiding.": "피하고 있던 이메일을 찾았어요.",
  "I never forget a promise. Not even yours.": "약속은 절대 잊지 않아요. 직접 한 약속도요.",
  "I nudge because I care. And because you asked.": "신경 쓰여서 알림을 보내요. 부탁하셨기도 하고요.",
@@ -2370,6 +2378,7 @@
  "Importing…": "가져오는 중…",
  "In 2 hours": "2시간 후",
  "In ChatGPT: Skills, Installed, a skill’s ⋯ menu, Download. Upload the .zip here.": "ChatGPT에서 스킬, 설치됨, 스킬의 ⋯ 메뉴, 다운로드 순으로 선택해요. 여기에서 .zip 파일을 업로드해요.",
+ "In Claude, add it under Customize, Skills.": "Claude에서 사용자 지정 > 스킬에 추가하세요.",
  "In Claude: Customize, Skills, open your skill and download it as a .skill file. Upload it here.": "Claude에서 사용자 지정, 스킬로 이동해 스킬을 열고 .skill 파일로 다운로드해요. 여기에서 업로드해요.",
  "In Granola: Settings, Connectors, API keys. Needs a Business or Enterprise plan. Only reads.": "Granola에서 설정 > 커넥터 > API 키로 이동하세요. Business 또는 Enterprise 요금제가 필요해요. 읽기만 가능해요.",
  "In Intercom's Developer Hub, open your app, then Authentication, and copy its access token.": "Intercom의 Developer Hub에서 앱을 연 다음 인증으로 이동해 액세스 토큰을 복사해요.",
@@ -2502,6 +2511,7 @@
  "It finished without a result.": "결과 없이 끝났어요.",
  "It follows its board now.": "이제 보드를 따라요.",
  "It goes by itself within the hour. Nothing to confirm.": "한 시간 안에 자동으로 실행돼요. 확인할 필요 없어요.",
+ "It goes on by itself once the app is open.": "앱을 열면 자동으로 계속 진행돼요.",
  "It has install steps: The Machine may install tools for it.": "설치 단계가 있어요. The Machine이 필요한 도구를 설치할 수 있어요.",
  "It has no search page. Stop it and add the template again.": "검색 페이지가 없어요. 중지하고 템플릿을 다시 추가하세요.",
  "It is in that area already": "이미 해당 영역에 있어요",
@@ -2634,6 +2644,7 @@
  "Kept both": "둘 다 유지했어요",
  "Kept both to-dos": "두 할 일 모두 유지했어요",
  "Kept open for the work the reply promised": "답변에서 약속한 작업을 위해 계속 열어 둠",
+ "Kept open in case the edited reply left work to do": "수정된 답장에 아직 할 일이 남아 있을 수 있어 열린 상태로 유지했어요",
  "Kept private": "비공개로 유지했어요",
  "Kept private, or a personal conversation is on them. New projects go within the hour.": "비공개로 유지했거나 개인적인 대화가 연결되어 있어요. 새 프로젝트는 한 시간 안에 전송돼요.",
  "Kept private.": "비공개로 유지했어요.",
@@ -3724,6 +3735,12 @@
  "Of {} messages with no to-do": {
   "other": "할 일이 없는 메시지 {}개 중"
  },
+ "Of {} to-dos closed after Do it: done": {
+  "other": "실행 후 완료 처리된 할 일 {}개: 완료"
+ },
+ "Of {} to-dos done after Do it: no correction needed": {
+  "other": "실행 후 완료된 할 일 {}개: 수정 필요 없음"
+ },
  "Of {} to-dos started with Do it: finished without a nudge": {
   "other": "‘실행’으로 시작한 할 일 {}개 중 알림 보내기 없이 완료했어요"
  },
@@ -3765,6 +3782,7 @@
  "Okay. Turn it on any time in the Fleet tab.": "알겠어요. Fleet 탭에서 언제든 켤 수 있어요.",
  "Old job turned off": "이전 작업 꺼짐",
  "Older": "이전",
+ "Older mail in {} could not be searched just now.": "지금은 {}의 이전 메일을 검색할 수 없어요.",
  "Oldest contact": "가장 오래된 연락처",
  "Omarchy theme": "Omarchy 테마",
  "On": "켜짐",
@@ -3989,6 +4007,7 @@
  "Open Search": "검색 열기",
  "Open Settings": "설정 열기",
  "Open Tailscale": "Tailscale 열기",
+ "Open The Machine on your computer": "컴퓨터에서 The Machine 열기",
  "Open The Machine: {}": "The Machine 열기: {}",
  "Open To-dos": "할 일 열기",
  "Open a folded list": "접힌 목록 열기",
@@ -4035,6 +4054,7 @@
  "Open the OpenClaw app on the phone.": "휴대폰에서 OpenClaw 앱을 열어 주세요.",
  "Open the PDF below to read it.": "아래 PDF를 열어 읽어 주세요.",
  "Open the PDF to read this result.": "이 결과를 보려면 PDF를 열어 주세요.",
+ "Open the app": "앱 열기",
  "Open the brief": "브리프 열기",
  "Open the browser": "브라우저 열기",
  "Open the browser to use it there.": "브라우저에서 사용하려면 브라우저를 열어 주세요.",
@@ -4758,6 +4778,7 @@
  "Replaced": "바꿨어요",
  "Replaced. Teammates get the new one.": "바꿨어요. 팀원에게 새 항목이 전달돼요.",
  "Replaces the saved {} sign-in": "저장된 {} 로그인 정보를 대체해요",
+ "Replied to {} on {}. Kept open in case the work is still to do.": "{}에게 {}에 답장했어요. 아직 할 일이 남아 있을 수 있어 열린 상태로 유지했어요.",
  "Replied to {} on {}. The work is still to do.": "{}에게 {}에 답장했어요. 작업은 아직 할 일로 남아 있어요.",
  "Replies are not on for this Intercom account: the owner turns them on by signing in with Intercom themselves (a Fleet-shared token only reads). Give the reply text in the body instead.": "이 Intercom 계정에서는 답장 기능이 꺼져 있어요. 소유자가 직접 Intercom에 로그인해야 켤 수 있어요(Fleet에서 공유한 토큰은 읽기만 가능해요). 대신 본문에 답장 내용을 입력해 주세요.",
  "Replies as {}, only after you press Send.": "보내기를 눌러야만 {}으로 답장해요.",
@@ -5371,6 +5392,7 @@
  "Sign in with {} isn’t available yet. Paste an integration token instead.": "아직 {}으로 로그인할 수 없어요. 대신 통합 기능 토큰을 붙여 넣으세요.",
  "Sign in with {} isn’t available yet. Use a Maton API key instead.": "아직 {}으로 로그인할 수 없어요. 대신 Maton API 키를 사용하세요.",
  "Sign in with {} isn’t available yet. Use your own app instead.": "아직 {}으로 로그인할 수 없어요. 대신 직접 만든 앱을 사용하세요.",
+ "Sign in without it": "이것 없이 로그인하기",
  "Sign out": "로그아웃",
  "Sign-in": "로그인",
  "Sign-in email": "로그인 이메일",
@@ -5488,6 +5510,7 @@
  "Snoozed.": "미뤄 뒀어요.",
  "Snoozes and waits coming back": "미뤄 두거나 기다린 항목이 돌아오는 시간",
  "Snoozes land at": "미뤄 둔 항목이 돌아오는 시간",
+ "So {} sees you signing in from home, not from a server.": "그러면 {}에는 서버가 아니라 집에서 로그인하는 것으로 표시돼요.",
  "Some conversation history or text is omitted; check the original.": "대화 기록이나 텍스트 일부가 생략됐어요. 원본을 확인해 주세요.",
  "Some formatting can’t go in an email, so it was taken out. Check the message, then send.": "일부 서식은 이메일에 넣을 수 없어 삭제했어요. 메시지를 확인한 다음 보내 주세요.",
  "Some lines in your Hyprland settings could not be read, so those settings are not applied.": "Hyprland 설정의 일부 줄을 읽지 못해 해당 설정이 적용되지 않아요.",
@@ -5877,6 +5900,7 @@
  "That didn’t work. Try again.": "작동하지 않았어요. 다시 시도해 주세요.",
  "That doc is not one of this task’s own doc events": "해당 문서는 이 작업 자체의 문서 이벤트에 포함되지 않아요",
  "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc linked in its messages)": "해당 문서는 이 할 일에 속한 문서가 아니에요(이 할 일을 위해 만든 문서, 문서 이벤트 또는 메시지에 연결된 Google 문서가 아니에요)",
+ "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, Sheet or Slides file linked in its messages or its chat)": "해당 문서는 이 할 일에 속한 문서가 아니에요 (이 할 일을 위해 만든 문서, 문서 이벤트, 또는 메시지나 채팅에 연결된 Google 문서, Sheets 또는 Slides 파일이 아니에요)",
  "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc, Sheet or Slides file linked in its messages)": "이 문서는 이 할 일에 속한 문서가 아니에요. 이 할 일을 위해 만든 문서, 이 할 일의 문서 이벤트, 또는 메시지에 연결된 Google Docs, Sheets, Slides 파일이어야 해요.",
  "That doesn’t look like a Granola API key": "Granola API 키가 아닌 것 같아요",
  "That doesn’t look like a Linear API key": "Linear API 키가 아닌 것 같아요",
@@ -6463,6 +6487,7 @@
  "This message is not the one sent for that request, so nothing was done. Please use the dashboard.": "이 메시지는 해당 요청에 대해 전송된 메시지가 아니므로 아무 작업도 하지 않았어요. 대시보드를 이용하세요.",
  "This morning’s digest": "오늘 아침 요약",
  "This needs a paid Claude plan.": "유료 Claude 요금제가 필요해요.",
+ "This opens from the desktop app.": "데스크톱 앱에서 열 수 있어요.",
  "This page expired. Connect again from your AI.": "이 페이지가 만료됐어요. AI에서 다시 연결하세요.",
  "This photo is encrypted and {} is missing": "이 사진은 암호화되어 있고 {}가 없어요.",
  "This preparation is owned by its already-running turn": "이 준비 작업은 이미 실행 중인 턴에 속해 있어요.",
@@ -8501,6 +8526,7 @@
  "{} shared a task with you": "{}가 작업을 공유했어요",
  "{} shared this board with you": "{}가 보드를 공유했어요",
  "{} shares a team Graph. Your Work contacts and client threads go to your teammates' Machines. Personal, sensitive and automated mail never does.": "{}에서 팀 Graph를 공유해요. 업무 연락처와 고객 대화는 팀원들의 Machine으로 전송돼요. 개인용, 민감한 메일과 자동 메일은 절대 전송되지 않아요.",
+ "{} shows {}": "{}에 {} 표시",
  "{} sign-ins found in {}.": "{}에서 로그인 정보 {}개를 찾았어요.",
  "{} signal versions saved.{}": "신호 버전 {}개를 저장했어요.{}",
  "{} signals": {
@@ -8535,6 +8561,7 @@
  "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{}에서 아직 내 Machine의 브라우저에서 패스키를 요청해요. 거기서 사용하면 제가 알아서 계속 진행할게요.",
  "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{}에서 아직 내 Machine의 브라우저에서 로그인 코드를 요청해요. 거기서 입력하면 제가 알아서 계속 진행할게요.",
  "{} still has this. Check in drafts a short nudge for you to send.": "{}이(가) 아직 이 일을 맡고 있어요. ‘확인하기’를 누르면 보낼 짧은 알림 초안을 작성해요.",
+ "{} still open": "{}개가 아직 열려 있어요",
  "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{}의 로그인 화면이 아직 내 Machine의 브라우저에 표시돼요. 거기서 마치면 제가 알아서 계속 진행할게요.",
  "{} still waiting.": "{}개가 아직 대기 중이에요.",
  "{} stopped after failing to start": "{}개가 시작에 실패한 뒤 중지됐어요",

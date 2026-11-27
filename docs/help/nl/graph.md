@@ -9,7 +9,7 @@ translated: 181ff5fa2a9d8f47
 ---
 Je Machine brengt in kaart met wie je contact hebt en wat er speelt, op basis van je berichten, meetings en beslissingen. Je hoeft niets in te stellen en alles blijft op je Machine.
 
-- [Mensen](people.md): iedereen met wie je contact hebt, met een samenvatting en tijdlijn per persoon.
+- [Personen](people.md): iedereen met wie je contact hebt, met een samenvatting en tijdlijn per persoon.
 - [Organisaties](organizations.md): de bedrijven waar ze werken, met hun mensen en projecten.
 - [Projecten](projects.md): wat er speelt, op borden met fases, zoals deals in een CRM.
 
