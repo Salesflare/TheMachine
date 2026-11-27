@@ -15,7 +15,7 @@ A name joins two identities only when each of them is one person's own:
   WhatsApp and Telegram personal, and anything else says nothing. When a name is on a work identity and on a personal
   one, they are one person as before when something else agrees (Keys.agree): the work side is a colleague (an
   address at the owner's own domain), the chat's number is known for the work side (a connector's profile, the
-  owner's own edit), both are on one project, both are at one organization, or one signal has both. When the name is
+  owner's own edit), both are on one small project (same_person.project_weight), both are at one organization, or one signal has both. When the name is
   all there is, each side joins within itself only, and the pair is left for "Same person?" (machine/graph/same_person.py likely_same) to ask.
 
 Nothing is stored: it is worked out again each build, from the signals. The owner's and the agent's own merges
@@ -130,7 +130,24 @@ class Keys:
                 out['events'][r[0]].add(r[1])
             for r in db.execute('SELECT project_id,node_id FROM project_people'):  # put on a project by the owner
                 out['projects'][r[1]].add(r[0])
+            out['weights'] = self.project_weights(out)
         return self._known
+
+    def project_weights(self, known):
+        """How much being on each project together says (same_person.project_weight): its identities, from its signals
+        and the owner's own picks, and the company domains among them."""
+        from machine.graph.same_person import project_weight
+        members = collections.defaultdict(set)
+        for identifier, events in self.signals.items():
+            for event_id in events:
+                for pid in known['events'].get(event_id, ()):
+                    members[pid].add(identifier)
+        for identifier, pids in known['projects'].items():
+            for pid in pids:
+                members[pid].add(identifier)
+        domain = lambda i: i.rsplit('@', 1)[-1] if i.startswith('email:') and '@' in i else None
+        return {pid: project_weight(len(ids), len({domain(i) for i in ids} - {None} - self.freemail - self.owner.domains))
+                for pid, ids in members.items()}
 
     def agree(self, db, work, chat):
         """Whether something besides the name says these work identities and these personal ones are one person."""
@@ -152,7 +169,9 @@ class Keys:
         def orgs(side):
             domains = {address(i).rsplit('@', 1)[-1] for i in side if address(i)} - self.freemail
             return domains | {self.fold(d.split('.')[0]) for d in domains} | set().union(*(known['orgs'].get(i, ()) for i in side))
-        return bool(projects(work) & projects(chat) or orgs(work) & orgs(chat))
+        from machine.graph.same_person import PROJECT_EVIDENCE  # a catch-all project agrees with nothing
+        small = any(known['weights'].get(pid, 1.0) >= PROJECT_EVIDENCE for pid in projects(work) & projects(chat))
+        return bool(small or orgs(work) & orgs(chat))
 
     def join_names(self, db, union, known, best):
         """The same full name on different channels is one person, unless two people carry it on one channel (two

@@ -199,6 +199,24 @@ class Joins(unittest.TestCase):
         self.build()
         self.assertEqual(self.asked(), [('email:jan@client.example', 'wa:32470000021', 'Same name')])
 
+    def test_a_project_across_many_companies_is_no_evidence_and_the_owners_merge_stays(self):
+        """A catch-all project (testers from many companies) says nothing: the pair is asked, never joined by it, and the
+        owner's own Merge keeps them one on it."""
+        testers = [f'email:t{i}@co{i}.example' for i in range(10)]
+        self.jan(*(mail(3, f'Tester {chr(65 + i)}ster <{t[6:]}>', 'sam@acme.example') for i, t in enumerate(testers)))
+        with self.store.connect() as db:
+            db.execute("INSERT INTO projects(id,name,created_at) VALUES(7,'Early testers',?)", (NOW.isoformat(),))
+            db.executemany('INSERT INTO project_people(project_id,node_id,created_at) VALUES(7,?,?)',
+                           [(i, NOW.isoformat()) for i in testers + ['email:jan@client.example', 'wa:32470000021']])
+        self.build()
+        self.assertEqual(self.asked(), [('email:jan@client.example', 'wa:32470000021', 'Same name')])
+        self.assertNotIn('wa:32470000021', self.people()['email:jan@client.example'][1])
+        self.say('email:jan@client.example', 'wa:32470000021', True)
+        for _ in range(2):
+            self.build()
+            self.assertEqual(self.people()['email:jan@client.example'][1], ['email:jan@client.example', 'wa:32470000021'])
+            self.assertEqual(self.asked(), [])
+
     def test_the_same_organization_keeps_them_one(self):
         self.jan()
         with self.store.connect() as db:  # the chat said where they work: the company the address is at
