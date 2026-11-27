@@ -870,11 +870,18 @@ jobs:
           failed=0
           bash smoke/linux.sh "$image" shots/appimage python3 smoke/started.py "$PWD/shots/appimage" "$image" || failed=1
           # An older sandbox AppImage, on FUSE as people start it, fetches the newer one, checks it with the made-up key and
-          # puts it in its own place
+          # puts it in its own place. A release tag cut before the AppImage updated itself (this workflow is main's, its code
+          # the tag's) has neither that nor its test
           sandbox="$PWD/linux-sandbox"
           chmod +x "$sandbox"/*.AppImage
-          bash smoke/linux.sh "$sandbox/the-machine-desktop-0.0.1.AppImage" shots/updates env MACHINE_SANDBOX_UPDATES_KEY="$(cat "$sandbox/made-up.key.pub")" \
-            python3 -u smoke/updates.py "$sandbox/the-machine-desktop-0.0.1.AppImage" "$sandbox/the-machine-desktop-9999.0.0.AppImage" "$PWD/shots/updates" || failed=1
+          if grep -q "'linux': 'on_linux'" smoke/updates.py; then
+            bash smoke/linux.sh "$sandbox/the-machine-desktop-0.0.1.AppImage" shots/updates env MACHINE_SANDBOX_UPDATES_KEY="$(cat "$sandbox/made-up.key.pub")" \
+              python3 -u smoke/updates.py "$sandbox/the-machine-desktop-0.0.1.AppImage" "$sandbox/the-machine-desktop-9999.0.0.AppImage" "$PWD/shots/updates" || failed=1
+          elif [ -n "$RELEASE" ]; then
+            echo "NOT TESTED: $RELEASE's AppImage doesn't update itself yet"
+          else
+            failed=1
+          fi
           sudo apt-get install -y -qq ./linux-build/the-machine-desktop-amd64.deb
           dpkg -L "$(dpkg-deb -f linux-build/the-machine-desktop-amd64.deb Package)"
           bash smoke/linux.sh /usr/bin/the-machine-desktop shots/deb python3 smoke/started.py "$PWD/shots/deb" /usr/bin/the-machine-desktop || failed=1
