@@ -140,7 +140,7 @@ class DocsActionOnly(unittest.TestCase):
             find=lambda config, account, words, helpers: [{'file_id': 'found-doc-1', 'title': 'Q4 plan', 'url': None, 'at': None}],
             read_text=lambda config, account, file_id, helpers: self.reads.append(file_id) or {'title': 'Q4 plan', 'text': 'Week 2.'})
         patch_everywhere(assistant, 'load_connector', lambda name: plugin if name == 'docs' else None).start()
-        patch.object(assistant.App, 'doc_run', lambda app, args: ('job-1', {'event_ids': '[]'}, {'linked-doc-1': 'acme-docs'}, doc_writes.area(app.config, ['acme-docs']))).start()
+        patch.object(assistant.App, 'doc_run', lambda app, args: ('job-1', {'event_ids': '[]'}, {'linked-doc-1': ('acme-docs',)}, doc_writes.area(app.config, ['acme-docs']))).start()
         self.addCleanup(patch.stopall)
 
     def test_finds_then_reads_only_what_it_found_or_the_task_links(self):

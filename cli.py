@@ -1108,7 +1108,7 @@ def parser():
             cmd_doc_draft)
     c.add_argument('--job', required=True, help='the preparation job id')
     c.add_argument('--event', type=int, help="the doc event's id, for an edit")
-    c.add_argument('--file', help='the doc id (or its link), for an edit of a doc made for this to-do or linked in its messages')
+    c.add_argument('--file', help='the doc id (or its link), for an edit of a doc made for this to-do or linked in its messages or chat')
     c.add_argument('--changes', help='JSON file (or -) with the edit: [{"find","replace"} | {"after","insert"} | {"append"} | '
                                      '{"format","style"} | {"format","link"}] (format: Google Docs)')
     c.add_argument('--account', help='the Docs connection id, for a new doc')
