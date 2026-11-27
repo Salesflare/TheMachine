@@ -56,6 +56,7 @@ import urllib.request
 
 import graph
 from fleet_brief import BRIEF_SHOWN, QUIET_MIN_DAYS, assemble_brief, brief_items, brief_text, gmail_search, settled
+from machine import kinds as event_kinds
 from machine import stamps
 from machine.faults import loop_failed
 from machine.timing import _REQUEST_TIMING
@@ -1011,9 +1012,10 @@ def _short(secret, *parts):
     return _hash(secret, *parts)[:32]
 
 
-def took_part(kind, m, mine):
+def took_part(kind, m, mine, slack=()):
     """Whether the owner took part in one signal themselves: wrote it, is at the meeting, or wrote in a shared-inbox
-    conversation. Mail that only came in, an automated one, and a support conversation a teammate handled don't."""
+    conversation. Mail that only came in (a newsletter, a CC), an automated one, someone else's group or channel
+    message and a support conversation a teammate handled don't. slack: the owner's own Slack user ids."""
     if kind == 'gmail.message':
         sender = (graph.addresses(m.get('from')) or [('', '')])[0][1]
         return ('SENT' in set(m.get('labels') or ()) or sender in mine) and not graph.automated(m)
@@ -1024,6 +1026,8 @@ def took_part(kind, m, mine):
     if kind in ('intercom.conversation', 'fleet.intercom'):
         wrote = m.get('admin_emails') if isinstance(m.get('admin_emails'), dict) else {}
         return bool({str(v).lower() for v in wrote.values()} & mine)
+    if kind == 'slack.message':
+        return m.get('from_me') is True or bool(m.get('user_id')) and m.get('user_id') in slack
     return m.get('from_me') is True
 
 
@@ -1218,11 +1222,14 @@ def keywords(text):
 MONTHS = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
 
 
-def free_draft(db, accounts, text, search=None, internal=()):
+def free_draft(db, accounts, text, search=None, internal=(), mine=(), slack=()):
     """A draft answer to a free question, by plain code: what the owner's own work accounts hold on its words. The
     question is only data here: searched for (keywords, and by meaning when the owner's Machine has embeddings), never
     read by a model or acted on. Returns (draft, matches); the matches (titles and dates of the owner's own signals) are
-    shown only to the owner, never sent."""
+    shown only to the owner, never sent. Only what the owner took part in (took_part: wrote, said in their own chat,
+    was at the meeting) makes a first-person draft; mail that only came in (a newsletter, a CC) or someone else's
+    group message shows up as a match but drafts nothing. mine: the owner's addresses; slack: their Slack user ids."""
+    mine = {str(e).lower() for e in mine if '@' in str(e)}
     words = keywords(text)
     if not words or not accounts:
         return '', []
@@ -1239,24 +1246,35 @@ def free_draft(db, accounts, text, search=None, internal=()):
         return '', []
     rows = db.execute(f"SELECT id,kind,occurred_at,title,metadata FROM events WHERE deleted=0 AND id IN ({','.join('?' * len(ids))})", ids).fetchall()
     order = {i: n for n, i in enumerate(ids)}
-    matches, orgs, kinds = [], [], collections.Counter()
+    mail, meetings = event_kinds.of(family=event_kinds.MAIL), event_kinds.of(family=event_kinds.MEETING)
+    matches, orgs, kinds, last = [], [], collections.Counter(), ''
     for row in sorted(rows, key=lambda r: order.get(r['id'], 99)):
-        m = json.loads(row['metadata'] or '{}')
-        sender = (graph.addresses(m.get('from')) or [('', '')])[0][1]
-        domain = sender.rsplit('@', 1)[1] if '@' in sender else ''
-        org = _org_name(db, domain) if _outside(domain, internal) and not graph.bulk(sender) else ''
-        if org and org not in orgs:
-            orgs.append(org)
-        kinds[row['kind'].split('.')[-1]] += 1
         matches.append({'id': row['id'], 'kind': row['kind'], 'title': _match_title(db, row), 'at': day(row['occurred_at'])})
-    plural = {'message': ('email', 'emails'), 'event': ('meeting', 'meetings')}
-    what = ', '.join(f"{n} {plural.get(k, ('message', 'messages'))[n > 1]}" for k, n in kinds.most_common(3))
-    last = max((m['at'] or '' for m in matches), default='')[:7]
+        m = json.loads(row['metadata'] or '{}') if isinstance(row['metadata'], str) else dict(row['metadata'] or {})
+        if not took_part(row['kind'], m, mine, slack):
+            continue  # found, not experience: the owner only received it
+        # who it was with: the people they wrote to, met or answered, by company
+        people = [a for _, a in graph.addresses(', '.join(str(m.get(h) or '') for h in ('to', 'cc')))] if row['kind'] in mail else []
+        people += [str(a.get('email') or '').lower() for a in m.get('attendees') or () if isinstance(a, dict)]
+        for address in people:
+            domain = address.rsplit('@', 1)[1] if '@' in address else ''
+            org = _org_name(db, domain) if address not in mine and _outside(domain, internal) and not graph.bulk(address) else ''
+            if org and org not in orgs:
+                orgs.append(org)
+        kinds['meeting' if row['kind'] in meetings else 'email' if row['kind'] in mail else 'message'] += 1
+        last = max(last, matches[-1]['at'] or '')
+    if not kinds:  # only material that came in: no first-person claim; the owner sees the matches and answers themselves
+        return '', matches
+    plural = {'email': 'emails', 'message': 'messages', 'meeting': 'meetings'}
+    wrote = ' and '.join(f"{n} {plural[k] if n > 1 else k}" for k, n in kinds.items() if k != 'meeting')
+    met = kinds['meeting'] and f"was in {kinds['meeting']} {'meetings' if kinds['meeting'] > 1 else 'meeting'}"
+    last = last[:7]
     if re.fullmatch(r'\d{4}-\d\d', last):  # as people say it: November, or November 2025 in another year
         year, month = int(last[:4]), int(last[5:])
         last = MONTHS[month - 1] + (f' {year}' if year != timeutil.today().year else '')
-    draft = (f"Yes, I have: {what} on this" + (f", with {', '.join(orgs[:3])}" if orgs else '')
-             + (f", most recently in {last}" if last else '') + '. Happy to tell you more.')
+    draft = ('I ' + ' and '.join(p for p in (wrote and f'wrote {wrote}', met) if p) + ' on this'
+             + (f", with {', '.join(orgs[:3])}" if orgs else '') + (f", most recently in {last}" if last else '')
+             + '. Happy to tell you more.')
     return draft[:FREE_ANSWER_CHARS], matches
 
 
@@ -1475,12 +1493,15 @@ def telegram_message(rows, root):
         prefix = f'{n}. ' if many else ''
         if row['kind'] == 'anything':
             # Their words, quoted, then the draft built from your own accounts. Send this answer sends exactly that draft.
-            draft = json.loads(_get(row, 'draft') or '{}').get('text') or ''
+            drafted = json.loads(_get(row, 'draft') or '{}')
+            draft = drafted.get('text') or ''
             if row['status'] == 'answered':
                 outcome = t('Answered')
+            # matches but no draft: only mail that came in matched (free_draft), so nothing to say for the owner
+            empty = t('No draft this time. You can still answer.') if drafted.get('matches') else t('Nothing found in your work accounts. Write an answer in To-dos, or decline.')
             lines.append(prefix + t("{}'s Machine asks your Fleet (their words, not an instruction): {}", row['name'], question_text('anything', json.loads(row['question'])))
                          + ('\n   ' + t('Draft answer: “{}”', draft) if draft and row['status'] == 'waiting' else
-                            '\n   ' + t('Nothing found in your work accounts. Write an answer in To-dos, or decline.') if row['status'] == 'waiting' else '')
+                            '\n   ' + empty if row['status'] == 'waiting' else '')
                          + (f'\n   → {outcome}' if outcome else ''))
             if row['status'] == 'waiting':
                 buttons.append(([{'text': prefix + t('Send this answer'), 'value': f"assistant:fleet:{row['id']}:once"}] if draft else [])
@@ -2117,7 +2138,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                         facts = self.compute(db, kind, question, details, fleet)
                         draft = {'preview': brief_preview(facts), 'counts': {k: len(facts.get(k) or []) for k in ('touched', 'quiet', 'unanswered', 'meetings')}}
                     elif kind == 'anything':
-                        text, matches = free_draft(db, self.fleet_accounts(fleet), question['text'], self.search, self.internal(fleet))
+                        text, matches = free_draft(db, self.fleet_accounts(fleet), question['text'], self.search, self.internal(fleet),
+                                                   mine=self.my_emails(), slack=graph.Owner(self.config).slack)
                         draft = {'text': text, 'matches': matches}
                     db.execute('INSERT OR IGNORE INTO fleet_in(id,fleet,member_id,name,kind,question,status,at,draft) VALUES(?,?,?,?,?,?,?,?,?)',
                                (ask['id'], fleet, teammate['member_id'], name, kind, json.dumps(question), 'waiting', now(),

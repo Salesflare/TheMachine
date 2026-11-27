@@ -383,8 +383,10 @@ this Machine's learnings back on its next round. See also [Sharing learnings](in
 Type a question in a Work Fleet's **Ask anything** box ("has anyone dealt with Stripe disputes?").
 
 - Each teammate's Machine searches only its owner's own work accounts in that Fleet, and shows its owner your question,
-  quoted, with what it found and a draft answer built by plain code ("Yes, I have: 3 emails on this, with Acme, most
-  recently in 2026-09").
+  quoted, with what it found and a draft answer built by plain code ("I wrote 3 emails on this, with Acme, most
+  recently in September"). The draft counts only what its owner took part in: mail they sent, their own chat or Slack
+  messages, meetings they were at. Mail that only came in (a newsletter, a CC) and other people's group messages show
+  as found but draft nothing, so no one claims experience they don't have.
 - Nothing goes back until they send that draft, edited or not. Their phone and Telegram offer **Send this answer** and
   **Don't answer**. There is no Always.
 - You see the answers as they arrive, and "no answer" after a day or when declined.
