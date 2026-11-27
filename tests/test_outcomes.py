@@ -134,6 +134,18 @@ class Outcomes(unittest.TestCase):
         self.assertEqual(row['status'], 'completed')
         self.assertIsNone(row['handled_hint'])
         self.assertTrue(row['undo_until'])
+        # Its card and chat say the result, not the wait it was in; only shown, so Undo shows its own text again
+        self.assertEqual(self.shown_body(), f'Done: {RESULT}.')
+        self.assertEqual(self.suggestion()['body'], row['body'])
+        self.decide('undo', 'undo-1')  # closed on the real clock: Undo is open
+        self.assertEqual(self.shown_body(), row['body'])
+
+    def shown_body(self):
+        """The to-do's text as the list and its chat show it (the card views)."""
+        card = self.suggestion()
+        with self.store.connect() as db:
+            self.store.card_views(db, [card], jobs=False)
+        return card['body']
 
     def test_a_signal_before_the_send_is_only_a_hint(self):
         self.set(RESULT, 'review')

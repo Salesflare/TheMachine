@@ -32,7 +32,7 @@ When a message comes from an address that only looks like someone you know, like
 
 A to-do still waiting on someone else, like a review or a reply, says **Waiting on:** that step. It sits in **Waiting on others**, folded above Coming back later, until a new message brings it back. The same goes after you asked a question back: it returns the morning before its deadline, at the deadline when that is later today, or the next morning once it has passed, and says whom it is still waiting on.
 
-When a to-do is for a result someone else delivers, like a signed contract, **Details** shows it as **Done when**. Sending your part doesn't close it: it waits in **Waiting on others** until a message shows the result, then closes by itself, with **Undo**. If nothing comes by the time to chase them, it comes back with **Write a short nudge** in its chat. Tell it in the chat what counts as done to change it.
+When a to-do is for a result someone else delivers, like a signed contract, **Details** shows it as **Done when**. Sending your part doesn't close it: it waits in **Waiting on others** until a message shows the result, then closes by itself with the result and **Undo**. If nothing comes by the time to chase them, it returns with **Write a short nudge** in its chat. To change what counts as done, tell it in the chat.
 
 When the result will show on a public web page that its messages name, like an article that will list you, your Machine reads that page when it is time to chase them. If the page shows it, and didn't when the to-do started waiting, the to-do closes by itself and says the result, with **Undo**. It only reads the page, as any visitor would, and never sends anything.
 

@@ -56,7 +56,7 @@ from machine.sources import groups
 from machine.sources.android import android_app_shown
 from machine.sources.salesflare import salesflare_progress
 from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_name_table, slack_named
-from machine.store import done_checks
+from machine.store import outcomes
 from machine.store import history as history_store
 from machine.store import graph_identifiers
 from machine import names, stamps
@@ -861,7 +861,7 @@ class ViewsStore(ConversationStore):
             calendar_clashes.annotate(db, cards)  # the other side of a calendar clash, for the owner only (calendar_clashes.py)
             still_needed.annotate(db, cards, now(), local_tz())  # "Still needed?" on a to-do untouched for a week (still_needed.py)
             still_needed.older(db, cards, now(), local_tz())  # Older: nothing new on it for a week (still_needed.py)
-            done_checks.summaries(cards)  # closed by its page check: it says the result, not the wait (done_checks.py)
+            outcomes.result_summaries(cards)  # closed because its result came: it says the result, not the wait (outcomes.py)
             return
         few = len(cards) <= 200  # a Done page: only its own; the status payload: all at once
         # shown: its status as every view shows it, a stuck run that a Claude Code or Codex job took over after it is not

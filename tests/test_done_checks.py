@@ -26,7 +26,7 @@ def later(stamp, **delta):
 
 
 class DoneChecks(unittest.TestCase):
-    row, decide = to.Outcomes.row, to.Outcomes.decide
+    row, decide, shown_body = to.Outcomes.row, to.Outcomes.decide, to.Outcomes.shown_body
     app, suggestion, send = to.Outcomes.app, to.Outcomes.suggestion, to.Outcomes.send
 
     def setUp(self):
@@ -79,13 +79,6 @@ class DoneChecks(unittest.TestCase):
             with self.store.connect() as db:
                 back = return_waiting(db)
         return kept, reads, back
-
-    def shown_body(self):
-        """The to-do's text as the list and its chat show it (the card views)."""
-        card = self.suggestion()
-        with self.store.connect() as db:
-            self.store.card_views(db, [card], jobs=False)
-        return card['body']
 
     def chat(self):
         with self.store.connect() as db:
