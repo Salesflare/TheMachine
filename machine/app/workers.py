@@ -441,6 +441,7 @@ class WorkersApp:
         self.summary_step()  # people's summaries, when their evidence changed (person_summary.py)
         self.about_step()  # project descriptions, when their evidence changed (project_about.py)
         self.stall_step()  # once a week: a next step for a few projects that went quiet with nothing on them (project_stall.py)
+        self.opportunity_step()  # once a week, when turned on: work that only shows across separate threads (opportunities.py)
         self.meeting_prep_step()  # a briefing to-do before a meeting with people from outside (meeting_prep.py)
         self.trip_extract_step()  # booking mail without structured data, read by a small model call (machine/app/trips.py)
         self.trip_notes_step()  # trips and events from booking and ticket mail, plain code (trip_notes.py, event_notes.py)

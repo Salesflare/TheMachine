@@ -37,6 +37,7 @@ memory_use.purpose memory_use.how merge_effects.operation milestones.name missed
 missed_audit_items.what missed_audit_items.label missed_audits.result ms_photo_accounts.scopes ms_photo_accounts.offered
 ms_photo_asks.outcome network_outbox.method network_outbox.path network_people.relation network_pins.keys note_page_links.target
 note_pages.area note_pages.starts note_pages.ends note_writeups.basis notify_app_devices.platform notify_desks.desk notify_digests.channels
+opportunity_items.threads
 notify_queue.batch notify_queue.channel notify_queue.delivery notify_queue.ref org_aliases.alias org_aliases.target org_apart.a org_apart.b
 own_addresses.sources pacing_starts.win person_facts.field person_orgs.via person_photos.type
 preparations.use_events preparations.connect preparations.update_retry preparations.move_to
@@ -73,7 +74,7 @@ WORDS = {
     'errors: the code\'s own line, or what a service answered': '''
         action_jobs.error activity_blocks.reason android_feed_health.error analyses.last_error calendar_writes.error checkpoints.error deliveries.error
         feedback_prompts.error faults.message faults.frames faults.location error_feed.message error_feed.location meeting_writes.error
-        missed_audits.error network_outbox.error person_summary_runs.error preparations.error profile_runs.error project_stall_runs.error recaps.error
+        missed_audits.error network_outbox.error person_summary_runs.error preparations.error profile_runs.error project_stall_runs.error opportunity_runs.error recaps.error
         review_runs.error review_runs.last_error routine_runs.error sync_activity.error team_learnings.error team_learning_votes.error''',
     'who and where: people, organizations, addresses, sites and labels, which the database has to find a message by': '''
         activity_accounts.label agent_jobs.url ai_clients.name ai_clients.redirect_uris ai_codes.redirect_uri ai_connections.name
