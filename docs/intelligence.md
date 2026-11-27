@@ -440,8 +440,8 @@ Roles show on people in the Graph tab, in preparation context, `graph` results a
 **Kept honest:**
 
 - **Evidence.** A review gives the message it read a role in (`event_id`) and a short `quote` copied from it; the
-  service refuses a quote that isn't there. A role applies as read: it shows on their page with that line, and in
-  **Recent changes**. Nothing waits for a confirm; **Edit** on the page, or **⋯** on the line in Recent changes, fixes
+  service refuses a quote that isn't there, in any script (`machine.text.said_in`). A role applies as read: it shows
+  on their page with that line, and in **Recent changes**. Nothing waits for a confirm; **Edit** on the page, or **⋯** on the line in Recent changes, fixes
   a wrong one and makes it your word. A review's role is read again later (above); yours never is.
 - **Learning from corrections.** When you replace a review's role, `role_corrections` keeps the old and new one; the
   roles run and the review prompt get the latest eight as examples.

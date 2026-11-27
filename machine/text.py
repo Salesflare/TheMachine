@@ -285,6 +285,20 @@ def quoted_in(quote, message):
     return ' '.join(base[said[at][1]:said[at + len(key) - 1][1] + 1].split())
 
 
+def said_in(quote, text):
+    """A role's or organization's quote (graph.set_role, set_org) is in the message: as quoted_in reads it, or for a short
+    one ("CEO") its words in order, accents folded. A quote in another script keeps its letters: never empty words."""
+    quote = str(quote or '').strip('"\'…. ')
+    if not quote or quoted_in(quote, text):
+        return bool(quote)
+    words = lambda s, ascii: re.findall(r'\w+', (unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode() if ascii
+                                                 else unicodedata.normalize('NFKC', s)).casefold())
+    latin, own = words(quote, True), words(quote, False)
+    if latin and len(latin) == len(own):  # Latin words ("Directeur Général"): as the Graph folds names
+        return ' '.join(latin) in ' '.join(words(str(text or ''), True))
+    return bool(own) and ' '.join(own) in ' '.join(words(str(text or ''), False))
+
+
 def email_body(plain, html_parts, subject='', people=''):
     """Prefer the text part, unless it is empty, only points to the HTML version, or is a
     token stub (like "empty") while the HTML has the real message."""

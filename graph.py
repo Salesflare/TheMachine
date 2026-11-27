@@ -64,6 +64,7 @@ from machine.kinds import KINDS, of
 from machine.names import SERVICES
 from machine.owner_error import OwnerError
 from machine.store import graph_history, graph_identifiers, graph_promises, review_whys
+from machine.text import said_in
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE COLLATE NOCASE,created_at TEXT NOT NULL,closed_at TEXT);
@@ -2283,7 +2284,7 @@ def set_role(db, node_id, role, source, now, event_id=None, quote=None):
                            (int(event_id), *members)).fetchone()
         if not found:
             raise ValueError('event_id must be one of their own signals (see graph node_id)')
-        if quote and folded_words(quote.strip('"\'…. ')) not in folded_words(f"{found['title']} {found['body']}"):
+        if quote and not said_in(quote, f"{found['title']} {found['body']}"):
             raise ValueError('quote must be words copied from that message (a short line: their title, a signature, an introduction)')
     if not role:
         db.execute('INSERT OR REPLACE INTO person_roles(identifier,role,source,created_at,checked_at) VALUES(?,?,?, ?,?)', (row['id'], '', 'owner', now, now))
@@ -2343,12 +2344,11 @@ def set_org(db, node_id, org, source, now, event_id=None, quote=None):
         except ValueError:
             meta = {}
         headline = str(meta.get('headline') or '') if found['kind'] == 'linkedin.message' and not meta.get('group') else ''
-        words = folded_words(quote.strip('"\'…. '))
-        if words and words in folded_words(headline):
+        if headline and said_in(quote, headline):
             via = 'LinkedIn headline'
         elif meta.get('from_me') is True or 'SENT' in (meta.get('labels') or ()):
             raise ValueError('quote their own words (or their LinkedIn headline), not the owner\'s message')
-        elif words and words in folded_words(f"{found['title']} {found['body']}"):
+        elif said_in(quote, f"{found['title']} {found['body']}"):
             via = VIA.get(found['kind'], found['kind'].split('.')[0])
         else:
             raise ValueError('quote must be words copied from that message, or from their LinkedIn headline on it')
