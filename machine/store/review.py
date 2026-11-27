@@ -15,6 +15,7 @@ import enrichment
 import graph
 import graph_board_reviews
 import project_org_checks
+import project_spread
 from machine.config import LOG
 from machine.mail_quotes import sends_on
 import mail_senders
@@ -1409,8 +1410,8 @@ class ReviewStore:
                 for name, ids in projects.items():
                     if not set(ids) <= batch:
                         raise OwnerError('Project event IDs must belong to this batch')
-                    if ids:
-                        graph.label(db, ids, name, 'review', now())
+                # through the catch-all guard: a thread with nobody on the project joins no catch-all (project_spread.py)
+                project_spread.label(db, {n: ids for n, ids in projects.items() if ids}, graph.Owner(self.own_config(), db), now())
             moved = []
             if stages is not None:
                 # Projects on a board moved by what a message in this batch means (graph.set_stage): the owner's own move wins

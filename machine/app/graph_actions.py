@@ -45,6 +45,7 @@ import memory_use
 import own_addresses
 import person_birthday
 import project_split
+import project_spread
 import project_success
 from sources import gog_read, SourceError
 from timeutil import local_tz, now
@@ -265,7 +266,10 @@ class GraphActionsApp:
                 if db.execute('SELECT count(*) FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in args['event_ids']) + ')',
                               [int(i) for i in args['event_ids']]).fetchone()[0] != len(set(args['event_ids'])):
                     raise OwnerError('Every event must exist and be live')
-                graph.label(db, args['event_ids'], args['project'], 'agent', now())
+                if args.get('_review_session'):  # a review's: through the catch-all guard (project_spread.py); the chat's is the owner's word
+                    project_spread.label(db, {args['project']: args['event_ids']}, graph.Owner(self.config, db), now(), 'agent')
+                else:
+                    graph.label(db, args['event_ids'], args['project'], 'agent', now())
                 changed = True
             if args.get('split'):  # several projects named at once (one per counterpart), with one graph build after
                 parts = args['split']
@@ -364,6 +368,8 @@ class GraphActionsApp:
                                        for line in self.graph_event_lines(found.pop('event_ids'), keep_order=True)]  # graph.detail's: past first
                 else:  # the dashboard's record page: its timeline shows them, only their ids are asked
                     found['recent'] = found.pop('event_ids')
+                    if found.get('kind') == 'project' and found.get('project'):  # a catch-all says so, with Split up and Keep as one
+                        found['spread'] = project_spread.page(db, int(found['id'].split(':', 1)[1]), graph.Owner(self.config, db))
                 if db.execute("SELECT 1 FROM sqlite_master WHERE name='share_threads'").fetchone() and db.execute('SELECT 1 FROM share_threads LIMIT 1').fetchone():
                     found['team_hint'] = ('When the owner asks: graph event_id + share (only_you, team or auto) for a thread, '
                                           'node_id + keep_private true to keep this out of the team\'s Graph.')
@@ -1083,8 +1089,8 @@ class GraphActionsApp:
         return self.about_change(args)
 
     def project_split_action(self, name, args, owner_dashboard=False):
-        """Split up a project (project_split.py): op propose (one model turn, nothing changes), apply (the owner's
-        parts, confirmed) or undo."""
+        """Split up a project (project_split.py): op propose (one model turn, or none on a catch-all; nothing changes),
+        apply (the owner's parts, confirmed), undo, or keep (a catch-all kept as one, project_spread.py)."""
         if not owner_dashboard:
             raise OwnerError('Only the owner splits up a project, on the dashboard')
         op = args.get('op')
@@ -1092,12 +1098,15 @@ class GraphActionsApp:
             return self.project_split_propose(args.get('node_id'))
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
+            owner = graph.Owner(self.config, db)
             if op == 'apply':
-                done = project_split.apply(db, args.get('node_id'), args.get('parts'), args.get('drop') or (), now())
+                done = project_split.apply(db, args.get('node_id'), args.get('parts'), args.get('drop') or (), now(), owner)
             elif op == 'undo':
                 done = project_split.undo(db, args.get('split_id'), now())
+            elif op == 'keep':
+                return project_spread.keep(db, graph.project_row(db, args.get('node_id'))['id'], owner, now())
             else:
-                raise ValueError('op is propose, apply or undo')
+                raise ValueError('op is propose, apply, undo or keep')
         self.graph_build()  # the new projects (or the original again) are on the Graph before the page asks for them
         return done
 
@@ -1109,14 +1118,20 @@ class GraphActionsApp:
         import model_service
         from models import background_model, has_model
         stand_in = getattr(self, 'split_model', None)  # a stand-in in the sandbox and tests: (config, prompt)
-        if not stand_in and not has_model(self.config, wait=False):
-            raise OwnerError('Split up needs a model. Set one up in Settings, Model.')
         with self.store.connect() as db:
             project_split.ensure(db)
+            owner = graph.Owner(self.config, db)
+            row = graph.project_row(db, node_id)
+            if project_spread.page(db, row['id'], owner):  # a catch-all: one project per counterpart that answered, no turn
+                row, found = project_split.group_items(db, node_id, owner)
+                parts, drop = project_split.group_plan(db, row, found)
+                return {'node_id': 'project:' + str(row['id']), 'name': row['name'], 'parts': parts, 'drop': drop, 'items': project_split.view(found)}
             row, found = project_split.items(db, node_id, graph.Owner({'accounts': self.config.get('accounts', [])}, db).emails)
             if len(found) < 2:
                 return {'node_id': 'project:' + str(row['id']), 'name': row['name'], 'parts': [], 'items': {}}
             page, ids = project_split.page(row, found)
+        if not stand_in and not has_model(self.config, wait=False):
+            raise OwnerError('Split up needs a model. Set one up in Settings, Model.')
         text = project_split.prompt(page, locale_prefs.language_of(self.config))
         try:
             if stand_in:

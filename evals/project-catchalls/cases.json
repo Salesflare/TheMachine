@@ -1,0 +1,1198 @@
+{
+ "frozen": "2026-11-27",
+ "owner": "owner@example.com",
+ "cases": [
+  {
+   "id": "tester-invites",
+   "kind": "catch-all",
+   "project": "Product alpha testing",
+   "about": "The owner invites 30 people at 30 companies to try the product, one mail each; 5 answer.",
+   "messages": [
+    {
+     "thread": "ti-0",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Ana <ana@anaco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-1",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Bram <bram@bramco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-2",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Cleo <cleo@cleoco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-3",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Dirk <dirk@dirkco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-4",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Eva <eva@evaco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-5",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Femke <femke@femkeco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-6",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Gus <gus@gusco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-7",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Hana <hana@hanaco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-8",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Ilse <ilse@ilseco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-9",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Joris <joris@jorisco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-10",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Kaat <kaat@kaatco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-11",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Lars <lars@larsco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-2",
+     "day": 4,
+     "from": "Cleo <cleo@cleoco.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Want to try our alpha?"
+    },
+    {
+     "thread": "ti-12",
+     "day": 4,
+     "from": "owner@example.com",
+     "to": [
+      "Mira <mira@miraco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-13",
+     "day": 4,
+     "from": "owner@example.com",
+     "to": [
+      "Nico <nico@nicoco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-14",
+     "day": 4,
+     "from": "owner@example.com",
+     "to": [
+      "Olga <olga@olgaco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-15",
+     "day": 4,
+     "from": "owner@example.com",
+     "to": [
+      "Pim <pim@pimco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-7",
+     "day": 5,
+     "from": "Hana <hana@hanaco.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Want to try our alpha?"
+    },
+    {
+     "thread": "ti-16",
+     "day": 5,
+     "from": "owner@example.com",
+     "to": [
+      "Quinn <quinn@quinnco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-17",
+     "day": 5,
+     "from": "owner@example.com",
+     "to": [
+      "Rosa <rosa@rosaco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-18",
+     "day": 5,
+     "from": "owner@example.com",
+     "to": [
+      "Sven <sven@svenco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-19",
+     "day": 5,
+     "from": "owner@example.com",
+     "to": [
+      "Tess <tess@tessco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-11",
+     "day": 6,
+     "from": "Lars <lars@larsco.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Want to try our alpha?"
+    },
+    {
+     "thread": "ti-20",
+     "day": 6,
+     "from": "owner@example.com",
+     "to": [
+      "Ugo <ugo@ugoco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-21",
+     "day": 6,
+     "from": "owner@example.com",
+     "to": [
+      "Vera <vera@veraco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-22",
+     "day": 6,
+     "from": "owner@example.com",
+     "to": [
+      "Wout <wout@woutco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-23",
+     "day": 6,
+     "from": "owner@example.com",
+     "to": [
+      "Xena <xena@xenaco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-24",
+     "day": 7,
+     "from": "owner@example.com",
+     "to": [
+      "Yves <yves@yvesco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-25",
+     "day": 7,
+     "from": "owner@example.com",
+     "to": [
+      "Zoe <zoe@zoeco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-26",
+     "day": 7,
+     "from": "owner@example.com",
+     "to": [
+      "Arno <arno@arnoco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-27",
+     "day": 7,
+     "from": "owner@example.com",
+     "to": [
+      "Bo <bo@boco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-19",
+     "day": 8,
+     "from": "Tess <tess@tessco.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Want to try our alpha?"
+    },
+    {
+     "thread": "ti-28",
+     "day": 8,
+     "from": "owner@example.com",
+     "to": [
+      "Cas <cas@casco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-29",
+     "day": 8,
+     "from": "owner@example.com",
+     "to": [
+      "Dana <dana@danaco.example>"
+     ],
+     "title": "Want to try our alpha?",
+     "sent": true
+    },
+    {
+     "thread": "ti-26",
+     "day": 10,
+     "from": "Arno <arno@arnoco.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Want to try our alpha?"
+    }
+   ]
+  },
+  {
+   "id": "buyer-pitches",
+   "kind": "catch-all",
+   "project": "Company sale",
+   "about": "The owner pitches the company to 12 possible buyers, one mail each; 2 answer.",
+   "messages": [
+    {
+     "thread": "bp-0",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Harbor <deals@harbor.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-1",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Lindqvist <deals@lindqvist.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-2",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Nordlicht <deals@nordlicht.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-3",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Oakridge <deals@oakridge.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-4",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Pelican <deals@pelican.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-5",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Quarry <deals@quarry.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-6",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Redwood <deals@redwood.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-7",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Saffron <deals@saffron.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-8",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Tidewater <deals@tidewater.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-9",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Umber <deals@umber.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-10",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Vantage <deals@vantage.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-11",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Deal team Westgate <deals@westgate.example>"
+     ],
+     "title": "Confidential: a company for sale",
+     "sent": true
+    },
+    {
+     "thread": "bp-3",
+     "day": 4,
+     "from": "Deal team Oakridge <deals@oakridge.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Confidential: a company for sale"
+    },
+    {
+     "thread": "bp-8",
+     "day": 6,
+     "from": "Deal team Tidewater <deals@tidewater.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Confidential: a company for sale"
+    }
+   ]
+  },
+  {
+   "id": "candidate-outreach",
+   "kind": "catch-all",
+   "project": "Hiring a designer",
+   "about": "The owner writes to 15 candidates on personal mail, one each; 4 answer.",
+   "messages": [
+    {
+     "thread": "co-0",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Ana Smit <ana.smit0@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-1",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Bram Smit <bram.smit1@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-2",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Cleo Smit <cleo.smit2@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-3",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Dirk Smit <dirk.smit3@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-4",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Eva Smit <eva.smit4@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-5",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Femke Smit <femke.smit5@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-6",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Gus Smit <gus.smit6@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-7",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Hana Smit <hana.smit7@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-8",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Ilse Smit <ilse.smit8@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-9",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Joris Smit <joris.smit9@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-10",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Kaat Smit <kaat.smit10@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-11",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Lars Smit <lars.smit11@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-1",
+     "day": 4,
+     "from": "Bram Smit <bram.smit1@gmail.com>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Your portfolio and our design role"
+    },
+    {
+     "thread": "co-12",
+     "day": 4,
+     "from": "owner@example.com",
+     "to": [
+      "Mira Smit <mira.smit12@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-13",
+     "day": 4,
+     "from": "owner@example.com",
+     "to": [
+      "Nico Smit <nico.smit13@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-14",
+     "day": 4,
+     "from": "owner@example.com",
+     "to": [
+      "Olga Smit <olga.smit14@gmail.com>"
+     ],
+     "title": "Your portfolio and our design role",
+     "sent": true
+    },
+    {
+     "thread": "co-5",
+     "day": 5,
+     "from": "Femke Smit <femke.smit5@gmail.com>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Your portfolio and our design role"
+    },
+    {
+     "thread": "co-9",
+     "day": 6,
+     "from": "Joris Smit <joris.smit9@gmail.com>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Your portfolio and our design role"
+    },
+    {
+     "thread": "co-13",
+     "day": 7,
+     "from": "Nico Smit <nico.smit13@gmail.com>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Your portfolio and our design role"
+    }
+   ]
+  },
+  {
+   "id": "partner-customer-deal",
+   "kind": "genuine",
+   "project": "Northwind rollout",
+   "about": "One deal: the customer, the integration partner, and later their lawyer; an intro thread with all, then separate threads.",
+   "messages": [
+    {
+     "thread": "nw-intro",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Mara Quill <mara@northwind.example>",
+      "Ivo Brandt <ivo@integra.example>"
+     ],
+     "title": "Intro: Northwind and Integra",
+     "sent": true
+    },
+    {
+     "thread": "nw-intro",
+     "day": 2,
+     "from": "Mara Quill <mara@northwind.example>",
+     "to": [
+      "owner@example.com",
+      "Ivo Brandt <ivo@integra.example>"
+     ],
+     "title": "Re: Intro: Northwind and Integra"
+    },
+    {
+     "thread": "nw-scope",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Mara Quill <mara@northwind.example>"
+     ],
+     "title": "Rollout scope",
+     "sent": true
+    },
+    {
+     "thread": "nw-plan",
+     "day": 4,
+     "from": "owner@example.com",
+     "to": [
+      "Ivo Brandt <ivo@integra.example>"
+     ],
+     "title": "Integration plan for Northwind",
+     "sent": true
+    },
+    {
+     "thread": "nw-scope",
+     "day": 5,
+     "from": "Mara Quill <mara@northwind.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Rollout scope"
+    },
+    {
+     "thread": "nw-it",
+     "day": 6,
+     "from": "Tom Berg <tom@northwind.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Northwind SSO settings"
+    },
+    {
+     "thread": "nw-legal",
+     "day": 7,
+     "from": "owner@example.com",
+     "to": [
+      "Lena Vos <lena@voslaw.example>"
+     ],
+     "title": "Northwind order form review",
+     "sent": true
+    },
+    {
+     "thread": "nw-plan",
+     "day": 8,
+     "from": "Ivo Brandt <ivo@integra.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Integration plan for Northwind"
+    },
+    {
+     "thread": "nw-sec",
+     "day": 9,
+     "from": "owner@example.com",
+     "to": [
+      "Security desk <sec@auditly.example>"
+     ],
+     "title": "Security questionnaire for Northwind",
+     "sent": true
+    },
+    {
+     "thread": "nw-legal",
+     "day": 10,
+     "from": "Lena Vos <lena@voslaw.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Northwind order form review"
+    },
+    {
+     "thread": "nw-go",
+     "day": 11,
+     "from": "Mara Quill <mara@northwind.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Go-live date"
+    },
+    {
+     "thread": "nw-sec",
+     "day": 12,
+     "from": "Security desk <sec@auditly.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Security questionnaire for Northwind"
+    }
+   ]
+  },
+  {
+   "id": "office-lease",
+   "kind": "small",
+   "project": "Office lease",
+   "about": "One landlord, three threads.",
+   "messages": [
+    {
+     "thread": "ol-1",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Bea Kort <bea@kortvastgoed.example>"
+     ],
+     "title": "Lease renewal",
+     "sent": true
+    },
+    {
+     "thread": "ol-1",
+     "day": 2,
+     "from": "Bea Kort <bea@kortvastgoed.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Lease renewal"
+    },
+    {
+     "thread": "ol-2",
+     "day": 4,
+     "from": "Bea Kort <bea@kortvastgoed.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "New lease draft"
+    },
+    {
+     "thread": "ol-2",
+     "day": 5,
+     "from": "owner@example.com",
+     "to": [
+      "Bea Kort <bea@kortvastgoed.example>"
+     ],
+     "title": "Re: New lease draft",
+     "sent": true
+    },
+    {
+     "thread": "ol-3",
+     "day": 8,
+     "from": "owner@example.com",
+     "to": [
+      "Bea Kort <bea@kortvastgoed.example>"
+     ],
+     "title": "Signed lease",
+     "sent": true
+    }
+   ]
+  },
+  {
+   "id": "summer-party",
+   "kind": "genuine",
+   "project": "Summer party",
+   "about": "One party: the owner invites 8 friends on personal mail, one mail each; 6 answer.",
+   "messages": [
+    {
+     "thread": "sp-0",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Kaat Jansen <kaat.jansen@gmail.com>"
+     ],
+     "title": "Summer party on the 12th?",
+     "sent": true
+    },
+    {
+     "thread": "sp-1",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Lars Jansen <lars.jansen@gmail.com>"
+     ],
+     "title": "Summer party on the 12th?",
+     "sent": true
+    },
+    {
+     "thread": "sp-2",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Mira Jansen <mira.jansen@gmail.com>"
+     ],
+     "title": "Summer party on the 12th?",
+     "sent": true
+    },
+    {
+     "thread": "sp-3",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Nico Jansen <nico.jansen@gmail.com>"
+     ],
+     "title": "Summer party on the 12th?",
+     "sent": true
+    },
+    {
+     "thread": "sp-4",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Olga Jansen <olga.jansen@gmail.com>"
+     ],
+     "title": "Summer party on the 12th?",
+     "sent": true
+    },
+    {
+     "thread": "sp-5",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Pim Jansen <pim.jansen@gmail.com>"
+     ],
+     "title": "Summer party on the 12th?",
+     "sent": true
+    },
+    {
+     "thread": "sp-6",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Quinn Jansen <quinn.jansen@gmail.com>"
+     ],
+     "title": "Summer party on the 12th?",
+     "sent": true
+    },
+    {
+     "thread": "sp-7",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Rosa Jansen <rosa.jansen@gmail.com>"
+     ],
+     "title": "Summer party on the 12th?",
+     "sent": true
+    },
+    {
+     "thread": "sp-0",
+     "day": 4,
+     "from": "Kaat Jansen <kaat.jansen@gmail.com>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Summer party on the 12th?"
+    },
+    {
+     "thread": "sp-1",
+     "day": 4,
+     "from": "Lars Jansen <lars.jansen@gmail.com>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Summer party on the 12th?"
+    },
+    {
+     "thread": "sp-2",
+     "day": 4,
+     "from": "Mira Jansen <mira.jansen@gmail.com>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Summer party on the 12th?"
+    },
+    {
+     "thread": "sp-4",
+     "day": 5,
+     "from": "Olga Jansen <olga.jansen@gmail.com>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Summer party on the 12th?"
+    },
+    {
+     "thread": "sp-5",
+     "day": 5,
+     "from": "Pim Jansen <pim.jansen@gmail.com>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Summer party on the 12th?"
+    },
+    {
+     "thread": "sp-7",
+     "day": 5,
+     "from": "Rosa Jansen <rosa.jansen@gmail.com>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Summer party on the 12th?"
+    }
+   ]
+  },
+  {
+   "id": "kitchen-quotes",
+   "kind": "genuine",
+   "project": "Kitchen renovation",
+   "about": "One renovation: the owner asks 4 contractors for a quote; 3 answer.",
+   "messages": [
+    {
+     "thread": "kq-0",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Bouw Peeters <info@bouwpeeters.example>"
+     ],
+     "title": "Quote for a kitchen renovation",
+     "sent": true
+    },
+    {
+     "thread": "kq-1",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Keukens Claes <offerte@keukensclaes.example>"
+     ],
+     "title": "Quote for a kitchen renovation",
+     "sent": true
+    },
+    {
+     "thread": "kq-2",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Studio Wit <hello@studiowit.example>"
+     ],
+     "title": "Quote for a kitchen renovation",
+     "sent": true
+    },
+    {
+     "thread": "kq-3",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Renova <quotes@renova.example>"
+     ],
+     "title": "Quote for a kitchen renovation",
+     "sent": true
+    },
+    {
+     "thread": "kq-0",
+     "day": 4,
+     "from": "Bouw Peeters <info@bouwpeeters.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Quote for a kitchen renovation"
+    },
+    {
+     "thread": "kq-1",
+     "day": 4,
+     "from": "Keukens Claes <offerte@keukensclaes.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Quote for a kitchen renovation"
+    },
+    {
+     "thread": "kq-3",
+     "day": 4,
+     "from": "Renova <quotes@renova.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Quote for a kitchen renovation"
+    }
+   ]
+  },
+  {
+   "id": "conference",
+   "kind": "genuine",
+   "project": "Partner summit",
+   "about": "One event: venue, caterer and three speakers, each in their own threads, all answering.",
+   "messages": [
+    {
+     "thread": "ps-0",
+     "day": 1,
+     "from": "owner@example.com",
+     "to": [
+      "Venue desk <events@hallnine.example>"
+     ],
+     "title": "Partner summit in May",
+     "sent": true
+    },
+    {
+     "thread": "ps-0",
+     "day": 2,
+     "from": "Venue desk <events@hallnine.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Partner summit in May"
+    },
+    {
+     "thread": "ps-1",
+     "day": 2,
+     "from": "owner@example.com",
+     "to": [
+      "Catering <orders@tastefull.example>"
+     ],
+     "title": "Partner summit in May",
+     "sent": true
+    },
+    {
+     "thread": "ps-1",
+     "day": 3,
+     "from": "Catering <orders@tastefull.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Partner summit in May"
+    },
+    {
+     "thread": "ps-2",
+     "day": 3,
+     "from": "owner@example.com",
+     "to": [
+      "Rui Costa <rui@speakco.example>"
+     ],
+     "title": "Partner summit in May",
+     "sent": true
+    },
+    {
+     "thread": "ps-2",
+     "day": 4,
+     "from": "Rui Costa <rui@speakco.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Partner summit in May"
+    },
+    {
+     "thread": "ps-3",
+     "day": 4,
+     "from": "owner@example.com",
+     "to": [
+      "Ada Lind <ada@linddata.example>"
+     ],
+     "title": "Partner summit in May",
+     "sent": true
+    },
+    {
+     "thread": "ps-3",
+     "day": 5,
+     "from": "Ada Lind <ada@linddata.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Partner summit in May"
+    },
+    {
+     "thread": "ps-4",
+     "day": 5,
+     "from": "owner@example.com",
+     "to": [
+      "Omar Haddad <omar@haddad.example>"
+     ],
+     "title": "Partner summit in May",
+     "sent": true
+    },
+    {
+     "thread": "ps-4",
+     "day": 6,
+     "from": "Omar Haddad <omar@haddad.example>",
+     "to": [
+      "owner@example.com"
+     ],
+     "title": "Re: Partner summit in May"
+    }
+   ]
+  }
+ ]
+}
