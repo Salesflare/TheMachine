@@ -188,14 +188,25 @@ def offered():
     return page('settings', '!document.querySelector("#update").hidden')
 
 
-def top(app, selector):
-    """Where something in Settings is on the screen, from the top of its page: with no bar above it, and the window may
-    still be taller than its page (on_linux.here counts from the bottom, for the dashboard's bar that finds)."""
-    at = page('settings', f'(() => {{ const e = document.querySelector({json.dumps(selector)}).getBoundingClientRect(); return [e.x + e.width / 2, e.y + e.height / 2, innerWidth] }})()')
+def press_update(app):
+    """A real click on Restart to update. On Linux the window manager may count Settings' place with its title bar, and
+    its window may still be taller than its page: each likely spot is tried until the button says it was pressed (it
+    turns off at once), so it is never pressed twice."""
+    if not LINUX:
+        return on.click(*on.here(app, '#update', 'settings'))
+    pressed = lambda: version() == NEW or _quiet(lambda: page('settings', 'document.querySelector("#update").disabled', 2)) is not False
+    box = page('settings', '(() => { const e = document.querySelector("#update").getBoundingClientRect(); return [e.x + e.width / 2, e.y + e.height / 2, innerWidth, innerHeight] })()')
     r = app.settings()
     need(r, 'its Settings')
-    by = r.width / at[2]
-    return round(r.left + at[0] * by), round(r.top + at[1] * by)
+    scale = r.width / box[2]
+    across = round(r.left + box[0] * scale)
+    spots = [round(r.top + box[1] * scale), round(r.top + (r.height - box[3] * scale) + box[1] * scale)]
+    spots += [y + 19 for y in spots]
+    for y in dict.fromkeys(spots):
+        on.click(across, y)
+        if until(pressed, 3):
+            return f'{across},{y} of {r}'
+    need(False, f'pressed at none of {spots} in {r}, page {box}')
 
 
 def _quiet(what):
@@ -237,11 +248,11 @@ def _():
     png('an-update')
     was = running()
     need(page('settings', 'document.querySelector("#update-hint").innerText') == f'{NEW} is ready', 'says so')
-    on.click(*(top(app, '#update') if LINUX else on.here(app, '#update', 'settings')))
+    where = press_update(app)
     if not until(lambda: version() == NEW, 90):
         png('not-in-place')
         said = _quiet(lambda: page('settings', 'document.querySelector("#error").innerText'))
-        need(False, f'it is in place: {version()}; it says {said!r}')
+        need(False, f'it is in place: {version()}; it says {said!r}; pressed at {where}')
     again = lambda: running() and not set(running()) & set(was)
     if not until(lambda: again() or refused(), 60) or not again():
         png('updated')
