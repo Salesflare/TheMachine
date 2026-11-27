@@ -1,0 +1,87 @@
+{"note": "Frozen before the first run. Synthetic. Each case is one learning pass's batch; want lists the scopes a rule learned from it may rightly take (none: nothing should be learned). with: names a person (Name) or organization. Signal shorthand: kind edit|note|miss, area, channel, with (\"Name@Org\" a person at an organization, \"Org\" an organization, \"Name\" a person alone).",
+"cases": [
+{"id": "f01-partner-price", "want": ["with:Pat Lane", "with:Northwind"], "signals": [
+  {"kind": "edit", "to_do": "Seat pricing for Northwind", "draft": "Our price is EUR 120 per seat.", "theirs": "Our partner price is EUR 90 per seat.", "area": "work", "channel": "email", "with": ["Pat Lane@Northwind"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Renewal quote", "note": "they always get the partner rate", "area": "work", "channel": "email", "with": ["Pat Lane@Northwind"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Sunday lunch", "note": "not now", "area": "personal", "channel": "whatsapp", "with": ["Ann Owner"]}]},
+{"id": "f02-nickname", "want": ["with:Robert Hale"], "signals": [
+  {"kind": "edit", "to_do": "Intro call follow-up", "draft": "Dear Robert,", "theirs": "Hi Bob,", "area": "work", "channel": "email", "with": ["Robert Hale@Fabrikam"]},
+  {"kind": "edit", "to_do": "Contract question", "draft": "Hello Robert,", "theirs": "Hey Bob,", "area": "work", "channel": "email", "with": ["Robert Hale@Fabrikam"]},
+  {"kind": "edit", "to_do": "Board deck", "draft": "Hi team, attached the deck.", "theirs": "Hi team, attached the deck.", "area": "work", "channel": "email", "with": ["Mia Chen@Contoso"]}]},
+{"id": "f03-slack-lowercase", "want": ["channel:Slack"], "signals": [
+  {"kind": "edit", "to_do": "Deploy ping", "draft": "Hello Sam, The deploy is done.", "theirs": "hey sam, deploy is done", "area": "work", "channel": "slack", "with": ["Sam Ortiz@Acme"]},
+  {"kind": "edit", "to_do": "Standup note", "draft": "Good morning Lee, Here is my update.", "theirs": "morning lee, update below", "area": "work", "channel": "slack", "with": ["Lee Park@Acme"]},
+  {"kind": "edit", "to_do": "Question from Kai", "draft": "Hi Kai, Yes, that works.", "theirs": "yes works", "area": "work", "channel": "slack", "with": ["Kai Moss@Initech"]},
+  {"kind": "edit", "to_do": "Invoice to Contoso", "draft": "Dear Mia, Please find the invoice attached.", "theirs": "Dear Mia, Please find the invoice attached. Kind regards", "area": "work", "channel": "email", "with": ["Mia Chen@Contoso"]}]},
+{"id": "f04-family-signoff", "want": ["area:personal"], "signals": [
+  {"kind": "edit", "to_do": "Birthday plans", "draft": "Best regards", "theirs": "Love, J", "area": "personal", "channel": "email", "with": ["Ann Owner"]},
+  {"kind": "edit", "to_do": "Holiday photos", "draft": "Kind regards", "theirs": "Love you, J", "area": "personal", "channel": "whatsapp", "with": ["Tom Owner"]},
+  {"kind": "edit", "to_do": "Dinner Friday", "draft": "Regards", "theirs": "Love, J", "area": "personal", "channel": "email", "with": ["Lia Brandt"]},
+  {"kind": "edit", "to_do": "Supplier reply", "draft": "Regards", "theirs": "Regards", "area": "work", "channel": "email", "with": ["Kai Moss@Initech"]}]},
+{"id": "f05-no-exclamation-everywhere", "want": ["global"], "signals": [
+  {"kind": "edit", "to_do": "Thanks to Mia", "draft": "Thanks so much!", "theirs": "Thanks so much.", "area": "work", "channel": "email", "with": ["Mia Chen@Contoso"]},
+  {"kind": "edit", "to_do": "Mom's visit", "draft": "Can't wait!", "theirs": "Looking forward to it.", "area": "personal", "channel": "whatsapp", "with": ["Ann Owner"]},
+  {"kind": "edit", "to_do": "Release note", "draft": "It shipped!", "theirs": "It shipped.", "area": "work", "channel": "slack", "with": ["Sam Ortiz@Acme"]},
+  {"kind": "edit", "to_do": "Neighbor's package", "draft": "Got it, thanks!", "theirs": "Got it, thanks.", "area": "personal", "channel": "email", "with": ["Lia Brandt"]}]},
+{"id": "f06-plain-24h-everywhere", "want": ["global"], "signals": [
+  {"kind": "note", "what": "corrected in chat", "to_do": "Meeting time for Initech", "note": "use 24-hour times, always, in everything you write for me", "area": "work", "channel": "email", "with": ["Kai Moss@Initech"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Car service", "note": "next week", "area": "personal", "channel": "email", "with": []},
+  {"kind": "note", "what": "dismissed", "to_do": "Webinar invite", "note": "no", "area": "work", "channel": "email", "with": ["Globex"]}]},
+{"id": "f07-plain-person-pref", "want": ["with:Dana Ruiz"], "signals": [
+  {"kind": "note", "what": "corrected in chat", "to_do": "Reply to Dana about the audit", "note": "Dana hates long emails, propose a quick call instead", "area": "work", "channel": "email", "with": ["Dana Ruiz@Globex"]},
+  {"kind": "edit", "to_do": "Kickoff agenda", "draft": "Agenda: intro, scope, timeline.", "theirs": "Agenda: intro, scope, timeline.", "area": "work", "channel": "email", "with": ["Lee Park@Acme"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Gym membership renewal", "note": "already done", "area": "personal", "channel": "email", "with": []}]},
+{"id": "f08-org-discount", "want": ["with:Globex"], "signals": [
+  {"kind": "edit", "to_do": "Quote for Globex", "draft": "The total is EUR 10,000.", "theirs": "The total is EUR 10,000 minus your 15% volume discount.", "area": "work", "channel": "email", "with": ["Dana Ruiz@Globex"]},
+  {"kind": "edit", "to_do": "Globex add-on seats", "draft": "Five more seats are EUR 500.", "theirs": "Five more seats are EUR 425 with your 15% discount.", "area": "work", "channel": "email", "with": ["Omar Diaz@Globex"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Globex renewal", "note": "remember the 15 percent", "area": "work", "channel": "email", "with": ["Globex"]}]},
+{"id": "f09-vendor-newsletters", "want": ["area:work", "channel:Email"], "signals": [
+  {"kind": "note", "what": "dismissed", "to_do": "Read the Datadog product update", "area": "work", "channel": "email", "with": ["Datadog"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Stripe newsletter: new features", "area": "work", "channel": "email", "with": ["Stripe"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Notion monthly digest", "note": "newsletter", "area": "work", "channel": "email", "with": ["Notion"]}]},
+{"id": "f10-group-chat-question", "want": ["area:personal", "channel:WhatsApp"], "signals": [
+  {"kind": "miss", "message": "Family group: J, can you bring the chairs on Saturday?", "review_said": "others in the group will answer", "area": "personal", "channel": "whatsapp", "with": ["Tom Owner"]},
+  {"kind": "miss", "message": "Book club: J, are you hosting next month?", "review_said": "a group chat, no direct ask", "area": "personal", "channel": "whatsapp", "with": ["Lia Brandt"]},
+  {"kind": "miss", "message": "Climbing crew: J did you book the wall for Thursday?", "review_said": "group banter", "area": "personal", "channel": "whatsapp", "with": ["Eli Novak"]}]},
+{"id": "f11-short-work-mail", "want": ["area:work", "channel:Email"], "signals": [
+  {"kind": "edit", "to_do": "Reply to Contoso", "draft": "Thank you for your message. I have looked into it and I am happy to confirm that we can proceed as discussed, and I will send the documents shortly.", "theirs": "Confirmed, documents follow today.", "area": "work", "channel": "email", "with": ["Mia Chen@Contoso"]},
+  {"kind": "edit", "to_do": "Reply to Initech", "draft": "Thanks for reaching out. After reviewing the proposal in detail I believe it is a good fit and we would love to move forward.", "theirs": "Looks good, let's go ahead.", "area": "work", "channel": "email", "with": ["Kai Moss@Initech"]},
+  {"kind": "edit", "to_do": "Reply to Fabrikam", "draft": "I appreciate your patience. I wanted to let you know that the issue has now been resolved by our team.", "theirs": "Fixed now.", "area": "work", "channel": "email", "with": ["Robert Hale@Fabrikam"]}]},
+{"id": "f12-formal-clients", "want": ["area:work"], "signals": [
+  {"kind": "edit", "to_do": "Proposal to Contoso", "draft": "Hey Mia, here's the thing", "theirs": "Dear Ms. Chen, please find our proposal", "area": "work", "channel": "email", "with": ["Mia Chen@Contoso"]},
+  {"kind": "edit", "to_do": "Follow-up with Initech", "draft": "Yo Kai", "theirs": "Dear Mr. Moss", "area": "work", "channel": "email", "with": ["Kai Moss@Initech"]},
+  {"kind": "edit", "to_do": "Slack intro to Fabrikam", "draft": "hey robert", "theirs": "Dear Mr. Hale, a short introduction", "area": "work", "channel": "slack", "with": ["Robert Hale@Fabrikam"]},
+  {"kind": "edit", "to_do": "Text to brother", "draft": "Dear Tom,", "theirs": "yo tom", "area": "personal", "channel": "whatsapp", "with": ["Tom Owner"]}]},
+{"id": "f13-one-client-language", "want": ["with:Hans Weber", "with:Bergmann"], "signals": [
+  {"kind": "edit", "to_do": "Offer for Bergmann", "draft": "Hello Hans, attached is the offer.", "theirs": "Hallo Hans, anbei das Angebot.", "area": "work", "channel": "email", "with": ["Hans Weber@Bergmann"]},
+  {"kind": "edit", "to_do": "Delivery date for Bergmann", "draft": "Hi Hans, delivery is on Monday.", "theirs": "Hallo Hans, Lieferung am Montag.", "area": "work", "channel": "email", "with": ["Hans Weber@Bergmann"]},
+  {"kind": "edit", "to_do": "Status to Contoso", "draft": "Hi Mia, all on track.", "theirs": "Hi Mia, all on track.", "area": "work", "channel": "email", "with": ["Mia Chen@Contoso"]}]},
+{"id": "f14-noise", "want": ["none"], "signals": [
+  {"kind": "note", "what": "snoozed", "to_do": "Dentist appointment", "note": "later", "area": "personal", "channel": "email", "with": []},
+  {"kind": "edit", "to_do": "Reply to Lee", "draft": "See you at 3.", "theirs": "See you at 4.", "area": "work", "channel": "slack", "with": ["Lee Park@Acme"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Book flights to Lisbon", "note": "did it already", "area": "personal", "channel": "email", "with": []}]},
+{"id": "f15-plain-whatsapp-voice-notes", "want": ["channel:WhatsApp", "area:personal"], "signals": [
+  {"kind": "note", "what": "corrected in chat", "to_do": "Reply to Tom about the weekend", "note": "on WhatsApp I never send long texts, keep every WhatsApp reply to one line", "area": "personal", "channel": "whatsapp", "with": ["Tom Owner"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Renew domain", "note": "auto-renews", "area": "work", "channel": "email", "with": ["Namecheap"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Call grandma", "note": "Sunday", "area": "personal", "channel": "whatsapp", "with": ["Rosa Owner"]}]},
+{"id": "f16-one-person-two-channels", "want": ["with:Lee Park"], "signals": [
+  {"kind": "edit", "to_do": "Lee asks for the numbers", "draft": "Hi Lee, here are the numbers.", "theirs": "Hi Lee, here are the numbers. TL;DR at the top: revenue up 4%.", "area": "work", "channel": "email", "with": ["Lee Park@Acme"]},
+  {"kind": "edit", "to_do": "Lee on the roadmap", "draft": "hey lee, roadmap below", "theirs": "tl;dr: Q1 is search. roadmap below", "area": "work", "channel": "slack", "with": ["Lee Park@Acme"]},
+  {"kind": "edit", "to_do": "Lee about hiring", "draft": "Hi Lee, about hiring", "theirs": "TL;DR: two hires in March. Hi Lee, about hiring", "area": "work", "channel": "email", "with": ["Lee Park@Acme"]}]},
+{"id": "f17-usd-outside-europe", "want": ["area:work", "channel:Email"], "signals": [
+  {"kind": "edit", "to_do": "Quote for Kai", "draft": "EUR 2,000", "theirs": "USD 2,200", "area": "work", "channel": "email", "with": ["Kai Moss@Initech"]},
+  {"kind": "edit", "to_do": "Quote for Priya", "draft": "EUR 900", "theirs": "USD 1,000", "area": "work", "channel": "email", "with": ["Priya Rao@Umbrella"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Quote for Jun", "note": "dollars for anyone outside Europe", "area": "work", "channel": "email", "with": ["Jun Sato@Tanaka"]}]},
+{"id": "f18-plain-but-one-client", "want": ["with:Northwind", "with:Pat Lane"], "signals": [
+  {"kind": "note", "what": "corrected in chat", "to_do": "Northwind invoice", "note": "Northwind always pays by bank transfer, never send them a card payment link", "area": "work", "channel": "email", "with": ["Pat Lane@Northwind"]},
+  {"kind": "note", "what": "dismissed", "to_do": "LinkedIn digest", "area": "work", "channel": "email", "with": ["LinkedIn"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Plan the school trip", "note": "after the meeting", "area": "personal", "channel": "email", "with": []}]},
+{"id": "f19-calendar-no-early", "want": ["global", "area:work", "area:personal"], "signals": [
+  {"kind": "note", "what": "corrected in chat", "to_do": "Call with Contoso", "note": "not before 10, I don't take calls before 10", "area": "work", "channel": "email", "with": ["Mia Chen@Contoso"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Plumber visit", "note": "no, after 10 please", "area": "personal", "channel": "email", "with": ["Max Plumbing"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Sync with Initech", "note": "move it past 10", "area": "work", "channel": "slack", "with": ["Kai Moss@Initech"]}]},
+{"id": "f20-team-slack-emoji", "want": ["channel:Slack", "with:Acme"], "signals": [
+  {"kind": "edit", "to_do": "Reply in team channel", "draft": "Thanks, Sam.", "theirs": "thanks sam :pray:", "area": "work", "channel": "slack", "with": ["Sam Ortiz@Acme"]},
+  {"kind": "edit", "to_do": "Answer Lee in DM", "draft": "Sounds good.", "theirs": "sounds good :+1:", "area": "work", "channel": "slack", "with": ["Lee Park@Acme"]},
+  {"kind": "edit", "to_do": "Ping Ava", "draft": "Done.", "theirs": "done :white_check_mark:", "area": "work", "channel": "slack", "with": ["Ava Stone@Acme"]}]}
+]}

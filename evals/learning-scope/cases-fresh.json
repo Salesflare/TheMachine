@@ -1,0 +1,121 @@
+{"note": "Held-out set, written fresh and frozen before any run. Synthetic: all people, organizations and content are made up. Each case is one learning pass's batch; want lists the scopes a rule learned from it may rightly take (none: nothing should be learned). with: names a person (Name) or organization. Signal shorthand: kind edit|note|miss, area, channel, with (\"Name@Org\" a person at an organization, \"Org\" an organization, \"Name\" a person alone). Mix: h01-h06 one person's or org's specifics that tempt over-generalizing; h07-h10 truly global (h09, h10 from a single plain owner note); h11-h14 area-only; h15-h18 channel-only; h19-h21 a single plain note about one person or org; h22-h24 nothing to learn.",
+"cases": [
+{"id": "h01-volume-discount", "want": ["with:Dana Reyes", "with:Lumacraft"], "signals": [
+  {"kind": "edit", "to_do": "Quote for 40 Lumacraft licenses", "draft": "The list price is $60 per license per month.", "theirs": "With your volume discount that comes to $51 per license per month (15% off list).", "area": "work", "channel": "email", "with": ["Dana Reyes@Lumacraft"]},
+  {"kind": "edit", "to_do": "Lumacraft add-on seats", "draft": "Adding 5 seats would be $300 per month.", "theirs": "Adding 5 seats would be $255 per month, same 15% as the rest of your contract.", "area": "work", "channel": "email", "with": ["Dana Reyes@Lumacraft"]},
+  {"kind": "edit", "to_do": "Pricing question from Quillstone", "draft": "Our list price is $60 per license per month.", "theirs": "Our list price is $60 per license per month.", "area": "work", "channel": "email", "with": ["Omar Haddad@Quillstone"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Return library books", "note": "did it on the way home", "area": "personal", "channel": "whatsapp", "with": ["Priya Natarajan"]}]},
+{"id": "h02-spanish-replies", "want": ["with:Lucia Ferraz"], "signals": [
+  {"kind": "edit", "to_do": "Reply to Lucia about the pilot", "draft": "Hi Lucia, thanks for the update. Let's meet Tuesday.", "theirs": "Hola Lucia, gracias por la actualización. Nos vemos el martes.", "area": "work", "channel": "whatsapp", "with": ["Lucia Ferraz@Ventaro"]},
+  {"kind": "edit", "to_do": "Send Lucia the revised timeline", "draft": "Hi Lucia, here is the revised timeline.", "theirs": "Hola Lucia, te paso el cronograma revisado.", "area": "work", "channel": "email", "with": ["Lucia Ferraz@Ventaro"]},
+  {"kind": "edit", "to_do": "Confirm kickoff with Ventaro finance", "draft": "Hi Ben, confirming the kickoff on the 9th.", "theirs": "Hi Ben, confirming the kickoff on the 9th.", "area": "work", "channel": "email", "with": ["Ben Kowalski@Ventaro"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Book car service", "area": "personal", "channel": "email", "with": ["Ridgeway Auto"]}]},
+{"id": "h03-professor-title", "want": ["with:Amara Okafor"], "signals": [
+  {"kind": "edit", "to_do": "Follow up on the research partnership", "draft": "Hi Amara, just following up on our call.", "theirs": "Dear Professor Okafor, I am following up on our call.", "area": "work", "channel": "email", "with": ["Amara Okafor@Hollin University"]},
+  {"kind": "edit", "to_do": "Send Amara the data-sharing draft", "draft": "Hey Amara, here's the draft!", "theirs": "Dear Professor Okafor, please find the draft attached.", "area": "work", "channel": "email", "with": ["Amara Okafor@Hollin University"]},
+  {"kind": "edit", "to_do": "Reply to Felix about lab access", "draft": "Hi Felix, sure, Thursday works.", "theirs": "Hi Felix, sure, Thursday works.", "area": "work", "channel": "email", "with": ["Felix Grant@Hollin University"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Plan Saturday hike", "note": "it's Sunday, not Saturday", "area": "personal", "channel": "telegram", "with": ["Jonah Pike"]}]},
+{"id": "h04-po-number-org", "want": ["with:Tidewell Logistics"], "signals": [
+  {"kind": "edit", "to_do": "Send October invoice to Tidewell", "draft": "Hi Carla, attached is the October invoice.", "theirs": "Hi Carla, attached is the October invoice, referencing PO 44817.", "area": "work", "channel": "email", "with": ["Carla Jensen@Tidewell Logistics"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Invoice Tidewell for the extra pallets", "note": "Tidewell's AP rejects anything without their PO number on it", "area": "work", "channel": "email", "with": ["Marcus Lowe@Tidewell Logistics"]},
+  {"kind": "edit", "to_do": "Invoice Brightquay for setup", "draft": "Hi Ines, attached is the setup invoice.", "theirs": "Hi Ines, attached is the setup invoice.", "area": "work", "channel": "email", "with": ["Ines Duarte@Brightquay"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Renew gym membership", "note": "canceling it", "area": "personal", "channel": "email", "with": ["Corefit Studio"]}]},
+{"id": "h05-grandpa-no-emoji", "want": ["with:Walt Brenner"], "signals": [
+  {"kind": "edit", "to_do": "Reply to Grandpa about Thanksgiving", "draft": "Can't wait!! 🦃🎉 See you Thursday 😊", "theirs": "Looking forward to it, Grandpa. We will see you on Thursday at noon.", "area": "personal", "channel": "whatsapp", "with": ["Walt Brenner"]},
+  {"kind": "edit", "to_do": "Thank Grandpa for the birthday card", "draft": "Thx Grandpa ❤️❤️", "theirs": "Thank you for the lovely card, Grandpa. It made my day.", "area": "personal", "channel": "whatsapp", "with": ["Walt Brenner"]},
+  {"kind": "edit", "to_do": "Answer Tess about the game", "draft": "Yesss see you there 🏀🔥", "theirs": "Yesss see you there 🏀🔥", "area": "personal", "channel": "whatsapp", "with": ["Tess Albright"]},
+  {"kind": "edit", "to_do": "Reply to Noah about dinner", "draft": "Sounds great 😄 7 works", "theirs": "Sounds great 😄 7 works", "area": "personal", "channel": "whatsapp", "with": ["Noah Brenner"]}]},
+{"id": "h06-fyi-means-ask", "want": ["with:Rafael Quint"], "signals": [
+  {"kind": "miss", "message": "FYI the vendor form for the Q1 rollout is still blank on our side.", "review_said": "Informational update, no request.", "area": "work", "channel": "slack", "with": ["Rafael Quint@Orbitline"]},
+  {"kind": "miss", "message": "Just FYI, legal hasn't seen your redlines yet.", "review_said": "FYI only, nothing asked of the owner.", "area": "work", "channel": "email", "with": ["Rafael Quint@Orbitline"]},
+  {"kind": "miss", "message": "FYI: the demo account expires Friday.", "review_said": "Status note, no action needed.", "area": "work", "channel": "slack", "with": ["Rafael Quint@Orbitline"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Reply to Zoe's lunch poll", "note": "already voted", "area": "work", "channel": "slack", "with": ["Zoe Lindqvist@Orbitline"]}]},
+{"id": "h07-no-hope-youre-well", "want": ["global"], "signals": [
+  {"kind": "edit", "to_do": "Follow up with Kestrel on the renewal", "draft": "Hi Elena, I hope this email finds you well. Any update on the renewal?", "theirs": "Hi Elena, any update on the renewal?", "area": "work", "channel": "email", "with": ["Elena Varga@Kestrel Foods"]},
+  {"kind": "edit", "to_do": "Ask Sophie about the cabin weekend", "draft": "Hey Sophie, hope you're doing well! Are we still on for the cabin?", "theirs": "Hey Sophie, are we still on for the cabin?", "area": "personal", "channel": "whatsapp", "with": ["Sophie Marchetti"]},
+  {"kind": "edit", "to_do": "Nudge Arjun on the design review", "draft": "Hi Arjun, hope all is well! Could you look at the review today?", "theirs": "Hi Arjun, could you look at the review today?", "area": "work", "channel": "slack", "with": ["Arjun Mehta@Pinecrest Labs"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Order printer ink", "note": "next week", "area": "personal", "channel": "email", "with": ["Inkhaven Supply"]}]},
+{"id": "h08-dated-commitments", "want": ["global"], "signals": [
+  {"kind": "miss", "message": "Reminder that the board pack is due to me by the 14th.", "review_said": "Reminder of known schedule, no new ask.", "area": "work", "channel": "email", "with": ["Helen Achebe@Sablewood Capital"]},
+  {"kind": "miss", "message": "School photo forms have to be back by Monday.", "review_said": "Group announcement, not addressed to the owner.", "area": "personal", "channel": "telegram", "with": ["Maplegrove Elementary PTA"]},
+  {"kind": "miss", "message": "Security training closes Nov 30 for anyone who hasn't done it.", "review_said": "Company-wide notice, no direct ask.", "area": "work", "channel": "teams", "with": ["Gareth Oyelaran@Pinecrest Labs"]},
+  {"kind": "miss", "message": "The plumber can only come if we confirm by tomorrow noon.", "review_said": "Shared household update, no question.", "area": "personal", "channel": "whatsapp", "with": ["Lena Corrigan"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Like Jamal's post", "area": "work", "channel": "linkedin", "with": ["Jamal Whitfield"]}]},
+{"id": "h09-no-best-regards-note", "want": ["global"], "signals": [
+  {"kind": "note", "what": "corrected in chat", "to_do": "Reply to Yusuf about the contract draft", "note": "never sign off with \"Best regards\" or anything like it, anywhere. I just end with my first name.", "area": "work", "channel": "email", "with": ["Yusuf Demir@Corvane Group"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Vote in the HOA survey", "note": "missed the deadline", "area": "personal", "channel": "email", "with": ["Willow Run HOA"]},
+  {"kind": "edit", "to_do": "Share the Q3 numbers with Corvane", "draft": "Hi Yusuf, the Q3 numbers are in the attached sheet.", "theirs": "Hi Yusuf, the Q3 numbers are in the attached sheet, tab 2.", "area": "work", "channel": "email", "with": ["Yusuf Demir@Corvane Group"]}]},
+{"id": "h10-no-newsletter-todos-note", "want": ["global"], "signals": [
+  {"kind": "note", "what": "dismissed", "to_do": "Read the Growth Weekly newsletter", "note": "never make to-dos out of newsletters, in any account or app. I read them when I feel like it.", "area": "work", "channel": "linkedin", "with": ["Growth Weekly"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Call Oliver back about the bike", "area": "personal", "channel": "whatsapp", "with": ["Oliver Stanton"]},
+  {"kind": "edit", "to_do": "Answer Rhea on the staffing plan", "draft": "Hi Rhea, two contractors should be enough.", "theirs": "Hi Rhea, three contractors, two is too tight.", "area": "work", "channel": "teams", "with": ["Rhea Castellano@Duneport Health"]}]},
+{"id": "h11-personal-after-six", "want": ["area:personal"], "signals": [
+  {"kind": "note", "what": "snoozed", "to_do": "Reply to Mira about the birthday gift", "note": "personal stuff after 6pm", "area": "personal", "channel": "whatsapp", "with": ["Mira Halvorsen"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Book the vet appointment", "note": "evening, not during work hours", "area": "personal", "channel": "email", "with": ["Clearbrook Vet Clinic"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Answer Dev about the camping gear", "note": "after work", "area": "personal", "channel": "telegram", "with": ["Dev Ramaswamy"]},
+  {"kind": "edit", "to_do": "Confirm the 10am call with Halcyon", "draft": "Hi Ruth, confirming 10am.", "theirs": "Hi Ruth, confirming 10am. I'll send the dial-in.", "area": "work", "channel": "email", "with": ["Ruth Abernathy@Halcyon Media"]}]},
+{"id": "h12-work-no-exclamations", "want": ["area:work"], "signals": [
+  {"kind": "edit", "to_do": "Thank Marisol for the referral", "draft": "Thanks so much for the intro, Marisol! Really appreciate it!", "theirs": "Thanks for the intro, Marisol. Appreciated.", "area": "work", "channel": "email", "with": ["Marisol Vega@Arcwright Partners"]},
+  {"kind": "edit", "to_do": "Reply to Tomasz on the release", "draft": "Great news! Ship it!", "theirs": "Good. Ship it.", "area": "work", "channel": "slack", "with": ["Tomasz Wrobel@Fernhill Software"]},
+  {"kind": "edit", "to_do": "Answer Keiko about the workshop", "draft": "Yes, I'd love to join!", "theirs": "Yes, I'll join.", "area": "work", "channel": "teams", "with": ["Keiko Arai@Lanternfield"]},
+  {"kind": "edit", "to_do": "Reply to Ava about the concert", "draft": "Yes! Count me in!", "theirs": "Yes! Count me in!", "area": "personal", "channel": "whatsapp", "with": ["Ava Delacroix"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Pick up dry cleaning", "note": "done", "area": "personal", "channel": "telegram", "with": ["Pressline Cleaners"]}]},
+{"id": "h13-work-approvals", "want": ["area:work"], "signals": [
+  {"kind": "miss", "message": "Submitted my expense report for the Denver trip.", "review_said": "Status update from a teammate, no question.", "area": "work", "channel": "email", "with": ["Caleb Whitaker@Stonebridge Analytics"]},
+  {"kind": "miss", "message": "Put in PTO for Dec 22-26 in the HR tool.", "review_said": "Informational, nothing asked.", "area": "work", "channel": "teams", "with": ["Nadia Farouk@Stonebridge Analytics"]},
+  {"kind": "miss", "message": "Opened the purchase request for the new monitors.", "review_said": "FYI, no action for the owner.", "area": "work", "channel": "slack", "with": ["Hugo Lambert@Stonebridge Analytics"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Reply to cousin's group chat", "note": "just memes", "area": "personal", "channel": "whatsapp", "with": ["Iris Calloway"]}]},
+{"id": "h14-personal-one-liners", "want": ["area:personal"], "signals": [
+  {"kind": "edit", "to_do": "Reply to Aunt Bea about Christmas", "draft": "Hi Aunt Bea, thank you for the invitation. We would be delighted to come for Christmas dinner. Please let me know what we can bring. Warmly, Sam", "theirs": "We'll be there, what can we bring?", "area": "personal", "channel": "email", "with": ["Bea Ostrander"]},
+  {"kind": "edit", "to_do": "Answer Kofi about the fantasy league", "draft": "Hey Kofi, thanks for asking. I'd be glad to join again this season. Let me know the draft date. Cheers", "theirs": "in, send the draft date", "area": "personal", "channel": "telegram", "with": ["Kofi Mensah"]},
+  {"kind": "edit", "to_do": "Reply to Lila about borrowing the ladder", "draft": "Hi Lila, of course you can borrow the ladder. It's in the garage, feel free to come by anytime this weekend. Best, Sam", "theirs": "sure, it's in the garage", "area": "personal", "channel": "whatsapp", "with": ["Lila Brandt"]},
+  {"kind": "edit", "to_do": "Reply to Vireo Systems on the proposal", "draft": "Hi Grant, thank you for the proposal. I've reviewed it and have two questions on scope. Best, Sam", "theirs": "Hi Grant, thank you for the proposal. I've reviewed it and have two questions on scope. Best, Sam", "area": "work", "channel": "email", "with": ["Grant Ellery@Vireo Systems"]}]},
+{"id": "h15-linkedin-pleasantries", "want": ["channel:LinkedIn"], "signals": [
+  {"kind": "note", "what": "dismissed", "to_do": "Thank Rosa for connecting", "note": "no need", "area": "work", "channel": "linkedin", "with": ["Rosa Delgado@Peakline Ventures"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Reply to Ethan's congrats on the new role", "note": "these never need a reply", "area": "work", "channel": "linkedin", "with": ["Ethan Brooks@Calloway Freight"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Answer Priyanka's 'great to connect'", "area": "work", "channel": "linkedin", "with": ["Priyanka Sood"]},
+  {"kind": "edit", "to_do": "Thank Daniel for the intro", "draft": "Thanks Daniel, appreciated.", "theirs": "Thanks Daniel, appreciated. I'll reach out to her this week.", "area": "work", "channel": "email", "with": ["Daniel Mercer@Halcyon Media"]}]},
+{"id": "h16-telegram-no-greeting", "want": ["channel:Telegram"], "signals": [
+  {"kind": "edit", "to_do": "Confirm the pickup time with Selin", "draft": "Hi Selin! Pickup at 5 works.", "theirs": "5 works", "area": "personal", "channel": "telegram", "with": ["Selin Aydin"]},
+  {"kind": "edit", "to_do": "Answer Viktor on the server move", "draft": "Hello Viktor, the move is scheduled for Saturday.", "theirs": "move is Saturday", "area": "work", "channel": "telegram", "with": ["Viktor Hale@Ironleaf Hosting"]},
+  {"kind": "edit", "to_do": "Reply to the climbing group about Sunday", "draft": "Hey everyone, I'll be there Sunday.", "theirs": "there Sunday", "area": "personal", "channel": "telegram", "with": ["Crux Climbing Crew"]},
+  {"kind": "edit", "to_do": "Reply to Wendy about the board seat", "draft": "Hi Wendy, I'd be glad to discuss the board seat.", "theirs": "Hi Wendy, I'd be glad to discuss the board seat.", "area": "work", "channel": "email", "with": ["Wendy Szabo@Larkspur Foundation"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Renew passport", "note": "after the holidays", "area": "personal", "channel": "email", "with": ["Passport Agency"]}]},
+{"id": "h17-teams-mentions", "want": ["channel:Teams"], "signals": [
+  {"kind": "miss", "message": "@owner can you sign off on the vendor list before Thursday's sync?", "review_said": "Group channel chatter, many recipients.", "area": "work", "channel": "teams", "with": ["Imogen Tate@Carraway Health"]},
+  {"kind": "miss", "message": "@owner need your numbers in the budget sheet today", "review_said": "Busy group thread, not a direct message.", "area": "work", "channel": "teams", "with": ["Bilal Rahman@Westmere Bank"]},
+  {"kind": "miss", "message": "@owner please review slide 7", "review_said": "Team channel message, owner not the main recipient.", "area": "work", "channel": "teams", "with": ["Cora Lindgren@Carraway Health"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Order flowers for Mom", "note": "tulips, not roses", "area": "personal", "channel": "whatsapp", "with": ["Grace Whitlow"]}]},
+{"id": "h18-email-ask-first", "want": ["channel:Email"], "signals": [
+  {"kind": "edit", "to_do": "Ask Halden Supply for the revised quote", "draft": "Hi Mateo, thanks for the call last week. It was great to go over the options. When you have a moment, could you send the revised quote?", "theirs": "Hi Mateo, could you send the revised quote? Thanks for the call last week.", "area": "work", "channel": "email", "with": ["Mateo Ruiz@Halden Supply"]},
+  {"kind": "edit", "to_do": "Ask the landlord about the heating", "draft": "Hi Mr. Pruitt, I hope your week is going well. We've noticed the radiator in the bedroom is cold. Could someone take a look?", "theirs": "Hi Mr. Pruitt, could someone look at the bedroom radiator? It's been cold since Monday.", "area": "personal", "channel": "email", "with": ["Gordon Pruitt"]},
+  {"kind": "edit", "to_do": "Ask Saanvi for the contract signature", "draft": "Hi Saanvi, following up on our discussion and the redlines we agreed. Could you sign the contract this week?", "theirs": "Hi Saanvi, could you sign the contract this week? It has the redlines we agreed.", "area": "work", "channel": "email", "with": ["Saanvi Rao@Glenmoor Legal"]},
+  {"kind": "edit", "to_do": "Ask Theo on Slack for the logs", "draft": "hey, thanks for jumping on this earlier. could you drop the logs here?", "theirs": "hey, thanks for jumping on this earlier. could you drop the logs here?", "area": "work", "channel": "slack", "with": ["Theo Banks@Fernhill Software"]}]},
+{"id": "h19-gina-prefers-calls", "want": ["with:Gina Marlowe"], "signals": [
+  {"kind": "note", "what": "corrected in chat", "to_do": "Email Gina the onboarding questions", "note": "Gina hates long emails, always suggest a quick call with her instead", "area": "work", "channel": "email", "with": ["Gina Marlowe@Parcelyn"]},
+  {"kind": "edit", "to_do": "Reply to Owen about the invoice date", "draft": "Hi Owen, the invoice went out on the 3rd.", "theirs": "Hi Owen, the invoice went out on the 4th.", "area": "work", "channel": "email", "with": ["Owen Pratt@Parcelyn"]},
+  {"kind": "note", "what": "dismissed", "to_do": "RSVP to the block party", "note": "already did", "area": "personal", "channel": "whatsapp", "with": ["Elm Street Neighbors"]}]},
+{"id": "h20-dentist-itemized", "want": ["with:Brookfield Dental"], "signals": [
+  {"kind": "note", "what": "corrected in chat", "to_do": "Pay the Brookfield Dental bill", "note": "always ask Brookfield Dental for an itemized bill before paying; they've double-charged twice", "area": "personal", "channel": "email", "with": ["Brookfield Dental"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Pay the water bill", "area": "personal", "channel": "email", "with": ["Clearwater Utilities"]},
+  {"kind": "edit", "to_do": "Send Amir the meeting notes", "draft": "Hi Amir, notes attached.", "theirs": "Hi Amir, notes attached. Action items are at the bottom.", "area": "work", "channel": "slack", "with": ["Amir Khalil@Lanternfield"]}]},
+{"id": "h21-uncle-sundays", "want": ["with:Theo Vance"], "signals": [
+  {"kind": "note", "what": "snoozed", "to_do": "Call Uncle Theo about the boat", "note": "Uncle Theo only picks up on Sundays, put anything for him on Sunday", "area": "personal", "channel": "whatsapp", "with": ["Theo Vance"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Answer Brianna's carpool question", "note": "sorted it in person", "area": "personal", "channel": "whatsapp", "with": ["Brianna Cole"]},
+  {"kind": "edit", "to_do": "Reply to Kestrel about the shipment", "draft": "Hi Elena, it ships Monday.", "theirs": "Hi Elena, it ships Tuesday.", "area": "work", "channel": "email", "with": ["Elena Varga@Kestrel Foods"]}]},
+{"id": "h22-one-off-dismissals", "want": ["none"], "signals": [
+  {"kind": "note", "what": "dismissed", "to_do": "Reply to Marcus about the parking spot", "note": "already handled", "area": "work", "channel": "slack", "with": ["Marcus Lowe@Tidewell Logistics"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Send Nell the recipe", "note": "she found it", "area": "personal", "channel": "whatsapp", "with": ["Nell Fairbanks"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Review the Q4 roadmap doc", "area": "work", "channel": "email", "with": ["Pinecrest Labs"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Water the neighbor's plants", "note": "they're back early", "area": "personal", "channel": "telegram", "with": ["Hal Jordan"]}]},
+{"id": "h23-one-off-facts-and-typos", "want": ["none"], "signals": [
+  {"kind": "edit", "to_do": "Confirm the workshop with Keiko", "draft": "Hi Keiko, see you Thursday at 2.", "theirs": "Hi Keiko, see you Friday at 2.", "area": "work", "channel": "teams", "with": ["Keiko Arai@Lanternfield"]},
+  {"kind": "edit", "to_do": "Tell Sophie the cabin address", "draft": "It's 14 Birch Lane.", "theirs": "It's 41 Birch Lane.", "area": "personal", "channel": "whatsapp", "with": ["Sophie Marchetti"]},
+  {"kind": "edit", "to_do": "Send Mateo the PO", "draft": "Hi Mateo, PO attached.", "theirs": "Hi Mateo, PO attached.", "area": "work", "channel": "email", "with": ["Mateo Ruiz@Halden Supply"]},
+  {"kind": "edit", "to_do": "Reply to Arjun on the ticket", "draft": "fixed in teh latest build", "theirs": "fixed in the latest build", "area": "work", "channel": "slack", "with": ["Arjun Mehta@Pinecrest Labs"]}]},
+{"id": "h24-mixed-noise", "want": ["none"], "signals": [
+  {"kind": "miss", "message": "Can you grab milk on the way home?", "review_said": "Casual message, no clear task.", "area": "personal", "channel": "whatsapp", "with": ["Lena Corrigan"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Prepare slides for the Westmere pitch", "area": "work", "channel": "email", "with": ["Bilal Rahman@Westmere Bank"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Book a table at Olive & Thyme", "note": "for 4 people, not 3", "area": "personal", "channel": "email", "with": ["Olive & Thyme"]},
+  {"kind": "edit", "to_do": "Answer Hugo on the monitors", "draft": "Approved, go ahead.", "theirs": "Approved, go ahead.", "area": "work", "channel": "slack", "with": ["Hugo Lambert@Stonebridge Analytics"]}]}
+]}

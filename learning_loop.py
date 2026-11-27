@@ -383,41 +383,47 @@ def set_fact(db, fact_id, text, removed_at, ref):
 def scope_of(change, evidence):
     """Where a pass's rule or fact holds: (scope, side, node id), or None when it can't be placed (then it isn't
     kept). A run from before scopes (or with the FLAG off): global, as every rule was. A scope the pass gave is kept
-    when the signals bear it out: an area or channel one of them was in, a with: ref they named. Missing or wrong:
-    what the signals it came from (from, else the whole batch) all share, narrowest first (the one person or
-    organization, the area, the channel). Nothing shared: None. Never global by default."""
+    as far as the signals it came from (from, else the whole batch) bear it out: global only when they span
+    different people and more than one area or channel, or one note in the owner's own words says it; a with: ref
+    one of them named. An area or channel: one of them in it, or all of them when the pass named them (from), and
+    then not when they are all with one person (that person's, unless their one note says it). Missing or wider:
+    what those signals all share, narrowest first (the one person or organization, the area, the channel). Nothing
+    shared: None. Never global by default."""
     if not evidence.get('scoped'):
         return (None, None, None)
     signals = evidence.get('signals') or []
-    picked = [s for s in signals if s.get('n') in set(change.get('from') or ())] or signals
+    cited = [s for s in signals if s.get('n') in set(change.get('from') or ())]
+    picked = cited or signals
     contexts = [s.get('context') or {} for s in picked]
     refs = evidence.get('refs') or {}
     said = str(change.get('scope') or '').strip()
     kind, _, value = said.partition(':')
     kind, value = kind.strip().casefold(), value.strip()
-    if kind == 'global':
-        return ('global', None, None)
-    if kind == 'area' and value.casefold() in AREAS and any(c.get('area') == value.casefold() for c in contexts):
-        return ('area', value.casefold(), None)
-    if kind == 'channel' and any(str(c.get('channel') or '').casefold() == value.casefold() for c in contexts):
-        channel = next(c['channel'] for c in contexts if str(c.get('channel') or '').casefold() == value.casefold())
-        return ('channel:' + channel, None, None)
     if kind == 'with' and value in refs and any(value in {w['ref'] for w in c.get('with') or ()} for c in contexts):
         return ('with:' + refs[value], None, refs[value])
     if not contexts:
         return None
     shared = set.intersection(*({w['ref'] for w in c.get('with') or ()} for c in contexts))
     people = sorted(r for r in shared if r in refs and next((w for c in contexts for w in c.get('with') or () if w['ref'] == r), {}).get('kind') == 'person')
+    areas, channels = {c.get('area') for c in contexts}, {c.get('channel') for c in contexts}
+    plainly = len(picked) == 1 and bool(picked[0].get('note'))
+    if kind == 'global' and (plainly or (not shared and (len(areas - {None}) > 1 or len(channels - {None}) > 1))):
+        return ('global', None, None)
+    held = (lambda match: all(map(match, contexts))) if cited else (lambda match: any(map(match, contexts)))
+    if not (cited and len(people) == 1 and not plainly):  # one person's signals stay theirs
+        if kind == 'area' and value.casefold() in AREAS and held(lambda c: c.get('area') == value.casefold()):
+            return ('area', value.casefold(), None)
+        channel = next((c['channel'] for c in contexts if str(c.get('channel') or '').casefold() == value.casefold()), None)
+        if kind == 'channel' and channel and held(lambda c: str(c.get('channel') or '').casefold() == value.casefold()):
+            return ('channel:' + channel, None, None)
     if len(people) == 1 or len(shared) == 1:
         ref = people[0] if people else next(iter(shared))
         if ref in refs:
             return ('with:' + refs[ref], None, refs[ref])
-    areas = {c.get('area') for c in contexts}
     if len(areas) == 1 and None not in areas:
-        return ('area', areas.pop(), None)
-    channels = {c.get('channel') for c in contexts}
+        return ('area', next(iter(areas)), None)
     if len(channels) == 1 and None not in channels:
-        return ('channel:' + channels.pop(), None, None)
+        return ('channel:' + next(iter(channels)), None, None)
     return None
 
 

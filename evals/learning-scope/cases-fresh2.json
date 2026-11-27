@@ -1,0 +1,104 @@
+{"note": "Second held-out slice, frozen before any run. Synthetic, new people and organizations. Each case is one learning pass's batch; want lists the scopes a rule learned from it may rightly take (none: nothing should be learned). with: names a person (Name) or organization. The owner's own company is Brightline. Signal shorthand: kind edit|note|miss, area, channel, with (\"Name@Org\" a person at an organization, \"Org\" an organization, \"Name\" a person alone).",
+"cases": [
+{"id": "k01-doctor-title", "want": ["with:Chidi Okafor"], "signals": [
+  {"kind": "edit", "to_do": "Reply about the pilot study", "draft": "Hi Chidi, thanks for the data.", "theirs": "Dear Dr. Okafor, thank you for the data.", "area": "work", "channel": "email", "with": ["Chidi Okafor@Lakeshore Clinic"]},
+  {"kind": "edit", "to_do": "Schedule review meeting", "draft": "Hey Chidi, does Tuesday work?", "theirs": "Dear Dr. Okafor, would Tuesday suit you?", "area": "work", "channel": "email", "with": ["Chidi Okafor@Lakeshore Clinic"]},
+  {"kind": "edit", "to_do": "Send the signed NDA", "draft": "Hi Wren, NDA attached.", "theirs": "Hi Wren, NDA attached.", "area": "work", "channel": "email", "with": ["Wren Castillo@Lakeshore Clinic"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Renew passport", "note": "after the holidays", "area": "personal", "channel": "email", "with": []}]},
+{"id": "k02-friend-vegetarian", "want": ["with:Marisol Reyes"], "signals": [
+  {"kind": "edit", "to_do": "Pick a place for Friday dinner", "draft": "How about the steakhouse on 5th?", "theirs": "How about the Thai place on 5th? They have plenty of veggie dishes.", "area": "personal", "channel": "whatsapp", "with": ["Marisol Reyes"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Plan the barbecue with Marisol", "note": "Marisol doesn't eat meat, get her the veggie burgers", "area": "personal", "channel": "whatsapp", "with": ["Marisol Reyes"]},
+  {"kind": "edit", "to_do": "Brunch with Owen", "draft": "Bacon pancakes at the diner?", "theirs": "Bacon pancakes at the diner?", "area": "personal", "channel": "whatsapp", "with": ["Owen Pryce"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Read the quarterly planning doc", "note": "already read it", "area": "work", "channel": "slack", "with": ["Theo Marsh@Brightline"]}]},
+{"id": "k03-teams-spanish-client", "want": ["with:Ines Calder", "with:Vidrios Sur"], "signals": [
+  {"kind": "edit", "to_do": "Confirm the glass order", "draft": "Hi Ines, the order is confirmed for Monday.", "theirs": "Hola Ines, el pedido queda confirmado para el lunes.", "area": "work", "channel": "teams", "with": ["Ines Calder@Vidrios Sur"]},
+  {"kind": "edit", "to_do": "Ask about the freight quote", "draft": "Hi Ines, did the freight quote come in?", "theirs": "Hola Ines, ¿llegó la cotización del flete?", "area": "work", "channel": "teams", "with": ["Ines Calder@Vidrios Sur"]},
+  {"kind": "edit", "to_do": "Weekly sync notes", "draft": "Hi Gareth, notes from today are below.", "theirs": "Hi Gareth, notes from today are below.", "area": "work", "channel": "teams", "with": ["Gareth Bloom@Orchid Analytics"]}]},
+{"id": "k04-friend-timezone", "want": ["with:Arjun Patel"], "signals": [
+  {"kind": "edit", "to_do": "Set up a call with Arjun", "draft": "Want to call at 10 am tomorrow?", "theirs": "Want to call at 8 pm my time tomorrow? That's your morning.", "area": "personal", "channel": "telegram", "with": ["Arjun Patel"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Catch up with Arjun", "note": "Arjun lives in Singapore, always suggest my evenings", "area": "personal", "channel": "telegram", "with": ["Arjun Patel"]},
+  {"kind": "edit", "to_do": "Game night with Bea", "draft": "Saturday at 7 pm?", "theirs": "Saturday at 7 pm?", "area": "personal", "channel": "telegram", "with": ["Bea Lindqvist"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Webinar on cloud costs", "area": "work", "channel": "email", "with": ["Cumulus Cloud"]}]},
+{"id": "k05-org-payment-terms", "want": ["with:Quillmark Press"], "signals": [
+  {"kind": "edit", "to_do": "Invoice for the print run", "draft": "Payment is due within 30 days.", "theirs": "Payment is due within 45 days, per our agreement.", "area": "work", "channel": "email", "with": ["Hollis Brandvold@Quillmark Press"]},
+  {"kind": "edit", "to_do": "Invoice for the cover redesign", "draft": "Please pay within 30 days.", "theirs": "Please pay within 45 days.", "area": "work", "channel": "email", "with": ["Petra Szabo@Quillmark Press"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Quillmark reminder about the open invoice", "note": "it isn't late yet, Quillmark is on net 45", "area": "work", "channel": "email", "with": ["Quillmark Press"]},
+  {"kind": "edit", "to_do": "Invoice for Orchid Analytics", "draft": "Payment is due within 30 days.", "theirs": "Payment is due within 30 days.", "area": "work", "channel": "email", "with": ["Gareth Bloom@Orchid Analytics"]}]},
+{"id": "k06-org-po-number", "want": ["with:Ferro Logistics"], "signals": [
+  {"kind": "edit", "to_do": "Send the November invoice", "draft": "Attached is invoice 2231.", "theirs": "Attached is invoice 2231, PO number FL-7781.", "area": "work", "channel": "email", "with": ["Dmitri Vasquez@Ferro Logistics"]},
+  {"kind": "edit", "to_do": "Resend the corrected invoice", "draft": "Here is the corrected invoice.", "theirs": "Here is the corrected invoice with your PO number on it.", "area": "work", "channel": "email", "with": ["Aisha Brennan@Ferro Logistics"]},
+  {"kind": "miss", "message": "Ferro accounts payable: invoice 2198 rejected, PO reference missing", "review_said": "automated notice, nothing to do", "area": "work", "channel": "email", "with": ["Ferro Logistics"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Book the car wash", "note": "when it stops raining", "area": "personal", "channel": "whatsapp", "with": []}]},
+{"id": "k07-org-secure-portal", "want": ["with:Tidewater Bank"], "signals": [
+  {"kind": "edit", "to_do": "Send the quarterly statements", "draft": "Please find the statements attached.", "theirs": "I've uploaded the statements to your secure portal.", "area": "work", "channel": "email", "with": ["Corinne Abara@Tidewater Bank"]},
+  {"kind": "edit", "to_do": "Share the signed loan form", "draft": "Attaching the signed form here.", "theirs": "The signed form is in the secure portal now.", "area": "work", "channel": "teams", "with": ["Malik Ferreira@Tidewater Bank"]},
+  {"kind": "note", "what": "corrected in chat", "to_do": "Email the tax certificate to Tidewater", "note": "Tidewater won't accept attachments, it all goes through their portal", "area": "work", "channel": "email", "with": ["Tidewater Bank"]},
+  {"kind": "edit", "to_do": "Send the slides to Orchid", "draft": "Slides attached.", "theirs": "Slides attached.", "area": "work", "channel": "email", "with": ["Gareth Bloom@Orchid Analytics"]}]},
+{"id": "k08-team-review-requests", "want": ["with:Brightline", "area:work"], "signals": [
+  {"kind": "miss", "message": "Rosa: when you get a sec, can you look over the pricing page copy?", "review_said": "casual, no deadline", "area": "work", "channel": "slack", "with": ["Rosa Vance@Brightline"]},
+  {"kind": "miss", "message": "Theo: would love your eyes on the onboarding flow before Thursday", "review_said": "FYI to the team", "area": "work", "channel": "teams", "with": ["Theo Marsh@Brightline"]},
+  {"kind": "miss", "message": "Nadia: draft of the partner email is in the doc, thoughts?", "review_said": "open question, others can reply", "area": "work", "channel": "email", "with": ["Nadia Kerr@Brightline"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Reply to Owen's meme", "area": "personal", "channel": "whatsapp", "with": ["Owen Pryce"]}]},
+{"id": "k09-team-no-greeting", "want": ["with:Brightline", "area:work"], "signals": [
+  {"kind": "edit", "to_do": "Answer Felix about the launch date", "draft": "Hi Felix, I hope you're doing well! The launch is on the 14th.", "theirs": "Launch is on the 14th.", "area": "work", "channel": "slack", "with": ["Felix Grant@Brightline"]},
+  {"kind": "edit", "to_do": "Reply to Rosa on the budget", "draft": "Hi Rosa, thanks so much for asking. The budget is approved.", "theirs": "Budget's approved.", "area": "work", "channel": "teams", "with": ["Rosa Vance@Brightline"]},
+  {"kind": "edit", "to_do": "Tell Nadia the contract is signed", "draft": "Hi Nadia, great news, I wanted to let you know the contract is signed.", "theirs": "Contract is signed.", "area": "work", "channel": "email", "with": ["Nadia Kerr@Brightline"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Call grandma", "note": "Sunday", "area": "personal", "channel": "telegram", "with": ["Grandma Ruth"]}]},
+{"id": "k10-team-standup-dismissals", "want": ["with:Brightline", "area:work"], "signals": [
+  {"kind": "note", "what": "dismissed", "to_do": "Read Theo's standup update", "note": "standup posts from the team are just status, no to-do", "area": "work", "channel": "slack", "with": ["Theo Marsh@Brightline"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Reply to Felix's weekly status", "area": "work", "channel": "email", "with": ["Felix Grant@Brightline"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Acknowledge Rosa's daily update", "area": "work", "channel": "teams", "with": ["Rosa Vance@Brightline"]},
+  {"kind": "edit", "to_do": "Quote for Orchid Analytics", "draft": "The quote is $4,000.", "theirs": "The quote is $4,000.", "area": "work", "channel": "email", "with": ["Gareth Bloom@Orchid Analytics"]}]},
+{"id": "k11-no-filler-openers", "want": ["global"], "signals": [
+  {"kind": "edit", "to_do": "Reply to Corinne about the statement", "draft": "I hope this email finds you well. The statement is uploaded.", "theirs": "The statement is uploaded.", "area": "work", "channel": "email", "with": ["Corinne Abara@Tidewater Bank"]},
+  {"kind": "edit", "to_do": "Answer Bea about the board game", "draft": "Hope you're having a great week! I'll bring the game.", "theirs": "I'll bring the game.", "area": "personal", "channel": "telegram", "with": ["Bea Lindqvist"]},
+  {"kind": "edit", "to_do": "Reply to Theo in the launch thread", "draft": "Hope all is well! Copy is final.", "theirs": "Copy is final.", "area": "work", "channel": "slack", "with": ["Theo Marsh@Brightline"]},
+  {"kind": "edit", "to_do": "Text Marisol about the concert", "draft": "Hope you're doing well! Tickets are booked.", "theirs": "Tickets are booked.", "area": "personal", "channel": "whatsapp", "with": ["Marisol Reyes"]}]},
+{"id": "k12-spelled-out-dates", "want": ["global"], "signals": [
+  {"kind": "edit", "to_do": "Confirm delivery with Dmitri", "draft": "Delivery is on 12/08.", "theirs": "Delivery is on Tuesday, December 8.", "area": "work", "channel": "email", "with": ["Dmitri Vasquez@Ferro Logistics"]},
+  {"kind": "edit", "to_do": "Plan Arjun's visit", "draft": "You land on 1/15, right?", "theirs": "You land on Friday, January 15, right?", "area": "personal", "channel": "telegram", "with": ["Arjun Patel"]},
+  {"kind": "edit", "to_do": "Tell Ines the shipping date", "draft": "We ship on 11/30.", "theirs": "We ship on Monday, November 30.", "area": "work", "channel": "teams", "with": ["Ines Calder@Vidrios Sur"]},
+  {"kind": "edit", "to_do": "RSVP to Owen's party", "draft": "See you on 12/19!", "theirs": "See you on Saturday, December 19!", "area": "personal", "channel": "whatsapp", "with": ["Owen Pryce"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Try the new expense tool", "area": "work", "channel": "slack", "with": ["Felix Grant@Brightline"]}]},
+{"id": "k13-plain-note-first-name", "want": ["global"], "signals": [
+  {"kind": "note", "what": "corrected in chat", "to_do": "Reply to Hollis about the print run", "note": "sign off with just my first name in everything you write for me, work or personal, whoever it's to", "area": "work", "channel": "email", "with": ["Hollis Brandvold@Quillmark Press"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Order new running shoes", "note": "Black Friday", "area": "personal", "channel": "email", "with": []},
+  {"kind": "note", "what": "dismissed", "to_do": "Join the vendor roundtable", "note": "no time", "area": "work", "channel": "linkedin", "with": ["Summit Procurement Forum"]}]},
+{"id": "k14-work-deadlines-missed", "want": ["area:work"], "signals": [
+  {"kind": "miss", "message": "Corinne: the signed renewal needs to be back with us by the 3rd", "review_said": "informational", "area": "work", "channel": "email", "with": ["Corinne Abara@Tidewater Bank"]},
+  {"kind": "miss", "message": "Gareth: reminder, the data export closes Friday", "review_said": "a reminder, no ask", "area": "work", "channel": "teams", "with": ["Gareth Bloom@Orchid Analytics"]},
+  {"kind": "miss", "message": "Petra: proofs are due back to the printer Monday morning", "review_said": "FYI", "area": "work", "channel": "slack", "with": ["Petra Szabo@Quillmark Press"]},
+  {"kind": "miss", "message": "Wren: the grant report is due next Wednesday", "review_said": "just a heads-up", "area": "work", "channel": "email", "with": ["Wren Castillo@Lakeshore Clinic"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Pick up dry cleaning", "note": "tomorrow", "area": "personal", "channel": "whatsapp", "with": []}]},
+{"id": "k15-personal-to-weekend", "want": ["area:personal"], "signals": [
+  {"kind": "note", "what": "snoozed", "to_do": "Help Bea move the couch", "note": "weekend", "area": "personal", "channel": "telegram", "with": ["Bea Lindqvist"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Look at Owen's vacation photos", "note": "Saturday", "area": "personal", "channel": "whatsapp", "with": ["Owen Pryce"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Answer the HOA survey", "note": "weekend, not during the workday", "area": "personal", "channel": "email", "with": ["Maple Ridge HOA"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Call Grandma Ruth back", "note": "weekend", "area": "personal", "channel": "telegram", "with": ["Grandma Ruth"]},
+  {"kind": "edit", "to_do": "Reply to Aisha about the pallet count", "draft": "We have 12 pallets.", "theirs": "We have 14 pallets.", "area": "work", "channel": "email", "with": ["Aisha Brennan@Ferro Logistics"]}]},
+{"id": "k16-work-booking-link", "want": ["area:work"], "signals": [
+  {"kind": "edit", "to_do": "Find a time with Gareth", "draft": "What times work for you next week?", "theirs": "Grab any slot that suits you here: brightline.example/book-jordan", "area": "work", "channel": "email", "with": ["Gareth Bloom@Orchid Analytics"]},
+  {"kind": "edit", "to_do": "Intro call with a prospect", "draft": "When are you free for a call?", "theirs": "Pick a time that works here: brightline.example/book-jordan", "area": "work", "channel": "linkedin", "with": ["Sloane Achebe@Redfern Solar"]},
+  {"kind": "edit", "to_do": "Meeting with Malik", "draft": "Could you suggest a few times?", "theirs": "Book whatever fits: brightline.example/book-jordan", "area": "work", "channel": "teams", "with": ["Malik Ferreira@Tidewater Bank"]},
+  {"kind": "edit", "to_do": "Plan coffee with Marisol", "draft": "When are you free?", "theirs": "When are you free?", "area": "personal", "channel": "whatsapp", "with": ["Marisol Reyes"]}]},
+{"id": "k17-linkedin-openers", "want": ["channel:LinkedIn"], "signals": [
+  {"kind": "edit", "to_do": "Reply to Sloane's connection note", "draft": "I came across your profile and was impressed by your work. Happy to connect!", "theirs": "Thanks for reaching out, happy to connect.", "area": "work", "channel": "linkedin", "with": ["Sloane Achebe@Redfern Solar"]},
+  {"kind": "edit", "to_do": "Message old college roommate", "draft": "I came across your profile and noticed we went to the same school!", "theirs": "Hey Lucas, long time! Saw you moved to Denver.", "area": "personal", "channel": "linkedin", "with": ["Lucas Ferrante"]},
+  {"kind": "edit", "to_do": "Answer the recruiter", "draft": "I came across your profile and your opening sounds interesting.", "theirs": "Thanks for the note, I'm not looking right now.", "area": "work", "channel": "linkedin", "with": ["Yara Holm@Peakstone Talent"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Rate the delivery driver", "area": "personal", "channel": "email", "with": ["Parcelwise"]}]},
+{"id": "k18-telegram-forwards", "want": ["channel:Telegram"], "signals": [
+  {"kind": "miss", "message": "Forwarded from Bea's sister: can J pick up the cake on Saturday?", "review_said": "forwarded message, not addressed to you", "area": "personal", "channel": "telegram", "with": ["Bea Lindqvist"]},
+  {"kind": "miss", "message": "Forwarded by Kofi: client wants J to approve the revised mockups today", "review_said": "a forward, no direct ask", "area": "work", "channel": "telegram", "with": ["Kofi Mensah@Studio Lumen"]},
+  {"kind": "miss", "message": "Forwarded from the landlord: J, please confirm the plumber can come in Tuesday", "review_said": "forwarded content", "area": "personal", "channel": "telegram", "with": ["Arjun Patel"]},
+  {"kind": "edit", "to_do": "Thank Petra for the proofs", "draft": "Thanks, Petra.", "theirs": "Thanks, Petra.", "area": "work", "channel": "email", "with": ["Petra Szabo@Quillmark Press"]}]},
+{"id": "k19-noise-mixed", "want": ["none"], "signals": [
+  {"kind": "note", "what": "snoozed", "to_do": "Schedule the eye exam", "note": "next month", "area": "personal", "channel": "email", "with": []},
+  {"kind": "note", "what": "dismissed", "to_do": "Reply to Sloane's product question", "note": "Felix already answered", "area": "work", "channel": "linkedin", "with": ["Sloane Achebe@Redfern Solar"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Sign up for the 10K", "note": "my knee", "area": "personal", "channel": "whatsapp", "with": ["Owen Pryce"]},
+  {"kind": "note", "what": "snoozed", "to_do": "Review Q1 hiring plan", "note": "after budget sign-off", "area": "work", "channel": "slack", "with": ["Nadia Kerr@Brightline"]}]},
+{"id": "k20-noise-one-off-fixes", "want": ["none"], "signals": [
+  {"kind": "edit", "to_do": "Confirm the workshop with Kofi", "draft": "See you Thursday at the studio.", "theirs": "See you Friday at the studio, Thursday got moved.", "area": "work", "channel": "email", "with": ["Kofi Mensah@Studio Lumen"]},
+  {"kind": "edit", "to_do": "Tell Bea the room number", "draft": "We're in room 214.", "theirs": "We're in room 241.", "area": "personal", "channel": "telegram", "with": ["Bea Lindqvist"]},
+  {"kind": "edit", "to_do": "Send Malik the account summary", "draft": "The balance is $18,200.", "theirs": "The balance is $18,450 after yesterday's deposit.", "area": "work", "channel": "teams", "with": ["Malik Ferreira@Tidewater Bank"]},
+  {"kind": "note", "what": "dismissed", "to_do": "Answer the survey from Parcelwise", "area": "personal", "channel": "email", "with": ["Parcelwise"]}]}
+]}
