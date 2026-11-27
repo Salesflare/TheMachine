@@ -413,7 +413,7 @@ def scope_of(change, evidence):
     if not (cited and len(people) == 1 and not plainly):  # one person's signals stay theirs
         if kind == 'area' and value.casefold() in AREAS and held(lambda c: c.get('area') == value.casefold()):
             return ('area', value.casefold(), None)
-        channel = next((c['channel'] for c in contexts if str(c.get('channel') or '').casefold() == value.casefold()), None)
+        channel = next((c['channel'] for c in contexts if c.get('channel') and c['channel'].casefold() == value.casefold()), None)
         if kind == 'channel' and channel and held(lambda c: str(c.get('channel') or '').casefold() == value.casefold()):
             return ('channel:' + channel, None, None)
     if len(people) == 1 or len(shared) == 1:
