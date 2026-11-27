@@ -1,7 +1,8 @@
 """Work that only shows across separate threads (opportunities.py): off unless turned on; one turn per area, never
-across; a proposal is kept only on two independent signals code can check (never a shared first name or one shared
-word), with no date the messages don't give; at most two a week, the best of each area first. Made-up data, a stand-in
-model."""
+across; threads are tied only by what the Graph resolved (the same confirmed person, organization or project) or two
+independent signals in the messages code can check (never a name, first or full, nor one shared word), one person on
+two addresses the Graph joined is one, with no date the messages don't give; at most two a week, the best of each area
+first. Made-up data, the real Graph build, a stand-in model."""
 import datetime as dt
 import json
 import re
@@ -9,6 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import graph
 import machine.main as machine_main
 import opportunities
 import timeutil
@@ -172,6 +174,70 @@ class Opportunities(unittest.TestCase):
         self.answers = [self.answer(self.session('Write to each separately. To Mara: Hi Mara, we can train your team on the planner. '
                                                  'To Liesel: Hi Liesel, we can run the planner onboarding for you.'))]
         self.assertEqual(1, self.run_once(NOW - dt.timedelta(days=12))[0])
+
+    def build(self, merge=()):
+        """The Graph as the worker builds it; merge: pairs of addresses the owner said are one person."""
+        with self.store.connect() as db:
+            for a, b in merge:
+                graph.merge(db, 'email:' + a, 'email:' + b, True, NOW.isoformat(), source='owner')
+            db.commit()
+            graph.build(db, self.app.config, NOW.isoformat())
+            db.commit()
+
+    def boxes(self, second='Ben Cole <ben@birch.example>'):
+        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Carton price', 'From 1 January our mailer boxes cost 12% more.')
+        b = self.mail('w', 'b', second, 'Quote', 'We can supply mailer boxes at 0.41 each.')
+        return a, b, {'title': 'Compare the mailer box quotes', 'why': 'Two offers.', 'work': 'Ben quoted 0.41.', 'sources': [f'E{a}', f'E{b}'],
+                      'links': [{'kind': 'item', 'quotes': [{'source': f'E{a}', 'quote': 'our mailer boxes cost 12% more'}, {'source': f'E{b}', 'quote': 'mailer boxes at 0.41'}]},
+                                {'kind': 'need_offer', 'quotes': [{'source': f'E{a}', 'quote': 'cost 12% more'}, {'source': f'E{b}', 'quote': 'We can supply mailer boxes'}]}]}
+
+    def test_the_graph_ties_threads_and_says_who_is_one_person(self):
+        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Export bug', 'The export drops the last row since Monday.')
+        b = self.mail('w', 'b', 'Ben Cole <ben@quarry.example>', 'Rollout', 'Can we plan the rollout for our second office?')
+        self.build()
+        p = {'title': 'Fix the export before the second office rollout', 'why': 'One company.', 'work': 'Plan: fix, then roll out.',
+             'sources': [f'E{a}', f'E{b}'], 'links': []}
+        self.answers = [self.answer(p)]
+        self.assertEqual(1, self.run_once()[0])  # one tie the Graph resolved is enough: the same organization
+        self.assertIn('Graph ties: T', self.prompts[-1])
+        self.assertIn('same organization', self.prompts[-1])
+
+    def test_a_shared_full_name_alone_never_ties_threads(self):
+        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Export bug', 'The export drops the last row.')
+        b = self.mail('w', 'b', 'Ana Ruiz <ana@birch.example>', 'Rollout', 'Can we plan the rollout?')
+        self.build()  # at most a "Same person?" suggestion, which never counts
+        self.answers = [self.answer({'title': 'Fix the export before the rollout for Ana', 'why': 'Ana twice.', 'work': 'Plan.',
+                                     'sources': [f'E{a}', f'E{b}'], 'links': []})]
+        self.assertEqual(0, self.run_once()[0])
+        self.assertNotIn('Graph ties: T', self.prompts[-1])
+
+    def test_one_person_on_two_addresses_is_one_once_the_graph_joined_them(self):
+        *_, p = self.boxes('Ana Ruiz <ana.ruiz@birch.example>')
+        self.build([('ana@quarry.example', 'ana.ruiz@birch.example')])
+        self.answers = [self.answer(p)]
+        self.assertEqual(0, self.run_once()[0])  # the "two offers" are one person's
+
+    def test_two_signals_in_the_messages_still_tie_threads_without_the_graph(self):
+        *_, p = self.boxes()
+        self.build()
+        self.answers = [self.answer(p)]
+        self.assertEqual(1, self.run_once()[0])
+
+    def test_the_same_specific_thing_in_several_words_or_a_code_ties_by_itself(self):
+        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Freight', 'We need a benchmark of Benelux road freight rates per pallet.')
+        b = self.mail('w', 'b', 'Ben Cole <ben@birch.example>', 'Dataset', 'I have a dataset of Benelux road freight rates from 2025.')
+        p = {'title': 'Offer the freight rate dataset for the benchmark', 'why': 'One needs it, one has it.', 'work': 'Ask Ben to share it.',
+             'sources': [f'E{a}', f'E{b}'],
+             'links': [{'kind': 'item', 'quotes': [{'source': f'E{a}', 'quote': 'Benelux road freight rates'}, {'source': f'E{b}', 'quote': 'Benelux road freight rates'}]}]}
+        self.answers = [self.answer(p)]
+        self.assertEqual(1, self.run_once()[0])
+
+    def test_a_title_says_one_message_each_for_several_organizations(self):
+        work = ('Write to each separately. To Mara: Hi Mara, we can train your team on the planner. '
+                'To Liesel: Hi Liesel, we can run the planner onboarding for you.')
+        self.answers = [self.answer(self.session(work, 'Send the planner training offers to Fernhill and Penrose together'))]
+        self.assertEqual(0, self.run_once(NOW - dt.timedelta(days=12))[0])
+        self.assertIn('never "together"', self.prompts[-1])
 
     def test_the_best_of_each_area_first_and_two_at_most(self):
         picked = opportunities.pick({'work': [{'title': 'w1'}, {'title': 'w2'}], 'personal': [{'title': 'p1'}]})
