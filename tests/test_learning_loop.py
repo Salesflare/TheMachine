@@ -257,8 +257,6 @@ class DurableSignals(LearningLoop):
         run_id = self.store.tune_due(self.later(hours))
         if not run_id:
             return None
-        with self.store.connect() as db:  # started on this test's clock, for the cadence
-            db.execute('UPDATE profile_runs SET started_at=? WHERE run_id=?', (self.clock.isoformat(), run_id))
         session = machine_store_profile.PROFILE_SESSION_PREFIX + run_id
         page = self.store.profile_evidence(1, session)
 
@@ -269,6 +267,8 @@ class DurableSignals(LearningLoop):
                 return {'status': 'admitted'}
             return {'status': 'ok'}  # ended without a draft: the pass failed
         self.step(runner)
+        with self.store.connect() as db:  # went out on this test's clock (started_at is set when it does), for the cadence
+            db.execute('UPDATE profile_runs SET started_at=? WHERE run_id=?', (self.clock.isoformat(), run_id))
         return page
 
     def states(self):

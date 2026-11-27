@@ -156,7 +156,7 @@ const cardWho=s=>{const a=s?.next_actions||(s?.next_action?.kind==='menu'?s.next
 // Handed to someone: the card waits for their reply and closes when they answer.
 // What we don't know (gap_note.py): one quiet line when the last word with the person is old or unanswered, from synced
 // signals only, and the channels they may have answered on that aren't synced here. A fresh conversation gets none.
-const gapOr=list=>{try{return new Intl.ListFormat(I18N.lang||'en',{type:'disjunction'}).format(list)}catch{return list.join(', ')}};
+const gapOr=list=>andList(list,'disjunction');
 // The message from someone else the draft or decision follows (based_on: a teammate's input in Slack, another thread): one
 // quiet line under the body that opens it here, in Read message (its Open in Slack or Gmail sits inside), so the owner never
 // has to dig for it in the project. The service leaves it out when the source line already names that message.

@@ -82,7 +82,11 @@ class ProfileApp:
             with self.store.connect() as db:
                 db.execute("UPDATE profile_runs SET status='error',error='openclaw_unavailable',finished_at=?,updated_at=? WHERE run_id=?", (now(), now(), run['run_id']))
             return 'error'
-        action = 'stop' if age > PROFILE_SECONDS + 300 else 'start' if run['status'] == 'starting' else 'status'
+        # A turn's time runs from when it first went out (started_at, set then), never from when it was queued: The
+        # Machine's own turns wait for the first look and for each other, and one that waited longer than a turn may take
+        # was stopped before it ever ran (a first look's profile, roles and voices, all three).
+        unsent = run['status'] == 'starting' and not run['attempts']
+        action = 'start' if unsent else 'stop' if age > PROFILE_SECONDS + 300 else 'start' if run['status'] == 'starting' else 'status'
         skills_run = run.get('kind') == 'skills'
         request = {'kind': 'skills' if skills_run else 'profile', 'job_id': run['run_id'], 'action': action}
         accounts = None
@@ -107,9 +111,16 @@ class ProfileApp:
                                   team_learnings.vote_prompt(run['run_id'], json.loads(run['evidence'])) if run.get('kind') == 'team_votes' else
                                   profile_prompt(run['run_id'], first['counts'], run.get('room') or PROFILE_ROOM))
             with self.store.connect() as db:
-                db.execute('UPDATE profile_runs SET attempts=attempts+1,updated_at=? WHERE run_id=?', (now(), run['run_id']))
+                sent = now()
+                db.execute('UPDATE profile_runs SET attempts=attempts+1,started_at=CASE WHEN attempts=0 THEN ? ELSE started_at END,updated_at=? WHERE run_id=?',
+                           (sent, sent, run['run_id']))
         receipt = runner(request)
         result = receipt.get('status', 'unavailable')
+        # These turns end with exactly NO_REPLY as told: on a CLI runtime (Claude Code) OpenClaw fails that silent ending
+        # as an empty response after the turn's work ran (silent_end, preparation-run.mjs). It ended as asked; what it
+        # saved decides, as for a review (review_step), so a roles turn that named people is not an error.
+        if result == 'error' and receipt.get('silent_end'):
+            result = 'ok'
         with self.store.connect() as db:
             if result == 'admitted':
                 if run['auto']:

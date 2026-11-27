@@ -126,7 +126,7 @@ function learnedList(){
  const bring=bringSection();  // lines of their OpenClaw notes to tick (learning-bring.js); nothing when there are none
  // Import from another AI (learning-import.js): one quiet row on top, always there
  const imp=html`<div class="learn-import"><span class="grow"><strong>${t('Import from another AI')}</strong><small>${t('ChatGPT, Claude or Gemini. You pick what stays.')}</small></span><button type="button" data-memory-import>${t('Import')}</button></div>`;
- if(!groups.length&&!bring)return html`${imp}<div class="muted">Nothing yet. When a note on a to-do holds beyond it, I keep it here.</div>`;
+ if(!learnedAny())return html`${imp}<div class="muted">Nothing yet. When a note on a to-do holds beyond it, I keep it here.</div>`;
  const c=state.condensed;
  return html`${imp}${bring}${c&&c.notes?html`<div class="muted learn-note">Condensed ${notesN(c.notes)} on ${learnDay(new Date(c.at))}.</div>`:''}${
   groups.map(([k,title,blurb,rows,foot])=>{const all=learnAll.has(k)||rows.length<=6;
