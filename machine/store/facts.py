@@ -352,6 +352,25 @@ def general_count(db):
     return db.execute('SELECT count(*) FROM facts WHERE removed_at IS NULL AND id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL)').fetchone()[0]
 
 
+def save_learned(db, text, storage, sort, until, decision_id, source, side):
+    """A general fact or rule a connected AI saved (save_learning, ai_app.py), about no one in the graph: decision_id
+    'ai:<connection id>'. A fact has source 'ai:<name>' (its words stay that AI's claim: ai_fact_by) and its area; a
+    rule comes only once the owner OKd it, so it has no source and is theirs. The same text current again is said
+    again (confirmed_at), one the owner took out of this connection's is not saved again (ValueError). Its id."""
+    current = db.execute('SELECT id FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (storage, text)).fetchone()
+    if current:
+        db.execute('UPDATE facts SET confirmed_at=? WHERE id=?', (now(), current['id']))
+        return current['id']
+    if db.execute('SELECT 1 FROM facts WHERE decision_id=? AND removed_at IS NOT NULL AND merged_into IS NULL AND lower(text)=lower(?)',
+                  (decision_id, text)).fetchone():
+        raise ValueError('The owner took this out before, so it was not saved again')
+    keep_in_bounds(db, general_count(db))
+    if sort == 'event' and not until:
+        until = (dt.date.fromisoformat(now()[:10]) + dt.timedelta(days=EVENT_DAYS)).isoformat()
+    return db.execute('INSERT INTO facts(text,decision_id,created_at,kind,fact_kind,valid_until,source,side) VALUES(?,?,?,?,?,?,?,?)',
+                      (text, decision_id, now(), storage, sort, until, source, side)).lastrowid
+
+
 def keep_in_bounds(db, count):
     """Before one more fact or rule about no one is saved, with count of them current: below FACTS_LIMIT nothing
     happens. At it, the lowest-weight ones (fact_weight) from connected AIs or imports the owner didn't edit go, as

@@ -175,16 +175,27 @@ TOOLS = {
     'get_brief': ('read', "A short brief: who the owner is, their top rules, and what changed since this connection's last visit "
                           "(new to-dos, promises coming due, new people, what The Machine learned). The same as the server's "
                           "instructions, for apps that don't read those.", {'type': 'object', 'properties': {}}),
+    'save_learning': ('draft', "Save what the owner settled with you: a fact about them or how they work goes in at once, marked "
+                               "as coming from you, and the owner can undo it. A rule (how to do a kind of task) waits for the "
+                               "owner's OK in The Machine first. Their voice can't be changed here. A fact about one person or "
+                               "organization goes through save_fact.", {
+        'type': 'object', 'properties': {'kind': {'type': 'string', 'enum': ['fact', 'rule']},
+                                         'text': {'type': 'string', 'description': 'One short sentence, 5-240 characters'},
+                                         'sort': {'type': 'string', 'enum': ['fact', 'preference', 'commitment', 'event'],
+                                                  'description': 'A fact only: preference, commitment, event or fact (anything else)'},
+                                         'until': {'type': 'string', 'description': 'A fact only, YYYY-MM-DD: the day it stops holding'}},
+        'required': ['kind', 'text']}),
 }
-LEARNING_TOOLS = ('get_learnings', 'get_brief')  # only with the config's ai_learnings on (ai_learnings.FLAG): else unknown
+LEARNING_TOOLS = ('get_learnings', 'get_brief', 'save_learning')  # only with the config's ai_learnings on (ai_learnings.FLAG): else unknown
 # Each tool's title, as the AI's app shows it (MCP tool title and annotations.title)
 TITLES = {'list_todos': 'List to-dos', 'get_todo': 'Get a to-do', 'list_promises': 'List promises', 'search_graph': 'Search the Graph',
           'get_graph_record': 'Get a Graph record', 'get_team_brief': 'Get team briefs', 'create_todo': 'Add a to-do',
           'create_draft': 'Add an email draft', 'save_fact': 'Save a fact', 'update_record': 'Update a Graph record',
           'add_summary_line': 'Add a summary line', 'search_messages': 'Search messages', 'read_thread': 'Read a thread',
-          'get_learnings': 'Get learnings', 'get_brief': 'Get the brief'}
+          'get_learnings': 'Get learnings', 'get_brief': 'Get the brief', 'save_learning': 'Save a learning'}
 ADDS = ('create_todo', 'create_draft')  # each adds a to-do; the same again soon after is a retry (added_before)
-WRITES = ('save_fact', 'update_record', 'add_summary_line')  # Graph changes: each has Undo in Activity (ai_writes)
+# Graph and Learning changes: each has Undo in Activity (ai_writes), and they share the daily limit
+WRITES = ('save_fact', 'update_record', 'add_summary_line', 'save_learning')
 MESSAGE_TOOLS = ('search_messages', 'read_thread')  # only with the connection's Messages on (ai_app.ai_tool_search_messages)
 INSTRUCTIONS = ("The Machine is the owner's assistant for email and work. Through this connection you can read their to-dos, "
                 "promises, team briefs and people in their Graph, and, when allowed, add a to-do or an email draft for them to "
@@ -751,11 +762,12 @@ TOOL_WORDS = {'list_todos': 'Read the to-dos', 'get_todo': 'Read a to-do', 'list
               'update_record': 'Changed a Graph record', 'add_summary_line': 'Added a summary line', 'connect': 'Connected',
               'search_messages': 'Searched messages', 'read_thread': 'Read a thread',
               'get_learnings': 'Read the learnings', 'get_brief': 'Read the brief', 'brief': 'Read the brief',
+              'save_learning': 'Saved a learning',
               'settings': 'Access changed', 'sign-in': 'Sign-in'}
 OUTCOMES = {'ok': 'done', 'again': 'done', 'refused': 'refused', 'error': 'failed'}
 # A Graph change that waited for the owner's OK (Messages on), until it is applied
 ASKED_WORDS = {'save_fact': 'Asked to save a fact', 'update_record': 'Asked to change a Graph record',
-               'add_summary_line': 'Asked to add a summary line'}
+               'add_summary_line': 'Asked to add a summary line', 'save_learning': 'Asked to save a learning'}
 # The calls that read or add one to-do: their result's id is the to-do, kept with the line (ai_activity.todo_id)
 TODO_TOOLS = ('get_todo', 'create_todo', 'create_draft')
 
@@ -928,6 +940,18 @@ def settle(db, asked, write_id, detail):
     db.execute('UPDATE ai_activity SET detail=? WHERE id=?', (str(detail or '')[:200], asked['activity_id']))
 
 
+def rules_waiting(db):
+    """The rules connected AIs asked to save that wait for the owner's OK (save_learning), for Learning: [{id (the
+    write's), text, by (the AI's name)}], oldest first."""
+    try:
+        rows = db.execute("SELECT w.id,w.changes,c.name FROM ai_writes w JOIN ai_connections c ON c.id=w.connection_id "
+                          "WHERE w.tool='save_learning' AND w.waiting=1 ORDER BY w.id LIMIT 50").fetchall()
+    except sqlite3.OperationalError:  # no connected AI yet
+        return []
+    found = [(r, json.loads(r['changes']).get('args') or {}) for r in rows]
+    return [{'id': r['id'], 'text': str(a.get('text') or ''), 'by': r['name']} for r, a in found if a.get('kind') == 'rule']
+
+
 def mark_undone(db, write_id):
     db.execute('UPDATE ai_writes SET undone_at=? WHERE id=? AND undone_at IS NULL', (stamp(), int(write_id)))
 
@@ -1057,7 +1081,7 @@ def refusal(why, level=None):
     if why == 'creates':
         return f'This connection added {CREATES_PER_DAY} to-dos in the last day, the most it can. Try again tomorrow.'
     if why == 'writes':
-        return f'This connection made {WRITES_PER_DAY} Graph changes in the last day, the most it can. Try again tomorrow.'
+        return f'This connection made {WRITES_PER_DAY} Graph changes or learnings in the last day, the most it can. Try again tomorrow.'
     if why == 'messages':
         return 'This connection cannot read messages: Messages is off. ' + where
     return where
