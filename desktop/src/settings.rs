@@ -171,7 +171,7 @@ pub async fn settings_set(app: AppHandle, id: String, on: bool) -> Result<(), St
             }
         }
         "quits" => shared.saved.lock().unwrap().quits = on,
-        // Off tells the Machine at once, so its browser doesn't wait for this computer
+        // Off tells the Machine at once, so it doesn't ask for this computer
         "exit" => {
             shared.saved.lock().unwrap().no_exit = !on;
             crate::exit::set(on);

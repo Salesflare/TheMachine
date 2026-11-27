@@ -296,7 +296,7 @@ pub fn offered() -> bool {
     exit().offered.load(Ordering::Relaxed)
 }
 
-/// On or off (Settings). Off ends the connection now, telling the Machine, so it doesn't wait for this computer.
+/// On or off (Settings). Off ends the connection now, telling the Machine the switch is off, so it doesn't ask for this computer.
 pub fn set(on: bool) {
     let was = exit().on.swap(on, Ordering::Relaxed);
     if was && !on {
