@@ -5330,6 +5330,7 @@
  "Sign in again for this address": "이 주소로 다시 로그인",
  "Sign in again in the browser it reads with.": "읽기에 사용하는 브라우저에서 다시 로그인해요.",
  "Sign in again to keep things running.": "계속 사용하려면 다시 로그인해 주세요.",
+ "Sign in again: {}": "다시 로그인해 주세요: {}",
  "Sign in as": "다음 계정으로 로그인",
  "Sign in as the saved user": "저장된 사용자로 로그인",
  "Sign in as {}": "{} 계정으로 로그인",

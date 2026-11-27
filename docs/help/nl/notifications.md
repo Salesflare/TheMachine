@@ -6,95 +6,96 @@ covers: settings:notify
 code: notify.py, dashboard.html, assistant.py, sw.js
 order: 2
 keywords: alerts, notify, ping, buzz, quiet, too many, push, sound, interrupt
-translated: 3c469ec1032f6bea
+translated: dc56a77907df5da0
 ---
-Minder meldingen, of andere? Kies in **Instellingen**, **Meldingen** waar je elk soort melding wilt ontvangen:
+Minder meldingen, of andere? Kies in **Instellingen** bij **Meldingen** waar je elk soort melding wilt ontvangen:
 
-- **Nieuwe to-do's**: alleen wat niet kan wachten, zoals iets met deadline vandaag of iets dringends.
-- **Resultaten en vragen**: een antwoord dat klaarstaat om te versturen, een login die een taak nodig heeft of een vraag van Fleet.
-- **Herinneringen**: gesnoozede to-do's en antwoorden waarop je wacht die terugkomen.
+- **Nieuwe to-do's**: alleen wat niet kan wachten, zoals iets met deadline vandaag of iets urgents.
+- **Resultaten en vragen**: een antwoord dat klaarstaat om te versturen, een login die voor een taak nodig is of een vraag van Fleet.
+- **Herinneringen**: gesnoozede to-do's en antwoorden waarop je wacht die weer terugkomen.
 - **Ochtendoverzicht**: één kort overzicht van je dag. Zie hieronder.
-- **Avondoverzicht**: wat je vandaag hebt gedaan en wat morgen nog openstaat. Zie hieronder.
+- **Avondoverzicht**: wat je vandaag hebt gedaan en wat er morgen nog openstaat. Zie hieronder.
 
-Voor elk soort melding kun je kiezen voor **Push** (de app op je telefoon of computer), **Telegram** zodra dat is ingesteld en **E-mail** op een gehoste Machine of een Machine op The Machine Network. Alles staat aan, behalve de overzichten op Telegram.
+Voor elk soort melding kun je **Push** inschakelen (de app op je telefoon of computer), **Telegram** zodra dat is ingesteld en **E-mail** voor een gehoste Machine of een Machine op The Machine Network. Alles staat aan, behalve de overzichten via Telegram.
 
-Je **Werkuren** staan in hetzelfde tabblad: werkdagen, wanneer meldingen kunnen binnenkomen, wanneer gesnoozede items terugkomen, de tijden van de overzichten en je tijdzone. Zie [Werkuren](work-hours.md).
+Je **Werkuren** staan in hetzelfde tabblad: werkdagen, wanneer meldingen mogen binnenkomen, wanneer snoozes terugkomen, de tijden van de overzichten en je tijdzone. Zie [Werkuren](work-hours.md).
 
 ## Alleen wat niet kan wachten
 
-Je krijgt alleen een pushmelding, een melding op Telegram of een e-mail voor:
+Je krijgt alleen een pushmelding, een Telegram-melding of een e-mail voor:
 
-- een to-do met deadline vandaag of met de markering dringend;
-- een antwoord waarop iemand wacht, als concept opgesteld en klaar om te versturen;
+- een to-do met deadline vandaag of die als urgent is gemarkeerd;
+- een antwoord waarop iemand wacht, dat als concept klaarstaat om te versturen;
 - een taak waarvoor je moet inloggen;
 - een snooze die terugkomt op het tijdstip dat je hebt gekozen.
 
-Al het andere komt stil op het dashboard terecht (en zonder geluid op Telegram) en wacht op het ochtendoverzicht. Op een vrije dag krijg je alleen een melding voor iets dringends of met deadline vandaag. Je krijgt hoogstens 8 pushmeldingen per dag. Als je het dashboard 3 dagen niet opent, krijg je alleen het ochtendoverzicht totdat je terug bent.
+Al het andere verschijnt stil op het dashboard (en zonder melding in Telegram) en wacht op het ochtendoverzicht. Op een vrije dag krijg je alleen een melding voor iets urgents of met deadline vandaag. Je krijgt maximaal 8 pushmeldingen per dag. Als je het dashboard 3 dagen niet opent, krijg je alleen het ochtendoverzicht, totdat je terug bent.
 
 ## Wanneer je een melding krijgt
 
-Er wordt gekeken of je het dashboard echt gebruikt, niet alleen of het openstaat:
+Er wordt gecontroleerd of je het dashboard echt gebruikt, niet alleen of het openstaat:
 
-- Als je het gebruikt (het staat op de voorgrond en je hebt in de afgelopen 10 minuten geklikt, getypt of gescrold), krijg je geen melding. Telegram-berichten komen zonder geluid binnen. Alleen openen of opnieuw laden telt niet.
-- Als je weg bent (het dashboard staat op de achtergrond, is gesloten of is 10 minuten inactief), krijg je een minuut nadat je bent weggegaan een pushmelding, tenzij je terugkwam en die al zag.
-- Als je 15 minuten later nog niets hebt ontvangen en het niet kan wachten, krijg je één e-mail, hoogstens één per uur. Wat je al hebt gezien of afgehandeld, wordt weggelaten. Elke to-do staat er één keer in, met de huidige status. Op de meeste dagen is het ochtendoverzicht de enige e-mail.
-- Iets is ontvangen als er een melding op je telefoon of in je browser is getoond, of als Telegram het bericht heeft ontvangen. Een telefoon die uitstaat, offline is of meldingen heeft uitgeschakeld, telt niet mee. Telegram telt ook niet mee zolang je het dashboard gebruikt. Als de melding alleen op een computer is getoond, wordt iets dringends of met deadline vandaag alsnog per e-mail verstuurd: misschien ben je niet achter je computer.
-- Geen telefoon-app, browsermeldingen of Telegram? Dan krijg je voor alles hierboven een e-mail.
-- Telegram is niet bereikbaar: de pushmelding wordt alsnog één keer verstuurd en Telegram wordt vanzelf opnieuw geprobeerd.
-- Een teamgenoot geeft je een to-do en je Machine kan je niet bereiken via je telefoon of Telegram: als je de to-do na 15 minuten nog niet hebt gezien, krijg je één e-mail met de titel en een link. Zet **E-mail** bij **Resultaten en vragen** uit om dit te stoppen.
-- Buiten je werkuren krijg je geen meldingen. Het ochtendoverzicht bevat deze informatie.
-- Een nieuwe werk-to-do op een vrije dag wacht tot het tijdstip van het overzicht op je volgende werkdag. Bij de to-do staat wanneer je die ontvangt, bijvoorbeeld Melding ma 2 nov · 08:30.
+- Je gebruikt het dashboard (het staat vooraan en je hebt in de afgelopen 10 minuten geklikt, getypt of gescrold): je krijgt geen melding. Telegram-berichten komen stil binnen. Alleen openen of herladen telt niet.
+- Je bent weg (het dashboard staat op de achtergrond, is gesloten of is 10 minuten niet gebruikt): een minuut nadat je bent weggegaan, krijg je een pushmelding, tenzij je terug bent gekomen en die hebt gezien.
+- Je hebt 15 minuten later nog niets ontvangen en het kan niet wachten: je krijgt er één e-mail voor, maximaal één per uur. Wat je al hebt gezien of afgehandeld, wordt weggelaten. Elke to-do staat er één keer in, met de huidige status. Op de meeste dagen is het ochtendoverzicht de enige e-mail.
+- Ontvangen betekent dat er een melding op je telefoon of in je browser is getoond, of dat Telegram het bericht heeft ontvangen. Een telefoon die uitstaat, offline is of meldingen uit heeft staan, telt niet mee. Telegram telt ook niet mee als je het dashboard gebruikt. Als een melding alleen op een computer is getoond, krijg je wat urgent is of deadline vandaag heeft toch per e-mail: misschien ben je niet bij je computer.
+- Heb je geen telefoonapp, browsermeldingen of Telegram? Dan krijg je voor alles hierboven een e-mail.
+- Telegram is niet bereikbaar: de pushmelding wordt toch één keer verstuurd en Telegram wordt vanzelf opnieuw geprobeerd.
+- Een teamgenoot geeft je een to-do en je Machine kan je niet bereiken via je telefoon of Telegram: als je de to-do na 15 minuten nog niet hebt gezien, krijg je één e-mail met de titel en een link. Met **E-mail** voor **Resultaten en vragen** schakel je dit uit.
+- Je Claude-login verloopt binnen 3 dagen of is verlopen: je krijgt één e-mail met **Opnieuw inloggen**, één keer per login. Met **E-mail** voor **Resultaten en vragen** schakel je dit uit.
+- Buiten je werkuren: je krijgt niets. Het staat in het ochtendoverzicht.
+- Een nieuwe werk-to-do op een vrije dag wacht op het tijdstip van je overzicht op de eerstvolgende werkdag. Bij de to-do staat wanneer je de melding krijgt, bijvoorbeeld: Melding ma 2 nov · 08:30.
 
-Voortgang en wijzigingen geven nooit een melding. Een nieuwer resultaat voor een to-do die je nog niet hebt gezien, wordt bijgewerkt zonder nieuwe melding. Meerdere meldingen kort na elkaar geven samen één melding. Het app-icoon laat zien hoeveel to-do's je aandacht nodig hebben.
+Voortgang en wijzigingen geven nooit een melding. Een nieuw resultaat bij een to-do die je nog niet hebt gezien, wordt bijgewerkt zonder nieuwe melding. Bij meerdere meldingen kort na elkaar krijg je er maar één. Het appicoon toont hoeveel to-do's aandacht nodig hebben.
 
 ## Knoppen in meldingen
 
-Elke melding heeft knoppen voor de volgende stap. In de telefoon-app:
+Elke melding heeft knoppen voor de volgende stap. In de telefoonapp:
 
 - Nieuwe to-do: **Doe het**, **Snoozen**, **Als gedaan markeren**.
-- Concept klaar: **Concept openen**, **Snoozen**, **Als gedaan markeren**.
-- Resultaat klaar: **Openen**, **Als gedaan markeren**, **Snoozen**.
-- Je antwoord nodig, vastgelopen of een login nodig: **Antwoorden**, **Openen** of **Inloggen**, gevolgd door **Snoozen** en **Als gedaan markeren**.
+- Concept staat klaar: **Concept openen**, **Snoozen**, **Als gedaan markeren**.
+- Resultaat staat klaar: **Openen**, **Als gedaan markeren**, **Snoozen**.
+- Je antwoord is nodig, iets zit vast of je moet inloggen: **Beantwoorden**, **Openen** of **Inloggen**, gevolgd door **Snoozen** en **Als gedaan markeren**.
 - Herinnering: **Als gedaan markeren**, **Snoozen**, **Openen**.
 - Ochtendoverzicht: tik erop om het te openen.
 
-In een browser en op Telegram zie je twee van deze knoppen. Bij vragen van Fleet blijven **Antwoorden** en **Afwijzen** staan.
+In een browser en op Telegram zie je twee van deze knoppen. Bij vragen van Fleet blijven **Beantwoorden** en **Weigeren** staan.
 
-Er wordt niets verstuurd, betaald of ingediend vanuit een melding. Een concept wordt altijd eerst geopend, zodat je het kunt bekijken voordat het wordt verstuurd. Met **Concept openen** zie je de to-do in je lijst, met het volledige concept. **Doe het** start alleen het werk aan een nieuwe to-do.
+Via een melding wordt nooit iets verstuurd, betaald of ingediend. Een concept wordt altijd eerst geopend, zodat je het kunt bekijken voordat het wordt verstuurd. Met **Concept openen** zie je de to-do in je lijst met het volledige concept. **Doe het** start het werk alleen bij een nieuwe to-do.
 
-In de telefoon-app moet je eerst ontgrendelen om **Snoozen** of **Als gedaan markeren** te gebruiken. In een browser openen ze het dashboard. Daar wordt de actie uitgevoerd en zie je **Ongedaan maken**. Door te snoozen komt de to-do over twee uur terug, of de volgende ochtend als het om een herinnering gaat.
+In de telefoonapp moet je eerst ontgrendelen om **Snoozen** of **Als gedaan markeren** te kiezen. In een browser wordt het dashboard geopend, waar de actie wordt uitgevoerd en je **Ongedaan maken** ziet. Een gesnoozede to-do komt na twee uur terug, of de volgende ochtend als het om een herinnering gaat.
 
-E-mails bevatten links om items te openen (en een link om te snoozen voor items waarop je wacht). De links openen alleen het dashboard.
+E-mails bevatten links om iets te openen (en om te snoozen als je ergens op wacht). Ze openen alleen het dashboard.
 
-Als je op een melding tikt of in een e-mail of op Telegram op **Openen** tikt, zie je de to-do uitgelicht in je lijst, waar die nu ook staat: **Net gedaan**, **Gedaan**, **Komt later terug** of een ander overzicht. De chat wordt nooit geopend. Als de pagina nog niet is bijgewerkt, wordt de to-do gevolgd zodra dat wel zo is.
+Als je op een melding tikt, of op **Openen** in een e-mail of Telegram, zie je de to-do uitgelicht in je lijst, waar die nu ook staat: **Net gedaan**, **Gedaan**, **Komt later terug** of een andere weergave. De chat wordt nooit geopend. Als de pagina de laatste informatie nog niet heeft geladen, wordt de to-do gevolgd zodra dat wel zo is.
 
 ## Het ochtendoverzicht
 
-Het komt op werkdagen op het tijdstip van **Ochtendoverzicht**, tenzij er niets te melden is. Valt dat tijdstip vóór **Gesnoozede items komen terug om**, dan wacht het overzicht tot 5 minuten daarna. Zo staan de to-do's die die ochtend terugkomen erin. Met **Voorbeeld** bekijk je het overzicht zonder het te versturen. Standaard krijg je een pushmelding en een e-mail, kort genoeg om snel te lezen:
+Je krijgt het op werkdagen op het tijdstip van **Ochtendoverzicht**, tenzij er niets te melden is. Valt dat tijdstip vóór **Gesnoozede items komen terug om**, dan wacht het overzicht tot 5 minuten daarna. Zo staan de to-do's die die ochtend terugkomen erin. Met **Voorbeeld** bekijk je het zonder het te versturen. Standaard krijg je een pushmelding en een e-mail, kort genoeg om in één oogopslag te lezen:
 
-- een begroeting met wat vandaag belangrijk is, zoals "Goedemorgen Sam, 2 antwoorden staan klaar om te versturen" of, bij één to-do, "Goedemorgen Sam, klaar voor je akkoord: het bestelformulier versturen". Alleen to-do's met een concept of resultaat dat je moet goedkeuren tellen als klaar. Een to-do waarvoor je eerst antwoord moet geven, telt niet mee;
-- de to-do's die in de begroeting zijn meegeteld, elk met een link om ze te openen, en wat vandaag deadline heeft; anders hoogstens drie dingen om te doen;
-- to-do's die je zelf hebt toegevoegd en waarop jij moet wachten, tot vijf stuks, ongeacht wat er in de begroeting is meegeteld;
-- hoeveel andere to-do's kunnen wachten en hoelang je er in jouw tempo over doet, bijvoorbeeld "12 andere kunnen wachten, het kost ongeveer 5 min om ze af te handelen". To-do's waarop je eerst moet antwoorden tellen niet mee voor de tijd. Een to-do met deadline vandaag die je tot later hebt gesnoozed, of waaraan The Machine nog werkt, telt pas mee als jij aan zet bent. Het aantal komt overeen met de to-do's waarop je lijst op jou wacht.
+- een begroeting met wat vandaag belangrijk is, zoals "Goedemorgen Sam, er staan 2 antwoorden klaar om te versturen" of, bij één to-do, "Goedemorgen Sam, klaar voor je akkoord: het bestelformulier versturen". Alleen to-do's met een concept of resultaat dat je moet goedkeuren tellen als klaar. Een to-do waarvoor eerst je antwoord nodig is, telt niet mee;
+- de to-do's die in de begroeting worden genoemd, elk met een link om ze te openen, en wat vandaag een deadline heeft; anders maximaal drie dingen om te doen;
+- maximaal vijf to-do's die je zelf hebt toegevoegd en waar jij nog iets mee moet, ongeacht wat in de begroeting wordt genoemd;
+- hoeveel andere dingen kunnen wachten en hoelang je er op jouw tempo mee bezig bent, zoals "12 andere dingen kunnen wachten, ongeveer 5 min om af te handelen". To-do's waarop nog je antwoord nodig is, tellen niet mee voor die tijd. Een to-do met deadline vandaag die tot later is gesnoozed, of waaraan The Machine nog werkt, telt pas mee als jij ermee aan de slag moet. Het aantal komt overeen met de to-do's die in je lijst op je wachten;
 - je meetings op één regel.
 
-Met **Openen** zie je de to-do uitgelicht in je lijst, ook als die gedaan of gesnoozed is. Een belofte opent de bijbehorende to-do, of de eigen pagina als die nog geen to-do heeft.
+Met **Openen** zie je de to-do uitgelicht in je lijst, ook als die al gedaan of gesnoozed is. Een belofte opent de bijbehorende to-do, of de eigen pagina als die to-do er nog niet is.
 
-De pushmelding bevat dezelfde informatie, zonder links. Tik erop of op de link onderaan de e-mail om dit overzicht opnieuw te lezen in **To-do's**.
+De pushmelding bevat hetzelfde, maar zonder links. Tik erop of op de link onderaan de e-mail om dit overzicht opnieuw te bekijken bij **To-do's**.
 
 ## Het avondoverzicht
 
-Het komt op werkdagen eenmaal op het tijdstip dat je ervoor hebt ingesteld bij **Werkuren**, standaard 15 minuten vóór **Tot**, via de manieren die je in de rij hierboven hebt gekozen. Je krijgt het alleen op een dag waarop je actief was: je hebt het dashboard gebruikt of een keuze gemaakt bij een to-do, op Telegram, in de chat of met je stem. Op een dag waarop je geen to-do hebt afgerond en geen meeting hebt gehad, krijg je het niet.
+Je krijgt het eenmaal op werkdagen, op het tijdstip dat je hebt ingesteld bij **Werkuren**. Standaard is dat 15 minuten vóór **Tot**, via de kanalen die je in de rij hierboven hebt gekozen. Je krijgt het alleen op een dag waarop je actief was: je hebt het dashboard gebruikt of een keuze gemaakt bij een to-do, in Telegram, in de chat of met je stem. Op een dag waarop je geen to-do hebt afgerond en geen meeting hebt gehad, krijg je het niet.
 
 Het begint met een telling van je dag, zoals "Goedenavond Sam, vandaag 4 to-do's gedaan", gevolgd door een onderdeel **Werk** en een onderdeel **Privé**. Een onderdeel zonder inhoud wordt weggelaten. Een melding over je Machine zelf staat in geen van beide. Elk onderdeel bevat:
 
-- **Vandaag gedaan**: hoogstens drie to-do's die jij of je Machine heeft afgerond, gevolgd door "+12 meer" en de meetings van die dag, zoals "+3 meetings: prijsgesprek en 2 andere";
-- **Open voor morgen** (op vrijdag voor je volgende werkdag): de eerste meetings en wat deadline heeft.
+- **Vandaag gedaan**: maximaal drie to-do's die jij of je Machine hebt afgerond, gevolgd door "+12 meer" en de meetings van die dag, zoals "+3 meetings: prijsoverleg en nog 2";
+- **Open voor morgen** (op vrijdag voor je eerstvolgende werkdag): de eerste meetings en wat een deadline heeft.
 
-Het overzicht eindigt met het aantal to-do's dat nog op jou wacht. Tik op de pushmelding of op de link onderaan de e-mail om het opnieuw te lezen, met **Werk kopiëren** en **Privé kopiëren**. Zet de rij voor dit overzicht uit om het te stoppen.
+Aan het einde staat hoeveel to-do's nog aandacht nodig hebben. Tik op de pushmelding of op de link onderaan de e-mail om het overzicht opnieuw te bekijken, met **Werk kopiëren** en **Privé kopiëren**. Schakel de rij uit om het overzicht niet meer te ontvangen.
 
 ## Privacy
 
-Pushmeldingen gaan vanaf je Machine rechtstreeks en versleuteld naar je apparaat. E-mail gaat via de mailserver van The Machine en je e-mailprovider. Als [Voorzichtig](security-levels.md) to-do-tekst in meldingen verbergt, bevatten e-mails alleen aantallen. Zet **E-mail** voor een soort melding uit om die uit e-mail te houden.
+Pushmeldingen gaan versleuteld rechtstreeks van je Machine naar je apparaat. E-mail loopt via de mailserver van The Machine en je e-mailprovider. Als [Zorgvuldig](security-levels.md) de tekst van to-do's in meldingen verbergt, bevatten e-mails alleen aantallen. Schakel **E-mail** voor een soort melding uit om die niet per e-mail te ontvangen.
 
-Zet pushmeldingen voor een apparaat aan bij **Dit apparaat** of bekijk [De app installeren](phone-app.md). De [mobiele app](mobile-app.md) stuurt een gewone regel via Apple of Google en vraagt daarna je Machine om de titel en de volgende stap.
+Schakel pushmeldingen voor een apparaat in bij **Dit apparaat**, of bekijk [De app installeren](phone-app.md). De [mobiele app](mobile-app.md) ontvangt via Apple of Google een gewone regel tekst en vraagt je Machine daarna om de titel en de volgende stap.
