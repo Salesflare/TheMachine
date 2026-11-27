@@ -12,7 +12,7 @@ from machine.store.cards import check_bill
 from machine.store import review_saves
 from machine.store.review import bulk_kind
 from mail_senders import automated
-from machine.store import outcomes
+from machine.store import done_checks, outcomes
 import todo_areas
 
 LOG = logging.getLogger('personal-assistant')
@@ -120,6 +120,7 @@ class ReviewSavesApp:
                                  'care of it, a meeting covered it, a later message settled it) or no longer the owner\'s, make no to-do. '
                                  'Otherwise suggest again with newer_checked: [these event ids], saying in the body what is still open.')
         done_when = outcomes.clean(args.get('done_when'))  # checked before anything is saved
+        done_check = done_checks.clean(args.get('done_check')) if done_when else None  # the page that will show it
         bill = check_bill(args.get('bill'))  # a bill to pay by hand: matches it on a Family member's Machine
         # A title or summary that says "today" or "tomorrow" is wrong the day after: saved with the day itself
         (title, body), stale = undated_card(str(args['title'] or ''), str(args['body'] or ''))
@@ -164,6 +165,11 @@ class ReviewSavesApp:
         if isinstance(saved, dict) and saved.get('id') and done_when:
             with self.store.connect() as db:  # the result that counts as done: a send alone doesn't close it (outcomes.py)
                 outcomes.set_done_when(db, saved['id'], done_when, 'review')
+                if done_check:  # read before it comes back to chase them (done_checks.py); only an address its messages give
+                    try:
+                        done_checks.set_check(db, saved['id'], done_check, 'review')
+                    except ValueError as error:
+                        saved['done_check'] = f'Not kept: {error}'
         if isinstance(saved, dict) and saved.get('id') and bill:
             with self.store.connect() as db:  # sealed like the to-do's own text (message_seal.DERIVED)
                 self.store.set_bill(db, saved['id'], bill)
