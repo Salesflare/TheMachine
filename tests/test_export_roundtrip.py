@@ -70,7 +70,8 @@ class RoundTrip(unittest.TestCase):
         cls.tmp = Path(tempfile.mkdtemp(prefix='export-roundtrip-'))
         cls.old_home, cls.new_home = cls.tmp / 'old', cls.tmp / 'new'
         cls.data = cls.old_home / '.local/share/personal-assistant'
-        env = {**os.environ, 'HOME': str(cls.old_home)}
+        # The sandbox makes its data folder HOME; its workspace sits where a real install keeps it
+        env = {**os.environ, 'HOME': str(cls.old_home), 'OPENCLAW_WORKSPACE': str(cls.old_home / '.openclaw/workspace')}
         env.pop('CLAUDE_CONFIG_DIR', None)
         env.pop('CODEX_HOME', None)
         subprocess.run([sys.executable, str(ROOT / 'sandbox/load.py'), '--dir', str(cls.data), '--state', 'all'],

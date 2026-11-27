@@ -201,7 +201,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
         if 'notes' in states:  # never part of `all`: the site's demo is recorded from `all` and shows no notes to bring in
             load_notes(store, config, directory)
         if not fresh:  # a fresh Machine has no profile yet
-            load_profile(directory, 'notes' in states)
+            load_profile('notes' in states)
     return config, config_path
 
 
@@ -661,13 +661,14 @@ PROFILE_MD = """
 """
 
 
-def load_profile(directory, notes=False):
-    """What the first profile turn wrote into USER.md, after the owner's own notes when the sandbox has them: in the
-    workspace the app reads (machine.config.WORKSPACE, under the sandbox's HOME) and the one Bring these in read."""
+def load_profile(notes=False):
+    """What the first profile turn wrote into USER.md, after the owner's own notes when the sandbox has them, in the
+    workspace the app reads (machine.config.WORKSPACE, under the sandbox's HOME)."""
     from machine.config import WORKSPACE
-    for workspace in {WORKSPACE, Path(directory) / 'workspace'}:
-        workspace.mkdir(parents=True, exist_ok=True)
-        (workspace / 'USER.md').write_text((NOTES['USER.md'] if notes else '# About me\n') + PROFILE_MD)
+    WORKSPACE.mkdir(parents=True, exist_ok=True)
+    (WORKSPACE / 'USER.md').write_text((NOTES['USER.md'] if notes else '# About me\n') + PROFILE_MD)
+
+
 NOTES_PICKS = [(1, 'Thibault at Meridian Robotics wants every quote as a PDF, never a link.', 'preference'),
                (2, 'Ilse from the school board only reads messages after 8 pm.', 'fact'),
                (3, 'Customer calls are never booked on Friday afternoon.', 'preference'),
