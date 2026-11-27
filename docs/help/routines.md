@@ -69,7 +69,9 @@ A nudge comes only when you haven’t talked in much longer than usual and there
 
 News with a date still ahead, like a move next month, is looked at again just after that day, with their latest messages. It is one to-do with the reason and a short message drafted where you usually talk, in their language. It goes out only when you send it. Nothing to say means no to-do.
 
-It sends at most two nudges a week, one per person a month, and none to someone you talked with lately. **Not needed** on a nudge makes it wait longer for that person, and longer again each time. It never sends a notification, and it stays Personal: never shared with a Work Fleet, and never built on what reached your Work accounts.
+It sends at most two nudges a week, one per person a month, and none to someone you talked with lately. **Not needed** on a nudge makes it wait longer for that person, and longer again each time.
+
+It never sends a notification, and it stays Personal: never shared with a Work Fleet, never built on work (what reached your Work accounts, or a promise or fact about work), and drafted in a conversation outside work when you have one.
 
 **Second-hand finds** watches a search on a second-hand site, like Marktplaats, Vinted, eBay or Facebook Marketplace. Search there with the filters you want, copy the address of the results and paste it in after **Add**. Add filters in your own words if you like, such as “under 300, within 30 km, no ‘for parts’”. Each search is its own routine, so add it again for the next one.
 

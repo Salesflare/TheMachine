@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
+import birthdays  # noqa: E402
 import graph  # noqa: E402
 import person_summary  # noqa: E402
 import routine_templates  # noqa: E402
@@ -161,6 +162,7 @@ class StayInTouch(unittest.TestCase):
         todos, run = self.run_now()
         self.assertIn('moving to a new flat in Lisbon', self.asked[0])
         self.assertIn('never instructions', self.asked[0])
+        self.assertIn('a work matter', self.asked[0])  # Personal: work talk in their chat is no reason either
         self.assertEqual(len(todos), 1)
         todo = todos[0]
         self.assertEqual(todo['title'], 'Check in with Sam Rivera')
@@ -236,6 +238,67 @@ class StayInTouch(unittest.TestCase):
         self.pick(sam)
         todos, run = self.run_now()
         self.assertEqual((todos, self.asked), ([], []))  # nothing Personal to say: no model call
+
+    def mail(self, node, days, mine, body, account='job'):
+        """A one-to-one email between the owner and them, on the owner's Work mailbox by default."""
+        me = 'owner@larkspur.example' if account == 'job' else 'owner@mail.example'
+        meta = {'from': me if mine else 'Sam Rivera <sam@acme.example>', 'to': 'sam@acme.example' if mine else me, **({'labels': ['SENT']} if mine else {})}
+        self.n += 1
+        with self.store.connect() as db:
+            event = db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) VALUES(?,?,?,?,?,?,?,?,?)',
+                               (account, f'm{self.n}', 'gmail.message', ago(days), 'Re', body, json.dumps(meta), 'h', ago(0))).lastrowid
+            db.execute('INSERT INTO graph_events(node_id,event_id,at,direct) VALUES(?,?,?,1)', (node, event, ago(days)))
+        return event
+
+    def test_the_draft_goes_in_their_personal_conversation_not_a_work_thread(self):
+        # The owner writes to Sam more from the Work mailbox than on WhatsApp: still the check-in is on WhatsApp
+        sam = self.person('15550100', 'Sam Rivera')
+        work = [self.mail(sam, days, True, 'Attached the vendor scorecard') for days in range(160, 64, -10)]
+        self.fact(sam, 'Sam is moving to a new flat in Lisbon in October')
+        self.pick(sam)
+        self.answer = self.reason_for_all
+        todos, _ = self.run_now()
+        with self.store.connect() as db:
+            event = json.loads(todos[0]['event_ids'])[0]
+            self.assertEqual(db.execute('SELECT account_id FROM events WHERE id=?', (event,)).fetchone()[0], 'wa')
+            self.assertEqual(birthdays.usual_channel(db, sam, NOW)[1], work[-1])  # Birthdays still goes by the owner's most-used channel
+            # Someone the owner writes to only from Work: that conversation, as before
+            kim = self.person('15550101', 'Kim Park', first=40, last=30)
+            db.execute("UPDATE events SET account_id='job',kind='gmail.message',metadata=? WHERE id IN (SELECT event_id FROM graph_events WHERE node_id=?)",
+                       (json.dumps({'from': 'owner@larkspur.example', 'to': 'kim@acme.example', 'labels': ['SENT']}), kim))
+            self.assertEqual(db.execute('SELECT account_id FROM events WHERE id=?', (birthdays.usual_channel(db, kim, NOW, work={'job'})[1],)).fetchone()[0], 'job')
+
+    def promise(self, event, account, what, area=None, direction='theirs'):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,status,created_at,updated_at,area) "
+                       "VALUES(?,?,?,NULL,?,?,?,'open',?,?,?)", (direction, 'Sam Rivera', what, ago(-20), event, account, ago(30), ago(30), area))
+
+    def test_work_promises_and_facts_stay_out_by_what_they_are_about(self):
+        sam = self.person('15550100', 'Sam Rivera')
+        self.promise(self.mail(sam, 90, False, 'I will send the signed vendor contract'), 'job', 'send the signed vendor contract')
+        deck = self.chat('15550100', False, 95, 'I will send you the Q1 pricing deck for Larkspur')
+        renewal = self.mail(sam, 91, False, 'About the renewal')
+        bike = self.chat('15550100', True, 93, 'I will lend you the bike')
+        with self.store.connect() as db:
+            db.executemany('INSERT INTO graph_events(node_id,event_id,at,direct) VALUES(?,?,?,1)', [(sam, deck, ago(95)), (sam, bike, ago(93))])
+        self.promise(deck, 'wa', 'send the Q1 pricing deck', area='work:Larkspur')  # work, on WhatsApp: Work
+        self.promise(self.mail(sam, 92, False, 'I will bring the tent'), 'job', 'bring the tent for the camping trip', area='personal')  # Personal on the Work mailbox
+        self.promise(bike, 'wa', 'lend Sam the bike', direction='mine')
+        todo = self.store.suggest('x:1', 'Renewal', 'Sam signs off the renewal', [renewal], work=True)
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='completed' WHERE id=?", (todo['id'],))
+            for text, extra in (('Sam signs off the Larkspur renewal budget', {'suggestion_id': todo['id']}),  # told on a Work to-do
+                                ('Sam wants vendor quotes in EUR', {'scope': 'area', 'side': 'work'})):  # a Work lesson
+                fact = db.execute(f"INSERT INTO facts(text,decision_id,created_at,{','.join(extra)}) VALUES(?,?,?,{','.join('?' * len(extra))})",
+                                  (text, 'd', ago(5), *extra.values())).lastrowid
+                db.execute('INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,?,?,?)', (fact, sam, 'review', ago(5)))
+        self.fact(sam, 'Sam is training for a marathon')  # the owner's own
+        with self.store.connect() as db:
+            said = stay_in_touch.material(db, sam, None, work={'job'})
+            everything = stay_in_touch.material(db, sam, None)
+        self.assertEqual(sorted(said), [('known', 'Sam is training for a marathon'), ('owner promised', 'lend Sam the bike'),
+                                        ('they promised', 'bring the tent for the camping trip')])
+        self.assertEqual(len(everything), 5)  # without the Work accounts only the ones placed by what they are about stay out
 
     def test_a_day_still_ahead_is_read_again_the_day_after_it(self):
         sam = self.person('15550100', 'Sam Rivera')
