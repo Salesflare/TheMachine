@@ -148,6 +148,35 @@ def last(db):
     return found if isinstance(found, dict) else None
 
 
+def ask_recheck(db):
+    """A review failed while the last check passed: check the AI again soon (due), so a sign-in that lapsed since shows
+    as a failed check with the provider's own words (ModelCheckFailed in the error reports), and its comeback
+    (recovered_at) lets the reviews go again at once. Nothing before a first check, nor when one failed already: those
+    are checked again by themselves. A check is of the main model of its time; another main model is checked anew (due)."""
+    from machine.store.first_look import note_model_check
+    found = last(db)
+    if found and found.get('ok') and not found.get('recheck') and found.get('at'):
+        note_model_check(db, {**found, 'recheck': True})
+
+
+def answering(db):
+    """The AI answered its last check and nothing failed since that asks for another (ask_recheck)."""
+    found = last(db)
+    return bool(found and found.get('ok') and not found.get('recheck'))
+
+
+def answered_since(db, at):
+    """The AI answered a check made at or after `at` (ISO text): it works, whatever failed before it."""
+    found = last(db)
+    return bool(found and found.get('ok') and not found.get('recheck') and str(found.get('at') or '') >= str(at or ''))
+
+
+def recovered_since(db, at):
+    """The AI failed its check and answered again after `at` (ISO text): a sign-in or an outage came back."""
+    found = last(db)
+    return bool(found and found.get('ok') and str(found.get('recovered_at') or '') > str(at or ''))
+
+
 def passed(db, model):
     """The main model `model` answered its last check."""
     found = last(db)
@@ -175,9 +204,11 @@ def due(found, model, stamp, current):
         return False
     if not found or found.get('model') != model:
         return True
-    if found.get('ok'):
+    if found.get('ok') and not found.get('recheck'):
         return False
     since = _seconds(found, 'at', current)
+    if found.get('ok'):  # a review failed after it passed (ask_recheck): once, after SOON_SECONDS
+        return since >= SOON_SECONDS
     if since < SOON_SECONDS:
         return False
     if found.get('stamp') != stamp:
@@ -209,6 +240,10 @@ def check(found, config, model, now_text, run=None):
     out = {'model': model, 'ok': ok, 'at': now_text, 'stamp': sign_in_stamp(config), 'failed': failed}
     if error:
         out['error'] = error
+    if ok and found and found.get('model') == model and not found.get('ok'):
+        out['recovered_at'] = now_text  # it failed, now it answers: reviews that failed meanwhile go again at once
+    elif ok and found and found.get('model') == model and found.get('recovered_at'):
+        out['recovered_at'] = found['recovered_at']
     if found and found.get('model') == model and not ok:  # a fallback that answered stays until it is looked for again
         out.update({k: found[k] for k in ('fallback', 'fallback_at') if k in found})
     return out

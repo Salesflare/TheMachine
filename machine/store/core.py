@@ -293,6 +293,8 @@ class StoreCore:
                     db.execute('ALTER TABLE analyses ADD COLUMN ' + column + ' TEXT')
             if 'attempts' not in review_columns:
                 db.execute('ALTER TABLE analyses ADD COLUMN attempts INTEGER NOT NULL DEFAULT 1')
+            if 'failures' not in review_columns:  # runs that failed on this batch itself (machine/store/review_split.py)
+                db.execute('ALTER TABLE analyses ADD COLUMN failures INTEGER NOT NULL DEFAULT 0')
             if 'computer' not in {r['name'] for r in db.execute('PRAGMA table_info(push_subscriptions)')}:
                 db.execute('ALTER TABLE push_subscriptions ADD COLUMN computer TEXT')
             if 'room' not in {r['name'] for r in db.execute('PRAGMA table_info(profile_runs)')}:

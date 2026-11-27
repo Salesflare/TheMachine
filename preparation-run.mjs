@@ -68,15 +68,27 @@ function failure(result,status){
   // Background turns end exactly so: the service judges from what the turn saved (assistant.py review_step).
   const silentEnd=status==='error'&&/^CLI backend returned an empty response\.?$/.test(String(result?.error??'').trim());
   // A generic runtime error keeps a short reason from a fixed list, for the service log (never the text itself).
-  const reason=error==='runtime_error'&&!silentEnd?(REASONS.find(([pattern])=>pattern.test(text))?.[1]||'unclassified'):null;
+  // Its words first; else OpenClaw's own failover class for the turn (its wait result's errorObservation), which it
+  // keeps also when the words are only "LLM request failed." (2026-11-27: every review on two Machines whose Claude
+  // sign-in had lapsed reported "unclassified", and nothing said it was the sign-in).
+  const failover=result?.errorObservation?.failoverReason??result?.failoverReason;
+  const reason=error==='runtime_error'&&!silentEnd?(REASONS.find(([pattern])=>pattern.test(text))?.[1]||
+    (typeof failover==='string'&&Object.hasOwn(FAILOVER,failover)?FAILOVER[failover]:'unclassified')):null;
   return {error,error_phase:phase,...(silentEnd?{silent_end:true}:{}),...(reason?{reason}:{})};
 }
+// OpenClaw's failover classes (FAILOVER_REASONS) that name a reason of ours; the others stay unclassified.
+const FAILOVER={auth:'auth_failed',auth_permanent:'auth_failed',session_expired:'auth_failed',billing:'billing',
+  overloaded:'provider_overloaded',server_error:'provider_error',route_unavailable:'provider_error',
+  context_overflow:'context_overflow',model_not_found:'model_unavailable'};
 // Kept in sync with REVIEW_REASONS in preparation_state.py.
 const REASONS=[
   [/live runtime limit|runtime limit \(\d+\) reached/i,'mcp_runtime_limit'],
   [/context (?:window|length|overflow)|maximum context|too many tokens|prompt is too long/i,'context_overflow'],
   [/unknown model|model[^.]{0,40}not (?:found|available|allowed|supported)/i,'model_unavailable'],
-  [/unauthori[sz]ed|\b40[13]\b|forbidden|invalid api key|authentication|sign in again|not signed in/i,'auth_failed'],
+  // Claude Code signed out ("Not logged in · Please run /login", an expired OAuth token) and OpenClaw's own words for a
+  // sign-in it can't use ("Re-authenticate with: …", "could not materialize selected auth profile")
+  [/unauthori[sz]ed|\b40[13]\b|forbidden|invalid api key|authentication|sign in again|not signed in|not logged in|run \/login|re-?authenticate|selected auth profile|(?:oauth|access) token (?:has )?(?:expired|been revoked)/i,'auth_failed'],
+  [/credit balance|billing|payment required|\b402\b/i,'billing'],
   [/no (?:api key|credentials|auth profile)|missing (?:api key|credentials)/i,'auth_missing'],
   [/server_is_overloaded|overloaded_error|servers are (?:currently )?overloaded|AI service is (?:temporarily )?overloaded/i,'provider_overloaded'],
   [/\b(?:HTTP|status)[ :=]*(?:code[ :=]*)?5\d\d\b|\b529\b|internal server error|bad gateway|service unavailable/i,'provider_error'],

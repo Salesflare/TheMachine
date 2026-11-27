@@ -18,8 +18,10 @@ They resolve their model the same way your chats do: `agents.defaults.model.prim
 Don't copy a model name from an old screenshot, or assume a model on one computer is there on another.
 
 **The short test.** Before the first look starts, and again when the main model changes, The Machine sends one fixed
-prompt ("Reply with OK.") to check that the AI answers (`model_check.py`). A test that passed isn't repeated; a failed
-one is retried after 1, 2, then every 5 minutes, and at once after a new sign-in. With an API key or a ChatGPT sign-in
+prompt ("Reply with OK.") to check that the AI answers (`model_check.py`). A test that passed is repeated only once after a check of new
+messages failed with a generic error (a sign-in that lapsed since shows as a failed test, with the provider's words in
+the error reports); a failed one is retried after 1, 2, then every 5 minutes, and at once after a new sign-in. When a
+failed test passes again, the next check of new messages starts at once instead of after its back-off. With an API key or a ChatGPT sign-in
 that is `openclaw infer model run --gateway`, a raw model call. A Claude model that runs through Claude Code goes
 through Claude Code's own print mode (`claude_print.py`, about 550 tokens), since `infer model run` never takes the
 Claude Code route. Only that model can answer: no fallback stands in. When a Claude plan fails it, the dashboard adds

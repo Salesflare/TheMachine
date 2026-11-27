@@ -1124,6 +1124,11 @@ the usual `suggest` and its dedupe, no to-do, or, put off again, closed for good
 whose to-do the owner dismissed or snoozed, is never looked at again. **Connections**, **Checks** lists them under
 **Set aside** with what each is waiting for.
 
+A batch whose review fails run after run while the AI answers its short test is split in half on each retry, and the
+one message behind it is set aside the same way (`machine/store/review_split.py`): one message can't hold the rest
+back. A failure that is the AI's (its sign-in, billing, a provider outage, the Gateway's limits) never splits a batch
+or sets a message aside.
+
 - Once a week, within the usage budget like every background turn, it samples up to 30 of the last week's reviewed
   emails, messages and meetings, stratified by channel and area (Personal, or Work at one company). Mail in Spam or
   Trash, mail the review saw as a title line, and meetings on someone else's calendar are left out. The same text the
