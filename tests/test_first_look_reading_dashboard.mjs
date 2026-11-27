@@ -20,7 +20,7 @@ let run=null,dig=null,done=null,cards=[];
 const live=()=>({runs:run?[run]:[],queue:null,first_look:null,first_dig:dig,first_eta:cards.length?null:2,cards:{count:cards.length,newest:cards.length?at(-1):null}});
 const state=()=>({suggestions:cards,promises:[],connectors:[{id:'work',display_name:'Work mail',service:'gmail'},{id:'chat',display_name:'Team chat',service:'slack'}],
  suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],reviews_on:true,greeting:{name:'Robin'},
- review_live:live(),first_look_done:done});
+ review_live:live(),first_look_done:done,facts:[{id:1,kind:'fact',text:'Prefers mornings for calls.',created_at:'2026-11-01T09:00:00Z',merged:0,about:[]}]});
 const errors=[];
 const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');

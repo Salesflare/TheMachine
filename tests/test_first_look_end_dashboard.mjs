@@ -10,11 +10,11 @@ const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const card={id:'ab'.repeat(8),title:'Reply to Robin about the garden plan',body:'Robin asked for the dates.',status:'pending',scope:'personal',created_at:now,event_ids:[1]};
 let run={run_id:'r1',status:'running',started_at:now,preview:1,auto:1,window_hours:168,planned:8,done_count:0,claimed_count:8,account_ids:['work'],steps:[]};
-let done=null,cards=[],model=null;
+let done=null,cards=[],model=null,learned={};
 const live=()=>({runs:run?[run]:[],queue:null,first_look:null});
 const state=()=>({suggestions:cards,promises:[],connectors:[{id:'work',display_name:'Work mail',service:'outlook'},{id:'work-cal',display_name:'Work calendar',service:'outlook_calendar'}],
  suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:run?{}:{last_completed:now},review_runs:[],reviews_on:true,greeting:{name:'Robin'},
- review_live:live(),first_look_done:done,...(model?{model_status:model}:{})});
+ review_live:live(),first_look_done:done,...learned,...(model?{model_status:model}:{})});
 const errors=[],plain=s=>s.replace(/\u00a0/g,' ');  // a count keeps its word on the same line (a non-breaking space)
 const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -45,7 +45,12 @@ try{
  assert.equal(plain(await end.locator('.fl-read').innerText()),'Read 8 emails from the past week: 5 newsletters and 3 notifications.');
  assert.ok((await end.innerText()).includes('New mail gets a look as it comes in.'));
  assert.deepEqual(await end.locator('[data-fl-next]').allInnerTexts(),['Add another inbox','Give me a to-do']);
- // Where what it learned lives: one link to Learning, What I've learned
+ // Nothing learned yet (the profile and voice study come after the first look): no link to an empty page
+ assert.equal(await end.locator('a.fl-learned').count(),0);
+ // Once something is: one link to Learning, What I've learned
+ learned={voices:[{channel:'Email',text:'Hi + first name',updated_at:now}]};
+ await page.evaluate(async()=>{await refresh()});
+ await end.locator('a.fl-learned').waitFor();
  assert.equal(await end.locator('a.fl-learned').getAttribute('href'),'#learning=learned');
  assert.equal(await end.locator('a.fl-learned').innerText(),'See what I’ve learned');
  assert.equal(await page.locator('#suggestions img.sleepy').count(),0);

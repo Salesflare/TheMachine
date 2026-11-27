@@ -224,6 +224,27 @@ class Profile(unittest.TestCase):
         self.assertEqual((run['status'], run['error']), ('error', 'no_draft'))
 
 
+    def test_a_turn_that_ended_as_told_on_claude_code_is_judged_by_what_it_saved(self):
+        # Claude Code (claude-cli) fails the exact NO_REPLY ending as an empty response after the work ran (silent_end)
+        silent = lambda request: {'status': 'error', 'error': 'runtime_error', 'silent_end': True}
+        self.app.graph_build()
+        started = self.app.action('profile_start', {})
+        run_id, roles = started['run_id'], started['roles_run_id']
+        self.app.profile_step(Runner('admitted'))
+        self.app.action('save_profile', {'_profile_session': machine_store_profile.PROFILE_SESSION_PREFIX + run_id, 'profile': {'tone': 'Warm'}})
+        self.app.profile_step(silent)
+        self.assertEqual(self.app.action('profile_status', {'run_id': run_id})['status'], 'ok')
+        self.app.profile_step(Runner('admitted')); self.app.profile_step(silent)  # roles: saved through graph, no draft of its own
+        self.assertEqual(self.app.action('profile_status', {'run_id': roles})['status'], 'ok')
+        # without a draft it is still no_draft, and any other error stays an error
+        again = self.app.action('profile_start', {'again': True})['run_id']
+        self.app.profile_step(Runner('admitted')); self.app.profile_step(silent)
+        self.assertEqual(self.app.action('profile_status', {'run_id': again})['error'], 'no_draft')
+        with self.store.connect() as db: db.execute("DELETE FROM profile_runs WHERE status='starting'")  # its roles turn
+        other = self.app.action('profile_start', {'again': True})['run_id']
+        self.app.profile_step(Runner('admitted')); self.app.profile_step(lambda request: {'status': 'error', 'error': 'runtime_error'})
+        self.assertEqual(self.app.action('profile_status', {'run_id': other})['error'], 'error')
+
     def test_a_turn_that_can_never_start_ends_at_once_with_its_own_error(self):
         run_id = self.app.action('profile_start', {})['run_id']
         self.app.profile_step(lambda request: {'status': 'error', 'error': 'prompt_too_long', 'error_phase': 'runtime'})
@@ -265,6 +286,35 @@ class Profile(unittest.TestCase):
         self.assertIn('# About me', text)  # the starter for the template, its covered blanks gone
         self.assertNotIn('- Tone: (for example', text)
         self.assertIsNone(self.app.first_profile_step())  # says how they write now: never again by itself
+
+    def test_a_turn_that_waited_long_in_line_still_starts_and_its_time_runs_from_then(self):
+        # The first look took long: the onboarding profile waited in line past a turn's own time limit. It used to be
+        # stopped before it ever went out ("lost"), and nothing was learned.
+        self.first_profile_app('# About me\n\n- Tone: \n')
+        run_id = self.app.first_profile_step()['run_id']
+        queued = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=machine_app_profile.PROFILE_SECONDS + 1800)).isoformat()
+        with self.store.connect() as db:
+            db.execute('UPDATE profile_runs SET started_at=?,updated_at=? WHERE run_id=?', (queued, queued, run_id))
+            db.execute("INSERT INTO milestones(name,at) VALUES('first_card_shown',?)", (timeutil.now(),))
+        runner = Runner('admitted', 'running')
+        self.assertEqual(self.app.profile_step(runner), 'admitted')
+        self.assertEqual(runner.requests[0]['action'], 'start')
+        self.assertEqual(self.app.profile_step(runner), 'running')
+        self.assertEqual(runner.requests[1]['action'], 'status')  # its time counts from when it went out
+        # still stopped once it has run past its time
+        ran = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=machine_app_profile.PROFILE_SECONDS + 400)).isoformat()
+        with self.store.connect() as db:
+            db.execute('UPDATE profile_runs SET started_at=? WHERE run_id=?', (ran, run_id))
+        runner = Runner('lost')
+        self.app.profile_step(runner)
+        self.assertEqual(runner.requests[0]['action'], 'stop')
+        # a start that went out but was never confirmed is still stopped after its time, as before
+        again = self.app.action('profile_start', {'again': True})['run_id']
+        with self.store.connect() as db:
+            db.execute("UPDATE profile_runs SET attempts=1,started_at=?,updated_at=? WHERE run_id=?", (ran, ran, again))
+        runner = Runner('lost')
+        self.app.profile_step(runner)
+        self.assertEqual((runner.requests[0]['job_id'], runner.requests[0]['action']), (again, 'stop'))
 
     def test_first_profile_leaves_a_written_user_md_and_the_owners_own_run_alone(self):
         self.first_profile_app('# About me\n\n- Tone: warm, first names\n')

@@ -79,8 +79,9 @@ const firstLookBar=i=>{const done=flInt(i.done),total=flInt(i.total);return tota
 // every few seconds up to three, so they show up as it finds them
 let flNamesAt=0;
 function flNames(i){const names=(i.names||[]).slice(0,3);if(!names.length){flNamesAt=0;return ''}flNamesAt||=Date.now();
- const shown=names.slice(0,Math.min(names.length,1+Math.floor((Date.now()-flNamesAt)/4000)));let list;
- try{list=new Intl.ListFormat(I18N.lang||'en',{type:'conjunction'}).format(shown)}catch{list=shown.join(', ')}return t('Bumped into {} so far.',list)}
+ return t('Bumped into {} so far.',andList(names.slice(0,Math.min(names.length,1+Math.floor((Date.now()-flNamesAt)/4000)))))}
+// "a, b and c" in the owner's language ("a, b or c" with type disjunction, todos-cards.js)
+const andList=(l,type='conjunction')=>{try{return new Intl.ListFormat(I18N.lang||'en',{type}).format(l)}catch{return l.join(', ')}};
 const flNamesNode=i=>{const line=flNames(i);return line?make('span',{class:'fl-names',translate:'no'},line):''};
 const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp','data-blink':'brand/wave-blink.webp','data-look':'brand/wave-look.webp','data-hand':'brand/wave-hand.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),flNamesNode(i),i.wait===false?'':make('small',{},i.wait||(firstEta()?t('First to-dos in about {} min.',firstEta()):t('To-dos show up here as they come.'))),flDetail(i),flImport())];
 // While it reads: one quiet, optional button to import what another AI knows (setup-card.js memoryImportOpen); never
@@ -95,7 +96,7 @@ function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&fi
 // Meetings are said with the kinds, so the reviewer's groups list only what the messages were.
 const FL_KINDS=[['email',['{} email','{} emails']],['meeting',['{} meeting','{} meetings']],['message',['{} message','{} messages']],['other',['{} other signal','{} other signals']]];
 const FL_READ=[['people',['{} from a person','{} from people']],['newsletters',['{} newsletter','{} newsletters']],['notifications',['{} notification','{} notifications']],['other',['{} other','{} other']]];
-const flList=(counts,words)=>{const parts=words.filter(([k])=>(+counts?.[k]|0)>0).map(([k,w])=>t(w,+counts[k]|0).replace(/^(\d+) /,'$1\u00a0'));try{return new Intl.ListFormat(I18N.lang||'en',{type:'conjunction'}).format(parts)}catch{return parts.join(', ')}};
+const flList=(counts,words)=>andList(words.filter(([k])=>(+counts?.[k]|0)>0).map(([k,w])=>t(w,+counts[k]|0).replace(/^(\d+) /,'$1\u00a0')));
 // Concrete offers first, never an empty ask while there is one: a source that mails the owner often (d.connect, "Connect
 // Slack"), the setup steps that fit; then one question to ask (Search's ask), else Talk or a to-do of their own.
 const FL_NEXT={calendar:'Connect your calendar',inbox:'Add another inbox',ask:'Ask what changed this week',talk:'Talk to me',todo:'Give me a to-do'};
@@ -103,8 +104,9 @@ function flNext(d){const steps=[...(d.connect||[]).map(c=>({key:'connect',servic
   ...(d.next||[]).filter(k=>k==='calendar'||k==='inbox').map(k=>({key:k,label:t(FL_NEXT[k])}))];
  const last=typeof palAskable==='function'&&palAskable()?'ask':typeof talkOk==='function'&&talkOk()?'talk':'todo';
  return [...steps,{key:last,label:t(FL_NEXT[last])}].slice(0,2)}
-// Where what it learned lives
-const flLearned=()=>html`<a class="link fl-learned" href="#learning=learned">${t('See what I’ve learned')}</a>`;
+// Whether What I've learned holds anything (learnedList draws these, learning-missed.js); the link goes only once it does
+const learnedAny=()=>['voices','facts','rules_waiting','facts_ended','moved','bring_in'].some(k=>state[k]?.length);
+const flLearned=()=>learnedAny()?html`<a class="link fl-learned" href="#learning=learned">${t('See what I’ve learned')}</a>`:'';
 function firstLookEnd(){const d=state.first_look_done;if(!d||d.todos>1)return '';const kinds=flList(d.kinds,FL_KINDS),read=flList(d.read,FL_READ);
  const line=!kinds?t('Nothing came in from the past week yet.'):read?t('Read {} from the past week: {}.',kinds,read):t('Read {} from the past week.',kinds);
  return html`<div class="empty all-clear first-look-end"><img class="sticker" src="brand/wave.webp" alt=""><div><span class="fl-read">${line}</span>${state.reviews_on?html`<small>${t('New mail gets a look as it comes in.')}</small>`:''}${flLearned()}</div><div class="fl-next">${flNext(d).map((x,i)=>x.service?html`<button type="button" class="${i?'quiet':''}" data-connect-open="${x.service}">${x.label}</button>`:html`<button type="button" class="${i?'quiet':''}" data-fl-next="${x.key}">${x.label}</button>`)}</div></div>`}
