@@ -28,7 +28,7 @@ import i18n
 from connectors import web_page
 from machine import todo_states
 from machine.prompts.result_check import verdict as kept_verdict
-from machine.store import done_checks, outcomes, todo_moves
+from machine.store import done_checks, message_view, outcomes, todo_moves
 from machine.text import encoded
 
 LEASE = dt.timedelta(minutes=15)
@@ -86,23 +86,44 @@ def owed_promises(db, row):
         '(SELECT value FROM json_each(?))) ORDER BY created_at LIMIT 3', (row['id'], json.dumps(ids)))]
 
 
-def thread(db, row):
-    """What was agreed: its messages, the owner's words and notes, and what the owner sent from it (with file names)."""
-    texts = done_checks.evidence_texts(db, row['id'])
-    for job in db.execute("SELECT payload FROM action_jobs WHERE suggestion_id=? AND status='sent' ORDER BY created_at", (row['id'],)):
+def thread(db, row, mine=None):
+    """What was agreed, oldest first, each {at, who, mine, text}: its messages (who wrote them: the owner by
+    review.own_message, else the name their message gives), the owner's words and notes, and what the owner sent from it
+    (with file names). mine(event): the owner's own message (the App passes its Slack IDs and addresses)."""
+    from machine.store.review import own_message  # review imports far more than this needs at load
+    mine = mine or own_message
+    out = [{'at': '', 'who': '', 'mine': True, 'text': row['owner_words']}] if row['owner_words'] else []
+    try:
+        ids = [int(i) for i in json.loads(row['event_ids'] or '[]')][:50]
+    except (TypeError, ValueError):
+        ids = []
+    for e in db.execute('SELECT kind,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND id IN (SELECT value FROM json_each(?))',
+                        (json.dumps(ids),)):
+        e = dict(e)
+        try:
+            meta = json.loads(e['metadata'] or '{}')
+        except ValueError:
+            meta = {}
+        meta = meta if isinstance(meta, dict) else {}
+        out.append({'at': e['occurred_at'], 'who': message_view.sender_name(e['kind'], meta), 'mine': bool(mine({**e, 'metadata': meta})),
+                    'text': f"{e['title'] or ''}\n{e['body'] or ''}"})
+    out += [{'at': r['created_at'], 'who': '', 'mine': True, 'text': r['feedback']} for r in db.execute(
+        "SELECT feedback,created_at FROM decisions WHERE suggestion_id=? AND choice='other' AND source IN ('dashboard','telegram')", (row['id'],))]
+    for job in db.execute("SELECT payload,updated_at FROM action_jobs WHERE suggestion_id=? AND status='sent'", (row['id'],)):
         try:
             action = json.loads(job['payload'] or '{}')
         except ValueError:
             continue
         files = [str(a.get('name') or a.get('filename') or '') for a in action.get('attachments') or [] if isinstance(a, dict)]
-        texts.append('The owner sent: ' + ' '.join(str(action.get(k) or '') for k in ('subject', 'body')).strip()
-                     + (f" (files: {', '.join(f for f in files if f)})" if any(files) else ''))
-    return texts
+        out.append({'at': job['updated_at'], 'who': '', 'mine': True,
+                    'text': ' '.join(str(action.get(k) or '') for k in ('subject', 'body')).strip()
+                    + (f" (files: {', '.join(f for f in files if f)})" if any(files) else '')})
+    return sorted(out, key=lambda t: str(t['at'] or ''))
 
 
-def claim(db, stamp, limit=1):
+def claim(db, stamp, limit=1, mine=None):
     """Checks to ask about, claimed inside the caller's write transaction: [{id, token, done_when, source, url, came,
-    thread, promises}]."""
+    thread, promises}]. mine: as thread takes it."""
     out = []
     marks = ','.join('?' * len(todo_states.OPEN))
     for row in db.execute(f'SELECT * FROM suggestions WHERE result_check IS NOT NULL AND status IN ({marks})', todo_states.OPEN).fetchall():
@@ -120,7 +141,7 @@ def claim(db, stamp, limit=1):
             came = '\n'.join(f"{r['title'] or ''}\n{r['body'] or ''}" for r in db.execute(
                 'SELECT title,body FROM events WHERE deleted=0 AND id IN (SELECT value FROM json_each(?))', (json.dumps(ids),)))[:CAME_CHARS]
         out.append({'id': row['id'], 'token': token, 'done_when': row['done_when'], 'source': check['source'], 'url': check.get('url'),
-                    'came': came or '', 'thread': thread(db, row), 'promises': owed_promises(db, row)})
+                    'came': came or '', 'thread': thread(db, row, mine), 'promises': owed_promises(db, row)})
     return out
 
 
@@ -153,7 +174,7 @@ def settle(db, job, answer, stamp):
     if db.execute("SELECT 1 FROM decisions WHERE suggestion_id=? AND created_at>? AND id NOT LIKE ? AND id NOT LIKE ?",
                   (row['id'], since, PREFIX + '%', done_checks.PREFIX + '%')).fetchone():
         return None  # the owner or a newer message moved it while it was checked: theirs stands
-    found = kept_verdict(answer) if answer is not None else {'state': 'unsure', 'checked': '', 'difference': '', 'owed': ''}
+    found = kept_verdict(answer, job) if answer is not None else {'state': 'unsure', 'checked': '', 'difference': '', 'owed': ''}
     promised = owed_promises(db, row)
     owed = promised[0] if promised else found['owed']
     state = found['state']

@@ -59,6 +59,11 @@ def judged(db, ids):
     for r in db.execute(f"SELECT id,title,body,kind,metadata FROM events WHERE id IN ({','.join('?' * len(ids))})", list(ids)):
         meta = json.loads(r['metadata'] or '{}')
         found = files(r['kind'], meta, r['body'])
-        named = '' if found is None else ', no files' if not found else f", files: <<<{', '.join(' '.join(n.split())[:120] for n in found[:10])}>>>"
-        out[r['id']] = f"<<<{cut(slack_ids_named(db, words(r['kind'], meta, r['title'], r['body'])))}>>>{named}"
+        named = '' if found is None else ', no files' if not found else f", files: {_data(', '.join(' '.join(n.split())[:120] for n in found[:10]))}"
+        out[r['id']] = _data(cut(slack_ids_named(db, words(r['kind'], meta, r['title'], r['body'])))) + named
     return out
+
+
+def _data(text):
+    """Quoted as data that can't end its quotes early: <<< and >>> a sender typed are only characters."""
+    return '<<<' + text.replace('<<<', '‹‹‹').replace('>>>', '›››') + '>>>'

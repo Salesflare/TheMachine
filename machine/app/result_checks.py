@@ -13,6 +13,7 @@ from machine import model_reply
 from machine.config import LOG
 from machine.prompts.result_check import result_check_prompt
 from machine.store import result_checks
+from machine.store.review import own_message
 from models import background_model, openclaw_model
 from timeutil import now
 
@@ -33,7 +34,8 @@ class ResultChecksApp:
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             result_checks.given_up(db, now())
-            jobs = result_checks.claim(db, now())
+            own = self.store.review_own_addresses(db)
+            jobs = result_checks.claim(db, now(), mine=lambda e: own_message(e, self.store.owner_user_ids, own))
         if not jobs:
             return None
         if getattr(self, 'result_check_model', None):

@@ -20,7 +20,8 @@ RESULT = 'partner.example/best-crm-tools lists Example CRM'
 CHECK = {'url': URL, 'expect': ['Example CRM']}
 LIVE = ['Best CRM tools', 'Other CRM: for teams', 'Example CRM: for small teams']
 BEFORE = ['Best CRM tools', 'Other CRM: for teams']
-MATCHES = {'state': 'matches', 'checked': 'with the description you sent'}
+MATCHES = {'state': 'matches', 'checked': 'with the description you sent', 'shows': 'Example CRM: for small teams',
+           'agreed': 'add Example CRM to our list'}  # both quotes really in the page and the thread (result_check.grounded)
 
 
 def later(stamp, **delta):
@@ -232,7 +233,7 @@ class DoneChecks(unittest.TestCase):
             db.execute('BEGIN IMMEDIATE')
             job = done_checks.claim(db, at)[0]
         with self.store.connect() as db:
-            self.assertEqual(done_checks.settle(db, job, 'met', at, fingerprint='f'), 'checking')
+            self.assertEqual(done_checks.settle(db, job, 'met', at, fingerprint='f', lines=LIVE), 'checking')
         with self.store.connect() as db:  # the same result kept twice (a retried write): nothing more
             self.assertIsNone(done_checks.settle(db, job, 'met', at, fingerprint='f'))
         with patch_everywhere(timeutil, 'now', return_value=at):
