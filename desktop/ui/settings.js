@@ -3,10 +3,10 @@
   'use strict';
   const {core: {invoke}, event: {listen}} = window.__TAURI__;
   const t = window.MachineText, $ = id => document.getElementById(id);
-  const names = {'robot-name': t.setRobot, 'robot-hint': t.setRobotHint, 'notify-name': t.setNotify, 'notify-hint': t.setNotifyHint, 'browser-name': t.setBrowser, 'browser-hint': t.setBrowserHint, 'browser-yes': t.setBrowserYes, 'browser-no': t.setBrowserNo, 'login-name': t.setLogin, 'quits-name': t.setClose, keep: t.setKeep, quit: t.setQuit, update: t.setUpdate, signout: t.signOut};
+  const names = {'robot-name': t.setRobot, 'robot-hint': t.setRobotHint, 'notify-name': t.setNotify, 'notify-hint': t.setNotifyHint, 'browser-name': t.setBrowser, 'browser-hint': t.setBrowserHint, 'browser-yes': t.setBrowserYes, 'browser-no': t.setBrowserNo, 'login-name': t.setLogin, 'exit-name': t.setExit, 'exit-hint': t.setExitHint, 'quits-name': t.setClose, keep: t.setKeep, quit: t.setQuit, update: t.setUpdate, signout: t.signOut};
   for (const [id, text] of Object.entries(names)) $(id).textContent = text;
   document.title = t.settings;
-  const SETS = ['robot', 'notify', 'login'];
+  const SETS = ['robot', 'notify', 'login', 'exit'];
   const SYSTEM = ['Mac', 'Windows'].find(s => navigator.userAgent.includes(s)) || 'Linux';
   const words = e => (e === 'login' && t.errors.login[SYSTEM]) || t.errors[e] || t.errors.failed;
 
@@ -19,6 +19,8 @@
     $('notify-hint').classList.toggle('warn', s.blocked);
     $('browser-row').hidden = !s.browser;
     $('login').checked = s.login === 'on';
+    $('exit-row').hidden = s.exit === null; // only where the Machine has it
+    $('exit').checked = !!s.exit;
     $('quits').value = s.quits ? '1' : '';
     $('update-name').textContent = t.setVersion.replace('{}', s.version);
     const out = s.out && t.setOut[s.out.how];

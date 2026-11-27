@@ -83,7 +83,7 @@ pub struct Waiting {
 
 /// The account names the computer by its system (Account, Security), and the Mac App Store's build as the store's app,
 /// which it shows nothing to buy.
-fn user_agent() -> String {
+pub fn user_agent() -> String {
     let store = if cfg!(feature = "store") { " store" } else { "" };
     format!("TheMachineDesktop/{} ({}){store}", crate::version(), std::env::consts::OS)
 }

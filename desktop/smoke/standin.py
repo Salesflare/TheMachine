@@ -153,6 +153,7 @@ class Machine(http.server.ThreadingHTTPServer):
         self.named, self.odd = [], None  # the to-dos whose words it asked; the status that answers it instead
         self.todos, self.name = list(TODOS), 'Sam'
         self.refuse = False
+        self.tunnel = None  # its browser's way out through the app (exit_side.Tunnel); none: it hasn't one (404)
         self.off = None  # its address answers, it doesn't: its manifest's status (404 paused, 502 starting); all else is sent to the account
         self.loopback = False  # its account sends the browser back to the app's own port
         self.compact = False  # its dashboard has the page of one to-do
@@ -219,6 +220,8 @@ class Page(http.server.BaseHTTPRequestHandler):
         if u.path == '/seen':
             m.seen.append(q)
             return self.answer({})
+        if u.path == '/api/exit':
+            return m.tunnel.take(self, m.at) if m.tunnel else self.answer({'error': 'Not found'}, 404)
         if m.refuse and not (m.away and u.path == '/'):
             return self.answer({'error': 'Sign in'}, 403)
         if u.path == '/api/session':

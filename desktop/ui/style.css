@@ -185,5 +185,6 @@ main.card>:not(#card,#live){display:none!important}
 #files img{height:48px;max-width:120px;object-fit:cover;border-radius:5px;margin:3px 6px 3px -5px;display:block}
 #files .icon{width:24px;height:24px}
 #said{font-size:13px;color:var(--text-2);margin:8px 0 0}
+#exit{font-size:12px;line-height:1.35;color:var(--text-3);margin:8px 0 0}
 #said.error{color:var(--error)}
 @media (forced-colors:active){.set input{border:1px solid;forced-color-adjust:none;background:Canvas}.set input::after{background:CanvasText}.set input:checked{background:Highlight}.box main,.kinds input:checked+span,.send,.primary{border:1px solid}#dot{background:Highlight;forced-color-adjust:none}}
