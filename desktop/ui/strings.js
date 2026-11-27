@@ -53,6 +53,11 @@ window.MachineText = {
   setVersion: 'Version {}',
   setUpdateHint: '{} is ready',
   setUpdate: 'Restart to update',
+  setOut: {  // a package's: its package manager puts it in place
+    deb: '{} is out. Install its .deb with apt.',
+    arch: '{} is out. Run makepkg -si with its PKGBUILD.',
+  },
+  setGet: 'Download',
   hidden: 'The robot hides here, at the bottom edge of the screen. Click it to bring it back.',
   ok: 'OK',
   signOut: 'Sign out',

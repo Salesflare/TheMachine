@@ -21,8 +21,10 @@
     $('login').checked = s.login === 'on';
     $('quits').value = s.quits ? '1' : '';
     $('update-name').textContent = t.setVersion.replace('{}', s.version);
-    $('update-hint').textContent = s.update ? t.setUpdateHint.replace('{}', () => s.update) : '';
-    $('update').hidden = !s.update;
+    const out = s.out && t.setOut[s.out.how];
+    $('update-hint').textContent = s.update ? t.setUpdateHint.replace('{}', () => s.update) : out ? out.replace('{}', () => s.out.version) : '';
+    $('update').textContent = s.update ? t.setUpdate : t.setGet;
+    $('update').hidden = !s.update && !out;
     $('account').hidden = !s.machine;
     if (s.machine) $('where').textContent = t.signedIn.replace('{}', () => new URL(s.machine).host);
   }
@@ -46,7 +48,8 @@
   $('update').addEventListener('click', async () => {
     $('error').textContent = '';
     $('update').disabled = true;
-    try { await invoke('update_apply'); } catch { $('error').textContent = t.errors.update; $('update').disabled = false; }
+    const opens = $('update').textContent === t.setGet; // a package's file, in the browser: it stays
+    try { await invoke('update_apply'); if (opens) $('update').disabled = false; } catch { $('error').textContent = t.errors.update; $('update').disabled = false; }
   });
   $('quits').addEventListener('change', () => set('quits', !!$('quits').value));
   $('signout').addEventListener('click', async () => { await invoke('menu_item', {id: 'signout'}); });

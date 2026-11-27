@@ -1299,7 +1299,7 @@ fn main() {
             }
             #[cfg(all(feature = "sandbox", not(windows)))]
             debug(app.handle());
-            #[cfg(all(feature = "updates", any(windows, target_os = "macos")))]
+            #[cfg(feature = "updates")]
             app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
             hangs::watch(app.handle());
             #[cfg(target_os = "macos")]

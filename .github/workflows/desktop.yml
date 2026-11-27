@@ -650,8 +650,8 @@ jobs:
 
   # What the app itself fetches when there is a newer one, with the key it trusts (README, Updates)
   updates-sign:
-    needs: [mac-sign, mac-open, windows-sign]
-    if: ${{ !cancelled() && needs.mac-sign.result == 'success' && needs.mac-open.result == 'success' && needs.windows-sign.result == 'success' }}
+    needs: [mac-sign, mac-open, windows-sign, linux]
+    if: ${{ !cancelled() && needs.mac-sign.result == 'success' && needs.mac-open.result == 'success' && needs.windows-sign.result == 'success' && needs.linux.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: mac-signing
@@ -668,22 +668,29 @@ jobs:
         with:
           name: the-machine-desktop-windows
           path: out
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-linux
+          path: linux
       - run: cd desktop/tools && npm ci --ignore-scripts --no-audit --no-fund
       - name: Sign
         env:
           MAC: ${{ needs.mac-sign.outputs.update }}
           WINDOWS: ${{ needs.windows-sign.outputs.sha }}
+          LINUX: ${{ needs.linux.outputs.sha }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.DESKTOP_UPDATER_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         run: |
           set -euo pipefail
+          cp linux/the-machine-desktop-x86_64.AppImage out/ # the AppImage alone: the .deb and the Arch package don't replace themselves
           echo "$MAC  out/the-machine-desktop-mac.app.tar.gz" | sha256sum -c -
           echo "$WINDOWS  out/the-machine-desktop-setup.exe" | sha256sum -c -
-          for file in out/the-machine-desktop-mac.app.tar.gz out/the-machine-desktop-setup.exe; do desktop/tools/node_modules/.bin/tauri signer sign "$file" > /dev/null; done
+          echo "$LINUX  out/the-machine-desktop-x86_64.AppImage" | sha256sum -c -
+          for file in out/the-machine-desktop-mac.app.tar.gz out/the-machine-desktop-setup.exe out/the-machine-desktop-x86_64.AppImage; do desktop/tools/node_modules/.bin/tauri signer sign "$file" > /dev/null; done
       - name: By the key the app trusts
         run: |
           set -euo pipefail
-          node desktop/tools/verify.mjs out/the-machine-desktop-mac.app.tar.gz out/the-machine-desktop-setup.exe
+          node desktop/tools/verify.mjs out/the-machine-desktop-mac.app.tar.gz out/the-machine-desktop-setup.exe out/the-machine-desktop-x86_64.AppImage
           if [ -n "$RELEASE" ]; then python3 desktop/tools/version.py "$RELEASE"; fi
           node desktop/tools/latest.mjs out $RELEASE > out/latest.json
           cat out/latest.json
@@ -695,13 +702,17 @@ jobs:
           retention-days: 14
 
   # Linux for people: an AppImage (x86_64, with what it needs, gtk-layer-shell too) and a .deb, on the oldest Ubuntu runner so
-  # they run where its glibc is older. Not signed, and it doesn't update itself. The jobs after it start them where nothing
-  # of the build is: Ubuntu with X11, and Arch with Wayland (linux/PKGBUILD).
+  # they run where its glibc is older. The AppImage updates itself: updates-sign signs it for the updater; the .deb and the
+  # Arch package are their package manager's. Also two sandbox AppImages, an older and a newer one signed with a key made
+  # here, for smoke/updates.py. The jobs after it start them where nothing of the build is: Ubuntu with X11, and Arch with
+  # Wayland (linux/PKGBUILD).
   linux:
     needs: release
     if: ${{ !cancelled() && needs.release.result != 'failure' && github.head_ref != 'desktop-bubble' && !inputs.mac-store-only }} # its push has it
     runs-on: ubuntu-22.04
-    timeout-minutes: 60
+    timeout-minutes: 75
+    outputs:
+      sha: ${{ steps.build.outputs.sha }}
     env: # the AppImage's runtime, in place of the one tauri fetched: static, mounts with fuse3's fusermount3 (linux/runtime.py)
       RUNTIME: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64
       RUNTIME_SHA256: 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d
@@ -715,6 +726,7 @@ jobs:
           persist-credentials: false
           ref: ${{ inputs.release && format('refs/tags/{0}', inputs.release) || '' }}
       - name: Build
+        id: build
         run: |
           set -euo pipefail
           if [ -n "$RELEASE" ]; then python3 tools/version.py "$RELEASE"; fi
@@ -728,6 +740,23 @@ jobs:
           sudo apt-get install -y -qq --no-install-recommends libwebkit2gtk-4.1-dev libgtk-layer-shell-dev libayatana-appindicator3-dev librsvg2-dev file xdg-utils > /dev/null
           rustup toolchain install stable --profile minimal --no-self-update
           (cd tools && npm ci --ignore-scripts --no-audit --no-fund)
+          tauri=tools/node_modules/.bin/tauri
+          # The sandbox's AppImages: this version, and 9999.0.0 built in (the version the updater compares is tauri.conf.json's)
+          mkdir sandbox-build
+          cp tauri.conf.json "$RUNNER_TEMP/tauri.conf.json"
+          for version in 0.0.1 9999.0.0; do
+            jq --arg v "$version" '.version = $v' "$RUNNER_TEMP/tauri.conf.json" > tauri.conf.json
+            touch src/main.rs
+            cargo +stable build --release --locked --features sandbox
+            "$tauri" bundle --ci --bundles appimage --config linux/bundle.json
+            mv target/release/bundle/appimage/*.AppImage "sandbox-build/the-machine-desktop-$version.AppImage"
+            python3 linux/runtime.py "sandbox-build/the-machine-desktop-$version.AppImage" "$RUNNER_TEMP/runtime"
+          done
+          cp "$RUNNER_TEMP/tauri.conf.json" tauri.conf.json
+          "$tauri" signer generate --ci -w "$RUNNER_TEMP/made-up.key" > /dev/null
+          "$tauri" signer sign -f "$RUNNER_TEMP/made-up.key" -p '' sandbox-build/the-machine-desktop-9999.0.0.AppImage > /dev/null
+          cp "$RUNNER_TEMP/made-up.key.pub" sandbox-build/
+          touch src/main.rs
           cargo +stable build --release --locked
           if grep -q MACHINE_SANDBOX_ROOT target/release/the-machine-desktop; then exit 1; fi
           tools/node_modules/.bin/tauri bundle --ci --bundles deb,appimage --config linux/bundle.json
@@ -736,6 +765,7 @@ jobs:
           python3 linux/runtime.py out/the-machine-desktop-x86_64.AppImage "$RUNNER_TEMP/runtime"
           mv target/release/bundle/deb/*.deb out/the-machine-desktop-amd64.deb
           cp README.md ../LICENSE linux/PKGBUILD out/
+          echo "sha=$(sha256sum out/the-machine-desktop-x86_64.AppImage | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - name: What is in them
         run: |
           set -euo pipefail
@@ -767,12 +797,18 @@ jobs:
           path: desktop/out/
           if-no-files-found: error
           retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: the-machine-desktop-linux-sandbox # for smoke/updates.py only, never published
+          path: desktop/sandbox-build/
+          if-no-files-found: error
+          retention-days: 3
 
   linux-ubuntu:
     needs: linux
     if: ${{ !cancelled() && needs.linux.result == 'success' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     defaults:
       run:
         working-directory: desktop
@@ -786,7 +822,11 @@ jobs:
         with:
           name: the-machine-desktop-linux
           path: desktop/linux-build
-      - name: The AppImage, then the .deb installed, each to its sign-in window (X11)
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: the-machine-desktop-linux-sandbox
+          path: desktop/linux-sandbox
+      - name: The AppImage, an update of it, then the .deb installed, each to its sign-in window (X11)
         run: |
           set -euo pipefail
           # The runner's own Microsoft package source isn't needed here, and its server has refused runners (403)
@@ -814,6 +854,12 @@ jobs:
           watcher=$!
           failed=0
           bash smoke/linux.sh "$image" shots/appimage python3 smoke/started.py "$PWD/shots/appimage" "$image" || failed=1
+          # An older sandbox AppImage, on FUSE as people start it, fetches the newer one, checks it with the made-up key and
+          # puts it in its own place
+          sandbox="$PWD/linux-sandbox"
+          chmod +x "$sandbox"/*.AppImage
+          bash smoke/linux.sh "$sandbox/the-machine-desktop-0.0.1.AppImage" shots/updates env MACHINE_SANDBOX_UPDATES_KEY="$(cat "$sandbox/made-up.key.pub")" \
+            python3 -u smoke/updates.py "$sandbox/the-machine-desktop-0.0.1.AppImage" "$sandbox/the-machine-desktop-9999.0.0.AppImage" "$PWD/shots/updates" || failed=1
           sudo apt-get install -y -qq ./linux-build/the-machine-desktop-amd64.deb
           dpkg -L "$(dpkg-deb -f linux-build/the-machine-desktop-amd64.deb Package)"
           bash smoke/linux.sh /usr/bin/the-machine-desktop shots/deb python3 smoke/started.py "$PWD/shots/deb" /usr/bin/the-machine-desktop || failed=1

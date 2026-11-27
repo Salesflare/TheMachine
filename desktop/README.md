@@ -57,11 +57,12 @@ Mac (macOS 13 or newer, Apple silicon or Intel): `the-machine-desktop-mac.zip`, 
 **The Machine** to Applications and open it there. macOS asks once whether you want to open an app from the internet:
 **Open**. Its window opens to sign in, and the robot stands in its corner when another program is in front. It updates itself.
 
-Linux (64-bit, x86_64). None of these update themselves: what installed it updates it, or take the newer file.
+Linux (64-bit, x86_64). The AppImage updates itself; the .deb and the Arch package are updated as they were installed, and
+Settings says when a newer one is out.
 
 - **Any distribution**: `the-machine-desktop-x86_64.AppImage` brings what it needs, gtk-layer-shell too. `chmod +x` it and
   start it. It needs FUSE's `fusermount3` (or the older `fusermount`), which most desktops have; no libfuse. If it says
-  FUSE is missing, install `fuse3`.
+  FUSE is missing, install `fuse3`. Kept in a folder of yours (`~/Applications`, say), it updates itself.
 - **Ubuntu and Debian** (Ubuntu 22.04, Debian 12 or newer): `sudo apt install ./the-machine-desktop-amd64.deb`, which also
   installs WebKitGTK 4.1 and gtk-layer-shell. It is in the applications menu as The Machine; `the-machine-desktop` starts it too.
 - **Arch and Omarchy**: download `PKGBUILD` into an empty folder and run `makepkg -si` there. It fetches that release's .deb,
@@ -219,8 +220,15 @@ menu, or Command-Q in the box. The program with `--quit` stops it whatever state
 
 ## Updates
 
-On a Mac, and on Windows when the installer put it there, it looks for a newer version a minute after it starts and once a
-day, fetches it and waits: **Settings** has **Restart to update**. Elsewhere, what installed it updates it.
+On a Mac, on Windows when the installer put it there, and as an AppImage in a folder of the person's own (theirs, and they
+may write in it), it looks for a newer version a minute after it starts and once a day, fetches it and waits: **Settings**
+has **Restart to update**. The AppImage is renamed away and the newer one written in its place, never over the one that
+runs; it then starts from there.
+
+The .deb and the Arch package are their package manager's: the app never replaces what they installed. It looks the same
+way, fetches nothing, and **Settings** says that a newer version is out, with **Download** for that release's .deb or
+`PKGBUILD` (`sudo apt install ./the-machine-desktop-amd64.deb`, or `makepkg -si`). Anything else, such as a build of your
+own or an AppImage unpacked into a folder, is left as it is: take the newer file.
 
 - **What it asks:** one fixed address on GitHub (`tauri.conf.json`). No version, id or account goes with it.
 - **What it takes:** only what is signed with the one key it trusts, whose public half is in `tauri.conf.json`.
@@ -228,7 +236,8 @@ day, fetches it and waits: **Settings** has **Restart to update**. Elsewhere, wh
   get, and `desktop-updater-key` in the maintainers' key vault. It has no password. Lost, no installed app can be updated
   any more: people would install a new one by hand.
 - **Where:** `releases/latest/download/latest.json`, the newest GitHub release. It names that release's own files, so a
-  newer one published meanwhile never pairs a version with another one's file.
+  newer one published meanwhile never pairs a version with another one's file: the Mac's and Windows' as before, and for
+  `linux-x86_64` the AppImage, signed as it is downloaded (`updates-sign`, in the same environment).
 
 ## Releases
 
@@ -241,7 +250,7 @@ every job builds the tag, with its version (`tools/version.py`: `release-2026112
 release is a newer version), uses it as for a pull request, and signs it: Developer ID and Apple's notarization, Azure
 Artifact Signing, and the update key. Only when all of that passed, `publish` puts the files on a GitHub release of the tag,
 marked latest: `the-machine-desktop-setup.exe`, `the-machine-desktop-mac.zip`, `the-machine-desktop-mac.app.tar.gz` (for
-updates), `latest.json`, the AppImage, the .deb, `PKGBUILD` with that release's tag and checksum, the Arch package and
+updates), `latest.json`, the AppImage and its `.sig`, the .deb, `PKGBUILD` with that release's tag and checksum, the Arch package and
 `SHA256SUMS`. A run that fails publishes nothing; the app stays at the release before.
 
 Each of those files has GitHub's build provenance: a signed statement that this workflow made it, from that tag. To check a
@@ -365,7 +374,8 @@ cargo test --manifest-path desktop/Cargo.toml
 CI also uses the Windows and the Mac build, with real mouse and keys against a made-up Machine (`smoke/windows.py` and
 `smoke/mac.py` the robot, `smoke/window.py` the window, `smoke/text.py` Windows' Text size and scales,
 `smoke/signin.py` a sign-in with a second copy or an administrator's beside it,
-`smoke/updates.py` the installer and an update), and keeps the screenshots with the run. They move the mouse and
+`smoke/updates.py` the installer and an update; on Ubuntu an older sandbox AppImage that puts a newer one in its place),
+and keeps the screenshots with the run. They move the mouse and
 change the screen, so they are for a throwaway computer. `smoke/linux.sh` runs `window.py` on a screen that isn't there,
 with a home of its own: nothing of the desktop it is started on is seen or touched. Also over https, as a hosted Machine: with a certificate made for that run
 (`smoke/certificate.sh`), which only a sandbox build and that computer trust, until it ends.
