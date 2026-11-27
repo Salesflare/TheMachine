@@ -956,7 +956,7 @@ names you needs a to-do"). It costs no turn of its own.
 - Every recall applies it before ranking (`Store.in_scope`): a preparation gets a person's or organization's rule only
   on their to-dos, an area's only in that area, a channel's only when its draft goes out there. A routine's run has no
   area, so it gets no area's rules; it gets a channel's for the channels its drafts go out on and a person's when its
-  words name them. `get_learnings` never gives a person's or organization's rule, and says the channel or area of one
+  words name them: their whole name as words, in any case ("Era" is not in "general"). `get_learnings` never gives a person's or organization's rule, and says the channel or area of one
   scoped to it.
 
 ## What a prompt reads
