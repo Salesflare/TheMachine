@@ -25,7 +25,7 @@ pub struct Settings {
     /// Nothing is said here: a browser here may tell (speak.rs).
     browser: bool,
     machine: Option<String>,
-    /// A release's, as the updater compares it (tauri.conf.json, which tools/version.py writes; Cargo.toml's stays 0.0.1).
+    /// A release's (crate::version).
     version: String,
     /// The version that is fetched and waits for a restart (updates.rs).
     update: Option<String>,
@@ -136,7 +136,7 @@ pub async fn settings_state(app: AppHandle) -> Result<Settings, String> {
             blocked: saved.notify == Some(true) && notices == notify::Lets::No,
             browser: shared.browser.load(Ordering::Relaxed) > 0 && (!saved.no_robot || saved.notify == Some(true) && notices == notify::Lets::Yes),
             machine: saved.machine.clone(),
-            version: app.package_info().version.to_string(),
+            version: crate::version().to_string(),
             update: updates::ready(),
             out: updates::out(),
         })

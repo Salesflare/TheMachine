@@ -85,7 +85,7 @@ pub struct Waiting {
 /// which it shows nothing to buy.
 fn user_agent() -> String {
     let store = if cfg!(feature = "store") { " store" } else { "" };
-    format!("TheMachineDesktop/{} ({}){store}", env!("CARGO_PKG_VERSION"), std::env::consts::OS)
+    format!("TheMachineDesktop/{} ({}){store}", crate::version(), std::env::consts::OS)
 }
 
 fn agent(seconds: u64) -> ureq::Agent {
