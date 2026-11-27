@@ -8531,7 +8531,10 @@
  "{} steps left": {
   "other": "{}ステップ残っています"
  },
+ "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{}はまだMachineのブラウザーでパスキーを求めています。そこでパスキーを使えば、こちらで続けます。",
+ "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{}はまだMachineのブラウザーでログインコードを求めています。そこで入力すれば、こちらで続けます。",
  "{} still has this. Check in drafts a short nudge for you to send.": "{}はまだこの件を抱えています。「状況を確認」を押すと、送信用の短いリマインドを下書きします。",
+ "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{}はまだMachineのブラウザーにログイン画面を表示しています。そこでログインを完了すれば、こちらで続けます。",
  "{} still waiting.": "{}件がまだ待機中です。",
  "{} stopped after failing to start": "{}は起動に失敗し、停止しました",
  "{} stopped the search for {}": "{}が{}の検索を停止しました",

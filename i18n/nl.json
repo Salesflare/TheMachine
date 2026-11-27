@@ -8724,7 +8724,10 @@
   "one": "Nog {} stap",
   "other": "Nog {} stappen"
  },
+ "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{} vraagt nog steeds om een passkey in de browser van je Machine. Gebruik die daar, dan ga ik zelf verder.",
+ "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{} vraagt nog steeds om een inlogcode in de browser van je Machine. Voer die daar in, dan ga ik zelf verder.",
  "{} still has this. Check in drafts a short nudge for you to send.": "{} heeft dit nog. Even polsen zet een kort concept klaar dat je zelf verstuurt.",
+ "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{} toont de login nog steeds in de browser van je Machine. Rond die daar af, dan ga ik zelf verder.",
  "{} still waiting.": "{} wachten nog.",
  "{} stopped after failing to start": "{} is gestopt na mislukte starts",
  "{} stopped the search for {}": "{} heeft de zoekopdracht voor {} stopgezet",

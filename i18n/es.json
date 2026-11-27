@@ -8724,7 +8724,10 @@
   "one": "Falta {} paso",
   "other": "Faltan {} pasos"
  },
+ "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{} aún te pide una clave de acceso en el navegador de tu Machine. Úsala allí y seguiré por mi cuenta.",
+ "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{} aún te pide un código de inicio de sesión en el navegador de tu Machine. Introdúcelo allí y seguiré por mi cuenta.",
  "{} still has this. Check in drafts a short nudge for you to send.": "{} aún lo tiene. Preguntar cómo va escribe un borrador breve que envías tú.",
+ "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{} aún muestra el inicio de sesión en el navegador de tu Machine. Complétalo allí y seguiré por mi cuenta.",
  "{} still waiting.": "{} siguen esperando.",
  "{} stopped after failing to start": "{} se detuvo tras fallar al arrancar",
  "{} stopped the search for {}": "{} detuvo la búsqueda de {}",

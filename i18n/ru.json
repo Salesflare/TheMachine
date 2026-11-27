@@ -9110,7 +9110,10 @@
   "one": "Остался {} шаг",
   "other": "Осталось {} шага"
  },
+ "{} still asks for a passkey in your Machine’s browser. Use it there and I’ll carry on by myself.": "{} всё ещё запрашивает ключ доступа в браузере вашей Machine. Используйте его там, и я продолжу сама.",
+ "{} still asks for a sign-in code in your Machine’s browser. Enter it there and I’ll carry on by myself.": "{} всё ещё запрашивает код для входа в браузере вашей Machine. Введите его там, и я продолжу сама.",
  "{} still has this. Check in drafts a short nudge for you to send.": "Это всё ещё за {}. В черновиках есть короткое напоминание, которое можно отправить.",
+ "{} still shows its sign-in in your Machine’s browser. Finish it there and I’ll carry on by myself.": "{} всё ещё показывает окно входа в браузере вашей Machine. Завершите вход там, и я продолжу сама.",
  "{} still waiting.": "{} всё ещё ждёт.",
  "{} stopped after failing to start": "{}: остановлено после неудачного запуска",
  "{} stopped the search for {}": "{} остановил(а) поиск по {}",
