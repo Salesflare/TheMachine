@@ -11,7 +11,6 @@ import sqlite3
 import subprocess
 import threading
 import time
-import urllib.request
 
 import agent_jobs
 import browser_login
@@ -23,7 +22,7 @@ import fleet_reviews
 import i18n
 import meeting_prep
 from machine import names as display_names
-from machine.browser import preparation_steps, run_tab
+from machine.browser import preparation_steps, run_tab, same_browser
 from machine.cards import CHAT_HANDLE, blocker_questions
 from machine.delivery.push import NOTICE_DECISION
 from machine.chat import (
@@ -290,7 +289,7 @@ class CardChatApp:
             with self.store.connect() as db:
                 tab = run_tab(db, job_id)
             base = (browser_login.endpoints(self.config) or [None])[0]
-            if tab and base and urllib.parse.urlsplit(base).port == tab[1]:
+            if tab and same_browser(base, tab[1]):
                 with browser_login.browser_cdp.Session(base, tab[0], timeout=3) as session:
                     session.call('Page.stopLoading')
         except (browser_login.browser_cdp.CdpError, OSError, KeyError, TypeError, AttributeError, ValueError, sqlite3.Error):
