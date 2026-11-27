@@ -467,6 +467,84 @@ class SigninDialogOpens(unittest.TestCase):
         self.assertFalse(a.signin_address('https://www.example.com/dashboard', 'https://www.example.com/'))
 
 
+STALE = '45E2D1B57A085E3E59809F09FDAF32F4'
+PAGE = 'https://start.ledger.example.be/?ReturnUrl=%2fpurchase%2fInvoice.aspx%3fid%3d7'
+CODE_STEP = 'https://login.ledger-id.example.com/b2c/api/SelfAsserted/confirmed?tx=1'
+SIGNED_IN = 'https://start.ledger.example.be/purchase/Invoice.aspx?id=7'
+CODE_REASON = 'Enter your authenticator code and finish signing in on the open Ledger tab, then tap Continue.'
+
+
+def opened(target, url, label, **more):
+    """An open step's answer as OpenClaw records it now: the tab's target ID, no DevTools address."""
+    text = '\n<<<EXTERNAL_UNTRUSTED_CONTENT id="x">>>\nSource: API\n---\n' + json.dumps(
+        {'targetId': target, 'url': url, 'tabId': 't34', 'label': label, 'suggestedTargetId': label, **more}) + '\n<<<END_EXTERNAL_UNTRUSTED_CONTENT id="x">>>'
+    return json.dumps({'content': [{'type': 'text', 'text': text}]})
+
+
+class StaleCodeStep(unittest.TestCase):
+    """The 2026-11-27 report: a run left its tab on the identity provider's code step (another site than the task's).
+    The owner signed in through the Sign in dialog's own tab; the run that carried on and two Continues after it read
+    the old tab, still showing the code step, and said three times that the code was still needed."""
+
+    job, steps = SigninHandoff.job, SigninHandoff.steps
+
+    def setUp(self):
+        SigninHandoff.setUp(self)
+        with self.store.connect() as db:
+            for i, (params, result) in enumerate([({'action': 'open', 'targetUrl': PAGE, 'label': 'invoice'}, opened(STALE, PAGE, 'invoice')),
+                                                  ({'action': 'act', 'kind': 'click', 'targetId': 'invoice'}, None),
+                                                  ({'action': 'snapshot', 'targetId': 'invoice'}, None)]):
+                db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,result,started_at) VALUES(?,?,?,?,?,?)',
+                           (self.job()['job_id'], str(i), 'browser', json.dumps(params), result, '2026-11-27T09:39:0%d+00:00' % i))
+        self.store.preparation_blocked(self.sid, self.job()['job_id'], CODE_REASON)
+        self.app.config['browser_cdp_url'] = 'http://127.0.0.1:18800'
+
+    def look(self, tabs, forms, call):
+        with patch.object(a.App, 'signin_tabs', return_value=tabs), patch.object(a.browser_login, 'pages', return_value=forms), \
+                patch.object(a.browser_login.browser_cdp, 'navigate') as navigate:
+            return call(), navigate
+
+    def test_continue_after_signing_in_in_another_tab_reopens_the_old_one_and_carries_on(self):
+        tabs = [{'id': 'NEWTAB', 'url': SIGNED_IN}, {'id': STALE, 'url': CODE_STEP}]
+        said, navigate = self.look(tabs, [{'host': 'login.ledger-id.example.com', 'id': '0:' + STALE}], lambda: self.app.action(
+            'decide', {'suggestion_id': self.sid, 'choice': 'retry', 'decision_id': 'continue-1'}, owner_dashboard=True))
+        self.assertTrue(said['retrying'])
+        self.assertEqual(self.job()['status'], 'queued')
+        navigate.assert_called_once_with('http://127.0.0.1:18800', STALE, PAGE, timeout=15)  # never the owner's tab
+
+    def test_continue_while_the_code_step_still_shows_says_so_once_and_starts_nothing(self):
+        before = self.job()
+        for kind_tabs in ([{'id': STALE, 'url': CODE_STEP}], [{'id': STALE, 'url': CODE_STEP}, {'id': 'NEWTAB', 'url': PAGE}]):
+            with self.assertRaisesRegex(ValueError, '^Ledger still asks for a sign-in code in your Machine’s browser. Enter it there'):
+                _, navigate = self.look(kind_tabs, [{'host': 'login.ledger-id.example.com', 'id': '0:' + STALE}, {'host': 'start.ledger.example.be', 'id': '0:NEWTAB'}],
+                                        lambda: self.app.action('decide', {'suggestion_id': self.sid, 'choice': 'retry', 'decision_id': 'continue-2'}, owner_dashboard=True))
+        self.assertEqual((self.job()['status'], self.job()['job_id']), ('blocked', before['job_id']))
+
+    def test_continue_without_a_browser_or_its_tabs_runs_as_before(self):
+        with patch.object(a.App, 'signin_tabs', side_effect=OSError('refused')):
+            self.assertTrue(self.app.action('decide', {'suggestion_id': self.sid, 'choice': 'retry', 'decision_id': 'c3'}, owner_dashboard=True)['retrying'])
+        self.assertEqual(self.job()['status'], 'queued')
+
+    def test_the_watcher_carries_on_past_the_old_tab_and_reopens_it(self):
+        # It sees the old tab on the code step, then the dialog's tab signed in while the old one still shows it.
+        looks = [([{'id': STALE, 'url': CODE_STEP}], [{'host': 'login.ledger-id.example.com', 'id': '0:' + STALE}]),
+                 ([{'id': STALE, 'url': CODE_STEP}, {'id': 'NEWTAB', 'url': SIGNED_IN}], [{'host': 'login.ledger-id.example.com', 'id': '0:' + STALE}])]
+        for step, (tabs, forms) in enumerate(looks):
+            resumed, navigate = self.look(tabs, forms, lambda: self.app.watch_sign_ins(every=0))
+            self.assertEqual(resumed, [self.sid] if step else [])
+        navigate.assert_called_once_with('http://127.0.0.1:18800', STALE, PAGE, timeout=15)
+        self.assertEqual(self.job()['status'], 'queued')
+
+    def test_only_the_tasks_own_tabs_in_this_browser_are_reopened(self):
+        # The open step's answer names a tab in another computer's browser: that ID is not the task's tab here.
+        with self.store.connect() as db:
+            db.execute('UPDATE preparation_calls SET result=? WHERE call_id=?', (opened(STALE, PAGE, 'invoice', wsUrl='ws://10.0.0.9:1/x'), '0'))
+        tabs = [{'id': 'NEWTAB', 'url': SIGNED_IN}, {'id': STALE, 'url': CODE_STEP}]
+        seen, navigate = self.look(tabs, [], lambda: self.app.fresh_signin(self.sid))
+        self.assertEqual(seen['state'], 'done')
+        navigate.assert_not_called()
+
+
 class DashboardWiring(unittest.TestCase):
     def test_the_card_and_the_telegram_link_open_the_dialog_for_the_task(self):
         html = dashboard_parts.assemble(Path(__file__).parent.parent)
