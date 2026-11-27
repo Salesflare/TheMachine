@@ -24,10 +24,12 @@ from machine.app.graph_actions import account_services
 from machine.app.prep_reads import history_once, review_brief
 from machine.app.recall import recall
 from machine.app import start_message
+from machine import browser_exit
 from machine.browser import (
     browser_lease_script,
     browser_link,
     browser_wait,
+    on_browser,
     PEEK_EVERY,
     PEEK_WIDTH,
     preparation_steps,
@@ -819,9 +821,13 @@ class PreparationApp:
             job = db.execute('SELECT job_id,session_job_id,status,started_at FROM preparations WHERE suggestion_id=?', (suggestion_id,)).fetchone()
             waiting = browser_wait(db, job['job_id'], job['status']) if job else None
             steps = preparation_steps(db, job['job_id']) if job and job['status'] in ('starting', 'running') else []
+            # a listed site waits for the owner's computer (browser_exit.py): said on the run that is on the browser
+            wait = steps and on_browser(db, job['job_id']) and browser_exit.waiting_step()
         if not job:
             raise OwnerError('No preparation')
         running = job['status'] in ('starting', 'running')
+        if wait and steps[-1]['title'] != wait['title']:
+            steps = [*steps, wait][-4:]
         return {'status': job['status'], 'started_at': job['started_at'], 'steps': steps,
                 'browser': {**waiting, 'link': browser_link(self.config)} if waiting else None,
                 'peek': running and self.peek_target(job['job_id']) is not None}

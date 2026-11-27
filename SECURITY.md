@@ -141,6 +141,26 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 - The browser's own cookies and sign-ins (its profile) belong to the browser: protected by the account and the disk,
   not by The Machine's keys. Anything running as the service user, the agent included, can use them.
 
+### The browser through the owner's computer
+
+With `browser_exit` on, the sites in `browser_exit_sites` (LinkedIn, Facebook, Instagram, X and Threads to start with)
+reach the Machine's browser through the owner's desktop app, so they see the owner's own address
+(`machine/browser_exit.py`). Only the browser: mail, AI calls and connectors go out from the Machine as before.
+
+- Only the owner: the app opens `GET /api/exit` (an upgrade to `tm-exit/1`) to the Machine it is signed in to, over
+  the same TLS and sign-in as its other calls; the Machine takes it only from its owner and its own origin, as every
+  dashboard route. A web page can't ask for that upgrade.
+- On the computer the app only connects out, never listens. It connects only to public internet addresses on ports 80
+  and 443, checked after its own DNS lookup and on the address it checked (also for a redirect, which is a new
+  connection): no private, loopback, link-local, cloud metadata, carrier-grade NAT, Tailscale, multicast or reserved
+  ranges, nor the computer's own public address. It has caps on connections, speed and bytes a day.
+- The Machine's end is a SOCKS5 listener on `127.0.0.1` of the Machine's own host, for its browser.
+- What goes through is the browser's traffic as it is: for HTTPS sites that is TLS and the site's name. Nothing is
+  kept or logged but that a computer connected or went, which listed site waited for it, and why a connection was
+  refused (a word, no address).
+- While the owner's computer is away, listed sites wait for it and are then refused, so a sign-in doesn't come from
+  the Machine's address instead. Turned off in the app, or no app for 14 days: they go out from the Machine again.
+
 ### On the device
 
 The dashboard keeps its last to-dos, the open chat and the Graph's lists on each device so it opens at once. They are
