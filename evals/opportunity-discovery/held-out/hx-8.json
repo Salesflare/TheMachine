@@ -1,0 +1,3378 @@
+{
+ "id": "hx-8",
+ "about": "Operations manager at a commercial pollination company that rents honeybee hives to orchards and berry farms; married, two school-age kids",
+ "owner": {
+  "name": "Teodora Vance",
+  "email": "teodora@hollowmere.example"
+ },
+ "accounts": [
+  {
+   "id": "wmail",
+   "boundary": "work:Hollowmere",
+   "email": "teodora@hollowmere.example"
+  },
+  {
+   "id": "pmail",
+   "boundary": "personal:home",
+   "email": "teodora.vance@mail.example"
+  }
+ ],
+ "messages": [
+  {
+   "key": "m1",
+   "account": "wmail",
+   "thread": "w1",
+   "day": 30,
+   "hour": 9,
+   "from": [
+    "Neha Brandt",
+    "neha.brandt@calloway-orchards.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "North block hive count for this spring",
+   "body": "Hi Teodora,\n\nWe finished grafting the new north block last fall and the trees are finally big enough to count this year. I'd like to go from 80 hives to 120 for the spring placement so the north block gets proper coverage. Bloom looks like it will start around March 18 if the weather holds.\n\nCan you hold 40 extra colonies for us? Same drop points as last year plus the new lane along the north fence.\n\nThanks,\nNeha Brandt\nGrower Manager, Calloway Orchards",
+   "bulk": false,
+   "project": "Calloway spring placement"
+  },
+  {
+   "key": "m2",
+   "account": "wmail",
+   "thread": "w1",
+   "day": 30,
+   "hour": 14,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Neha Brandt",
+     "neha.brandt@calloway-orchards.example"
+    ]
+   ],
+   "subject": "Re: North block hive count for this spring",
+   "body": "Hi Neha,\n\nGreat news about the north block. I need to check what we have free around March 18 before I promise 40 more, but I'll come back to you with a yes or no and a revised quote.\n\nTeodora Vance\nOperations, Hollowmere Apiaries",
+   "bulk": false,
+   "project": "Calloway spring placement"
+  },
+  {
+   "key": "m3",
+   "account": "wmail",
+   "thread": "w1",
+   "day": 29,
+   "hour": 8,
+   "from": [
+    "Neha Brandt",
+    "neha.brandt@calloway-orchards.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: North block hive count for this spring",
+   "body": "Perfect, thank you. I'll send a map of the new lane once our guy marks it.\n\nNeha",
+   "bulk": false,
+   "project": "Calloway spring placement"
+  },
+  {
+   "key": "m4",
+   "account": "wmail",
+   "thread": "w2",
+   "day": 24,
+   "hour": 11,
+   "from": [
+    "Owen Pike",
+    "owen.pike@calloway-orchards.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Pollination agreement renewal",
+   "body": "Dear Ms. Vance,\n\nI handle vendor contracts at Calloway. Our pollination agreement with Hollowmere is up for renewal. We would like to renew at last year's count of 80 hives, and given our volume over the past three seasons we are asking for a 5% loyalty discount on the per-hive rate.\n\nOur board signs vendor agreements on March 6, so we need the final document before then.\n\nKind regards,\nOwen Pike\nFinance, Calloway Orchards",
+   "bulk": false,
+   "project": "Calloway spring placement"
+  },
+  {
+   "key": "m5",
+   "account": "wmail",
+   "thread": "w2",
+   "day": 23,
+   "hour": 10,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Owen Pike",
+     "owen.pike@calloway-orchards.example"
+    ]
+   ],
+   "subject": "Re: Pollination agreement renewal",
+   "body": "Hi Owen,\n\nThanks for reaching out. I'll talk to Arlo about the discount and get you a draft well before March 6.\n\nBest,\nTeodora",
+   "bulk": false,
+   "project": "Calloway spring placement"
+  },
+  {
+   "key": "m6",
+   "account": "wmail",
+   "thread": "w3",
+   "day": 26,
+   "hour": 16,
+   "from": [
+    "Jonas Reyes",
+    "jonas@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "spare colonies mid March",
+   "body": "Teo, quick heads up. With Larkfield out this season we have about 40 strong colonies sitting at the Birch Road yard with nothing booked from March 15 on. If you know anyone who needs them say so soon, otherwise I'll start splitting some of them.\n\nJonas",
+   "bulk": false
+  },
+  {
+   "key": "m7",
+   "account": "wmail",
+   "thread": "w3",
+   "day": 25,
+   "hour": 8,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Jonas Reyes",
+     "jonas@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: spare colonies mid March",
+   "body": "Thanks Jonas, don't split them yet. Give me a week.",
+   "bulk": false
+  },
+  {
+   "key": "m8",
+   "account": "wmail",
+   "thread": "w4",
+   "day": 19,
+   "hour": 13,
+   "from": [
+    "Felix Odum",
+    "felix@pembertoncherry.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Weak colonies in the plum block",
+   "body": "Hi Teodora,\n\nWalked the plum block this morning with our scout. Six of the 20 colonies you dropped are really weak, hardly any brood, and in two of them we couldn't find a queen at all. The queens that are there have the green dot marking. Everything else looks fine.\n\nCan someone come take a look? Plum bloom is short and I don't want to lose it.\n\nFelix Odum\nPemberton Cherry Co.",
+   "bulk": false,
+   "project": "Pemberton cherry placement"
+  },
+  {
+   "key": "m9",
+   "account": "wmail",
+   "thread": "w4",
+   "day": 19,
+   "hour": 15,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Felix Odum",
+     "felix@pembertoncherry.example"
+    ]
+   ],
+   "subject": "Re: Weak colonies in the plum block",
+   "body": "Hi Felix, sorry to hear it. Jonas will swing by tomorrow and swap in two strong colonies for the queenless ones. We'll sort out the rest after he's had a look.\n\nTeodora",
+   "bulk": false,
+   "project": "Pemberton cherry placement"
+  },
+  {
+   "key": "m10",
+   "account": "wmail",
+   "thread": "w5",
+   "day": 17,
+   "hour": 10,
+   "from": [
+    "Tamsin Hale",
+    "tamsin@ridgebackqueens.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "About the queens from lot RQ-44",
+   "body": "Hi Teodora,\n\nI'm writing to the few customers who got queens from lot RQ-44 (green dot, shipped in mid January). That batch mated during a week of cold rain and we're now hearing about poor laying and some supersedure. Your order had 40 queens from that lot.\n\nWe'll replace any failing RQ-44 queen free of charge. Just send me the count and the yard by March 15 and we'll ship within a week of the claim.\n\nReally sorry about this.\nTamsin Hale\nRidgeback Queens",
+   "bulk": false
+  },
+  {
+   "key": "m11",
+   "account": "wmail",
+   "thread": "w6",
+   "day": 15,
+   "hour": 9,
+   "from": [
+    "Kenji Sato",
+    "kenji@satoberries.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "hives on the east field",
+   "body": "Morning Teodora,\n\nNot urgent yet but I wanted to flag it. Nine of the hives on our east field are slow, the foragers are thin and I see a lot of empty cells. My nephew checked a couple and the queens all have a little green dot. The rest of the hives are doing great.\n\nBlueberries open in about three weeks. Let me know what you think.\n\nKenji\nSato Blueberry Farm",
+   "bulk": false,
+   "project": "Sato blueberry placement"
+  },
+  {
+   "key": "m12",
+   "account": "wmail",
+   "thread": "w6",
+   "day": 15,
+   "hour": 12,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Kenji Sato",
+     "kenji@satoberries.example"
+    ]
+   ],
+   "subject": "Re: hives on the east field",
+   "body": "Thanks Kenji, good catch. I'll have someone look at them before bloom, promise.\n\nTeodora",
+   "bulk": false,
+   "project": "Sato blueberry placement"
+  },
+  {
+   "key": "m13",
+   "account": "wmail",
+   "thread": "w7",
+   "day": 9,
+   "hour": 11,
+   "from": [
+    "Gwen Lattimore",
+    "g.lattimore@apiary-program.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Scheduled inspection: Fernhill yard",
+   "body": "Ms. Vance,\n\nThis is notice of the routine apiary inspection for your registered Fernhill yard on Tuesday, March 10, starting at 9:00 a.m. All registered colonies at the site must be present and accessible for the inspection. If colonies are absent the inspection will be recorded as incomplete and rescheduled, which may delay your movement certificate for the season.\n\nPlease confirm by reply.\n\nGwen Lattimore\nState Apiary Inspector\nApiary Program Office",
+   "bulk": false
+  },
+  {
+   "key": "m14",
+   "account": "wmail",
+   "thread": "w7",
+   "day": 8,
+   "hour": 9,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Gwen Lattimore",
+     "g.lattimore@apiary-program.example"
+    ]
+   ],
+   "subject": "Re: Scheduled inspection: Fernhill yard",
+   "body": "Dear Ms. Lattimore,\n\nConfirmed, March 10 at 9:00 works. Someone from our field team will meet you at the gate.\n\nBest regards,\nTeodora Vance\nOperations, Hollowmere Apiaries",
+   "bulk": false
+  },
+  {
+   "key": "m15",
+   "account": "wmail",
+   "thread": "w8",
+   "day": 13,
+   "hour": 14,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Felix Odum",
+     "felix@pembertoncherry.example"
+    ]
+   ],
+   "subject": "Cherry placement delivery",
+   "body": "Hi Felix,\n\nFor the cherry block we're planning to bring the 60 Fernhill colonies over on March 10, early morning. Does that still work on your side?\n\nTeodora",
+   "bulk": false,
+   "project": "Pemberton cherry placement"
+  },
+  {
+   "key": "m16",
+   "account": "wmail",
+   "thread": "w8",
+   "day": 12,
+   "hour": 7,
+   "from": [
+    "Felix Odum",
+    "felix@pembertoncherry.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: Cherry placement delivery",
+   "body": "Yes, March 10 is good. Gate will be open from 6, I'll have the forklift ready at the lower lot. See you then.\n\nFelix",
+   "bulk": false,
+   "project": "Pemberton cherry placement"
+  },
+  {
+   "key": "m17",
+   "account": "wmail",
+   "thread": "w9",
+   "day": 14,
+   "hour": 17,
+   "from": [
+    "Jonas Reyes",
+    "jonas@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "flatbed booked",
+   "body": "Booked the big flatbed for the night of March 9 to the 10th. We load Fernhill after dark on the 9th and roll at 4am so we're at Pemberton by 6.\n\nJ",
+   "bulk": false,
+   "project": "Pemberton cherry placement"
+  },
+  {
+   "key": "m18",
+   "account": "wmail",
+   "thread": "w10",
+   "day": 20,
+   "hour": 10,
+   "from": [
+    "Daniel Ortiz",
+    "daniel.ortiz@westbrook-trucks.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Box truck reservation March 7",
+   "body": "Hello Teodora,\n\nFollowing up on your call. I have a 26 ft box truck with liftgate available for Saturday, March 7, pickup 7 a.m. at our Westbrook lot. Rate is the same as your December rental. Should I lock it in? I'll need a credit card on file by Friday.\n\nThanks,\nDaniel Ortiz\nAccount Rep, Westbrook Truck Rental",
+   "bulk": false
+  },
+  {
+   "key": "m19",
+   "account": "wmail",
+   "thread": "w10",
+   "day": 20,
+   "hour": 13,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Daniel Ortiz",
+     "daniel.ortiz@westbrook-trucks.example"
+    ]
+   ],
+   "subject": "Re: Box truck reservation March 7",
+   "body": "Hi Daniel, yes please lock it in. It's for moving honey drums to Greystone. Bea will call with the card.\n\nTeodora",
+   "bulk": false
+  },
+  {
+   "key": "m20",
+   "account": "wmail",
+   "thread": "w10",
+   "day": 19,
+   "hour": 9,
+   "from": [
+    "Daniel Ortiz",
+    "daniel.ortiz@westbrook-trucks.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: Box truck reservation March 7",
+   "body": "All set, confirmation WB-77812. Card received from Bea. See you on the 7th.\n\nDaniel",
+   "bulk": false
+  },
+  {
+   "key": "m21",
+   "account": "wmail",
+   "thread": "w11",
+   "day": 33,
+   "hour": 15,
+   "from": [
+    "Colin Abara",
+    "colin@larkfieldpears.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Skipping this season",
+   "body": "Hi Teodora,\n\nBad news from our side. We're pulling out half the old pear block this spring and the rest is getting a hard prune, so there's no point in renting hives this year. We'll need to delay until next season. Sorry for the short notice, we really liked working with you.\n\nColin Abara\nLarkfield Pears",
+   "bulk": false
+  },
+  {
+   "key": "m22",
+   "account": "wmail",
+   "thread": "w11",
+   "day": 33,
+   "hour": 17,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Colin Abara",
+     "colin@larkfieldpears.example"
+    ]
+   ],
+   "subject": "Re: Skipping this season",
+   "body": "Understood Colin, thanks for telling us early. Let's talk again in the fall.\n\nTeodora",
+   "bulk": false
+  },
+  {
+   "key": "m23",
+   "account": "wmail",
+   "thread": "w12",
+   "day": 27,
+   "hour": 11,
+   "from": [
+    "Colin Marsh",
+    "colin.marsh@sweetfeed.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Syrup delivery delayed",
+   "body": "Hi Teodora,\n\nOur tanker is in the shop so your 2,000 gallon syrup delivery is delayed until the following Wednesday. Apologies. If that's a problem let me know and I'll see if I can do a partial drop with the small truck.\n\nColin Marsh\nSweetfeed Syrup",
+   "bulk": false
+  },
+  {
+   "key": "m24",
+   "account": "wmail",
+   "thread": "w12",
+   "day": 27,
+   "hour": 13,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Colin Marsh",
+     "colin.marsh@sweetfeed.example"
+    ]
+   ],
+   "subject": "Re: Syrup delivery delayed",
+   "body": "Wednesday is fine Colin, we have enough for now.",
+   "bulk": false
+  },
+  {
+   "key": "m25",
+   "account": "wmail",
+   "thread": "w13",
+   "day": 40,
+   "hour": 10,
+   "from": [
+    "Hugo Brandvold",
+    "hugo@ashgrove.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Quote for apple bloom",
+   "body": "Hello,\n\nWe're a mid-size apple grower and we're looking for 30 hives for apple bloom in late April. Could you send a quote? Our previous provider retired.\n\nHugo Brandvold\nAshgrove Farm",
+   "bulk": false
+  },
+  {
+   "key": "m26",
+   "account": "wmail",
+   "thread": "w14",
+   "day": 37,
+   "hour": 19,
+   "from": [
+    "Hugo Brandvold",
+    "hugo.brandvold@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "30 hives for April",
+   "body": "Hi Teodora,\n\nWriting from my personal address, our farm mail has been bouncing all week. I'd like a price for 30 hives for apple bloom at the end of April. Hope this one gets through.\n\nHugo Brandvold\nAshgrove Farm",
+   "bulk": false
+  },
+  {
+   "key": "m27",
+   "account": "wmail",
+   "thread": "w14",
+   "day": 36,
+   "hour": 9,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Hugo Brandvold",
+     "hugo.brandvold@mail.example"
+    ]
+   ],
+   "subject": "Re: 30 hives for April",
+   "body": "Hi Hugo,\n\nGot both of your notes. Quote attached for 30 hives, late April to mid May, delivery and pickup included. Happy to walk the orchard with you if helpful.\n\nTeodora Vance\nOperations, Hollowmere Apiaries",
+   "bulk": false
+  },
+  {
+   "key": "m28",
+   "account": "wmail",
+   "thread": "w15",
+   "day": 44,
+   "hour": 12,
+   "from": [
+    "Dana Weiss",
+    "dweiss@ellery-twp.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Swarm removal contact list",
+   "body": "Hi Ms. Vance,\n\nEllery Township is updating the list of beekeepers residents can call for swarm removal this spring. Would Hollowmere like to stay on it? We just need a phone number and whether you charge.\n\nDana Weiss\nTownship Clerk's Office",
+   "bulk": false
+  },
+  {
+   "key": "m29",
+   "account": "wmail",
+   "thread": "w15",
+   "day": 43,
+   "hour": 9,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Dana Weiss",
+     "dweiss@ellery-twp.example"
+    ]
+   ],
+   "subject": "Re: Swarm removal contact list",
+   "body": "Hi Dana, yes please keep us on. Use the main office line, and there's no charge within the township.\n\nTeodora",
+   "bulk": false
+  },
+  {
+   "key": "m30",
+   "account": "wmail",
+   "thread": "w16",
+   "day": 38,
+   "hour": 14,
+   "from": [
+    "Pia Moreau",
+    "pia@buzzline.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Proposal: the Swarm campaign",
+   "body": "Hi Teodora!\n\nAs promised, here's our idea for spring: a social campaign we're calling Swarm. Short clips from your yards, grower testimonials, and a map that fills in as hives get placed. Three months, budget options attached.\n\nWould love your thoughts.\nPia Moreau\nBuzzline Media",
+   "bulk": false
+  },
+  {
+   "key": "m31",
+   "account": "wmail",
+   "thread": "w16",
+   "day": 37,
+   "hour": 10,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Pia Moreau",
+     "pia@buzzline.example"
+    ]
+   ],
+   "subject": "Re: Proposal: the Swarm campaign",
+   "body": "Thanks Pia, fun concept. The smallest budget option is the only one we could do. Can you show what that one includes exactly?",
+   "bulk": false
+  },
+  {
+   "key": "m32",
+   "account": "wmail",
+   "thread": "w16",
+   "day": 35,
+   "hour": 16,
+   "from": [
+    "Pia Moreau",
+    "pia@buzzline.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: Proposal: the Swarm campaign",
+   "body": "Sure! Option A is 12 short clips, one grower interview and the map. No paid ads. I'll hold the spot on our calendar until end of the month.\n\nPia",
+   "bulk": false
+  },
+  {
+   "key": "m33",
+   "account": "wmail",
+   "thread": "w17",
+   "day": 10,
+   "hour": 15,
+   "from": [
+    "Wren Castellano",
+    "wren@brindlecider.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Grower tasting night, March 20",
+   "body": "Hi Teodora,\n\nWe're hosting our growers and partners for a tasting of the new barrel batch on Friday, March 20, 7 p.m. at the cider house. You and a plus-one are very welcome. It's mostly orchard folks talking shop, so bring your best bee stories.\n\nCheers,\nWren Castellano\nBrindle Cider",
+   "bulk": false
+  },
+  {
+   "key": "m34",
+   "account": "wmail",
+   "thread": "w17",
+   "day": 9,
+   "hour": 8,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Wren Castellano",
+     "wren@brindlecider.example"
+    ]
+   ],
+   "subject": "Re: Grower tasting night, March 20",
+   "body": "Thanks Wren, I'd love to come. I'll let you know about the plus-one closer to the date.",
+   "bulk": false
+  },
+  {
+   "key": "m35",
+   "account": "wmail",
+   "thread": "w18",
+   "day": 34,
+   "hour": 11,
+   "from": [
+    "Rhoda Fenn",
+    "rhoda@millcreekorchard.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "invoice amount looks wrong",
+   "body": "Hi Teodora, the invoice in your online portal shows $14,200 but our agreement is $12,400. Typo maybe? Can you check before I pay.\n\nRhoda",
+   "bulk": false
+  },
+  {
+   "key": "m36",
+   "account": "wmail",
+   "thread": "w18",
+   "day": 33,
+   "hour": 9,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Rhoda Fenn",
+     "rhoda@millcreekorchard.example"
+    ]
+   ],
+   "cc": [
+    [
+     "Bea Lindqvist",
+     "bea@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: invoice amount looks wrong",
+   "body": "Hi Rhoda, you're right, the agreement says $12,400. Please hold off paying, Bea (cc) is checking the portal.\n\nTeodora",
+   "bulk": false
+  },
+  {
+   "key": "m37",
+   "account": "wmail",
+   "thread": "w19",
+   "day": 32,
+   "hour": 10,
+   "from": [
+    "Abel Krause",
+    "abel@tansyhill.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Rechnung im Portal",
+   "body": "Hallo Teodora,\n\nim Portal steht bei unserer Rechnung ein anderer Betrag als im Vertrag, ungefähr 1.800 Dollar zu viel. Kannst du das bitte prüfen? Ich zahle erst, wenn das geklärt ist.\n\nViele Grüße\nAbel Krause\nTansy Hill Farm",
+   "bulk": false
+  },
+  {
+   "key": "m38",
+   "account": "wmail",
+   "thread": "w19",
+   "day": 32,
+   "hour": 14,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Abel Krause",
+     "abel@tansyhill.example"
+    ]
+   ],
+   "subject": "Re: Rechnung im Portal",
+   "body": "Hallo Abel,\n\ndanke für den Hinweis. Wir haben das gleiche Problem bei einem anderen Kunden gesehen, Bea schaut sich das Portal gerade an. Du bekommst eine korrigierte Rechnung.\n\nViele Grüße\nTeodora",
+   "bulk": false
+  },
+  {
+   "key": "m39",
+   "account": "wmail",
+   "thread": "w20",
+   "day": 29,
+   "hour": 16,
+   "from": [
+    "Bea Lindqvist",
+    "bea@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "portal invoices fixed",
+   "body": "Hi Teo,\n\nFound it: the portal pulled last year's rate table for anyone with a multi-year contract. Fixed it this afternoon, checked all 31 open invoices, and sent corrected ones to Mill Creek, Tansy Hill and the two others that were affected. Nobody had paid the wrong amount yet.\n\nBea",
+   "bulk": false
+  },
+  {
+   "key": "m40",
+   "account": "wmail",
+   "thread": "w19",
+   "day": 28,
+   "hour": 8,
+   "from": [
+    "Abel Krause",
+    "abel@tansyhill.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: Rechnung im Portal",
+   "body": "Neue Rechnung ist da und stimmt. Danke, wird diese Woche bezahlt.\n\nAbel",
+   "bulk": false
+  },
+  {
+   "key": "m41",
+   "account": "wmail",
+   "thread": "w21",
+   "day": 42,
+   "hour": 13,
+   "from": [
+    "Rhoda Fenn",
+    "rhoda@millcreekorchard.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "hive health workshop idea",
+   "body": "Teodora, a few of us growers were talking about how little we know about what's going on inside the hives we rent. Any chance you could do a short hive health session at the co-op hall on February 20? Nothing fancy, an hour with questions.\n\nRhoda",
+   "bulk": false
+  },
+  {
+   "key": "m42",
+   "account": "wmail",
+   "thread": "w22",
+   "day": 38,
+   "hour": 9,
+   "from": [
+    "Lou Brennan",
+    "lou@westvale-coop.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "February 20 member meeting",
+   "body": "Hi Teodora,\n\nOur February 20 member meeting has a 30 minute slot open. Several members asked for someone to talk about bee health and what growers can do to help the colonies they rent. Would you be up for it?\n\nLou Brennan\nChair, Westvale Growers Co-op",
+   "bulk": false
+  },
+  {
+   "key": "m43",
+   "account": "wmail",
+   "thread": "w23",
+   "day": 25,
+   "hour": 10,
+   "from": [
+    "Ilse Vogel",
+    "ilse@clearcrest.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Price update for 2026 jar orders",
+   "body": "Dear Teodora,\n\nDue to higher energy costs our glass jar prices will go up by 12% for orders placed after March 1. Your standing order for 1 lb jars is affected. Happy to discuss volume options.\n\nBest,\nIlse Vogel\nClearcrest Glass",
+   "bulk": false
+  },
+  {
+   "key": "m44",
+   "account": "wmail",
+   "thread": "w24",
+   "day": 22,
+   "hour": 11,
+   "from": [
+    "Rob Tully",
+    "rob@inkhaven.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Label pricing",
+   "body": "Hey Teodora, heads up that our label stock went up and we're passing on about 9% from next month. Your wildflower and clover labels are both on the new sheet attached.\n\nRob\nInkhaven Labels",
+   "bulk": false
+  },
+  {
+   "key": "m45",
+   "account": "wmail",
+   "thread": "w25",
+   "day": 21,
+   "hour": 7,
+   "from": [
+    "State Beekeepers Association",
+    "news@statebeekeepers.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "February bulletin: mite treatment supply, spring meeting, new members",
+   "body": "In this issue: distributors report a shortage of the popular oxalic strip treatment this spring; order early. Our spring meeting is in April. Welcome to 14 new members. Plus: building a better swarm trap.",
+   "bulk": true
+  },
+  {
+   "key": "m46",
+   "account": "wmail",
+   "thread": "w26",
+   "day": 16,
+   "hour": 7,
+   "from": [
+    "Fieldstone Seeds",
+    "hello@fieldstone-seeds.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Pollinator strips are back + beekeeper supply news",
+   "body": "Our pollinator cover crop mix is back in stock. Also in the news: beekeeping suppliers warn of a mite treatment shortage, so plan ahead. 10% off cover crop seed this week.",
+   "bulk": true
+  },
+  {
+   "key": "m47",
+   "account": "wmail",
+   "thread": "w27",
+   "day": 47,
+   "hour": 10,
+   "from": [
+    "Céline Marchand",
+    "celine@ruchelle.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Commande de cadres",
+   "body": "Bonjour Teodora,\n\nMerci pour votre commande de 600 cadres. Nous pouvons livrer fin février. Souhaitez-vous les cadres montés avec cire ou sans cire cette année?\n\nCordialement,\nCéline Marchand\nAtelier Ruchelle",
+   "bulk": false
+  },
+  {
+   "key": "m48",
+   "account": "wmail",
+   "thread": "w27",
+   "day": 46,
+   "hour": 9,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Céline Marchand",
+     "celine@ruchelle.example"
+    ]
+   ],
+   "subject": "Re: Commande de cadres",
+   "body": "Bonjour Céline,\n\nAvec cire, comme l'année dernière s'il vous plaît. Fin février nous convient.\n\nMerci,\nTeodora",
+   "bulk": false
+  },
+  {
+   "key": "m49",
+   "account": "wmail",
+   "thread": "w27",
+   "day": 45,
+   "hour": 11,
+   "from": [
+    "Céline Marchand",
+    "celine@ruchelle.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: Commande de cadres",
+   "body": "Parfait, c'est noté. Je vous envoie la facture pro forma aujourd'hui. Le paiement est à régler avant l'expédition.\n\nCéline",
+   "bulk": false
+  },
+  {
+   "key": "m50",
+   "account": "wmail",
+   "thread": "w27",
+   "day": 44,
+   "hour": 15,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Céline Marchand",
+     "celine@ruchelle.example"
+    ]
+   ],
+   "subject": "Re: Commande de cadres",
+   "body": "Merci Céline, le virement est fait.\n\nTeodora",
+   "bulk": false
+  },
+  {
+   "key": "m51",
+   "account": "wmail",
+   "thread": "w28",
+   "day": 5,
+   "hour": 8,
+   "from": [
+    "Arlo Penn",
+    "arlo@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Monday sync",
+   "body": "Teo, can you put together the agenda for Monday? I want to go over spring placements, truck schedule and the hiring for the two seasonal field hands.\n\nArlo",
+   "bulk": false
+  },
+  {
+   "key": "m52",
+   "account": "wmail",
+   "thread": "w28",
+   "day": 5,
+   "hour": 10,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Arlo Penn",
+     "arlo@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: Monday sync",
+   "body": "Will do, I'll send it Sunday night.",
+   "bulk": false
+  },
+  {
+   "key": "m53",
+   "account": "wmail",
+   "thread": "w29",
+   "day": 3,
+   "hour": 14,
+   "from": [
+    "Bea Lindqvist",
+    "bea@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "seasonal hires paperwork",
+   "body": "Hi Teo, for the two seasonal hands, do you want them on the March 16 payroll or the April 1 one? I need to know by Wednesday to set them up.\n\nBea",
+   "bulk": false
+  },
+  {
+   "key": "m54",
+   "account": "wmail",
+   "thread": "w30",
+   "day": 50,
+   "hour": 11,
+   "from": [
+    "Wren Castellano",
+    "wren@brindlecider.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Signed agreement",
+   "body": "Hi Teodora, signed agreement for the 25 hives attached. Same as last year. Thanks!\n\nWren",
+   "bulk": false
+  },
+  {
+   "key": "m55",
+   "account": "wmail",
+   "thread": "w31",
+   "day": 18,
+   "hour": 10,
+   "from": [
+    "Marta Ilves",
+    "marta@greystonehoney.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Drum pickup and price",
+   "body": "Hi Teodora,\n\nWe can take the 18 drums of wildflower on March 7 at our dock, any time after 9. Price per pound as we agreed in December. Please bring the lot sheets with moisture readings.\n\nMarta Ilves\nGreystone Honey Packers",
+   "bulk": false
+  },
+  {
+   "key": "m56",
+   "account": "wmail",
+   "thread": "w31",
+   "day": 17,
+   "hour": 9,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Marta Ilves",
+     "marta@greystonehoney.example"
+    ]
+   ],
+   "subject": "Re: Drum pickup and price",
+   "body": "Great, we'll be there around 10 on the 7th with the sheets.\n\nTeodora",
+   "bulk": false
+  },
+  {
+   "key": "m57",
+   "account": "wmail",
+   "thread": "w32",
+   "day": 39,
+   "hour": 13,
+   "from": [
+    "Kestrel Insurance",
+    "renewals@kestrel-ins.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Your commercial auto policy renews April 1",
+   "body": "Your commercial auto policy for Hollowmere Apiaries renews on April 1. No action is needed if your vehicle list is unchanged. Log in to review your documents.",
+   "bulk": true
+  },
+  {
+   "key": "m58",
+   "account": "wmail",
+   "thread": "w33",
+   "day": 52,
+   "hour": 16,
+   "from": [
+    "Jonas Reyes",
+    "jonas@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "truck 2 brakes",
+   "body": "Truck 2 is in for brakes, back Thursday. Using the old pickup till then.",
+   "bulk": false
+  },
+  {
+   "key": "m59",
+   "account": "wmail",
+   "thread": "w34",
+   "day": 55,
+   "hour": 9,
+   "from": [
+    "Apiary Program Office",
+    "noreply@apiary-program.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Apiary registration renewed",
+   "body": "Your apiary registrations for 2026 have been renewed: Fernhill, Birch Road, Quarry Lane. Keep this notice for your records.",
+   "bulk": true
+  },
+  {
+   "key": "m60",
+   "account": "wmail",
+   "thread": "w35",
+   "day": 31,
+   "hour": 7,
+   "from": [
+    "Harborline Bank",
+    "alerts@harborline-bank.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Your January business statement is ready",
+   "body": "Your statement for the account ending 4471 is ready to view in online banking.",
+   "bulk": true
+  },
+  {
+   "key": "m61",
+   "account": "wmail",
+   "thread": "w36",
+   "day": 12,
+   "hour": 7,
+   "from": [
+    "HiveLog",
+    "updates@hivelog.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "HiveLog 4.2: offline yard notes",
+   "body": "New in 4.2: take yard notes offline and sync later, faster photo uploads, and a new queen tracking field.",
+   "bulk": true
+  },
+  {
+   "key": "m62",
+   "account": "wmail",
+   "thread": "w37",
+   "day": 6,
+   "hour": 9,
+   "from": [
+    "Westbrook Truck Rental",
+    "deals@westbrook-trucks.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Spring special: 15% off weekly rentals",
+   "body": "Book any truck for a week or more in March and save 15%. Offer ends March 31.",
+   "bulk": true
+  },
+  {
+   "key": "m63",
+   "account": "wmail",
+   "thread": "w38",
+   "day": 2,
+   "hour": 12,
+   "from": [
+    "AgriBiz Webinars",
+    "events@agribiz-webinars.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Webinar: hiring seasonal workers in 2026",
+   "body": "Join us Thursday at noon for a free session on seasonal hiring rules, housing, and payroll tips.",
+   "bulk": true
+  },
+  {
+   "key": "m64",
+   "account": "wmail",
+   "thread": "w39",
+   "day": 48,
+   "hour": 10,
+   "from": [
+    "Kenji Sato",
+    "kenji@satoberries.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "placement this year",
+   "body": "Hi Teodora, same 30 hives as last year please, east and south fields. We expect bloom late February or early March depending on the weather. Can you drop them mid February?\n\nKenji",
+   "bulk": false,
+   "project": "Sato blueberry placement"
+  },
+  {
+   "key": "m65",
+   "account": "wmail",
+   "thread": "w39",
+   "day": 47,
+   "hour": 15,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Kenji Sato",
+     "kenji@satoberries.example"
+    ]
+   ],
+   "subject": "Re: placement this year",
+   "body": "Hi Kenji, mid February works. We'll drop 18 on the east field and 12 on the south. I'll send the date once the truck is booked.\n\nTeodora",
+   "bulk": false,
+   "project": "Sato blueberry placement"
+  },
+  {
+   "key": "m66",
+   "account": "wmail",
+   "thread": "w40",
+   "day": 53,
+   "hour": 14,
+   "from": [
+    "Felix Odum",
+    "felix@pembertoncherry.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Signed: plums and cherries",
+   "body": "Teodora, signed contract attached: 20 colonies for the plum block in February and 60 for cherries in March. Looking forward to it.\n\nFelix",
+   "bulk": false,
+   "project": "Pemberton cherry placement"
+  },
+  {
+   "key": "m67",
+   "account": "wmail",
+   "thread": "w41",
+   "day": 7,
+   "hour": 11,
+   "from": [
+    "Sergio Valdez",
+    "sergio@pinecrestalmendras.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Consulta: colmenas para almendros",
+   "body": "Hola Teodora,\n\nMe recomendó tu empresa Felix Odum. Tenemos 40 hectáreas de almendros jóvenes y queremos probar con colmenas el año que viene. ¿Qué precio por colmena manejan y cuántas recomiendan por hectárea?\n\nSaludos,\nSergio Valdez\nPinecrest Almendras",
+   "bulk": false
+  },
+  {
+   "key": "m68",
+   "account": "wmail",
+   "thread": "w41",
+   "day": 6,
+   "hour": 10,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Sergio Valdez",
+     "sergio@pinecrestalmendras.example"
+    ]
+   ],
+   "subject": "Re: Consulta: colmenas para almendros",
+   "body": "Hola Sergio,\n\nGracias por escribir. Para almendros recomendamos unas 5 colmenas por hectárea. Te mando una cotización la semana que viene, y si quieres podemos visitar la finca.\n\nSaludos,\nTeodora",
+   "bulk": false
+  },
+  {
+   "key": "m69",
+   "account": "wmail",
+   "thread": "w41",
+   "day": 4,
+   "hour": 17,
+   "from": [
+    "Sergio Valdez",
+    "sergio@pinecrestalmendras.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: Consulta: colmenas para almendros",
+   "body": "Perfecto, una visita sería ideal. ¿Te va bien algún día de la segunda semana de marzo?\n\nSergio",
+   "bulk": false
+  },
+  {
+   "key": "m70",
+   "account": "wmail",
+   "thread": "w42",
+   "day": 35,
+   "hour": 12,
+   "from": [
+    "Jonas Reyes",
+    "jonas@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "Fernhill mite counts",
+   "body": "Did alcohol washes on 12 colonies at Fernhill. Average 1.2 mites per 100 bees, two at 3. Fine for now, I'd treat those two after the cherries. Full sheet in HiveLog.\n\nJonas",
+   "bulk": false
+  },
+  {
+   "key": "m71",
+   "account": "wmail",
+   "thread": "w42",
+   "day": 34,
+   "hour": 8,
+   "from": [
+    "Teodora Vance",
+    "teodora@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Jonas Reyes",
+     "jonas@hollowmere.example"
+    ]
+   ],
+   "subject": "Re: Fernhill mite counts",
+   "body": "Agreed, treat those two after cherry bloom. Thanks.",
+   "bulk": false
+  },
+  {
+   "key": "m72",
+   "account": "wmail",
+   "thread": "w43",
+   "day": 58,
+   "hour": 15,
+   "from": [
+    "Arlo Penn",
+    "arlo@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "happy new year + Q1",
+   "body": "Happy new year Teo. Big season ahead. Let's grab lunch Tuesday and go over the Q1 placement plan.\n\nArlo",
+   "bulk": false
+  },
+  {
+   "key": "m73",
+   "account": "wmail",
+   "thread": "w44",
+   "day": 46,
+   "hour": 10,
+   "from": [
+    "Bea Lindqvist",
+    "bea@hollowmere.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora@hollowmere.example"
+    ]
+   ],
+   "subject": "December expenses",
+   "body": "Hi Teo, still missing your December fuel receipts. Can you drop them in the shared folder this week?\n\nBea",
+   "bulk": false
+  },
+  {
+   "key": "m74",
+   "account": "pmail",
+   "thread": "p1",
+   "day": 22,
+   "hour": 20,
+   "from": [
+    "Sam Whitlock",
+    "coach.sam@riverbendfc.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "U12 girls: Fairview tournament March 14-15",
+   "body": "Hi Teodora,\n\nGood news, the U12 girls got a spot in the Fairview spring tournament on Saturday March 14 and Sunday March 15. First game Saturday at 10:30, then 2:00, and Sunday depends on results. Fairview is about two hours away, so most families are staying over at the Lakeside Inn.\n\nCan you let me know by the end of the week if Ines is in and if you can drive?\n\nCoach Sam\nRiverbend FC",
+   "bulk": false
+  },
+  {
+   "key": "m75",
+   "account": "pmail",
+   "thread": "p1",
+   "day": 21,
+   "hour": 7,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Sam Whitlock",
+     "coach.sam@riverbendfc.example"
+    ]
+   ],
+   "subject": "Re: U12 girls: Fairview tournament March 14-15",
+   "body": "Hi Sam, Ines is in, she's thrilled! We can drive and take one more girl if needed.\n\nTeodora",
+   "bulk": false
+  },
+  {
+   "key": "m76",
+   "account": "pmail",
+   "thread": "p2",
+   "day": 18,
+   "hour": 19,
+   "from": [
+    "Dario Duarte",
+    "dario.duarte@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Mom's 70th!!",
+   "body": "Teo,\n\nBooked the back room at the Rosemary Room for Mom's 70th, Saturday March 14 at noon. It's a surprise-ish (she knows something is up). I really want all the grandkids there for the photo, she keeps talking about it. Can you confirm you're all coming?\n\nD",
+   "bulk": false
+  },
+  {
+   "key": "m77",
+   "account": "pmail",
+   "thread": "p2",
+   "day": 18,
+   "hour": 21,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Dario Duarte",
+     "dario.duarte@mail.example"
+    ]
+   ],
+   "subject": "Re: Mom's 70th!!",
+   "body": "Of course we're coming! Count the four of us. Let me know what I can bring or pay for.",
+   "bulk": false
+  },
+  {
+   "key": "m78",
+   "account": "pmail",
+   "thread": "p3",
+   "day": 16,
+   "hour": 10,
+   "from": [
+    "Gloria Duarte",
+    "gloria.duarte@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "the 14th",
+   "body": "Mija, your brother is being very mysterious about Saturday the 14th. I'm told to keep it free and wear something nice. I'm so happy you'll all be there, especially the kids. I already bought Ines and Rafe a little something.\n\nLove, Mom",
+   "bulk": false
+  },
+  {
+   "key": "m79",
+   "account": "pmail",
+   "thread": "p4",
+   "day": 13,
+   "hour": 18,
+   "from": [
+    "Priya Nolan",
+    "priya@dolphinswim.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Ashford meet March 21: drivers needed",
+   "body": "Hi Dolphins families,\n\nThe Ashford invitational is on Saturday March 21 at the Ashford Aquatic Center. Warm-up starts at 1:00 pm, so swimmers should be there by 12:45. We are short on drivers: if you can take your swimmer plus one or two others, please reply to me directly.\n\nThanks!\nPriya Nolan\nTeam Manager, Ashford Dolphins",
+   "bulk": false
+  },
+  {
+   "key": "m80",
+   "account": "pmail",
+   "thread": "p5",
+   "day": 11,
+   "hour": 9,
+   "from": [
+    "Gloria Duarte",
+    "gloria.duarte@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "my visit",
+   "body": "Hi sweetheart,\n\nAfter the party I'll go home for a few days and then come stay with you for a week like we said. I booked the train, it gets into Ashford Station at 2:15 on Saturday March 21. Can someone pick me up there? If it's a bother I can take the bus, but my suitcase is heavy.\n\nMom",
+   "bulk": false
+  },
+  {
+   "key": "m81",
+   "account": "pmail",
+   "thread": "p5",
+   "day": 11,
+   "hour": 12,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Gloria Duarte",
+     "gloria.duarte@mail.example"
+    ]
+   ],
+   "subject": "Re: my visit",
+   "body": "Mom, no bus! We'll figure out who picks you up. Can't wait.",
+   "bulk": false
+  },
+  {
+   "key": "m82",
+   "account": "pmail",
+   "thread": "p6",
+   "day": 6,
+   "hour": 20,
+   "from": [
+    "Pat Okafor",
+    "pat.okafor@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "piano teacher?",
+   "body": "Hi neighbor! Quick one: Tobi wants to start piano and I have no idea where to look. Do you know any good teacher around here who takes beginners? Ideally walking distance.\n\nPat",
+   "bulk": false
+  },
+  {
+   "key": "m83",
+   "account": "pmail",
+   "thread": "p7",
+   "day": 4,
+   "hour": 17,
+   "from": [
+    "Yvette Lam",
+    "yvette.lam@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "practice carpool",
+   "body": "Hey Teodora, want to split soccer practice driving? I can do Tuesdays if you take Thursdays.\n\nYvette",
+   "bulk": false
+  },
+  {
+   "key": "m84",
+   "account": "pmail",
+   "thread": "p7",
+   "day": 4,
+   "hour": 19,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Yvette Lam",
+     "yvette.lam@mail.example"
+    ]
+   ],
+   "subject": "Re: practice carpool",
+   "body": "Deal! Thursdays are mine. Thanks Yvette.",
+   "bulk": false
+  },
+  {
+   "key": "m85",
+   "account": "pmail",
+   "thread": "p7",
+   "day": 3,
+   "hour": 8,
+   "from": [
+    "Yvette Lam",
+    "yvette.lam@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Re: practice carpool",
+   "body": "Great. Oh and random, but Mrs. Volkova, Maya's piano teacher on Linden Street, just told me she has two beginner slots opening in March. She's wonderful with kids. In case you know anyone.\n\nY",
+   "bulk": false
+  },
+  {
+   "key": "m86",
+   "account": "pmail",
+   "thread": "p8",
+   "day": 21,
+   "hour": 21,
+   "from": [
+    "Daniel Ortiz",
+    "daniel.ortiz.home@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Field trip bus March 7: chaperones",
+   "body": "Hi Teodora,\n\nI'm the parent coordinating the 5th grade trip to the science museum on Saturday March 7. The school booked the bus, but we need four more chaperones to ride along. Any chance you could join? We'd leave Larchwood at 8:30 and be back by 3.\n\nDaniel Ortiz (Leo's dad)",
+   "bulk": false
+  },
+  {
+   "key": "m87",
+   "account": "pmail",
+   "thread": "p8",
+   "day": 20,
+   "hour": 7,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Daniel Ortiz",
+     "daniel.ortiz.home@mail.example"
+    ]
+   ],
+   "subject": "Re: Field trip bus March 7: chaperones",
+   "body": "Hi Daniel, I have a work delivery that day so I can't, but I asked Malik and he can do it. He'll email you.",
+   "bulk": false
+  },
+  {
+   "key": "m88",
+   "account": "pmail",
+   "thread": "p8",
+   "day": 19,
+   "hour": 20,
+   "from": [
+    "Daniel Ortiz",
+    "daniel.ortiz.home@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Re: Field trip bus March 7: chaperones",
+   "body": "Got Malik's note, he's on the list. Thank you both!\n\nDaniel",
+   "bulk": false
+  },
+  {
+   "key": "m89",
+   "account": "pmail",
+   "thread": "p9",
+   "day": 8,
+   "hour": 21,
+   "from": [
+    "Sunita Rao",
+    "sunita.rao@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "girls night?",
+   "body": "Teooo. It's been forever. Me, Jess and Carla are thinking Friday March 20 for a night out, something with drinks and no kids. You in? Ideas welcome.\n\nS",
+   "bulk": false
+  },
+  {
+   "key": "m90",
+   "account": "pmail",
+   "thread": "p9",
+   "day": 7,
+   "hour": 7,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Sunita Rao",
+     "sunita.rao@mail.example"
+    ]
+   ],
+   "subject": "Re: girls night?",
+   "body": "YES. I need it. Let me think about where to go.",
+   "bulk": false
+  },
+  {
+   "key": "m91",
+   "account": "pmail",
+   "thread": "p10",
+   "day": 26,
+   "hour": 20,
+   "from": [
+    "Dario Duarte",
+    "dario.duarte@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "cousins",
+   "body": "Random thought: we should get all the cousins together at the lake sometime this year. The kids barely know each other. No rush, just putting it out there.\n\nD",
+   "bulk": false
+  },
+  {
+   "key": "m92",
+   "account": "pmail",
+   "thread": "p10",
+   "day": 25,
+   "hour": 9,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Dario Duarte",
+     "dario.duarte@mail.example"
+    ]
+   ],
+   "subject": "Re: cousins",
+   "body": "Love that. Sometime when things calm down.",
+   "bulk": false
+  },
+  {
+   "key": "m93",
+   "account": "pmail",
+   "thread": "p11",
+   "day": 15,
+   "hour": 19,
+   "from": [
+    "Lina Duarte",
+    "lina.duarte@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "hello from the north",
+   "body": "Hi cousin! Saw the photos of Ines playing soccer, she's so tall. We should really get the kids together sometime, Mateo would love it. Hugs to everyone.\n\nLina",
+   "bulk": false
+  },
+  {
+   "key": "m94",
+   "account": "pmail",
+   "thread": "p11",
+   "day": 14,
+   "hour": 8,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Lina Duarte",
+     "lina.duarte@mail.example"
+    ]
+   ],
+   "subject": "Re: hello from the north",
+   "body": "Yes we should! Hugs back.",
+   "bulk": false
+  },
+  {
+   "key": "m95",
+   "account": "pmail",
+   "thread": "p12",
+   "day": 36,
+   "hour": 18,
+   "from": [
+    "Carmen Duarte",
+    "carmen.duarte@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Receta de la abuela",
+   "body": "Hola Teodora,\n\nTu mamá me dijo que buscabas la receta de las empanadas de la abuela. Te la mando escrita como ella la hacía, con la masa de manteca. Cuidado con el horno, que se queman rápido.\n\nUn beso grande,\nTía Carmen",
+   "bulk": false
+  },
+  {
+   "key": "m96",
+   "account": "pmail",
+   "thread": "p12",
+   "day": 35,
+   "hour": 20,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Carmen Duarte",
+     "carmen.duarte@mail.example"
+    ]
+   ],
+   "subject": "Re: Receta de la abuela",
+   "body": "¡Gracias tía! Las voy a hacer este fin de semana con los niños. Te mando fotos.\n\nBesos,\nTeo",
+   "bulk": false
+  },
+  {
+   "key": "m97",
+   "account": "pmail",
+   "thread": "p12",
+   "day": 33,
+   "hour": 11,
+   "from": [
+    "Carmen Duarte",
+    "carmen.duarte@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Re: Receta de la abuela",
+   "body": "¡Qué lindas quedaron! Rafe tiene manos de cocinero. Besos a todos.",
+   "bulk": false
+  },
+  {
+   "key": "m98",
+   "account": "pmail",
+   "thread": "p13",
+   "day": 41,
+   "hour": 13,
+   "from": [
+    "Femke de Wit",
+    "femke.dewit@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Lang geleden!",
+   "body": "Hoi Teodora,\n\nIk vond laatst een foto van ons uitwisselingsjaar, met die vreselijke fietsen. Hoe gaat het met je? En met de bijen? Wij zijn net verhuisd naar een huis met een tuin, dus misschien begin ik zelf ook met een kast.\n\nLiefs,\nFemke",
+   "bulk": false
+  },
+  {
+   "key": "m99",
+   "account": "pmail",
+   "thread": "p13",
+   "day": 40,
+   "hour": 21,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Femke de Wit",
+     "femke.dewit@mail.example"
+    ]
+   ],
+   "subject": "Re: Lang geleden!",
+   "body": "Hoi Femke! Wat leuk. Met ons gaat het goed, druk met de kinderen en het werk. Begin zeker met een kast, maar zoek eerst een imkersvereniging bij jou in de buurt. Mijn Nederlands is roestig, sorry!\n\nTeo",
+   "bulk": false
+  },
+  {
+   "key": "m100",
+   "account": "pmail",
+   "thread": "p13",
+   "day": 30,
+   "hour": 12,
+   "from": [
+    "Femke de Wit",
+    "femke.dewit@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Re: Lang geleden!",
+   "body": "Je Nederlands is prima! Ik heb me aangemeld voor een cursus bij de vereniging hier. Ik hou je op de hoogte.\n\nFemke",
+   "bulk": false
+  },
+  {
+   "key": "m101",
+   "account": "pmail",
+   "thread": "p13",
+   "day": 29,
+   "hour": 9,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Femke de Wit",
+     "femke.dewit@mail.example"
+    ]
+   ],
+   "subject": "Re: Lang geleden!",
+   "body": "Super! Stuur me foto's van je eerste kast.",
+   "bulk": false
+  },
+  {
+   "key": "m102",
+   "account": "pmail",
+   "thread": "p14",
+   "day": 2,
+   "hour": 16,
+   "from": [
+    "Malik Vance",
+    "malik.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "dinner tonight",
+   "body": "I'm stuck at work till 7. Can you grab the kids and start the pasta? I'll pick up milk on the way.\n\nM",
+   "bulk": false
+  },
+  {
+   "key": "m103",
+   "account": "pmail",
+   "thread": "p14",
+   "day": 2,
+   "hour": 16,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Malik Vance",
+     "malik.vance@mail.example"
+    ]
+   ],
+   "subject": "Re: dinner tonight",
+   "body": "On it. Also eggs please.",
+   "bulk": false
+  },
+  {
+   "key": "m104",
+   "account": "pmail",
+   "thread": "p15",
+   "day": 17,
+   "hour": 12,
+   "from": [
+    "Malik Vance",
+    "malik.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "minivan service",
+   "body": "The van is booked for service Wednesday morning, I'll drop it before work. You'll have to take the kids to school in your car.\n\nM",
+   "bulk": false
+  },
+  {
+   "key": "m105",
+   "account": "pmail",
+   "thread": "p16",
+   "day": 28,
+   "hour": 7,
+   "from": [
+    "Larchwood Elementary",
+    "news@larchwood-school.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Larchwood Weekly: winter concert photos, lunch menu, reminders",
+   "body": "This week: winter concert photos are online, the new lunch menu, and a reminder that school is closed on Presidents Day.",
+   "bulk": true
+  },
+  {
+   "key": "m106",
+   "account": "pmail",
+   "thread": "p17",
+   "day": 7,
+   "hour": 7,
+   "from": [
+    "Larchwood Elementary",
+    "news@larchwood-school.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Larchwood Weekly: spring break dates, book fair",
+   "body": "Spring break runs March 30 to April 3. The book fair opens next week in the library. Volunteers welcome.",
+   "bulk": true
+  },
+  {
+   "key": "m107",
+   "account": "pmail",
+   "thread": "p18",
+   "day": 24,
+   "hour": 15,
+   "from": [
+    "Omar Haddad",
+    "o.haddad@larchwood-school.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Rafe's reading",
+   "body": "Dear Ms. Vance,\n\nRafe has made great progress in reading this term. I'd like to meet briefly to talk about moving him into the next reading group and how you can support it at home. Would Tuesday or Thursday after school work for you?\n\nBest,\nOmar Haddad\n3rd Grade, Larchwood Elementary",
+   "bulk": false
+  },
+  {
+   "key": "m108",
+   "account": "pmail",
+   "thread": "p18",
+   "day": 23,
+   "hour": 8,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Omar Haddad",
+     "o.haddad@larchwood-school.example"
+    ]
+   ],
+   "subject": "Re: Rafe's reading",
+   "body": "Dear Mr. Haddad, that's lovely to hear. Thursday after school works. Thank you!\n\nTeodora Vance",
+   "bulk": false
+  },
+  {
+   "key": "m109",
+   "account": "pmail",
+   "thread": "p18",
+   "day": 22,
+   "hour": 14,
+   "from": [
+    "Omar Haddad",
+    "o.haddad@larchwood-school.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Re: Rafe's reading",
+   "body": "Thursday at 3:15 in room 12, see you then.\n\nMr. Haddad",
+   "bulk": false
+  },
+  {
+   "key": "m110",
+   "account": "pmail",
+   "thread": "p19",
+   "day": 45,
+   "hour": 8,
+   "from": [
+    "Riverbend FC",
+    "no-reply@riverbendfc.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Spring season fees due",
+   "body": "Spring season registration fees are due by February 1. Pay online in the parent portal. Late fees apply after the due date.",
+   "bulk": true
+  },
+  {
+   "key": "m111",
+   "account": "pmail",
+   "thread": "p20",
+   "day": 33,
+   "hour": 18,
+   "from": [
+    "Ashford Dolphins",
+    "news@dolphinswim.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Dolphins News: meet results and spring schedule",
+   "body": "Congratulations to all swimmers at the winter meet! Results are posted. Spring practice schedule attached.",
+   "bulk": true
+  },
+  {
+   "key": "m112",
+   "account": "pmail",
+   "thread": "p21",
+   "day": 9,
+   "hour": 10,
+   "from": [
+    "Brightsmile Dental",
+    "reminders@brightsmile.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Reminder: Ines has a cleaning on March 4",
+   "body": "This is a reminder that Ines Vance has a dental cleaning on March 4 at 4:00 pm. Reply C to confirm.",
+   "bulk": true
+  },
+  {
+   "key": "m113",
+   "account": "pmail",
+   "thread": "p22",
+   "day": 50,
+   "hour": 17,
+   "from": [
+    "Pat Okafor",
+    "pat.okafor@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "the fence",
+   "body": "Hi Teodora, the wind took down two panels of the fence between our yards. I got a quote from a handyman for $340. Split it?\n\nPat",
+   "bulk": false
+  },
+  {
+   "key": "m114",
+   "account": "pmail",
+   "thread": "p22",
+   "day": 49,
+   "hour": 8,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Pat Okafor",
+     "pat.okafor@mail.example"
+    ]
+   ],
+   "subject": "Re: the fence",
+   "body": "Of course, split it. Tell him to go ahead.",
+   "bulk": false
+  },
+  {
+   "key": "m115",
+   "account": "pmail",
+   "thread": "p22",
+   "day": 48,
+   "hour": 19,
+   "from": [
+    "Pat Okafor",
+    "pat.okafor@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Re: the fence",
+   "body": "Done and fixed! Your half is $170 whenever.\n\nPat",
+   "bulk": false
+  },
+  {
+   "key": "m116",
+   "account": "pmail",
+   "thread": "p23",
+   "day": 12,
+   "hour": 7,
+   "from": [
+    "Ashford Public Library",
+    "holds@ashford-library.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Your hold is ready",
+   "body": "The item you placed on hold is ready for pickup at the Main Branch until March 3.",
+   "bulk": true
+  },
+  {
+   "key": "m117",
+   "account": "pmail",
+   "thread": "p24",
+   "day": 56,
+   "hour": 11,
+   "from": [
+    "Gloria Duarte",
+    "gloria.duarte@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "pictures from Christmas",
+   "body": "Mija, here are the pictures from Christmas. The one of Rafe with the dog is my favorite. Thank you again for the lovely days.\n\nMom",
+   "bulk": false
+  },
+  {
+   "key": "m118",
+   "account": "pmail",
+   "thread": "p25",
+   "day": 38,
+   "hour": 21,
+   "from": [
+    "Malik Vance",
+    "malik.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "summer cabin",
+   "body": "Found a cabin on Lake Orrin for the first week of August, sleeps 6. Should I book before it goes?\n\nM",
+   "bulk": false
+  },
+  {
+   "key": "m119",
+   "account": "pmail",
+   "thread": "p25",
+   "day": 37,
+   "hour": 7,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Malik Vance",
+     "malik.vance@mail.example"
+    ]
+   ],
+   "subject": "Re: summer cabin",
+   "body": "Book it! First week of August is after the busy season.",
+   "bulk": false
+  },
+  {
+   "key": "m120",
+   "account": "pmail",
+   "thread": "p26",
+   "day": 19,
+   "hour": 9,
+   "from": [
+    "SkyVista Air",
+    "deals@skyvista.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Spring fares from $59",
+   "body": "Fly somewhere warm this spring. Fares from $59 one way. Book by Sunday.",
+   "bulk": true
+  },
+  {
+   "key": "m121",
+   "account": "pmail",
+   "thread": "p27",
+   "day": 1,
+   "hour": 10,
+   "from": [
+    "Hearth & Home Store",
+    "offers@hearthhome.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Weekend sale: 30% off bedding",
+   "body": "This weekend only: 30% off all bedding and towels, in store and online.",
+   "bulk": true
+  },
+  {
+   "key": "m122",
+   "account": "pmail",
+   "thread": "p28",
+   "day": 30,
+   "hour": 20,
+   "from": [
+    "StreamNest",
+    "account@streamnest.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Your subscription renews soon",
+   "body": "Your family plan renews on February 8. No action needed.",
+   "bulk": true
+  },
+  {
+   "key": "m123",
+   "account": "pmail",
+   "thread": "p29",
+   "day": 10,
+   "hour": 18,
+   "from": [
+    "Hannah Cole",
+    "hannah.cole@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Zoe's birthday party",
+   "body": "Hi! Zoe is turning 11 and we're doing a roller skating party on Sunday March 8, 2 to 4 at Skate World. Would love for Ines to come. RSVP by March 3?\n\nHannah",
+   "bulk": false
+  },
+  {
+   "key": "m124",
+   "account": "pmail",
+   "thread": "p29",
+   "day": 10,
+   "hour": 20,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Hannah Cole",
+     "hannah.cole@mail.example"
+    ]
+   ],
+   "subject": "Re: Zoe's birthday party",
+   "body": "Ines would love to come, thanks Hannah!",
+   "bulk": false
+  },
+  {
+   "key": "m125",
+   "account": "pmail",
+   "thread": "p30",
+   "day": 40,
+   "hour": 17,
+   "from": [
+    "Sam Whitlock",
+    "coach.sam@riverbendfc.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Practice moved indoors",
+   "body": "Hi all, fields are frozen so Thursday practice moves to the Riverbend gym, same time. Bring indoor shoes.\n\nCoach Sam",
+   "bulk": false
+  },
+  {
+   "key": "m126",
+   "account": "pmail",
+   "thread": "p31",
+   "day": 54,
+   "hour": 9,
+   "from": [
+    "Gus Moreno",
+    "gus.moreno@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "snowblower",
+   "body": "Morning! My snowblower died. Mind if I borrow yours this afternoon? I'll do your sidewalk too.\n\nGus",
+   "bulk": false
+  },
+  {
+   "key": "m127",
+   "account": "pmail",
+   "thread": "p31",
+   "day": 54,
+   "hour": 10,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Gus Moreno",
+     "gus.moreno@mail.example"
+    ]
+   ],
+   "subject": "Re: snowblower",
+   "body": "Sure Gus, garage code is the usual. Thanks for the sidewalk!",
+   "bulk": false
+  },
+  {
+   "key": "m128",
+   "account": "pmail",
+   "thread": "p32",
+   "day": 35,
+   "hour": 19,
+   "from": [
+    "Priya Nolan",
+    "priya@dolphinswim.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Rafe's times",
+   "body": "Hi Teodora, just wanted to say Rafe took 4 seconds off his 50 free at the winter meet. Great job to him!\n\nPriya",
+   "bulk": false
+  },
+  {
+   "key": "m129",
+   "account": "pmail",
+   "thread": "p33",
+   "day": 23,
+   "hour": 7,
+   "from": [
+    "Ashford Power & Water",
+    "billing@ashford-utilities.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "Your bill is ready",
+   "body": "Your February bill of $212.40 is ready. Autopay will run on the due date.",
+   "bulk": true
+  },
+  {
+   "key": "m130",
+   "account": "pmail",
+   "thread": "p34",
+   "day": 12,
+   "hour": 20,
+   "from": [
+    "Dario Duarte",
+    "dario.duarte@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "gift for Mom",
+   "body": "For the 70th I was thinking a photo book with pictures from every decade. Can you scan the old ones you have from the 80s? Need them in two weeks so it prints in time.\n\nD",
+   "bulk": false
+  },
+  {
+   "key": "m131",
+   "account": "pmail",
+   "thread": "p34",
+   "day": 12,
+   "hour": 21,
+   "from": [
+    "Teodora Vance",
+    "teodora.vance@mail.example"
+   ],
+   "to": [
+    [
+     "Dario Duarte",
+     "dario.duarte@mail.example"
+    ]
+   ],
+   "subject": "Re: gift for Mom",
+   "body": "Great idea, I'll scan them this weekend.",
+   "bulk": false
+  },
+  {
+   "key": "m132",
+   "account": "pmail",
+   "thread": "p35",
+   "day": 14,
+   "hour": 7,
+   "from": [
+    "Flowstate Yoga",
+    "classes@flowstate.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "New spring class schedule",
+   "body": "Our spring schedule is live. New early morning flow on Tuesdays and Thursdays at 6:15.",
+   "bulk": true
+  },
+  {
+   "key": "m133",
+   "account": "pmail",
+   "thread": "p36",
+   "day": 30,
+   "hour": 15,
+   "from": [
+    "Gloria Duarte",
+    "gloria.duarte@mail.example"
+   ],
+   "to": [
+    [
+     "Teodora Vance",
+     "teodora.vance@mail.example"
+    ]
+   ],
+   "subject": "doctor",
+   "body": "Just so you don't worry: the knee checkup went fine, the doctor says keep walking. Kisses to the kids.\n\nMom",
+   "bulk": false
+  }
+ ],
+ "todos": [
+  {
+   "key": "td1",
+   "title": "Reply to Neha about 40 extra hives for the north block",
+   "evidence": [
+    "m1"
+   ],
+   "day": 30,
+   "state": "open"
+  },
+  {
+   "key": "td2",
+   "title": "Send Owen the renewal draft",
+   "evidence": [
+    "m4"
+   ],
+   "day": 24,
+   "state": "open"
+  },
+  {
+   "key": "td3",
+   "title": "Reply to Jonas about the spare colonies",
+   "evidence": [
+    "m6"
+   ],
+   "day": 26,
+   "state": "done"
+  },
+  {
+   "key": "td4",
+   "title": "Check the weak colonies in Pemberton's plum block",
+   "evidence": [
+    "m8"
+   ],
+   "day": 19,
+   "state": "open"
+  },
+  {
+   "key": "td5",
+   "title": "Reply to Tamsin about the RQ-44 queens",
+   "evidence": [
+    "m10"
+   ],
+   "day": 17,
+   "state": "open"
+  },
+  {
+   "key": "td6",
+   "title": "Have Kenji's east field hives checked",
+   "evidence": [
+    "m11"
+   ],
+   "day": 15,
+   "state": "open"
+  },
+  {
+   "key": "td7",
+   "title": "Confirm the Fernhill inspection with Gwen",
+   "evidence": [
+    "m13"
+   ],
+   "day": 9,
+   "state": "done"
+  },
+  {
+   "key": "td8",
+   "title": "Confirm the Westbrook box truck for March 7",
+   "evidence": [
+    "m18"
+   ],
+   "day": 20,
+   "state": "done"
+  },
+  {
+   "key": "td9",
+   "title": "Reply to Colin Abara about skipping the season",
+   "evidence": [
+    "m21"
+   ],
+   "day": 33,
+   "state": "done"
+  },
+  {
+   "key": "td10",
+   "title": "Reply to Colin Marsh about the syrup delay",
+   "evidence": [
+    "m23"
+   ],
+   "day": 27,
+   "state": "done"
+  },
+  {
+   "key": "td11",
+   "title": "Send Hugo a quote for 30 hives",
+   "evidence": [
+    "m25"
+   ],
+   "day": 40,
+   "state": "done"
+  },
+  {
+   "key": "td12",
+   "title": "Reply to Hugo about 30 hives for April",
+   "evidence": [
+    "m26"
+   ],
+   "day": 37,
+   "state": "done"
+  },
+  {
+   "key": "td13",
+   "title": "Reply to Dana about the swarm removal list",
+   "evidence": [
+    "m28"
+   ],
+   "day": 44,
+   "state": "done"
+  },
+  {
+   "key": "td14",
+   "title": "Reply to Pia about the Swarm proposal",
+   "evidence": [
+    "m30"
+   ],
+   "day": 38,
+   "state": "done"
+  },
+  {
+   "key": "td15",
+   "title": "Decide on Buzzline's option A",
+   "evidence": [
+    "m32"
+   ],
+   "day": 35,
+   "state": "open"
+  },
+  {
+   "key": "td16",
+   "title": "Reply to Wren about the tasting night",
+   "evidence": [
+    "m33"
+   ],
+   "day": 10,
+   "state": "done"
+  },
+  {
+   "key": "td17",
+   "title": "Check Mill Creek's invoice amount",
+   "evidence": [
+    "m35"
+   ],
+   "day": 34,
+   "state": "done"
+  },
+  {
+   "key": "td18",
+   "title": "Check Tansy Hill's invoice in the portal",
+   "evidence": [
+    "m37"
+   ],
+   "day": 32,
+   "state": "done"
+  },
+  {
+   "key": "td19",
+   "title": "Reply to Rhoda about a hive health workshop",
+   "evidence": [
+    "m41"
+   ],
+   "day": 42,
+   "state": "open"
+  },
+  {
+   "key": "td20",
+   "title": "Reply to Lou about the co-op meeting slot",
+   "evidence": [
+    "m42"
+   ],
+   "day": 38,
+   "state": "open"
+  },
+  {
+   "key": "td21",
+   "title": "Review packaging price increases from Clearcrest and Inkhaven",
+   "evidence": [
+    "m43",
+    "m44"
+   ],
+   "day": 22,
+   "state": "open"
+  },
+  {
+   "key": "td22",
+   "title": "Reply to Céline about the frame order",
+   "evidence": [
+    "m47"
+   ],
+   "day": 47,
+   "state": "done"
+  },
+  {
+   "key": "td23",
+   "title": "Pay the Atelier Ruchelle pro forma invoice",
+   "evidence": [
+    "m49"
+   ],
+   "day": 45,
+   "state": "done"
+  },
+  {
+   "key": "td24",
+   "title": "Send Arlo the Monday sync agenda",
+   "evidence": [
+    "m51"
+   ],
+   "day": 5,
+   "state": "open"
+  },
+  {
+   "key": "td25",
+   "title": "Tell Bea which payroll the seasonal hires go on",
+   "evidence": [
+    "m53"
+   ],
+   "day": 3,
+   "state": "open"
+  },
+  {
+   "key": "td26",
+   "title": "Confirm the Greystone drum drop-off",
+   "evidence": [
+    "m55"
+   ],
+   "day": 18,
+   "state": "done"
+  },
+  {
+   "key": "td27",
+   "title": "Reply to Kenji about this year's placement",
+   "evidence": [
+    "m64"
+   ],
+   "day": 48,
+   "state": "done"
+  },
+  {
+   "key": "td28",
+   "title": "Reply to Sergio about almond hives",
+   "evidence": [
+    "m67"
+   ],
+   "day": 7,
+   "state": "done"
+  },
+  {
+   "key": "td29",
+   "title": "Propose a visit day to Sergio",
+   "evidence": [
+    "m69"
+   ],
+   "day": 4,
+   "state": "open"
+  },
+  {
+   "key": "td30",
+   "title": "Reply to Jonas about the Fernhill mite counts",
+   "evidence": [
+    "m70"
+   ],
+   "day": 35,
+   "state": "done"
+  },
+  {
+   "key": "td31",
+   "title": "Reply to Arlo about lunch",
+   "evidence": [
+    "m72"
+   ],
+   "day": 58,
+   "state": "done"
+  },
+  {
+   "key": "td32",
+   "title": "Upload December fuel receipts for Bea",
+   "evidence": [
+    "m73"
+   ],
+   "day": 46,
+   "state": "done"
+  },
+  {
+   "key": "td33",
+   "title": "Reply to Coach Sam about the Fairview tournament",
+   "evidence": [
+    "m74"
+   ],
+   "day": 22,
+   "state": "done"
+  },
+  {
+   "key": "td34",
+   "title": "Reply to Dario about Mom's 70th",
+   "evidence": [
+    "m76"
+   ],
+   "day": 18,
+   "state": "done"
+  },
+  {
+   "key": "td35",
+   "title": "Reply to Priya about driving to the Ashford meet",
+   "evidence": [
+    "m79"
+   ],
+   "day": 13,
+   "state": "open"
+  },
+  {
+   "key": "td36",
+   "title": "Arrange a pickup for Mom at Ashford Station",
+   "evidence": [
+    "m80"
+   ],
+   "day": 11,
+   "state": "open"
+  },
+  {
+   "key": "td37",
+   "title": "Reply to Pat about a piano teacher",
+   "evidence": [
+    "m82"
+   ],
+   "day": 6,
+   "state": "open"
+  },
+  {
+   "key": "td38",
+   "title": "Reply to Yvette about the practice carpool",
+   "evidence": [
+    "m83"
+   ],
+   "day": 4,
+   "state": "done"
+  },
+  {
+   "key": "td39",
+   "title": "Reply to Daniel about chaperoning the field trip",
+   "evidence": [
+    "m86"
+   ],
+   "day": 21,
+   "state": "done"
+  },
+  {
+   "key": "td40",
+   "title": "Pick a place for girls' night with Sunita",
+   "evidence": [
+    "m89"
+   ],
+   "day": 8,
+   "state": "open"
+  },
+  {
+   "key": "td41",
+   "title": "Reply to Femke",
+   "evidence": [
+    "m98"
+   ],
+   "day": 41,
+   "state": "done"
+  },
+  {
+   "key": "td42",
+   "title": "Reply to Mr. Haddad about Rafe's reading",
+   "evidence": [
+    "m107"
+   ],
+   "day": 24,
+   "state": "done"
+  },
+  {
+   "key": "td43",
+   "title": "Confirm Ines's dental cleaning",
+   "evidence": [
+    "m112"
+   ],
+   "day": 9,
+   "state": "open"
+  },
+  {
+   "key": "td44",
+   "title": "Reply to Pat about the fence",
+   "evidence": [
+    "m113"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "td45",
+   "title": "Pay Pat $170 for the fence",
+   "evidence": [
+    "m115"
+   ],
+   "day": 48,
+   "state": "open"
+  },
+  {
+   "key": "td46",
+   "title": "Reply to Malik about the summer cabin",
+   "evidence": [
+    "m118"
+   ],
+   "day": 38,
+   "state": "done"
+  },
+  {
+   "key": "td47",
+   "title": "RSVP to Hannah for Zoe's party",
+   "evidence": [
+    "m123"
+   ],
+   "day": 10,
+   "state": "done"
+  },
+  {
+   "key": "td48",
+   "title": "Scan the 80s photos for Dario",
+   "evidence": [
+    "m130"
+   ],
+   "day": 12,
+   "state": "open"
+  },
+  {
+   "key": "td49",
+   "title": "Reply to Dario about a cousins trip",
+   "evidence": [
+    "m91"
+   ],
+   "day": 26,
+   "state": "dismissed"
+  }
+ ],
+ "promises": [
+  {
+   "direction": "mine",
+   "who": "Neha Brandt",
+   "what": "come back with a yes or no and a revised quote for 40 extra hives",
+   "message": "m2",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Neha Brandt",
+   "what": "send a map of the new north lane",
+   "message": "m3",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Owen Pike",
+   "what": "send a renewal draft well before March 6",
+   "message": "m5",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Felix Odum",
+   "what": "have Jonas swap in two strong colonies and sort out the rest",
+   "message": "m9",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Tamsin Hale",
+   "what": "replace failing RQ-44 queens free if claimed by March 15",
+   "message": "m10",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Kenji Sato",
+   "what": "have someone look at the east field hives before bloom",
+   "message": "m12",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Pia Moreau",
+   "what": "hold the calendar spot until end of the month",
+   "message": "m32",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Arlo Penn",
+   "what": "send the Monday agenda Sunday night",
+   "message": "m52",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Gloria Duarte",
+   "what": "make sure someone picks her up at Ashford Station",
+   "message": "m81",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Dario Duarte",
+   "what": "scan the old photos this weekend",
+   "message": "m131",
+   "status": "open"
+  }
+ ],
+ "key": {
+  "opportunities": [
+   {
+    "id": "o1",
+    "what": "At Calloway, Neha wants 120 hives while Owen is renewing at 80 with a discount for a March 6 board signing; Jonas has 40 spare colonies from March 15. Prepare one renewal for 120 hives using the spare colonies and send it to both Calloway contacts before March 6.",
+    "evidence": [
+     "m1",
+     "m4",
+     "m6"
+    ],
+    "ready_day": 24
+   },
+   {
+    "id": "o2",
+    "what": "Pemberton and Sato both report weak hives with green dot queens, and Ridgeback says lot RQ-44 (green dot) is failing with free replacements if claimed by March 15. File one claim for both yards and tell Felix and Kenji when replacements arrive.",
+    "evidence": [
+     "m8",
+     "m10",
+     "m11"
+    ],
+    "ready_day": 15
+   },
+   {
+    "id": "o3",
+    "what": "The Fernhill inspection on March 10 at 9 a.m. needs every colony present, but the flatbed moves the Fernhill colonies to Pemberton overnight and Felix expects them at dawn on March 10. Move the delivery or ask the inspector to reschedule before the clash.",
+    "evidence": [
+     "m13",
+     "m16",
+     "m17"
+    ],
+    "ready_day": 9
+   },
+   {
+    "id": "o4",
+    "what": "Ines's Fairview tournament on March 14-15 (games at 10:30 and 2:00, two hours away) clashes with Mom's 70th lunch at noon on March 14, and both were accepted. Plan who goes where, or tell Coach Sam or Dario before the day.",
+    "evidence": [
+     "m74",
+     "m76",
+     "m78"
+    ],
+    "ready_day": 16
+   },
+   {
+    "id": "o5",
+    "what": "Rafe's swim meet in Ashford on March 21 needs drivers by 12:45, and Mom's train reaches Ashford Station at 2:15 that day. Volunteer to drive for the meet and pick Mom up in the same trip.",
+    "evidence": [
+     "m79",
+     "m80"
+    ],
+    "ready_day": 11
+   },
+   {
+    "id": "o6",
+    "what": "Pat is looking for a beginner piano teacher nearby, and Yvette says Mrs. Volkova on Linden Street has two beginner slots opening in March. Pass the recommendation to Pat.",
+    "evidence": [
+     "m82",
+     "m85"
+    ],
+    "ready_day": 3
+   }
+  ],
+  "traps": [
+   {
+    "id": "x1",
+    "kind": "namesake",
+    "what": "Two different people named Daniel Ortiz: a truck rental rep (work, box truck on March 7) and a school parent (field trip bus on March 7). Same name and date, unrelated bookings, both already settled.",
+    "evidence": [
+     "m18",
+     "m20",
+     "m86",
+     "m88"
+    ]
+   },
+   {
+    "id": "x2",
+    "kind": "same_source",
+    "what": "Hugo Brandvold asked for the same 30-hive quote from his farm address and his personal address; it is one request, already answered.",
+    "evidence": [
+     "m25",
+     "m26",
+     "m27"
+    ]
+   },
+   {
+    "id": "x3",
+    "kind": "coincidence",
+    "what": "Colin Abara (Larkfield skipping the season) and Colin Marsh (syrup delivery delayed) share a first name only and both mention a delay; unrelated matters.",
+    "evidence": [
+     "m21",
+     "m23"
+    ]
+   },
+   {
+    "id": "x4",
+    "kind": "coincidence",
+    "what": "The township swarm removal list and Buzzline's campaign named Swarm share only the word swarm.",
+    "evidence": [
+     "m28",
+     "m30"
+    ]
+   },
+   {
+    "id": "x5",
+    "kind": "cross_area",
+    "what": "Brindle Cider's client tasting on March 20 allows a plus-one and Sunita wants a girls' night with drinks on March 20; joining a work client event to a personal outing is wrong.",
+    "evidence": [
+     "m33",
+     "m89"
+    ]
+   },
+   {
+    "id": "x6",
+    "kind": "resolved",
+    "what": "Mill Creek and Tansy Hill both saw wrong portal invoice amounts, but Bea fixed the portal and sent corrected invoices.",
+    "evidence": [
+     "m35",
+     "m37",
+     "m39",
+     "m40"
+    ]
+   },
+   {
+    "id": "x7",
+    "kind": "covered",
+    "what": "Jar and label suppliers both raised prices, but an open to-do already covers reviewing both increases.",
+    "evidence": [
+     "m43",
+     "m44"
+    ]
+   },
+   {
+    "id": "x8",
+    "kind": "bulk",
+    "what": "The mite treatment shortage only appears in two newsletters.",
+    "evidence": [
+     "m45",
+     "m46"
+    ]
+   },
+   {
+    "id": "x9",
+    "kind": "stale_timing",
+    "what": "Rhoda and Lou both wanted a hive health talk on February 20, which is already past, and nothing followed.",
+    "evidence": [
+     "m41",
+     "m42"
+    ]
+   },
+   {
+    "id": "x10",
+    "kind": "stale_timing",
+    "what": "Dario and Lina both want the cousins together sometime, with no date in either thread; a joint plan would invent dates.",
+    "evidence": [
+     "m91",
+     "m93"
+    ]
+   }
+  ]
+ }
+}
