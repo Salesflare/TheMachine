@@ -16,6 +16,8 @@ Each link always has the newest version:
 - Mac with macOS 13 or newer: [the-machine-desktop-mac.zip](https://github.com/Salesflare/TheMachine/releases/latest/download/the-machine-desktop-mac.zip)
 - Linux, 64-bit: the [AppImage](https://github.com/Salesflare/TheMachine/releases/latest/download/the-machine-desktop-x86_64.AppImage), the [.deb](https://github.com/Salesflare/TheMachine/releases/latest/download/the-machine-desktop-amd64.deb) for Ubuntu and Debian, or the [PKGBUILD](https://github.com/Salesflare/TheMachine/releases/latest/download/PKGBUILD) for Arch and Omarchy
 
+Your dashboard has them too. On a computer, **Settings**, **Apps** lists all three, with **This computer** on yours. The **Get more out of The Machine** to-do has **Get the desktop app**, which downloads the one for your computer, or opens the Linux steps below. It goes once the app is signed in to your Machine. Neither shows on a phone or inside the desktop app.
+
 ## Windows
 
 Open the installer. It installs for you alone, without an administrator, and is signed by Salesflare. On a computer where nothing used WebView2 before, it takes a few seconds more to get that ready, so the app starts at once after it. The app updates itself: its Settings say when a new version is ready.

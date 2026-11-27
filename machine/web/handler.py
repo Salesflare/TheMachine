@@ -522,7 +522,9 @@ def make_handler(app):
             first = lambda name: (args.get(name) or [''])[0]
             said = app.desk_look(first('desk'), args.get('up') == ['1'], first('got').split(','), first('on'), first('none')) if args.get('look') == ['1'] and 'desk' in args else {}
             self.output(200, said | status_delta.changes({**dashboard_status(app.action('status', {'full': True, 'done': DONE_FIRST, 'recent': recent})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
-                              'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))}, since))
+                              'browser_embed': browser_embed(app.config, self.headers.get('Host', '')),
+                              # the desktop app for the system this browser runs on, for Settings, Apps and the setup to-do
+                              'desktop_app': desk.app(self.headers.get('User-Agent'))}, since))
             # after the answer and off the request: on its thread the next request of this connection would wait
             # (look=1: the desktop robot looking for its dot, the owner opened nothing)
             if args.get('look') != ['1']:

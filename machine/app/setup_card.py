@@ -8,6 +8,7 @@ import sqlite3
 import time
 
 from machine.app import setup_nudge
+from machine.delivery import desk
 from machine.delivery.push import (
     phone_qr,
 )
@@ -77,7 +78,7 @@ def phone_app_nudge(store):
 # order, each ticked once done and closed for good with its ×, the whole to-do with its own ×. What the Machine knows
 # about each step is here; what only a device knows (its notifications, the app installed there) the dashboard works
 # out itself. Closed rows are kept on the Machine (milestones 'setup:<step>'), so every device agrees.
-SETUP_STEPS = ('calendar', 'memory', 'phone', 'push', 'whatsapp', 'install', 'account', 'connect')
+SETUP_STEPS = ('calendar', 'memory', 'phone', 'desktop', 'push', 'whatsapp', 'install', 'account', 'connect')
 
 
 SETUP_STEP_RE = re.compile(r'(?:' + '|'.join(SETUP_STEPS) + r'|card|hint-[a-z0-9-]{1,40})')
@@ -87,8 +88,8 @@ SETUP_BASIC = {'gmail', 'outlook', 'calendar', 'outlook_calendar', 'whatsapp'}  
 
 
 def setup_card(store, config):
-    """{closed, dismissed, phones, whatsapp, calendar, mail_accounts, add, more, memory, since} for the setup to-do: closed
-    with its × (for good), the rows closed, phones with the app, a WhatsApp connected, a calendar connected (Google's or
+    """{closed, dismissed, phones, desktop, whatsapp, calendar, mail_accounts, add, more, memory, since} for the setup
+    to-do: closed with its × (for good), the rows closed, phones with the app, the desktop app ever there (desk.seen), a WhatsApp connected, a calendar connected (Google's or
     Outlook's), how many mail accounts (another one: add, the provider the owner has), a connection beyond mail, calendar
     and WhatsApp (more), a line ever kept from another assistant's memory (memory_import.py), and since when the owner has had to-dos (the first one shown, else when this Machine started
     counting): after that first day the dashboard folds the to-do into one line. The owner's own accounts only."""
@@ -101,8 +102,9 @@ def setup_card(store, config):
         except sqlite3.Error:
             phones = 0
         memory = bool(db.execute("SELECT 1 FROM facts WHERE source LIKE 'import:%' LIMIT 1").fetchone())
+        desktop = desk.seen(db)
     mail = [s for s in services if s in ('gmail', 'outlook', 'imap')]
-    return {'closed': 'card' in closed, 'dismissed': sorted(closed - {'card'}), 'phones': phones, 'whatsapp': 'whatsapp' in services,
+    return {'closed': 'card' in closed, 'dismissed': sorted(closed - {'card'}), 'phones': phones, 'desktop': desktop, 'whatsapp': 'whatsapp' in services,
             'calendar': any(s in ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange') for s in services),
             'mail_accounts': len(mail), 'add': 'microsoft' if 'outlook' in mail and 'gmail' not in mail else 'google',
             'more': any(s and s not in SETUP_BASIC for s in services), 'memory': memory,

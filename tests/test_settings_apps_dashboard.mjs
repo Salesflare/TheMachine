@@ -8,9 +8,11 @@ const {chromium}=await import('./browser.mjs');
 // Settings, Apps (was AIs): The Machine apps on top, iPhone and iPad (App Store) and Android (Google Play), each a link
 // to its store in a new tab, then ChatGPT and Claude. A phone's browser shows its own store only; the phone app shows
 // neither (no Google Play inside the iPhone app); a Machine without store links shows no section. An old #settings/ai
-// link opens Apps. A computer's browser also gets Computer (installing the dashboard from the browser, This device's own
-// prompt and steps): Install when the browser offers it, the browser's steps when not, and nothing on a phone, in the
-// phone app or once it runs as the installed app. One browser, one page per device: light and dark are the same page with its color scheme switched.
+// link opens Apps. A computer's browser also gets the desktop app (state.desktop_app, as machine/delivery/desk.py app()
+// makes it from the browser's User-Agent): Windows, Mac and Linux, each a Download link in a new tab, this computer's
+// filled and marked This computer, Linux with a line on its .deb and PKGBUILD; nothing on a phone, in the phone app or
+// in the desktop app. Installing the dashboard from the browser is in Settings, General, This device only. One browser,
+// one page per device: light and dark are the same page with its color scheme switched.
 // Under the stores, how the phone app signs in (state.notify.phone_app): with the account when hosted or on The Machine
 // Network; off the Network, folded under "Not on the Network?", a code to scan (not on a phone) and the address to type.
 // This is the one place for the phone app: Settings, General, This device has no Phone app row.
@@ -19,7 +21,13 @@ const IOS='https://apps.apple.com/app/id6829875215',PLAY='https://play.google.co
 const IPHONE='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 const ANDROID='Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
 const MAC_SAFARI='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15';
-const CHROME_STEPS='Find Install in the browser’s menu, or the icon in the address bar.',SAFARI_STEPS='In Safari’s menu bar: File, then Add to Dock.';
+const WINDOWS_EDGE='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0';
+const LINUX_FIREFOX='Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0';
+const CHROMEBOOK='Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+// The desktop app as the Machine hands it to a browser with this User-Agent (desk.app), once per agent
+const deskFor=new Map(),desktopApp=ua=>{if(!deskFor.has(ua))deskFor.set(ua,JSON.parse(execFileSync('python3',['-c','import json,sys;from machine.delivery import desk;print(json.dumps(desk.app(sys.argv[1])))',ua||''],{cwd:new URL('..',import.meta.url)}).toString()));return deskFor.get(ua)};
+const DL='https://github.com/Salesflare/TheMachine/releases/latest/download/the-machine-desktop-';
+const DESK_FILES={windows:DL+'setup.exe',mac:DL+'mac.zip',linux:DL+'x86_64.AppImage'};
 const STORE={published:true,ios:IOS,android:PLAY,phones:0};
 const OWN='https://machine.example.ts.net/',OWN_LINK='computer.themachine.app://connect?u='+encodeURIComponent(OWN);
 // A real code for the connect link (qr.py, as push.phone_app makes it)
@@ -31,7 +39,7 @@ let store=STORE,phoneApp=HOSTED;
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],phone_app_store:store,notify:{app_push_ready:true,prefs:{},app_devices:[],push_devices:0,phone_app:phoneApp}}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({desktop_app:desktopApp(req.headers['user-agent']),suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],phone_app_store:store,notify:{app_push_ready:true,prefs:{},app_devices:[],push_devices:0,phone_app:phoneApp}}));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const {action}=JSON.parse(body);
   if(action==='ai_connections'){res.end(JSON.stringify({connections:[],areas:['work'],reach:{hosted:true,shared:'https://mcp.themachine.computer/mcp',address:'https://pat.mcp.themachine.computer/mcp'}}));return}
   res.end('{}');return}
@@ -42,7 +50,10 @@ const base='http://127.0.0.1:'+server.address().port;
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
 const stores=page=>page.locator('#apps-list [data-app-store]').evaluateAll(rows=>rows.map(r=>r.dataset.appStore));
-const computer=page=>page.locator('#apps-list [data-app-computer]').evaluateAll(rows=>rows.map(r=>r.dataset.appComputer));
+const desks=page=>page.locator('#apps-list [data-app-desk]').evaluateAll(rows=>rows.map(r=>r.dataset.appDesk));
+// Each desktop app row: [system, its name, its lines, its link's text, href, filled (not .alt)]
+const deskRows=page=>page.locator('#apps-list [data-app-desk]').evaluateAll(rows=>rows.map(r=>{const a=r.querySelector('a.store-badge');
+ return [r.dataset.appDesk,r.querySelector('strong').innerText,[...r.querySelectorAll('small')].map(s=>s.innerText),a.innerText.trim(),a.getAttribute('href'),!a.classList.contains('alt'),a.target,a.rel]}));
 // What a Chromium browser hands the page when it offers to install: the dashboard keeps it for its own Install button
 const offerInstall=page=>page.evaluate(()=>{const e=new Event('beforeinstallprompt',{cancelable:true});window.__prompted=0;
  e.prompt=()=>{window.__prompted++};e.userChoice=Promise.resolve({outcome:'accepted'});dispatchEvent(e)});
@@ -58,7 +69,7 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>Object.defineProperty(window,'machineDesktop',{value:Object.freeze({version:1})}));
   await open(page,base+'/#settings/apps');
-  assert.deepEqual(await stores(page),['ios','android']);assert.deepEqual(await computer(page),[],'nothing to install');
+  assert.deepEqual(await stores(page),['ios','android']);assert.deepEqual(await desks(page),[],'no desktop app inside it');
   assert.deepEqual(await page.evaluate(()=>[document.querySelector('#device-app').hidden,document.querySelector('#device-push').hidden]),[true,true]);
   await page.evaluate(()=>{location.hash='#settings/notify'});
   const more=page.locator('#notify-more');await more.waitFor();
@@ -77,9 +88,13 @@ try{
   for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});
    assert.equal(await selected(page),'Apps');
    assert.deepEqual(await stores(page),want,name);
-   assert.deepEqual(await computer(page),['computer','narrow'].includes(name)?['steps']:[],name+': Computer');
-   if(['computer','narrow'].includes(name)){assert.equal(await page.locator('#apps-list [data-app-computer] strong').innerText(),'Computer');
-    assert.equal(await page.locator('#apps-list [data-app-computer] small').innerText(),CHROME_STEPS)}
+   // a computer (this headless browser says Linux): the three systems, Linux its own
+   assert.deepEqual(await desks(page),['computer','narrow'].includes(name)?['windows','mac','linux']:[],name+': desktop app');
+   if(['computer','narrow'].includes(name)){
+    assert.deepEqual((await deskRows(page)).map(r=>r.slice(0,6)),[['windows','Windows',[],'Download',DESK_FILES.windows,false],['mac','Mac',[],'Download',DESK_FILES.mac,false],
+     ['linux','Linux',['This computer','Also a .deb and a PKGBUILD. Learn more'],'Download',DESK_FILES.linux,true]],name);
+    assert.equal(await page.locator('#apps-list [data-app-desk="linux"] a.learn').getAttribute('href'),'https://themachine.computer/help/desktop-app#linux');
+    for(const box of await page.locator('#apps-list [data-app-desk] a.store-badge').evaluateAll(as=>as.map(a=>a.getBoundingClientRect().toJSON())))assert.ok(box.x>=0&&box.right<=width,`${name}: Download inside the screen`)}
    assert.equal(await page.locator('#settings-apps').isVisible(),want.length>0||['computer','narrow'].includes(name),name+': the section');
    for(const k of want){const a=page.locator(`#apps-list [data-app-store="${k}"] a`);
     assert.equal(await a.getAttribute('href'),k==='ios'?IOS:PLAY);assert.equal(await a.getAttribute('target'),'_blank');assert.match(await a.getAttribute('rel'),/noopener/);
@@ -98,14 +113,15 @@ try{
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${name}: no sideways scroll`);
    if(shots)await page.screenshot({path:`${shots}/apps-${name}-${scheme}.png`,fullPage:true})}
   if(name==='computer'){
-   // No store links on this Machine: Computer alone, ChatGPT and Claude stay
+   // No store links on this Machine: the desktop app alone, ChatGPT and Claude stay
    store=null;await open(page,base+'/#settings/apps');
-   assert.equal(await stores(page).then(r=>r.length),0);assert.deepEqual(await computer(page),['steps']);assert.equal(await page.locator('#settings-apps').isVisible(),true);assert.equal(await selected(page),'Apps');
-   // The browser offers to install: Install opens its own prompt, and once installed the row goes
-   await offerInstall(page);await page.locator('#apps-list [data-app-computer="install"] button',{hasText:/^Install$/}).click();
-   await page.locator('#apps-list [data-app-computer]').waitFor({state:'detached'});
-   assert.equal(await page.evaluate(()=>window.__prompted),1);assert.equal(await page.locator('#settings-apps').isVisible(),false);
-   await page.locator('#toast.show',{hasText:'Installed.'}).waitFor();
+   assert.equal(await stores(page).then(r=>r.length),0);assert.deepEqual(await desks(page),['windows','mac','linux']);assert.equal(await page.locator('#settings-apps').isVisible(),true);assert.equal(await selected(page),'Apps');
+   // Installing from the browser offers nothing here: Install app in Settings, General, This device opens its prompt
+   await offerInstall(page);await page.evaluate(()=>{location.hash='#settings/general'});
+   await page.locator('#device-app button',{hasText:/^Install app$/}).click();
+   await page.locator('#toast.show',{hasText:'Installed.'}).waitFor();assert.equal(await page.evaluate(()=>window.__prompted),1);
+   await page.evaluate(()=>{location.hash='#settings/apps'});await page.locator('#apps-list [data-app-desk]').first().waitFor();
+   assert.equal(await page.locator('#apps-list button').count(),0,'no Install in Apps');
    await page.evaluate(()=>localStorage.removeItem('app-installed'));
    // a tab kept from before the rename, and an old AIs link, open Apps
    store=STORE;await page.evaluate(()=>localStorage.setItem('settings-tab','ai'));await open(page,base+'/#settings');
@@ -151,26 +167,25 @@ try{
   await context.close();
  }
  phoneApp=HOSTED;
- // Computer, per browser, at both widths and in both color schemes: Chromium with the install offered (Install), Safari
- // on a Mac (its menu's steps), and the installed app itself (no row)
+ // The desktop app per system, at both widths and in both color schemes: Windows (Edge), a Mac (Safari) and Linux
+ // (Firefox) each fill their own and mark it This computer; a Chromebook (no desktop app for it) and the dashboard
+ // installed from the browser get all three, none marked
  store=STORE;
- for(const [name,ua] of [['chrome',null],['safari',MAC_SAFARI],['installed',null]])for(const width of [1440,390]){
-  const context=await browser.newContext({viewport:{width,height:844},...(ua?{userAgent:ua}:{})}),page=await context.newPage();
+ const MARK=['This computer'],MORE='Also a .deb and a PKGBUILD. Learn more';
+ for(const [name,ua,mine] of [['windows',WINDOWS_EDGE,'windows'],['mac',MAC_SAFARI,'mac'],['linux',LINUX_FIREFOX,'linux'],['chromebook',CHROMEBOOK,null],['installed',WINDOWS_EDGE,'windows']])for(const width of [1440,390]){
+  const context=await browser.newContext({viewport:{width,height:844},userAgent:ua}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   if(name==='installed')await page.addInitScript(()=>Object.defineProperty(Navigator.prototype,'standalone',{get:()=>true}));
   page.on('pageerror',e=>errors.push(e.message));
   await open(page,base+'/#settings/apps');
-  if(name==='chrome'){await offerInstall(page);await page.locator('#apps-list [data-app-computer="install"]').waitFor()}
   for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});
    assert.deepEqual(await stores(page),['ios','android'],name);
-   if(name==='installed'){assert.deepEqual(await computer(page),[],name);continue}
-   const row=page.locator('#apps-list [data-app-computer]');
-   assert.equal(await row.locator('strong').innerText(),'Computer');
-   if(name==='chrome'){assert.equal(await row.locator('small').innerText(),'Pin it to your taskbar or dock.');
-    const b=row.locator('button');assert.equal(await b.innerText(),'Install');const box=await b.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width,`${name} ${width}: Install inside the screen`)}
-   else{assert.equal(await row.locator('small').innerText(),SAFARI_STEPS);assert.equal(await row.locator('button').count(),0)}
+   const rows=await deskRows(page);
+   assert.deepEqual(rows.map(r=>[r[0],r[2],r[5]]),[['windows',mine==='windows'?MARK:[],mine==='windows'],['mac',mine==='mac'?MARK:[],mine==='mac'],['linux',mine==='linux'?[...MARK,MORE]:[MORE],mine==='linux']],name);
+   for(const r of rows){assert.equal(r[4],DESK_FILES[r[0]]);assert.equal(r[3],'Download');assert.equal(r[6],'_blank');assert.match(r[7],/noopener/)}
+   for(const box of await page.locator('#apps-list [data-app-desk] a.store-badge').evaluateAll(as=>as.map(a=>a.getBoundingClientRect().toJSON())))assert.ok(box.x>=0&&box.right<=width,`${name} ${width}: Download inside the screen`);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${name} ${width}: no sideways scroll`);
-   if(shots)await page.locator('#settings-apps').screenshot({path:`${shots}/apps-computer-${name}-${width}-${scheme}.png`})}
+   if(shots)await page.locator('#settings-apps').screenshot({path:`${shots}/apps-desktop-${name}-${width}-${scheme}.png`})}
   await context.close();
  }
  assert.deepEqual(errors,[]);

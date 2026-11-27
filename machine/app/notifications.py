@@ -181,6 +181,9 @@ class NotificationsApp:
             with self.store.connect() as db:
                 notify.reached(db, tag, 'computer')
         found = desk.look(ident, up, got, on=on, none=none)
+        if desk.ID.fullmatch(ident or '') and not self.__dict__.get('_desk_noted'):  # once a run: the setup to-do's row is done
+            self.store.note_desktop_app()
+            self._desk_noted = True
         if not up or not desk.ID.fullmatch(ident or ''):
             return {}
         with self.store.connect() as db:

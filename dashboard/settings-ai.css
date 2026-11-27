@@ -1,5 +1,11 @@
 /* Settings, Connected AIs: the rows settings-ai.js draws, which load with it (dashboard_parts.LAZY). */
 /*@lazy*/
+/* Settings, Apps (settings-apps.js), above the AIs: the store badges, and the desktop app's rows, where another
+   computer's download is quiet and its download mark is drawn in lines */
+[data-app-store] .store-badge,[data-app-desk] .store-badge{flex:none;min-width:136px;justify-content:center}
+[data-app-desk] .alt{background:var(--surface-2);border-color:var(--border-strong);color:var(--text)}
+[data-app-desk] .alt:hover{background:var(--c-hover);color:var(--text)}
+[data-app-desk] .dl{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .settings-list>.ai-conn{flex-wrap:wrap;gap:8px}
 .ai-conn .grow{flex-basis:100%}
 .ai-controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}

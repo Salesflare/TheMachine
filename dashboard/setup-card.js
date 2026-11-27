@@ -1,5 +1,7 @@
 // The setup to-do at the top of To-dos, "Get more out of The Machine": one small card with a row per step, in this order:
-// the calendar (once mail is connected), importing what another AI knows (memoryImportOpen), the phone app, notifications, WhatsApp, the app on this computer, another mail account, more connections, then what
+// the calendar (once mail is connected), importing what another AI knows (memoryImportOpen), the phone app, the desktop
+// app (deskGet), notifications, WhatsApp, the dashboard
+// installed from the browser (only on a computer with no desktop app, like a Chromebook), another mail account, more connections, then what
 // setup left out once it is relevant (state.setup_hints). At most SETUP_MAX rows; each has one button that does the step
 // itself, leaves the card once done (only what is left shows, under "3 steps left"), and closes for good with its × (setup_dismiss, kept on the Machine so every device
 // agrees, with Undo in the toast); the card's own × closes all of it. Closed rows come back with "Show 1 hidden" at the
@@ -28,6 +30,10 @@ const SETUP_ICON={
  memory:'<path d="M4 13.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4.5"/><path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/>',
  scope:'<rect x="3.5" y="7.5" width="17" height="12" rx="2"/><path d="M9 7.5v-2a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5.5v2M3.5 12.5h17"/>',
  hint:'<path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/>'};
+SETUP_ICON.desktop=SETUP_ICON.install;
+// The desktop app for this computer (state.desktop_app.get, desk.app in machine/delivery/desk.py: its download, or
+// Linux's help), outside the desktop app and the phone app; none on a phone or a computer without it, like a Chromebook
+const deskGet=()=>!(onPhone()||DEV.phoneApp||desktopApp)&&state?.desktop_app?.get;
 const setupSvg=k=>raw(`<svg class="setup-ic" viewBox="0 0 24 24" aria-hidden="true">${SETUP_ICON[k]||SETUP_ICON.hint}</svg>`);
 // Store marks (simple-icons, CC0)
 const STORE_APPLE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>';
@@ -47,9 +53,10 @@ function setupRows(all){const s=state?.setup_card;if(!s)return [];const n=s.nudg
  add('calendar',s.mail_accounts>0,s.calendar);
  add('memory',1,s.memory);
  add('phone',!!p&&!DEV.phoneApp&&(DEV.mobile?!!setupStore():!!(p.ios||p.android)),s.phones>0);
+ const desk=deskGet();add('desktop',desk,s.desktop);
  add('push',!DEV.phoneApp&&(pushOn()||pushOK&&devicePush.checked&&devicePush.perm!=='denied'&&devStore.get('push-off')!=='1'),pushOn());
  add('whatsapp',hosted,s.whatsapp);
- add('install',!onPhone()&&!DEV.phoneApp&&nudgeable&&(appInstalled()||!!installEvt||DEV.macSafari),appInstalled());
+ add('install',!desk&&!onPhone()&&!DEV.phoneApp&&nudgeable&&(appInstalled()||!!installEvt),appInstalled());
  add('account',hosted,s.mail_accounts>=2);
  add('connect',1,s.more);
  for(const h of state.setup_hints||[])add('hint-'+h?.id,h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id),0,h);
@@ -60,8 +67,8 @@ function setupRows(all){const s=state?.setup_card;if(!s)return [];const n=s.nudg
 // The closed rows that would still apply here and aren't done: what Show hidden brings back
 function setupHidden(){const closed=new Set(state?.setup_card?.dismissed||[]);return setupRows(true).filter(r=>closed.has(r.id)&&!r.done).length}
 const setupLabel=r=>r.hint?r.hint.title:
- {calendar:t('Connect your calendar'),phone:'Get the phone app',push:'Turn on notifications',whatsapp:'Connect WhatsApp',install:'Install on this computer',account:'Add another email account',connect:'Add more connections',memory:t('Import what another AI knows')}[r.id];
-const setupButton=r=>r.hint?r.hint.button||'Open':{calendar:t('Connect'),phone:'Get it',push:'Turn on',whatsapp:'Connect',install:'Install',account:'Add',connect:'Browse',memory:t('Import')}[r.id];
+ {calendar:t('Connect your calendar'),phone:'Get the phone app',desktop:'Get the desktop app',push:'Turn on notifications',whatsapp:'Connect WhatsApp',install:'Install on this computer',account:'Add another email account',connect:'Add more connections',memory:t('Import what another AI knows')}[r.id];
+const setupButton=r=>r.hint?r.hint.button||'Open':{calendar:t('Connect'),phone:'Get it',desktop:'Get it',push:'Turn on',whatsapp:'Connect',install:'Install',account:'Add',connect:'Browse',memory:t('Import')}[r.id];
 // On a computer: a QR code that opens the right store on the phone (one, or one per store before the redirect is live).
 // On a phone whose store isn't known (onPhone, not DEV.mobile): the two store links, no code to scan.
 function setupQRHTML(){const p=state?.phone_app_store||{},rows=v=>Array.isArray(v)?v.filter(r=>/^[01]+$/.test(r)):[];
@@ -86,8 +93,9 @@ const setupMailFirst=()=>{const s=state?.setup_card;if(!s||s.demo||DEV.framed||!
 const setupMailHTML=()=>html`<div class="setup-head"><strong>${t('Connect your mail to get your first to-dos.')}</strong></div><div class="setup-mail actions"><button type="button" class="primary" data-connect-open="gmail">${t('Gmail')}</button><button type="button" data-connect-open="outlook">${t('Outlook')}</button><button type="button" data-connect-open="imap">${t('Other email')}</button></div>`;
 const SETUP_CHEVRON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 14 5-5 5 5"/></svg>';
 // On a phone with a known store (setupStore), Get it is a plain link to that store: straight there, no code, no popup.
-function setupHTML(rows,quiet){const desk=!DEV.mobile,hidden=setupHidden(),store=DEV.mobile&&!state.setup_card?.demo?setupStore():null;
- const row=r=>html`<li class="setup-row" data-step="${r.id}">${setupSvg(r.hint?(r.hint.scope?'scope':r.hint.icon):r.id)}<span class="setup-label">${setupLabel(r)}</span>${html`${r.id==='phone'&&store?html`<a class="setup-go btn-link" href="${safeHref(store)}" target="_blank" rel="noopener" data-setup-go="phone">${setupButton(r)}</a>`:html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button>`}<button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
+// The desktop app's Get it, the same: this system's download, or Linux's help (deskGet).
+function setupHTML(rows,quiet){const desk=!DEV.mobile,demo=state.setup_card?.demo,hidden=setupHidden(),go={phone:DEV.mobile&&!demo?setupStore():null,desktop:!demo&&deskGet()};
+ const row=r=>html`<li class="setup-row" data-step="${r.id}">${setupSvg(r.hint?(r.hint.scope?'scope':r.hint.icon):r.id)}<span class="setup-label">${setupLabel(r)}</span>${html`${go[r.id]?html`<a class="setup-go btn-link" href="${safeHref(go[r.id])}" target="_blank" rel="noopener" data-setup-go="${r.id}">${setupButton(r)}</a>`:html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button>`}<button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
    r.id==='phone'&&desk&&setupQR?setupQRHTML():''}</li>`;
  // folded: the suggestion as its row (its button and ×; once it is closed, the line that opens
  // the rest comes back), else how many steps are left
@@ -155,7 +163,7 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
  // the calendar of the mail they have
  if(step==='calendar'){connectOpen(s.add==='microsoft'?'outlook_calendar':'calendar');return}
  b.disabled=true;
- try{if(step==='push')await pushEnable();else if(step==='install'){if(installEvt)await appInstall();else toast(DEV.macSafari?'In Safari’s menu bar: File, then Add to Dock.':'Find Install in the browser’s menu.')}}
+ try{if(step==='push')await pushEnable();else if(step==='install')await appInstall()}
  finally{b.disabled=false;setupRender()}}
 // Import from another AI (learning-import.js, a lazy part): from the setup row, the first look's quiet button and
 // Learning, each a [data-memory-import] button. Not in a frame or the site's demo.
