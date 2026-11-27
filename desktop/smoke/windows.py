@@ -407,6 +407,19 @@ def _():
     need(until(back), 'it is back')
 
 
+@step('its own link brings it back, and nothing more')
+def _():
+    command = winreg.QueryValue(winreg.HKEY_CURRENT_USER, r'Software\Classes\computer.themachine.desktop\shell\open\command')
+    need(os.path.basename(app.program).lower() in command.lower(), f'the link is this app: {command}')
+    hide()
+    app.again('computer.themachine.desktop://open?to=quit')
+    time.sleep(2)
+    need(hidden() and app.process.poll() is None, 'one with more in it does nothing')
+    app.again('computer.themachine.desktop://open')
+    need(until(back), 'it is back')
+    return command
+
+
 def open_it():
     if not app.box():
         click(*app.center())

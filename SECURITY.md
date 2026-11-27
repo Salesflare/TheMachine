@@ -148,6 +148,9 @@ encrypted (AES-GCM, with a key the browser can't export), for one owner, kept at
 are wiped on Sign out or when the session ends ([On the device](docs/architecture.md#on-the-device)). On a shared
 computer, sign out.
 
+The desktop app's own link, `computer.themachine.desktop://open`, only brings the app to the front. It carries no
+command and no data: any other link of that scheme does nothing.
+
 ### The operating system
 
 Keep the operating system patched. On a dedicated Ubuntu server, let `unattended-upgrades` install the `-security`

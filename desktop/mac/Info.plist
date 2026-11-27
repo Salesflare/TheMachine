@@ -27,6 +27,12 @@
       <key>CFBundleTypeRole</key><string>Viewer</string>
       <key>CFBundleURLSchemes</key><array><string>computer.themachine.app</string></array>
     </dict>
+    <dict>
+      <!-- Its own link, which only brings it to the front (src/link.rs) -->
+      <key>CFBundleURLName</key><string>computer.themachine.desktop.open</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>CFBundleURLSchemes</key><array><string>computer.themachine.desktop</string></array>
+    </dict>
   </array>
 </dict>
 </plist>

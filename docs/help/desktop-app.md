@@ -42,6 +42,8 @@ Every file has GitHub's build provenance, which shows it was built from The Mach
 
 The first time, its window opens to sign in. For a hosted Machine or one on The Machine Network, it opens your account in your browser and comes back. A self-hosted Machine takes its own address, from a computer on your Tailscale network.
 
+A page of your Machine can bring the app to the front with its own link, `computer.themachine.desktop://open`. The link only opens the app and carries nothing.
+
 To have the dashboard as an app of Chrome or Edge instead, see [Install the app](phone-app.md).
 
 ## The robot
