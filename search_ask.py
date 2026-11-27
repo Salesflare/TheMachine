@@ -31,6 +31,10 @@ message. Nothing matches: the prompt is the one without them. A question about d
 learned and no longer holds, marked as such. When nothing here answers it, or only part of it (the answer ends with
 SHORT), and something no longer current matches it ("before the renewal" names no days), it is answered once more with that.
 
+On that same SHORT, the owner's own searchable mailboxes of the area are also searched once, live and bounded
+(machine/app/search_ask.py search_ask_mailbox), and the answer is made again from what they found, in the same one
+more turn. A mailbox that couldn't be searched is said under the answer.
+
 Cheap by design, like Help (help_chat.py): one-shot turns on the Machine's own lighter model through OpenClaw, no tools
 and no workspace files, so it can answer and change nothing: it never sends, drafts or makes a to-do. What goes in is
 capped (SOURCES messages, SCOPED_SOURCES for one person's or one time's, of at most SOURCE_CHARS each, PROMPT_CHARS in

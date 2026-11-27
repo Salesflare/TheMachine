@@ -30,6 +30,8 @@ It also reads what the Machine already keeps on the question: promises (open, or
 
 Ask how something was, like “what did we pay Initech in June?” or “before the renewal”, and it also reads what it learned that no longer holds, marked as no longer current, with the day it learned it and the day that changed. Those are the days the Machine noticed, not surely when it became or stopped being true. What you removed never comes back.
 
+When nothing here answers it, or only part of it, it searches your own mailboxes of the area you're viewing once, older mail too, and answers from what it finds, with a link to each. Gmail and Outlook only, never a Fleet's. Old mail it finds is context, never a new to-do or promise. A mailbox it couldn't search, it says so.
+
 If several people have that name, it says which one it means. When another of them wrote in the last 3 hours, it gives what both wrote. The other messages it read show under Messages. The question an empty search suggests is only one it has messages for. The answer never sends anything or adds a to-do, and it needs a model (Settings, Model).
 
 ## Shortcuts

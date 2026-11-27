@@ -12,6 +12,7 @@ question about the owner's own mailbox or chat account reads only its messages, 
 The Graph has what came in since its last build (up to half an hour) only later, so the newest messages are also looked
 at for who sent them (search_ask_recent): the person's own, or of someone else with that name, who may be the one meant.
 A question about minutes ago reads all that came in since, newest first, whatever words it has."""
+import concurrent.futures
 import datetime as dt
 import json
 import logging
@@ -21,6 +22,7 @@ import sqlite3
 import embeddings
 import graph
 import help_search
+import i18n
 import locale_prefs
 import timeutil
 from machine.app import ask_connections, ask_memory
@@ -32,6 +34,7 @@ from models import background_model, has_model
 import search_ask
 import shared_graph
 from machine.owner_error import OwnerError
+from machine.app.mail import SEARCHABLE
 
 LOG = logging.getLogger('personal-assistant')
 AREAS = (None, 'work', 'personal')
@@ -47,6 +50,11 @@ THERE, BEYOND = 8, 4  # messages of the place asked about and from elsewhere, wh
 PERSON_ROWS = 400   # of one person's messages in the days asked about, the newest looked at
 EXAMPLE_PEOPLE = 6  # people from the open to-dos a suggested question may be about
 WORD_LEADS = 3      # the best keyword matches that always reach the answer's messages
+# Nothing kept here answers a question: the owner's own mailboxes are searched live (search_ask_mailbox), at most
+MAILBOX_ACCOUNTS = 3  # mailboxes of the area in view
+MAILBOX_FOUND = 5     # messages from each
+MAILBOX_SECONDS = 15  # for all of it; slower, and it says those couldn't be searched
+MAILBOX_WORDS = 4     # of the subject's words
 
 
 def _meta(r):
@@ -504,15 +512,22 @@ class SearchAskApp:
                 kept, tags = ask_memory.read(memory, about, search_ask.PROMPT_CHARS)
             found = memory.read('sources', question, rows, run, lang, body=lambda b: shown_body(b)[0], scope=scope, counted=counted, mine=mine,
                                 memory=kept, kept=tags, before=before)
+            failed = []
             short = found.pop('short', False) or not (found['sources'] or found.get('memory')) if found else not (rows or kept)  # None after a turn: NONE, no question
-            then = short and read and about and ask_memory.earlier(self, about)  # nothing kept answers it: what held earlier, for one that names no days
-            if then:
-                memory = recall(self, 'ask', {'question': question}, search_ask.PROMPT_CHARS)
-                kept, tags = ask_memory.read(memory, then, search_ask.PROMPT_CHARS)
-                found = memory.read('sources', question, rows, run, lang, body=lambda b: shown_body(b)[0], scope=scope, counted=True, mine=mine,
-                                    memory=kept, kept=tags, before=before)
-                if found:
-                    found.pop('short', None)
+            if short and read and not (scope and (scope.get('connections') or scope.get('ago'))):  # nothing kept here answers it, or not all of it
+                more, failed = self.search_ask_mailbox(question, read, area, scope, rows or [])
+                then = about and ask_memory.earlier(self, about)  # what held earlier, for one that names no days
+                if then:
+                    memory = recall(self, 'ask', {'question': question}, search_ask.PROMPT_CHARS)
+                    kept, tags = ask_memory.read(memory, then, search_ask.PROMPT_CHARS)
+                if more or then:  # older mail its own mailbox search found, or what held earlier: answered again, that mail first
+                    if more:
+                        scope = scope and {**scope, 'none': False, 'empty': False, 'newest': False}
+                    rows = more + list(rows or [])
+                    found = memory.read('sources', question, rows, run, lang, body=lambda b: shown_body(b)[0], scope=scope, counted=True, mine=mine,
+                                        memory=kept, kept=tags, before=before)
+                    if found:
+                        found.pop('short', None)
             memory_use.record(self.store, 'ask', memory.rows())  # what its prompt held: ids only
         except (search_ask.Unavailable, help_chat.Unavailable) as error:
             LOG.info('search ask not answered error=%s', type(error).__name__)
@@ -522,7 +537,66 @@ class SearchAskApp:
             rest = sorted((s for s in search_ask.sources(rows, lambda b: shown_body(b)[0], search_ask.SCOPED_SOURCES, mine) if s['id'] not in cited),
                           key=lambda s: s['at'], reverse=True)
             found['messages'] = [{k: s[k] for k in ('id', 'kind', 'title', 'from', 'at')} for s in rest[:4]]
+        if failed and not (found and (found['sources'] or found.get('memory'))):  # nothing found is then no proof: say what wasn't searched
+            names = ', '.join(failed)
+            found = {**found, 'answer': found['answer'] + ' ' + i18n.t('Older mail in {} could not be searched just now.', names)} if found else \
+                {'answer': i18n.t('I found nothing about it. Older mail in {} could not be searched just now.', names), 'sources': []}
         return found or {'none': True}
+
+    def search_ask_mailbox(self, question, plan, area, scope, rows):
+        """(rows, names of the mailboxes that couldn't be searched) for a question nothing kept here answers: the
+        owner's own mailboxes searched live (App.mailbox_lookup: read-only, Gmail's or Outlook's own search, never a
+        mailbox shared from a Fleet), only those of the area in view (and of the person's or days' scope), at most
+        MAILBOX_ACCOUNTS of them, MAILBOX_FOUND messages each, within MAILBOX_SECONDS. What it finds is kept as collected
+        mail (Store.keep_found: older mail is context, never news or a new to-do), and only mail not already read for
+        the question comes back, Work never a thread about the owner's own life."""
+        accounts = {a['id']: a for a in self.config.get('accounts', []) if a.get('id')}
+        mail = [i for i in self.search_ask_within(area) if accounts[i].get('service', 'gmail') in SEARCHABLE and not accounts[i].get('shared')][:MAILBOX_ACCOUNTS]
+        query = self.search_ask_mail_query(question, plan, area, scope)
+        if not mail or not query:
+            return [], []
+        pool = concurrent.futures.ThreadPoolExecutor(1)
+        try:
+            ids, failed = pool.submit(self.mailbox_lookup, mail, query, MAILBOX_FOUND).result(MAILBOX_SECONDS)
+        except concurrent.futures.TimeoutError:
+            ids, failed = [], dict.fromkeys(mail, 'timeout')
+        except Exception as error:  # noqa: BLE001 - a mailbox that can't be searched never costs the answer
+            LOG.info('search ask mailbox error=%s', type(error).__name__)
+            ids, failed = [], dict.fromkeys(mail, 'error')
+        finally:
+            pool.shutdown(wait=False)
+        have = {r['id'] for r in rows}
+        found = [r for r in self.store.events(mail, event_ids=ids, kinds=list(graph.MESSAGE_KINDS)) if r['id'] not in have] if ids else []
+        days = search_ask.bounds(scope['start'], scope['end'], scope['tz']) if scope and scope.get('start') else None
+        found = [r for r in self.search_ask_keep(found, area) if not days or self.search_ask_in(r, days)]
+        place = {e: n for n, e in enumerate(ids)}
+        found.sort(key=lambda r: place.get(r['id'], len(place)))
+        LOG.info('search ask mailbox accounts=%s found=%s new=%s failed=%s', len(mail), len(ids), len(found), len(failed))
+        return found, [ask_connections.name(accounts[i], accounts.values()) for i in failed]
+
+    def search_ask_mail_query(self, question, plan, area, scope=None):
+        """The mailbox search's words (Gmail's syntax, which Outlook's search reads too): the person and the
+        organizations or projects the question names, each as a phrase that must be there, and any one of the
+        subject's words (all of them when nothing names who it is about), within the days asked about. '' when there is
+        nothing to look for."""
+        with self.store.connect() as db:
+            named = [r['name'] for r in ask_memory.named(db, question, self.search_ask_accounts(area))]
+        anchors, taken = [], set()
+        for a in [plan.get('person') or (scope or {}).get('name') or '', *named]:
+            if a.strip() and not (name_words(a) and name_words(a) <= taken):  # "Bluth" once "Bluth Company" is in
+                anchors.append(a)
+                taken |= name_words(a)
+        subject = [w for w in re.findall(r'\w+', plan.get('about') or '') if len(w) > 2 and help_search.fold(w).casefold() not in taken][:MAILBOX_WORDS]
+        if not anchors and not subject:
+            return ''
+        parts = ['"' + a.replace('"', '') + '"' for a in anchors[:2]]
+        if subject:
+            parts.append(('{' + ' '.join(subject) + '}') if anchors and len(subject) > 1 else ' '.join(subject))
+        if plan.get('start'):
+            parts.append(f"after:{plan['start']:%Y/%m/%d}")
+        if plan.get('end'):
+            parts.append(f"before:{plan['end'] + dt.timedelta(days=1):%Y/%m/%d}")
+        return ' '.join(parts)
 
     def search_ask_examples(self, people, area=None):
         """The suggested questions Search may offer, only where the answer has something to go on: of these people (the
