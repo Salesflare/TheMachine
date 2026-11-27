@@ -1050,6 +1050,9 @@ Learning, and saves only the ones the owner ticks.
   It is read and removed like any other, and counts as the owner's own words for connected AIs.
 - Dismissed candidates and lines a pass has read are not offered again. Lines added to the files later go through the
   same pass and show up the same quiet way: no notification, no badge.
+- With `ai_learnings` on, a connected AI can also save what the owner settled in a chat with it (`save_learning`,
+  [ai-connections.md](ai-connections.md#learnings-and-the-brief)): a fact goes in as that AI's ("AI: <name>", Undo in
+  Activity); a rule waits at the top of How to do things with Approve and Dismiss, and is the owner's own once approved.
 - Facts kept from notes then go where they belong (`notes_people.py`): after each batch the owner keeps, one small
   background turn reads the new ones (once, too, for those kept before this). It is given real people only: those whose
   name shares a telling word with the fact, and family and friends by their role ("To you"). Per fact it picks the one

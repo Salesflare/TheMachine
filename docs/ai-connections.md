@@ -135,6 +135,7 @@ brief their Fleet tab shows. Teammates' Team Graph records and threads never go 
 | `read_thread` | Read, with Messages on | The thread or chat around one message (`id`), oldest first, up to 30 messages of up to 4000 characters |
 | `get_learnings` | Read, with `ai_learnings` on | The owner's rules, general facts and voice per channel, as Learning has them, in the connection's area; optional `query` (every word in it) and `limit` (30, at most 100 of each) ([Learnings and the brief](#learnings-and-the-brief)) |
 | `get_brief` | Read, with `ai_learnings` on | The brief the server's instructions end with, for apps that don't read those |
+| `save_learning` | Read & edit, with `ai_learnings` on | A general fact (in at once, Undo) or a rule (waits for the owner's OK) the owner settled in the chat (`kind`, `text`, a fact's optional `sort` and `until`); never a voice ([Learnings and the brief](#learnings-and-the-brief)) |
 
 Every tool is listed to every connection. A tool above the connection's level is refused with what to change and where,
 and the refusal is logged. The AI can't raise its own level.
@@ -146,7 +147,7 @@ name, an organization or role, a Work or Personal side, sharing or an owner: tho
 **To-dos from an AI** are marked reviewed, like a Fleet request (`App.fleet_card`): no review or preparation reads them
 by themselves, and the owner sees "From Claude" on them. A draft goes out only when the owner taps Send.
 
-**Limits.** At most 20 new to-dos and 50 Graph changes a day per connection, and 10 recipients on a draft.
+**Limits.** At most 20 new to-dos and 50 Graph changes and learnings a day per connection, and 10 recipients on a draft.
 
 **Arguments** are checked against the tool's schema before it runs (`ai_access.check_args`). One it doesn't take, one
 that is missing and a value that doesn't fit come back as an error (`isError`) that names them all in one message, with
@@ -218,6 +219,19 @@ or off. An off or expired connection gets none.
 
 An `initialize` with the brief is a line in Activity ("Read the brief"), which is the visit; not again while that
 connection's last line is a brief from the last 10 minutes (a client that starts over for each call).
+
+**save_learning** (Read & edit) keeps what the owner settled in the chat, about no one in the Graph (a fact about
+someone goes through `save_fact`), through `facts.save_learned`:
+
+- **A fact** goes in at once with source "AI: <name>" and the connection's area, so it stays that AI's claim
+  (`ai_fact_by`: prompts read it as data, other AIs get it marked `ai`). Its line in Activity has Undo.
+- **A rule** waits, Messages on or off: a rule steers the Machine's own work, and an email the AI read could have talked
+  it into one. It waits in `ai_writes` (waiting) and shows in Learning, How to do things, with "From <name> · Waiting
+  for your OK", Approve and Dismiss (`ai_apply`, `ai_dismiss`, as in Activity). Approved, it is the owner's own (no
+  source), for both areas, with Undo in Activity.
+- **Never a voice.** Only `fact` and `rule`.
+- With Messages on, a fact waits too, like every Graph change. One the owner took out of this connection's is not saved
+  again; the same text again is said again (`confirmed_at`). It counts toward the 50 changes a day.
 
 ## Messages
 

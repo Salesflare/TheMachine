@@ -510,6 +510,7 @@ class StatusApp:
         except (sqlite3.Error, ValueError, TypeError) as error:
             LOG.warning('done milestone error=%s', type(error).__name__); result['done_milestone'] = None
         result['team_learnings'] = self.learnings_view()
+        result['rules_waiting'] = self.ai_rules_waiting()  # Learning, How to do things: a connected AI's rule, Approve or Dismiss
         result['security'] = self.security_view()
         for suggestion in result.get('suggestions', []):
             work = self.is_work(suggestion.get('account_ids'))

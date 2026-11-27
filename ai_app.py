@@ -36,6 +36,7 @@ from machine import todo_states
 from machine.owner_error import OwnerError
 from machine.dashboard_link import dashboard_link
 from machine import owner_name
+from machine.store.facts import fact_until, save_learned
 import timeutil
 
 OPEN = todo_states.OPEN_NOT_SNOOZED  # list_todos' "open": snoozed ones are their own status there (status=snoozed)
@@ -413,10 +414,12 @@ class AiApp:
     def ai_tool(self, connection, name, args, again=None):
         """(result, the activity line) for one call, its arguments checked (ai_access.check_args). A ValueError is the
         call's error, said to the AI and logged. With Messages on, a Graph change waits for the owner's OK instead
-        (ai_wait). again: the to-do the same add made a moment ago (ai_access.added_before)."""
+        (ai_wait), and a rule an AI saves always does, until ai_apply runs it as the owner's OK (owner_ok). again: the
+        to-do the same add made a moment ago (ai_access.added_before)."""
         if again:
             return self.ai_added(name, again), ''
-        if name in ai_access.WRITES and connection.get('messages'):
+        rule = name == 'save_learning' and args.get('kind') == 'rule' and not connection.get('owner_ok')
+        if name in ai_access.WRITES and (connection.get('messages') or rule):
             return self.ai_wait(connection, name, args)
         return getattr(self, 'ai_tool_' + name)(connection, args)
 
@@ -672,6 +675,37 @@ class AiApp:
     def ai_tool_get_brief(self, connection, args):
         return {'brief': self.ai_brief_text(connection)}, ''
 
+    def ai_tool_save_learning(self, connection, args):
+        """A general fact goes in at once, in the connection's area, with Undo; a rule only once the owner OKd it
+        (ai_tool sends it to ai_wait first: a rule steers the Machine's own work). Never a voice."""
+        kind, text = args.get('kind'), ' '.join(str(args.get('text') or '').split())
+        if not 5 <= len(text) <= 240:
+            raise ValueError('A learning is one short sentence (5-240 characters)')
+        sort = (args.get('sort') or 'fact') if kind == 'fact' else None
+        if sort not in (None, *AI_SORTS):
+            raise ValueError('sort is fact, preference, commitment or event')
+        until = fact_until(args.get('until')) if kind == 'fact' else None
+        _, want = self.ai_accounts(connection, None)
+        storage = 'fact' if kind == 'fact' else 'draft'
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            same = db.execute('SELECT id FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (storage, text)).fetchone()
+            before = self.store.fact_state(db, same['id']) if same else None  # said again: Undo puts that back as it was
+            fact_id = save_learned(db, text, storage, sort, until, 'ai:' + connection['id'],
+                                   'ai:' + connection['name'] if kind == 'fact' else None, want if kind == 'fact' else None)
+            after = self.store.fact_state(db, fact_id)
+            write = ai_access.note_write(db, connection['id'], 'save_learning', '', [
+                {'part': 'fact', 'before': before or {**after, 'fact': None, 'about': []}, 'after': after}])
+        return {'id': fact_id, 'kind': kind, 'note': 'Saved. The owner sees it in Learning and can undo it.'}, \
+            i18n.t('“{}”', text[:120]), write
+
+    def ai_rules_waiting(self):
+        """Learning's rules from connected AIs that wait for the owner's OK (Approve runs ai_apply, Dismiss ai_dismiss)."""
+        if not self.config.get(ai_learnings.FLAG):
+            return []
+        with self.store.connect() as db:
+            return ai_access.rules_waiting(db)
+
     def ai_brief(self, connection):
         """initialize's brief (ai_access.handle): its text, and a line in Activity, which is this connection's visit (not
         again while its last line is a brief of the last ai_learnings.AGAIN_MINUTES)."""
@@ -919,16 +953,19 @@ class AiApp:
 
     def ai_wait(self, connection, name, args):
         """A Graph change while Messages is on: what the AI read may have steered it, so it waits for the owner's OK
-        (Apply or Dismiss on its line in Activity) instead of applying. The record is checked now as for any change."""
+        (Apply or Dismiss on its line in Activity) instead of applying. The record is checked now as for any change.
+        A learning (save_learning) is about no record; a rule waits so, Messages on or off (Approve in Learning too)."""
+        learning = name == 'save_learning'
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            row, view = self.ai_record(db, connection, args.get('id'))
+            row, view = ({'id': ''}, {'name': ''}) if learning else self.ai_record(db, connection, args.get('id'))
             asked = {k: v for k, v in args.items() if k in ai_access.TOOLS[name][2]['properties']}
             write = ai_access.note_write(db, connection['id'], name, row['id'], {'args': asked}, waiting=True)
         text = ' '.join(str(args.get('text') or '').split())[:80]
-        said = i18n.t('{}: “{}”', view['name'][:60], text) if text else view['name'][:60]
-        return {'id': row['id'], 'waiting': True, 'changed': False,
-                'note': 'Not changed yet. Messages is on for this connection, so the owner OKs each change in The Machine first.'}, said, write
+        said = i18n.t('“{}”', text) if learning else i18n.t('{}: “{}”', view['name'][:60], text) if text else view['name'][:60]
+        why = 'A rule steers The Machine’s own work' if args.get('kind') == 'rule' and learning else 'Messages is on for this connection'
+        return {'id': row['id'] or None, 'waiting': True, 'changed': False,
+                'note': f'Not changed yet. {why}, so the owner OKs it in The Machine first.'}, said, write
 
     def ai_apply(self, args):
         """Apply on a change that waits (ai_wait): the AI's own tool runs now, as the owner's OK, with the connection's
@@ -945,7 +982,8 @@ class AiApp:
                 raise OwnerError(i18n.t('That connection is gone'))
             ai_access.set_waiting(db, asked['id'], 0)
         try:
-            _, said, *write = getattr(self, 'ai_tool_' + asked['tool'])({**dict(connection), 'messages': 0}, asked['changes'].get('args') or {})
+            _, said, *write = getattr(self, 'ai_tool_' + asked['tool'])({**dict(connection), 'messages': 0, 'owner_ok': True},
+                                                                         asked['changes'].get('args') or {})
         except ValueError:
             with self.store.connect() as db:
                 ai_access.set_waiting(db, asked['id'], 1)
