@@ -210,6 +210,8 @@ def note_failed(db, job, receipt, error, version=None):
     reason = receipt.get('reason') if receipt.get('reason') in preparation_state.REVIEW_REASONS else None
     after = 'retry' if preparation_state.retry_left(job) and code not in start_message.REFUSED else 'stopped'
     LOG.warning('preparation failed error=%s phase=%s after=%s' + (' reason=%s' if reason else ''), code, phase, after, *([reason] if reason else []))
+    if reason in preparation_state.SIGNIN_REASONS:  # the owner's sign-in to the AI, not a bug: as a review's
+        return
     try:
         error_feed.record(db, 'job', code + ('.' + reason if reason else ''), f'{phase} {after}', 'machine/app/preparation.py', 'preparation_run_step', None, version)
     except Exception as failed:  # counting a failure never stands in its way

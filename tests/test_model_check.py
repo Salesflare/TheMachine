@@ -8,8 +8,10 @@ import json
 import os
 import subprocess
 import tempfile
+import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import model_check as mc
 from seams import patch_everywhere  # noqa: E402
@@ -246,6 +248,26 @@ class Check(unittest.TestCase):
             error_feed.ensure(db)
             rows = [dict(r) for r in db.execute('SELECT source,kind,location,count FROM error_feed')]
         self.assertEqual(rows, [{'source': 'service', 'kind': 'ModelCheckFailed', 'location': 'machine/app/first_look.py:model_check_run', 'count': 2}])
+
+    def test_a_claude_sign_in_that_lapsed_is_the_owners_and_never_reported(self):
+        """2026-11-27: Claude Code's refresh failed before the sign-in's end, `claude auth status` still said signed in,
+        and the check's failure went to the error reports as a bug while Needs you said nothing."""
+        import error_feed
+        from machine import claude_signin
+        claude_signin.reset(); self.addCleanup(claude_signin.reset)
+        with patch.object(claude_signin, '_cache', {**claude_signin._cache, 'at': time.monotonic(), 'stamp': claude_signin.stamp(),
+                                                    'found': {'signed_in': True, 'plan': 'max', 'expires_at': None}}):
+            with self.assertLogs(a.LOG, 'INFO') as logs:
+                self.checked(StandIn(main=(False, 'Failed to authenticate: OAuth session expired and could not be refreshed')))
+            self.assertIn('model check signed out', '\n'.join(logs.output))
+            self.assertFalse(claude_signin.read(self.app.config, wait=False)['signed_in'])  # Needs you and ai_signin say it
+            with self.store.connect() as db:
+                error_feed.ensure(db)
+                self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
+                self.assertEqual(mc.last(db)['error'], 'Failed to authenticate: OAuth session expired and could not be refreshed')
+            with self.assertLogs(a.LOG, 'INFO'):
+                self.checked(StandIn(main=(True, None)), 1.1)
+            self.assertTrue(claude_signin.read(self.app.config, wait=False)['signed_in'])  # it answers again
 
     def test_a_failed_first_look_comes_back_within_minutes(self):
         self.checked(StandIn(main=(True, None)))

@@ -142,6 +142,17 @@ class RetryBudget(unittest.TestCase):
             kinds = {r[0] for r in db.execute('SELECT kind FROM error_feed')}
         self.assertEqual(kinds, {'runtime_error.provider_overloaded', 'runtime_error'})
 
+    def test_a_sign_in_the_ai_cant_use_is_logged_but_never_reported(self):
+        # Claude Code's sign-in lapsed: the owner's to fix (Needs you says it), not a bug in the error reports
+        receipt = {'status': 'error', 'error': 'runtime_error', 'error_phase': 'runtime', 'reason': 'auth_failed'}
+        fail = lambda r: {'status': 'admitted'} if r['action'] == 'start' else receipt
+        self.store.decide(self.sid, 'accept', '', 'click', 'dashboard')
+        with self.assertLogs('personal-assistant', 'WARNING') as logs:
+            self.app.preparation_step(fail)
+            self.app.preparation_step(fail)
+        self.assertIn('reason=auth_failed', logs.output[0])
+        self.assertEqual(self.counted(), [])
+
     def counted(self):
         with self.store.connect() as db:
             error_feed.ensure(db)

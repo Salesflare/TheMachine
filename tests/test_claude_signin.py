@@ -3,6 +3,7 @@ one step that signs in again, and told once on the phone and in Telegram (machin
 import datetime as dt
 import json
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import time
@@ -85,6 +86,48 @@ class Reading(unittest.TestCase):
         thread.return_value.start.assert_called_once()
 
 
+SIGNED_OUT_TEXTS = ('Failed to authenticate: OAuth session expired and could not be refreshed',  # 2026-11-27, Claude Code 2.1
+                    'Not logged in · Please run /login', 'OAuth token has expired. Please obtain a new token',
+                    'OAuth token has been revoked')
+OTHER_TEXTS = ('No API key found for provider "anthropic".', 'No answer within 60 seconds.', 'Overloaded', 'The model gave an empty answer.')
+
+
+class SaidSignedOut(unittest.TestCase):
+    """A refresh that failed before the sign-in's end: Claude Code's `claude -p` says so while `claude auth status`
+    still says loggedIn with a later end (it only looks for a token)."""
+    def setUp(self):
+        claude_signin.reset()
+        self.addCleanup(claude_signin.reset)
+
+    def test_claude_codes_words_for_a_sign_in_it_cant_use(self):
+        for text in SIGNED_OUT_TEXTS:
+            self.assertTrue(claude_signin.said_signed_out(text), text)
+        for text in OTHER_TEXTS + (None, ''):
+            self.assertFalse(claude_signin.said_signed_out(text), text)
+
+    def test_the_review_runner_names_the_same_words_auth_failed(self):
+        source = (Path(__file__).parent.parent / 'preparation-run.mjs').read_text()
+        pattern = next(line for line in source.splitlines() if line.rstrip().endswith("/i,'auth_failed'],"))
+        runner = re.compile(pattern.strip()[2:-len("/i,'auth_failed'],")].replace('\\/', '/'), re.I)
+        for text in SIGNED_OUT_TEXTS:
+            self.assertTrue(runner.search(text), text)
+
+    def test_a_refusal_counts_as_signed_out_until_a_new_sign_in_or_a_check_that_passes(self):
+        config, stamp = {'claude': '/bin/claude'}, [100]
+        with mock.patch.object(claude_signin, 'stamp', side_effect=lambda: stamp[0]):
+            self.assertTrue(claude_signin.read(config, status_run())['signed_in'])
+            claude_signin.refused()
+            found = claude_signin.read(config, status_run())
+            self.assertEqual((found['signed_in'], found['plan']), (False, None))
+            self.assertIsNone(claude_signin.days_left(found, NOW))
+            self.assertEqual(ai_signin.lapse(found), found['expires_at'])  # told once for this sign-in
+            claude_signin.answered()
+            self.assertTrue(claude_signin.read(config, status_run())['signed_in'])
+            claude_signin.refused()
+            stamp[0] = 200  # signed in again: Claude Code wrote its credentials
+            self.assertTrue(claude_signin.read(config, status_run())['signed_in'])
+
+
 class NeedsYou(unittest.TestCase):
     def setUp(self):
         claude_signin.reset()
@@ -106,6 +149,11 @@ class NeedsYou(unittest.TestCase):
         self.assertEqual((item['url'], item['action']), ('https://app.example.com/setup#model', 'Sign in again'))
         claude_signin.reset()
         self.assertEqual(self.item(ends=-60, manage='')['action'], 'Run: claude auth login')
+
+    def test_a_check_that_said_signed_out_says_so_while_claude_code_still_says_logged_in(self):
+        self.assertIsNone(self.item())
+        claude_signin.refused()  # first_look.model_check_run: "OAuth session expired and could not be refreshed"
+        self.assertEqual(self.item()['id'], 'claude-signed-out')
 
     def test_three_days_ahead_too_and_nothing_while_it_holds(self):
         self.assertEqual(self.item(ends=3600)['text'], 'Your Claude sign-in ends today.')
