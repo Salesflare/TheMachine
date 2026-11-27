@@ -166,7 +166,8 @@ class BothAreas(Base):
             self.assertIn('area_open', json.loads(self.owner_event(made)['metadata']), text)
 
     def test_a_person_it_names_by_address_places_it(self):
-        self.graph(('person:kai', 'person', 'Kai Rivera', {'side': 'personal', 'emails': ['kai@mail.example'], 'accounts': ['home-mail']}))
+        self.graph(('email:kai@mail.example', 'person', 'Kai Rivera', {'side': 'personal', 'identifiers': ['email:kai@mail.example'],  # as graph.py stores them
+                                                                         'emails': [{'value': 'kai@mail.example', 'by': 'messages'}], 'accounts': ['home-mail']}))
         made = self.new(text='Send Kai@mail.example the photos')
         self.assertEqual(self.card(made['id'])['area'], 'personal')
 

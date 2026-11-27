@@ -45,13 +45,11 @@ def owner_card_area(db, accounts, node_ids=(), text=''):
     if pick is None:
         mails = todo_areas.addresses(text)
         try:
-            people, rows = [], []
+            people = []
             select = "SELECT n.kind,n.info,o.info org_info FROM graph_nodes n LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') "
-            if node_ids:
-                rows += db.execute(select + f"WHERE n.id IN ({','.join('?' for _ in node_ids)}) AND n.kind IN ('person','org')", list(node_ids)).fetchall()
-            if mails:
-                rows += db.execute(select + f"WHERE n.kind='person' AND EXISTS (SELECT 1 FROM json_each(n.info,'$.emails') e WHERE lower(e.value) IN "
-                                   f"({','.join('?' for _ in mails)}))", mails).fetchall()
+            # the people its words name by address: whoever the Graph holds that address for (graph.people_by_email)
+            ids = list(dict.fromkeys([*node_ids, *(n for n, _ in graph.people_by_email(db, mails))]))
+            rows = db.execute(select + f"WHERE n.id IN ({','.join('?' for _ in ids)}) AND n.kind IN ('person','org')", ids).fetchall() if ids else []
             for r in rows:
                 info, org = json.loads(r['info'] or '{}'), json.loads(r['org_info'] or '{}')
                 people.append({'side': info.get('side'), 'accounts': info.get('accounts') or [],

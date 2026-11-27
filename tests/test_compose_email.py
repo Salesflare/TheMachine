@@ -21,11 +21,12 @@ class ComposeEmail(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
-        with self.store.connect() as db:
-            for node, name, email, side, accounts in (('p_sam', 'Sam Lee', 'sam@client.example', 'work', ['work']),
-                                                      ('p_dana', 'Dana Roe', 'dana@family.example', 'personal', ['home'])):
+        with self.store.connect() as db:  # as graph.py stores people: Sam's address from their messages, Dana's added in Edit
+            for node, name, email, by, side, accounts in (('p_sam', 'Sam Lee', 'sam@client.example', 'messages', 'work', ['work']),
+                                                          ('p_dana', 'Dana Roe', 'dana@family.example', 'owner', 'personal', ['home'])):
                 db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,'person',?,1,1,?)",
-                           (node, name, json.dumps({'emails': [email], 'side': side, 'accounts': accounts})))
+                           (node, name, json.dumps({'identifiers': [node] + (['email:' + email] if by == 'messages' else []),
+                                                    'emails': [{'value': email, 'by': by}], 'side': side, 'accounts': accounts})))
 
     def app(self, accounts=(WORK, HOME, SLACK)):
         app = object.__new__(machine_main.App)
