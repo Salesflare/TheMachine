@@ -85,9 +85,11 @@ const REASONS=[
   [/live runtime limit|runtime limit \(\d+\) reached/i,'mcp_runtime_limit'],
   [/context (?:window|length|overflow)|maximum context|too many tokens|prompt is too long/i,'context_overflow'],
   [/unknown model|model[^.]{0,40}not (?:found|available|allowed|supported)/i,'model_unavailable'],
-  // Claude Code signed out ("Not logged in · Please run /login", an expired OAuth token) and OpenClaw's own words for a
-  // sign-in it can't use ("Re-authenticate with: …", "could not materialize selected auth profile")
-  [/unauthori[sz]ed|\b40[13]\b|forbidden|invalid api key|authentication|sign in again|not signed in|not logged in|run \/login|re-?authenticate|selected auth profile|(?:oauth|access) token (?:has )?(?:expired|been revoked)/i,'auth_failed'],
+  // Claude Code signed out ("Not logged in · Please run /login", "Failed to authenticate: OAuth session expired and
+  // could not be refreshed", an expired OAuth token: SIGNED_OUT in machine/claude_signin.py, held to the same texts by
+  // tests/test_claude_signin.py) and OpenClaw's own words for a sign-in it can't use ("Re-authenticate with: …",
+  // "could not materialize selected auth profile")
+  [/unauthori[sz]ed|\b40[13]\b|forbidden|invalid api key|authentication|failed to authenticate|sign in again|not signed in|not logged in|run \/login|re-?authenticate|selected auth profile|(?:oauth|access) (?:token|session) (?:has )?(?:expired|been revoked)|expired and could not be refreshed/i,'auth_failed'],
   [/credit balance|billing|payment required|\b402\b/i,'billing'],
   [/no (?:api key|credentials|auth profile)|missing (?:api key|credentials)/i,'auth_missing'],
   [/server_is_overloaded|overloaded_error|servers are (?:currently )?overloaded|AI service is (?:temporarily )?overloaded/i,'provider_overloaded'],

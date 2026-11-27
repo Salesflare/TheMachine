@@ -37,7 +37,7 @@ from machine.app.first_look import (
 )
 from machine.app.graph_actions import account_services
 from machine.app.preparation import PROMPT_LIMIT
-from preparation_state import REVIEW_FAILURE_PHASES, REVIEW_FAILURES, REVIEW_REASONS
+from preparation_state import REVIEW_FAILURE_PHASES, REVIEW_FAILURES, REVIEW_REASONS, SIGNIN_REASONS
 from machine.app.prep_reads import ALREADY_READ, RunReads, read_once
 from machine.app.recall import recall
 from machine.app.senders import REPLY_CUT, REPLY_RESERVE
@@ -741,10 +741,12 @@ class ReviewApp:
                     # The error reports: its error code with its reason, and its phase with what follows, all from fixed
                     # lists (error_feed.py), as a preparation's (machine/app/preparation.py); a bare "runtime" told nothing
                     # ("retry chunk": its next run takes half the batch; words error_words.py keeps, like the cloud's copy)
+                    # A sign-in the AI can't use is the owner's to fix (SIGNIN_REASONS): left out, like the usage limit above.
                     after = 'retry chunk' if on_batch and review_split.splitting(db.execute(
                         'SELECT failures FROM analyses WHERE owner_run=? AND status=? LIMIT 1', (run['run_id'], 'retryable')).fetchone()) else 'retry'
-                    error_feed.record(db, 'review', error + ('.' + reason if reason else ''), f'{phase or "runtime"} {after}', 'assistant.py', 'review_step',
-                                      None, self.store.code_version)
+                    if reason not in SIGNIN_REASONS:
+                        error_feed.record(db, 'review', error + ('.' + reason if reason else ''), f'{phase or "runtime"} {after}', 'assistant.py', 'review_step',
+                                          None, self.store.code_version)
                     # A generic runtime error may be a sign-in that lapsed since the AI's last check passed: checked again,
                     # so it shows with the provider's words, and its comeback restarts the reviews (model_check.py). A
                     # limit or a dropped connection says what it is already. A failure on the batch itself is checked too:

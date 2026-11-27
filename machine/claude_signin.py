@@ -8,6 +8,11 @@ its end counts as signed out. Two hosted Machines lost theirs about four weeks a
 failed for hours with nothing on the dashboard (2026-11): Needs you says it now (machine/app/status.py needs_you), three
 days ahead too, and a lapse is told once on the phone and in Telegram (machine/app/ai_signin.py).
 
+A sign-in can also end before that day: its refresh fails ("OAuth session expired and could not be refreshed"), and
+`claude auth status` still says loggedIn with the old end, since it only looks for a token (2026-11-27). So when the AI's
+check fails with Claude Code's words for a sign-in it can't use (said_signed_out), the reading counts as signed out
+(refused) until the credentials file changes (a new sign-in) or a check passes again (answered).
+
 read() runs the command at most once per SOON and keeps a reading HOLD seconds (shorter while signed out). It reads
 again sooner when Claude Code's credentials file changed (a sign-in: its time only, never what it holds) or the AI failed
 its check since (stale, from model_check_run). wait=False never runs it on the caller's thread (the status poll): the last
@@ -30,7 +35,13 @@ SOON = 60  # never two readings closer than this
 ENDS_SOON = 3 * 86400  # Claude Code itself warns this long before its sign-in ends
 TIMEOUT = 30
 _lock = threading.Lock()
-_cache = {'at': float('-inf'), 'found': None, 'stamp': None, 'reading': False, 'stale': False}
+_cache = {'at': float('-inf'), 'found': None, 'stamp': None, 'reading': False, 'stale': False, 'refused': None}
+# Claude Code's words for a sign-in it can't use, in a failed `claude -p` (the AI's check): signed out ("Not logged in ·
+# Please run /login"), a refresh that failed ("Failed to authenticate: OAuth session expired and could not be
+# refreshed"), a token that expired or was revoked. The review runner names the same words auth_failed (REASONS in
+# preparation-run.mjs; tests/test_claude_signin.py holds both to the same texts).
+SIGNED_OUT = re.compile(r'(?i)not logged in|run /login|failed to authenticate|oauth (?:token|session) (?:has )?(?:expired|been revoked)'
+                        r'|expired and could not be refreshed')
 
 
 def binary(config):
@@ -83,9 +94,34 @@ def stale():
         _cache['stale'] = True
 
 
+def said_signed_out(text):
+    """Whether a failed turn's error is Claude Code saying its sign-in can't be used (SIGNED_OUT)."""
+    return bool(SIGNED_OUT.search(str(text or '')))
+
+
+def refused():
+    """The AI's check failed with Claude Code's signed-out words (said_signed_out): signed out from now on, whatever
+    `claude auth status` says, until the credentials file changes or a check passes (answered)."""
+    with _lock:
+        _cache.update(refused=(stamp(),), stale=True)
+
+
+def answered():
+    """The AI's check passed: a refusal (refused) no longer holds."""
+    with _lock:
+        _cache['refused'] = None
+
+
+def _held(found):
+    """`found`, signed out while a refusal holds: the credentials file is as it was when the check failed."""
+    if found and found['signed_in'] and _cache['refused'] == (stamp(),):
+        return {**found, 'signed_in': False, 'plan': None}
+    return found
+
+
 def reset():
     with _lock:
-        _cache.update(at=float('-inf'), found=None, stamp=None, reading=False, stale=False)
+        _cache.update(at=float('-inf'), found=None, stamp=None, reading=False, stale=False, refused=None)
 
 
 def _due(clock):
@@ -118,12 +154,14 @@ def read(config, run=subprocess.run, clock=time.monotonic, wait=True):
     there is no Claude Code or it can't tell. wait=False: never on this thread (see the module's text)."""
     with _lock:
         due = _due(clock)
-        found = _cache['found']
+        found = _held(_cache['found'])
         start = due and not wait and not _cache['reading']
         if start:
             _cache['reading'] = True
     if due and wait:
-        return _read(config, run, clock)
+        found = _read(config, run, clock)
+        with _lock:
+            return _held(found)
     if start:
         def background():
             try:

@@ -120,10 +120,20 @@ class ReviewSplit(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT failures FROM analyses').fetchone()[0], 0)
             self.assertEqual(len(__import__('json').loads(db.execute('SELECT items FROM analyses').fetchone()[0])), 8)  # never split
+            __import__('error_feed').ensure(db)
             kinds = {r[0]: r[1] for r in db.execute("SELECT kind,message FROM error_feed WHERE source='review'")}
             check = model_check.last(db)
-        self.assertEqual(kinds, {'runtime_error.auth_failed': 'runtime retry'})
+        # The owner's sign-in, not a bug: never in the error reports (it was "runtime_error.auth_failed"), as a usage
+        # limit isn't; the check shows it
+        self.assertEqual(kinds, {})
         self.assertEqual((check['ok'], check['error']), (False, 'Not logged in'))  # the sign-in shows as a failed check
+
+    def test_a_provider_failure_still_reaches_the_error_reports(self):
+        receipt = {'status': 'error', 'error': 'runtime_error', 'error_phase': 'runtime', 'reason': 'provider_error'}
+        self.work(Model(self.store, lambda titles: True, receipt), 2)
+        with self.store.connect() as db:
+            kinds = {r[0]: r[1] for r in db.execute("SELECT kind,message FROM error_feed WHERE source='review'")}
+        self.assertEqual(kinds, {'runtime_error.provider_error': 'runtime retry'})
 
     def test_the_model_check_is_made_again_once_after_a_review_failed_and_notes_a_comeback(self):
         at = T.isoformat()

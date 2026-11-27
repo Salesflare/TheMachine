@@ -24,6 +24,11 @@ REVIEW_REASONS = {'mcp_runtime_limit','context_overflow','model_unavailable','au
 # one is never split up or blamed on a signal (machine/store/review_split.py).
 ACCOUNT_REASONS = {'mcp_runtime_limit','model_unavailable','auth_failed','auth_missing','billing','provider_overloaded','provider_error'}
 
+# Reasons that are the owner's sign-in to the AI (signed out, a sign-in that lapsed or was refused): theirs to fix, not
+# a bug, so a review or preparation that failed for one stays out of the error reports, as a usage limit does. The AI's
+# check runs again and says it (Needs you; a failed check that isn't a sign-in still reaches the error reports).
+SIGNIN_REASONS = {'auth_failed','auth_missing'}
+
 # Automatic retries of one to-do's runs (a run that failed, timed out, ended without a result, or was lost or cut off
 # by a restart; the one after a new release): at most AUTO_RETRIES in all, the first after AUTO_RETRY_BACKOFF[0]
 # seconds, the next after AUTO_RETRY_BACKOFF[1]. Counted in preparations.retries_spent, which only something new for

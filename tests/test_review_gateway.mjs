@@ -82,6 +82,8 @@ r=await run({kind:'review',job_id:id,action:'status'},[{status:'error',error:'HT
 for(const [response,reason] of [
   [{status:'error',error:'Not logged in · Please run /login private'},'auth_failed'],
   [{status:'error',error:'OAuth token has expired. Please obtain a new token private'},'auth_failed'],
+  // a refresh that failed before the sign-in's end (2026-11-27: reported as "unclassified")
+  [{status:'error',error:'Failed to authenticate: OAuth session expired and could not be refreshed private'},'auth_failed'],
   [{status:'error',error:'CLI backend "claude-cli" could not materialize selected auth profile "x". Re-authenticate with: openclaw models auth login. private'},'auth_failed'],
   [{status:'error',error:'no auth profile for anthropic private'},'auth_missing'],
   [{status:'error',error:'Your credit balance is too low to access the Anthropic API. private'},'billing'],

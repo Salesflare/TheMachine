@@ -58,8 +58,11 @@ To use your own Claude plan (Pro, Max or Team), install Claude Code with Anthrop
 - Sign out with `claude auth logout`.
 - A Claude sign-in ends on a fixed day, about four weeks after you signed in: Claude Code's token refreshes never move
   that day later. Three days ahead, Needs you says when it ends; once it ended, Needs you says Claude is signed out,
-  and a phone notification and Telegram tell it once (`machine/claude_signin.py`, `machine/app/ai_signin.py`). Sign in
-  again with `claude auth login` (on a hosted Machine: **Sign in again** on its setup page).
+  and a phone notification and Telegram tell it once (`machine/claude_signin.py`, `machine/app/ai_signin.py`). A
+  sign-in whose refresh failed earlier ("OAuth session expired and could not be refreshed") counts as signed out the
+  same way once the AI's short test fails with it, though `claude auth status` still says logged in. Sign in
+  again with `claude auth login` (on a hosted Machine: **Sign in again** on its setup page). A lapsed sign-in is
+  yours to fix, not a bug: the failed test, reviews and preparations it stops are not sent as error reports.
 - One-shot turns (the short test, Help, bringing in a CSV, the bug report check, mail cleanup, notes, subscriptions) run through
   Claude Code's own print mode (`claude -p`, `claude_print.py`): no tools, MCP servers, skills, settings files or saved
   session, and a one-line system prompt. `openclaw infer model run` never takes the Claude Code route. `"claude":

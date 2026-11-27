@@ -19,7 +19,7 @@ from machine.store.first_look import FIRST_ACTIONS, TIP_SOURCES, note_model_chec
 from machine.store.review import FIRST_LOOK_READ, PREVIEW_DAYS
 from machine.text import encoded
 import model_check
-from models import has_model, main_model, model_ready
+from models import claude_plan_route, has_model, main_model, model_ready
 from sources import CALENDAR_SERVICES, MAIL_SERVICES
 from timeutil import now
 
@@ -271,12 +271,19 @@ class FirstLookApp:
                 with self.store.connect() as db:
                     note_model_check(db, found)
                 LOG.info('model check ok=%s failed=%s', found['ok'], found['failed'])
-                if not found['ok']:
+                if not found['ok'] and claude_plan_route(self.config) and claude_signin.said_signed_out(found.get('error')):
+                    # Claude Code says its sign-in can't be used: the owner's to fix, not a bug, so not in the error reports
+                    # (as a usage limit isn't). Needs you says it and the owner is told once (machine/app/ai_signin.py),
+                    # also when `claude auth status` still says signed in (claude_signin.refused).
+                    claude_signin.refused()
+                    LOG.info('model check signed out')
+                elif not found['ok']:
                     # In the error reports too (a signature, the provider's words normalized): a log line alone never
                     # reached them, and a check that failed on every Machine on a Claude sign-in went unseen (2026-11-16)
                     self.store.record_error('service', 'ModelCheckFailed', found.get('error') or '', 'machine/app/first_look.py', 'model_check_run')
                     claude_signin.stale()  # a Claude sign-in that ended shows on Needs you at the next poll, not an hour later
                 if found['ok']:
+                    claude_signin.answered()
                     self.agent_warm_up(run)
             with self.store.connect() as db:
                 look = not self.first_look_over(db) and (not found['ok'] or self.first_look_failing(db))

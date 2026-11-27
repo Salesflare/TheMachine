@@ -33,7 +33,7 @@ What your messages, to-dos, drafts or chats say. Names, email addresses, phone n
 - coding agent jobs that fail: the tool and the kind of failure only;
 - your AI's short test when it fails: the AI's error, with anything specific taken out.
 
-A check that stopped at your AI plan's usage limit is not an error and isn't sent: it waits for the reset.
+A check that stopped at your AI plan's usage limit is not an error and isn't sent: it waits for the reset. Neither is one that failed because your AI is signed out: **Needs you** asks you to sign in again.
 
 A connector you added yourself (your own file in `connectors/`) sends only its service name and its error's label, like `notes` and `notes_http: HTTP unauthorized`, so we can help fix it. Nothing else from its code. Its connection card shows the full error.
 
