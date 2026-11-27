@@ -42,6 +42,14 @@ When a project holds more than one thing, **Split up…** in its **⋯** asks yo
 
 The new projects sit on the same board and stage and are shared with the same people as the original, never more. The page then says what it was split into, with **Undo**, which puts everything back.
 
+## One project per piece of work
+
+A project is one piece of work with the same people or one goal, like a deal with its partner and customer, or one party. The same kind of message to many separate people, like invites, pitches or candidates, is not one project: each person who answers gets their own, and a message nobody answered stays out of projects.
+
+Your Machine keeps a new conversation off a project that already holds several such separate contacts it shares nobody with. Your own choices always count.
+
+When a project already mixes many separate contacts, its page says so, like "Mixes 40 separate contacts, 35 never answered." **Split up…** there proposes one project per contact who answered, added to their own project when they have one, and takes the messages nobody answered off. Nothing is deleted, and **Undo** puts it back. **Keep as one** keeps it as it is.
+
 ## A project's to-dos
 
 A to-do can belong to one project. Your Machine picks it when its thread or the people it's about are on a single open project, and the to-do shows its name under the title. **Project** under the to-do's **Details**, or **Put on a project** in the command menu (Ctrl K), changes it or takes it off. Your choice stays.

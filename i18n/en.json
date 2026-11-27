@@ -2653,6 +2653,7 @@
  "Keep": "Keep",
  "Keep Do it details 90 days": "Keep Do it details 90 days",
  "Keep a line shorter: split it in two": "Keep a line shorter: split it in two",
+ "Keep as one": "Keep as one",
  "Keep at least one learning to send, or tap Not now": "Keep at least one learning to send, or tap Not now",
  "Keep blocker details under 2000 characters": "Keep blocker details under 2000 characters",
  "Keep both": "Keep both",
@@ -3054,6 +3055,7 @@
  "Messages": "Messages",
  "Messages from": "Messages from",
  "Messages from all sources": "Messages from all sources",
+ "Messages nobody answered": "Messages nobody answered",
  "Messages off": "Messages off",
  "Messages on": "Messages on",
  "Messages: also read your email and chats. Its changes then wait for your OK.": "Messages: also read your email and chats. Its changes then wait for your OK.",
@@ -3078,6 +3080,8 @@
  "Missed to-dos": "Missed to-dos",
  "Missing a source? Ask for it.": "Missing a source? Ask for it.",
  "Missing features": "Missing features",
+ "Mixes {} separate contacts, {} never answered.": "Mixes {} separate contacts, {} never answered.",
+ "Mixes {} separate contacts.": "Mixes {} separate contacts.",
  "Mmh… five more minutes.": "Mmh… five more minutes.",
  "Mo": "Mo",
  "Model": "Model",
@@ -5807,6 +5811,7 @@
  "Take it back from {}": "Take it back from {}",
  "Take off": "Take off",
  "Take out": "Take out",
+ "Take them off": "Take them off",
  "Take them out of the team's Graph? Nothing new goes to their Machine, and what the team shared with them is removed from it.": "Take them out of the team's Graph? Nothing new goes to their Machine, and what the team shared with them is removed from it.",
  "Take this on in your own Machine": "Take this on in your own Machine",
  "Take this on in your own Machine: {}": "Take this on in your own Machine: {}",
@@ -8163,6 +8168,10 @@
  "{} contacts not updated: Salesforce refused the change": {
   "one": "{} contact not updated: Salesforce refused the change",
   "other": "{} contacts not updated: Salesforce refused the change"
+ },
+ "{} conversations": {
+  "one": "{} conversation",
+  "other": "{} conversations"
  },
  "{} could not be decided.": "{} could not be decided.",
  "{} crashed": "{} crashed",

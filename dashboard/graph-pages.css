@@ -40,7 +40,7 @@
 .person-rel{margin:14px 0 0;color:var(--muted);font-size:var(--fs-sm);line-height:1.5}
 /* A person's summary (person_summary.py): its lines in the text color, each with its sources quietly after it; Edit opens the lines as one field */
 .person-summary .summary-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-2)}.person-summary .summary-head h4{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-strong);color:var(--faint);letter-spacing:.01em}
-.person-summary button.link{border:0;background:none;box-shadow:none;padding:0;min-height:0;color:var(--muted);font:inherit;font-size:var(--fs-sm);text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
+.proj-spread{margin:8px 0 0}.person-summary button.link,.proj-spread button.link{border:0;background:none;box-shadow:none;padding:0;min-height:0;color:var(--muted);font:inherit;font-size:var(--fs-sm);text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
 .person-summary button.link:hover{color:var(--text)}.person-summary.editing [data-summary-edit],.person-summary.editing>.summary-lines,.person-summary.editing>.summary-meta{display:none}
 .summary-lines{list-style:none;margin:6px 0 0;padding:0}.summary-lines li{margin:0;padding:3px 0;line-height:1.5;overflow-wrap:anywhere}
 .summary-lines .sl-src{color:var(--faint);font-size:var(--fs-xs);white-space:nowrap}.summary-lines .sl-src :is(a,button.link,span){font-size:var(--fs-xs);color:var(--faint)}.summary-lines .sl-src a{text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px}

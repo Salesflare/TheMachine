@@ -440,7 +440,7 @@
  "op is create (a new doc) or edit (a doc of this task)",
  "op is edit or auto",
  "op is edit, use, keep or reset",
- "op is propose, apply or undo",
+ "op is propose, apply, undo or keep",
  "open doc-open primary",
  "open project",
  "open projects",

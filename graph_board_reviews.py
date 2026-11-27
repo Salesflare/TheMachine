@@ -236,6 +236,20 @@ def counterpart_keys(db, event_ids):
     return out
 
 
+def counterpart_projects(db, project_id):
+    """{counterpart key: open project id}: the open project (not this one, on a board first) each organization or person
+    is with already, so a split adds to it instead of making a duplicate (split_plan, project_split.group_items)."""
+    owners = {}
+    for r in db.execute('SELECT id,org,board_id FROM projects WHERE closed_at IS NULL AND org IS NOT NULL AND id<>? ORDER BY board_id IS NULL,id', (int(project_id),)):
+        owners.setdefault('org:' + r['org'], r['id'])
+    for r in db.execute("SELECT l.a,json_extract(n.info,'$.org') org,p.id FROM graph_links l JOIN graph_nodes n ON n.id=l.a JOIN projects p ON 'project:'||p.id=l.b "
+                        "WHERE l.kind='project' AND p.closed_at IS NULL AND p.id<>? AND n.kind='person' ORDER BY p.board_id IS NULL,p.id", (int(project_id),)):
+        owners.setdefault(r['a'], r['id'])
+        if str(r['org'] or '').startswith('org:'):
+            owners.setdefault(r['org'], r['id'])
+    return owners
+
+
 def split_plan(db, project_id):
     """How Add splits a project that bundles several counterparts (a review said so): one part per organization (or
     person without one) its messages are with, each going into the open project already with them when there is one
@@ -255,14 +269,7 @@ def split_plan(db, project_id):
     if len(parts) < 2:
         return []
     names = {r['id']: r['name'] for r in db.execute(f"SELECT id,name FROM graph_nodes WHERE id IN ({','.join('?' * len(parts))})", list(parts))}
-    owners = {}  # the open project each counterpart is with already
-    for r in db.execute('SELECT id,org,board_id FROM projects WHERE closed_at IS NULL AND org IS NOT NULL AND id<>? ORDER BY board_id IS NULL,id', (row['id'],)):
-        owners.setdefault('org:' + r['org'], r['id'])
-    for r in db.execute("SELECT l.a,json_extract(n.info,'$.org') org,p.id FROM graph_links l JOIN graph_nodes n ON n.id=l.a JOIN projects p ON 'project:'||p.id=l.b "
-                        "WHERE l.kind='project' AND p.closed_at IS NULL AND p.id<>? AND n.kind='person' ORDER BY p.board_id IS NULL,p.id", (row['id'],)):
-        owners.setdefault(r['a'], r['id'])
-        if str(r['org'] or '').startswith('org:'):
-            owners.setdefault(r['org'], r['id'])
+    owners = counterpart_projects(db, row['id'])
     out, used = [], set()
     for key, events in sorted(parts.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         who = graph.one_line(names.get(key), 60) or (key[4:] if key.startswith('org:') else key.split(':', 1)[-1])

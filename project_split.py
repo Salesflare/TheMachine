@@ -40,6 +40,7 @@ THREADS = 40       # threads read, labeled first, then "probably part of it", ne
 TODOS = 30
 PEOPLE = 30
 MIN_PARTS, MAX_PARTS = 2, 4
+GROUP_PARTS = 40   # a catch-all's groups that answered, each its own project (project_spread.py), most messages first
 NAME_CHARS = 60
 ABOUT_CHARS = 140
 TITLE, TEXT = 100, 160
@@ -112,6 +113,47 @@ def _people(db, pid):
         "SELECT n.id,n.name,json_extract(n.info,'$.org') org,(SELECT o.name FROM graph_nodes o WHERE o.id=json_extract(n.info,'$.org')) org_name "
         "FROM graph_nodes n WHERE n.kind='person' AND n.id IN (SELECT node_id FROM project_people WHERE project_id=? UNION "
         "SELECT a FROM graph_links WHERE b=? AND kind='project') ORDER BY n.strength DESC LIMIT ?", (pid, node, PEOPLE))]
+
+
+def group_items(db, node_id, owner):
+    """Split up on a catch-all (project_spread.py), plain code and no turn: (row, {key: item}) with one item per group
+    that answered (g:<its first key>, the GROUP_PARTS with most messages) and one for all the one-way groups (g:none).
+    Each answered one names the open project its counterpart is with already ('join'), if any."""
+    import graph_board_reviews
+    import i18n
+    import project_spread
+    row = graph.project_row(db, node_id)
+    found, _ = project_spread.groups(db, row['id'], owner)
+    joins = graph_board_reviews.counterpart_projects(db, row['id'])
+    out = {}
+    for g in [g for g in found if g['answered']][:GROUP_PARTS]:
+        join = next((joins[k] for k in sorted(g['keys']) if k in joins), None)
+        out['g:' + min(g['keys'])] = {'kind': 'thread', 'events': g['events'], 'probable': False, 'title': project_spread.name_of(db, g['keys']), 'at': g['at'],
+                                      'from': i18n.t('{} conversations', g['threads']), 'join': join}
+    one_way = [g for g in found if not g['answered']]
+    if one_way:
+        out['g:none'] = {'kind': 'thread', 'events': [e for g in one_way for e in g['events']], 'probable': False, 'title': i18n.t('Messages nobody answered'),
+                         'at': max(g['at'] for g in one_way), 'from': i18n.t('{} conversations', len(one_way))}
+    return row, out
+
+
+def group_plan(db, row, found):
+    """The proposal for a catch-all: one part per group that answered, named after the project its counterpart is on
+    already or after the counterpart ("<project>: <counterpart>" when that name is taken by another), and the one-way
+    groups taken off. Nothing changes until the owner confirms (apply)."""
+    parts, used = [], set()
+    for key, item in found.items():
+        if key == 'g:none':
+            continue
+        join = db.execute('SELECT name FROM projects WHERE id=?', (item['join'],)).fetchone() if item.get('join') else None
+        name = join['name'] if join else clean_name(item['title'])
+        if not join and (name.casefold() in used or db.execute('SELECT 1 FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone()):
+            name = clean_name(f"{row['name'][:max(10, NAME_CHARS - 2 - len(name))]}: {name}")
+        if name.casefold() in used:
+            continue
+        used.add(name.casefold())
+        parts.append({'name': name, 'about': '', 'items': [key]})
+    return parts, [k for k in found if k == 'g:none']
 
 
 def items(db, node_id, mine=frozenset()):
@@ -232,36 +274,46 @@ def _private(db, node):
         return False
 
 
-def apply(db, node_id, parts, drop=(), now=None):
+def apply(db, node_id, parts, drop=(), now=None, owner=None):
     """Make the owner's parts into projects and move their items (see the module). parts: [{'name', 'about', 'items':
     [keys]}] as the preview shows them after the owner's changes; drop: keys taken off the project. Returns
-    {'split_id', 'projects': [{'node_id', 'name'}], 'archived'}."""
+    {'split_id', 'projects': [{'node_id', 'name'}], 'archived'}. A catch-all's groups (g: keys, group_items, with the
+    owner's graph.Owner): a part named after the project its counterpart is on already goes onto that one."""
     ensure(db)
     now = now or _now()
-    row, found = items(db, node_id)
-    pid, node = row['id'], 'project:' + str(row['id'])
     if not isinstance(parts, list) or not all(isinstance(p, dict) for p in parts):
         raise ValueError('parts is [{"name", "about", "items": [keys]}]')
+    grouped = owner is not None and any(str(k).startswith('g:') for p in parts for k in p.get('items') or ())
+    row, found = group_items(db, node_id, owner) if grouped else items(db, node_id)
+    pid, node = row['id'], 'project:' + str(row['id'])
     wanted, names, seen = [], set(), set()
-    for part in parts[:MAX_PARTS]:
+    for part in parts[:GROUP_PARTS if grouped else MAX_PARTS]:
         keys = [k for k in dict.fromkeys(str(k) for k in part.get('items') or ()) if k in found and k not in seen]
         if not keys:
             continue
         name = clean_name(part.get('name'))
         if not name:
             raise OwnerError('Give each new project a name')
-        if name.casefold() in names or db.execute('SELECT 1 FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone():
+        there = db.execute('SELECT id FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone()
+        join = there['id'] if there and there['id'] != pid and all(found[k].get('join') == there['id'] for k in keys) else None
+        if name.casefold() in names or (there and not join):
             raise OwnerError(f'There is a project called "{name}" already')
         names.add(name.casefold())
         seen.update(keys)
-        wanted.append((name, clean_about(part.get('about')), keys))
-    if not wanted:
-        raise OwnerError('Put something in a new project first')
+        wanted.append((name, clean_about(part.get('about')), keys, join))
     dropped = [k for k in dict.fromkeys(str(k) for k in drop or ()) if k in found and k not in seen]
+    if not wanted and not (grouped and dropped):  # a catch-all may only lose its one-way messages
+        raise OwnerError('Put something in a new project first')
     hidden, private = _hidden(db, pid), _private(db, node)
-    steps = {'labels': [], 'added': [], 'cards': [], 'people': [], 'original': {c: row[c] for c in ('closed_at',)}}
-    made = []
-    for name, about, keys in wanted:
+    steps = {'labels': [], 'added': [], 'cards': [], 'people': [], 'joined': [], 'original': {c: row[c] for c in ('closed_at',)}}
+    made, joined = [], []
+    for name, about, keys, join in wanted:
+        if join:  # onto the project its counterpart is on already; Undo takes off only what came with the split
+            have = {r[0] for r in db.execute('SELECT event_id FROM event_projects WHERE project_id=?', (join,))}
+            steps['joined'] += [[e, join] for k in keys for e in found[k]['events'] if e not in have]
+            joined.append({'id': join, 'name': name})
+            _move(db, found, keys, pid, join, name, now, steps)
+            continue
         new = db.execute("INSERT INTO projects(name,created_at,made_by) VALUES(?,?,'owner')", (name, now)).lastrowid
         db.execute("UPDATE projects SET board_id=?,stage=?,stage_by=?,stage_at=?,visibility=?,outcome=?,outcome_reason=? WHERE id=?",
                    (row['board_id'], row['stage'], 'owner' if row['board_id'] else None, now if row['board_id'] else None, row['visibility'],
@@ -289,7 +341,7 @@ def apply(db, node_id, parts, drop=(), now=None):
         archived = bool(graph.archive_project(db, node, True, now))
     split_id = db.execute('INSERT INTO project_splits(project_id,made,steps,created_at) VALUES(?,?,?,?)',
                           (pid, json.dumps([m['id'] for m in made]), json.dumps(steps), now)).lastrowid
-    return {'split_id': split_id, 'projects': [{'node_id': 'project:' + str(m['id']), 'name': m['name']} for m in made], 'archived': archived}
+    return {'split_id': split_id, 'projects': [{'node_id': 'project:' + str(m['id']), 'name': m['name']} for m in made + joined], 'archived': archived}
 
 
 def _move(db, found, keys, pid, new, new_name, now, steps):
@@ -348,6 +400,7 @@ def undo(db, split_id, now=None):
             graph.put_back_card_project(db, card['id'], original['name'], card['project_by'])
         db.execute('INSERT OR IGNORE INTO project_people(project_id,node_id,created_at) SELECT ?,node_id,created_at FROM project_people WHERE project_id=?', (pid, new))
         graph.delete_project(db, 'project:' + str(new))
+    db.executemany('DELETE FROM event_projects WHERE event_id=? AND project_id=?', [tuple(r) for r in steps.get('joined') or ()])
     db.executemany('INSERT OR REPLACE INTO event_projects(event_id,project_id,source,created_at) VALUES(?,?,?,?)', [tuple(r) for r in steps.get('labels') or ()])
     for card, project, by in steps.get('cards') or ():
         graph.put_back_card_project(db, card, project, by)
