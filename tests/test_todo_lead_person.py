@@ -75,6 +75,31 @@ class LeadPerson(unittest.TestCase):
             db.execute("INSERT INTO graph_events(node_id,event_id,at,direct) VALUES('email:ada@studio.example',104,'2026-11-09T00:00:00+00:00',1)")
         self.assertEqual(self.people([own, 103, 104]), ['Marco Bell', 'Ada Kim'])
 
+    def test_a_meeting_of_the_owners_own_team_names_none_of_them(self):
+        # A stand-up's briefing named the colleague closest to the owner, whoever its points were about
+        def stand_up(source, people):
+            self.store.commit_page('w', {}, [{'account_id': 'w', 'source_id': source, 'kind': 'calendar.event', 'occurred_at': '2026-11-10T09:30:00+00:00',
+                                              'title': 'Stand up', 'body': '', 'deleted': False, 'metadata': {'attendees': [{'email': e} for e, _ in people]}}])
+            with self.store.connect() as db:
+                event = db.execute('SELECT id FROM events WHERE source_id=?', (source,)).fetchone()[0]
+                for node, strength in people:
+                    db.execute("INSERT OR IGNORE INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,'person',?,?,1,'{\"colleague\": true}')",
+                               ('email:' + node, node.split('@')[0].title(), strength))
+                    db.execute("INSERT INTO graph_events(node_id,event_id,at,direct) VALUES(?,?,'2026-11-09T00:00:00+00:00',1)", ('email:' + node, event))
+            return event
+        team = stand_up('su', [('ada@studio.example', 6.0), ('ben@studio.example', 2.0), ('cy@studio.example', 1.0)])
+        with self.store.connect() as db:
+            people, weight = graph.card_people(db, [team], unlinked=True)
+            self.assertEqual((people, weight), ([], 6.0))  # ranked as before
+            # A same-matter check still sees everyone on it
+            self.assertEqual(len(graph.card_people(db, [team], limit=10)[0]), 3)
+        self.assertEqual(self.people([team, 103]), ['Marco Bell'])  # a later message's sender still shows
+        self.assertEqual(self.people([stand_up('one', [('ada@studio.example', 6.0)])]), ['Ada'])  # a 1:1 names them
+        mixed = stand_up('mixed', [('ada@studio.example', 6.0), ('ben@studio.example', 2.0)])
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_events(node_id,event_id,at,direct) VALUES('email:lena@client.example',?,'2026-11-09T00:00:00+00:00',1)", (mixed,))
+        self.assertEqual(self.people([mixed]), ['Lena Ortiz', 'Ada', 'Ben'])  # someone from outside on it leads, then colleagues
+
     def test_the_rules_are_in_the_prompts(self):
         self.assertTrue('Automated mail alone makes a to-do only when it asks the owner to act' in machine_prompts_review.review_prompt('r1', ['work']))
         self.assertTrue('nor a message you only read to answer the owner' in machine_app_preparation.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
