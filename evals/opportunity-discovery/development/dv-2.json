@@ -1,0 +1,2783 @@
+{
+ "id": "dv-2",
+ "about": "Owner of a small online shop for linen home goods, working with suppliers, a 3PL warehouse and an accountant, plus family mail",
+ "owner": {
+  "name": "Femke Jansen",
+  "email": "femke@linnenhuis.example"
+ },
+ "accounts": [
+  {
+   "id": "wmail",
+   "boundary": "work:Linnenhuis",
+   "email": "femke@linnenhuis.example"
+  },
+  {
+   "id": "pmail",
+   "boundary": "personal:home",
+   "email": "femke.jansen@mail.example"
+  }
+ ],
+ "messages": [
+  {
+   "key": "n77",
+   "account": "wmail",
+   "thread": "t59",
+   "day": 58,
+   "hour": 10,
+   "from": [
+    "Lea Martin",
+    "lea@leamartin.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Invoice autumn shoot",
+   "body": "Hi Femke, attached the invoice for the autumn shoot (EUR 1,350, two days incl. editing). The final selection is in the shared folder. Lea",
+   "bulk": false
+  },
+  {
+   "key": "n31",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 57,
+   "hour": 11,
+   "from": [
+    "Kees Mulder",
+    "kees.mulder@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Waar blijft mijn bestelling?",
+   "body": "Goedemiddag, ik heb negen dagen geleden besteld (2071) en nog niks ontvangen. Kunt u even kijken? Groet, Kees Mulder",
+   "bulk": false
+  },
+  {
+   "key": "n106",
+   "account": "wmail",
+   "thread": "t80",
+   "day": 57,
+   "hour": 16,
+   "from": [
+    "Lea Martin",
+    "lea@leamartin.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Selection autumn shoot",
+   "body": "Hi Femke, my favorite 40 shots from the shoot are in the folder. Mark the ones you want retouched? Lea",
+   "bulk": false
+  },
+  {
+   "key": "n41",
+   "account": "wmail",
+   "thread": "t31",
+   "day": 56,
+   "hour": 8,
+   "from": [
+    "Shopwise",
+    "reports@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Your weekly store report",
+   "body": "Linnenhuis last week: 64 orders, EUR 5,912 revenue, conversion 2.1%. Top product: Stonewashed duvet cover, Oat.",
+   "bulk": true
+  },
+  {
+   "key": "n107",
+   "account": "wmail",
+   "thread": "t80",
+   "day": 56,
+   "hour": 10,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Lea Martin",
+     "lea@leamartin.example"
+    ]
+   ],
+   "subject": "Re: Selection autumn shoot",
+   "body": "Done, I marked 24. They're gorgeous! Femke",
+   "bulk": false
+  },
+  {
+   "key": "n32",
+   "account": "wmail",
+   "thread": "t25",
+   "day": 55,
+   "hour": 20,
+   "from": [
+    "Isabel Fox",
+    "isabel.fox@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Still waiting for order 2079",
+   "body": "Hi, my order 2079 still hasn't shipped after a week. Is something wrong? Isabel",
+   "bulk": false
+  },
+  {
+   "key": "n33",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 54,
+   "hour": 9,
+   "from": [
+    "Bram Visser",
+    "bram@pakhuisnoord.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Backlog after WMS migration cleared",
+   "body": "Hi Femke,\n\nApologies again for last week. The backlog from our WMS migration is fully cleared: all your open orders, including 2071 and 2079, shipped yesterday. We're crediting 10% of October's handling fees.\n\nBram",
+   "bulk": false
+  },
+  {
+   "key": "n34",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 54,
+   "hour": 11,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Kees Mulder",
+     "kees.mulder@mail.example"
+    ]
+   ],
+   "subject": "Re: Waar blijft mijn bestelling?",
+   "body": "Beste Kees, excuses voor het wachten, ons magazijn had een storing. Uw bestelling is gisteren verstuurd en komt morgen aan. Groet, Femke",
+   "bulk": false
+  },
+  {
+   "key": "n35",
+   "account": "wmail",
+   "thread": "t25",
+   "day": 54,
+   "hour": 11,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Isabel Fox",
+     "isabel.fox@mail.example"
+    ]
+   ],
+   "subject": "Re: Still waiting for order 2079",
+   "body": "Hi Isabel, sorry for the wait, our warehouse had a system issue. Your order shipped yesterday and should arrive tomorrow. Femke",
+   "bulk": false
+  },
+  {
+   "key": "n104",
+   "account": "wmail",
+   "thread": "t78",
+   "day": 53,
+   "hour": 15,
+   "from": [
+    "Shopwise",
+    "noreply@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "New app: product reviews",
+   "body": "Collect reviews automatically after delivery. Install the Reviews app in one click from your admin.",
+   "bulk": true
+  },
+  {
+   "key": "n53",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 52,
+   "hour": 7,
+   "from": [
+    "The Small Shop Letter",
+    "hello@smallshopletter.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Holiday shipping deadlines, explained",
+   "body": "This week: how to set holiday shipping cut-offs, why warehouses close in December, and five ways to handle the January returns wave.",
+   "bulk": true
+  },
+  {
+   "key": "n59",
+   "account": "wmail",
+   "thread": "t49",
+   "day": 50,
+   "hour": 14,
+   "from": [
+    "Hans Kuipers",
+    "hans@kuipersaccountancy.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Btw-aangifte Q3",
+   "body": "Hoi Femke,\n\nDe btw-aangifte over Q3 staat klaar. Je moet EUR 4.212 betalen, uiterlijk 31 oktober. Wil je hem even akkoord geven in het portaal?\n\nGroet,\nHans",
+   "bulk": false
+  },
+  {
+   "key": "n60",
+   "account": "wmail",
+   "thread": "t49",
+   "day": 50,
+   "hour": 17,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Hans Kuipers",
+     "hans@kuipersaccountancy.example"
+    ]
+   ],
+   "subject": "Re: Btw-aangifte Q3",
+   "body": "Hoi Hans, akkoord gegeven. Dank je! Femke",
+   "bulk": false
+  },
+  {
+   "key": "n85",
+   "account": "pmail",
+   "thread": "t64",
+   "day": 50,
+   "hour": 19,
+   "from": [
+    "Daan Smit",
+    "daan.smit@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "groceries",
+   "body": "Can you pick up milk and bread on the way home? I'm stuck in a meeting till 7.",
+   "bulk": false
+  },
+  {
+   "key": "n42",
+   "account": "wmail",
+   "thread": "t32",
+   "day": 49,
+   "hour": 8,
+   "from": [
+    "Shopwise",
+    "reports@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Your weekly store report",
+   "body": "Linnenhuis last week: 71 orders, EUR 6,480 revenue, conversion 2.3%. Top product: Waffle bath towel set, Sand.",
+   "bulk": true
+  },
+  {
+   "key": "n18",
+   "account": "wmail",
+   "thread": "t14",
+   "day": 48,
+   "hour": 12,
+   "from": [
+    "Lea Martin",
+    "lea@leamartin.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Thanks + February",
+   "body": "Hi Femke,\n\nThanks again for the autumn shoot, I'm really happy with how the throws came out in that morning light. Small favor: February is very quiet for me. If you know any brands that need product or catalog photography, I'd love an introduction. Textiles are my favorite to shoot.\n\nLea",
+   "bulk": false
+  },
+  {
+   "key": "n19",
+   "account": "wmail",
+   "thread": "t14",
+   "day": 47,
+   "hour": 9,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Lea Martin",
+     "lea@leamartin.example"
+    ]
+   ],
+   "subject": "Re: Thanks + February",
+   "body": "Hi Lea, the photos are getting so many compliments! I'll keep my ears open for February. Femke",
+   "bulk": false
+  },
+  {
+   "key": "n93",
+   "account": "pmail",
+   "thread": "t69",
+   "day": 47,
+   "hour": 16,
+   "from": [
+    "OBS De Regenboog",
+    "nieuwsbrief@deregenboog.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "Nieuwsbrief november",
+   "body": "In deze nieuwsbrief: de sinterklaasviering op 4 december, de nieuwe overblijfregeling en luizencontrole na de herfstvakantie.",
+   "bulk": true
+  },
+  {
+   "key": "n80",
+   "account": "wmail",
+   "thread": "t61",
+   "day": 46,
+   "hour": 10,
+   "from": [
+    "Rasa Petrauskaite",
+    "rasa@audinys.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Production update",
+   "body": "Dear Femke,\n\nThe towels in Sand and Stone are on the loom this week. We expect to ship around the 25th. Everything is on schedule.\n\nBest regards,\nRasa",
+   "bulk": false
+  },
+  {
+   "key": "n81",
+   "account": "wmail",
+   "thread": "t61",
+   "day": 45,
+   "hour": 8,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Rasa Petrauskaite",
+     "rasa@audinys.example"
+    ]
+   ],
+   "subject": "Re: Production update",
+   "body": "Thank you Rasa, great news! Femke",
+   "bulk": false
+  },
+  {
+   "key": "n50",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 45,
+   "hour": 9,
+   "from": [
+    "PayBridge",
+    "payouts@paybridge.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Payout of EUR 5,640.18 is on its way",
+   "body": "Your payout of EUR 5,640.18 will arrive in your bank account within 1-2 business days.",
+   "bulk": true
+  },
+  {
+   "key": "n57",
+   "account": "wmail",
+   "thread": "t47",
+   "day": 45,
+   "hour": 10,
+   "from": [
+    "Pakhuis Noord Billing",
+    "billing@pakhuisnoord.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Invoice PN-2026-1014",
+   "body": "Dear client, please find attached invoice PN-2026-1014 for storage and handling in October: EUR 2,314.60 excl. VAT (incl. 10% credit on handling). Payment term 14 days.",
+   "bulk": false
+  },
+  {
+   "key": "n90",
+   "account": "pmail",
+   "thread": "t67",
+   "day": 45,
+   "hour": 18,
+   "from": [
+    "Ria Jansen",
+    "ria.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "recept appeltaart",
+   "body": "Hier is het recept waar je om vroeg! Niet te veel kaneel he. Liefs mama",
+   "bulk": false
+  },
+  {
+   "key": "n64",
+   "account": "wmail",
+   "thread": "t52",
+   "day": 44,
+   "hour": 13,
+   "from": [
+    "Sophie Laurent",
+    "sophie.laurent@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Duvet cover size",
+   "body": "Hi, does your 200x220 duvet cover fit a 200x200 duvet too or will it be too loose? Thanks, Sophie",
+   "bulk": false
+  },
+  {
+   "key": "n65",
+   "account": "wmail",
+   "thread": "t52",
+   "day": 44,
+   "hour": 15,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Sophie Laurent",
+     "sophie.laurent@mail.example"
+    ]
+   ],
+   "subject": "Re: Duvet cover size",
+   "body": "Hi Sophie, it will be a bit long at the foot end. I'd go for the 200x200 version, it's back in stock. Femke",
+   "bulk": false
+  },
+  {
+   "key": "n43",
+   "account": "wmail",
+   "thread": "t33",
+   "day": 42,
+   "hour": 8,
+   "from": [
+    "Shopwise",
+    "reports@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Your weekly store report",
+   "body": "Linnenhuis last week: 58 orders, EUR 5,207 revenue, conversion 1.9%. Top product: Linen napkins, set of 4.",
+   "bulk": true
+  },
+  {
+   "key": "n78",
+   "account": "wmail",
+   "thread": "t60",
+   "day": 42,
+   "hour": 11,
+   "from": [
+    "Bram Visser",
+    "bram@pakhuisnoord.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Quarterly review",
+   "body": "Hi Femke, shall we do the quarterly review in two weeks? I'd like to go through your peak season forecast. Bram",
+   "bulk": false
+  },
+  {
+   "key": "n79",
+   "account": "wmail",
+   "thread": "t60",
+   "day": 41,
+   "hour": 9,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Bram Visser",
+     "bram@pakhuisnoord.example"
+    ]
+   ],
+   "subject": "Re: Quarterly review",
+   "body": "Hi Bram, sure. Thursday the 12th at 10:00 online? I'll bring the forecast. Femke",
+   "bulk": false
+  },
+  {
+   "key": "n6",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 40,
+   "hour": 8,
+   "from": [
+    "Kartonwerk Buchhaltung",
+    "rechnung@kartonwerk.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Rechnung RE-1042",
+   "body": "Sehr geehrte Frau Jansen,\n\nanbei erhalten Sie die Rechnung RE-1042 über 3.000 Versandkartons 40x30x10 cm à 0,42 EUR = 1.260,00 EUR zzgl. MwSt. Zahlbar innerhalb von 30 Tagen.\n\nMit freundlichen Grüßen\nKartonwerk Buchhaltung",
+   "bulk": false
+  },
+  {
+   "key": "n91",
+   "account": "pmail",
+   "thread": "t68",
+   "day": 40,
+   "hour": 21,
+   "from": [
+    "Joost Jansen",
+    "joost.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "verhuisdozen",
+   "body": "Fem, heb je nog van die stevige verhuisdozen? We gaan de oude zaak leeghalen. J",
+   "bulk": false
+  },
+  {
+   "key": "n92",
+   "account": "pmail",
+   "thread": "t68",
+   "day": 39,
+   "hour": 8,
+   "from": [
+    "Femke Jansen",
+    "femke.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Joost Jansen",
+     "joost.jansen@mail.example"
+    ]
+   ],
+   "subject": "Re: verhuisdozen",
+   "body": "Ja, er staan er een stuk of tien in de schuur. Kom ze maar halen!",
+   "bulk": false
+  },
+  {
+   "key": "n66",
+   "account": "wmail",
+   "thread": "t53",
+   "day": 39,
+   "hour": 10,
+   "from": [
+    "Mark Jensen",
+    "mark.jensen@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Return order 2105",
+   "body": "Hello, I'd like to return the bedsheet from order 2105, it's the wrong size for our bed. Unused and in the original packaging. How do I do that? Mark",
+   "bulk": false
+  },
+  {
+   "key": "n67",
+   "account": "wmail",
+   "thread": "t53",
+   "day": 39,
+   "hour": 12,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Mark Jensen",
+     "mark.jensen@mail.example"
+    ]
+   ],
+   "subject": "Re: Return order 2105",
+   "body": "Hi Mark, no problem. Here's a free return label, just drop the parcel at any service point. The refund follows within 5 days of arrival. Femke",
+   "bulk": false
+  },
+  {
+   "key": "n54",
+   "account": "wmail",
+   "thread": "t44",
+   "day": 38,
+   "hour": 7,
+   "from": [
+    "The Small Shop Letter",
+    "hello@smallshopletter.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Is your packaging eating your margin?",
+   "body": "This week: packaging costs are up again, when to switch suppliers, and a reader asks about gift wrapping.",
+   "bulk": true
+  },
+  {
+   "key": "n27",
+   "account": "wmail",
+   "thread": "t22",
+   "day": 37,
+   "hour": 16,
+   "from": [
+    "Paul Durand",
+    "paul.durand@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Commande 2198 pas encore reçue",
+   "body": "Bonjour,\n\nJ'ai passé la commande 2198 il y a dix jours et je n'ai toujours rien reçu à Lyon. Pouvez-vous vérifier où en est le colis ?\n\nCordialement,\nPaul Durand",
+   "bulk": false
+  },
+  {
+   "key": "n28",
+   "account": "wmail",
+   "thread": "t22",
+   "day": 36,
+   "hour": 9,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Paul Durand",
+     "paul.durand@mail.example"
+    ]
+   ],
+   "subject": "Re: Commande 2198 pas encore reçue",
+   "body": "Bonjour Paul,\n\nDésolée pour l'attente. Le colis est chez le transporteur depuis lundi, voici le suivi : 3SLNX0028173. La livraison est prévue demain.\n\nBien cordialement,\nFemke",
+   "bulk": false
+  },
+  {
+   "key": "n30",
+   "account": "wmail",
+   "thread": "t23",
+   "day": 36,
+   "hour": 14,
+   "from": [
+    "Sanne de Groot",
+    "sanne@pakhuisnoord.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "ASN 2198 inbound delayed",
+   "body": "Hi Femke, the container for ASN 2198 (Audinys) arrived late at the dock yesterday, we'll receive it this morning and the stock will be live by 16:00. Sanne",
+   "bulk": false
+  },
+  {
+   "key": "n99",
+   "account": "pmail",
+   "thread": "t75",
+   "day": 36,
+   "hour": 20,
+   "from": [
+    "Mila van Dam",
+    "mila.vandam@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "book club",
+   "body": "Next book club is at mine on the 3rd! We're doing the lighthouse novel. Bring snacks :)",
+   "bulk": false
+  },
+  {
+   "key": "n44",
+   "account": "wmail",
+   "thread": "t34",
+   "day": 35,
+   "hour": 8,
+   "from": [
+    "Shopwise",
+    "reports@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Your weekly store report",
+   "body": "Linnenhuis last week: 77 orders, EUR 7,033 revenue, conversion 2.4%. Top product: Pillowcase pair, Oat.",
+   "bulk": true
+  },
+  {
+   "key": "n100",
+   "account": "pmail",
+   "thread": "t75",
+   "day": 35,
+   "hour": 8,
+   "from": [
+    "Femke Jansen",
+    "femke.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Mila van Dam",
+     "mila.vandam@mail.example"
+    ]
+   ],
+   "subject": "Re: book club",
+   "body": "I'm in! Halfway through, it's so good.",
+   "bulk": false
+  },
+  {
+   "key": "n29",
+   "account": "wmail",
+   "thread": "t22",
+   "day": 35,
+   "hour": 18,
+   "from": [
+    "Paul Durand",
+    "paul.durand@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Re: Commande 2198 pas encore reçue",
+   "body": "Bien reçu ce matin, merci beaucoup ! Les draps sont magnifiques. Paul",
+   "bulk": false
+  },
+  {
+   "key": "n36",
+   "account": "wmail",
+   "thread": "t27",
+   "day": 34,
+   "hour": 17,
+   "from": [
+    "Elena Ruiz",
+    "elena.ruiz@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "¿Envoltorio de regalo?",
+   "body": "Hola,\n\nQuiero regalar el mantel de lino a mi madre. ¿Ofrecéis envoltorio de regalo o una tarjeta con mensaje?\n\nGracias,\nElena",
+   "bulk": false
+  },
+  {
+   "key": "n37",
+   "account": "wmail",
+   "thread": "t27",
+   "day": 33,
+   "hour": 10,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Elena Ruiz",
+     "elena.ruiz@mail.example"
+    ]
+   ],
+   "subject": "Re: ¿Envoltorio de regalo?",
+   "body": "Hola Elena,\n\nDe momento no ofrecemos envoltorio de regalo, lo siento. Pero puedo añadir una tarjeta escrita a mano si me dices el mensaje.\n\nUn saludo,\nFemke",
+   "bulk": false
+  },
+  {
+   "key": "n7",
+   "account": "wmail",
+   "thread": "t6",
+   "day": 33,
+   "hour": 11,
+   "from": [
+    "Jürgen Haas",
+    "j.haas@kartonwerk.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Preisanpassung ab 1. November",
+   "body": "Liebe Frau Jansen,\n\naufgrund der gestiegenen Papier- und Energiekosten müssen wir unsere Preise ab dem 1. November anpassen. Der Versandkarton 40x30x10 cm kostet dann 0,51 EUR pro Stück (bisher 0,42 EUR). Wir bedauern diesen Schritt sehr und danken Ihnen für Ihr Verständnis.\n\nBeste Grüße\nJürgen Haas\nVertrieb, Kartonwerk",
+   "bulk": false
+  },
+  {
+   "key": "n96",
+   "account": "pmail",
+   "thread": "t72",
+   "day": 33,
+   "hour": 12,
+   "from": [
+    "Duinrand Vakantieparken",
+    "nieuws@duinrand.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "Winterweekenden aan zee",
+   "body": "Winterweekenden aan de kust vanaf EUR 89 per nacht. Groepshuizen voor 8 tot 14 personen nu beschikbaar voor januari tot maart.",
+   "bulk": true
+  },
+  {
+   "key": "n51",
+   "account": "wmail",
+   "thread": "t41",
+   "day": 31,
+   "hour": 9,
+   "from": [
+    "PayBridge",
+    "payouts@paybridge.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Payout of EUR 6,912.40 is on its way",
+   "body": "Your payout of EUR 6,912.40 will arrive in your bank account within 1-2 business days.",
+   "bulk": true
+  },
+  {
+   "key": "n68",
+   "account": "wmail",
+   "thread": "t54",
+   "day": 31,
+   "hour": 21,
+   "from": [
+    "Nina Hoekstra",
+    "nina.hoekstra@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Bedankt!",
+   "body": "Hallo, ik wilde even laten weten dat de handdoeken prachtig zijn. Zo zacht! Ik bestel zeker nog een set voor de logeerkamer. Groetjes, Nina",
+   "bulk": false
+  },
+  {
+   "key": "n86",
+   "account": "pmail",
+   "thread": "t65",
+   "day": 30,
+   "hour": 12,
+   "from": [
+    "Daan Smit",
+    "daan.smit@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "Saturday",
+   "body": "Mila and Ruben invited us for dinner on Saturday. I said yes, we can bring the kids. OK?",
+   "bulk": false
+  },
+  {
+   "key": "n87",
+   "account": "pmail",
+   "thread": "t65",
+   "day": 30,
+   "hour": 13,
+   "from": [
+    "Femke Jansen",
+    "femke.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Daan Smit",
+     "daan.smit@mail.example"
+    ]
+   ],
+   "subject": "Re: Saturday",
+   "body": "Leuk! I'll make a dessert.",
+   "bulk": false
+  },
+  {
+   "key": "n11",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 30,
+   "hour": 14,
+   "from": [
+    "Marco Vermeulen",
+    "m.vermeulen@hotelzeezicht.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Order for our reopening",
+   "body": "Dear Femke,\n\nAfter the renovation we're reopening Hotel Zeezicht on Saturday 12 December, and we'd love to have your towels in the rooms. We'd like 40 bath towel sets in Sand. We need them at the hotel by Thursday 10 December at the latest so housekeeping can prepare the rooms. Our PO is attached.\n\nKind regards,\nMarco Vermeulen\nGeneral Manager, Hotel Zeezicht",
+   "bulk": false
+  },
+  {
+   "key": "n12",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 29,
+   "hour": 9,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Marco Vermeulen",
+     "m.vermeulen@hotelzeezicht.example"
+    ]
+   ],
+   "subject": "Re: Order for our reopening",
+   "body": "Dear Marco,\n\nWhat a lovely project, thank you! Confirmed: 40 bath towel sets in Sand, delivered at the hotel by 10 December. The invoice will follow with the shipment.\n\nBest regards,\nFemke",
+   "bulk": false
+  },
+  {
+   "key": "n1",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 29,
+   "hour": 10,
+   "from": [
+    "Olivia Grant",
+    "olivia.grant@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Wrong color pillowcases (order #2231)",
+   "body": "Hello,\n\nMy order #2231 arrived today, thank you for the lovely packaging. Unfortunately the two pillowcases are sage green and I ordered oat. The packing slip says oat too. Could you send the right ones?\n\nKind regards,\nOlivia Grant",
+   "bulk": false
+  },
+  {
+   "key": "n45",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 28,
+   "hour": 8,
+   "from": [
+    "Shopwise",
+    "reports@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Your weekly store report",
+   "body": "Linnenhuis last week: 92 orders, EUR 8,450 revenue, conversion 2.6%. Top product: Pillowcase pair, Oat.",
+   "bulk": true
+  },
+  {
+   "key": "n2",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 28,
+   "hour": 9,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Olivia Grant",
+     "olivia.grant@mail.example"
+    ]
+   ],
+   "subject": "Re: Wrong color pillowcases (order #2231)",
+   "body": "Hi Olivia,\n\nSo sorry about that! I'm sending two oat pillowcases today. Please keep the sage ones, no need to send them back.\n\nWarm regards,\nFemke\nLinnenhuis",
+   "bulk": false
+  },
+  {
+   "key": "n94",
+   "account": "pmail",
+   "thread": "t70",
+   "day": 27,
+   "hour": 16,
+   "from": [
+    "OBS De Regenboog",
+    "nieuwsbrief@deregenboog.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "Nieuwsbrief december",
+   "body": "In deze nieuwsbrief: het kerstdiner op 17 december, de jaarkalender voor 2027 volgt binnenkort en de oudercommissie zoekt versterking.",
+   "bulk": true
+  },
+  {
+   "key": "n3",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 27,
+   "hour": 20,
+   "from": [
+    "Thomas Becker",
+    "t.becker@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Order 2240 - wrong color?",
+   "body": "Hi, I ordered 2 pillowcases in oat but received sage green. Did I click the wrong thing? The order confirmation says oat. Thomas",
+   "bulk": false
+  },
+  {
+   "key": "n40",
+   "account": "wmail",
+   "thread": "t30",
+   "day": 26,
+   "hour": 10,
+   "from": [
+    "Rasa Petrauskaite",
+    "rasa@audinys.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Samples for the 2027 collection",
+   "body": "Dear Femke,\n\nThe sample box for the 2027 collection is on its way. Besides the new bedding colors I added two heavier curtain-weight linens, in case you want to expand the range. Let me know what you think.\n\nBest regards,\nRasa",
+   "bulk": false
+  },
+  {
+   "key": "n61",
+   "account": "wmail",
+   "thread": "t50",
+   "day": 26,
+   "hour": 11,
+   "from": [
+    "Hans Kuipers",
+    "hans@kuipersaccountancy.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Planning jaarafsluiting",
+   "body": "Hoi Femke,\n\nZullen we in de tweede week van januari de jaarafsluiting doornemen? Ik heb dan in elk geval de bankafschriften en de Shopwise-export nodig. Dinsdag 12 of donderdag 14 januari, wat past jou?\n\nGroet,\nHans",
+   "bulk": false
+  },
+  {
+   "key": "n62",
+   "account": "wmail",
+   "thread": "t50",
+   "day": 25,
+   "hour": 9,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Hans Kuipers",
+     "hans@kuipersaccountancy.example"
+    ]
+   ],
+   "subject": "Re: Planning jaarafsluiting",
+   "body": "Donderdag 14 januari is prima, om 10 uur? Ik zet de exports vooraf klaar. Femke",
+   "bulk": false
+  },
+  {
+   "key": "n4",
+   "account": "wmail",
+   "thread": "t3",
+   "day": 25,
+   "hour": 13,
+   "from": [
+    "Aisha Khan",
+    "aisha.k@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "pillowcases are green??",
+   "body": "Hi there! Just opened my parcel (order 2252) and the pillowcases are green, not the oat color from the photos. They're nice but they don't match my duvet cover at all :( What can we do? Aisha",
+   "bulk": false
+  },
+  {
+   "key": "n55",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 24,
+   "hour": 7,
+   "from": [
+    "The Small Shop Letter",
+    "hello@smallshopletter.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Black Friday without discounts",
+   "body": "This week: brands that skip discounts, free gifts that work, and our checklist for peak season customer service.",
+   "bulk": true
+  },
+  {
+   "key": "n5",
+   "account": "wmail",
+   "thread": "t4",
+   "day": 24,
+   "hour": 11,
+   "from": [
+    "Sanne de Groot",
+    "sanne@pakhuisnoord.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Aisle C relabel done",
+   "body": "Hi Femke,\n\nFYI: the rack move in aisle C is finished and all bins were relabeled on the 3rd. Your SKUs moved: LH-PC-OAT is now in C-14, LH-PC-SAGE in C-15 and LH-NP-LIN in C-16. Pick rates are back to normal. Let us know if you notice anything odd.\n\nSanne de Groot\nOperations, Pakhuis Noord",
+   "bulk": false
+  },
+  {
+   "key": "n38",
+   "account": "wmail",
+   "thread": "t28",
+   "day": 23,
+   "hour": 12,
+   "from": [
+    "Grace Lin",
+    "grace.lin@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Gift wrapping?",
+   "body": "Hi! Do you offer gift wrapping? The napkin set is for my sister's wedding. Thanks, Grace",
+   "bulk": false
+  },
+  {
+   "key": "n98",
+   "account": "pmail",
+   "thread": "t74",
+   "day": 22,
+   "hour": 9,
+   "from": [
+    "Tandartspraktijk Zuid",
+    "afspraken@tandartszuid.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "Herinnering afspraak",
+   "body": "Herinnering: controle voor Femke Jansen op 2 december om 9:15.",
+   "bulk": true
+  },
+  {
+   "key": "n46",
+   "account": "wmail",
+   "thread": "t36",
+   "day": 21,
+   "hour": 8,
+   "from": [
+    "Shopwise",
+    "reports@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Your weekly store report",
+   "body": "Linnenhuis last week: 118 orders, EUR 10,904 revenue, conversion 2.8%. Top product: Waffle bath towel set, Sand.",
+   "bulk": true
+  },
+  {
+   "key": "n69",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 21,
+   "hour": 9,
+   "from": [
+    "Ahmed Saleh",
+    "ahmed.saleh@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Shipping to Switzerland?",
+   "body": "Hello, do you ship to Switzerland, and what about customs? Best, Ahmed",
+   "bulk": false
+  },
+  {
+   "key": "n70",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 21,
+   "hour": 11,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Ahmed Saleh",
+     "ahmed.saleh@mail.example"
+    ]
+   ],
+   "subject": "Re: Shipping to Switzerland?",
+   "body": "Hi Ahmed, yes we do, shipping is EUR 14.95. Swiss VAT and a small customs fee are charged on delivery. Femke",
+   "bulk": false
+  },
+  {
+   "key": "n21",
+   "account": "wmail",
+   "thread": "t16",
+   "day": 20,
+   "hour": 7,
+   "from": [
+    "PayBridge",
+    "alerts@paybridge.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Alert: declined payments up 38% this week",
+   "body": "Declined card payments for Linnenhuis are up 38% compared to last week. Most declines: issuer did not respond. No action is required. View details in your dashboard.",
+   "bulk": true
+  },
+  {
+   "key": "n9",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 20,
+   "hour": 15,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Nadia Price",
+     "nadia@boxwell.example"
+    ]
+   ],
+   "subject": "Quote for gift boxes",
+   "body": "Hi Nadia,\n\nWe met briefly at the trade fair in Utrecht. Could you quote 1,000 printed gift boxes for our napkin sets (25x25x6 cm, one color print on the lid)?\n\nThanks!\nFemke Jansen\nLinnenhuis",
+   "bulk": false
+  },
+  {
+   "key": "n14",
+   "account": "pmail",
+   "thread": "t11",
+   "day": 20,
+   "hour": 19,
+   "from": [
+    "Ria Jansen",
+    "ria.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "mijn verjaardag",
+   "body": "Lieve Femke,\n\nJe vroeg wat ik wil voor mijn 70e. Eerlijk? Geen cadeaus. Ik zou het heerlijk vinden om een weekend met jullie allemaal aan zee te zijn, met alle kleinkinderen erbij. Liefst in februari, rond mijn verjaardag (de 10e). Maar maak je niet druk hoor.\n\nLiefs, mama",
+   "bulk": false
+  },
+  {
+   "key": "n15",
+   "account": "pmail",
+   "thread": "t11",
+   "day": 19,
+   "hour": 8,
+   "from": [
+    "Femke Jansen",
+    "femke.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Ria Jansen",
+     "ria.jansen@mail.example"
+    ]
+   ],
+   "subject": "Re: mijn verjaardag",
+   "body": "Wat een mooi idee mam! Ik ga het met Joost bespreken. Dikke kus x",
+   "bulk": false
+  },
+  {
+   "key": "n83",
+   "account": "wmail",
+   "thread": "t63",
+   "day": 19,
+   "hour": 13,
+   "from": [
+    "Sanne de Groot",
+    "sanne@pakhuisnoord.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Damaged inbound carton",
+   "body": "Hi Femke, one carton from yesterday's Audinys inbound was damaged in transit, 6 napkin sets have water stains. We've put them in quarantine. Do you want them back or written off? Sanne",
+   "bulk": false
+  },
+  {
+   "key": "n84",
+   "account": "wmail",
+   "thread": "t63",
+   "day": 19,
+   "hour": 15,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Sanne de Groot",
+     "sanne@pakhuisnoord.example"
+    ]
+   ],
+   "subject": "Re: Damaged inbound carton",
+   "body": "Hi Sanne, please send them to my home address, I'll sell them as seconds. Thanks! Femke",
+   "bulk": false
+  },
+  {
+   "key": "n8",
+   "account": "wmail",
+   "thread": "t7",
+   "day": 18,
+   "hour": 8,
+   "from": [
+    "Kartonwerk Buchhaltung",
+    "rechnung@kartonwerk.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Rechnung RE-1107",
+   "body": "Sehr geehrte Frau Jansen,\n\nanbei erhalten Sie die Rechnung RE-1107 über 3.000 Versandkartons 40x30x10 cm à 0,51 EUR = 1.530,00 EUR zzgl. MwSt. Zahlbar innerhalb von 30 Tagen.\n\nMit freundlichen Grüßen\nKartonwerk Buchhaltung",
+   "bulk": false
+  },
+  {
+   "key": "n105",
+   "account": "wmail",
+   "thread": "t79",
+   "day": 18,
+   "hour": 15,
+   "from": [
+    "Shopwise",
+    "noreply@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Your plan renews on 1 December",
+   "body": "Your Shopwise Grow plan renews on 1 December for EUR 79 per month. No action needed.",
+   "bulk": true
+  },
+  {
+   "key": "n52",
+   "account": "wmail",
+   "thread": "t42",
+   "day": 17,
+   "hour": 9,
+   "from": [
+    "PayBridge",
+    "payouts@paybridge.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Payout of EUR 9,877.05 is on its way",
+   "body": "Your payout of EUR 9,877.05 will arrive in your bank account within 1-2 business days.",
+   "bulk": true
+  },
+  {
+   "key": "n108",
+   "account": "wmail",
+   "thread": "t81",
+   "day": 16,
+   "hour": 11,
+   "from": [
+    "Jürgen Haas",
+    "j.haas@kartonwerk.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Lieferung KW 49",
+   "body": "Liebe Frau Jansen, Ihre nächste Lieferung Versandkartons geht in KW 49 an Pakhuis Noord, wie gewohnt 3.000 Stück. Bitte melden Sie sich, falls sich etwas ändert. Beste Grüße, Jürgen Haas",
+   "bulk": false
+  },
+  {
+   "key": "n39",
+   "account": "pmail",
+   "thread": "t29",
+   "day": 16,
+   "hour": 20,
+   "from": [
+    "Daan Smit",
+    "daan.smit@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "curtains",
+   "body": "Can you ask your linen people if they also do curtain fabric? For the living room, 2 windows of 140x240. The old ones are really done. x",
+   "bulk": false
+  },
+  {
+   "key": "n10",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 15,
+   "hour": 10,
+   "from": [
+    "Nadia Price",
+    "nadia@boxwell.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Re: Quote for gift boxes",
+   "body": "Hi Femke,\n\nGreat to hear from you. For 1,000 printed gift boxes 25x25x6 with a one color lid print we'd be at EUR 1.15 per box, lead time three weeks.\n\nAlso, you mentioned at the fair that you ship in plain brown mailers: our standard 40x30x10 mailer is EUR 0.44 per piece from 3,000 pieces, same 3-ply quality, free delivery in NL. Happy to send a few samples of both.\n\nBest,\nNadia Price\nBoxwell Packaging",
+   "bulk": false
+  },
+  {
+   "key": "n58",
+   "account": "wmail",
+   "thread": "t48",
+   "day": 15,
+   "hour": 10,
+   "from": [
+    "Pakhuis Noord Billing",
+    "billing@pakhuisnoord.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Invoice PN-2026-1122",
+   "body": "Dear client, please find attached invoice PN-2026-1122 for storage and handling in November: EUR 3,105.20 excl. VAT. Payment term 14 days.",
+   "bulk": false
+  },
+  {
+   "key": "n47",
+   "account": "wmail",
+   "thread": "t37",
+   "day": 14,
+   "hour": 8,
+   "from": [
+    "Shopwise",
+    "reports@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Your weekly store report",
+   "body": "Linnenhuis last week: 131 orders, EUR 12,266 revenue, conversion 2.9%. Black Friday week starts soon: check your stock levels.",
+   "bulk": true
+  },
+  {
+   "key": "n25",
+   "account": "wmail",
+   "thread": "t20",
+   "day": 14,
+   "hour": 10,
+   "from": [
+    "Rasa Petrauskaite",
+    "rasa@audinys.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Tea towel shipment",
+   "body": "Dear Femke,\n\nGood news: the three new tea towel designs are finished and the shipment leaves Kaunas on Monday. Expected at Pakhuis Noord on 2 December. Packing list attached.\n\nBest regards,\nRasa",
+   "bulk": false
+  },
+  {
+   "key": "n22",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 13,
+   "hour": 7,
+   "from": [
+    "PayBridge",
+    "alerts@paybridge.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Alert: declined payments up 41% this week",
+   "body": "Declined card payments for Linnenhuis are up 41% compared to last week. Most declines: issuer did not respond. No action is required. View details in your dashboard.",
+   "bulk": true
+  },
+  {
+   "key": "n101",
+   "account": "pmail",
+   "thread": "t76",
+   "day": 13,
+   "hour": 18,
+   "from": [
+    "VV Oranje Zwart",
+    "jeugd@oranjezwart.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "Wedstrijdschema december",
+   "body": "Het wedstrijdschema voor de JO9 in december staat online. Rijders voor 12 december gezocht.",
+   "bulk": true
+  },
+  {
+   "key": "n24",
+   "account": "wmail",
+   "thread": "t19",
+   "day": 12,
+   "hour": 7,
+   "from": [
+    "Shopwise Status",
+    "status@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Incident resolved: slow checkout for some stores",
+   "body": "Between 14:05 and 15:40 CET some stores saw slow checkout pages. The issue is resolved. We apologise for the inconvenience.",
+   "bulk": true
+  },
+  {
+   "key": "n16",
+   "account": "pmail",
+   "thread": "t12",
+   "day": 12,
+   "hour": 21,
+   "from": [
+    "Joost Jansen",
+    "joost.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "mama's 70e",
+   "body": "Hoi Fem,\n\nMama zei iets over een weekend aan zee voor haar verjaardag. Ik kan alleen het weekend van 5-7 feb of 12-14 feb, daarna zit ik tot april vol met de opening van het restaurant. Zullen we iets boeken voor iedereen? Ik betaal de helft. Wij zijn met z'n vieren.\n\nJoost",
+   "bulk": false
+  },
+  {
+   "key": "n13",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 11,
+   "hour": 10,
+   "from": [
+    "Bram Visser",
+    "bram@pakhuisnoord.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Annual stocktake 9-11 December",
+   "body": "Hi Femke,\n\nA heads-up about our annual stocktake: the warehouse is closed for counting from Wednesday 9 to Friday 11 December. No orders are picked or shipped on those days. The last carrier pick-up before the count is Tuesday 8 December at 14:00, orders after that ship on Monday 14 December.\n\nIf you want to put a notice on your shop, now is a good time.\n\nBest,\nBram Visser\nAccount Manager, Pakhuis Noord",
+   "bulk": false
+  },
+  {
+   "key": "n56",
+   "account": "wmail",
+   "thread": "t46",
+   "day": 10,
+   "hour": 7,
+   "from": [
+    "The Small Shop Letter",
+    "hello@smallshopletter.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Wholesale for small brands",
+   "body": "This week: when to say yes to wholesale, how to set trade prices, and minimum order quantities that don't scare buyers.",
+   "bulk": true
+  },
+  {
+   "key": "n71",
+   "account": "wmail",
+   "thread": "t56",
+   "day": 10,
+   "hour": 19,
+   "from": [
+    "Laura Becker",
+    "laura.becker@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Discount code not working",
+   "body": "Hi, the code WELCOME10 from your newsletter says it's invalid at checkout. Can you help? Laura",
+   "bulk": false
+  },
+  {
+   "key": "n72",
+   "account": "wmail",
+   "thread": "t56",
+   "day": 10,
+   "hour": 20,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Laura Becker",
+     "laura.becker@mail.example"
+    ]
+   ],
+   "subject": "Re: Discount code not working",
+   "body": "Hi Laura, sorry, it had expired by mistake. It works again now, valid until the end of the month. Femke",
+   "bulk": false
+  },
+  {
+   "key": "n26",
+   "account": "wmail",
+   "thread": "t21",
+   "day": 9,
+   "hour": 15,
+   "from": [
+    "Bram Visser",
+    "bram@pakhuisnoord.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Dimensions for new SKUs",
+   "body": "Hi Femke,\n\nWe see an inbound on 2 December with three new SKUs (LH-TT-01, LH-TT-02, LH-TT-03). Could you fill in the attached template with the dimensions and weights per unit by Friday? Then we can set up the bin locations before the goods arrive.\n\nThanks,\nBram",
+   "bulk": false
+  },
+  {
+   "key": "n95",
+   "account": "pmail",
+   "thread": "t71",
+   "day": 9,
+   "hour": 16,
+   "from": [
+    "OBS De Regenboog",
+    "nieuwsbrief@deregenboog.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "Ouderavond groep 5",
+   "body": "Beste ouders, op dinsdag 15 december is de ouderavond van groep 5 om 19:30. Aanmelden via de app.",
+   "bulk": true
+  },
+  {
+   "key": "n88",
+   "account": "pmail",
+   "thread": "t66",
+   "day": 8,
+   "hour": 10,
+   "from": [
+    "Daan Smit",
+    "daan.smit@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "plumber",
+   "body": "Plumber is coming Tuesday between 8 and 12. I'm in the office, can you be home?",
+   "bulk": false
+  },
+  {
+   "key": "n89",
+   "account": "pmail",
+   "thread": "t66",
+   "day": 8,
+   "hour": 11,
+   "from": [
+    "Femke Jansen",
+    "femke.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Daan Smit",
+     "daan.smit@mail.example"
+    ]
+   ],
+   "subject": "Re: plumber",
+   "body": "Yes, I'll work from home that morning.",
+   "bulk": false
+  },
+  {
+   "key": "n48",
+   "account": "wmail",
+   "thread": "t38",
+   "day": 7,
+   "hour": 8,
+   "from": [
+    "Shopwise",
+    "reports@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Your weekly store report",
+   "body": "Linnenhuis last week: 164 orders, EUR 15,120 revenue, conversion 3.1%. Top product: Linen napkins, set of 4.",
+   "bulk": true
+  },
+  {
+   "key": "n73",
+   "account": "wmail",
+   "thread": "t57",
+   "day": 7,
+   "hour": 14,
+   "from": [
+    "Ben Carter",
+    "ben@carterandco.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Wholesale enquiry",
+   "body": "Hi Femke,\n\nI run a small interiors shop in Leiden and love your napkins and tea towels. Do you sell wholesale? If so, could you send your trade price list and minimum order?\n\nCheers,\nBen Carter\nCarter & Co Interiors",
+   "bulk": false
+  },
+  {
+   "key": "n23",
+   "account": "wmail",
+   "thread": "t18",
+   "day": 6,
+   "hour": 7,
+   "from": [
+    "PayBridge",
+    "alerts@paybridge.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Weekly risk summary: declines elevated",
+   "body": "Your weekly risk summary: declines remain elevated across the network due to an issuer outage. Your conversion rate is within the normal range.",
+   "bulk": true
+  },
+  {
+   "key": "n97",
+   "account": "pmail",
+   "thread": "t73",
+   "day": 6,
+   "hour": 12,
+   "from": [
+    "Duinrand Vakantieparken",
+    "nieuws@duinrand.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "Laatste kans: vroegboekkorting",
+   "body": "Boek voor 15 december en krijg 15% korting op je verblijf in 2027.",
+   "bulk": true
+  },
+  {
+   "key": "n63",
+   "account": "wmail",
+   "thread": "t51",
+   "day": 5,
+   "hour": 16,
+   "from": [
+    "Hans Kuipers",
+    "hans@kuipersaccountancy.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Voorlopige aanslag 2027",
+   "body": "Hoi Femke, ik zie dat de voorlopige aanslag inkomstenbelasting 2027 binnen is. Hij lijkt me aan de lage kant gezien je omzetgroei, ik kijk of we hem moeten laten aanpassen. Je hoeft nu niks te doen. Groet, Hans",
+   "bulk": false
+  },
+  {
+   "key": "n109",
+   "account": "wmail",
+   "thread": "t82",
+   "day": 4,
+   "hour": 14,
+   "from": [
+    "Sanne de Groot",
+    "sanne@pakhuisnoord.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Black Friday volumes",
+   "body": "Hi Femke, just to say your Black Friday orders went out on time, 412 parcels in three days. Nice work! Sanne",
+   "bulk": false
+  },
+  {
+   "key": "n17",
+   "account": "pmail",
+   "thread": "t13",
+   "day": 4,
+   "hour": 18,
+   "from": [
+    "Daan Smit",
+    "daan.smit@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "school holidays",
+   "body": "Hey, the school sent next year's calendar: krokusvakantie is 13-21 Feb and the kids are also off on Friday the 12th (study day). And reminder: I'm at the trade fair in Utrecht 5-7 Feb, can't move that one. x D",
+   "bulk": false
+  },
+  {
+   "key": "n82",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 3,
+   "hour": 10,
+   "from": [
+    "Marco Vermeulen",
+    "m.vermeulen@hotelzeezicht.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Invoice details",
+   "body": "Hi Femke, could you address the invoice to Zeezicht Hospitality B.V. and mention our PO number HZ-0412? Our administration is strict about that. Thanks, Marco",
+   "bulk": false
+  },
+  {
+   "key": "n74",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 3,
+   "hour": 15,
+   "from": [
+    "Julia Weiss",
+    "julia.weiss@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Frage zur Waschanleitung",
+   "body": "Hallo,\n\nkann ich die Leinenbettwäsche bei 60 Grad waschen oder lieber bei 40? Auf dem Etikett steht nur das Symbol.\n\nViele Grüße\nJulia Weiss",
+   "bulk": false
+  },
+  {
+   "key": "n75",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 3,
+   "hour": 17,
+   "from": [
+    "Femke Jansen",
+    "femke@linnenhuis.example"
+   ],
+   "to": [
+    [
+     "Julia Weiss",
+     "julia.weiss@mail.example"
+    ]
+   ],
+   "subject": "Re: Frage zur Waschanleitung",
+   "body": "Hallo Julia,\n\n40 Grad reicht völlig und schont die Fasern. 60 Grad geht ab und zu, aber dann bitte nicht in den Trockner.\n\nViele Grüße\nFemke",
+   "bulk": false
+  },
+  {
+   "key": "n20",
+   "account": "wmail",
+   "thread": "t15",
+   "day": 2,
+   "hour": 9,
+   "from": [
+    "Rasa Petrauskaite",
+    "rasa@audinys.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Catalog photos",
+   "body": "Dear Femke,\n\nI hope the season is going well. A question: our long-time photographer has retired and we need new photos of the 2027 collection for our catalog and website by March. Many of our customers are in the Netherlands and Belgium, so we would like someone there who understands linen. We can ship all samples. Do you know anyone you would recommend?\n\nBest regards,\nRasa\nAudinys Linen",
+   "bulk": false
+  },
+  {
+   "key": "n102",
+   "account": "pmail",
+   "thread": "t77",
+   "day": 2,
+   "hour": 20,
+   "from": [
+    "Ria Jansen",
+    "ria.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke.jansen@mail.example"
+    ]
+   ],
+   "subject": "zondag",
+   "body": "Kom je zondag koffie drinken? Neem de kinderen mee, ik heb pepernoten. x mama",
+   "bulk": false
+  },
+  {
+   "key": "n103",
+   "account": "pmail",
+   "thread": "t77",
+   "day": 1,
+   "hour": 9,
+   "from": [
+    "Femke Jansen",
+    "femke.jansen@mail.example"
+   ],
+   "to": [
+    [
+     "Ria Jansen",
+     "ria.jansen@mail.example"
+    ]
+   ],
+   "subject": "Re: zondag",
+   "body": "Gezellig, we komen rond 11 uur! x",
+   "bulk": false
+  },
+  {
+   "key": "n76",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 1,
+   "hour": 11,
+   "from": [
+    "Olivia Grant",
+    "olivia.grant@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Re: Wrong color pillowcases (order #2231)",
+   "body": "Hi Femke, the oat ones arrived and they're perfect. Thanks for the quick help! Olivia",
+   "bulk": false
+  },
+  {
+   "key": "n49",
+   "account": "wmail",
+   "thread": "t39",
+   "day": 0,
+   "hour": 8,
+   "from": [
+    "Shopwise",
+    "reports@shopwise.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Your weekly store report",
+   "body": "Linnenhuis last week: 203 orders, EUR 18,744 revenue, conversion 3.4%. Your best week ever!",
+   "bulk": true
+  },
+  {
+   "key": "n110",
+   "account": "wmail",
+   "thread": "t83",
+   "day": 0,
+   "hour": 10,
+   "from": [
+    "Grace Lin",
+    "grace.lin@mail.example"
+   ],
+   "to": [
+    [
+     "Femke Jansen",
+     "femke@linnenhuis.example"
+    ]
+   ],
+   "subject": "Thank you",
+   "body": "Hi Femke, the napkins arrived and my sister loved them. Thanks for the handwritten card! Grace",
+   "bulk": false
+  }
+ ],
+ "todos": [
+  {
+   "key": "e1",
+   "title": "Send Olivia the oat pillowcases",
+   "evidence": [
+    "n1"
+   ],
+   "day": 29,
+   "state": "done"
+  },
+  {
+   "key": "e2",
+   "title": "Reply to Thomas about the wrong pillowcase color",
+   "evidence": [
+    "n3"
+   ],
+   "day": 27,
+   "state": "open"
+  },
+  {
+   "key": "e3",
+   "title": "Reply to Aisha about the green pillowcases",
+   "evidence": [
+    "n4"
+   ],
+   "day": 25,
+   "state": "open"
+  },
+  {
+   "key": "e4",
+   "title": "Pay Kartonwerk invoice RE-1042",
+   "evidence": [
+    "n6"
+   ],
+   "day": 40,
+   "state": "done"
+  },
+  {
+   "key": "e5",
+   "title": "Pay Kartonwerk invoice RE-1107",
+   "evidence": [
+    "n8"
+   ],
+   "day": 18,
+   "state": "open"
+  },
+  {
+   "key": "e6",
+   "title": "Reply to Nadia about the gift box quote",
+   "evidence": [
+    "n10"
+   ],
+   "day": 15,
+   "state": "open"
+  },
+  {
+   "key": "e7",
+   "title": "Confirm Hotel Zeezicht's towel order",
+   "evidence": [
+    "n11"
+   ],
+   "day": 30,
+   "state": "done"
+  },
+  {
+   "key": "e8",
+   "title": "Put a shipping pause notice on the shop for 9-11 December",
+   "evidence": [
+    "n13"
+   ],
+   "day": 11,
+   "state": "open"
+  },
+  {
+   "key": "e9",
+   "title": "Reply to Mum about her birthday wish",
+   "evidence": [
+    "n14"
+   ],
+   "day": 20,
+   "state": "done"
+  },
+  {
+   "key": "e10",
+   "title": "Reply to Joost about Mum's 70th",
+   "evidence": [
+    "n16"
+   ],
+   "day": 12,
+   "state": "open"
+  },
+  {
+   "key": "e11",
+   "title": "Reply to Lea about February",
+   "evidence": [
+    "n18"
+   ],
+   "day": 48,
+   "state": "done"
+  },
+  {
+   "key": "e12",
+   "title": "Reply to Rasa about a photographer",
+   "evidence": [
+    "n20"
+   ],
+   "day": 2,
+   "state": "open"
+  },
+  {
+   "key": "e13",
+   "title": "Send Bram the dimensions for the 3 new tea towel SKUs",
+   "evidence": [
+    "n26"
+   ],
+   "day": 9,
+   "state": "open"
+  },
+  {
+   "key": "e14",
+   "title": "Reply to Paul about order 2198",
+   "evidence": [
+    "n27"
+   ],
+   "day": 37,
+   "state": "done"
+  },
+  {
+   "key": "e15",
+   "title": "Reply to Kees about order 2071",
+   "evidence": [
+    "n31"
+   ],
+   "day": 57,
+   "state": "done"
+  },
+  {
+   "key": "e16",
+   "title": "Reply to Isabel about order 2079",
+   "evidence": [
+    "n32"
+   ],
+   "day": 55,
+   "state": "done"
+  },
+  {
+   "key": "e17",
+   "title": "Decide whether to offer gift wrapping (several customers asked)",
+   "evidence": [
+    "n36",
+    "n38"
+   ],
+   "day": 23,
+   "state": "dismissed"
+  },
+  {
+   "key": "e18",
+   "title": "Reply to Elena about gift wrapping",
+   "evidence": [
+    "n36"
+   ],
+   "day": 34,
+   "state": "done"
+  },
+  {
+   "key": "e19",
+   "title": "Reply to Grace about gift wrapping",
+   "evidence": [
+    "n38"
+   ],
+   "day": 23,
+   "state": "done"
+  },
+  {
+   "key": "e20",
+   "title": "Reply to Daan about curtain fabric",
+   "evidence": [
+    "n39"
+   ],
+   "day": 16,
+   "state": "open"
+  },
+  {
+   "key": "e21",
+   "title": "Reply to Rasa about the 2027 samples",
+   "evidence": [
+    "n40"
+   ],
+   "day": 26,
+   "state": "open"
+  },
+  {
+   "key": "e22",
+   "title": "Pay Pakhuis Noord invoice PN-2026-1014",
+   "evidence": [
+    "n57"
+   ],
+   "day": 45,
+   "state": "done"
+  },
+  {
+   "key": "e23",
+   "title": "Pay Pakhuis Noord invoice PN-2026-1122",
+   "evidence": [
+    "n58"
+   ],
+   "day": 15,
+   "state": "open"
+  },
+  {
+   "key": "e24",
+   "title": "Approve the Q3 VAT return",
+   "evidence": [
+    "n59"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "e25",
+   "title": "Reply to Hans about the year-end meeting",
+   "evidence": [
+    "n61"
+   ],
+   "day": 26,
+   "state": "done"
+  },
+  {
+   "key": "e26",
+   "title": "Reply to Sophie about the duvet cover size",
+   "evidence": [
+    "n64"
+   ],
+   "day": 44,
+   "state": "done"
+  },
+  {
+   "key": "e27",
+   "title": "Send Mark a return label for order 2105",
+   "evidence": [
+    "n66"
+   ],
+   "day": 39,
+   "state": "done"
+  },
+  {
+   "key": "e28",
+   "title": "Reply to Ahmed about shipping to Switzerland",
+   "evidence": [
+    "n69"
+   ],
+   "day": 21,
+   "state": "done"
+  },
+  {
+   "key": "e29",
+   "title": "Fix the WELCOME10 discount code for Laura",
+   "evidence": [
+    "n71"
+   ],
+   "day": 10,
+   "state": "done"
+  },
+  {
+   "key": "e30",
+   "title": "Send Ben the wholesale price list",
+   "evidence": [
+    "n73"
+   ],
+   "day": 7,
+   "state": "open"
+  },
+  {
+   "key": "e31",
+   "title": "Reply to Julia about washing instructions",
+   "evidence": [
+    "n74"
+   ],
+   "day": 3,
+   "state": "done"
+  },
+  {
+   "key": "e32",
+   "title": "Pay Lea's invoice for the autumn shoot",
+   "evidence": [
+    "n77"
+   ],
+   "day": 58,
+   "state": "done"
+  },
+  {
+   "key": "e33",
+   "title": "Reply to Bram about the quarterly review",
+   "evidence": [
+    "n78"
+   ],
+   "day": 42,
+   "state": "done"
+  },
+  {
+   "key": "e34",
+   "title": "Address Hotel Zeezicht's invoice to Zeezicht Hospitality B.V. with PO HZ-0412",
+   "evidence": [
+    "n82"
+   ],
+   "day": 3,
+   "state": "open"
+  },
+  {
+   "key": "e35",
+   "title": "Reply to Sanne about the damaged carton",
+   "evidence": [
+    "n83"
+   ],
+   "day": 19,
+   "state": "done"
+  },
+  {
+   "key": "e36",
+   "title": "Pick up milk and bread",
+   "evidence": [
+    "n85"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "e37",
+   "title": "Reply to Daan about Saturday dinner",
+   "evidence": [
+    "n86"
+   ],
+   "day": 30,
+   "state": "done"
+  },
+  {
+   "key": "e38",
+   "title": "Be home Tuesday morning for the plumber",
+   "evidence": [
+    "n88"
+   ],
+   "day": 8,
+   "state": "open"
+  },
+  {
+   "key": "e39",
+   "title": "Reply to Joost about moving boxes",
+   "evidence": [
+    "n91"
+   ],
+   "day": 40,
+   "state": "done"
+  },
+  {
+   "key": "e40",
+   "title": "Reply to Mila about book club",
+   "evidence": [
+    "n99"
+   ],
+   "day": 36,
+   "state": "done"
+  },
+  {
+   "key": "e41",
+   "title": "Reply to Mum about Sunday coffee",
+   "evidence": [
+    "n102"
+   ],
+   "day": 2,
+   "state": "done"
+  },
+  {
+   "key": "e42",
+   "title": "Mark the shots to retouch for Lea",
+   "evidence": [
+    "n106"
+   ],
+   "day": 57,
+   "state": "done"
+  }
+ ],
+ "promises": [
+  {
+   "direction": "mine",
+   "who": "Olivia Grant",
+   "what": "send two oat pillowcases today",
+   "message": "n2",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Marco Vermeulen",
+   "what": "deliver 40 bath towel sets in Sand at the hotel by 10 December",
+   "message": "n12",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Ria Jansen",
+   "what": "discuss the birthday weekend with Joost",
+   "message": "n15",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Lea Martin",
+   "what": "keep an ear out for February photography work",
+   "message": "n19",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Hans Kuipers",
+   "what": "have the exports ready before the 14 January meeting",
+   "message": "n62",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Daan Smit",
+   "what": "be home Tuesday morning for the plumber",
+   "message": "n89",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Bram Visser",
+   "what": "credit 10% of October's handling fees",
+   "message": "n33",
+   "status": "done"
+  },
+  {
+   "direction": "theirs",
+   "who": "Hans Kuipers",
+   "what": "check whether the provisional 2027 assessment needs adjusting",
+   "message": "n63",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Jürgen Haas",
+   "what": "deliver the next 3,000 shipping boxes in week 49",
+   "message": "n108",
+   "status": "open"
+  }
+ ],
+ "key": {
+  "opportunities": [
+   {
+    "id": "p1",
+    "what": "Three customers got sage pillowcases instead of oat right after the 3PL relabeled aisle C (oat C-14, sage C-15). Ask Pakhuis Noord to check and swap the bin labels and recount, then send replacements with one consistent reply.",
+    "evidence": [
+     "n1",
+     "n3",
+     "n4",
+     "n5"
+    ],
+    "ready_day": 24
+   },
+   {
+    "id": "p2",
+    "what": "Kartonwerk raised the 40x30x10 box from EUR 0.42 to 0.51 (+21%) and has another 3,000 scheduled for week 49; Boxwell quoted the same box at EUR 0.44. Ask Boxwell for samples and switch or renegotiate before the next delivery.",
+    "evidence": [
+     "n7",
+     "n8",
+     "n10",
+     "n108"
+    ],
+    "ready_day": 15
+   },
+   {
+    "id": "p3",
+    "what": "Femke promised Hotel Zeezicht 40 towel sets by 10 December, but the 3PL stops shipping 9-11 December with a last pick-up on 8 December at 14:00. Get the hotel order out before the cutoff and confirm with Marco.",
+    "evidence": [
+     "n11",
+     "n12",
+     "n13"
+    ],
+    "ready_day": 11
+   },
+   {
+    "id": "p4",
+    "what": "Mum wants a seaside weekend for her 70th in February, Joost can only do 5-7 or 12-14 Feb, and Daan is away 5-7 Feb while the kids are off from the 12th. Book a group house at the coast for 12-14 February and share the plan with Joost.",
+    "evidence": [
+     "n14",
+     "n16",
+     "n17"
+    ],
+    "ready_day": 4
+   },
+   {
+    "id": "p5",
+    "what": "Rasa at Audinys needs a linen photographer in NL/BE by March, and Lea asked for introductions for her quiet February. Introduce Lea to Rasa.",
+    "evidence": [
+     "n18",
+     "n20"
+    ],
+    "ready_day": 2
+   }
+  ],
+  "traps": [
+   {
+    "id": "y1",
+    "kind": "bulk",
+    "what": "Payment decline and checkout incident alerts form a pattern, but only in automatic notifications; no customer complained.",
+    "evidence": [
+     "n21",
+     "n22",
+     "n23",
+     "n24"
+    ]
+   },
+   {
+    "id": "y2",
+    "kind": "obvious",
+    "what": "Rasa's shipment note and Bram's request concern the same new SKUs, but Bram's message already says exactly what to do (send dimensions by Friday).",
+    "evidence": [
+     "n25",
+     "n26"
+    ]
+   },
+   {
+    "id": "y3",
+    "kind": "coincidence",
+    "what": "Customer order 2198 and inbound ASN 2198 share a number and a delay, but are unrelated, and the order arrived.",
+    "evidence": [
+     "n27",
+     "n29",
+     "n30"
+    ]
+   },
+   {
+    "id": "y4",
+    "kind": "stale",
+    "what": "Two late-order complaints during the 3PL migration, settled about 54 days ago with a credit.",
+    "evidence": [
+     "n31",
+     "n32",
+     "n33"
+    ]
+   },
+   {
+    "id": "y5",
+    "kind": "covered",
+    "what": "Several customers asked for gift wrapping; a to-do to decide on it already exists (dismissed).",
+    "evidence": [
+     "n36",
+     "n38"
+    ]
+   },
+   {
+    "id": "y6",
+    "kind": "cross_area",
+    "what": "Partner's home curtain request (personal) and the supplier's curtain-weight samples (work) must not be combined.",
+    "evidence": [
+     "n39",
+     "n40"
+    ]
+   }
+  ]
+ }
+}

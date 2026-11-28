@@ -13,6 +13,7 @@ import graph
 import locale_prefs
 from machine import model_reply
 from models import background_model
+import opportunities
 import person_summary
 import project_about
 import project_stall
@@ -259,6 +260,76 @@ class SummariesApp:
         with self.store.connect() as db:
             project_stall.finish(db, run_id, len(items), made, error)
         LOG.info('project stall candidates=%s made=%s status=%s', len(items), made, error or 'ok')
+        return made
+
+    def opportunity_step(self):
+        """Once a week, on a work day in the owner's hours, with config opportunities on: work nobody asked for that only
+        shows across separate threads (opportunities.py). In a thread of its own, within the usage budget like every
+        background turn. None when not started."""
+        if not opportunities.on(self.config) or not (self.config.get('review_worker') or {}).get('enabled'):
+            return None
+        thread = getattr(self, '_opportunity_thread', None)
+        if thread and thread.is_alive():
+            return None
+        local = timeutil.clock().astimezone(timeutil.local_tz())
+        if not (timeutil.is_work_day(local) and timeutil.in_hours(local)):
+            return None
+        with self.store.connect() as db:
+            if not opportunities.due(db):
+                return None
+        if not self.background_spaced() or self.background_pause(job='opportunities'):
+            return None
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if not opportunities.due(db):
+                return None
+            run_id = opportunities.begin(db)
+        self.background_started()
+        self._opportunity_thread = threading.Thread(target=self.opportunity_run, args=(run_id,), name='opportunities', daemon=True)
+        self._opportunity_thread.start()
+        return run_id
+
+    def opportunity_run(self, run_id, current=None):
+        """One run (opportunities.run_pass: the ledger turns, then two judging turns per area with candidates), then at
+        most opportunities.CAP to-dos, value first (Store.suggest). Returns how many were made."""
+        import help_chat
+        stand_in = getattr(self, 'opportunity_model', None)  # a stand-in in the sandbox, tests and evals: (config, prompt)
+        current = current or timeutil.clock()
+        accounts = self.config.get('accounts', [])
+        made, error, read = 0, None, 0
+        dropped = getattr(self, 'opportunity_dropped', None)  # evals keep the reasons over a whole run
+        dropped = {} if dropped is None else dropped
+
+        def ask(text):
+            if stand_in:
+                return stand_in(self.config, text)
+            swap = background_model(self.config)
+            return help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=opportunities.TIMEOUT)
+        try:
+            kept, read = opportunities.run_pass(self.store.connect, accounts, current, ask,
+                                                person_summary._language(locale_prefs.language_of(self.config)), dropped)
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                for p in kept:
+                    db.execute('SAVEPOINT opportunity')
+                    try:
+                        card = self.store.suggest(opportunities.dedupe(p), p['title'], opportunities.body(p), p['event_ids'], owner_step=True, _db=db)
+                        if not card.get('duplicate'):
+                            opportunities.made(db, run_id, p, card['id'])
+                            made += 1
+                        db.execute('RELEASE opportunity')
+                    except (sqlite3.Error, ValueError, TypeError, KeyError) as failure:
+                        db.execute('ROLLBACK TO opportunity')
+                        db.execute('RELEASE opportunity')
+                        LOG.warning('opportunity to-do error=%s', type(failure).__name__)
+        except help_chat.Unavailable:
+            error = 'model'
+        except (sqlite3.Error, ValueError, KeyError, TypeError, OSError) as failure:
+            error = type(failure).__name__
+        with self.store.connect() as db:
+            opportunities.finish(db, run_id, read, made, error)
+        LOG.info('opportunities threads=%s made=%s dropped=%s status=%s', read, made, ','.join(f'{k}:{v}' for k, v in sorted(dropped.items())) or '-',
+                 error or 'ok')
         return made
 
     def about_change(self, args):

@@ -1,0 +1,3724 @@
+{
+ "id": "hx-3",
+ "about": "Freelance event planner running Lanternfield Events (weddings and corporate events), plus a personal account for family, friends and the kids' school and sports club.",
+ "owner": {
+  "name": "Odessa Thornbury",
+  "email": "odessa@lanternfield.example"
+ },
+ "accounts": [
+  {
+   "id": "wmail",
+   "boundary": "work:Lanternfield Events",
+   "email": "odessa@lanternfield.example"
+  },
+  {
+   "id": "pmail",
+   "boundary": "personal:home",
+   "email": "odessa.thornbury@mail.example"
+  }
+ ],
+ "messages": [
+  {
+   "key": "m1",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 31,
+   "hour": 10,
+   "from": [
+    "Priya Halvorsen",
+    "priya.halvorsen@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Thank you (and one small thing)",
+   "body": "Hi Odessa,\n\nWe're still floating after Saturday. Thank you for everything, the lanterns along the path were magic and my mom hasn't stopped talking about the cake.\n\nOne small thing, and I only mention it because you asked for honest feedback: a lot of guests at the back tables told us they couldn't hear the toasts at all. My uncle said it was just echo off the roof beams. Kestrel Barn is gorgeous but the sound was a mess past the dance floor.\n\nIt didn't ruin anything, promise. Thank you again!\n\nPriya",
+   "bulk": false,
+   "project": "Halvorsen wedding"
+  },
+  {
+   "key": "m2",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 30,
+   "hour": 19,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Priya Halvorsen",
+     "priya.halvorsen@mail.example"
+    ]
+   ],
+   "subject": "Re: Thank you (and one small thing)",
+   "body": "Hi Priya,\n\nThank you so much, it was a joy to plan with you both. And thank you for telling me about the toasts. I'm sorry the back tables missed them. I'll look into what we can do about the sound in that barn for future events.\n\nWarmly,\nOdessa",
+   "bulk": false,
+   "project": "Halvorsen wedding"
+  },
+  {
+   "key": "m3",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 26,
+   "hour": 14,
+   "from": [
+    "Lena Varga",
+    "lena.varga@corvidsoftware.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Retreat debrief + spring kickoff",
+   "body": "Hi Odessa,\n\nThe team survey from the retreat is in. Food and the hike scored great. The weak spot was the all-hands: half the room said they couldn't follow Ravi's talk because of the echo in the barn, and a few people just gave up and checked email.\n\nWe're starting to plan the spring kickoff (about 90 people) and would like to use Kestrel Barn again since everyone loved the setting, but only if the audio problem is solved. Can you send a recommendation when you have one?\n\nBest,\nLena Varga\nPeople Operations, Corvid Software",
+   "bulk": false,
+   "project": "Corvid retreat"
+  },
+  {
+   "key": "m4",
+   "account": "wmail",
+   "thread": "t3",
+   "day": 24,
+   "hour": 11,
+   "from": [
+    "Felix Arnaud",
+    "felix@brightlineav.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Barn delay-speaker kit",
+   "body": "Hey Odessa,\n\nQuick one. After a few rough rooms this fall we built a delay-speaker kit for long timber barns: two extra column speakers halfway down the room on a short delay, plus a small mixer so speeches stay clear at the back. We tested it at Kestrel Barn last week with their manager and the difference is night and day.\n\nIt's a $380/day add-on to any of our packages. Let me know if you want it on any upcoming bookings.\n\nCheers,\nFelix\nBrightline AV",
+   "bulk": false
+  },
+  {
+   "key": "m5",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 29,
+   "hour": 9,
+   "from": [
+    "Priya Halvorsen",
+    "priya.halvorsen@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Re: Thank you (and one small thing)",
+   "body": "No worries at all! Sending you a few of the photos once we get them back. P.",
+   "bulk": false,
+   "project": "Halvorsen wedding"
+  },
+  {
+   "key": "m6",
+   "account": "wmail",
+   "thread": "t4",
+   "day": 41,
+   "hour": 9,
+   "from": [
+    "Wren Castellano",
+    "wren@bloomhavenflorals.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Invoice BH-2291 - Ashby anniversary dinner",
+   "body": "Hi Odessa,\n\nAttached is invoice BH-2291 for the Ashby dinner: 12 low centerpieces at $68 each ($816), plus delivery $40. Total $856, due in 30 days.\n\nJust so you know, the per-piece price is up from $58 this summer, our stem costs have gone up across the board.\n\nThanks as always!\nWren\nBloomhaven Florals",
+   "bulk": false
+  },
+  {
+   "key": "m7",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 18,
+   "hour": 10,
+   "from": [
+    "Wren Castellano",
+    "wren@bloomhavenflorals.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Invoice BH-2347 - Linwood book launch",
+   "body": "Hi Odessa,\n\nHere's BH-2347 for the Linwood launch: 10 centerpieces at $74 each ($740), seasonal surcharge 8% ($59.20), delivery $40. Total $839.20.\n\nHeads up that the surcharge will stay on through the spring season.\n\nThanks,\nWren",
+   "bulk": false,
+   "project": "Linwood book launch"
+  },
+  {
+   "key": "m8",
+   "account": "wmail",
+   "thread": "t6",
+   "day": 15,
+   "hour": 16,
+   "from": [
+    "Tobias Reyes",
+    "tobias@junipermoss.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Quote: Halloway wedding centerpieces",
+   "body": "Hi Odessa,\n\nThanks for thinking of us for the Halloway wedding. For 16 low seasonal centerpieces (white ranunculus, eucalyptus, bud vases) we can do $56 each, delivery free within 20 miles, no seasonal surcharge.\n\nWe'd be happy to hold that per-piece rate for any repeat orders from you through June. Quote attached, valid 30 days.\n\nBest,\nTobias Reyes\nJuniper Moss Florals",
+   "bulk": false,
+   "project": "Halloway wedding"
+  },
+  {
+   "key": "m9",
+   "account": "wmail",
+   "thread": "t7",
+   "day": 12,
+   "hour": 13,
+   "from": [
+    "Aurelio Banks",
+    "aurelio.banks@northgateins.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Photo booth for the holiday party?",
+   "body": "Hi Odessa,\n\nQuick add for Friday Dec 11: the committee would love a photo booth at the holiday party, something with instant prints. We have roughly $900 left in the budget for it. Can you find one?\n\nThanks,\nAurelio",
+   "bulk": false,
+   "project": "Northgate holiday party"
+  },
+  {
+   "key": "m10",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 9,
+   "hour": 15,
+   "from": [
+    "Mei Lindqvist",
+    "mei@callowaydental.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Booth for our year-end dinner",
+   "body": "Hi Odessa, hope you're well!\n\nThe staff keep asking whether we can have a photo booth at the dinner on Saturday Dec 12 at Harrow Mill. Is that doable? I could stretch to about $800.\n\nBest,\nMei",
+   "bulk": false,
+   "project": "Calloway year-end dinner"
+  },
+  {
+   "key": "m11",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 8,
+   "hour": 12,
+   "from": [
+    "Kofi Adebayo",
+    "kofi@spinframebooths.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "December booth rates",
+   "body": "Hi Odessa,\n\nGreat meeting you at the vendor fair. As promised, our December rates: one evening is $950 with an attendant and unlimited prints. If you book two consecutive days we do $1,400 for both, same crew and one load-in.\n\nRight now Fri Dec 11 and Sat Dec 12 are both still open, but December weekends go fast.\n\nKofi\nSpinFrame Booths",
+   "bulk": false
+  },
+  {
+   "key": "m12",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 5,
+   "hour": 11,
+   "from": [
+    "Rafael Duarte",
+    "rafael@silverspooncatering.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Re: Vandermeer tasting",
+   "body": "Hi Odessa,\n\nDone: Friday Dec 4 at 11:00 at our kitchen on Mill Street, for Anouk, Bram and you. It takes about 90 minutes. We'll prepare both mains and the vegetarian option.\n\nSee you then!\nRafael",
+   "bulk": false,
+   "project": "Vandermeer wedding"
+  },
+  {
+   "key": "m13",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 6,
+   "hour": 10,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Rafael Duarte",
+     "rafael@silverspooncatering.example"
+    ]
+   ],
+   "subject": "Vandermeer tasting",
+   "body": "Hi Rafael,\n\nAnouk and Bram would like to do their tasting before the holidays. Could you fit them in next week?\n\nThanks,\nOdessa",
+   "bulk": false,
+   "project": "Vandermeer wedding"
+  },
+  {
+   "key": "m14",
+   "account": "wmail",
+   "thread": "t11",
+   "day": 3,
+   "hour": 9,
+   "from": [
+    "Desmond Okafor",
+    "desmond.okafor@brightwatercg.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Gala walkthrough moved",
+   "body": "Odessa,\n\nThe board can only do the venue walkthrough at the Ashcombe Hotel on Friday Dec 4, 10:30 to 12:30. Since you're running the gala we need you there for the whole thing, mostly seating and stage questions.\n\nPlease confirm.\nDesmond",
+   "bulk": false,
+   "project": "Brightwater gala"
+  },
+  {
+   "key": "m15",
+   "account": "pmail",
+   "thread": "t13",
+   "day": 13,
+   "hour": 20,
+   "from": [
+    "Walter Thornbury",
+    "walter.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Flights booked!",
+   "body": "Hi sweetheart,\n\nBooked it. I land at Harlow airport on Sunday December 20 at 4:10 pm, the flight from Pinecrest. Don't go to any trouble, I can take the bus into town if that's easier.\n\nCan't wait to see the kids.\n\nLove,\nDad",
+   "bulk": false
+  },
+  {
+   "key": "m16",
+   "account": "pmail",
+   "thread": "t14",
+   "day": 10,
+   "hour": 21,
+   "from": [
+    "Clara Thornbury",
+    "clara.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "We're coming!",
+   "body": "Odie! Flights are done. The boys and I land at Harlow on Dec 20 at 5:25 pm. Should I rent a car at the airport or can somebody grab us? Renting is like $70 a day over Christmas which hurts. Let me know.\n\nxx Clara",
+   "bulk": false
+  },
+  {
+   "key": "m17",
+   "account": "pmail",
+   "thread": "t15",
+   "day": 6,
+   "hour": 8,
+   "from": [
+    "Dana Pruitt",
+    "office@birchwoodelementary.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Winter concert: Theo's class",
+   "body": "Hi Odessa,\n\nTheo's class (Mr. Avila's 4th grade) sings in our winter concert on Thursday, December 10 at 6:00 pm in the gym. Students must arrive by 5:15 pm wearing a white shirt and dark pants.\n\nPlease return the attached participation and photo consent form by Friday, December 4.\n\nThank you,\nDana Pruitt\nOffice Manager, Birchwood Elementary",
+   "bulk": false
+  },
+  {
+   "key": "m18",
+   "account": "pmail",
+   "thread": "t16",
+   "day": 4,
+   "hour": 18,
+   "from": [
+    "Marco Ellery",
+    "coach.ellery@eastvaleunited.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ],
+    [
+     "Jonah Thornbury",
+     "jonah.thornbury@mail.example"
+    ]
+   ],
+   "subject": "U10 Hawks: team photos moved",
+   "body": "Hi Odessa and Jonah,\n\nThe photographer had to move, so Hawks team photos and our end of season party are now Thursday Dec 10, 5:00 to 6:30 pm at the clubhouse. That's the only night the photographer can do. Theo was our top scorer this season so we'd really like him in the picture!\n\nPlease let me know if he can't make it.\n\nCoach Marco",
+   "bulk": false
+  },
+  {
+   "key": "m19",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 22,
+   "hour": 20,
+   "from": [
+    "Nadia Ferreira",
+    "nadia.ferreira@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Late-night food idea",
+   "body": "Hi Odessa!\n\nRandom thought from Luis: could we do a late-night snack cart around 10:30 pm at Fenwick Gardens? Like grilled cheese or churros. Is that a thing people do?\n\nNadia",
+   "bulk": false,
+   "project": "Ferreira wedding"
+  },
+  {
+   "key": "m20",
+   "account": "wmail",
+   "thread": "t18",
+   "day": 21,
+   "hour": 11,
+   "from": [
+    "Nadia Kowalczyk",
+    "nadia.kowalczyk@ashcombehotel.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Late-night extension rates 2027",
+   "body": "Dear Odessa,\n\nA quick note that from January our ballroom late-night extension (past 11 pm) moves to $450 per hour. For events already contracted, the current $380 rate stays.\n\nPlease let me know if any of your upcoming clients would like to add an extension.\n\nKind regards,\nNadia Kowalczyk\nSales Manager, Ashcombe Hotel",
+   "bulk": false
+  },
+  {
+   "key": "m21",
+   "account": "wmail",
+   "thread": "t19",
+   "day": 28,
+   "hour": 9,
+   "from": [
+    "Hugo Brandt",
+    "hugo@orchardlodge.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Orchard Lodge hold: Pemberton wedding",
+   "body": "Hi Odessa,\n\nYour courtesy hold on Orchard Lodge for Saturday May 22 (Pemberton wedding) runs out on December 1. Should we turn it into a booking? Deposit is $1,500.\n\nBest,\nHugo",
+   "bulk": false,
+   "project": "Pemberton wedding"
+  },
+  {
+   "key": "m22",
+   "account": "wmail",
+   "thread": "t20",
+   "day": 16,
+   "hour": 14,
+   "from": [
+    "Simone Patel",
+    "accounts@orchardanalytics.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "PO number for invoice LF-1088",
+   "body": "Hello,\n\nCould you reissue invoice LF-1088 (Orchard Analytics client dinner) with our new PO number 55-1931? Our system rejects invoices without it.\n\nThanks,\nSimone Patel\nAccounts Payable, Orchard Analytics",
+   "bulk": false
+  },
+  {
+   "key": "m23",
+   "account": "wmail",
+   "thread": "t21",
+   "day": 11,
+   "hour": 10,
+   "from": [
+    "Juno Marsh",
+    "juno@popcloudballoons.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Balloon ceiling quote - Northgate",
+   "body": "Hi Odessa,\n\nAttached is the quote for the Northgate balloon ceiling: silver and white, 300 balloons, install and removal, $620.\n\nWe're also running 10% off any second order placed this month, in case you have another party coming up.\n\nJuno\nPopCloud Balloons",
+   "bulk": false,
+   "project": "Northgate holiday party"
+  },
+  {
+   "key": "m24",
+   "account": "pmail",
+   "thread": "t22",
+   "day": 9,
+   "hour": 21,
+   "from": [
+    "Jonah Thornbury",
+    "jonah.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Ivy's party balloons",
+   "body": "Hey love, Ivy wants 'a million balloons' for her party on the 19th. Should I just grab a bunch at the grocery store or do you want something fancier? I'm fine either way.\n\nJ",
+   "bulk": false
+  },
+  {
+   "key": "m25",
+   "account": "wmail",
+   "thread": "t23",
+   "day": 36,
+   "hour": 15,
+   "from": [
+    "Rafael Duarte",
+    "rafael@silverspooncatering.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Linwood launch staffing",
+   "body": "Hi Odessa,\n\nHeads up: we might be two servers short for the Linwood book launch on Nov 7, there's a flu going around our crew. I'm working on it and will confirm by the end of the week.\n\nRafael",
+   "bulk": false,
+   "project": "Linwood book launch"
+  },
+  {
+   "key": "m26",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 35,
+   "hour": 10,
+   "from": [
+    "Ruth Abernathy",
+    "ruth@linwoodpress.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Servers for the launch?",
+   "body": "Hi Odessa, just checking, will there be enough servers for 120 guests? Our last event had long waits at the bar.\n\nThanks,\nRuth",
+   "bulk": false,
+   "project": "Linwood book launch"
+  },
+  {
+   "key": "m27",
+   "account": "wmail",
+   "thread": "t23",
+   "day": 31,
+   "hour": 12,
+   "from": [
+    "Rafael Duarte",
+    "rafael@silverspooncatering.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Re: Linwood launch staffing",
+   "body": "All sorted for Linwood: two extra servers from our sister kitchen are confirmed, so we're at full strength.\n\nRafael",
+   "bulk": false,
+   "project": "Linwood book launch"
+  },
+  {
+   "key": "m28",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 31,
+   "hour": 16,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Ruth Abernathy",
+     "ruth@linwoodpress.example"
+    ]
+   ],
+   "subject": "Re: Servers for the launch?",
+   "body": "Hi Ruth,\n\nGood news: the caterer confirmed full staffing including two extra servers, so 120 guests are well covered and we'll have a second bartender too.\n\nOdessa",
+   "bulk": false,
+   "project": "Linwood book launch"
+  },
+  {
+   "key": "m29",
+   "account": "wmail",
+   "thread": "t25",
+   "day": 19,
+   "hour": 11,
+   "from": [
+    "Patrick Osei",
+    "patrick.osei@fernhillbank.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Offsite next year?",
+   "body": "Hi Odessa,\n\nWe met at the Linwood launch. Our leadership group (around 30 people) is talking about an offsite sometime next year, maybe spring, but nothing is fixed and budgets aren't approved yet. Would you be open to a chat once we know more?\n\nPatrick Osei\nFernhill Bank",
+   "bulk": false
+  },
+  {
+   "key": "m30",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 14,
+   "hour": 9,
+   "from": [
+    "Beatrix Holm",
+    "events@larchwoodestate.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Midweek packages at Larchwood",
+   "body": "Hi Odessa,\n\nWe've launched a midweek corporate package for groups of 20 to 40: meeting barn, lunch and dinner, from $145 per person. Just reach out whenever you have a group in mind.\n\nBest,\nBeatrix Holm\nLarchwood Estate",
+   "bulk": false
+  },
+  {
+   "key": "m31",
+   "account": "wmail",
+   "thread": "t27",
+   "day": 7,
+   "hour": 14,
+   "from": [
+    "Owen Pryce",
+    "owen@harrowmill.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Certificate of insurance - Dec 12",
+   "body": "Hi Odessa,\n\nFor the Calloway dinner on Dec 12 we'll need your certificate of insurance naming Harrow Mill as additional insured, at least a week before.\n\nThanks,\nOwen",
+   "bulk": false,
+   "project": "Calloway year-end dinner"
+  },
+  {
+   "key": "m32",
+   "account": "wmail",
+   "thread": "t28",
+   "day": 6,
+   "hour": 10,
+   "from": [
+    "Leo Marchetti",
+    "leo.marchetti@ashcombehotel.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "COI for the Brightwater gala",
+   "body": "Hello Odessa,\n\nCould you send a current certificate of insurance listing Ashcombe Hotel as additional insured for the Brightwater gala on Dec 18?\n\nMany thanks,\nLeo Marchetti\nEvents Coordinator, Ashcombe Hotel",
+   "bulk": false,
+   "project": "Brightwater gala"
+  },
+  {
+   "key": "m33",
+   "account": "wmail",
+   "thread": "t29",
+   "day": 45,
+   "hour": 22,
+   "from": [
+    "Graham Pettibone",
+    "graham@pettibonelaw.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "The band",
+   "body": "Odessa,\n\nOverall a lovely evening, but the band was far too loud. Several of our older guests left before dessert. I'd like to discuss this.\n\nGraham Pettibone",
+   "bulk": false,
+   "project": "Pettibone anniversary"
+  },
+  {
+   "key": "m34",
+   "account": "wmail",
+   "thread": "t30",
+   "day": 44,
+   "hour": 8,
+   "from": [
+    "Graham Pettibone",
+    "graham.pettibone@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Band volume at our party",
+   "body": "Hi Odessa,\n\nSending from my personal email in case the office one got caught in a filter. The band was much too loud on Saturday and my aunt and her friends left early. Could we talk about it?\n\nGraham",
+   "bulk": false,
+   "project": "Pettibone anniversary"
+  },
+  {
+   "key": "m35",
+   "account": "wmail",
+   "thread": "t30",
+   "day": 43,
+   "hour": 12,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Graham Pettibone",
+     "graham.pettibone@mail.example"
+    ]
+   ],
+   "subject": "Re: Band volume at our party",
+   "body": "Hi Graham,\n\nI got both of your notes, and I'm truly sorry. I asked the band twice to bring it down and should have pushed harder. Can I call you Thursday afternoon to talk it through?\n\nOdessa",
+   "bulk": false,
+   "project": "Pettibone anniversary"
+  },
+  {
+   "key": "m36",
+   "account": "wmail",
+   "thread": "t31",
+   "day": 27,
+   "hour": 7,
+   "from": [
+    "Event Pro Weekly",
+    "news@eventproweekly.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Linen rental prices climb 15% for 2027",
+   "body": "This week: rental houses across the region are raising linen prices by up to 15% for 2027. Plus: how to price a holiday party, and five vendors to watch. Unsubscribe anytime.",
+   "bulk": true
+  },
+  {
+   "key": "m37",
+   "account": "wmail",
+   "thread": "t32",
+   "day": 17,
+   "hour": 7,
+   "from": [
+    "RentRoost",
+    "notifications@rentroost.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Price changes on items you viewed",
+   "body": "Prices went up on 14 linen items you viewed recently, including the ivory 120-inch round and the gray chambray runner. See the new prices in your account.",
+   "bulk": true
+  },
+  {
+   "key": "m38",
+   "account": "wmail",
+   "thread": "t33",
+   "day": 57,
+   "hour": 10,
+   "from": [
+    "Céleste Moreau",
+    "celeste.moreau@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Enveloppes pour les invitations",
+   "body": "Bonjour Odessa,\n\nPour le mariage de ma fille, nous voulons des enveloppes calligraphiées pour les invitations. Elles doivent partir avant le 5 octobre. Est-ce que vous connaissez une calligraphe dans la région?\n\nMerci beaucoup,\nCéleste",
+   "bulk": false
+  },
+  {
+   "key": "m39",
+   "account": "wmail",
+   "thread": "t34",
+   "day": 55,
+   "hour": 13,
+   "from": [
+    "Ines Vale",
+    "ines@valeletters.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Calligraphy for your clients",
+   "body": "Hi Odessa,\n\nI'm a calligrapher in Eastvale and I'm now booking autumn envelope work, with a two-week turnaround. Portfolio attached if any of your couples need it.\n\nInes Vale",
+   "bulk": false
+  },
+  {
+   "key": "m40",
+   "account": "wmail",
+   "thread": "t33",
+   "day": 54,
+   "hour": 9,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Céleste Moreau",
+     "celeste.moreau@mail.example"
+    ]
+   ],
+   "subject": "Re: Enveloppes pour les invitations",
+   "body": "Bonjour Céleste,\n\nJe regarde avec mes contacts et je vous écris avant la fin de la semaine. Pour le 5 octobre, c'est possible.\n\nBien à vous,\nOdessa",
+   "bulk": false
+  },
+  {
+   "key": "m41",
+   "account": "wmail",
+   "thread": "t20",
+   "day": 15,
+   "hour": 9,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Simone Patel",
+     "accounts@orchardanalytics.example"
+    ]
+   ],
+   "subject": "Re: PO number for invoice LF-1088",
+   "body": "Hi Simone,\n\nReissued LF-1088 with PO 55-1931, attached. Sorry for the hassle.\n\nBest,\nOdessa",
+   "bulk": false
+  },
+  {
+   "key": "m42",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 20,
+   "hour": 20,
+   "from": [
+    "Anouk Vandermeer",
+    "anouk.vandermeer@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Vegetarische gasten",
+   "body": "Hoi Odessa,\n\nIk heb een vraag over het menu. Van onze gasten zijn er nu elf vegetariër en twee veganist. Kan de cateraar daar een apart hoofdgerecht voor maken, of is het beter om voor iedereen een vegetarische optie te doen? Bram vindt het allemaal prima, maar ik wil niet dat iemand alleen groenten krijgt.\n\nGroetjes,\nAnouk",
+   "bulk": false,
+   "project": "Vandermeer wedding"
+  },
+  {
+   "key": "m43",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 19,
+   "hour": 9,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Anouk Vandermeer",
+     "anouk.vandermeer@mail.example"
+    ]
+   ],
+   "subject": "Re: Vegetarische gasten",
+   "body": "Hoi Anouk,\n\nGoede vraag! Ik vraag Rafael om een apart vegetarisch hoofdgerecht en een veganistische variant. Bij de proeverij kunnen jullie het dan ook proeven. Ik laat het je deze week weten.\n\nGroetjes,\nOdessa",
+   "bulk": false,
+   "project": "Vandermeer wedding"
+  },
+  {
+   "key": "m44",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 17,
+   "hour": 21,
+   "from": [
+    "Anouk Vandermeer",
+    "anouk.vandermeer@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Re: Vegetarische gasten",
+   "body": "Super, dank je wel! Dan zijn we helemaal gerust. Groetjes, Anouk",
+   "bulk": false,
+   "project": "Vandermeer wedding"
+  },
+  {
+   "key": "m45",
+   "account": "wmail",
+   "thread": "t36",
+   "day": 34,
+   "hour": 8,
+   "from": [
+    "Katrin Vossberg",
+    "katrin.vossberg@helmwerk.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Abendessen für unsere Delegation im Januar",
+   "body": "Hallo Frau Thornbury,\n\nim Januar kommt eine Delegation aus unserem Hauptsitz für drei Tage zu Besuch. Wir möchten am zweiten Abend ein Abendessen für etwa 25 Personen planen, gerne in einem ruhigen Restaurant mit regionaler Küche. Können Sie uns dabei helfen?\n\nMit freundlichen Grüßen\nKatrin Vossberg\nHelmwerk",
+   "bulk": false,
+   "project": "Helmwerk delegation dinner"
+  },
+  {
+   "key": "m46",
+   "account": "wmail",
+   "thread": "t36",
+   "day": 33,
+   "hour": 14,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Katrin Vossberg",
+     "katrin.vossberg@helmwerk.example"
+    ]
+   ],
+   "subject": "Re: Abendessen für unsere Delegation im Januar",
+   "body": "Hallo Frau Vossberg,\n\nsehr gerne! Ich schicke Ihnen bis Freitag zwei oder drei Vorschläge mit Menü und Preisen. Haben Sie schon ein Datum für den zweiten Abend?\n\nViele Grüße\nOdessa Thornbury",
+   "bulk": false,
+   "project": "Helmwerk delegation dinner"
+  },
+  {
+   "key": "m47",
+   "account": "wmail",
+   "thread": "t36",
+   "day": 29,
+   "hour": 10,
+   "from": [
+    "Katrin Vossberg",
+    "katrin.vossberg@helmwerk.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Re: Abendessen für unsere Delegation im Januar",
+   "body": "Hallo Frau Thornbury,\n\ndanke für die Vorschläge! Das Datum ist der 20. Januar. Wir nehmen gerne das zweite Restaurant. Können Sie bitte die Reservierung machen und mir die Bestätigung schicken?\n\nViele Grüße\nKatrin Vossberg",
+   "bulk": false,
+   "project": "Helmwerk delegation dinner"
+  },
+  {
+   "key": "m48",
+   "account": "wmail",
+   "thread": "t37",
+   "day": 38,
+   "hour": 11,
+   "from": [
+    "Amélie Rousseau",
+    "amelie@rousseauphoto.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Mariage Halloway - 16 janvier",
+   "body": "Bonjour Odessa,\n\nMerci pour votre message. Je suis disponible le 16 janvier pour le mariage Halloway à Kestrel Barn. Je vous envoie mon devis pour huit heures de reportage, avec un second photographe. Est-ce que le couple veut aussi une séance avant le mariage?\n\nBien cordialement,\nAmélie",
+   "bulk": false,
+   "project": "Halloway wedding"
+  },
+  {
+   "key": "m49",
+   "account": "wmail",
+   "thread": "t37",
+   "day": 37,
+   "hour": 16,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Amélie Rousseau",
+     "amelie@rousseauphoto.example"
+    ]
+   ],
+   "subject": "Re: Mariage Halloway - 16 janvier",
+   "body": "Bonjour Amélie,\n\nMerci! Le couple accepte le devis. Pas de séance avant, mais ils aimeraient des photos de groupe avec la famille. Je vous envoie le planning de la journée en décembre.\n\nBien à vous,\nOdessa",
+   "bulk": false,
+   "project": "Halloway wedding"
+  },
+  {
+   "key": "m50",
+   "account": "wmail",
+   "thread": "t37",
+   "day": 36,
+   "hour": 9,
+   "from": [
+    "Amélie Rousseau",
+    "amelie@rousseauphoto.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Re: Mariage Halloway - 16 janvier",
+   "body": "Parfait, merci Odessa. J'attends le planning. À bientôt, Amélie",
+   "bulk": false,
+   "project": "Halloway wedding"
+  },
+  {
+   "key": "m51",
+   "account": "wmail",
+   "thread": "t38",
+   "day": 25,
+   "hour": 19,
+   "from": [
+    "Lucía Navarro",
+    "lucia.navarro@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Quinceañera de Valeria",
+   "body": "Hola Odessa,\n\nUna amiga me dio tu nombre. Estamos planeando la quinceañera de mi hija Valeria para el mes de abril, con unos 100 invitados. ¿Trabajas con eventos así? Nos gustaría un salón con pista de baile y comida mexicana.\n\nMuchas gracias,\nLucía Navarro",
+   "bulk": false
+  },
+  {
+   "key": "m52",
+   "account": "wmail",
+   "thread": "t38",
+   "day": 24,
+   "hour": 10,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Lucía Navarro",
+     "lucia.navarro@mail.example"
+    ]
+   ],
+   "subject": "Re: Quinceañera de Valeria",
+   "body": "Hola Lucía,\n\n¡Muchas gracias por escribir! Sí, trabajo con quinceañeras y me encantan. Te propongo una llamada la próxima semana para hablar de fechas, presupuesto y salones. ¿Te va bien el martes por la tarde?\n\nSaludos,\nOdessa",
+   "bulk": false
+  },
+  {
+   "key": "m53",
+   "account": "wmail",
+   "thread": "t38",
+   "day": 21,
+   "hour": 18,
+   "from": [
+    "Lucía Navarro",
+    "lucia.navarro@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Re: Quinceañera de Valeria",
+   "body": "Hola Odessa, el martes a las cinco me va perfecto. Hasta pronto, Lucía",
+   "bulk": false
+  },
+  {
+   "key": "m54",
+   "account": "wmail",
+   "thread": "t39",
+   "day": 47,
+   "hour": 21,
+   "from": [
+    "Mara Halloway",
+    "mara.halloway@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "We got Kestrel Barn!!",
+   "body": "Odessa!! Kestrel Barn said yes for Saturday January 16. Signed and deposit paid. I can't believe it. What's next?\n\nMara",
+   "bulk": false,
+   "project": "Halloway wedding"
+  },
+  {
+   "key": "m55",
+   "account": "wmail",
+   "thread": "t39",
+   "day": 46,
+   "hour": 10,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Mara Halloway",
+     "mara.halloway@mail.example"
+    ]
+   ],
+   "subject": "Re: We got Kestrel Barn!!",
+   "body": "Mara, wonderful news! Next up: photographer, florist and the band and AV. I'll send you a short list for each by next week.\n\nOdessa",
+   "bulk": false,
+   "project": "Halloway wedding"
+  },
+  {
+   "key": "m56",
+   "account": "wmail",
+   "thread": "t39",
+   "day": 2,
+   "hour": 20,
+   "from": [
+    "Mara Halloway",
+    "mara.halloway@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Re: We got Kestrel Barn!!",
+   "body": "Hi Odessa, final guest count is 142 (we lost a few to flu season and gained some cousins). Seating list to follow this weekend.\n\nMara",
+   "bulk": false,
+   "project": "Halloway wedding"
+  },
+  {
+   "key": "m57",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 39,
+   "hour": 9,
+   "from": [
+    "Gerald Finch",
+    "gerald@finchbooks.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Q4 estimated tax",
+   "body": "Hi Odessa,\n\nReminder that your Q4 estimated payment is due January 15. If you send me the October and November income figures by Dec 10, I'll calculate it for you.\n\nGerald\nFinch Bookkeeping",
+   "bulk": false
+  },
+  {
+   "key": "m58",
+   "account": "wmail",
+   "thread": "t41",
+   "day": 23,
+   "hour": 15,
+   "from": [
+    "Bernadette Cole",
+    "b.cole@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Retirement party inquiry",
+   "body": "Hello,\n\nI'm planning a retirement party for my husband in March, about 60 guests. Do you take on small events like this, and what do you charge?\n\nThank you,\nBernadette Cole",
+   "bulk": false
+  },
+  {
+   "key": "m59",
+   "account": "wmail",
+   "thread": "t41",
+   "day": 22,
+   "hour": 11,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Bernadette Cole",
+     "b.cole@mail.example"
+    ]
+   ],
+   "subject": "Re: Retirement party inquiry",
+   "body": "Hi Bernadette,\n\nCongratulations to your husband! Yes, I do. For an event that size I usually work with a flat planning fee of $1,800. I'll send you a short questionnaire so we can see what you have in mind.\n\nBest,\nOdessa",
+   "bulk": false
+  },
+  {
+   "key": "m60",
+   "account": "wmail",
+   "thread": "t42",
+   "day": 33,
+   "hour": 13,
+   "from": [
+    "Owen Pryce",
+    "owen@harrowmill.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Deposit invoice HM-410 - Calloway dinner",
+   "body": "Hi Odessa,\n\nAttached is the deposit invoice for Dec 12 (Calloway Dental), $2,250 due by Nov 15.\n\nThanks,\nOwen\nHarrow Mill",
+   "bulk": false,
+   "project": "Calloway year-end dinner"
+  },
+  {
+   "key": "m61",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 30,
+   "hour": 7,
+   "from": [
+    "Tablescape Pro",
+    "noreply@tablescapepro.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Your Tablescape Pro plan renews on Dec 2",
+   "body": "Your annual plan renews on Dec 2 for $240. No action needed. Manage your plan in settings.",
+   "bulk": true
+  },
+  {
+   "key": "m62",
+   "account": "wmail",
+   "thread": "t44",
+   "day": 48,
+   "hour": 8,
+   "from": [
+    "Eastvale Chamber of Commerce",
+    "news@eastvalechamber.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Chamber news: holiday mixer and small business awards",
+   "body": "Join us for the holiday mixer on Dec 3, and nominate a neighbor business for the small business awards.",
+   "bulk": true
+  },
+  {
+   "key": "m63",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 26,
+   "hour": 9,
+   "from": [
+    "Ledgerly Bank",
+    "alerts@ledgerlybank.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Deposit received: $4,800.00",
+   "body": "A deposit of $4,800.00 from Corvid Software was credited to your business checking account.",
+   "bulk": true
+  },
+  {
+   "key": "m64",
+   "account": "wmail",
+   "thread": "t46",
+   "day": 40,
+   "hour": 12,
+   "from": [
+    "Wedding Biz Academy",
+    "webinars@weddingbizacademy.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Free webinar: wedding trends for 2027",
+   "body": "Micro weddings, color-drenched tables and the return of the band. Save your seat for our free webinar.",
+   "bulk": true
+  },
+  {
+   "key": "m65",
+   "account": "wmail",
+   "thread": "t47",
+   "day": 42,
+   "hour": 10,
+   "from": [
+    "Desmond Okafor",
+    "desmond.okafor@brightwatercg.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Gala kickoff call",
+   "body": "Odessa, can we do a kickoff call for the gala next Tuesday at 2? I'll bring our comms lead.\n\nDesmond",
+   "bulk": false,
+   "project": "Brightwater gala"
+  },
+  {
+   "key": "m66",
+   "account": "wmail",
+   "thread": "t47",
+   "day": 41,
+   "hour": 12,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Desmond Okafor",
+     "desmond.okafor@brightwatercg.example"
+    ]
+   ],
+   "subject": "Re: Gala kickoff call",
+   "body": "Tuesday at 2 works. I'll send an invite.\n\nOdessa",
+   "bulk": false,
+   "project": "Brightwater gala"
+  },
+  {
+   "key": "m67",
+   "account": "wmail",
+   "thread": "t47",
+   "day": 20,
+   "hour": 16,
+   "from": [
+    "Desmond Okafor",
+    "desmond.okafor@brightwatercg.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Re: Gala kickoff call",
+   "body": "Seating question: our CEO wants the board at one long table instead of rounds. Does the Ashcombe ballroom fit a 24-seat banquet table plus 18 rounds?\n\nDesmond",
+   "bulk": false,
+   "project": "Brightwater gala"
+  },
+  {
+   "key": "m68",
+   "account": "wmail",
+   "thread": "t47",
+   "day": 19,
+   "hour": 13,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Desmond Okafor",
+     "desmond.okafor@brightwatercg.example"
+    ]
+   ],
+   "subject": "Re: Gala kickoff call",
+   "body": "Yes, it fits along the window wall, I checked the floor plan with the hotel. I'll update the layout and send it over.\n\nOdessa",
+   "bulk": false,
+   "project": "Brightwater gala"
+  },
+  {
+   "key": "m69",
+   "account": "wmail",
+   "thread": "t48",
+   "day": 29,
+   "hour": 11,
+   "from": [
+    "Aurelio Banks",
+    "aurelio.banks@northgateins.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Contract signed",
+   "body": "Hi Odessa,\n\nSigned contract attached for the Dec 11 holiday party. The deposit goes out Monday.\n\nAurelio",
+   "bulk": false,
+   "project": "Northgate holiday party"
+  },
+  {
+   "key": "m70",
+   "account": "wmail",
+   "thread": "t48",
+   "day": 28,
+   "hour": 9,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Aurelio Banks",
+     "aurelio.banks@northgateins.example"
+    ]
+   ],
+   "subject": "Re: Contract signed",
+   "body": "Thank you Aurelio, received! Looking forward to it.\n\nOdessa",
+   "bulk": false,
+   "project": "Northgate holiday party"
+  },
+  {
+   "key": "m71",
+   "account": "wmail",
+   "thread": "t49",
+   "day": 52,
+   "hour": 14,
+   "from": [
+    "Sabine Hartwell",
+    "sabine@hartwelltents.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Quote: clear-top tent for May",
+   "body": "Hi Odessa,\n\nAs requested, a 40x60 clear-top tent with sidewalls and flooring for the Pemberton wedding in May: $4,900 including install. The hold is free for two weeks.\n\nSabine\nHartwell Tent Co.",
+   "bulk": false,
+   "project": "Pemberton wedding"
+  },
+  {
+   "key": "m72",
+   "account": "wmail",
+   "thread": "t49",
+   "day": 51,
+   "hour": 10,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Sabine Hartwell",
+     "sabine@hartwelltents.example"
+    ]
+   ],
+   "subject": "Re: Quote: clear-top tent for May",
+   "body": "Thanks Sabine, the couple approved. Please book it.\n\nOdessa",
+   "bulk": false,
+   "project": "Pemberton wedding"
+  },
+  {
+   "key": "m73",
+   "account": "wmail",
+   "thread": "t50",
+   "day": 25,
+   "hour": 16,
+   "from": [
+    "Silas Brook",
+    "silas@kestrelbarn.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Jacket left behind",
+   "body": "Hi Odessa,\n\nA navy wool jacket from the Corvid retreat turned up in our coat room, the label says 'R. Iyer'. We'll keep it in the office until someone picks it up.\n\nSilas\nKestrel Barn",
+   "bulk": false,
+   "project": "Corvid retreat"
+  },
+  {
+   "key": "m74",
+   "account": "wmail",
+   "thread": "t51",
+   "day": 35,
+   "hour": 12,
+   "from": [
+    "Mei Lindqvist",
+    "mei@callowaydental.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Signed!",
+   "body": "Hi Odessa, signed contract for Dec 12 attached. We're so excited!\n\nMei",
+   "bulk": false,
+   "project": "Calloway year-end dinner"
+  },
+  {
+   "key": "m75",
+   "account": "wmail",
+   "thread": "t51",
+   "day": 34,
+   "hour": 9,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Mei Lindqvist",
+     "mei@callowaydental.example"
+    ]
+   ],
+   "subject": "Re: Signed!",
+   "body": "Thanks Mei! Got it. More soon.\n\nOdessa",
+   "bulk": false,
+   "project": "Calloway year-end dinner"
+  },
+  {
+   "key": "m76",
+   "account": "wmail",
+   "thread": "t52",
+   "day": 50,
+   "hour": 11,
+   "from": [
+    "Lena Varga",
+    "lena.varga@corvidsoftware.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Final retreat agenda",
+   "body": "Hi Odessa,\n\nFinal agenda attached for Oct 22-23: Ravi's all-hands Friday at 9 am in the barn, hike after lunch, dinner at 7. Let me know if anything changes on your side.\n\nLena",
+   "bulk": false,
+   "project": "Corvid retreat"
+  },
+  {
+   "key": "m77",
+   "account": "wmail",
+   "thread": "t52",
+   "day": 49,
+   "hour": 15,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Lena Varga",
+     "lena.varga@corvidsoftware.example"
+    ]
+   ],
+   "subject": "Re: Final retreat agenda",
+   "body": "All good on our side. See you on the 22nd!\n\nOdessa",
+   "bulk": false,
+   "project": "Corvid retreat"
+  },
+  {
+   "key": "m78",
+   "account": "wmail",
+   "thread": "t53",
+   "day": 16,
+   "hour": 11,
+   "from": [
+    "Rafael Duarte",
+    "rafael@silverspooncatering.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Invoice SC-774 - Linwood launch",
+   "body": "Hi Odessa,\n\nInvoice SC-774 for the Linwood launch is attached: $5,880, due in 30 days.\n\nThanks,\nRafael",
+   "bulk": false,
+   "project": "Linwood book launch"
+  },
+  {
+   "key": "m79",
+   "account": "wmail",
+   "thread": "t54",
+   "day": 33,
+   "hour": 10,
+   "from": [
+    "Felix Arnaud",
+    "felix@brightlineav.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Invoice BA-1932 - Halvorsen wedding",
+   "body": "Hi Odessa, invoice BA-1932 for the Halvorsen wedding is attached, $1,450, due in 30 days. Thanks! Felix",
+   "bulk": false,
+   "project": "Halvorsen wedding"
+  },
+  {
+   "key": "m80",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 12,
+   "hour": 9,
+   "from": [
+    "Rosalind Achebe",
+    "rosalind@achebeevents.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Coffee?",
+   "body": "Hey Odessa! It's been ages. Coffee next week? I want to hear how your fall went and pick your brain about pricing.\n\nRos",
+   "bulk": false
+  },
+  {
+   "key": "m81",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 11,
+   "hour": 8,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Rosalind Achebe",
+     "rosalind@achebeevents.example"
+    ]
+   ],
+   "subject": "Re: Coffee?",
+   "body": "Yes! Wednesday at 9 at the usual place?\n\nO.",
+   "bulk": false
+  },
+  {
+   "key": "m82",
+   "account": "wmail",
+   "thread": "t56",
+   "day": 46,
+   "hour": 15,
+   "from": [
+    "Thibault Garnier",
+    "thibault@garnierdmc.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Groupe en avril",
+   "body": "Bonjour Madame Thornbury,\n\nNous organisons un voyage pour un groupe de 40 personnes en avril et nous cherchons une partenaire locale pour deux soirées. Est-ce que vous êtes disponible pour en parler?\n\nCordialement,\nThibault Garnier",
+   "bulk": false
+  },
+  {
+   "key": "m83",
+   "account": "wmail",
+   "thread": "t56",
+   "day": 45,
+   "hour": 10,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Thibault Garnier",
+     "thibault@garnierdmc.example"
+    ]
+   ],
+   "subject": "Re: Groupe en avril",
+   "body": "Bonjour Monsieur Garnier,\n\nMerci pour votre message. Oui, je suis disponible. Pouvez-vous m'envoyer les dates et le budget?\n\nCordialement,\nOdessa Thornbury",
+   "bulk": false
+  },
+  {
+   "key": "m84",
+   "account": "wmail",
+   "thread": "t57",
+   "day": 5,
+   "hour": 13,
+   "from": [
+    "SiteBuilder",
+    "noreply@sitebuilder.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "New contact form submission",
+   "body": "You have a new message from your website contact form: 'Do you plan baby showers?' Reply from your dashboard.",
+   "bulk": true
+  },
+  {
+   "key": "m85",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 0,
+   "hour": 10,
+   "from": [
+    "Mei Lindqvist",
+    "mei@callowaydental.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Menu choices for Dec 12",
+   "body": "Hi Odessa,\n\nAttached are the final menu choices: 38 salmon, 22 short rib, 6 vegetarian. Two guests have nut allergies, marked on the list.\n\nMei",
+   "bulk": false,
+   "project": "Calloway year-end dinner"
+  },
+  {
+   "key": "m86",
+   "account": "wmail",
+   "thread": "t59",
+   "day": 0,
+   "hour": 8,
+   "from": [
+    "Event Pro Weekly",
+    "news@eventproweekly.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Five ways to fill January",
+   "body": "January is quiet for most planners. Here are five ways to fill it: workshops, styled shoots, and more.",
+   "bulk": true
+  },
+  {
+   "key": "m87",
+   "account": "wmail",
+   "thread": "t60",
+   "day": 1,
+   "hour": 17,
+   "from": [
+    "Leo Marchetti",
+    "leo.marchetti@ashcombehotel.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Load-in for Dec 18",
+   "body": "Hi Odessa,\n\nAV load-in for the gala can start at 1 pm on Dec 18. The ballroom has a luncheon until noon.\n\nLeo",
+   "bulk": false,
+   "project": "Brightwater gala"
+  },
+  {
+   "key": "m88",
+   "account": "wmail",
+   "thread": "t61",
+   "day": 10,
+   "hour": 14,
+   "from": [
+    "Felix Arnaud",
+    "felix@brightlineav.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Gala AV quote",
+   "body": "Hi Odessa,\n\nQuote for the Brightwater gala attached: stage wash, two screens, lectern mic and a playback laptop, $3,200 all in.\n\nFelix",
+   "bulk": false,
+   "project": "Brightwater gala"
+  },
+  {
+   "key": "m89",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 58,
+   "hour": 11,
+   "from": [
+    "Eastvale Wedding Fair",
+    "noreply@eastvaleweddingfair.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Welcome to the exhibitor list",
+   "body": "Thanks for registering as an exhibitor for the Nov 14 fair. Your booth number and load-in times follow next month.",
+   "bulk": true
+  },
+  {
+   "key": "m90",
+   "account": "wmail",
+   "thread": "t63",
+   "day": 53,
+   "hour": 16,
+   "from": [
+    "Oliver Pemberton",
+    "oliver.pemberton@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Venue shortlist",
+   "body": "Hi Odessa,\n\nWe visited all three and we love Orchard Lodge. Can you put a hold on it for May 22?\n\nOliver",
+   "bulk": false,
+   "project": "Pemberton wedding"
+  },
+  {
+   "key": "m91",
+   "account": "pmail",
+   "thread": "t70",
+   "day": 20,
+   "hour": 7,
+   "from": [
+    "Birchwood Elementary",
+    "news@birchwoodelementary.example"
+   ],
+   "to": [
+    [
+     "Birchwood Families",
+     "families@birchwoodelementary.example"
+    ]
+   ],
+   "subject": "Birchwood Bulletin: November",
+   "body": "In this issue: book fair recap, lost and found clear-out, and the winter coat drive. Have a great week!",
+   "bulk": true
+  },
+  {
+   "key": "m92",
+   "account": "pmail",
+   "thread": "t71",
+   "day": 13,
+   "hour": 7,
+   "from": [
+    "Birchwood Elementary",
+    "news@birchwoodelementary.example"
+   ],
+   "to": [
+    [
+     "Birchwood Families",
+     "families@birchwoodelementary.example"
+    ]
+   ],
+   "subject": "Birchwood Bulletin: Thanksgiving week",
+   "body": "No school Wednesday through Friday. The library is collecting canned food for the pantry until Tuesday.",
+   "bulk": true
+  },
+  {
+   "key": "m93",
+   "account": "pmail",
+   "thread": "t72",
+   "day": 32,
+   "hour": 20,
+   "from": [
+    "Sanne de Wit",
+    "sanne.dewit@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Bezoek in het voorjaar",
+   "body": "Hoi Odessa!\n\nHoe gaat het met jullie? Wij denken erover om in april met de kinderen naar jullie te komen. Lijkt je dat een goed idee, of hebben jullie het dan te druk? Ik hoor het graag.\n\nLiefs,\nSanne",
+   "bulk": false
+  },
+  {
+   "key": "m94",
+   "account": "pmail",
+   "thread": "t72",
+   "day": 31,
+   "hour": 21,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Sanne de Wit",
+     "sanne.dewit@mail.example"
+    ]
+   ],
+   "subject": "Re: Bezoek in het voorjaar",
+   "body": "Hoi Sanne,\n\nWat leuk! April is perfect, behalve het weekend van de 17e, want dan heb ik een bruiloft. Laat maar weten welke data jullie willen.\n\nLiefs,\nOdessa",
+   "bulk": false
+  },
+  {
+   "key": "m95",
+   "account": "pmail",
+   "thread": "t72",
+   "day": 30,
+   "hour": 9,
+   "from": [
+    "Sanne de Wit",
+    "sanne.dewit@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Re: Bezoek in het voorjaar",
+   "body": "Top! Ik kijk naar vluchten en ik stuur je de data zodra ik ze heb. Liefs, Sanne",
+   "bulk": false
+  },
+  {
+   "key": "m96",
+   "account": "pmail",
+   "thread": "t73",
+   "day": 43,
+   "hour": 18,
+   "from": [
+    "Rosario Ibáñez",
+    "rosario.ibanez@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Mi rodilla",
+   "body": "Hola mi niña,\n\nTe escribo para contarte que la operación de la rodilla salió muy bien. Ya estoy en casa y tu primo me ayuda con todo. No te preocupes por mí. ¿Cómo están los niños?\n\nUn beso grande,\ntía Rosario",
+   "bulk": false
+  },
+  {
+   "key": "m97",
+   "account": "pmail",
+   "thread": "t73",
+   "day": 42,
+   "hour": 20,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Rosario Ibáñez",
+     "rosario.ibanez@mail.example"
+    ]
+   ],
+   "subject": "Re: Mi rodilla",
+   "body": "Hola tía,\n\n¡Qué alegría! Me alegro mucho de que todo salió bien. Los niños están muy bien, Theo juega al fútbol y Ivy canta todo el día. Te llamo el domingo.\n\nBesos,\nOdessa",
+   "bulk": false
+  },
+  {
+   "key": "m98",
+   "account": "pmail",
+   "thread": "t73",
+   "day": 15,
+   "hour": 17,
+   "from": [
+    "Rosario Ibáñez",
+    "rosario.ibanez@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Re: Mi rodilla",
+   "body": "Hola Odessa, gracias por la llamada del domingo. Ya camino sin bastón. Te mando la receta de los polvorones que pediste para Navidad. Besos, tía Rosario",
+   "bulk": false
+  },
+  {
+   "key": "m99",
+   "account": "pmail",
+   "thread": "t74",
+   "day": 53,
+   "hour": 9,
+   "from": [
+    "Ute Brenner",
+    "ute.brenner@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Grüße aus dem Dorf",
+   "body": "Liebe Odessa,\n\nwie geht es dir und deiner Familie? Bei uns ist der Herbst sehr schön. Wir haben die alten Fotos von deinem Austauschjahr gefunden und müssen immer lachen. Ich schicke dir ein paar Bilder.\n\nHerzliche Grüße\nUte",
+   "bulk": false
+  },
+  {
+   "key": "m100",
+   "account": "pmail",
+   "thread": "t74",
+   "day": 52,
+   "hour": 21,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Ute Brenner",
+     "ute.brenner@mail.example"
+    ]
+   ],
+   "subject": "Re: Grüße aus dem Dorf",
+   "body": "Liebe Ute,\n\nvielen Dank für die Fotos! Ich habe sie den Kindern gezeigt und sie konnten nicht glauben, wie jung ich war. Uns geht es gut, die Arbeit ist viel, aber schön.\n\nHerzliche Grüße an Karl,\ndeine Odessa",
+   "bulk": false
+  },
+  {
+   "key": "m101",
+   "account": "pmail",
+   "thread": "t75",
+   "day": 14,
+   "hour": 8,
+   "from": [
+    "Hal Whitcombe",
+    "hal.whitcombe@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Your recycling bin",
+   "body": "Morning Odessa, the wind took your recycling bin for a ride last night, it's in our driveway. No rush, I'll roll it back over when I get a sec. Hal",
+   "bulk": false
+  },
+  {
+   "key": "m102",
+   "account": "pmail",
+   "thread": "t75",
+   "day": 14,
+   "hour": 9,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Hal Whitcombe",
+     "hal.whitcombe@mail.example"
+    ]
+   ],
+   "subject": "Re: Your recycling bin",
+   "body": "Thank you Hal, sorry about that! Jonah will grab it this morning.\n\nO",
+   "bulk": false
+  },
+  {
+   "key": "m103",
+   "account": "pmail",
+   "thread": "t76",
+   "day": 37,
+   "hour": 17,
+   "from": [
+    "Priscilla Nakamura",
+    "p.nakamura@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Leaf blower?",
+   "body": "Hi Odessa, could we borrow your leaf blower on Saturday? Ours finally died. Thank you!\n\nPriscilla",
+   "bulk": false
+  },
+  {
+   "key": "m104",
+   "account": "pmail",
+   "thread": "t76",
+   "day": 37,
+   "hour": 19,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Priscilla Nakamura",
+     "p.nakamura@mail.example"
+    ]
+   ],
+   "subject": "Re: Leaf blower?",
+   "body": "Of course, it's in the garage. The side door is open, just help yourself.",
+   "bulk": false
+  },
+  {
+   "key": "m105",
+   "account": "pmail",
+   "thread": "t77",
+   "day": 18,
+   "hour": 9,
+   "from": [
+    "Eastvale Family Dental",
+    "reminders@eastvaledental.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Appointment reminder for Ivy",
+   "body": "This is a reminder that Ivy has a cleaning on Dec 1 at 3:30 pm. Reply C to confirm.",
+   "bulk": true
+  },
+  {
+   "key": "m106",
+   "account": "pmail",
+   "thread": "t78",
+   "day": 24,
+   "hour": 8,
+   "from": [
+    "Eastvale United",
+    "news@eastvaleunited.example"
+   ],
+   "to": [
+    [
+     "Eastvale United families",
+     "families@eastvaleunited.example"
+    ]
+   ],
+   "subject": "Fall season wrap-up",
+   "body": "What a season! Registration for spring opens Jan 5. Thank you to all our volunteer coaches and referees.",
+   "bulk": true
+  },
+  {
+   "key": "m107",
+   "account": "pmail",
+   "thread": "t79",
+   "day": 7,
+   "hour": 19,
+   "from": [
+    "Hana Sato",
+    "hana.sato@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Mika RSVP",
+   "body": "Hi Odessa, Mika would love to come to Ivy's party on the 19th! Any ideas for a gift? She says Ivy is into unicorns and painting right now, haha.\n\nHana",
+   "bulk": false
+  },
+  {
+   "key": "m108",
+   "account": "pmail",
+   "thread": "t80",
+   "day": 3,
+   "hour": 11,
+   "from": [
+    "Eastvale Public Library",
+    "holds@eastvalelibrary.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Your hold is ready",
+   "body": "Your hold 'The Quiet Harbor' is ready for pickup at the Main Branch until Dec 4.",
+   "bulk": true
+  },
+  {
+   "key": "m109",
+   "account": "pmail",
+   "thread": "t81",
+   "day": 29,
+   "hour": 7,
+   "from": [
+    "Eastvale Power",
+    "billing@eastvalepower.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Your November bill is ready",
+   "body": "Your bill of $142.18 is ready and will be paid by autopay on Dec 5.",
+   "bulk": true
+  },
+  {
+   "key": "m110",
+   "account": "pmail",
+   "thread": "t82",
+   "day": 27,
+   "hour": 12,
+   "from": [
+    "Jonah Thornbury",
+    "jonah.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Saturday dinner",
+   "body": "The Okonkwos asked us over for dinner Saturday at 7. I said probably yes, ok?\n\nJ",
+   "bulk": false
+  },
+  {
+   "key": "m111",
+   "account": "pmail",
+   "thread": "t82",
+   "day": 27,
+   "hour": 13,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Jonah Thornbury",
+     "jonah.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Re: Saturday dinner",
+   "body": "Yes! I'll bring dessert. Can you ask your sister to babysit?",
+   "bulk": false
+  },
+  {
+   "key": "m112",
+   "account": "pmail",
+   "thread": "t83",
+   "day": 35,
+   "hour": 20,
+   "from": [
+    "Lydia Fairbanks",
+    "lydia.fairbanks@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "December book",
+   "body": "Hi Odessa, we're reading 'The Quiet Harbor' for December, meeting at my place on Dec 9. Can you bring a snack? Lydia",
+   "bulk": false
+  },
+  {
+   "key": "m113",
+   "account": "pmail",
+   "thread": "t83",
+   "day": 34,
+   "hour": 21,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Lydia Fairbanks",
+     "lydia.fairbanks@mail.example"
+    ]
+   ],
+   "subject": "Re: December book",
+   "body": "Count me in, I'll bring cheese straws!",
+   "bulk": false
+  },
+  {
+   "key": "m114",
+   "account": "pmail",
+   "thread": "t84",
+   "day": 40,
+   "hour": 16,
+   "from": [
+    "Gemma Royce",
+    "pta@birchwoodelementary.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Bake sale volunteers Nov 20",
+   "body": "Hi Odessa, we're short on volunteers for the bake sale on Nov 20. Could you do a one-hour shift? Thanks so much,\nGemma Royce, PTA",
+   "bulk": false
+  },
+  {
+   "key": "m115",
+   "account": "pmail",
+   "thread": "t84",
+   "day": 39,
+   "hour": 8,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Gemma Royce",
+     "pta@birchwoodelementary.example"
+    ]
+   ],
+   "subject": "Re: Bake sale volunteers Nov 20",
+   "body": "Hi Gemma, I'm so sorry, I'm working an event that day. I can send cookies with Theo though!\n\nOdessa",
+   "bulk": false
+  },
+  {
+   "key": "m116",
+   "account": "pmail",
+   "thread": "t85",
+   "day": 54,
+   "hour": 19,
+   "from": [
+    "Walter Thornbury",
+    "walter.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "How's everyone",
+   "body": "Hi sweetheart, haven't heard from you in a bit. How is everybody? Did Theo's team win on Saturday?\n\nLove, Dad",
+   "bulk": false
+  },
+  {
+   "key": "m117",
+   "account": "pmail",
+   "thread": "t85",
+   "day": 53,
+   "hour": 20,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Walter Thornbury",
+     "walter.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Re: How's everyone",
+   "body": "Hi Dad! They won 3-1 and Theo scored. All good here, just busy season. I'll call you this weekend.\n\nLove, O",
+   "bulk": false
+  },
+  {
+   "key": "m118",
+   "account": "pmail",
+   "thread": "t86",
+   "day": 38,
+   "hour": 22,
+   "from": [
+    "Clara Thornbury",
+    "clara.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Christmas?",
+   "body": "Odie, I'm thinking about coming for Christmas with the boys this year. Would that be too much with Dad there too? Be honest.\n\nC",
+   "bulk": false
+  },
+  {
+   "key": "m119",
+   "account": "pmail",
+   "thread": "t86",
+   "day": 37,
+   "hour": 7,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Clara Thornbury",
+     "clara.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Re: Christmas?",
+   "body": "Not too much at all, come! The boys can have the basement and Dad gets the guest room.\n\nO",
+   "bulk": false
+  },
+  {
+   "key": "m120",
+   "account": "pmail",
+   "thread": "t87",
+   "day": 9,
+   "hour": 10,
+   "from": [
+    "ShopLane",
+    "orders@shoplane.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Your order has shipped",
+   "body": "Good news! Your order (kids' white dress shirt, size 10) has shipped and arrives Tuesday.",
+   "bulk": true
+  },
+  {
+   "key": "m121",
+   "account": "pmail",
+   "thread": "t88",
+   "day": 44,
+   "hour": 10,
+   "from": [
+    "Eastvale Aquatics",
+    "swim@eastvaleaquatics.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Enrollment confirmed: Theo, Level 4",
+   "body": "Theo is enrolled in Level 4, Tuesdays at 4:30 pm, starting Jan 12.",
+   "bulk": true
+  },
+  {
+   "key": "m122",
+   "account": "pmail",
+   "thread": "t89",
+   "day": 16,
+   "hour": 20,
+   "from": [
+    "Jonah Thornbury",
+    "jonah.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Car inspection",
+   "body": "The minivan's inspection is due by Dec 15, so I booked it for the 8th at Delgado's garage. Just so you know. J",
+   "bulk": false
+  },
+  {
+   "key": "m123",
+   "account": "pmail",
+   "thread": "t90",
+   "day": 2,
+   "hour": 19,
+   "from": [
+    "Priscilla Nakamura",
+    "p.nakamura@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Package",
+   "body": "Hi, a package for you got left on our porch, I put it by your door. P.",
+   "bulk": false
+  },
+  {
+   "key": "m124",
+   "account": "pmail",
+   "thread": "t83",
+   "day": 0,
+   "hour": 21,
+   "from": [
+    "Lydia Fairbanks",
+    "lydia.fairbanks@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Re: December book",
+   "body": "Small change: we're starting at 7:30 instead of 7. See you there! Lydia",
+   "bulk": false
+  },
+  {
+   "key": "m125",
+   "account": "pmail",
+   "thread": "t91",
+   "day": 22,
+   "hour": 20,
+   "from": [
+    "Eastvale Parks",
+    "news@eastvaleparks.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Winter programs are open",
+   "body": "Ice skating lessons, indoor soccer and family yoga. Sign up online today, spots are limited.",
+   "bulk": true
+  },
+  {
+   "key": "m126",
+   "account": "pmail",
+   "thread": "t92",
+   "day": 47,
+   "hour": 12,
+   "from": [
+    "SnapPrint",
+    "prints@snapprint.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Your photos are ready",
+   "body": "Your 36 prints are ready for pickup. Thanks for printing with us!",
+   "bulk": true
+  },
+  {
+   "key": "m127",
+   "account": "pmail",
+   "thread": "t93",
+   "day": 57,
+   "hour": 20,
+   "from": [
+    "Dana Pruitt",
+    "office@birchwoodelementary.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Picture day order form",
+   "body": "Hi Odessa, Theo's picture day order form didn't come back. Could you send it in this week? Thank you, Dana",
+   "bulk": false
+  },
+  {
+   "key": "m128",
+   "account": "pmail",
+   "thread": "t93",
+   "day": 56,
+   "hour": 7,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Dana Pruitt",
+     "office@birchwoodelementary.example"
+    ]
+   ],
+   "subject": "Re: Picture day order form",
+   "body": "Sorry! It's in his backpack today.\n\nOdessa",
+   "bulk": false
+  },
+  {
+   "key": "m129",
+   "account": "pmail",
+   "thread": "t94",
+   "day": 26,
+   "hour": 19,
+   "from": [
+    "Marco Ellery",
+    "coach.ellery@eastvaleunited.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Tournament carpool",
+   "body": "Hi Odessa, can you drive two kids to Saturday's tournament in Fairport? We leave the clubhouse at 8. Marco",
+   "bulk": false
+  },
+  {
+   "key": "m130",
+   "account": "pmail",
+   "thread": "t94",
+   "day": 26,
+   "hour": 20,
+   "from": [
+    "Odessa Thornbury",
+    "odessa.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Marco Ellery",
+     "coach.ellery@eastvaleunited.example"
+    ]
+   ],
+   "subject": "Re: Tournament carpool",
+   "body": "Yes, I can take two. See you at 8.",
+   "bulk": false
+  },
+  {
+   "key": "m131",
+   "account": "wmail",
+   "thread": "t64",
+   "day": 58,
+   "hour": 9,
+   "from": [
+    "Priya Halvorsen",
+    "priya.halvorsen@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "First dance timing",
+   "body": "Hi Odessa, could we move the first dance to right before dinner instead of after? My grandparents tend to leave early. Thanks! Priya",
+   "bulk": false,
+   "project": "Halvorsen wedding"
+  },
+  {
+   "key": "m132",
+   "account": "wmail",
+   "thread": "t64",
+   "day": 57,
+   "hour": 14,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Priya Halvorsen",
+     "priya.halvorsen@mail.example"
+    ]
+   ],
+   "subject": "Re: First dance timing",
+   "body": "Absolutely, I'll update the timeline and let the band know.\n\nOdessa",
+   "bulk": false,
+   "project": "Halvorsen wedding"
+  },
+  {
+   "key": "m133",
+   "account": "wmail",
+   "thread": "t65",
+   "day": 21,
+   "hour": 8,
+   "from": [
+    "Bellweather Mutual",
+    "noreply@bellweathermutual.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Your policy renews Jan 1",
+   "body": "Your general liability policy renews on Jan 1. Log in to view your documents and request certificates.",
+   "bulk": true
+  },
+  {
+   "key": "m134",
+   "account": "wmail",
+   "thread": "t66",
+   "day": 32,
+   "hour": 11,
+   "from": [
+    "Wendell Price",
+    "wendell@inkwellpress.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Proof: Ferreira save-the-dates",
+   "body": "Hi Odessa, proof attached for the Ferreira save-the-dates. Please check names and the date, then approve and tell me the quantity.\n\nWendell",
+   "bulk": false,
+   "project": "Ferreira wedding"
+  },
+  {
+   "key": "m135",
+   "account": "wmail",
+   "thread": "t66",
+   "day": 31,
+   "hour": 9,
+   "from": [
+    "Odessa Thornbury",
+    "odessa@lanternfield.example"
+   ],
+   "to": [
+    [
+     "Wendell Price",
+     "wendell@inkwellpress.example"
+    ]
+   ],
+   "subject": "Re: Proof: Ferreira save-the-dates",
+   "body": "Approved, please print 120. Thanks Wendell!",
+   "bulk": false,
+   "project": "Ferreira wedding"
+  },
+  {
+   "key": "m136",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 4,
+   "hour": 15,
+   "from": [
+    "Rosalind Achebe",
+    "rosalind@achebeevents.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Re: Coffee?",
+   "body": "Thanks for coffee! Here's the pricing sheet template I mentioned. Steal anything you like.\n\nRos",
+   "bulk": false
+  },
+  {
+   "key": "m137",
+   "account": "wmail",
+   "thread": "t67",
+   "day": 38,
+   "hour": 17,
+   "from": [
+    "Eastvale Wedding Fair",
+    "noreply@eastvaleweddingfair.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "See you Nov 14",
+   "body": "Your booth is B12. Load-in from 7 am. Bring your own extension cords.",
+   "bulk": true
+  },
+  {
+   "key": "m138",
+   "account": "pmail",
+   "thread": "t95",
+   "day": 11,
+   "hour": 18,
+   "from": [
+    "Jonah Thornbury",
+    "jonah.thornbury@mail.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa.thornbury@mail.example"
+    ]
+   ],
+   "subject": "Thanksgiving groceries",
+   "body": "Can you pick up cranberries and a bag of ice on your way home? I've got everything else. J",
+   "bulk": false
+  },
+  {
+   "key": "m139",
+   "account": "pmail",
+   "thread": "t96",
+   "day": 1,
+   "hour": 12,
+   "from": [
+    "Birchwood Elementary",
+    "news@birchwoodelementary.example"
+   ],
+   "to": [
+    [
+     "Birchwood Families",
+     "families@birchwoodelementary.example"
+    ]
+   ],
+   "subject": "Winter concert seating",
+   "body": "Seating for the winter concert is first come, first served. Doors open at 5:30 pm.",
+   "bulk": true
+  },
+  {
+   "key": "m140",
+   "account": "wmail",
+   "thread": "t68",
+   "day": 1,
+   "hour": 10,
+   "from": [
+    "Ruth Abernathy",
+    "ruth@linwoodpress.example"
+   ],
+   "to": [
+    [
+     "Odessa Thornbury",
+     "odessa@lanternfield.example"
+    ]
+   ],
+   "subject": "Thank you + photos",
+   "body": "Hi Odessa,\n\nThe launch photos are lovely, thank you. Our director wants to do the spring catalog party with you too, date to be decided. Can you send a rough estimate for about 150 guests?\n\nRuth",
+   "bulk": false,
+   "project": "Linwood book launch"
+  }
+ ],
+ "todos": [
+  {
+   "key": "td1",
+   "title": "Reply to Priya about the toasts",
+   "evidence": [
+    "m1"
+   ],
+   "day": 31,
+   "state": "done"
+  },
+  {
+   "key": "td2",
+   "title": "Reply to Lena about the retreat debrief",
+   "evidence": [
+    "m3"
+   ],
+   "day": 26,
+   "state": "open"
+  },
+  {
+   "key": "td3",
+   "title": "Pay Bloomhaven invoice BH-2291",
+   "evidence": [
+    "m6"
+   ],
+   "day": 41,
+   "state": "done"
+  },
+  {
+   "key": "td4",
+   "title": "Pay Bloomhaven invoice BH-2347",
+   "evidence": [
+    "m7"
+   ],
+   "day": 18,
+   "state": "open"
+  },
+  {
+   "key": "td5",
+   "title": "Reply to Tobias about the Halloway centerpiece quote",
+   "evidence": [
+    "m8"
+   ],
+   "day": 15,
+   "state": "open"
+  },
+  {
+   "key": "td6",
+   "title": "Reply to Aurelio about a photo booth",
+   "evidence": [
+    "m9"
+   ],
+   "day": 12,
+   "state": "open"
+  },
+  {
+   "key": "td7",
+   "title": "Reply to Mei about a photo booth",
+   "evidence": [
+    "m10"
+   ],
+   "day": 9,
+   "state": "open"
+  },
+  {
+   "key": "td8",
+   "title": "Add the Vandermeer tasting to the calendar",
+   "evidence": [
+    "m12"
+   ],
+   "day": 5,
+   "state": "done"
+  },
+  {
+   "key": "td9",
+   "title": "Confirm the gala walkthrough with Desmond",
+   "evidence": [
+    "m14"
+   ],
+   "day": 3,
+   "state": "open"
+  },
+  {
+   "key": "td10",
+   "title": "Reply to Dad about his arrival",
+   "evidence": [
+    "m15"
+   ],
+   "day": 13,
+   "state": "open"
+  },
+  {
+   "key": "td11",
+   "title": "Reply to Clara about the airport pickup",
+   "evidence": [
+    "m16"
+   ],
+   "day": 10,
+   "state": "open"
+  },
+  {
+   "key": "td12",
+   "title": "Return Theo's concert form by Dec 4",
+   "evidence": [
+    "m17"
+   ],
+   "day": 6,
+   "state": "open"
+  },
+  {
+   "key": "td13",
+   "title": "Reply to Coach Marco about the team photos",
+   "evidence": [
+    "m18"
+   ],
+   "day": 4,
+   "state": "open"
+  },
+  {
+   "key": "td14",
+   "title": "Reply to Nadia Ferreira about a late-night snack cart",
+   "evidence": [
+    "m19"
+   ],
+   "day": 22,
+   "state": "open"
+  },
+  {
+   "key": "td15",
+   "title": "Reply to Nadia Kowalczyk about late-night extensions",
+   "evidence": [
+    "m20"
+   ],
+   "day": 21,
+   "state": "dismissed"
+  },
+  {
+   "key": "td16",
+   "title": "Reply to Hugo about the Orchard Lodge hold",
+   "evidence": [
+    "m21"
+   ],
+   "day": 28,
+   "state": "open"
+  },
+  {
+   "key": "td17",
+   "title": "Resend invoice LF-1088 with the PO number",
+   "evidence": [
+    "m22"
+   ],
+   "day": 16,
+   "state": "done"
+  },
+  {
+   "key": "td18",
+   "title": "Reply to Juno about the balloon quote",
+   "evidence": [
+    "m23"
+   ],
+   "day": 11,
+   "state": "open"
+  },
+  {
+   "key": "td19",
+   "title": "Reply to Jonah about balloons for Ivy's party",
+   "evidence": [
+    "m24"
+   ],
+   "day": 9,
+   "state": "open"
+  },
+  {
+   "key": "td20",
+   "title": "Follow up with Rafael on Linwood staffing",
+   "evidence": [
+    "m25"
+   ],
+   "day": 36,
+   "state": "done"
+  },
+  {
+   "key": "td21",
+   "title": "Reply to Ruth about server numbers",
+   "evidence": [
+    "m26"
+   ],
+   "day": 35,
+   "state": "done"
+  },
+  {
+   "key": "td22",
+   "title": "Reply to Patrick about the offsite",
+   "evidence": [
+    "m29"
+   ],
+   "day": 19,
+   "state": "open"
+  },
+  {
+   "key": "td23",
+   "title": "Ask the insurer for certificates naming Harrow Mill and Ashcombe Hotel",
+   "evidence": [
+    "m31",
+    "m32"
+   ],
+   "day": 6,
+   "state": "open"
+  },
+  {
+   "key": "td24",
+   "title": "Reply to Graham about the band volume",
+   "evidence": [
+    "m33"
+   ],
+   "day": 45,
+   "state": "done"
+  },
+  {
+   "key": "td25",
+   "title": "Reply to Graham about the band volume (personal email)",
+   "evidence": [
+    "m34"
+   ],
+   "day": 44,
+   "state": "done"
+  },
+  {
+   "key": "td26",
+   "title": "Reply to Céleste about a calligrapher",
+   "evidence": [
+    "m38"
+   ],
+   "day": 57,
+   "state": "done"
+  },
+  {
+   "key": "td27",
+   "title": "Reply to Anouk about the vegetarian menu",
+   "evidence": [
+    "m42"
+   ],
+   "day": 20,
+   "state": "done"
+  },
+  {
+   "key": "td28",
+   "title": "Reply to Katrin about the delegation dinner",
+   "evidence": [
+    "m45"
+   ],
+   "day": 34,
+   "state": "done"
+  },
+  {
+   "key": "td29",
+   "title": "Book the second restaurant for Helmwerk on Jan 20",
+   "evidence": [
+    "m47"
+   ],
+   "day": 29,
+   "state": "open"
+  },
+  {
+   "key": "td30",
+   "title": "Reply to Amélie about the Halloway coverage",
+   "evidence": [
+    "m48"
+   ],
+   "day": 38,
+   "state": "done"
+  },
+  {
+   "key": "td31",
+   "title": "Reply to Lucía about the quinceañera",
+   "evidence": [
+    "m51"
+   ],
+   "day": 25,
+   "state": "done"
+  },
+  {
+   "key": "td32",
+   "title": "Reply to Mara about next steps",
+   "evidence": [
+    "m54"
+   ],
+   "day": 47,
+   "state": "done"
+  },
+  {
+   "key": "td33",
+   "title": "Update the Halloway guest count to 142",
+   "evidence": [
+    "m56"
+   ],
+   "day": 2,
+   "state": "open"
+  },
+  {
+   "key": "td34",
+   "title": "Send Gerald the October and November income figures",
+   "evidence": [
+    "m57"
+   ],
+   "day": 39,
+   "state": "open"
+  },
+  {
+   "key": "td35",
+   "title": "Reply to Bernadette about the retirement party",
+   "evidence": [
+    "m58"
+   ],
+   "day": 23,
+   "state": "done"
+  },
+  {
+   "key": "td36",
+   "title": "Pay Harrow Mill deposit HM-410",
+   "evidence": [
+    "m60"
+   ],
+   "day": 33,
+   "state": "done"
+  },
+  {
+   "key": "td37",
+   "title": "Reply to Desmond about the kickoff call",
+   "evidence": [
+    "m65"
+   ],
+   "day": 42,
+   "state": "done"
+  },
+  {
+   "key": "td38",
+   "title": "Reply to Desmond about the long table",
+   "evidence": [
+    "m67"
+   ],
+   "day": 20,
+   "state": "done"
+  },
+  {
+   "key": "td39",
+   "title": "Tell Lena about the jacket left at Kestrel Barn",
+   "evidence": [
+    "m73"
+   ],
+   "day": 25,
+   "state": "open"
+  },
+  {
+   "key": "td40",
+   "title": "Review Lena's retreat agenda",
+   "evidence": [
+    "m76"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "td41",
+   "title": "Pay Silverspoon invoice SC-774",
+   "evidence": [
+    "m78"
+   ],
+   "day": 16,
+   "state": "open"
+  },
+  {
+   "key": "td42",
+   "title": "Pay Brightline invoice BA-1932",
+   "evidence": [
+    "m79"
+   ],
+   "day": 33,
+   "state": "done"
+  },
+  {
+   "key": "td43",
+   "title": "Reply to Rosalind about coffee",
+   "evidence": [
+    "m80"
+   ],
+   "day": 12,
+   "state": "done"
+  },
+  {
+   "key": "td44",
+   "title": "Reply to Thibault about the April group",
+   "evidence": [
+    "m82"
+   ],
+   "day": 46,
+   "state": "done"
+  },
+  {
+   "key": "td45",
+   "title": "Forward Mei's menu choices to Harrow Mill",
+   "evidence": [
+    "m85"
+   ],
+   "day": 0,
+   "state": "open"
+  },
+  {
+   "key": "td46",
+   "title": "Tell Felix the gala load-in starts at 1 pm",
+   "evidence": [
+    "m87"
+   ],
+   "day": 1,
+   "state": "open"
+  },
+  {
+   "key": "td47",
+   "title": "Reply to Felix about the gala AV quote",
+   "evidence": [
+    "m88"
+   ],
+   "day": 10,
+   "state": "open"
+  },
+  {
+   "key": "td48",
+   "title": "Place a hold on Orchard Lodge for May 22",
+   "evidence": [
+    "m90"
+   ],
+   "day": 53,
+   "state": "done"
+  },
+  {
+   "key": "td49",
+   "title": "Reply to Sanne about an April visit",
+   "evidence": [
+    "m93"
+   ],
+   "day": 32,
+   "state": "done"
+  },
+  {
+   "key": "td50",
+   "title": "Reply to Tía Rosario",
+   "evidence": [
+    "m96"
+   ],
+   "day": 43,
+   "state": "done"
+  },
+  {
+   "key": "td51",
+   "title": "Reply to Ute",
+   "evidence": [
+    "m99"
+   ],
+   "day": 53,
+   "state": "done"
+  },
+  {
+   "key": "td52",
+   "title": "Reply to Priscilla about the leaf blower",
+   "evidence": [
+    "m103"
+   ],
+   "day": 37,
+   "state": "done"
+  },
+  {
+   "key": "td53",
+   "title": "Reply to Hana about Mika's RSVP",
+   "evidence": [
+    "m107"
+   ],
+   "day": 7,
+   "state": "open"
+  },
+  {
+   "key": "td54",
+   "title": "Reply to Jonah about Saturday dinner",
+   "evidence": [
+    "m110"
+   ],
+   "day": 27,
+   "state": "done"
+  },
+  {
+   "key": "td55",
+   "title": "Reply to Lydia about book club",
+   "evidence": [
+    "m112"
+   ],
+   "day": 35,
+   "state": "done"
+  },
+  {
+   "key": "td56",
+   "title": "Reply to Gemma about the bake sale",
+   "evidence": [
+    "m114"
+   ],
+   "day": 40,
+   "state": "dismissed"
+  },
+  {
+   "key": "td57",
+   "title": "Reply to Dad",
+   "evidence": [
+    "m116"
+   ],
+   "day": 54,
+   "state": "done"
+  },
+  {
+   "key": "td58",
+   "title": "Reply to Clara about Christmas",
+   "evidence": [
+    "m118"
+   ],
+   "day": 38,
+   "state": "done"
+  },
+  {
+   "key": "td59",
+   "title": "Return Theo's picture day form",
+   "evidence": [
+    "m127"
+   ],
+   "day": 57,
+   "state": "done"
+  },
+  {
+   "key": "td60",
+   "title": "Reply to Coach Marco about the carpool",
+   "evidence": [
+    "m129"
+   ],
+   "day": 26,
+   "state": "done"
+  },
+  {
+   "key": "td61",
+   "title": "Reply to Priya about the first dance",
+   "evidence": [
+    "m131"
+   ],
+   "day": 58,
+   "state": "done"
+  },
+  {
+   "key": "td62",
+   "title": "Approve the Ferreira save-the-date proof",
+   "evidence": [
+    "m134"
+   ],
+   "day": 32,
+   "state": "done"
+  },
+  {
+   "key": "td63",
+   "title": "Pick up cranberries and ice",
+   "evidence": [
+    "m138"
+   ],
+   "day": 11,
+   "state": "done"
+  },
+  {
+   "key": "td64",
+   "title": "Send Ruth an estimate for the spring catalog party",
+   "evidence": [
+    "m140"
+   ],
+   "day": 1,
+   "state": "open"
+  },
+  {
+   "key": "td65",
+   "title": "File the Northgate contract",
+   "evidence": [
+    "m69"
+   ],
+   "day": 29,
+   "state": "done"
+  },
+  {
+   "key": "td66",
+   "title": "Reply to Sabine about the tent quote",
+   "evidence": [
+    "m71"
+   ],
+   "day": 52,
+   "state": "done"
+  }
+ ],
+ "promises": [
+  {
+   "direction": "mine",
+   "who": "Priya Halvorsen",
+   "what": "look into the barn sound for future events",
+   "message": "m2",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Rafael Duarte",
+   "what": "host the Vandermeer tasting on Dec 4 at 11:00",
+   "message": "m12",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Graham Pettibone",
+   "what": "call Graham Thursday afternoon",
+   "message": "m35",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Anouk Vandermeer",
+   "what": "ask the caterer for a separate vegetarian main",
+   "message": "m43",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Katrin Vossberg",
+   "what": "send two or three restaurant proposals by Friday",
+   "message": "m46",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Amélie Rousseau",
+   "what": "send the Halloway day schedule in December",
+   "message": "m49",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Mara Halloway",
+   "what": "send shortlists for photographer, florist and AV",
+   "message": "m55",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Bernadette Cole",
+   "what": "send a short questionnaire",
+   "message": "m59",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Desmond Okafor",
+   "what": "update the gala layout and send it",
+   "message": "m68",
+   "status": "done"
+  },
+  {
+   "direction": "theirs",
+   "who": "Sanne de Wit",
+   "what": "send the April visit dates",
+   "message": "m95",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Rosario Ibáñez",
+   "what": "call on Sunday",
+   "message": "m97",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Lydia Fairbanks",
+   "what": "bring cheese straws to book club",
+   "message": "m113",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Mara Halloway",
+   "what": "send the seating list this weekend",
+   "message": "m56",
+   "status": "open"
+  }
+ ],
+ "key": {
+  "opportunities": [
+   {
+    "id": "o1",
+    "what": "Two clients (Priya's wedding, Corvid retreat) say speeches were lost to echo at Kestrel Barn; Felix now has a $380/day barn delay-speaker kit tested there. Add it to the Halloway wedding there (Jan 16) and the Corvid kickoff proposal, and tell Priya and Lena about the fix.",
+    "evidence": [
+     "m1",
+     "m3",
+     "m4",
+     "m54"
+    ],
+    "ready_day": 24
+   },
+   {
+    "id": "o2",
+    "what": "Bloomhaven's centerpiece price went $58 to $68 to $74 plus an 8% surcharge across two invoices; Juniper Moss quotes $56 with no surcharge, held through June. Move recurring centerpiece orders or use the quote to renegotiate.",
+    "evidence": [
+     "m6",
+     "m7",
+     "m8"
+    ],
+    "ready_day": 15
+   },
+   {
+    "id": "o3",
+    "what": "Northgate (Fri Dec 11, ~$900) and Calloway (Sat Dec 12, ~$800) both want a photo booth; SpinFrame does two consecutive days for $1,400. Book one two-day rental, $700 per event, under both budgets.",
+    "evidence": [
+     "m9",
+     "m10",
+     "m11"
+    ],
+    "ready_day": 8
+   },
+   {
+    "id": "o4",
+    "what": "The Vandermeer tasting is Fri Dec 4 at 11:00 at Silverspoon, but Desmond moved the gala walkthrough to Dec 4, 10:30-12:30, and needs Odessa there. Move the tasting and tell the couple before confirming Desmond.",
+    "evidence": [
+     "m12",
+     "m14"
+    ],
+    "ready_day": 3
+   },
+   {
+    "id": "o5",
+    "what": "Dad lands at Harlow Dec 20 at 4:10 pm and Clara with the boys at 5:25 pm the same day. One airport run picks up all of them, so Dad skips the bus and Clara skips a $70/day rental; reply to both with one plan.",
+    "evidence": [
+     "m15",
+     "m16"
+    ],
+    "ready_day": 10
+   },
+   {
+    "id": "o6",
+    "what": "Theo must be at the school concert by 5:15 pm on Dec 10, but the Hawks team photo and party run 5:00-6:30 pm that night. Ask Coach Marco to shoot the team photo first, and return the concert form by Dec 4.",
+    "evidence": [
+     "m17",
+     "m18"
+    ],
+    "ready_day": 4
+   }
+  ],
+  "traps": [
+   {
+    "id": "x1",
+    "kind": "coincidence",
+    "what": "Two people with the first name Nadia both ask about late-night options, but one is a wedding client at Fenwick Gardens and the other is a hotel sales manager announcing rates; unrelated.",
+    "evidence": [
+     "m19",
+     "m20"
+    ]
+   },
+   {
+    "id": "x2",
+    "kind": "coincidence",
+    "what": "The word Orchard links the Orchard Lodge hold for the Pemberton wedding and an Orchard Analytics invoice fix; unrelated matters.",
+    "evidence": [
+     "m21",
+     "m22"
+    ]
+   },
+   {
+    "id": "x3",
+    "kind": "cross_area",
+    "what": "PopCloud's 10% second-order discount on a work quote could cover Ivy's party balloons, but that joins a work vendor deal with a family thread.",
+    "evidence": [
+     "m23",
+     "m24"
+    ]
+   },
+   {
+    "id": "x4",
+    "kind": "resolved",
+    "what": "Caterer warned of a server shortage and the client asked about staffing, but the caterer confirmed full staffing and Odessa told the client.",
+    "evidence": [
+     "m25",
+     "m26",
+     "m27",
+     "m28"
+    ]
+   },
+   {
+    "id": "x5",
+    "kind": "obvious",
+    "what": "Pitching Larchwood's midweek package for Fernhill's offsite is tempting, but there is no date or budget yet (no date anywhere), so a proposal would invent one; a reply to Patrick is enough.",
+    "evidence": [
+     "m29",
+     "m30"
+    ]
+   },
+   {
+    "id": "x6",
+    "kind": "covered",
+    "what": "Two venues need a certificate of insurance; an open to-do already asks the insurer for both.",
+    "evidence": [
+     "m31",
+     "m32"
+    ]
+   },
+   {
+    "id": "x7",
+    "kind": "same_source",
+    "what": "Two band-volume complaints are one client, Graham, writing from his work and personal addresses.",
+    "evidence": [
+     "m33",
+     "m34"
+    ]
+   },
+   {
+    "id": "x8",
+    "kind": "bulk",
+    "what": "Linen price rises appear only in a newsletter and a marketplace notification.",
+    "evidence": [
+     "m36",
+     "m37"
+    ]
+   },
+   {
+    "id": "x9",
+    "kind": "stale",
+    "what": "A client wanted a calligrapher for invitations due Oct 5 and a calligrapher pitched herself, but that deadline passed nearly two months ago.",
+    "evidence": [
+     "m38",
+     "m39",
+     "m40"
+    ]
+   }
+  ]
+ }
+}

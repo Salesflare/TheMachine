@@ -1,0 +1,3339 @@
+{
+ "id": "hx-7",
+ "about": "Head of dealer support and operations at Fernhill, a small electric cargo bike maker selling through bike shops and fleet customers",
+ "owner": {
+  "name": "Mara Lindqvist",
+  "email": "mara@fernhill.example"
+ },
+ "accounts": [
+  {
+   "id": "wmail",
+   "boundary": "work:Fernhill",
+   "email": "mara@fernhill.example"
+  },
+  {
+   "id": "pmail",
+   "boundary": "personal:home",
+   "email": "mara.lindqvist@mail.example"
+  }
+ ],
+ "messages": [
+  {
+   "key": "m1",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 40,
+   "hour": 9,
+   "from": [
+    "Sanne de Wit",
+    "sanne@velomarkt.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Piepende achterrem K2",
+   "body": "Hoi Mara,\n\nWij hebben nu drie K2's terug in de werkplaats met een piepende achterrem. Het geluid begint pas na een natte rit en is na een dag weer weg. Soms hoor je ook een klein geratel. De remblokken zijn nieuw en de schijven zijn recht. Hebben jullie dit vaker gehoord? De klanten zijn er niet blij mee.\n\nGroetjes,\nSanne de Wit\nWerkplaats Velomarkt Utrecht",
+   "bulk": false
+  },
+  {
+   "key": "m2",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 39,
+   "hour": 8,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Sanne de Wit",
+     "sanne@velomarkt.example"
+    ]
+   ],
+   "subject": "Re: Piepende achterrem K2",
+   "body": "Hoi Sanne,\n\nDank voor de melding. Ik leg het bij onze engineering neer en kom bij je terug. Kun je mij de framenummers sturen? Dan kunnen wij ook de remklauwen terughalen voor onderzoek.\n\nGroetjes,\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m3",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 37,
+   "hour": 14,
+   "from": [
+    "Sanne de Wit",
+    "sanne@velomarkt.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Piepende achterrem K2",
+   "body": "Hier zijn ze: FH-K2-10233, 10241 en 10307. De remklauwen zijn vandaag met de koerier naar jullie onderweg. Een vierde klant belde ook nog, dus het worden er meer. Ik hoor graag wat wij de klanten kunnen zeggen.\n\nGroet,\nSanne",
+   "bulk": false
+  },
+  {
+   "key": "m4",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 33,
+   "hour": 17,
+   "from": [
+    "Carla Mendes",
+    "carla@pedalworks.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "K2 rear brake rattle",
+   "body": "Hi Mara,\n\nQuick one. Two of our K2 rentals came back with a squeal and a rattle from the rear brake after the rainy week we had. Pads look fine, rotor is true. One rider said it sounds like a loose part in the caliper. Is this a known issue? We pulled both from the rental fleet for now, which hurts on weekends.\n\nThanks,\nCarla Mendes\nService Manager, Pedalworks Portland",
+   "bulk": false
+  },
+  {
+   "key": "m5",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 33,
+   "hour": 19,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Carla Mendes",
+     "carla@pedalworks.example"
+    ]
+   ],
+   "subject": "Re: K2 rear brake rattle",
+   "body": "Hi Carla,\n\nThanks for flagging, and sorry about the downtime. Engineering is looking at the rear brakes right now. I'll get back to you as soon as I know more.\n\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m6",
+   "account": "wmail",
+   "thread": "t3",
+   "day": 26,
+   "hour": 10,
+   "from": [
+    "Mathilde Roux",
+    "mathilde@ruecargo.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Frein arrière K2 qui grince",
+   "body": "Bonjour Mara,\n\nNous avons un souci sur deux K2 livrés en septembre : un grincement du frein arrière après la pluie, et un petit bruit de cliquetis. Les plaquettes sont neuves. Est-ce que vous avez une solution ? Nos clients sont des livreurs, ils ont besoin des vélos tous les jours.\n\nMerci d'avance et bonne journée,\nMathilde Roux\nAtelier Rue Cargo Lyon",
+   "bulk": false
+  },
+  {
+   "key": "m7",
+   "account": "wmail",
+   "thread": "t3",
+   "day": 25,
+   "hour": 9,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mathilde Roux",
+     "mathilde@ruecargo.example"
+    ]
+   ],
+   "subject": "Re: Frein arrière K2 qui grince",
+   "body": "Bonjour Mathilde,\n\nMerci pour le message. Nous regardons le problème avec notre équipe technique et je reviens vers vous très vite.\n\nBonne journée,\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m8",
+   "account": "wmail",
+   "thread": "t4",
+   "day": 31,
+   "hour": 16,
+   "from": [
+    "Jonas Weber",
+    "jonas@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Rear brake noise on K2: found it",
+   "body": "Mara,\n\nGot the three returned calipers from Utrecht on the bench. The anti-rattle shim in the rear caliper is the wrong thickness, 0.3 mm instead of 0.5 mm. It's the lot Corvid shipped in August (lot 0824). When it's wet the pad shifts a little and you get the squeal plus the rattle. Swapping the shim fixes it completely, about ten minutes per bike, no bleeding needed.\n\nJonas",
+   "bulk": false
+  },
+  {
+   "key": "m9",
+   "account": "wmail",
+   "thread": "t4",
+   "day": 30,
+   "hour": 8,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Jonas Weber",
+     "jonas@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Rear brake noise on K2: found it",
+   "body": "Nice detective work. How many bikes got that lot? And can we get correct shims fast?",
+   "bulk": false
+  },
+  {
+   "key": "m10",
+   "account": "wmail",
+   "thread": "t4",
+   "day": 30,
+   "hour": 11,
+   "from": [
+    "Jonas Weber",
+    "jonas@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Rear brake noise on K2: found it",
+   "body": "About 180 bikes, everything that shipped between Aug 20 and Sep 30. Corvid is sending 250 correct shim kits free of charge, they should be here next Monday. I can write the swap steps on half a page with photos if a shop needs them. Torque for the caliper bolts is 6 Nm.",
+   "bulk": false
+  },
+  {
+   "key": "m11",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 18,
+   "hour": 10,
+   "project": "Hof fleet pilot",
+   "from": [
+    "Stefan Brandt",
+    "s.brandt@hoflogistics.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Monatliche Auswertung der Räder",
+   "body": "Hallo Frau Lindqvist,\n\nder Pilot läuft gut, die Fahrer sind zufrieden und wir haben kaum Ausfälle. Eine Bitte: Unser Controlling möchte jeden Monat eine Auswertung pro Rad haben, also Kilometer, Ladezyklen und Standzeiten, am besten als CSV. Geht das aus Ihrem System? Bisher schreiben wir das per Hand ab.\n\nViele Grüße\nStefan Brandt\nFuhrparkleitung, Hof Logistics",
+   "bulk": false
+  },
+  {
+   "key": "m12",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 17,
+   "hour": 9,
+   "project": "Hof fleet pilot",
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Stefan Brandt",
+     "s.brandt@hoflogistics.example"
+    ]
+   ],
+   "subject": "Re: Monatliche Auswertung der Räder",
+   "body": "Hallo Herr Brandt,\n\ndanke für das Feedback, das freut uns sehr. Ich kläre das mit unserem Team und melde mich bei Ihnen.\n\nViele Grüße\nMara Lindqvist",
+   "bulk": false
+  },
+  {
+   "key": "m13",
+   "account": "wmail",
+   "thread": "t6",
+   "day": 15,
+   "hour": 13,
+   "project": "Hof fleet pilot",
+   "from": [
+    "Ute Krämer",
+    "u.kraemer@hoflogistics.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Verlängerung Pilotprojekt: Bestellung",
+   "body": "Sehr geehrte Frau Lindqvist,\n\nfür die Verlängerung des Pilotprojekts ab Januar brauche ich eine neue Bestellung. Dafür muss ich bis zum 10. Dezember einen Nutzungsbericht der zwölf Räder für Oktober und November vorlegen, sonst kann die Bestellung erst im Februar freigegeben werden. Die Zahlen sollten pro Rad sein.\n\nMit freundlichen Grüßen\nUte Krämer\nEinkauf und Finanzen, Hof Logistics",
+   "bulk": false
+  },
+  {
+   "key": "m14",
+   "account": "wmail",
+   "thread": "t6",
+   "day": 14,
+   "hour": 8,
+   "project": "Hof fleet pilot",
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Ute Krämer",
+     "u.kraemer@hoflogistics.example"
+    ]
+   ],
+   "subject": "Re: Verlängerung Pilotprojekt: Bestellung",
+   "body": "Sehr geehrte Frau Krämer,\n\nvielen Dank für die Information. Ich melde mich bei Ihnen, sobald ich mehr weiß.\n\nMit freundlichen Grüßen\nMara Lindqvist",
+   "bulk": false
+  },
+  {
+   "key": "m15",
+   "account": "wmail",
+   "thread": "t7",
+   "day": 16,
+   "hour": 15,
+   "project": "Hof fleet pilot",
+   "from": [
+    "Jonas Weber",
+    "jonas@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ],
+    [
+     "Tom Okafor",
+     "tom@fernhill.example"
+    ],
+    [
+     "Priya Raman",
+     "priya@fernhill.example"
+    ]
+   ],
+   "subject": "Telemetry export is live",
+   "body": "Hi all,\n\nThe fleet dashboard can now export per-bike data (km, charge cycles, idle hours, error codes) as CSV for any date range. It's under Fleet > Export. History goes back to the first day a bike was registered. Not announced to customers yet, so the button only shows for our own logins for now.\n\nJonas",
+   "bulk": false
+  },
+  {
+   "key": "m16",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 50,
+   "hour": 11,
+   "project": "Hof fleet pilot",
+   "from": [
+    "Tom Okafor",
+    "tom@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Hof pilot: 12 bikes delivered",
+   "body": "All 12 K2s are at the Hof depot, riders trained this morning. Stefan Brandt is our day to day contact, their finance person is Ute Krämer. Pilot runs to Dec 31. Can you be the support contact from here?\n\nTom",
+   "bulk": false
+  },
+  {
+   "key": "m17",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 49,
+   "hour": 9,
+   "project": "Hof fleet pilot",
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Tom Okafor",
+     "tom@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Hof pilot: 12 bikes delivered",
+   "body": "Sure, happy to. I'll send Stefan my direct line today.",
+   "bulk": false
+  },
+  {
+   "key": "m18",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 11,
+   "hour": 10,
+   "project": "Model K2 launch",
+   "from": [
+    "Elin Berg",
+    "elin@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "K2 launch shoot: demo bikes",
+   "body": "Hi Mara,\n\nThe photographer is booked for the K2 launch shoot on Thursday Dec 3, all day at the Harbor Hall studio. I need the six demo K2s there by 8:00, all colors, batteries charged. Can you sign off so Dario sets them aside? Dealers get the photos on Dec 8 for the launch kit, so there's no slack in the date.\n\nThanks!\nElin",
+   "bulk": false
+  },
+  {
+   "key": "m19",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 10,
+   "hour": 18,
+   "project": "Model K2 launch",
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Elin Berg",
+     "elin@fernhill.example"
+    ]
+   ],
+   "subject": "Re: K2 launch shoot: demo bikes",
+   "body": "Signed off, go ahead.",
+   "bulk": false
+  },
+  {
+   "key": "m20",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 9,
+   "hour": 7,
+   "project": "Model K2 launch",
+   "from": [
+    "Dario Costa",
+    "dario@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Demo fleet next week",
+   "body": "Mara, heads up on the demo fleet: all six demo K2s go on the van to Last Mile on Wednesday Dec 2 for the test ride and come back Friday Dec 4. That's the whole demo pool, the rest of the K2 stock is still boxed for dealer orders and I can't unbox those.\n\nDario",
+   "bulk": false
+  },
+  {
+   "key": "m21",
+   "account": "wmail",
+   "thread": "t11",
+   "day": 14,
+   "hour": 12,
+   "project": "Model K2 launch",
+   "from": [
+    "Grace Nwosu",
+    "grace@lastmile.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "cc": [
+    [
+     "Tom Okafor",
+     "tom@fernhill.example"
+    ]
+   ],
+   "subject": "K2 test ride Dec 3",
+   "body": "Hi Mara,\n\nConfirming our K2 test ride on Thursday Dec 3: six riders, a full delivery shift, starting 7:30 at our Eastside depot. If it goes well we're looking at 25 bikes in Q1, so the riders' feedback matters a lot to us.\n\nBest,\nGrace Nwosu\nOperations, Last Mile Couriers",
+   "bulk": false
+  },
+  {
+   "key": "m22",
+   "account": "wmail",
+   "thread": "t11",
+   "day": 13,
+   "hour": 9,
+   "project": "Model K2 launch",
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Grace Nwosu",
+     "grace@lastmile.example"
+    ]
+   ],
+   "cc": [
+    [
+     "Tom Okafor",
+     "tom@fernhill.example"
+    ]
+   ],
+   "subject": "Re: K2 test ride Dec 3",
+   "body": "Great, confirmed on our side. Dario will bring the bikes the day before.\n\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m23",
+   "account": "wmail",
+   "thread": "t12",
+   "day": 4,
+   "hour": 15,
+   "from": [
+    "Henrik Dahl",
+    "henrik@cykelhuset.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Rental question",
+   "body": "Hi Mara,\n\nA question outside the usual orders. We want to start renting out K2s to families next spring, but our insurer won't cover rental bikes and I have no idea how other shops handle it. Do you know a dealer that already runs a rental program? Would love to pick someone's brain before we commit.\n\nBest,\nHenrik Dahl\nCykelhuset",
+   "bulk": false
+  },
+  {
+   "key": "m24",
+   "account": "wmail",
+   "thread": "t13",
+   "day": 22,
+   "hour": 20,
+   "from": [
+    "Carla Mendes",
+    "carla@pedalworks.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Rental numbers",
+   "body": "Hi Mara,\n\nNot a problem for once :) Our K2 rental program is going great, 40 bikes out every weekend. The trick was finding a broker, Tallis Cover, who writes a fleet policy for rental bikes with theft and damage included. Took us months to find them. Happy to share what we learned if it helps other shops.\n\nCarla",
+   "bulk": false
+  },
+  {
+   "key": "m25",
+   "account": "wmail",
+   "thread": "t13",
+   "day": 21,
+   "hour": 8,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Carla Mendes",
+     "carla@pedalworks.example"
+    ]
+   ],
+   "subject": "Re: Rental numbers",
+   "body": "Love this, Carla! Thanks for sharing, that's great to hear.\n\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m26",
+   "account": "wmail",
+   "thread": "t14",
+   "day": 28,
+   "hour": 10,
+   "from": [
+    "Laura Bennett",
+    "l.bennett@corvid.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Q1 forecast for brake parts",
+   "body": "Hi Mara,\n\nAs every quarter, could you send us your Q1 forecast for calipers, rotors and shim kits by the end of next week? It helps us book capacity at the plant before the holidays.\n\nKind regards,\nLaura Bennett\nAccount Manager, Corvid Components",
+   "bulk": false
+  },
+  {
+   "key": "m27",
+   "account": "wmail",
+   "thread": "t14",
+   "day": 27,
+   "hour": 9,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Laura Bennett",
+     "l.bennett@corvid.example"
+    ]
+   ],
+   "cc": [
+    [
+     "Priya Raman",
+     "priya@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Q1 forecast for brake parts",
+   "body": "Hi Laura,\n\nWill do, Priya is pulling the numbers and will send them to you directly.\n\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m28",
+   "account": "wmail",
+   "thread": "t15",
+   "day": 24,
+   "hour": 14,
+   "from": [
+    "Laura Bennett",
+    "laura@brightside.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Q1 forecast for a first K2 order",
+   "body": "Hello Mara,\n\nWe met briefly at the Ghent show in September. We're opening two rental shops in March and want K2s from the start. Could you give me a forecast of delivery dates for a first order of 20 bikes in Q1? We're still choosing between two brands, so timing matters.\n\nThanks,\nLaura Bennett\nBrightside Rentals",
+   "bulk": false
+  },
+  {
+   "key": "m29",
+   "account": "wmail",
+   "thread": "t15",
+   "day": 23,
+   "hour": 11,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Laura Bennett",
+     "laura@brightside.example"
+    ]
+   ],
+   "cc": [
+    [
+     "Tom Okafor",
+     "tom@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Q1 forecast for a first K2 order",
+   "body": "Hi Laura,\n\nNice to hear from you again. I'm copying Tom, who handles new dealers; he'll send you lead times and a quote this week.\n\nBest,\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m30",
+   "account": "wmail",
+   "thread": "t16",
+   "day": 36,
+   "hour": 9,
+   "from": [
+    "Sofia Marin",
+    "sofia@rutabikes.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Catalog and price list request",
+   "body": "Hi Mara, could you send me your 2027 catalog and the dealer price list? We are reviewing brands for next season and cargo bikes are new for us. Thanks, Sofia Marin, Ruta Bikes",
+   "bulk": false
+  },
+  {
+   "key": "m31",
+   "account": "wmail",
+   "thread": "t16",
+   "day": 36,
+   "hour": 13,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Sofia Marin",
+     "sofia@rutabikes.example"
+    ]
+   ],
+   "subject": "Re: Catalog and price list request",
+   "body": "Hi Sofia, both attached. Let me know if you'd like a demo bike for a week.\n\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m32",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 34,
+   "hour": 11,
+   "from": [
+    "Sofia Haddad",
+    "s.haddad@northbank.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Documents for your credit line review",
+   "body": "Dear Ms. Lindqvist,\n\nFor the annual review of your credit line we need the Q3 figures and an updated inventory list by the end of the month. You can upload them in the business portal.\n\nRegards,\nSofia Haddad\nBusiness Banking, Northbank",
+   "bulk": false
+  },
+  {
+   "key": "m33",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 33,
+   "hour": 8,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Sofia Haddad",
+     "s.haddad@northbank.example"
+    ]
+   ],
+   "cc": [
+    [
+     "Priya Raman",
+     "priya@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Documents for your credit line review",
+   "body": "Hi Sofia, thanks. Priya will upload both this week.\n\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m34",
+   "account": "wmail",
+   "thread": "t18",
+   "day": 29,
+   "hour": 16,
+   "from": [
+    "Tom Okafor",
+    "tom@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Cityhop frame agreement draft",
+   "body": "Mara, draft frame agreement for Cityhop Deliveries attached. Three years, call-off orders, price review once a year. Can you look at the service section before I send it? They asked for on-site response in 48 hours.\n\nTom",
+   "bulk": false
+  },
+  {
+   "key": "m35",
+   "account": "wmail",
+   "thread": "t18",
+   "day": 28,
+   "hour": 8,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Tom Okafor",
+     "tom@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Cityhop frame agreement draft",
+   "body": "Looks fine. I'd make the on-site response 72 hours outside the city, 48 is only realistic inside the ring road. Rest is good to go.",
+   "bulk": false
+  },
+  {
+   "key": "m36",
+   "account": "wmail",
+   "thread": "t19",
+   "day": 21,
+   "hour": 17,
+   "from": [
+    "Dario Costa",
+    "dario@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Frame stock count",
+   "body": "Mara, inventory count done: we have 4 fewer K2 frames in size L than the system says. Probably two warranty swaps that weren't booked plus two sitting in the paint shop. I'll correct it, just so you know.\n\nDario",
+   "bulk": false
+  },
+  {
+   "key": "m37",
+   "account": "wmail",
+   "thread": "t20",
+   "day": 8,
+   "hour": 10,
+   "from": [
+    "Tom Okafor",
+    "tom@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Dealer dinner Amsterdam Dec 11",
+   "body": "Mara, can you host the dealer dinner in Amsterdam on Friday Dec 11? I'm stuck at the Hof review that day. Table for 14 at De Kade, 19:00, it's all booked and paid. Just need a friendly face and a short toast.\n\nTom",
+   "bulk": false
+  },
+  {
+   "key": "m38",
+   "account": "wmail",
+   "thread": "t20",
+   "day": 8,
+   "hour": 12,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Tom Okafor",
+     "tom@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Dealer dinner Amsterdam Dec 11",
+   "body": "Yes, I can do that. Send me the guest list?",
+   "bulk": false
+  },
+  {
+   "key": "m40",
+   "account": "wmail",
+   "thread": "t22",
+   "day": 57,
+   "hour": 9,
+   "from": [
+    "Henrik Dahl",
+    "henrik@cykelhuset.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Autumn promo",
+   "body": "Hi Mara, any chance you could extend the autumn dealer promo past today? We have three orders waiting on customers' financing and they'll miss the Oct 1 cutoff by a week or so. Henrik",
+   "bulk": false
+  },
+  {
+   "key": "m41",
+   "account": "wmail",
+   "thread": "t23",
+   "day": 54,
+   "hour": 15,
+   "from": [
+    "Amir Saleh",
+    "amir@urbanhaul.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Missed the promo deadline",
+   "body": "Hi Mara,\n\nWe missed the autumn promo deadline by a few days, my fault, I was away. Could you still honor the 8% on our order of six K2s?\n\nThanks,\nAmir Saleh\nUrban Haul",
+   "bulk": false
+  },
+  {
+   "key": "m42",
+   "account": "wmail",
+   "thread": "t23",
+   "day": 53,
+   "hour": 10,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Amir Saleh",
+     "amir@urbanhaul.example"
+    ]
+   ],
+   "subject": "Re: Missed the promo deadline",
+   "body": "Hi Amir, sorry, the promo closed on Oct 1 and we're not reopening it, I said the same to other shops. I can offer free shipping on the six bikes instead.\n\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m43",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 25,
+   "hour": 11,
+   "from": [
+    "Martin Hale",
+    "m.hale@corvid.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Price update from January 1",
+   "body": "Dear Mara,\n\nDue to higher steel and energy costs, prices of our caliper assemblies and rotors will rise by 6% from January 1. Orders placed before December 15 ship at current prices.\n\nBest regards,\nMartin Hale\nSales Director, Corvid Components",
+   "bulk": false
+  },
+  {
+   "key": "m44",
+   "account": "wmail",
+   "thread": "t25",
+   "day": 23,
+   "hour": 14,
+   "from": [
+    "Karin Olsen",
+    "karin@ardent.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Ardent Tubes 2027 pricing",
+   "body": "Hi Mara, a heads up that our aluminum tube sets go up 9% from January. I know that's a lot. Happy to talk volume if you can commit to the full year.\n\nKarin Olsen\nArdent Tubes",
+   "bulk": false
+  },
+  {
+   "key": "m45",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 20,
+   "hour": 9,
+   "from": [
+    "Priya Raman",
+    "priya@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Supplier increases for January",
+   "body": "Mara, Corvid is going up 6% and Ardent 9% from January. Together that's about 14k a year on our current volumes. I'd push back on both, take Karin up on the volume offer and get a comparison quote for tubes from Tamsin Metals. Can we sit down next week and decide?\n\nPriya",
+   "bulk": false
+  },
+  {
+   "key": "m46",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 20,
+   "hour": 11,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Priya Raman",
+     "priya@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Supplier increases for January",
+   "body": "Yes, let's. Thursday morning? Bring the volume numbers and we'll call both of them after.",
+   "bulk": false
+  },
+  {
+   "key": "m47",
+   "account": "wmail",
+   "thread": "t27",
+   "day": 44,
+   "hour": 7,
+   "from": [
+    "Cargo Bike Trade Weekly",
+    "news@cargotrade.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "This week: new battery storage rules for shops",
+   "body": "In this issue: proposed fire rules for storing e-bike batteries in retail back rooms, a survey of cargo bike sales in Q3, and five tips for winter service days. Read online. Unsubscribe.",
+   "bulk": true
+  },
+  {
+   "key": "m48",
+   "account": "wmail",
+   "thread": "t28",
+   "day": 17,
+   "hour": 7,
+   "from": [
+    "LEV Retail Digest",
+    "digest@levretail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Battery storage regulations: what retailers need to know",
+   "body": "Our monthly digest: battery storage regulations are coming, what retailers need to know, plus an interview with three shop owners on winter stock. Manage your preferences.",
+   "bulk": true
+  },
+  {
+   "key": "m49",
+   "account": "wmail",
+   "thread": "t29",
+   "day": 20,
+   "hour": 12,
+   "from": [
+    "Joaquín Ortega",
+    "joaquin@ortega.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "¿Nos vemos en Velo Expo?",
+   "body": "Hola Mara,\n\n¿Nos vemos en Velo Expo el sábado 21 de noviembre? Me gustaría hablar de los pedidos para la primavera y también de la garantía de las baterías. Estaré en el stand de 10 a 14, pero puedo pasar por el vuestro.\n\nSaludos,\nJoaquín Ortega\nOrtega Bicicletas",
+   "bulk": false
+  },
+  {
+   "key": "m50",
+   "account": "wmail",
+   "thread": "t30",
+   "day": 18,
+   "hour": 16,
+   "from": [
+    "Ines Kowalski",
+    "ines@brakeline.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Velo Expo Nov 21?",
+   "body": "Hi Mara, are you at Velo Expo on Saturday Nov 21? Would be good to meet at our booth, I'd love to show you the new hydraulic caliper in person. Any time after lunch works.\n\nInes Kowalski\nBrakeline",
+   "bulk": false
+  },
+  {
+   "key": "m51",
+   "account": "wmail",
+   "thread": "t31",
+   "day": 12,
+   "hour": 9,
+   "from": [
+    "Bram Jansen",
+    "bram@fietsfabriek.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "K2 in januari",
+   "body": "Hoi Mara,\n\nHoeveel K2's kunnen wij in januari krijgen? Wij willen graag de eerste winkel in Utrecht zijn met de nieuwe kleuren. Laat het me weten, dan plaats ik de bestelling nog deze week.\n\nGroet,\nBram Jansen\nDe Fietsfabriek Utrecht",
+   "bulk": false
+  },
+  {
+   "key": "m52",
+   "account": "wmail",
+   "thread": "t32",
+   "day": 10,
+   "hour": 14,
+   "from": [
+    "Kees Mulder",
+    "kees@stadsfiets.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Toewijzing K2 eerste kwartaal",
+   "body": "Dag Mara,\n\nWat is onze toewijzing van de K2 voor het eerste kwartaal? Wij hebben al twaalf klanten op de wachtlijst en willen niet achter de andere zaken in Utrecht aan lopen. Kun je mij een aantal geven?\n\nGroeten,\nKees Mulder\nStadsfiets",
+   "bulk": false
+  },
+  {
+   "key": "m53",
+   "account": "wmail",
+   "thread": "t33",
+   "day": 27,
+   "hour": 18,
+   "from": [
+    "Tom Okafor",
+    "tom@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Idea: dealer open day",
+   "body": "Random thought: we should do a dealer open day at the factory sometime. Show the line, test rides on the yard, food truck after. No rush at all, just putting it out there.",
+   "bulk": false
+  },
+  {
+   "key": "m54",
+   "account": "wmail",
+   "thread": "t34",
+   "day": 13,
+   "hour": 11,
+   "from": [
+    "Amir Saleh",
+    "amir@urbanhaul.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Thanks",
+   "body": "Mara, thanks for the help with the shipping on our order, the bikes arrived in great shape. Would love to see your factory at some point, whenever it suits you guys.\n\nAmir",
+   "bulk": false
+  },
+  {
+   "key": "m55",
+   "account": "wmail",
+   "thread": "t22",
+   "day": 57,
+   "hour": 11,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Henrik Dahl",
+     "henrik@cykelhuset.example"
+    ]
+   ],
+   "subject": "Re: Autumn promo",
+   "body": "Hi Henrik, I'm afraid Oct 1 is final, we promised the other dealers the same cutoff. If the financing comes through I'll make sure the bikes ship within two days.\n\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m56",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 55,
+   "hour": 10,
+   "project": "Dealer portal",
+   "from": [
+    "Owen Price",
+    "owen@bluepine.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Dealer portal kickoff notes",
+   "body": "Hi Mara,\n\nThanks for the kickoff today. Notes attached. Summary: warranty claims, order status and the spare parts shop in phase one, training videos in phase two. We'll have a staging site for you in about a week.\n\nOwen Price\nBluepine Web",
+   "bulk": false
+  },
+  {
+   "key": "m57",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 47,
+   "hour": 15,
+   "project": "Dealer portal",
+   "from": [
+    "Owen Price",
+    "owen@bluepine.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Dealer portal kickoff notes",
+   "body": "Staging is up at the usual link, login is your work email. The warranty form is the part we'd like your eyes on most.",
+   "bulk": false
+  },
+  {
+   "key": "m58",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 46,
+   "hour": 9,
+   "project": "Dealer portal",
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Owen Price",
+     "owen@bluepine.example"
+    ]
+   ],
+   "subject": "Re: Dealer portal kickoff notes",
+   "body": "Hi Owen, looks good. Three things: the warranty form needs a field for the frame number, photos should allow more than one, and the parts shop shows retail prices instead of dealer prices. Otherwise I'm happy.",
+   "bulk": false
+  },
+  {
+   "key": "m59",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 38,
+   "hour": 14,
+   "project": "Dealer portal",
+   "from": [
+    "Owen Price",
+    "owen@bluepine.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Dealer portal kickoff notes",
+   "body": "All three fixed on staging. Shall we go live on Tuesday Dec 1?",
+   "bulk": false
+  },
+  {
+   "key": "m60",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 37,
+   "hour": 8,
+   "project": "Dealer portal",
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Owen Price",
+     "owen@bluepine.example"
+    ]
+   ],
+   "subject": "Re: Dealer portal kickoff notes",
+   "body": "Dec 1 works. I'll tell the dealers the week before.",
+   "bulk": false
+  },
+  {
+   "key": "m61",
+   "account": "wmail",
+   "thread": "t36",
+   "day": 3,
+   "hour": 16,
+   "project": "Dealer portal",
+   "from": [
+    "Owen Price",
+    "owen@bluepine.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Go-live checklist",
+   "body": "Hi Mara, go-live checklist attached. Two things still open from your side: the final logo file in SVG and the list of dealer logins (name, email, shop). Can you send both by Monday?\n\nOwen",
+   "bulk": false
+  },
+  {
+   "key": "m62",
+   "account": "wmail",
+   "thread": "t37",
+   "day": 45,
+   "hour": 12,
+   "from": [
+    "Priya Raman",
+    "priya@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Holiday request",
+   "body": "Hi Mara, could I take Dec 22 to Jan 2 off? Purchasing for Q1 will be done before then. Thanks!",
+   "bulk": false
+  },
+  {
+   "key": "m63",
+   "account": "wmail",
+   "thread": "t37",
+   "day": 45,
+   "hour": 14,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Priya Raman",
+     "priya@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Holiday request",
+   "body": "Approved, enjoy!",
+   "bulk": false
+  },
+  {
+   "key": "m64",
+   "account": "wmail",
+   "thread": "t38",
+   "day": 42,
+   "hour": 18,
+   "from": [
+    "Lena Brooks",
+    "lena.brooks@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Thank you for the interview",
+   "body": "Dear Mara,\n\nThank you for taking the time to meet me yesterday. I really enjoyed seeing the workshop and hearing how the dealer support team works. I'm very interested in the role.\n\nKind regards,\nLena Brooks",
+   "bulk": false
+  },
+  {
+   "key": "m65",
+   "account": "wmail",
+   "thread": "t38",
+   "day": 41,
+   "hour": 10,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Lena Brooks",
+     "lena.brooks@mail.example"
+    ]
+   ],
+   "subject": "Re: Thank you for the interview",
+   "body": "Hi Lena, great to meet you too. We'd like to offer you the support technician role; the written offer follows from Priya today.\n\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m66",
+   "account": "wmail",
+   "thread": "t38",
+   "day": 33,
+   "hour": 20,
+   "from": [
+    "Lena Brooks",
+    "lena.brooks@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Thank you for the interview",
+   "body": "Signed and sent back. See you on January 5!",
+   "bulk": false
+  },
+  {
+   "key": "m67",
+   "account": "wmail",
+   "thread": "t39",
+   "day": 39,
+   "hour": 21,
+   "from": [
+    "Peter Walsh",
+    "peter.walsh@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Error E4 on my K2",
+   "body": "Hello, my K2 shows error E4 on the display since this morning and the motor won't assist. I bought it in June. What should I do? Peter",
+   "bulk": false
+  },
+  {
+   "key": "m68",
+   "account": "wmail",
+   "thread": "t39",
+   "day": 38,
+   "hour": 9,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Peter Walsh",
+     "peter.walsh@mail.example"
+    ]
+   ],
+   "subject": "Re: Error E4 on my K2",
+   "body": "Hi Peter, sorry about that. E4 is fixed by a firmware update; any of our dealers can do it in fifteen minutes, free of charge. The closest to you is Pedalworks. Mara",
+   "bulk": false
+  },
+  {
+   "key": "m69",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 35,
+   "hour": 13,
+   "from": [
+    "Lars Sørlie",
+    "lars@fjordfreight.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Quote: 3 pallets to Oslo",
+   "body": "Hi Mara, as asked: three pallets to Oslo, pickup Tuesday, delivery Friday, 1,140 EUR all in. Quote valid for ten days.\n\nLars Sørlie\nFjord Freight",
+   "bulk": false
+  },
+  {
+   "key": "m70",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 34,
+   "hour": 9,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Lars Sørlie",
+     "lars@fjordfreight.example"
+    ]
+   ],
+   "subject": "Re: Quote: 3 pallets to Oslo",
+   "body": "Accepted, thanks Lars. Dario will have them ready at the dock.",
+   "bulk": false
+  },
+  {
+   "key": "m71",
+   "account": "wmail",
+   "thread": "t41",
+   "day": 32,
+   "hour": 10,
+   "from": [
+    "Gail Porter",
+    "gail@harborline.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Warehouse policy renewal",
+   "body": "Dear Mara,\n\nYour warehouse and stock policy renews on December 31. The new premium is attached; it's 3% up because of the higher stock value you declared. Please sign the renewal by December 15 so cover continues without a gap.\n\nGail Porter\nHarborline Insurance",
+   "bulk": false
+  },
+  {
+   "key": "m72",
+   "account": "wmail",
+   "thread": "t42",
+   "day": 30,
+   "hour": 7,
+   "from": [
+    "Parcel Tracking",
+    "noreply@swiftparcel.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Your shipment is on its way",
+   "body": "Shipment 88231 is on its way and will arrive tomorrow between 9:00 and 13:00. Track it online.",
+   "bulk": true
+  },
+  {
+   "key": "m73",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 43,
+   "hour": 17,
+   "from": [
+    "Tom Okafor",
+    "tom@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "October numbers",
+   "body": "October: 212 bikes sold, up 18% on last year. Best month for the K1 ever, the K2 preorders are at 140. Warranty claims are flat. Nice work everyone.",
+   "bulk": false
+  },
+  {
+   "key": "m74",
+   "account": "wmail",
+   "thread": "t44",
+   "day": 15,
+   "hour": 17,
+   "from": [
+    "Tom Okafor",
+    "tom@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "November so far",
+   "body": "Halfway through November we're at 96 bikes. Slower than October, which is normal. Cityhop wants to sign before the holidays.",
+   "bulk": false
+  },
+  {
+   "key": "m75",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 19,
+   "hour": 11,
+   "from": [
+    "Elin Berg",
+    "elin@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Dealer newsletter draft",
+   "body": "Hi Mara, December dealer newsletter draft attached. Could you check the service tips section? I wasn't sure about the tire pressure numbers.\n\nElin",
+   "bulk": false
+  },
+  {
+   "key": "m76",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 19,
+   "hour": 15,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Elin Berg",
+     "elin@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Dealer newsletter draft",
+   "body": "Two typos marked, and the rear tire should say 2.5 to 3 bar loaded. Otherwise good to go.",
+   "bulk": false
+  },
+  {
+   "key": "m77",
+   "account": "wmail",
+   "thread": "t46",
+   "day": 48,
+   "hour": 10,
+   "from": [
+    "Grace Nwosu",
+    "grace@lastmile.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Service contract invoice",
+   "body": "Hi Mara, the service invoice for our K1 fleet lists 14 bikes but we have 12 since we sold two in the summer. Can you check? Grace",
+   "bulk": false
+  },
+  {
+   "key": "m78",
+   "account": "wmail",
+   "thread": "t46",
+   "day": 47,
+   "hour": 9,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Grace Nwosu",
+     "grace@lastmile.example"
+    ]
+   ],
+   "subject": "Re: Service contract invoice",
+   "body": "You're right, sorry. A corrected invoice for 12 bikes is attached and the old one is canceled.\n\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m79",
+   "account": "wmail",
+   "thread": "t47",
+   "day": 26,
+   "hour": 7,
+   "from": [
+    "LEV Academy",
+    "events@levacademy.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Webinar: winter service for e-cargo fleets",
+   "body": "Join our free webinar on December 9: how to plan winter service for e-cargo fleets. Register now, seats are limited.",
+   "bulk": true
+  },
+  {
+   "key": "m80",
+   "account": "wmail",
+   "thread": "t48",
+   "day": 5,
+   "hour": 8,
+   "from": [
+    "Expenses",
+    "noreply@spendly.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Your expense report was approved",
+   "body": "Your expense report 'Ghent show travel' (412.50 EUR) was approved and will be paid with the next payroll.",
+   "bulk": true
+  },
+  {
+   "key": "m81",
+   "account": "wmail",
+   "thread": "t49",
+   "day": 1,
+   "hour": 16,
+   "from": [
+    "Jonas Weber",
+    "jonas@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ],
+    [
+     "Tom Okafor",
+     "tom@fernhill.example"
+    ]
+   ],
+   "subject": "Firmware 2.4 release notes",
+   "body": "FYI, firmware 2.4 goes out to dealers next week: better range estimate in the cold, a fix for the E4 error, and the walk-assist button now works with gloves. Release notes attached.",
+   "bulk": false
+  },
+  {
+   "key": "m82",
+   "account": "wmail",
+   "thread": "t50",
+   "day": 2,
+   "hour": 13,
+   "from": [
+    "Tom Okafor",
+    "tom@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Cityhop signed!",
+   "body": "Cityhop signed the frame agreement this morning, with your 72-hour change in. First call-off is 30 bikes in February. Drinks on me.",
+   "bulk": false
+  },
+  {
+   "key": "m83",
+   "account": "wmail",
+   "thread": "t51",
+   "day": 0,
+   "hour": 9,
+   "project": "Model K2 launch",
+   "from": [
+    "Elin Berg",
+    "elin@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "30-second video for the launch?",
+   "body": "Hi Mara, could you record a 30-second video for the K2 launch page, about what dealers get from the support team? Phone is fine. Ideally by Wednesday.\n\nElin",
+   "bulk": false
+  },
+  {
+   "key": "m84",
+   "account": "wmail",
+   "thread": "t52",
+   "day": 52,
+   "hour": 7,
+   "from": [
+    "Velo Expo",
+    "info@veloexpo.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Velo Expo: exhibitor news",
+   "body": "Velo Expo opens on November 20. Exhibitor badges are now available in the portal. Unsubscribe from exhibitor news.",
+   "bulk": true
+  },
+  {
+   "key": "m85",
+   "account": "wmail",
+   "thread": "t53",
+   "day": 3,
+   "hour": 7,
+   "from": [
+    "Calendar",
+    "calendar@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Reminder: team meeting Monday 9:00",
+   "body": "Reminder: Team meeting, Monday 9:00 to 10:00, room Spoke.",
+   "bulk": true
+  },
+  {
+   "key": "m86",
+   "account": "wmail",
+   "thread": "t54",
+   "day": 58,
+   "hour": 10,
+   "from": [
+    "Tom Okafor",
+    "tom@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Q4 plan",
+   "body": "Mara, the Q4 plan is attached. Your part is the dealer portal, the Hof pilot support and the K2 launch support. Shout if anything is missing.",
+   "bulk": false
+  },
+  {
+   "key": "m87",
+   "account": "wmail",
+   "thread": "t54",
+   "day": 58,
+   "hour": 12,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Tom Okafor",
+     "tom@fernhill.example"
+    ]
+   ],
+   "subject": "Re: Q4 plan",
+   "body": "Looks complete to me. I'd add the new support hire, we need someone by January.",
+   "bulk": false
+  },
+  {
+   "key": "m88",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 24,
+   "hour": 7,
+   "from": [
+    "Pro Network",
+    "notify@pronetwork.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "You appeared in 12 searches this week",
+   "body": "You appeared in 12 searches this week. See who's looking.",
+   "bulk": true
+  },
+  {
+   "key": "m89",
+   "account": "wmail",
+   "thread": "t56",
+   "day": 14,
+   "hour": 7,
+   "from": [
+    "Payroll",
+    "payroll@fernhill.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Your November payslip is ready",
+   "body": "Your November payslip is ready in the HR portal.",
+   "bulk": true
+  },
+  {
+   "key": "m90",
+   "account": "wmail",
+   "thread": "t57",
+   "day": 27,
+   "hour": 14,
+   "from": [
+    "Maya Chen",
+    "maya.chen@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Where can I buy a K2?",
+   "body": "Hi! Saw your K2 at a friend's place and want one for two kids. Is there a shop near Boulder that sells them?",
+   "bulk": false
+  },
+  {
+   "key": "m91",
+   "account": "wmail",
+   "thread": "t57",
+   "day": 27,
+   "hour": 16,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Maya Chen",
+     "maya.chen@mail.example"
+    ]
+   ],
+   "subject": "Re: Where can I buy a K2?",
+   "body": "Hi Maya, great to hear! Our closest dealer is Mile High Cargo in Denver; they have a K2 to test ride. Mara",
+   "bulk": false
+  },
+  {
+   "key": "m92",
+   "account": "wmail",
+   "thread": "t11",
+   "day": 0,
+   "hour": 11,
+   "project": "Model K2 launch",
+   "from": [
+    "Grace Nwosu",
+    "grace@lastmile.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Re: K2 test ride Dec 3",
+   "body": "Quick question before Thursday: will the bikes have phone mounts, or should our riders bring their own?",
+   "bulk": false
+  },
+  {
+   "key": "m93",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 45,
+   "hour": 11,
+   "from": [
+    "Joaquín Ortega",
+    "joaquin@ortega.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara@fernhill.example"
+    ]
+   ],
+   "subject": "Reclamación de garantía K1",
+   "body": "Hola Mara,\n\nTenemos una batería de un K1 que no carga más del 60%. El cliente la compró en marzo. ¿Podéis enviar una nueva o tenemos que mandar la vieja primero? Te paso el número de serie: BT-55120.\n\nGracias y saludos,\nJoaquín",
+   "bulk": false
+  },
+  {
+   "key": "m94",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 44,
+   "hour": 9,
+   "from": [
+    "Mara Lindqvist",
+    "mara@fernhill.example"
+   ],
+   "to": [
+    [
+     "Joaquín Ortega",
+     "joaquin@ortega.example"
+    ]
+   ],
+   "subject": "Re: Reclamación de garantía K1",
+   "body": "Hola Joaquín,\n\nGracias por el aviso. Enviamos una batería nueva hoy y la vieja la recogemos con el mismo transportista. No hace falta esperar.\n\nSaludos,\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m39",
+   "account": "pmail",
+   "thread": "t21",
+   "day": 7,
+   "hour": 21,
+   "from": [
+    "Joost Vermeer",
+    "joost.vermeer@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "40!",
+   "body": "Hey Mara!\n\nTurning 40, ugh. Party at our place in Amsterdam on Friday Dec 11 from 20:00. Bring Ben, bring whoever. No presents please, just come.\n\nJoost",
+   "bulk": false
+  },
+  {
+   "key": "m95",
+   "account": "pmail",
+   "thread": "t60",
+   "day": 35,
+   "hour": 20,
+   "from": [
+    "Freya Lindqvist",
+    "freya.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Mom's 70th",
+   "body": "Hey sis,\n\nMom turns 70 on Saturday January 16! I'd love all of us together for a dinner that weekend, ideally somewhere outside the city where we can stay over so nobody has to drive back. I honestly have zero time to organize it with the move. Could you? You're better at this anyway.\n\nLove, F",
+   "bulk": false
+  },
+  {
+   "key": "m96",
+   "account": "pmail",
+   "thread": "t60",
+   "day": 34,
+   "hour": 8,
+   "from": [
+    "Mara Lindqvist",
+    "mara.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Freya Lindqvist",
+     "freya.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Re: Mom's 70th",
+   "body": "Yes, I'll take it on, once I know whether Nils can make it. No point booking for six and finding out he's in Toronto.",
+   "bulk": false
+  },
+  {
+   "key": "m97",
+   "account": "pmail",
+   "thread": "t60",
+   "day": 33,
+   "hour": 19,
+   "from": [
+    "Freya Lindqvist",
+    "freya.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Re: Mom's 70th",
+   "body": "He said maybe, depends on work. You'll hear from him before I do, he never answers me. Thank you!!",
+   "bulk": false
+  },
+  {
+   "key": "m98",
+   "account": "pmail",
+   "thread": "t61",
+   "day": 22,
+   "hour": 22,
+   "from": [
+    "Nils Lindqvist",
+    "nils.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Flights booked",
+   "body": "Hey! Booked it. Flying in from Toronto on Thursday Jan 14, back on Tuesday Jan 19. Can I crash in your guest room? Would love to do something special with mom while I'm there, it's been two years.\n\nN",
+   "bulk": false
+  },
+  {
+   "key": "m99",
+   "account": "pmail",
+   "thread": "t61",
+   "day": 21,
+   "hour": 7,
+   "from": [
+    "Mara Lindqvist",
+    "mara.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Nils Lindqvist",
+     "nils.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Re: Flights booked",
+   "body": "Yay! Of course, the guest room is yours. Leo will be thrilled.",
+   "bulk": false
+  },
+  {
+   "key": "m100",
+   "account": "pmail",
+   "thread": "t62",
+   "day": 6,
+   "hour": 10,
+   "from": [
+    "Brightsmile Dental",
+    "appointments@brightsmile.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Appointment reminder: Friday Dec 4",
+   "body": "Dear Mara, this is a reminder of your appointment with Dr. Kaur on Friday December 4 at 9:00 (checkup and cleaning, 45 minutes). Please reply to confirm or to reschedule. Changes less than 48 hours ahead are charged.\n\nBrightsmile Dental",
+   "bulk": false
+  },
+  {
+   "key": "m101",
+   "account": "pmail",
+   "thread": "t63",
+   "day": 2,
+   "hour": 15,
+   "from": [
+    "Daniel Alvarez",
+    "d.alvarez@oakridge-school.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Parent-teacher conference for Leo",
+   "body": "Dear Ms. Lindqvist,\n\nYour parent-teacher conference slot for Leo is Friday December 4, 8:45 to 9:15, in room 12. It's the only morning I have left; afternoons are full. Please let me know by Tuesday if this doesn't work.\n\nBest,\nDaniel Alvarez\nGrade 3, Oakridge School",
+   "bulk": false
+  },
+  {
+   "key": "m102",
+   "account": "pmail",
+   "thread": "t64",
+   "day": 40,
+   "hour": 19,
+   "from": [
+    "Rosa Quint",
+    "rosa.quint@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Book club in December",
+   "body": "Hi all, next book club is Wednesday Dec 9 at mine, 19:30. We're reading The Salt Road. Let me know if you're in so I know how much cake to make.\n\nRosa",
+   "bulk": false
+  },
+  {
+   "key": "m103",
+   "account": "pmail",
+   "thread": "t64",
+   "day": 39,
+   "hour": 8,
+   "from": [
+    "Mara Lindqvist",
+    "mara.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Rosa Quint",
+     "rosa.quint@mail.example"
+    ]
+   ],
+   "subject": "Re: Book club in December",
+   "body": "I'm in! Halfway through the book already.",
+   "bulk": false
+  },
+  {
+   "key": "m104",
+   "account": "pmail",
+   "thread": "t65",
+   "day": 47,
+   "hour": 11,
+   "from": [
+    "Chalet Lumière",
+    "contact@chaletlumiere.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Votre réservation du 10 au 17 juillet",
+   "body": "Bonjour Madame Lindqvist,\n\nMerci pour votre réservation du 10 au 17 juillet pour quatre personnes. Pour confirmer, nous vous demandons un acompte de 30 % avant le 15 décembre. Vous trouverez les coordonnées bancaires dans la pièce jointe.\n\nCordialement,\nCamille Perrin\nChalet Lumière, Annecy",
+   "bulk": false
+  },
+  {
+   "key": "m105",
+   "account": "pmail",
+   "thread": "t65",
+   "day": 46,
+   "hour": 20,
+   "from": [
+    "Mara Lindqvist",
+    "mara.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Camille Perrin",
+     "contact@chaletlumiere.example"
+    ]
+   ],
+   "subject": "Re: Votre réservation du 10 au 17 juillet",
+   "body": "Bonjour Madame Perrin,\n\nMerci beaucoup. Est-ce que nous pouvons aussi avoir un lit pour enfant ? Je paie l'acompte la semaine prochaine.\n\nCordialement,\nMara Lindqvist",
+   "bulk": false
+  },
+  {
+   "key": "m106",
+   "account": "pmail",
+   "thread": "t65",
+   "day": 44,
+   "hour": 9,
+   "from": [
+    "Chalet Lumière",
+    "contact@chaletlumiere.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Re: Votre réservation du 10 au 17 juillet",
+   "body": "Bonjour Madame,\n\nOui, pas de problème, le lit pour enfant est noté. Et merci, nous avons bien reçu l'acompte ce matin.\n\nBonne journée,\nCamille Perrin",
+   "bulk": false
+  },
+  {
+   "key": "m107",
+   "account": "pmail",
+   "thread": "t66",
+   "day": 16,
+   "hour": 18,
+   "from": [
+    "Ray Dorsey",
+    "ray.dorsey@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Your parcel",
+   "body": "Hi Mara, I've got a big parcel for you, the courier left it with us. Come by whenever, we're home all evening.",
+   "bulk": false
+  },
+  {
+   "key": "m108",
+   "account": "pmail",
+   "thread": "t67",
+   "day": 28,
+   "hour": 8,
+   "from": [
+    "Westside Auto",
+    "service@westsideauto.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Your car is due for service",
+   "body": "Your car is due for its yearly service. Book online and get a free winter check.",
+   "bulk": true
+  },
+  {
+   "key": "m109",
+   "account": "pmail",
+   "thread": "t68",
+   "day": 9,
+   "hour": 17,
+   "from": [
+    "Pablo Reyes",
+    "pablo.reyes@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "cc": [
+    [
+     "Ben Ito",
+     "ben.ito@mail.example"
+    ]
+   ],
+   "subject": "U9 game moved to 10:00",
+   "body": "Hi parents, Saturday's game is moved to 10:00 because of the field schedule. Please be there 9:30. Thanks, Coach Pablo",
+   "bulk": false
+  },
+  {
+   "key": "m110",
+   "account": "pmail",
+   "thread": "t69",
+   "day": 31,
+   "hour": 7,
+   "from": [
+    "Corefit Gym",
+    "hello@corefit.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "New classes this winter",
+   "body": "Spin, yoga and a new strength class on Saturdays. See the winter schedule.",
+   "bulk": true
+  },
+  {
+   "key": "m111",
+   "account": "pmail",
+   "thread": "t70",
+   "day": 12,
+   "hour": 7,
+   "from": [
+    "Harbor Savings",
+    "statements@harborsavings.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Your November statement is ready",
+   "body": "Your account statement for November is ready to view online.",
+   "bulk": true
+  },
+  {
+   "key": "m112",
+   "account": "pmail",
+   "thread": "t71",
+   "day": 3,
+   "hour": 19,
+   "from": [
+    "Streamly",
+    "offers@streamly.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Three months for the price of one",
+   "body": "Black Friday deal: three months of Streamly for the price of one. Ends Monday.",
+   "bulk": true
+  },
+  {
+   "key": "m113",
+   "account": "pmail",
+   "thread": "t72",
+   "day": 25,
+   "hour": 7,
+   "from": [
+    "Skyway Air",
+    "deals@skyway.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Winter fares from 49",
+   "body": "Winter fares from 49 to 30 cities. Book by Sunday.",
+   "bulk": true
+  },
+  {
+   "key": "m114",
+   "account": "pmail",
+   "thread": "t73",
+   "day": 18,
+   "hour": 13,
+   "from": [
+    "Ben Ito",
+    "ben.ito@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Tuesday pickup",
+   "body": "Can you pick Leo up on Tuesday? I've got a late client call. Love you",
+   "bulk": false
+  },
+  {
+   "key": "m115",
+   "account": "pmail",
+   "thread": "t73",
+   "day": 18,
+   "hour": 14,
+   "from": [
+    "Mara Lindqvist",
+    "mara.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Ben Ito",
+     "ben.ito@mail.example"
+    ]
+   ],
+   "subject": "Re: Tuesday pickup",
+   "body": "Yes, got it. I'll take him to the library after.",
+   "bulk": false
+  },
+  {
+   "key": "m116",
+   "account": "pmail",
+   "thread": "t74",
+   "day": 10,
+   "hour": 11,
+   "from": [
+    "Astrid Lindqvist",
+    "astrid.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Christmas cookies",
+   "body": "Hello darling, I'm baking on Sunday, do you want the almond ones or the ginger ones this year? And please don't let your sister make a big fuss about my birthday. Hugs to Leo. Mom",
+   "bulk": false
+  },
+  {
+   "key": "m117",
+   "account": "pmail",
+   "thread": "t74",
+   "day": 10,
+   "hour": 19,
+   "from": [
+    "Mara Lindqvist",
+    "mara.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Astrid Lindqvist",
+     "astrid.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Re: Christmas cookies",
+   "body": "Ginger, always! And no promises about the fuss :)",
+   "bulk": false
+  },
+  {
+   "key": "m118",
+   "account": "pmail",
+   "thread": "t75",
+   "day": 50,
+   "hour": 21,
+   "from": [
+    "Freya Lindqvist",
+    "freya.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Summer photos",
+   "body": "Finally sorted the summer photos, link attached. The one of Leo with the crab is the best thing I've ever taken.",
+   "bulk": false
+  },
+  {
+   "key": "m119",
+   "account": "pmail",
+   "thread": "t76",
+   "day": 37,
+   "hour": 7,
+   "from": [
+    "City Library",
+    "notices@citylibrary.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Your items are due soon",
+   "body": "Two items on your card are due on Friday. Renew online.",
+   "bulk": true
+  },
+  {
+   "key": "m120",
+   "account": "pmail",
+   "thread": "t77",
+   "day": 14,
+   "hour": 9,
+   "from": [
+    "Ben Ito",
+    "ben.ito@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Dinner Saturday?",
+   "body": "The Okoyes asked if we want to come for dinner Saturday. I said probably yes, ok?",
+   "bulk": false
+  },
+  {
+   "key": "m121",
+   "account": "pmail",
+   "thread": "t77",
+   "day": 14,
+   "hour": 12,
+   "from": [
+    "Mara Lindqvist",
+    "mara.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Ben Ito",
+     "ben.ito@mail.example"
+    ]
+   ],
+   "subject": "Re: Dinner Saturday?",
+   "body": "Yes, lovely. I'll bring dessert.",
+   "bulk": false
+  },
+  {
+   "key": "m122",
+   "account": "pmail",
+   "thread": "t78",
+   "day": 8,
+   "hour": 20,
+   "from": [
+    "Pablo Reyes",
+    "pablo.reyes@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Snack rota December",
+   "body": "Hi Mara, you're on snacks for the Dec 12 game. Fruit is great, nothing with nuts please. Thanks! Pablo",
+   "bulk": false
+  },
+  {
+   "key": "m123",
+   "account": "pmail",
+   "thread": "t79",
+   "day": 53,
+   "hour": 7,
+   "from": [
+    "Brightline Energy",
+    "billing@brightline.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Your October energy bill",
+   "body": "Your October bill of 96.40 will be collected on the 15th.",
+   "bulk": true
+  },
+  {
+   "key": "m124",
+   "account": "pmail",
+   "thread": "t80",
+   "day": 29,
+   "hour": 19,
+   "from": [
+    "Hanna Vos",
+    "hanna.vos@mail.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Hoi!",
+   "body": "Hoi Mara,\n\nWij zijn in december een weekend in jullie stad. Heb je zin om koffie te drinken? Zaterdag de 5e kan ik wel, ook met de kinderen. Laat maar weten!\n\nLiefs,\nHanna",
+   "bulk": false
+  },
+  {
+   "key": "m125",
+   "account": "pmail",
+   "thread": "t80",
+   "day": 28,
+   "hour": 9,
+   "from": [
+    "Mara Lindqvist",
+    "mara.lindqvist@mail.example"
+   ],
+   "to": [
+    [
+     "Hanna Vos",
+     "hanna.vos@mail.example"
+    ]
+   ],
+   "subject": "Re: Hoi!",
+   "body": "Hoi Hanna,\n\nJa, leuk! Zaterdag de 5e is goed, om 10 uur bij de bakker op de hoek? Dan kunnen de kinderen ook mee naar het park.\n\nLiefs,\nMara",
+   "bulk": false
+  },
+  {
+   "key": "m126",
+   "account": "pmail",
+   "thread": "t81",
+   "day": 1,
+   "hour": 18,
+   "from": [
+    "Oakridge School",
+    "office@oakridge-school.example"
+   ],
+   "to": [
+    [
+     "Mara Lindqvist",
+     "mara.lindqvist@mail.example"
+    ]
+   ],
+   "subject": "Oakridge weekly news",
+   "body": "This week at Oakridge: winter concert tickets, lost and found, and the new lunch menu.",
+   "bulk": true
+  }
+ ],
+ "todos": [
+  {
+   "key": "td1",
+   "title": "Reply to Sanne about the K2 rear brake noise",
+   "evidence": [
+    "m1"
+   ],
+   "day": 40,
+   "state": "done"
+  },
+  {
+   "key": "td2",
+   "title": "Reply to Sanne with an update on the brake noise",
+   "evidence": [
+    "m3"
+   ],
+   "day": 37,
+   "state": "open"
+  },
+  {
+   "key": "td3",
+   "title": "Reply to Carla about the K2 rear brake rattle",
+   "evidence": [
+    "m4"
+   ],
+   "day": 33,
+   "state": "done"
+  },
+  {
+   "key": "td4",
+   "title": "Reply to Mathilde about the K2 brake noise",
+   "evidence": [
+    "m6"
+   ],
+   "day": 26,
+   "state": "done"
+  },
+  {
+   "key": "td5",
+   "title": "Reply to Jonas about the brake noise findings",
+   "evidence": [
+    "m8"
+   ],
+   "day": 31,
+   "state": "done"
+  },
+  {
+   "key": "td6",
+   "title": "Reply to Stefan about a monthly per-bike CSV",
+   "evidence": [
+    "m11"
+   ],
+   "day": 18,
+   "state": "open"
+  },
+  {
+   "key": "td7",
+   "title": "Reply to Ute about the pilot renewal order",
+   "evidence": [
+    "m13"
+   ],
+   "day": 15,
+   "state": "open"
+  },
+  {
+   "key": "td9",
+   "title": "Reply to Tom about being the Hof support contact",
+   "evidence": [
+    "m16"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "td10",
+   "title": "Sign off on demo bikes for the launch shoot",
+   "evidence": [
+    "m18"
+   ],
+   "day": 11,
+   "state": "done"
+  },
+  {
+   "key": "td12",
+   "title": "Confirm the Dec 3 test ride with Grace",
+   "evidence": [
+    "m21"
+   ],
+   "day": 14,
+   "state": "done"
+  },
+  {
+   "key": "td13",
+   "title": "Reply to Grace about phone mounts",
+   "evidence": [
+    "m92"
+   ],
+   "day": 0,
+   "state": "open"
+  },
+  {
+   "key": "td14",
+   "title": "Reply to Henrik about rental programs",
+   "evidence": [
+    "m23"
+   ],
+   "day": 4,
+   "state": "open"
+  },
+  {
+   "key": "td15",
+   "title": "Reply to Carla about her rental numbers",
+   "evidence": [
+    "m24"
+   ],
+   "day": 22,
+   "state": "done"
+  },
+  {
+   "key": "td16",
+   "title": "Send Laura the Q1 brake parts forecast",
+   "evidence": [
+    "m26"
+   ],
+   "day": 28,
+   "state": "open"
+  },
+  {
+   "key": "td17",
+   "title": "Reply to Laura about Q1 delivery dates",
+   "evidence": [
+    "m28"
+   ],
+   "day": 24,
+   "state": "done"
+  },
+  {
+   "key": "td18",
+   "title": "Send Sofia the catalog and price list",
+   "evidence": [
+    "m30"
+   ],
+   "day": 36,
+   "state": "done"
+  },
+  {
+   "key": "td19",
+   "title": "Send Northbank the Q3 figures and inventory list",
+   "evidence": [
+    "m32"
+   ],
+   "day": 34,
+   "state": "open"
+  },
+  {
+   "key": "td20",
+   "title": "Review the Cityhop service section",
+   "evidence": [
+    "m34"
+   ],
+   "day": 29,
+   "state": "done"
+  },
+  {
+   "key": "td21",
+   "title": "Reply to Tom about hosting the dealer dinner",
+   "evidence": [
+    "m37"
+   ],
+   "day": 8,
+   "state": "done"
+  },
+  {
+   "key": "td22",
+   "title": "Reply to Henrik about the autumn promo",
+   "evidence": [
+    "m40"
+   ],
+   "day": 57,
+   "state": "done"
+  },
+  {
+   "key": "td23",
+   "title": "Reply to Amir about the missed promo",
+   "evidence": [
+    "m41"
+   ],
+   "day": 54,
+   "state": "done"
+  },
+  {
+   "key": "td24",
+   "title": "Renegotiate the Corvid and Ardent price increases with Priya",
+   "evidence": [
+    "m43",
+    "m44",
+    "m45"
+   ],
+   "day": 20,
+   "state": "open"
+  },
+  {
+   "key": "td25",
+   "title": "Reply to Joaquín about meeting at Velo Expo",
+   "evidence": [
+    "m49"
+   ],
+   "day": 20,
+   "state": "open"
+  },
+  {
+   "key": "td26",
+   "title": "Reply to Ines about meeting at Velo Expo",
+   "evidence": [
+    "m50"
+   ],
+   "day": 18,
+   "state": "open"
+  },
+  {
+   "key": "td27",
+   "title": "Reply to Bram about January K2 numbers",
+   "evidence": [
+    "m51"
+   ],
+   "day": 12,
+   "state": "open"
+  },
+  {
+   "key": "td28",
+   "title": "Reply to Kees about Q1 K2 allocation",
+   "evidence": [
+    "m52"
+   ],
+   "day": 10,
+   "state": "open"
+  },
+  {
+   "key": "td29",
+   "title": "Reply to Amir about a factory visit",
+   "evidence": [
+    "m54"
+   ],
+   "day": 13,
+   "state": "open"
+  },
+  {
+   "key": "td30",
+   "title": "Review the dealer portal staging site",
+   "evidence": [
+    "m57"
+   ],
+   "day": 47,
+   "state": "done"
+  },
+  {
+   "key": "td31",
+   "title": "Confirm the dealer portal go-live date",
+   "evidence": [
+    "m59"
+   ],
+   "day": 38,
+   "state": "done"
+  },
+  {
+   "key": "td32",
+   "title": "Send Owen the logo file and dealer logins",
+   "evidence": [
+    "m61"
+   ],
+   "day": 3,
+   "state": "open"
+  },
+  {
+   "key": "td33",
+   "title": "Approve Priya's holiday request",
+   "evidence": [
+    "m62"
+   ],
+   "day": 45,
+   "state": "done"
+  },
+  {
+   "key": "td34",
+   "title": "Reply to Lena about the support role",
+   "evidence": [
+    "m64"
+   ],
+   "day": 42,
+   "state": "done"
+  },
+  {
+   "key": "td35",
+   "title": "Reply to Peter about error E4",
+   "evidence": [
+    "m67"
+   ],
+   "day": 39,
+   "state": "done"
+  },
+  {
+   "key": "td36",
+   "title": "Reply to Lars about the Oslo freight quote",
+   "evidence": [
+    "m69"
+   ],
+   "day": 35,
+   "state": "done"
+  },
+  {
+   "key": "td37",
+   "title": "Sign the warehouse policy renewal by Dec 15",
+   "evidence": [
+    "m71"
+   ],
+   "day": 32,
+   "state": "open"
+  },
+  {
+   "key": "td38",
+   "title": "Review the dealer newsletter draft",
+   "evidence": [
+    "m75"
+   ],
+   "day": 19,
+   "state": "done"
+  },
+  {
+   "key": "td39",
+   "title": "Check the Last Mile service invoice",
+   "evidence": [
+    "m77"
+   ],
+   "day": 48,
+   "state": "done"
+  },
+  {
+   "key": "td40",
+   "title": "Record a 30-second video for the K2 launch",
+   "evidence": [
+    "m83"
+   ],
+   "day": 0,
+   "state": "open"
+  },
+  {
+   "key": "td41",
+   "title": "Review the Q4 plan",
+   "evidence": [
+    "m86"
+   ],
+   "day": 58,
+   "state": "done"
+  },
+  {
+   "key": "td42",
+   "title": "Reply to Maya about where to buy a K2",
+   "evidence": [
+    "m90"
+   ],
+   "day": 27,
+   "state": "done"
+  },
+  {
+   "key": "td43",
+   "title": "Reply to Joaquín about the K1 battery claim",
+   "evidence": [
+    "m93"
+   ],
+   "day": 45,
+   "state": "done"
+  },
+  {
+   "key": "td44",
+   "title": "Reply to Joost about his party on Dec 11",
+   "evidence": [
+    "m39"
+   ],
+   "day": 7,
+   "state": "open"
+  },
+  {
+   "key": "td45",
+   "title": "Reply to Freya about mom's 70th",
+   "evidence": [
+    "m95"
+   ],
+   "day": 35,
+   "state": "done"
+  },
+  {
+   "key": "td46",
+   "title": "Reply to Nils about staying over",
+   "evidence": [
+    "m98"
+   ],
+   "day": 22,
+   "state": "done"
+  },
+  {
+   "key": "td47",
+   "title": "Confirm the dentist appointment on Dec 4",
+   "evidence": [
+    "m100"
+   ],
+   "day": 6,
+   "state": "open"
+  },
+  {
+   "key": "td48",
+   "title": "Reply to Mr. Alvarez about Leo's conference slot",
+   "evidence": [
+    "m101"
+   ],
+   "day": 2,
+   "state": "open"
+  },
+  {
+   "key": "td49",
+   "title": "Reply to Rosa about book club",
+   "evidence": [
+    "m102"
+   ],
+   "day": 40,
+   "state": "done"
+  },
+  {
+   "key": "td50",
+   "title": "Pay the Chalet Lumière deposit",
+   "evidence": [
+    "m104"
+   ],
+   "day": 47,
+   "state": "done"
+  },
+  {
+   "key": "td51",
+   "title": "Pick up the parcel at Ray's",
+   "evidence": [
+    "m107"
+   ],
+   "day": 16,
+   "state": "done"
+  },
+  {
+   "key": "td52",
+   "title": "Reply to Ben about the Tuesday pickup",
+   "evidence": [
+    "m114"
+   ],
+   "day": 18,
+   "state": "done"
+  },
+  {
+   "key": "td53",
+   "title": "Reply to mom about Christmas cookies",
+   "evidence": [
+    "m116"
+   ],
+   "day": 10,
+   "state": "done"
+  },
+  {
+   "key": "td54",
+   "title": "Reply to Ben about Saturday dinner",
+   "evidence": [
+    "m120"
+   ],
+   "day": 14,
+   "state": "done"
+  },
+  {
+   "key": "td55",
+   "title": "Bring fruit for the Dec 12 game",
+   "evidence": [
+    "m122"
+   ],
+   "day": 8,
+   "state": "open"
+  },
+  {
+   "key": "td56",
+   "title": "Reply to Hanna about coffee",
+   "evidence": [
+    "m124"
+   ],
+   "day": 29,
+   "state": "done"
+  }
+ ],
+ "promises": [
+  {
+   "direction": "mine",
+   "who": "Sanne de Wit",
+   "what": "get back about the brake noise",
+   "message": "m2",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Carla Mendes",
+   "what": "get back when engineering knows more about the rear brakes",
+   "message": "m5",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Mathilde Roux",
+   "what": "get back soon about the brake noise",
+   "message": "m7",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Jonas Weber",
+   "what": "write the shim swap steps if a shop needs them",
+   "message": "m10",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Stefan Brandt",
+   "what": "check with the team and get back about the monthly CSV",
+   "message": "m12",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Ute Krämer",
+   "what": "get back about the renewal",
+   "message": "m14",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Grace Nwosu",
+   "what": "Dario brings the bikes the day before the test ride",
+   "message": "m22",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Tom Okafor",
+   "what": "host the dealer dinner on Dec 11",
+   "message": "m38",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Owen Price",
+   "what": "tell the dealers about go-live the week before",
+   "message": "m60",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Freya Lindqvist",
+   "what": "organize mom's 70th once Nils's plans are known",
+   "message": "m96",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Hanna Vos",
+   "what": "meet for coffee on Saturday Dec 5",
+   "message": "m125",
+   "status": "open"
+  }
+ ],
+ "key": {
+  "opportunities": [
+   {
+    "id": "o1",
+    "what": "Three dealers in separate threads report the same K2 rear brake squeal and rattle; Jonas traced it to the wrong shim lot and correct kits are coming. Send one service note with the swap steps and kits to Velomarkt, Pedalworks and Rue Cargo, and plan the swap for the other bikes from that lot.",
+    "evidence": [
+     "m1",
+     "m3",
+     "m4",
+     "m6",
+     "m8",
+     "m10"
+    ],
+    "ready_day": 26
+   },
+   {
+    "id": "o2",
+    "what": "Hof wants a monthly per-bike CSV (Stefan) and needs an Oct-Nov usage report by Dec 10 to renew the pilot (Ute); Jonas's new telemetry export gives both. Pull one per-bike report for Ute now and set up the monthly export for Stefan.",
+    "evidence": [
+     "m11",
+     "m13",
+     "m15"
+    ],
+    "ready_day": 15
+   },
+   {
+    "id": "o3",
+    "what": "The six demo K2s are double-booked on Dec 3: Elin's launch shoot needs them at the studio while Dario has them at Last Mile for Grace's test ride. Sort out the clash before either date slips.",
+    "evidence": [
+     "m18",
+     "m20",
+     "m21"
+    ],
+    "ready_day": 9
+   },
+   {
+    "id": "o4",
+    "what": "Henrik at Cykelhuset wants advice on starting a rental program and cover for rental bikes; Carla at Pedalworks runs one with a fleet broker and offered to share. Introduce Henrik to Carla.",
+    "evidence": [
+     "m23",
+     "m24"
+    ],
+    "ready_day": 4
+   },
+   {
+    "id": "o5",
+    "what": "Freya asked Mara to organize mom's 70th dinner with an overnight stay on Jan 16, waiting on Nils; Nils is now in town Jan 14-19. Book the dinner and stay for that weekend and tell Freya.",
+    "evidence": [
+     "m95",
+     "m96",
+     "m98"
+    ],
+    "ready_day": 22
+   },
+   {
+    "id": "o6",
+    "what": "The dentist appointment (Dec 4, 9:00) clashes with Leo's parent-teacher conference (Dec 4, 8:45-9:15), and the teacher has no other morning. Move the dentist appointment before the 48-hour cutoff and confirm with the school.",
+    "evidence": [
+     "m100",
+     "m101"
+    ],
+    "ready_day": 2
+   }
+  ],
+  "traps": [
+   {
+    "id": "x1",
+    "kind": "namesake",
+    "what": "Two different people named Laura Bennett, one at the supplier Corvid and one at a prospect, Brightside Rentals, both ask for a Q1 forecast; different companies and different forecasts.",
+    "evidence": [
+     "m26",
+     "m28"
+    ]
+   },
+   {
+    "id": "x2",
+    "kind": "coincidence",
+    "what": "Sofia at Ruta Bikes and Sofia at Northbank only share a first name; a catalog request and a bank review are unrelated.",
+    "evidence": [
+     "m30",
+     "m32"
+    ]
+   },
+   {
+    "id": "x3",
+    "kind": "coincidence",
+    "what": "The Cityhop frame agreement and the frame stock count only share the word frame; a contract and an inventory fix are unrelated.",
+    "evidence": [
+     "m34",
+     "m36"
+    ]
+   },
+   {
+    "id": "x4",
+    "kind": "cross_area",
+    "what": "The work dealer dinner and Joost's personal birthday party are both in Amsterdam on Dec 11; joining a work thread with a personal one must not happen.",
+    "evidence": [
+     "m37",
+     "m39"
+    ]
+   },
+   {
+    "id": "x5",
+    "kind": "stale",
+    "what": "Two shops asked to extend the autumn promo that closed Oct 1, more than 30 days ago, and both got a no.",
+    "evidence": [
+     "m40",
+     "m41",
+     "m42",
+     "m55"
+    ]
+   },
+   {
+    "id": "x6",
+    "kind": "covered",
+    "what": "Corvid and Ardent both raised prices, but there is already an open to-do to renegotiate both with Priya.",
+    "evidence": [
+     "m43",
+     "m44",
+     "m45"
+    ]
+   },
+   {
+    "id": "x7",
+    "kind": "bulk",
+    "what": "The battery storage rules show up only in two trade newsletters; nothing asks Mara to act.",
+    "evidence": [
+     "m47",
+     "m48"
+    ]
+   },
+   {
+    "id": "x8",
+    "kind": "stale_timing",
+    "what": "Joaquín and Ines both asked to meet at Velo Expo on Nov 21, which is already over, and nothing followed; a joint meeting plan is moot.",
+    "evidence": [
+     "m49",
+     "m50"
+    ]
+   },
+   {
+    "id": "x9",
+    "kind": "cross_company_group",
+    "what": "Two competing Utrecht shops both want early K2 numbers; one group message would expose each one's demand to the other. Answer them apart.",
+    "evidence": [
+     "m51",
+     "m52"
+    ]
+   },
+   {
+    "id": "x10",
+    "kind": "coincidence",
+    "what": "Tom's dealer open day and Amir's factory visit are both wanted sometime, with no date in either; a joint plan would invent dates.",
+    "evidence": [
+     "m53",
+     "m54"
+    ]
+   }
+  ]
+ }
+}

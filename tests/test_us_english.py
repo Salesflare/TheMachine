@@ -31,6 +31,10 @@ ALLOWED = [
     ('test_dismiss_and_snooze.py', "I didn't realise"),  # a reason as the owner types it
     ('test_crm.py', "'Organisation'"),  # a spreadsheet's column header as it may be written
     ('error_words.py', 'operation cancelled canceled'),  # error words as systems spell them, both kept
+    # made-up mail as its senders write it, in held-out eval sets whose hashes are frozen (evals/opportunity-discovery/FROZEN)
+    ('hy-1.json', 'handed to a neighbour at number 14'),
+    ('hy-2.json', 'is my favourite. Dad'),
+    ('hy-3.json', 'Fiona Grey'),  # a made-up surname
 ]
 
 

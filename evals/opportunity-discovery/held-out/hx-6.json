@@ -1,0 +1,3668 @@
+{
+ "id": "hx-6",
+ "about": "Owner of Kestrel Lane IT, a two-person managed IT consultancy for small offices such as a dental practice, law firms, an accounting firm, a physio clinic and a nonprofit; also uses a personal mailbox for family and friends.",
+ "owner": {
+  "name": "Maren Ostrowski",
+  "email": "maren@kestrellane.example"
+ },
+ "accounts": [
+  {
+   "id": "wmail",
+   "boundary": "work:Kestrel Lane IT",
+   "email": "maren@kestrellane.example"
+  },
+  {
+   "id": "pmail",
+   "boundary": "personal:home",
+   "email": "maren.ostrowski@mail.example"
+  }
+ ],
+ "messages": [
+  {
+   "key": "m1",
+   "account": "wmail",
+   "thread": "t1",
+   "day": 4,
+   "hour": 10,
+   "from": [
+    "Owen Talbot",
+    "owen.talbot@clearbyte.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Clearbyte Business pricing from December 1",
+   "body": "Hi Maren,\n\nA heads-up for our partners before the public notice goes out: Clearbyte Business goes from $12.50 to $14.75 per user per month for every renewal dated December 1 or later. Customers who renew early through a partner by November 30 keep $12.50 for the next 36 months, including seats they add later. Early renewal is in the partner portal under Renewals.\n\nPing me if a customer needs a custom term.\n\nOwen Talbot\nClearbyte partner team",
+   "bulk": false
+  },
+  {
+   "key": "m2",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 33,
+   "hour": 9,
+   "from": [
+    "Greta Lindqvist",
+    "greta@halvorsendental.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Clearbyte renewal invoice",
+   "body": "Hi Maren,\n\nWe got the Clearbyte renewal notice today: 9 users, renews December 12. Can you check we're on the right plan before it goes through? I don't want to pay for things we don't use.\n\nThanks,\nGreta",
+   "bulk": false,
+   "project": "Halvorsen admin"
+  },
+  {
+   "key": "m3",
+   "account": "wmail",
+   "thread": "t2",
+   "day": 32,
+   "hour": 11,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Greta Lindqvist",
+     "greta@halvorsendental.example"
+    ]
+   ],
+   "subject": "Re: Clearbyte renewal invoice",
+   "body": "Hi Greta,\n\nYes, Business is the right plan for you and all 9 seats are in use. Nothing to change for now.\n\nBest,\nMaren",
+   "bulk": false,
+   "project": "Halvorsen admin"
+  },
+  {
+   "key": "m4",
+   "account": "wmail",
+   "thread": "t3",
+   "day": 19,
+   "hour": 14,
+   "from": [
+    "Hollis Fennick",
+    "hollis@fennickrowe.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Seats for the new staff",
+   "body": "Hi Maren,\n\nWe're hiring three junior accountants who start in January. Can we add three Clearbyte seats when our plan renews on December 3? I'd rather do it all at once than have three separate charges.\n\nHollis",
+   "bulk": false
+  },
+  {
+   "key": "m5",
+   "account": "wmail",
+   "thread": "t4",
+   "day": 12,
+   "hour": 16,
+   "from": [
+    "Calvin Mercer",
+    "calvin@birchwoodlaw.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "2027 IT budget",
+   "body": "Hi Maren,\n\nI'm putting together next year's budget for the partners. What will Clearbyte cost us for our 14 users after it renews on December 20? And roughly what should I set aside for laptop replacements?\n\nThanks,\nCalvin",
+   "bulk": false
+  },
+  {
+   "key": "m6",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 27,
+   "hour": 9,
+   "from": [
+    "Calvin Mercer",
+    "calvin@birchwoodlaw.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Internet keeps cutting out",
+   "body": "Hi Maren,\n\nThe box in the server closet with the blue logo restarted itself three times this week. Every light goes dark for a few seconds and then we're offline for about five minutes. Yesterday it happened in the middle of a video hearing. Can someone look?\n\nCalvin",
+   "bulk": false
+  },
+  {
+   "key": "m7",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 27,
+   "hour": 11,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Calvin Mercer",
+     "calvin@birchwoodlaw.example"
+    ]
+   ],
+   "subject": "Re: Internet keeps cutting out",
+   "body": "Hi Calvin,\n\nSorry about the hearing. Tobias will remote in tomorrow morning and check the logs.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m8",
+   "account": "wmail",
+   "thread": "t5",
+   "day": 25,
+   "hour": 15,
+   "from": [
+    "Calvin Mercer",
+    "calvin@birchwoodlaw.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Internet keeps cutting out",
+   "body": "Tobias says the logs show a power loss each time, but the outlet tested fine. It's still happening, twice yesterday afternoon. What's next?\n\nCalvin",
+   "bulk": false
+  },
+  {
+   "key": "m9",
+   "account": "wmail",
+   "thread": "t6",
+   "day": 21,
+   "hour": 11,
+   "from": [
+    "Abena Mensah",
+    "abena@marlowtrust.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Internet dropping at the hall office",
+   "body": "Hi Maren,\n\nSince early October our internet drops for a minute or two several times a day. The little black Northpeak box makes a clicking sound right when it happens. Our volunteers are getting frustrated with the booking system.\n\nAbena",
+   "bulk": false
+  },
+  {
+   "key": "m10",
+   "account": "wmail",
+   "thread": "t7",
+   "day": 20,
+   "hour": 17,
+   "from": [
+    "Tobias Brandt",
+    "tobias@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Firewall serials for the asset sheet",
+   "body": "Maren,\n\nUpdated the asset sheet with firewall serials:\n- Birchwood: NP-40, NP40-22-1187 (bought 2022)\n- Marlow Trust: NP-40, NP40-22-0954 (bought 2022)\n- Pinecrest: NP-60, NP60-23-0311\n- Halvorsen: NP-60, NP60-24-0102\nFennick is still on the old Zyra box.\n\nTobias",
+   "bulk": false
+  },
+  {
+   "key": "m11",
+   "account": "wmail",
+   "thread": "t8",
+   "day": 17,
+   "hour": 10,
+   "from": [
+    "Sunita Rao",
+    "sunita.rao@northpeak.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "NP-40 power supply replacement program",
+   "body": "Hi Maren,\n\nWe've confirmed a faulty power supply in NP-40 units with serial numbers NP40-22-0800 through NP40-22-1400. The symptom is random reboots, sometimes with a clicking sound from the unit. Request a free replacement kit per serial number in the partner portal by December 11. Kits ship within three days and the swap takes about ten minutes with no config change.\n\nSunita Rao\nNorthpeak partner support",
+   "bulk": false
+  },
+  {
+   "key": "m12",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 41,
+   "hour": 10,
+   "from": [
+    "Greta Lindqvist",
+    "greta@halvorsendental.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Our move to Quarry Road",
+   "body": "Hi Maren,\n\nIt's official: we move to 18 Quarry Road on Saturday October 24. We need the network, the phones and the x-ray PCs working when we open on Monday the 26th. Can you plan this with us?\n\nGreta",
+   "bulk": false,
+   "project": "Halvorsen move"
+  },
+  {
+   "key": "m13",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 40,
+   "hour": 9,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Greta Lindqvist",
+     "greta@halvorsendental.example"
+    ]
+   ],
+   "subject": "Re: Our move to Quarry Road",
+   "body": "Hi Greta,\n\nGreat news! I'll put together a move plan and check internet options for Quarry Road, then send you both.\n\nMaren",
+   "bulk": false,
+   "project": "Halvorsen move"
+  },
+  {
+   "key": "m14",
+   "account": "wmail",
+   "thread": "t9",
+   "day": 10,
+   "hour": 15,
+   "from": [
+    "Greta Lindqvist",
+    "greta@halvorsendental.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Our move to Quarry Road",
+   "body": "Hi Maren,\n\nChange of plans: the builder is behind, so the move is now Saturday November 21 and we open at Quarry Road on Monday November 23. Sorry for the back and forth. Everything else stays the same.\n\nGreta",
+   "bulk": false,
+   "project": "Halvorsen move"
+  },
+  {
+   "key": "m15",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 38,
+   "hour": 14,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Dmitri Volkov",
+     "dmitri@arclinefiber.example"
+    ]
+   ],
+   "subject": "Business fiber at 18 Quarry Road",
+   "body": "Hi Dmitri,\n\nA client is moving into 18 Quarry Road. Can you tell me what business fiber is available there and how long an install takes?\n\nThanks,\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m16",
+   "account": "wmail",
+   "thread": "t10",
+   "day": 18,
+   "hour": 10,
+   "from": [
+    "Dmitri Volkov",
+    "dmitri@arclinefiber.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Business fiber at 18 Quarry Road",
+   "body": "Hi Maren,\n\nSorry for the slow answer. 18 Quarry Road is on our network: 500/500 business fiber is $189 a month. Install is 8 business days from a signed order, and the order needs the install address and an on-site contact. I can send the order form whenever you're ready.\n\nDmitri Volkov\nArcline Fiber, business sales",
+   "bulk": false
+  },
+  {
+   "key": "m17",
+   "account": "wmail",
+   "thread": "t11",
+   "day": 31,
+   "hour": 16,
+   "from": [
+    "Tobias Brandt",
+    "tobias@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Fennick backup box",
+   "body": "Maren,\n\nFennick's backup NAS flagged disk 3 with reallocated sectors again, and the volume is at 91% of its 8 TB. It's a 2019 unit and out of warranty. I'd plan a replacement before it fails on us.\n\nTobias",
+   "bulk": false
+  },
+  {
+   "key": "m18",
+   "account": "wmail",
+   "thread": "t11",
+   "day": 31,
+   "hour": 18,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Tobias Brandt",
+     "tobias@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Fennick backup box",
+   "body": "Thanks Tobias. Let's price a replacement; I'll talk to Hollis about it.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m19",
+   "account": "wmail",
+   "thread": "t12",
+   "day": 24,
+   "hour": 11,
+   "from": [
+    "Hollis Fennick",
+    "hollis@fennickrowe.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Scanning our paper archive",
+   "body": "Hi Maren,\n\nOur auditors want seven years of client files retrievable, so we're finally scanning the paper archive this winter. The scanning firm estimates about 3 TB of files. Where should all that live? Do we need more storage?\n\nHollis",
+   "bulk": false
+  },
+  {
+   "key": "m20",
+   "account": "pmail",
+   "thread": "t13",
+   "day": 31,
+   "hour": 18,
+   "from": [
+    "Karim Haddad",
+    "k.haddad@lindenschool.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Eighth grade trip to Strasbourg",
+   "body": "Dear Maren and Theo,\n\nThe eighth grade trip to Strasbourg runs January 18-22. Every student needs a passport valid until at least April 2027. Please send a copy of Ida's passport photo page by December 1 so we can book the group tickets.\n\nKind regards,\nKarim Haddad\nEighth grade coordinator, Linden School",
+   "bulk": false
+  },
+  {
+   "key": "m21",
+   "account": "pmail",
+   "thread": "t14",
+   "day": 25,
+   "hour": 9,
+   "from": [
+    "City Hall Passport Desk",
+    "passports@cityhall.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Passport renewal appointment confirmed",
+   "body": "Your appointment to renew the passport of Ida Ostrowski (current passport expires February 2027) is on Wednesday December 9 at 10:30. Standard processing takes three weeks after the appointment. Express processing (five business days) costs $60 extra and can be chosen at the desk. To change your appointment, reply to this email.\n\nCity Hall Passport Desk",
+   "bulk": false
+  },
+  {
+   "key": "m22",
+   "account": "pmail",
+   "thread": "t15",
+   "day": 6,
+   "hour": 12,
+   "from": [
+    "Lou Ferris",
+    "lou@ferrisauto.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Winter tire check",
+   "body": "Hi Maren,\n\nAt the inspection we measured your winter tires at 2.5 mm, too worn for another season. A new set of 205/55 R16 is $620 plus $80 for fitting. I've booked you for Saturday November 14 at 9:00 for the new set and the swap. Let me know if that works.\n\nLou\nFerris Auto",
+   "bulk": false
+  },
+  {
+   "key": "m23",
+   "account": "pmail",
+   "thread": "t16",
+   "day": 1,
+   "hour": 19,
+   "from": [
+    "Gareth Pryce",
+    "gareth.pryce@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Free winter tires",
+   "body": "Hi Maren,\n\nWe finally sold the old Golf, but the buyer didn't want the winter set. Four tires on rims, 205/55 R16, two seasons old, about 6 mm left. Free if you have a use for them, otherwise they go to the recycling yard next Saturday.\n\nGareth",
+   "bulk": false
+  },
+  {
+   "key": "m24",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 14,
+   "hour": 10,
+   "from": [
+    "Nora Whitfield",
+    "nora.whitfield@fennickrowe.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Second-floor printer",
+   "body": "Hi Maren,\n\nThe second-floor printer jams every Friday when we run the payroll reports, always on the big batch. Could someone check it before this Friday?\n\nThanks,\nNora",
+   "bulk": false
+  },
+  {
+   "key": "m25",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 14,
+   "hour": 12,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Nora Whitfield",
+     "nora.whitfield@fennickrowe.example"
+    ]
+   ],
+   "subject": "Re: Second-floor printer",
+   "body": "Hi Nora,\n\nTobias can come by Thursday afternoon to look at it.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m26",
+   "account": "wmail",
+   "thread": "t17",
+   "day": 10,
+   "hour": 15,
+   "from": [
+    "Nora Whitfield",
+    "nora.whitfield@fennickrowe.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Second-floor printer",
+   "body": "The printer behaved perfectly today, payroll went through in one go. Thanks to you and Tobias!\n\nNora",
+   "bulk": false
+  },
+  {
+   "key": "m27",
+   "account": "wmail",
+   "thread": "t18",
+   "day": 13,
+   "hour": 9,
+   "from": [
+    "Nora Castellanos",
+    "nora@brightpathcatering.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Your Friday team lunch",
+   "body": "Hi Maren,\n\nConfirming lunch for six at your office on Friday at 12:30: two vegetarian and one gluten-free. The invoice follows after delivery.\n\nNora Castellanos\nBrightpath Catering",
+   "bulk": false
+  },
+  {
+   "key": "m28",
+   "account": "wmail",
+   "thread": "t18",
+   "day": 13,
+   "hour": 11,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Nora Castellanos",
+     "nora@brightpathcatering.example"
+    ]
+   ],
+   "subject": "Re: Your Friday team lunch",
+   "body": "Perfect, thanks Nora! See you Friday.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m29",
+   "account": "wmail",
+   "thread": "t19",
+   "day": 35,
+   "hour": 10,
+   "from": [
+    "Calvin Mercer",
+    "calvin@birchwoodlaw.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Retiring Atlas",
+   "body": "Hi Maren,\n\nThe partners agreed to retire Atlas, the old file server in the back room, once everything is in the cloud. When could that happen?\n\nCalvin",
+   "bulk": false
+  },
+  {
+   "key": "m30",
+   "account": "wmail",
+   "thread": "t19",
+   "day": 34,
+   "hour": 9,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Calvin Mercer",
+     "calvin@birchwoodlaw.example"
+    ]
+   ],
+   "subject": "Re: Retiring Atlas",
+   "body": "Hi Calvin,\n\nOnce the last two shares are moved, early December looks realistic. I'll send you a plan with the steps.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m31",
+   "account": "wmail",
+   "thread": "t20",
+   "day": 11,
+   "hour": 14,
+   "from": [
+    "Ruben Okoye",
+    "ruben@atlasprint.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Proof for your business cards",
+   "body": "Hi Maren,\n\nAttached is the proof for the Kestrel Lane cards, 500 each for you and Tobias. Reply OK and they print tomorrow.\n\nRuben\nAtlas Print Co.",
+   "bulk": false
+  },
+  {
+   "key": "m32",
+   "account": "wmail",
+   "thread": "t21",
+   "day": 32,
+   "hour": 13,
+   "from": [
+    "Abena Mensah",
+    "abena@marlowtrust.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Projector for the hall",
+   "body": "Hi Maren,\n\nThe board approved $300 for a used projector for the community hall talks. Do you know where we could find a decent one? HDMI is a must.\n\nAbena",
+   "bulk": false
+  },
+  {
+   "key": "m33",
+   "account": "pmail",
+   "thread": "t22",
+   "day": 26,
+   "hour": 20,
+   "from": [
+    "Lena Hart",
+    "lena.hart@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Anyone want a projector?",
+   "body": "Hey Maren!\n\nClearing out the basement before the move. My old projector (HDMI, works fine, remote included) needs a new home, $100 or best offer. Know anyone?\n\nLena",
+   "bulk": false
+  },
+  {
+   "key": "m34",
+   "account": "wmail",
+   "thread": "t23",
+   "day": 46,
+   "hour": 15,
+   "from": [
+    "Greta Lindqvist",
+    "greta@halvorsendental.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Server swap on October 3",
+   "body": "Hi Maren,\n\nFor the server swap on Saturday October 3, I'll be at the practice from 8 to open up. Will Tobias come too?\n\nGreta",
+   "bulk": false,
+   "project": "Halvorsen server"
+  },
+  {
+   "key": "m35",
+   "account": "wmail",
+   "thread": "t23",
+   "day": 45,
+   "hour": 10,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Greta Lindqvist",
+     "greta@halvorsendental.example"
+    ]
+   ],
+   "subject": "Re: Server swap on October 3",
+   "body": "Hi Greta,\n\nYes, Tobias and I both come at 8.\n\nMaren",
+   "bulk": false,
+   "project": "Halvorsen server"
+  },
+  {
+   "key": "m36",
+   "account": "wmail",
+   "thread": "t24",
+   "day": 37,
+   "hour": 18,
+   "from": [
+    "Tobias Brandt",
+    "tobias@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Halvorsen swap done",
+   "body": "Halvorsen server swap finished today. All workstations were back by 1 pm and Greta signed off.\n\nTobias",
+   "bulk": false
+  },
+  {
+   "key": "m37",
+   "account": "wmail",
+   "thread": "t25",
+   "day": 34,
+   "hour": 9,
+   "from": [
+    "Hollis Fennick",
+    "hollis@fennickrowe.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Emails to Harbor Credit Union bouncing",
+   "body": "Maren, every email we send to our contact at Harbor Credit Union bounces back since Monday. Other mail goes out fine.\n\nHollis",
+   "bulk": false
+  },
+  {
+   "key": "m38",
+   "account": "wmail",
+   "thread": "t25",
+   "day": 34,
+   "hour": 11,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Hollis Fennick",
+     "hollis@fennickrowe.example"
+    ]
+   ],
+   "subject": "Re: Emails to Harbor Credit Union bouncing",
+   "body": "Looking into it now, Hollis. I'll check with the bank's IT.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m39",
+   "account": "wmail",
+   "thread": "t25",
+   "day": 28,
+   "hour": 10,
+   "from": [
+    "Hollis Fennick",
+    "hollis@fennickrowe.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Emails to Harbor Credit Union bouncing",
+   "body": "All good now, the bank got our mail this morning. Thanks!\n\nHollis",
+   "bulk": false
+  },
+  {
+   "key": "m40",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 33,
+   "hour": 14,
+   "from": [
+    "Rafael Ibarra",
+    "rafael@pinecrestphysio.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Bounced emails",
+   "body": "Hi Maren,\n\nOur emails to Harbor Credit Union keep coming back with 'rejected by policy'. Is it us?\n\nRafael",
+   "bulk": false
+  },
+  {
+   "key": "m41",
+   "account": "wmail",
+   "thread": "t26",
+   "day": 28,
+   "hour": 16,
+   "from": [
+    "Rafael Ibarra",
+    "rafael@pinecrestphysio.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Bounced emails",
+   "body": "Working again, thanks Maren!\n\nRafael",
+   "bulk": false
+  },
+  {
+   "key": "m42",
+   "account": "wmail",
+   "thread": "t27",
+   "day": 33,
+   "hour": 16,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Imani Brooks",
+     "imani.brooks@harborcu.example"
+    ]
+   ],
+   "subject": "Mail from two of my clients rejected",
+   "body": "Hi Imani,\n\nSince Monday, mail from two of my clients to your domain is rejected with 'rejected by policy'. Could your IT team take a look?\n\nThanks,\nMaren Ostrowski\nKestrel Lane IT",
+   "bulk": false
+  },
+  {
+   "key": "m43",
+   "account": "wmail",
+   "thread": "t27",
+   "day": 31,
+   "hour": 10,
+   "from": [
+    "Imani Brooks",
+    "imani.brooks@harborcu.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Mail from two of my clients rejected",
+   "body": "Hi Maren,\n\nOur new mail filter was rejecting a few outside senders. It's fixed as of this morning. Sorry for the trouble.\n\nImani Brooks\nHarbor Credit Union IT",
+   "bulk": false
+  },
+  {
+   "key": "m44",
+   "account": "wmail",
+   "thread": "t28",
+   "day": 17,
+   "hour": 15,
+   "from": [
+    "Rafael Ibarra",
+    "rafael@pinecrestphysio.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Next year",
+   "body": "Hi Maren,\n\nThanks for a smooth year. We should do a proper security review sometime next year, no rush.\n\nRafael",
+   "bulk": false
+  },
+  {
+   "key": "m45",
+   "account": "wmail",
+   "thread": "t29",
+   "day": 14,
+   "hour": 11,
+   "from": [
+    "Joris Vermeulen",
+    "joris@vermeulenvertalingen.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Beveiliging",
+   "body": "Hoi Maren,\n\nIk denk dat we ergens volgend jaar ook eens een beveiligingscheck moeten doen. Geen haast, maar het staat op mijn lijstje. Laat je het weten als je tijd hebt?\n\nGroetjes,\nJoris",
+   "bulk": false
+  },
+  {
+   "key": "m46",
+   "account": "wmail",
+   "thread": "t30",
+   "day": 7,
+   "hour": 10,
+   "from": [
+    "Delphine Arkwright",
+    "delphine@quaysidelegal.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "September invoice copy",
+   "body": "Hi Maren,\n\nOur bookkeeper can't find your September invoice. Could you send a copy as a PDF?\n\nThanks,\nDelphine",
+   "bulk": false
+  },
+  {
+   "key": "m47",
+   "account": "wmail",
+   "thread": "t31",
+   "day": 6,
+   "hour": 9,
+   "from": [
+    "Lucie Moreau",
+    "lucie@ateliermoreau.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Copie de la facture de septembre",
+   "body": "Bonjour Maren,\n\nJe ne trouve plus la facture de septembre pour le site et la messagerie. Est-ce que vous pouvez me la renvoyer en PDF ? Merci beaucoup et bonne journée.\n\nLucie",
+   "bulk": false
+  },
+  {
+   "key": "m48",
+   "account": "wmail",
+   "thread": "t32",
+   "day": 11,
+   "hour": 9,
+   "from": [
+    "Rafael Ibarra",
+    "rafael@pinecrestphysio.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Front desk Wi-Fi password",
+   "body": "Hi Maren,\n\nThe front desk tablet forgot the Wi-Fi password and nobody here knows it. Can you send it or reset it?\n\nRafael",
+   "bulk": false
+  },
+  {
+   "key": "m49",
+   "account": "wmail",
+   "thread": "t33",
+   "day": 11,
+   "hour": 21,
+   "from": [
+    "Rafael Ibarra",
+    "rafa.ibarra@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Wi-Fi at the clinic",
+   "body": "Maren, writing from my personal email since I'm home: the front desk tablet still can't get on the clinic Wi-Fi. Could you reset the password first thing tomorrow?\n\nRafael",
+   "bulk": false
+  },
+  {
+   "key": "m50",
+   "account": "wmail",
+   "thread": "t34",
+   "day": 20,
+   "hour": 7,
+   "from": [
+    "Byte Ledger Weekly",
+    "news@byteledger.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "This week: SSD prices up 15%, and the return of thin clients",
+   "body": "SSD prices rose 15% this quarter as flash makers cut output. Plus: why thin clients are back, five small-office networks we liked, and the trade show calendar for spring. Unsubscribe anytime.",
+   "bulk": true
+  },
+  {
+   "key": "m51",
+   "account": "wmail",
+   "thread": "t35",
+   "day": 12,
+   "hour": 7,
+   "from": [
+    "Calloway Supply",
+    "news@callowaysupply.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Price update from November 1",
+   "body": "Dear customer, due to continued shortages, prices for SSDs and RAM rise by 8 to 12% for orders placed from November 1. Laptops, docks and cables are unchanged. Thank you for your business.",
+   "bulk": true
+  },
+  {
+   "key": "m52",
+   "account": "wmail",
+   "thread": "t36",
+   "day": 28,
+   "hour": 10,
+   "from": [
+    "Hollis Fennick",
+    "hollis@fennickrowe.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Vaultline training",
+   "body": "Hi Maren,\n\nNow that everyone has Vaultline, could you give our staff a hands-on session on the password manager? The first week of November works best for us, before year-end gets busy.\n\nHollis",
+   "bulk": false
+  },
+  {
+   "key": "m53",
+   "account": "wmail",
+   "thread": "t37",
+   "day": 26,
+   "hour": 14,
+   "from": [
+    "Abena Mensah",
+    "abena@marlowtrust.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Password manager training for volunteers",
+   "body": "Hi Maren,\n\nCould you run a Vaultline training for our six office volunteers? Any morning in the first week of November would be ideal.\n\nAbena",
+   "bulk": false
+  },
+  {
+   "key": "m54",
+   "account": "wmail",
+   "thread": "t38",
+   "day": 38,
+   "hour": 11,
+   "from": [
+    "Delphine Arkwright",
+    "delphine@quaysidelegal.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Clearbyte Admin Basics",
+   "body": "Hi Maren,\n\nYou mentioned Clearbyte runs a free Admin Basics course. Could you get me a seat for the session on October 29? I'd like to manage our own users.\n\nDelphine",
+   "bulk": false
+  },
+  {
+   "key": "m55",
+   "account": "wmail",
+   "thread": "t39",
+   "day": 35,
+   "hour": 16,
+   "from": [
+    "Rafael Ibarra",
+    "rafael@pinecrestphysio.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Clearbyte course",
+   "body": "Hi Maren,\n\nI heard partners can register clients for Clearbyte Admin Basics on October 29. Could you sign up me and our receptionist?\n\nRafael",
+   "bulk": false
+  },
+  {
+   "key": "m56",
+   "account": "wmail",
+   "thread": "t40",
+   "day": 7,
+   "hour": 15,
+   "from": [
+    "Calvin Mercer",
+    "calvin@birchwoodlaw.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "E-signatures",
+   "body": "Hi Maren,\n\nClients keep asking to sign engagement letters online. Is Inkpoint any good? Could you show us how it works?\n\nCalvin",
+   "bulk": false
+  },
+  {
+   "key": "m57",
+   "account": "wmail",
+   "thread": "t41",
+   "day": 5,
+   "hour": 10,
+   "from": [
+    "Delphine Arkwright",
+    "delphine@quaysidelegal.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Inkpoint for engagement letters?",
+   "body": "Hi Maren,\n\nWe'd like to start using Inkpoint for engagement letters. Could you set up a demo for me and Marcus sometime soon?\n\nDelphine",
+   "bulk": false
+  },
+  {
+   "key": "m58",
+   "account": "wmail",
+   "thread": "t42",
+   "day": 3,
+   "hour": 10,
+   "from": [
+    "Rafael Ibarra",
+    "rafael@pinecrestphysio.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "New physio starting November 16",
+   "body": "Hi Maren,\n\nWe hired a new physio, Dana Kowal, who starts Monday November 16. She needs a laptop, a Clearbyte account and access to the booking system.\n\nRafael",
+   "bulk": false
+  },
+  {
+   "key": "m59",
+   "account": "wmail",
+   "thread": "t42",
+   "day": 3,
+   "hour": 13,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Rafael Ibarra",
+     "rafael@pinecrestphysio.example"
+    ]
+   ],
+   "subject": "Re: New physio starting November 16",
+   "body": "Hi Rafael,\n\nNo problem. Her laptop and accounts will be ready by Monday the 16th.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m60",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 44,
+   "hour": 10,
+   "from": [
+    "Joris Vermeulen",
+    "joris@vermeulenvertalingen.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Scanner doet het niet meer",
+   "body": "Hoi Maren,\n\nDe scanner op de eerste verdieping doet het niet meer sinds de update van gisteren. Ik krijg een foutmelding en de scans komen niet in de map. Kan je er even naar kijken?\n\nGroetjes,\nJoris",
+   "bulk": false
+  },
+  {
+   "key": "m61",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 44,
+   "hour": 14,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Joris Vermeulen",
+     "joris@vermeulenvertalingen.example"
+    ]
+   ],
+   "subject": "Re: Scanner doet het niet meer",
+   "body": "Hoi Joris,\n\nIk heb het net op afstand bekeken. De update had het wachtwoord van de scanmap gewist, ik heb het opnieuw ingesteld. Probeer je het nog eens?\n\nGroeten,\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m62",
+   "account": "wmail",
+   "thread": "t43",
+   "day": 43,
+   "hour": 9,
+   "from": [
+    "Joris Vermeulen",
+    "joris@vermeulenvertalingen.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Scanner doet het niet meer",
+   "body": "Het werkt weer, dank je wel! Groetjes, Joris",
+   "bulk": false
+  },
+  {
+   "key": "m63",
+   "account": "wmail",
+   "thread": "t44",
+   "day": 19,
+   "hour": 11,
+   "from": [
+    "Joris Vermeulen",
+    "joris@vermeulenvertalingen.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Vraag over de factuur",
+   "body": "Hoi Maren,\n\nOp de factuur van oktober staan twee keer de kosten voor de back-up. Is dat een vergissing of is het voor de nieuwe laptop? Ik hoor het graag.\n\nJoris",
+   "bulk": false
+  },
+  {
+   "key": "m64",
+   "account": "wmail",
+   "thread": "t44",
+   "day": 18,
+   "hour": 10,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Joris Vermeulen",
+     "joris@vermeulenvertalingen.example"
+    ]
+   ],
+   "subject": "Re: Vraag over de factuur",
+   "body": "Hoi Joris,\n\nJe hebt gelijk, dat is een fout van ons. Ik stuur je vandaag een creditnota voor de dubbele regel.\n\nGroeten,\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m65",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 27,
+   "hour": 10,
+   "from": [
+    "Lucie Moreau",
+    "lucie@ateliermoreau.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Renouvellement du nom de domaine",
+   "body": "Bonjour Maren,\n\nJ'ai reçu un message qui dit que le nom de domaine de l'atelier expire le 30 novembre. Est-ce que c'est vous qui le renouvelez ou je dois le faire moi-même ? Je ne veux pas perdre le site.\n\nMerci,\nLucie",
+   "bulk": false
+  },
+  {
+   "key": "m66",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 26,
+   "hour": 9,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Lucie Moreau",
+     "lucie@ateliermoreau.example"
+    ]
+   ],
+   "subject": "Re: Renouvellement du nom de domaine",
+   "body": "Bonjour Lucie,\n\nPas de souci, c'est nous qui le renouvelons et c'est déjà fait pour deux ans. Vous pouvez ignorer le message.\n\nBonne journée,\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m67",
+   "account": "wmail",
+   "thread": "t45",
+   "day": 26,
+   "hour": 12,
+   "from": [
+    "Lucie Moreau",
+    "lucie@ateliermoreau.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Renouvellement du nom de domaine",
+   "body": "Parfait, merci pour la réponse rapide !\n\nLucie",
+   "bulk": false
+  },
+  {
+   "key": "m68",
+   "account": "wmail",
+   "thread": "t46",
+   "day": 24,
+   "hour": 8,
+   "from": [
+    "Jana Kessler",
+    "jana@kessler-netz.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Lieferung der Switches verzögert",
+   "body": "Hallo Maren,\n\nleider ist die Lieferung der acht Switches für Quayside um eine Woche verzögert. Der Hersteller hat Probleme mit dem Transport. Wir liefern sie dir nächste Woche am Donnerstag. Ist das für dich in Ordnung?\n\nViele Grüße\nJana Kessler",
+   "bulk": false
+  },
+  {
+   "key": "m69",
+   "account": "wmail",
+   "thread": "t46",
+   "day": 24,
+   "hour": 11,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Jana Kessler",
+     "jana@kessler-netz.example"
+    ]
+   ],
+   "subject": "Re: Lieferung der Switches verzögert",
+   "body": "Hallo Jana,\n\ndanke für die Info. Donnerstag ist für uns kein Problem, ich sage es dem Kunden.\n\nViele Grüße\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m70",
+   "account": "wmail",
+   "thread": "t47",
+   "day": 52,
+   "hour": 10,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Jana Kessler",
+     "jana@kessler-netz.example"
+    ]
+   ],
+   "subject": "Angebot für die Verkabelung",
+   "body": "Hallo Jana,\n\nkannst du mir bitte ein Angebot für die Verkabelung bei einem neuen Kunden schicken? Es geht um zwölf Arbeitsplätze und einen kleinen Serverschrank. Die Pläne sind im Anhang.\n\nDanke und viele Grüße\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m71",
+   "account": "wmail",
+   "thread": "t47",
+   "day": 50,
+   "hour": 15,
+   "from": [
+    "Jana Kessler",
+    "jana@kessler-netz.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Angebot für die Verkabelung",
+   "body": "Hallo Maren,\n\nanbei das Angebot für die Verkabelung: zwölf Anschlüsse und der Serverschrank für 3.480 Euro. Wir können in der zweiten Oktoberwoche anfangen, wenn du bis Ende September bestätigst.\n\nViele Grüße\nJana",
+   "bulk": false
+  },
+  {
+   "key": "m72",
+   "account": "wmail",
+   "thread": "t48",
+   "day": 16,
+   "hour": 10,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Bree Calloway",
+     "bree@callowaysupply.example"
+    ]
+   ],
+   "subject": "Order: three USB-C docks",
+   "body": "Hi Bree,\n\nPlease send three of the Corvo USB-C docks to Birchwood Law, same address as last time.\n\nThanks,\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m73",
+   "account": "wmail",
+   "thread": "t48",
+   "day": 15,
+   "hour": 14,
+   "from": [
+    "Bree Calloway",
+    "bree@callowaysupply.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Order: three USB-C docks",
+   "body": "Hi Maren,\n\nOrder confirmed, the three docks ship Monday October 26 by ground.\n\nBree",
+   "bulk": false
+  },
+  {
+   "key": "m74",
+   "account": "wmail",
+   "thread": "t49",
+   "day": 2,
+   "hour": 11,
+   "from": [
+    "Bree Calloway",
+    "bree@callowaysupply.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Pinecrest monitors backordered",
+   "body": "Hi Maren,\n\nThe two 27-inch monitors for Pinecrest are backordered until November 20. Do you want to wait or switch to the 24-inch model we have in stock?\n\nBree",
+   "bulk": false
+  },
+  {
+   "key": "m75",
+   "account": "wmail",
+   "thread": "t50",
+   "day": 39,
+   "hour": 10,
+   "from": [
+    "Wanda Pell",
+    "wanda@pellbooks.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Q3 receipts",
+   "body": "Hi Maren,\n\nI'm closing your third quarter. I still need the receipts for the August software subscriptions and the van insurance. Could you upload them this week?\n\nWanda",
+   "bulk": false
+  },
+  {
+   "key": "m76",
+   "account": "wmail",
+   "thread": "t50",
+   "day": 38,
+   "hour": 17,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Wanda Pell",
+     "wanda@pellbooks.example"
+    ]
+   ],
+   "subject": "Re: Q3 receipts",
+   "body": "Uploaded both just now. Thanks, Wanda!\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m77",
+   "account": "wmail",
+   "thread": "t51",
+   "day": 22,
+   "hour": 9,
+   "from": [
+    "Ezra Quint",
+    "ezra@quintinsure.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Cyber liability renewal",
+   "body": "Hi Maren,\n\nYour cyber liability policy renews on January 1. The insurer wants the updated security questionnaire back by December 10 before they quote. I've attached it; most answers are the same as last year.\n\nEzra Quint\nQuint Insurance",
+   "bulk": false
+  },
+  {
+   "key": "m78",
+   "account": "wmail",
+   "thread": "t52",
+   "day": 48,
+   "hour": 13,
+   "from": [
+    "Amara Lowe",
+    "amara.lowe@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Helpdesk technician position",
+   "body": "Hello,\n\nI saw your posting for a helpdesk technician. I have three years of experience supporting a school district and a networking certificate. My resume is attached.\n\nThank you for considering me,\nAmara Lowe",
+   "bulk": false
+  },
+  {
+   "key": "m79",
+   "account": "wmail",
+   "thread": "t52",
+   "day": 47,
+   "hour": 10,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Amara Lowe",
+     "amara.lowe@mail.example"
+    ]
+   ],
+   "subject": "Re: Helpdesk technician position",
+   "body": "Hi Amara,\n\nThanks for applying. Could you come in Friday at 2 pm for a short chat with Tobias and me?\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m80",
+   "account": "wmail",
+   "thread": "t52",
+   "day": 47,
+   "hour": 15,
+   "from": [
+    "Amara Lowe",
+    "amara.lowe@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Helpdesk technician position",
+   "body": "Friday at 2 pm works, see you then.\n\nAmara",
+   "bulk": false
+  },
+  {
+   "key": "m81",
+   "account": "wmail",
+   "thread": "t53",
+   "day": 9,
+   "hour": 16,
+   "from": [
+    "Tobias Brandt",
+    "tobias@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Time off in December",
+   "body": "Maren, could I take December 21 through January 1 off? Family is coming over from Denver.\n\nTobias",
+   "bulk": false
+  },
+  {
+   "key": "m82",
+   "account": "wmail",
+   "thread": "t53",
+   "day": 8,
+   "hour": 10,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Tobias Brandt",
+     "tobias@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Time off in December",
+   "body": "Approved, enjoy! I'll cover the on-call that week.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m83",
+   "account": "wmail",
+   "thread": "t54",
+   "day": 52,
+   "hour": 14,
+   "from": [
+    "Abena Mensah",
+    "abena@marlowtrust.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Board meeting video setup",
+   "body": "Hi Maren,\n\nOur board meets in the hall on September 15 and two members join remotely. Can you make sure the camera and speaker work with the laptop?\n\nAbena",
+   "bulk": false
+  },
+  {
+   "key": "m84",
+   "account": "wmail",
+   "thread": "t54",
+   "day": 51,
+   "hour": 9,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Abena Mensah",
+     "abena@marlowtrust.example"
+    ]
+   ],
+   "subject": "Re: Board meeting video setup",
+   "body": "Hi Abena,\n\nTested it remotely this morning, the camera and speaker both work. I left a one-page how-to on the laptop desktop.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m85",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 55,
+   "hour": 10,
+   "from": [
+    "Greta Lindqvist",
+    "greta@halvorsendental.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "X-ray PC very slow",
+   "body": "Hi Maren,\n\nThe x-ray PC in room 2 takes five minutes to open an image since this morning. Patients are waiting. Can you look?\n\nGreta",
+   "bulk": false,
+   "project": "Halvorsen admin"
+  },
+  {
+   "key": "m86",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 55,
+   "hour": 11,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Greta Lindqvist",
+     "greta@halvorsendental.example"
+    ]
+   ],
+   "subject": "Re: X-ray PC very slow",
+   "body": "Hi Greta,\n\nA stuck update was eating the disk. I stopped it and restarted the PC remotely, it should be quick again.\n\nMaren",
+   "bulk": false,
+   "project": "Halvorsen admin"
+  },
+  {
+   "key": "m87",
+   "account": "wmail",
+   "thread": "t55",
+   "day": 53,
+   "hour": 9,
+   "from": [
+    "Greta Lindqvist",
+    "greta@halvorsendental.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: X-ray PC very slow",
+   "body": "Fast as ever, thank you!\n\nGreta",
+   "bulk": false,
+   "project": "Halvorsen admin"
+  },
+  {
+   "key": "m88",
+   "account": "wmail",
+   "thread": "t56",
+   "day": 50,
+   "hour": 11,
+   "from": [
+    "Calvin Mercer",
+    "calvin@birchwoodlaw.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "New partner joining October 1",
+   "body": "Hi Maren,\n\nPriya Sandoval joins us as a partner on October 1. She needs an email address, a laptop and access to the case files.\n\nCalvin",
+   "bulk": false
+  },
+  {
+   "key": "m89",
+   "account": "wmail",
+   "thread": "t56",
+   "day": 49,
+   "hour": 16,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Calvin Mercer",
+     "calvin@birchwoodlaw.example"
+    ]
+   ],
+   "subject": "Re: New partner joining October 1",
+   "body": "Hi Calvin,\n\nAll set: her email works, the laptop is imaged and she has access to the case files. Tobias will hand it over on her first morning.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m90",
+   "account": "wmail",
+   "thread": "t57",
+   "day": 57,
+   "hour": 15,
+   "from": [
+    "Delphine Arkwright",
+    "delphine@quaysidelegal.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Signed contract",
+   "body": "Hi Maren,\n\nAttached is the signed support contract. We're looking forward to working with you. When can we do the kickoff?\n\nDelphine Arkwright\nQuayside Legal",
+   "bulk": false
+  },
+  {
+   "key": "m91",
+   "account": "wmail",
+   "thread": "t57",
+   "day": 56,
+   "hour": 10,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Delphine Arkwright",
+     "delphine@quaysidelegal.example"
+    ]
+   ],
+   "subject": "Re: Signed contract",
+   "body": "Hi Delphine,\n\nWelcome aboard! How about Thursday at 10 at your office for the kickoff? I'll bring Tobias.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m92",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 6,
+   "hour": 14,
+   "from": [
+    "Hanna Wexford",
+    "hanna@wexfordvet.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Quote for IT support",
+   "body": "Hi Maren,\n\nWe're a five-person veterinary clinic and our current IT person is retiring. Could you send a quote for monthly support?\n\nHanna Wexford\nWexford Veterinary",
+   "bulk": false
+  },
+  {
+   "key": "m93",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 5,
+   "hour": 9,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Hanna Wexford",
+     "hanna@wexfordvet.example"
+    ]
+   ],
+   "subject": "Re: Quote for IT support",
+   "body": "Hi Hanna,\n\nHappy to. Could we do a 30-minute call first so I can see what you have? Any afternoon next week works for me.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m94",
+   "account": "wmail",
+   "thread": "t58",
+   "day": 4,
+   "hour": 16,
+   "from": [
+    "Hanna Wexford",
+    "hanna@wexfordvet.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Quote for IT support",
+   "body": "Thursday November 12 at 3 pm works. I'll call your office number.\n\nHanna",
+   "bulk": false
+  },
+  {
+   "key": "m95",
+   "account": "wmail",
+   "thread": "t59",
+   "day": 31,
+   "hour": 10,
+   "from": [
+    "Brigid Oyelaran",
+    "brigid@millyardoffices.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Lease renewal",
+   "body": "Hi Maren,\n\nYour office lease at the Mill Yard ends January 31. We'd be glad to renew for two years at a 4% increase. Let me know by the end of November so I can draw up the papers.\n\nBrigid Oyelaran\nMill Yard Offices",
+   "bulk": false
+  },
+  {
+   "key": "m96",
+   "account": "wmail",
+   "thread": "t60",
+   "day": 40,
+   "hour": 12,
+   "from": [
+    "Abena Mensah",
+    "abena@marlowtrust.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Old laptops",
+   "body": "Hi Maren,\n\nWe have five old laptops in a cupboard. Could you wipe them so we can donate them to the library program?\n\nAbena",
+   "bulk": false
+  },
+  {
+   "key": "m97",
+   "account": "wmail",
+   "thread": "t60",
+   "day": 39,
+   "hour": 9,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Abena Mensah",
+     "abena@marlowtrust.example"
+    ]
+   ],
+   "subject": "Re: Old laptops",
+   "body": "Hi Abena,\n\nSure. Tobias will pick them up next time he's there, wipe them and bring them back with a certificate for each.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m98",
+   "account": "wmail",
+   "thread": "t61",
+   "day": 20,
+   "hour": 15,
+   "from": [
+    "Delphine Arkwright",
+    "delphine@quaysidelegal.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Working from home",
+   "body": "Hi Maren,\n\nTwo of our associates want to work from home on Fridays. What do they need to reach the case files safely?\n\nDelphine",
+   "bulk": false
+  },
+  {
+   "key": "m99",
+   "account": "wmail",
+   "thread": "t61",
+   "day": 19,
+   "hour": 10,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Delphine Arkwright",
+     "delphine@quaysidelegal.example"
+    ]
+   ],
+   "subject": "Re: Working from home",
+   "body": "Hi Delphine,\n\nThey just need the VPN app on their laptops. I'll install it remotely this week and send them a one-page guide.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m100",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 47,
+   "hour": 9,
+   "from": [
+    "Calvin Mercer",
+    "calvin@birchwoodlaw.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Clicked a bad link",
+   "body": "Maren, one of our paralegals clicked a link in a fake invoice email and typed her password. What do we do?\n\nCalvin",
+   "bulk": false
+  },
+  {
+   "key": "m101",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 47,
+   "hour": 10,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Calvin Mercer",
+     "calvin@birchwoodlaw.example"
+    ]
+   ],
+   "subject": "Re: Clicked a bad link",
+   "body": "Calvin, I reset her password and signed her out everywhere. No other logins from outside. I'll keep an eye on her account this week.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m102",
+   "account": "wmail",
+   "thread": "t62",
+   "day": 46,
+   "hour": 9,
+   "from": [
+    "Calvin Mercer",
+    "calvin@birchwoodlaw.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Re: Clicked a bad link",
+   "body": "Thanks for the fast help.\n\nCalvin",
+   "bulk": false
+  },
+  {
+   "key": "m103",
+   "account": "wmail",
+   "thread": "t63",
+   "day": 15,
+   "hour": 13,
+   "from": [
+    "Ottilie Baines",
+    "ottilie@bainesweb.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "First draft of the new site",
+   "body": "Hi Maren,\n\nThe first draft of the Kestrel Lane site is up on the preview link. Have a look at the services page in particular and send me your notes.\n\nOttilie",
+   "bulk": false
+  },
+  {
+   "key": "m104",
+   "account": "wmail",
+   "thread": "t64",
+   "day": 33,
+   "hour": 8,
+   "from": [
+    "Northpeak Networks",
+    "events@northpeak.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Webinar: what's new in NP firmware 8",
+   "body": "Join our product team on November 18 for a tour of firmware 8: faster VPN, a new dashboard and simpler updates. Register on the partner portal.",
+   "bulk": true
+  },
+  {
+   "key": "m105",
+   "account": "wmail",
+   "thread": "t65",
+   "day": 26,
+   "hour": 7,
+   "from": [
+    "Clearbyte Partners",
+    "partners@clearbyte.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Partner news: October",
+   "body": "This month: new admin reports, a refreshed partner portal and three customer stories from small offices. Read more in the portal.",
+   "bulk": true
+  },
+  {
+   "key": "m106",
+   "account": "wmail",
+   "thread": "t66",
+   "day": 50,
+   "hour": 7,
+   "from": [
+    "Sentrywatch",
+    "alerts@sentrywatch.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Warning: disk space low on PINECREST-PC04",
+   "body": "Disk C: on PINECREST-PC04 is 92% full. This alert repeats daily until resolved.",
+   "bulk": true
+  },
+  {
+   "key": "m107",
+   "account": "wmail",
+   "thread": "t67",
+   "day": 36,
+   "hour": 7,
+   "from": [
+    "Sentrywatch",
+    "alerts@sentrywatch.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Warning: backup job slow at Quayside Legal",
+   "body": "The nightly backup at Quayside Legal took 4 h 12 min, longer than the 3 h target.",
+   "bulk": true
+  },
+  {
+   "key": "m108",
+   "account": "wmail",
+   "thread": "t68",
+   "day": 22,
+   "hour": 7,
+   "from": [
+    "Sentrywatch",
+    "alerts@sentrywatch.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Resolved: printer offline at Birchwood Law",
+   "body": "The printer BW-PRN-02 is back online after 18 minutes.",
+   "bulk": true
+  },
+  {
+   "key": "m109",
+   "account": "wmail",
+   "thread": "t69",
+   "day": 8,
+   "hour": 7,
+   "from": [
+    "Sentrywatch",
+    "alerts@sentrywatch.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Warning: certificate expires in 30 days",
+   "body": "The web certificate for the Marlow Trust booking page expires in 30 days. Auto-renew is on.",
+   "bulk": true
+  },
+  {
+   "key": "m110",
+   "account": "wmail",
+   "thread": "t70",
+   "day": 41,
+   "hour": 8,
+   "from": [
+    "Ledgerly",
+    "noreply@ledgerly.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Payment received from Halvorsen Dental",
+   "body": "Good news: Halvorsen Dental paid your invoice in full. The money will be in your account in 2 business days.",
+   "bulk": true
+  },
+  {
+   "key": "m111",
+   "account": "wmail",
+   "thread": "t71",
+   "day": 11,
+   "hour": 8,
+   "from": [
+    "Ledgerly",
+    "noreply@ledgerly.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Payment received from Fennick & Rowe",
+   "body": "Good news: Fennick & Rowe paid your invoice in full. The money will be in your account in 2 business days.",
+   "bulk": true
+  },
+  {
+   "key": "m112",
+   "account": "wmail",
+   "thread": "t72",
+   "day": 30,
+   "hour": 7,
+   "from": [
+    "IT-Markt Kompakt",
+    "newsletter@itmarkt.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "IT-Markt Kompakt: Ausgabe Oktober",
+   "body": "Liebe Leserinnen und Leser,\n\nin dieser Ausgabe: die neuen Regeln für Datenschutz in kleinen Firmen, ein Test von fünf Firewalls und unsere Tipps für die Sicherung im Winter. Außerdem ein Interview mit einer jungen Gründerin aus Hamburg.\n\nViel Spaß beim Lesen!\nIhre Redaktion",
+   "bulk": true
+  },
+  {
+   "key": "m113",
+   "account": "wmail",
+   "thread": "t73",
+   "day": 18,
+   "hour": 7,
+   "from": [
+    "Linkfold",
+    "noreply@linkfold.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "5 people viewed your profile this week",
+   "body": "See who's been looking at your profile and grow your network. Open Linkfold to see more.",
+   "bulk": true
+  },
+  {
+   "key": "m114",
+   "account": "wmail",
+   "thread": "t74",
+   "day": 45,
+   "hour": 11,
+   "from": [
+    "Rafael Ibarra",
+    "rafael@pinecrestphysio.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Toner",
+   "body": "Hi Maren, we're down to the last toner for the front desk printer. Can you order two?\n\nRafael",
+   "bulk": false
+  },
+  {
+   "key": "m115",
+   "account": "wmail",
+   "thread": "t74",
+   "day": 45,
+   "hour": 13,
+   "from": [
+    "Maren Ostrowski",
+    "maren@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Rafael Ibarra",
+     "rafael@pinecrestphysio.example"
+    ]
+   ],
+   "subject": "Re: Toner",
+   "body": "Ordered two, they arrive Thursday.\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m116",
+   "account": "wmail",
+   "thread": "t75",
+   "day": 3,
+   "hour": 15,
+   "from": [
+    "Nora Whitfield",
+    "nora.whitfield@fennickrowe.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Temp account",
+   "body": "Hi Maren,\n\nWe have a temp, Ben Archer, helping with filing for two weeks from Monday. Could he get a login for the file share only?\n\nNora",
+   "bulk": false
+  },
+  {
+   "key": "m117",
+   "account": "wmail",
+   "thread": "t76",
+   "day": 1,
+   "hour": 10,
+   "from": [
+    "Abena Mensah",
+    "abena@marlowtrust.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Thank you",
+   "body": "Hi Maren, just a note to say thanks for the quick help with the booking page on Friday. The volunteers were thrilled.\n\nAbena",
+   "bulk": false
+  },
+  {
+   "key": "m118",
+   "account": "wmail",
+   "thread": "t77",
+   "day": 26,
+   "hour": 9,
+   "from": [
+    "Tobias Brandt",
+    "tobias@kestrellane.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Van service",
+   "body": "Maren, the van is due for its service. The garage can take it Tuesday or Wednesday next week. Which day suits you?\n\nTobias",
+   "bulk": false
+  },
+  {
+   "key": "m119",
+   "account": "wmail",
+   "thread": "t78",
+   "day": 0,
+   "hour": 9,
+   "from": [
+    "Delphine Arkwright",
+    "delphine@quaysidelegal.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren@kestrellane.example"
+    ]
+   ],
+   "subject": "Marcus can't log in to the VPN",
+   "body": "Hi Maren,\n\nMarcus is working from home today and the VPN says his password is wrong, even though it works for email. Can you help?\n\nDelphine",
+   "bulk": false
+  },
+  {
+   "key": "m120",
+   "account": "pmail",
+   "thread": "t79",
+   "day": 5,
+   "hour": 18,
+   "from": [
+    "Theo Marsh",
+    "theo.marsh@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Thursday pickup",
+   "body": "Can you pick up Ida from swim on Thursday? I have a late meeting. x Theo",
+   "bulk": false
+  },
+  {
+   "key": "m121",
+   "account": "pmail",
+   "thread": "t79",
+   "day": 5,
+   "hour": 19,
+   "from": [
+    "Maren Ostrowski",
+    "maren.ostrowski@mail.example"
+   ],
+   "to": [
+    [
+     "Theo Marsh",
+     "theo.marsh@mail.example"
+    ]
+   ],
+   "subject": "Re: Thursday pickup",
+   "body": "Yes, I'll get her at 5:30.",
+   "bulk": false
+  },
+  {
+   "key": "m122",
+   "account": "pmail",
+   "thread": "t80",
+   "day": 7,
+   "hour": 20,
+   "from": [
+    "Simon Ostrowski",
+    "simon.ostrowski@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Thanksgiving",
+   "body": "Hey sis,\n\nThanksgiving at ours on November 26, around 3 pm. Could you bring a pie and the folding chairs? Mom's bringing the stuffing as usual.\n\nSimon",
+   "bulk": false
+  },
+  {
+   "key": "m123",
+   "account": "pmail",
+   "thread": "t81",
+   "day": 36,
+   "hour": 19,
+   "from": [
+    "Hilde Ostrowski",
+    "hilde.ostrowski@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Danke für die Karte",
+   "body": "Liebe Maren,\n\nvielen Dank für die schöne Karte zu meinem Geburtstag! Ich habe mich sehr gefreut. Wann kommt ihr uns mal wieder besuchen? Ida ist bestimmt schon so groß.\n\nAlles Liebe\nTante Hilde",
+   "bulk": false
+  },
+  {
+   "key": "m124",
+   "account": "pmail",
+   "thread": "t81",
+   "day": 35,
+   "hour": 20,
+   "from": [
+    "Maren Ostrowski",
+    "maren.ostrowski@mail.example"
+   ],
+   "to": [
+    [
+     "Hilde Ostrowski",
+     "hilde.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Re: Danke für die Karte",
+   "body": "Liebe Tante Hilde,\n\ngern geschehen! Wir wollen im Sommer kommen, ich sage dir Bescheid, wenn wir die Daten haben.\n\nAlles Liebe\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m125",
+   "account": "pmail",
+   "thread": "t82",
+   "day": 42,
+   "hour": 21,
+   "from": [
+    "Inés Navarro",
+    "ines.navarro@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "¡Visita en primavera!",
+   "body": "¡Hola Maren!\n\n¿Qué tal todo? Te escribo porque por fin tenemos fechas: Pablo y yo queremos ir a verte en abril, probablemente la segunda semana. No hace falta que nos busques nada, solo quería avisarte con tiempo.\n\nUn abrazo muy fuerte,\nInés",
+   "bulk": false
+  },
+  {
+   "key": "m126",
+   "account": "pmail",
+   "thread": "t82",
+   "day": 41,
+   "hour": 8,
+   "from": [
+    "Maren Ostrowski",
+    "maren.ostrowski@mail.example"
+   ],
+   "to": [
+    [
+     "Inés Navarro",
+     "ines.navarro@mail.example"
+    ]
+   ],
+   "subject": "Re: ¡Visita en primavera!",
+   "body": "¡Hola Inés!\n\n¡Qué alegría! Abril es perfecto, hay sitio para los dos. Ya tengo ganas de veros.\n\nUn abrazo,\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m127",
+   "account": "pmail",
+   "thread": "t83",
+   "day": 17,
+   "hour": 18,
+   "from": [
+    "Piet de Graaf",
+    "piet.degraaf@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Ladder lenen",
+   "body": "Hoi Maren,\n\nMag ik zaterdag je lange ladder lenen? Ik wil de dakgoot schoonmaken voor de winter. Ik breng hem zondag terug.\n\nGroetjes,\nPiet",
+   "bulk": false
+  },
+  {
+   "key": "m128",
+   "account": "pmail",
+   "thread": "t83",
+   "day": 17,
+   "hour": 20,
+   "from": [
+    "Maren Ostrowski",
+    "maren.ostrowski@mail.example"
+   ],
+   "to": [
+    [
+     "Piet de Graaf",
+     "piet.degraaf@mail.example"
+    ]
+   ],
+   "subject": "Re: Ladder lenen",
+   "body": "Hoi Piet, ja hoor, hij staat in de garage. Je mag hem gewoon pakken. Groetjes, Maren",
+   "bulk": false
+  },
+  {
+   "key": "m129",
+   "account": "pmail",
+   "thread": "t84",
+   "day": 24,
+   "hour": 20,
+   "from": [
+    "Marta Quill",
+    "marta.quill@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Next book",
+   "body": "Hi all, time to vote on the next book for December: the lighthouse novel or the memoir about the bakery. Reply by Sunday!\n\nMarta",
+   "bulk": false
+  },
+  {
+   "key": "m130",
+   "account": "pmail",
+   "thread": "t84",
+   "day": 23,
+   "hour": 9,
+   "from": [
+    "Maren Ostrowski",
+    "maren.ostrowski@mail.example"
+   ],
+   "to": [
+    [
+     "Marta Quill",
+     "marta.quill@mail.example"
+    ]
+   ],
+   "subject": "Re: Next book",
+   "body": "Lighthouse novel for me!\n\nMaren",
+   "bulk": false
+  },
+  {
+   "key": "m131",
+   "account": "pmail",
+   "thread": "t85",
+   "day": 12,
+   "hour": 17,
+   "from": [
+    "Yvette Lamarr",
+    "yvette@lamarrpiano.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Winter recital",
+   "body": "Hi Maren,\n\nThe winter recital is Sunday November 22 at 3 pm at the community music hall. Ida plays second. Please confirm how many seats you need.\n\nYvette Lamarr",
+   "bulk": false
+  },
+  {
+   "key": "m132",
+   "account": "pmail",
+   "thread": "t86",
+   "day": 44,
+   "hour": 9,
+   "from": [
+    "Corecraft Gym",
+    "members@corecraft.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Your membership freeze is confirmed",
+   "body": "Your membership is frozen from December 1 to December 31. No charge for December. See you in January!",
+   "bulk": true
+  },
+  {
+   "key": "m133",
+   "account": "pmail",
+   "thread": "t87",
+   "day": 10,
+   "hour": 8,
+   "from": [
+    "Freshcart",
+    "orders@freshcart.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Your order was delivered",
+   "body": "Your Freshcart order of 23 items was delivered at 6:12 pm. Rate your delivery in the app.",
+   "bulk": true
+  },
+  {
+   "key": "m134",
+   "account": "pmail",
+   "thread": "t88",
+   "day": 20,
+   "hour": 8,
+   "from": [
+    "Riverside Power",
+    "billing@riversidepower.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Your October bill is ready",
+   "body": "Your October bill of $84.20 is ready. It will be paid automatically on November 3.",
+   "bulk": true
+  },
+  {
+   "key": "m135",
+   "account": "pmail",
+   "thread": "t89",
+   "day": 34,
+   "hour": 8,
+   "from": [
+    "Streamline TV",
+    "hello@streamlinetv.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "New this week",
+   "body": "New this week: a detective series set in Oslo, a cooking show and two family movies.",
+   "bulk": true
+  },
+  {
+   "key": "m136",
+   "account": "pmail",
+   "thread": "t90",
+   "day": 9,
+   "hour": 8,
+   "from": [
+    "Maple Street Dental",
+    "reminders@maplestreetdental.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Reminder: cleaning on November 18",
+   "body": "This is a reminder of your cleaning appointment on Wednesday November 18 at 8:30 am.",
+   "bulk": true
+  },
+  {
+   "key": "m137",
+   "account": "pmail",
+   "thread": "t91",
+   "day": 50,
+   "hour": 21,
+   "from": [
+    "Theo Marsh",
+    "theo.marsh@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Parent-teacher evening",
+   "body": "Don't forget the parent-teacher evening on Thursday at 7. I'll meet you there after work.",
+   "bulk": false
+  },
+  {
+   "key": "m138",
+   "account": "pmail",
+   "thread": "t91",
+   "day": 50,
+   "hour": 21,
+   "from": [
+    "Maren Ostrowski",
+    "maren.ostrowski@mail.example"
+   ],
+   "to": [
+    [
+     "Theo Marsh",
+     "theo.marsh@mail.example"
+    ]
+   ],
+   "subject": "Re: Parent-teacher evening",
+   "body": "Got it, see you there.",
+   "bulk": false
+  },
+  {
+   "key": "m139",
+   "account": "pmail",
+   "thread": "t92",
+   "day": 58,
+   "hour": 20,
+   "from": [
+    "Simon Ostrowski",
+    "simon.ostrowski@mail.example"
+   ],
+   "to": [
+    [
+     "Maren Ostrowski",
+     "maren.ostrowski@mail.example"
+    ]
+   ],
+   "subject": "Lake photos",
+   "body": "Photos from the lake weekend are in the shared album. Ida's jump off the dock is the best one.\n\nSimon",
+   "bulk": false
+  }
+ ],
+ "todos": [
+  {
+   "key": "td1",
+   "title": "Reply to Owen about the Clearbyte price change",
+   "evidence": [
+    "m1"
+   ],
+   "day": 4,
+   "state": "open"
+  },
+  {
+   "key": "td2",
+   "title": "Reply to Greta about the Clearbyte renewal",
+   "evidence": [
+    "m2"
+   ],
+   "day": 33,
+   "state": "done"
+  },
+  {
+   "key": "td3",
+   "title": "Reply to Hollis about the three extra seats",
+   "evidence": [
+    "m4"
+   ],
+   "day": 19,
+   "state": "open"
+  },
+  {
+   "key": "td4",
+   "title": "Reply to Calvin about the 2027 IT budget",
+   "evidence": [
+    "m5"
+   ],
+   "day": 12,
+   "state": "open"
+  },
+  {
+   "key": "td5",
+   "title": "Reply to Calvin about the firewall restarts",
+   "evidence": [
+    "m8"
+   ],
+   "day": 25,
+   "state": "open"
+  },
+  {
+   "key": "td6",
+   "title": "Reply to Abena about the internet drops",
+   "evidence": [
+    "m9"
+   ],
+   "day": 21,
+   "state": "open"
+  },
+  {
+   "key": "td7",
+   "title": "Reply to Greta about the Quarry Road move",
+   "evidence": [
+    "m12"
+   ],
+   "day": 41,
+   "state": "done"
+  },
+  {
+   "key": "td8",
+   "title": "Reply to Greta about the new move date",
+   "evidence": [
+    "m14"
+   ],
+   "day": 10,
+   "state": "open"
+  },
+  {
+   "key": "td9",
+   "title": "Reply to Dmitri about fiber for Quarry Road",
+   "evidence": [
+    "m16"
+   ],
+   "day": 18,
+   "state": "open"
+  },
+  {
+   "key": "td10",
+   "title": "Reply to Hollis about storage for the scanned archive",
+   "evidence": [
+    "m19"
+   ],
+   "day": 24,
+   "state": "open"
+  },
+  {
+   "key": "td11",
+   "title": "Send Mr. Haddad a copy of Ida's passport",
+   "evidence": [
+    "m20"
+   ],
+   "day": 31,
+   "state": "open"
+  },
+  {
+   "key": "td12",
+   "title": "Reply to Lou about the winter tire booking",
+   "evidence": [
+    "m22"
+   ],
+   "day": 6,
+   "state": "open"
+  },
+  {
+   "key": "td13",
+   "title": "Reply to Gareth about the winter tires",
+   "evidence": [
+    "m23"
+   ],
+   "day": 1,
+   "state": "open"
+  },
+  {
+   "key": "td14",
+   "title": "Reply to Nora about the second-floor printer",
+   "evidence": [
+    "m24"
+   ],
+   "day": 14,
+   "state": "done"
+  },
+  {
+   "key": "td15",
+   "title": "Confirm the Friday lunch with Nora",
+   "evidence": [
+    "m27"
+   ],
+   "day": 13,
+   "state": "done"
+  },
+  {
+   "key": "td16",
+   "title": "Reply to Calvin about retiring Atlas",
+   "evidence": [
+    "m29"
+   ],
+   "day": 35,
+   "state": "done"
+  },
+  {
+   "key": "td17",
+   "title": "Reply to Ruben about the business card proof",
+   "evidence": [
+    "m31"
+   ],
+   "day": 11,
+   "state": "open"
+  },
+  {
+   "key": "td18",
+   "title": "Reply to Abena about a used projector",
+   "evidence": [
+    "m32"
+   ],
+   "day": 32,
+   "state": "open"
+  },
+  {
+   "key": "td19",
+   "title": "Reply to Lena about her projector",
+   "evidence": [
+    "m33"
+   ],
+   "day": 26,
+   "state": "open"
+  },
+  {
+   "key": "td20",
+   "title": "Reply to Greta about the server swap",
+   "evidence": [
+    "m34"
+   ],
+   "day": 46,
+   "state": "done"
+  },
+  {
+   "key": "td21",
+   "title": "Reply to Hollis about the bounced bank emails",
+   "evidence": [
+    "m37"
+   ],
+   "day": 34,
+   "state": "done"
+  },
+  {
+   "key": "td22",
+   "title": "Reply to Rafael about the bounced emails",
+   "evidence": [
+    "m40"
+   ],
+   "day": 33,
+   "state": "done"
+  },
+  {
+   "key": "td23",
+   "title": "Reply to Rafael about a security review",
+   "evidence": [
+    "m44"
+   ],
+   "day": 17,
+   "state": "open"
+  },
+  {
+   "key": "td24",
+   "title": "Reply to Joris about a security check",
+   "evidence": [
+    "m45"
+   ],
+   "day": 14,
+   "state": "open"
+  },
+  {
+   "key": "td25",
+   "title": "Send September invoice copies to Delphine and Lucie",
+   "evidence": [
+    "m46",
+    "m47"
+   ],
+   "day": 6,
+   "state": "open"
+  },
+  {
+   "key": "td26",
+   "title": "Reset the clinic Wi-Fi password for Rafael",
+   "evidence": [
+    "m48"
+   ],
+   "day": 11,
+   "state": "open"
+  },
+  {
+   "key": "td27",
+   "title": "Reply to Rafael about the clinic Wi-Fi",
+   "evidence": [
+    "m49"
+   ],
+   "day": 11,
+   "state": "dismissed"
+  },
+  {
+   "key": "td28",
+   "title": "Reply to Hollis about Vaultline training",
+   "evidence": [
+    "m52"
+   ],
+   "day": 28,
+   "state": "open"
+  },
+  {
+   "key": "td29",
+   "title": "Reply to Abena about Vaultline training",
+   "evidence": [
+    "m53"
+   ],
+   "day": 26,
+   "state": "open"
+  },
+  {
+   "key": "td30",
+   "title": "Reply to Delphine about Clearbyte Admin Basics",
+   "evidence": [
+    "m54"
+   ],
+   "day": 38,
+   "state": "open"
+  },
+  {
+   "key": "td31",
+   "title": "Reply to Rafael about the Clearbyte course",
+   "evidence": [
+    "m55"
+   ],
+   "day": 35,
+   "state": "open"
+  },
+  {
+   "key": "td32",
+   "title": "Reply to Calvin about Inkpoint",
+   "evidence": [
+    "m56"
+   ],
+   "day": 7,
+   "state": "open"
+  },
+  {
+   "key": "td33",
+   "title": "Reply to Delphine about an Inkpoint demo",
+   "evidence": [
+    "m57"
+   ],
+   "day": 5,
+   "state": "open"
+  },
+  {
+   "key": "td34",
+   "title": "Reply to Rafael about the new physio's setup",
+   "evidence": [
+    "m58"
+   ],
+   "day": 3,
+   "state": "done"
+  },
+  {
+   "key": "td35",
+   "title": "Set up Dana's laptop and accounts",
+   "evidence": [
+    "m59"
+   ],
+   "day": 3,
+   "state": "open"
+  },
+  {
+   "key": "td36",
+   "title": "Reply to Joris about the scanner",
+   "evidence": [
+    "m60"
+   ],
+   "day": 44,
+   "state": "done"
+  },
+  {
+   "key": "td37",
+   "title": "Reply to Joris about the October invoice",
+   "evidence": [
+    "m63"
+   ],
+   "day": 19,
+   "state": "done"
+  },
+  {
+   "key": "td38",
+   "title": "Reply to Lucie about the domain renewal",
+   "evidence": [
+    "m65"
+   ],
+   "day": 27,
+   "state": "done"
+  },
+  {
+   "key": "td39",
+   "title": "Reply to Jana about the switch delivery",
+   "evidence": [
+    "m68"
+   ],
+   "day": 24,
+   "state": "done"
+  },
+  {
+   "key": "td40",
+   "title": "Reply to Jana about the cabling quote",
+   "evidence": [
+    "m71"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "td41",
+   "title": "Reply to Bree about the backordered monitors",
+   "evidence": [
+    "m74"
+   ],
+   "day": 2,
+   "state": "open"
+  },
+  {
+   "key": "td42",
+   "title": "Send Wanda the Q3 receipts",
+   "evidence": [
+    "m75"
+   ],
+   "day": 39,
+   "state": "done"
+  },
+  {
+   "key": "td43",
+   "title": "Fill in the cyber insurance questionnaire for Ezra",
+   "evidence": [
+    "m77"
+   ],
+   "day": 22,
+   "state": "open"
+  },
+  {
+   "key": "td44",
+   "title": "Reply to Amara about the helpdesk position",
+   "evidence": [
+    "m78"
+   ],
+   "day": 48,
+   "state": "done"
+  },
+  {
+   "key": "td45",
+   "title": "Reply to Tobias about his December time off",
+   "evidence": [
+    "m81"
+   ],
+   "day": 9,
+   "state": "done"
+  },
+  {
+   "key": "td46",
+   "title": "Reply to Abena about the board meeting setup",
+   "evidence": [
+    "m83"
+   ],
+   "day": 52,
+   "state": "done"
+  },
+  {
+   "key": "td47",
+   "title": "Reply to Greta about the slow x-ray PC",
+   "evidence": [
+    "m85"
+   ],
+   "day": 55,
+   "state": "done"
+  },
+  {
+   "key": "td48",
+   "title": "Reply to Calvin about Priya's accounts",
+   "evidence": [
+    "m88"
+   ],
+   "day": 50,
+   "state": "done"
+  },
+  {
+   "key": "td49",
+   "title": "Reply to Delphine about the kickoff",
+   "evidence": [
+    "m90"
+   ],
+   "day": 57,
+   "state": "done"
+  },
+  {
+   "key": "td50",
+   "title": "Reply to Hanna about a support quote",
+   "evidence": [
+    "m92"
+   ],
+   "day": 6,
+   "state": "done"
+  },
+  {
+   "key": "td51",
+   "title": "Prepare for the call with Hanna on November 12",
+   "evidence": [
+    "m94"
+   ],
+   "day": 4,
+   "state": "open"
+  },
+  {
+   "key": "td52",
+   "title": "Reply to Brigid about the lease renewal",
+   "evidence": [
+    "m95"
+   ],
+   "day": 31,
+   "state": "open"
+  },
+  {
+   "key": "td53",
+   "title": "Reply to Abena about the old laptops",
+   "evidence": [
+    "m96"
+   ],
+   "day": 40,
+   "state": "done"
+  },
+  {
+   "key": "td54",
+   "title": "Reply to Delphine about working from home",
+   "evidence": [
+    "m98"
+   ],
+   "day": 20,
+   "state": "done"
+  },
+  {
+   "key": "td55",
+   "title": "Reply to Calvin about the phishing click",
+   "evidence": [
+    "m100"
+   ],
+   "day": 47,
+   "state": "done"
+  },
+  {
+   "key": "td56",
+   "title": "Send Ottilie notes on the site draft",
+   "evidence": [
+    "m103"
+   ],
+   "day": 15,
+   "state": "open"
+  },
+  {
+   "key": "td57",
+   "title": "Order toner for Pinecrest",
+   "evidence": [
+    "m114"
+   ],
+   "day": 45,
+   "state": "done"
+  },
+  {
+   "key": "td58",
+   "title": "Set up a file share login for Fennick's temp",
+   "evidence": [
+    "m116"
+   ],
+   "day": 3,
+   "state": "open"
+  },
+  {
+   "key": "td59",
+   "title": "Reply to Tobias about the van service",
+   "evidence": [
+    "m118"
+   ],
+   "day": 26,
+   "state": "done"
+  },
+  {
+   "key": "td60",
+   "title": "Reply to Delphine about Marcus's VPN login",
+   "evidence": [
+    "m119"
+   ],
+   "day": 0,
+   "state": "open"
+  },
+  {
+   "key": "td61",
+   "title": "Reply to Simon about Thanksgiving",
+   "evidence": [
+    "m122"
+   ],
+   "day": 7,
+   "state": "open"
+  },
+  {
+   "key": "td62",
+   "title": "Reply to Aunt Hilde",
+   "evidence": [
+    "m123"
+   ],
+   "day": 36,
+   "state": "done"
+  },
+  {
+   "key": "td63",
+   "title": "Reply to Inés about the spring visit",
+   "evidence": [
+    "m125"
+   ],
+   "day": 42,
+   "state": "done"
+  },
+  {
+   "key": "td64",
+   "title": "Reply to Piet about the ladder",
+   "evidence": [
+    "m127"
+   ],
+   "day": 17,
+   "state": "done"
+  },
+  {
+   "key": "td65",
+   "title": "Vote on the next book club book",
+   "evidence": [
+    "m129"
+   ],
+   "day": 24,
+   "state": "done"
+  },
+  {
+   "key": "td66",
+   "title": "Confirm recital seats with Yvette",
+   "evidence": [
+    "m131"
+   ],
+   "day": 12,
+   "state": "open"
+  }
+ ],
+ "promises": [
+  {
+   "direction": "mine",
+   "who": "Calvin Mercer",
+   "what": "have Tobias remote in tomorrow and check the firewall logs",
+   "message": "m7",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Greta Lindqvist",
+   "what": "send a move plan and internet options for Quarry Road",
+   "message": "m13",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Tobias Brandt",
+   "what": "price a replacement backup NAS and talk to Hollis",
+   "message": "m18",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Nora Whitfield",
+   "what": "send Tobias Thursday afternoon to check the printer",
+   "message": "m25",
+   "status": "done"
+  },
+  {
+   "direction": "mine",
+   "who": "Calvin Mercer",
+   "what": "send a plan for retiring the Atlas server",
+   "message": "m30",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Rafael Ibarra",
+   "what": "have the new physio's laptop and accounts ready by November 16",
+   "message": "m59",
+   "status": "open"
+  },
+  {
+   "direction": "theirs",
+   "who": "Jana Kessler",
+   "what": "deliver the eight switches for Quayside next Thursday",
+   "message": "m68",
+   "status": "kept"
+  },
+  {
+   "direction": "theirs",
+   "who": "Bree Calloway",
+   "what": "ship the three docks on October 26",
+   "message": "m73",
+   "status": "kept"
+  },
+  {
+   "direction": "theirs",
+   "who": "Hanna Wexford",
+   "what": "call on Thursday November 12 at 3 pm",
+   "message": "m94",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Abena Mensah",
+   "what": "wipe the five old laptops and return them with certificates",
+   "message": "m97",
+   "status": "open"
+  },
+  {
+   "direction": "mine",
+   "who": "Theo Marsh",
+   "what": "pick up Ida from swim on Thursday",
+   "message": "m121",
+   "status": "kept"
+  }
+ ],
+ "key": {
+  "opportunities": [
+   {
+    "id": "o1",
+    "what": "Halvorsen (renews Dec 12, 9 users), Fennick (renews Dec 3, adding 3 seats) and Birchwood (renews Dec 20, 14 users) all renew Clearbyte Business in December, and Clearbyte raises the price from $12.50 to $14.75 per user for renewals from Dec 1 unless the customer renews early through a partner by Nov 30, which locks $12.50 for 36 months. Offer each client an early renewal before Nov 30. These are three separate companies: write to each separately, never one mail to all.",
+    "evidence": [
+     "m1",
+     "m2",
+     "m4",
+     "m5"
+    ],
+    "ready_day": 4
+   },
+   {
+    "id": "o2",
+    "what": "Birchwood's and Marlow Trust's firewalls keep rebooting or dropping (Marlow's clicks), and Tobias's asset sheet shows both are NP-40 units with serials NP40-22-1187 and NP40-22-0954, inside the range Northpeak says has a faulty power supply with a free kit if requested by Dec 11. Request a kit per serial, book a ten-minute swap at each site, and tell each client. Two different companies: write to each separately, never one mail to all.",
+    "evidence": [
+     "m6",
+     "m8",
+     "m9",
+     "m10",
+     "m11"
+    ],
+    "ready_day": 17
+   },
+   {
+    "id": "o3",
+    "what": "Halvorsen's move to 18 Quarry Road was first set for Oct 24 (now past), but Greta's newer message moves it to Sat Nov 21, opening Mon Nov 23. Arcline needs 8 business days from a signed order to install fiber there. Sign the Arcline order now so the line is in before Nov 21, plan the cutover for the newer Nov 21 date (not the old Oct 24 one), and confirm with Greta.",
+    "evidence": [
+     "m12",
+     "m14",
+     "m15",
+     "m16"
+    ],
+    "ready_day": 10
+   },
+   {
+    "id": "o4",
+    "what": "Fennick's 8 TB backup NAS is failing and 91% full, and Hollis now needs room for a 3 TB scanned archive his auditors want kept retrievable. Quote one replacement sized for both (for example 16 TB usable) instead of a like-for-like swap, and send Hollis one proposal.",
+    "evidence": [
+     "m17",
+     "m19"
+    ],
+    "ready_day": 24
+   },
+   {
+    "id": "o5",
+    "what": "Ida's school trip needs a passport valid until April 2027 with a copy due Dec 1, but her passport expires February 2027 and the renewal appointment is Dec 9 with three weeks' processing. Move the appointment before Dec 1 and choose express processing, or ask Mr. Haddad for a later copy deadline.",
+    "evidence": [
+     "m20",
+     "m21"
+    ],
+    "ready_day": 25
+   },
+   {
+    "id": "o6",
+    "what": "Lou booked a new 205/55 R16 winter tire set ($620 plus $80 fitting) for Sat Nov 14, and Gareth is giving away a 205/55 R16 winter set on rims with 6 mm left before it goes to recycling next Saturday. Claim Gareth's set now and change Lou's booking to just the swap.",
+    "evidence": [
+     "m22",
+     "m23"
+    ],
+    "ready_day": 1
+   }
+  ],
+  "traps": [
+   {
+    "id": "x1",
+    "kind": "coincidence",
+    "what": "Two people share the first name Nora (Whitfield at Fennick, Castellanos at a caterer) and both mention Friday: a printer jam and a team lunch order. Different people, unrelated requests.",
+    "evidence": [
+     "m24",
+     "m27"
+    ]
+   },
+   {
+    "id": "x2",
+    "kind": "coincidence",
+    "what": "Atlas is Birchwood's old file server and also the print shop doing Kestrel's business cards; the shared word links nothing.",
+    "evidence": [
+     "m29",
+     "m31"
+    ]
+   },
+   {
+    "id": "x3",
+    "kind": "cross_area",
+    "what": "Marlow Trust wants a used projector and a personal friend is selling one; combining them would join work and personal mail.",
+    "evidence": [
+     "m32",
+     "m33"
+    ]
+   },
+   {
+    "id": "x4",
+    "kind": "stale",
+    "what": "Coordinating Tobias and Greta for the Halvorsen server swap is moot: it happened on Oct 3, over 30 days ago, and Greta signed off.",
+    "evidence": [
+     "m34",
+     "m35",
+     "m36"
+    ]
+   },
+   {
+    "id": "x5",
+    "kind": "resolved",
+    "what": "Fennick and Pinecrest both had mail to Harbor Credit Union bounce, but the bank fixed its filter and both confirmed it works.",
+    "evidence": [
+     "m37",
+     "m39",
+     "m40",
+     "m41",
+     "m42",
+     "m43"
+    ]
+   },
+   {
+    "id": "x6",
+    "kind": "obvious",
+    "what": "Rafael and Joris both want a security review sometime next year, but there is no date in either; a joint plan would invent dates. Each just needs a reply.",
+    "evidence": [
+     "m44",
+     "m45"
+    ]
+   },
+   {
+    "id": "x7",
+    "kind": "covered",
+    "what": "Delphine and Lucie both want September invoice copies; an open to-do already covers sending both.",
+    "evidence": [
+     "m46",
+     "m47"
+    ]
+   },
+   {
+    "id": "x8",
+    "kind": "same_source",
+    "what": "The two clinic Wi-Fi password requests are Rafael Ibarra writing from his clinic and personal addresses.",
+    "evidence": [
+     "m48",
+     "m49"
+    ]
+   },
+   {
+    "id": "x9",
+    "kind": "bulk",
+    "what": "SSD price rises appear only in a trade newsletter and a distributor price notice; no client or order is affected.",
+    "evidence": [
+     "m50",
+     "m51"
+    ]
+   },
+   {
+    "id": "x10",
+    "kind": "stale_timing",
+    "what": "Fennick and Marlow Trust both asked for a hands-on Vaultline training in the first week of November (Nov 2-6). That week is past and neither wrote again, so proposing a session in that week would be wrong; at most ask each for a new date.",
+    "evidence": [
+     "m52",
+     "m53"
+    ]
+   },
+   {
+    "id": "x11",
+    "kind": "stale_timing",
+    "what": "Delphine and Rafael both wanted seats at Clearbyte Admin Basics on October 29. That date is past and nothing followed, so proposing to register both for it would be wrong.",
+    "evidence": [
+     "m54",
+     "m55"
+    ]
+   },
+   {
+    "id": "x12",
+    "kind": "cross_company_group",
+    "what": "Birchwood Law and Quayside Legal, rival law firms, both asked about an Inkpoint e-signature demo. It is tempting to run one demo or send one invite to both, but they are competitors: answer each in its own thread, never one group mail.",
+    "evidence": [
+     "m56",
+     "m57"
+    ]
+   }
+  ]
+ }
+}
