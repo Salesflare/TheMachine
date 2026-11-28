@@ -532,8 +532,8 @@ def load_history_notes(store, base):
         for text, rule, preference, days, quote, side, node in (
                 ('You invoice on the first working day of the month, net 30.', False, False, 200,
                  'we invoice on the first working day of each month, payment terms are net 30', 'work', None),
-                ('You send contracts as PDF only, never as editable files.', False, True, 160,
-                 'I only send contracts as PDF, never as Word files', 'work', None),
+                ('You send quotes as PDF only, never as editable files.', False, True, 160,
+                 'I only send quotes as PDF, never as Word files', 'work', None),
                 ('Meridian Robotics pays quarterly in advance, as agreed.', False, False, 120,
                  'As agreed, Meridian Robotics pays quarterly in advance', 'work', org[0] if org else None),
                 ('Ask for a call before quoting anything over EUR 20,000.', True, False, 90,

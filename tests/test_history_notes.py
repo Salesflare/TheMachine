@@ -99,7 +99,6 @@ class HistoryNotes(unittest.TestCase):
     def test_keeps_the_owners_own_words_with_their_day(self):
         event = self.mail(200, 'Hi Pat, we always invoice on the first working day of the month, net 30. Thanks')
         self.mail(100, 'We always invoice weekly and charge a 5% late fee.', mine=False)  # someone else's words
-        self.mail(5, 'We always invoice on the first working day, net 15 now.', history=False)  # a live signal: never read
         seen = []
         found = self.learn(self.model([
             {'kind': 'preference', 'text': 'You invoice on the first working day of the month, net 30.',
@@ -107,7 +106,6 @@ class HistoryNotes(unittest.TestCase):
             {'kind': 'rule', 'text': 'You charge a 5% late fee.', 'quote': 'We always invoice weekly and charge a 5% late fee'}], seen=seen))
         self.assertEqual(found['read'], 1)
         self.assertNotIn('late fee', seen[0])
-        self.assertNotIn('net 15', ''.join(seen))
         [fact] = self.facts()
         self.assertEqual((fact['text'], fact['kind'], fact['fact_kind'], fact['source'], fact['side'], fact['scope']),
                          ('You invoice on the first working day of the month, net 30.', 'fact', 'preference', 'history:email', 'work', 'area'))
@@ -115,6 +113,34 @@ class HistoryNotes(unittest.TestCase):
         self.assertEqual(fact['quote'], 'we always invoice on the first working day of the month, net 30')
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 0)  # never a to-do
+
+    def test_newer_live_mail_and_what_learning_knows_end_a_note_but_never_write_one(self):
+        self.mail(200, 'Hi Pat, our deposit is 30 percent on every kitchen renovation. Thanks')
+        self.mail(5, 'Our deposit is 40 percent on every kitchen renovation now.', history=False)  # live: only checked against
+        self.mail(150, 'Patricia handles every supplier payment for us, always has.')
+        self.mail(140, 'Our office closes at 5 on Fridays, all year.')
+        with self.store.connect() as db:
+            db.execute("INSERT INTO facts(text,decision_id,created_at,kind) VALUES('Morgan handles every supplier payment now.','d1',?,'fact')", (NOW.isoformat(),))
+        seen = []
+        self.learn(self.model([
+            {'kind': 'fact', 'text': 'Your deposit is 30 percent on every kitchen renovation.', 'quote': 'our deposit is 30 percent on every kitchen renovation'},
+            {'kind': 'responsibility', 'text': 'Patricia handles every supplier payment.', 'quote': 'Patricia handles every supplier payment for us'},
+            {'kind': 'fact', 'text': 'Your office closes at 5 on Fridays.', 'quote': 'Our office closes at 5 on Fridays'}],
+            check={'F2': {'verdict': 'drop'}, 'F3': {'verdict': 'update', 'text': 'Your office closes at 4 on Fridays.', 'quote': 'closes at 4', 'message': 'N1'}},
+            seen=seen))
+        self.assertNotIn('40 percent', seen[0])  # never extracted from
+        self.assertIn('40 percent', seen[1])  # but the check sees it
+        self.assertIn('known now: <<<Morgan handles every supplier payment now.', seen[1])
+        self.assertEqual([f['text'] for f in self.facts() if f['source']], [])  # 30 percent changed later; Pat's job is Morgan's now; 4 is said nowhere
+
+    def test_an_update_carries_the_newer_messages_words_and_day(self):
+        self.mail(140, 'Our office closes at 5 on Fridays, all year.')
+        newer = self.mail(60, 'From now on our office closes at 4 on Fridays.')
+        self.learn(self.model([{'kind': 'fact', 'text': 'Your office closes at 5 on Fridays.', 'quote': 'Our office closes at 5 on Fridays'}],
+                              check={'F1': {'verdict': 'update', 'text': 'Your office closes at 4 on Fridays.', 'quote': 'our office closes at 4 on Fridays'}}))
+        [fact] = self.facts()
+        self.assertEqual((fact['text'], fact['quote']), ('Your office closes at 4 on Fridays.', 'our office closes at 4 on Fridays'))
+        self.assertEqual(fact['decision_id'], f"history:{(NOW - dt.timedelta(days=60)).date()}:{newer}")
 
     def test_a_note_that_says_more_than_its_quote_or_quotes_no_one_goes(self):
         self.mail(100, 'I prefer calls before 10 in the morning, please.')
@@ -142,6 +168,38 @@ class HistoryNotes(unittest.TestCase):
         self.assertEqual(facts['The setup fee is waived for the Clients.']['scope'], 'with:' + WALTER)  # "for the Clients only": the one Client
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT node_id,by FROM fact_about").fetchall()[0][:], (WALTER, 'history'))
+
+    def test_said_to_one_person_with_nothing_general_stays_theirs_and_no_one_unknown_gets_it(self):
+        self.mail(100, 'Walter, your invoices go out on the 15th.', to='Walter Client <walter@client.example>')
+        self.mail(90, 'Zed, your reports come as a spreadsheet.', to='Zed Unknown <zed@nowhere.example>')
+        self.mail(80, 'Walter, the shared folder link changes each quarter.', to='Walter Client <walter@client.example>, Pat Colleague <pat@acme.example>')
+        found = self.learn(self.model([
+            {'kind': 'fact', 'text': 'Invoices go out on the 15th.', 'quote': 'your invoices go out on the 15th'},
+            {'kind': 'fact', 'text': 'Reports come as a spreadsheet.', 'quote': 'your reports come as a spreadsheet'},
+            {'kind': 'fact', 'text': 'The shared folder link changes each quarter.', 'quote': 'the shared folder link changes each quarter'}]))
+        facts = {f['text']: f['scope'] for f in self.facts()}
+        self.assertEqual(facts, {'Invoices go out on the 15th.': 'with:' + WALTER, 'The shared folder link changes each quarter.': 'area'})
+        self.assertEqual(found['dropped'].get('no_one_to_keep_it_to'), 1)
+
+    def test_a_merge_keeps_one_messages_words_and_never_says_more(self):
+        self.mail(200, 'We invoice monthly, always on the first.')
+        self.mail(100, 'We charge a 5% late fee after 30 days.')
+        self.learn(self.model([
+            {'kind': 'fact', 'text': 'You invoice monthly on the first.', 'quote': 'We invoice monthly, always on the first'},
+            {'kind': 'fact', 'text': 'You charge a 5% late fee.', 'quote': 'We charge a 5% late fee after 30 days'}],
+            merge={'notes': [{'text': 'You invoice monthly on the first and charge a 5% late fee.', 'from': ['F1', 'F2']}]}))
+        self.assertEqual(sorted((f['text'], f['quote']) for f in self.facts()),
+                         [('You charge a 5% late fee.', 'We charge a 5% late fee after 30 days'),
+                          ('You invoice monthly on the first.', 'We invoice monthly, always on the first')])
+
+    def test_over_the_bound_the_richest_messages_are_read_across_all_of_history(self):
+        self.mail(600, 'Our minimum fee is 300 for every project, always, unless the board says otherwise.')
+        for n in range(history_notes.MAX_MESSAGES + 20):
+            self.mail(500 - n, f'Thanks, see you then, talk soon friend number {n}.')
+        with self.store.connect() as db:
+            rows = history_notes.own_history(db, ['work'], {ME})
+        self.assertEqual(len(rows), history_notes.MAX_MESSAGES)
+        self.assertIn('minimum fee', rows[-1]['text'])  # the oldest, but the one that says how the owner works
 
     def test_the_newer_wins_and_a_removed_note_never_comes_back(self):
         self.mail(300, 'Our retainer is $1,000 a month for every client, billed upfront.')

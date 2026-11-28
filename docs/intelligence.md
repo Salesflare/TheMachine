@@ -1101,21 +1101,27 @@ of task goes. Once per mailbox (`learning_state` `history_notes:<account>`), on 
 in config.json turns it off.
 
 - Plain code first: only history rows of mail the owner sent, no bulk mail, only their own lines (quoted mail and a
-  forward cut), newest first, at most 300 messages and 60,000 characters.
+  forward cut), at most 300 messages and 60,000 characters: all of it when it fits, else the richest across all of
+  history (words that state a way of working, numbers), not only the newest.
 - Extract, one turn per batch: at most 8 notes, each with the owner's exact words from one message, its kind, its area
   by meaning (family and health are personal also when told to a colleague) and who it is about.
 - Code decides over the model's words: the quote must be in the message and the note says no more than it does
   (numbers and telling words); a note the owner removed never comes back, and one said already is not said twice.
-- A rule told to one person is how the owner works for everyone, unless their own words keep it to that person or
-  organization ("for you", "except", "as agreed", "for Walter only", "under your agreement"). Then it holds only with
-  them (scope `with:<node>`, on their Graph page).
-- The newer wins: one turn shows each note with the owner's newer messages that share its words (keep, drop or
-  update), and code drops a general note whose number a newer message changes, or that a newer general note on the
+- A note holds for everyone only on evidence: the owner speaks of themselves or their firm or in general words ("I",
+  "we always", "every client"), or said it to their own colleagues only or to several people at once, and their words
+  don't keep it to one ("for you", "except", "as agreed", "for Walter only", "under your agreement"). Else it holds
+  only with the one it was said to (scope `with:<node>`, on their Graph page); one the Graph can't place is not kept.
+- The newer wins: one turn shows each note with the owner's newer messages that share its words, history and live
+  mail, and the facts on Learning it touches (keep; drop when anything changed, a number, who handles it, a preference;
+  or update, only with the owner's words from a newer history message: live mail is checked against, never learned
+  from), and code drops a general note whose number a newer message changes, or that a newer general note on the
   same thing with other numbers replaces. A turn merges notes that say the same.
 - One rule said twice in other words is kept once: each note is paired with the notes of its kind (a rule
   with rules, a fact with facts) and area that share its rarest words (`word_scores`), the ones already on Learning
   too, and a last turn says which pairs come down to one rule and whose wording says all of it. A pair with other
-  numbers is two things, and one already on Learning stays as the owner sees it.
+  numbers, or naming other people, is two things, and one already on Learning stays as the owner sees it.
+- A note's words and day are always one message's, checked again when it is saved: a merge whose text no single quote
+  says is not made.
 - Saved through `machine/store/facts.py` `history_fact`: source `history:email`, the message's day in `decision_id`
   (Learning shows "Your email," that day, and the owner's words), their area as `side` and scope `area`. A
   Personal note stays out of Work prompts and out of the learnings sent to the team. Never a to-do, a promise or a

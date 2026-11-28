@@ -40,8 +40,8 @@ It uses the access each connection already has. Nothing new to approve.
 Once a mailbox's history and its new mail are in, your Machine reads the email you wrote yourself in it, once, and keeps how you work: your rates and terms, how you like things done, what you handle. They show under **Learning**, **What I've learned**, each with the day you wrote it and your own words. **Edit** or **Remove** any of them; a removed one never comes back.
 
 - Only your own words count. What someone else asked is not how you work.
-- A deal with one client stays theirs, on their Graph page, when your words say so ("for you only", "as agreed").
-- When a newer email of yours changes something, the newer one wins.
+- Something you told one client stays theirs, on their Graph page, unless your words or who you told say it is how you work for everyone.
+- When a newer email of yours changes something, or what your Machine knows now says otherwise, the newer one wins.
 - One rule you wrote twice in other words is kept once.
 - Work or Personal by what it is about. A Personal note stays out of work.
 - Never a to-do, a promise or a reply. What is over stays over.
