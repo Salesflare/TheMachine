@@ -98,6 +98,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            # kept from the Notes feature that is gone, unread by any code: still sealed, and the full export opens them
            'section_topics': ('note',), 'note_writeups': ('page',), 'folder_overviews': ('page',), 'topic_routes': ('note', 'title'),
            'recurring_series': ('text',), 'recurring_offers': ('title', 'text'),  # a recurring to-do's words (recurring.py)
+           'opportunity_facts': ('facts',),  # what the weekly pass across threads read in a thread, with quotes (opportunities.py)
            'routines': ('name', 'instructions', 'steps', 'recipe'),  # a routine's words, and what its run read (routines.py)
            'routine_runs': ('result', 'why', 'trial', 'steps', 'recipe', 'data'),
            'routine_changes': ('instructions',),  # a routine's new words, offered on one of its to-dos (routine_changes.py)

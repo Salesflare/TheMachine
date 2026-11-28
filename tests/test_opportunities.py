@@ -1,14 +1,14 @@
-"""Work that only shows across separate threads (opportunities.py): off unless turned on; one turn per area, never
-across; threads are tied only by what the Graph resolved (the same confirmed person, organization or project) or two
-independent signals in the messages code can check (never a name, first or full, nor one shared word), one person on
-two addresses the Graph joined is one, with no date the messages don't give; at most two a week, the best of each area
-first. Made-up data, the real Graph build, a stand-in model."""
+"""Work that only shows across separate threads (opportunities.py): off unless turned on; a ledger of a few checked facts
+per thread, read again only when the thread changes; candidate groups found in code; two judging turns per area, never
+across, and only what both propose; code checks every quote, date, organization, to-do and earlier join; a quiet
+Machine keeps only clear, Graph-tied work; value first, at most CAP a week. Made-up data, a stand-in model."""
 import datetime as dt
 import json
 import re
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import graph
 import machine.main as machine_main
@@ -18,6 +18,8 @@ import timeutil
 NOW = dt.datetime(2026, 11, 9, 18, tzinfo=dt.timezone.utc)
 ACCOUNTS = [{'id': 'w', 'service': 'gmail', 'boundary': 'work:Larkspur', 'email': 'robin@larkspur.example'},
             {'id': 'p', 'service': 'gmail', 'boundary': 'personal:home', 'email': 'robin@mail.example'}]
+NOISE = ('alpine banjo cactus dolphin ember falcon glacier harbor igloo jasmine kettle lantern meadow nectar orchid pepper '
+         'quartz raven saffron tundra umbrella velvet walnut yonder').split()
 
 
 class Opportunities(unittest.TestCase):
@@ -31,8 +33,30 @@ class Opportunities(unittest.TestCase):
         self.addCleanup(setattr, machine_main.Store, 'accounts', [])
         self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config, self.app.fleet = self.store, {'accounts': ACCOUNTS}, None
-        self.n, self.prompts, self.answers = 0, [], []
-        self.app.opportunity_model = lambda config, text: (self.prompts.append(text), self.answers.pop(0) if self.answers else '{"proposals": []}')[1]
+        self.n, self.prompts, self.facts, self.judged = 0, [], {}, []
+        self.verdict = lambda events, sample: None  # {event ids of the group's threads} -> one group's answer, or None
+        self.app.opportunity_model = self.model
+        quiet = mock.patch.object(opportunities, 'QUIET_LINKED', 0)  # small corpora are quiet; the quiet gate has its own test
+        quiet.start()
+        self.addCleanup(quiet.stop)
+        for account in ('w', 'p'):  # other mail, so word scores work as in a real inbox
+            for i in range(8):
+                e = self.mail(account, f'other{i}', f'Sender {i} <s{i}@other{i}.example>', f'Note {i}', f'About {NOISE[i]} and {NOISE[i + 8]}.', days=10 + i)
+                self.fact(e, f'{NOISE[i]} {NOISE[i + 8]} {NOISE[i + 16]}', f'About {NOISE[i]} and {NOISE[i + 8]}')
+
+    def model(self, config, text):
+        self.prompts.append(text)
+        blocks = {int(n): [int(e) for e in re.findall(r'^  E(\d+) \|', body, re.M)]
+                  for n, body in re.findall(r'^T(\d+)\b[^\n]*\n((?:  .*\n?)+)', text, re.M)}
+        if text.startswith('Background task'):  # the ledger turn
+            return json.dumps({f'T{n}': [f for e in ids for f in self.facts.get(e, [])] for n, ids in blocks.items()})
+        sample = sum(1 for p in self.prompts if p.startswith('Weekly') and p.split('\n', 1)[0] == text.split('\n', 1)[0]) - 1
+        out = {}
+        for g, members in re.findall(r'^G(\d+): threads (.+)$', text, re.M):
+            events = {e for t in re.findall(r'T(\d+)', members) for e in blocks[int(t)]}
+            self.judged.append(events)
+            out[f'G{g}'] = self.verdict(events, sample % 2) or {'propose': False}
+        return json.dumps(out)
 
     def mail(self, account, thread, sender, subject, body, bulk=False, days=3):
         self.n += 1
@@ -44,6 +68,9 @@ class Opportunities(unittest.TestCase):
         with self.store.connect() as db:
             return db.execute('SELECT id FROM events WHERE source_id=?', (f's{self.n}',)).fetchone()[0]
 
+    def fact(self, event, about, quote, kind='need', date=''):
+        self.facts.setdefault(event, []).append({'kind': kind, 'about': about, 'date': date, 'source': f'E{event}', 'quote': quote})
+
     def run_once(self, current=NOW):
         timeutil.pin(current)
         with self.store.connect() as db:
@@ -51,11 +78,21 @@ class Opportunities(unittest.TestCase):
         made = self.app.opportunity_run(run_id, current)
         with self.store.connect() as db:
             cards = [dict(r) for r in db.execute("SELECT title,body,event_ids FROM suggestions WHERE dedupe_key LIKE 'opportunity:%'")]
+            db.execute('DELETE FROM opportunity_runs')
+            db.commit()
         return made, cards
 
-    @staticmethod
-    def answer(*proposals):
-        return json.dumps({'proposals': list(proposals)})
+    def boxes(self, second='Ben Cole <ben@birch.example>', days=3):
+        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Carton price', 'From 1 January our mailer boxes cost 12% more.', days=days)
+        b = self.mail('w', 'b', second, 'Quote', 'We can supply mailer boxes at 0.41 each.', days=days)
+        self.fact(a, 'mailer boxes cardboard cartons price increase', 'our mailer boxes cost 12% more', 'price')
+        self.fact(b, 'mailer boxes cardboard cartons supply quote', 'We can supply mailer boxes at 0.41', 'offer')
+        return a, b
+
+    def proposal(self, a, b, title='Compare the mailer box quotes before January', work='Ben quoted 0.41 a box.', value=3,
+                 why='Quarry raises prices from 1 January and Birch quoted less.'):
+        return {'propose': True, 'value': value, 'title': title, 'why': why, 'work': work,
+                'quotes': [{'source': f'E{a}', 'quote': 'our mailer boxes cost 12% more'}, {'source': f'E{b}', 'quote': 'mailer boxes at 0.41'}]}
 
     def test_off_by_default(self):
         self.app.config['review_worker'] = {'enabled': True}
@@ -63,186 +100,168 @@ class Opportunities(unittest.TestCase):
         self.assertFalse(opportunities.on({}))
         self.assertTrue(opportunities.on({'opportunities': True}))
 
-    def test_one_turn_per_area_and_bulk_stays_out(self):
-        self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Export bug', 'The export drops the last row.')
-        self.mail('w', 'b', 'Ben Cole <ben@birch.example>', 'Export', 'Our export misses the final row too.')
-        self.mail('w', 'n', 'news@weekly.example', 'Tips', 'Weekly tips', bulk=True)
-        self.mail('p', 'c', 'Mia <mia@mail.example>', 'Dinner', 'Dinner on Friday?')
-        self.mail('p', 'd', 'Tom <tom@mail.example>', 'Visit', 'We visit on Friday.')
-        self.run_once()
-        self.assertEqual(2, len(self.prompts))
-        work = next(p for p in self.prompts if 'work mail' in p)
-        self.assertNotIn('Dinner on Friday', work)
-        self.assertNotIn('Weekly tips', work)
-        self.assertNotIn('export', next(p for p in self.prompts if 'personal mail' in p))
-
-    def test_fewer_than_two_threads_means_no_turn(self):
-        self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Export bug', 'The export drops the last row.')
-        self.assertEqual((0, []), self.run_once())
-        self.assertEqual([], self.prompts)
-
-    def test_a_shared_first_name_or_one_word_is_not_enough(self):
-        a = self.mail('w', 'a', 'Emma Clarke <emma@clarke.example>', 'Seafoam order', 'Two skeins of Seafoam please.')
-        b = self.mail('w', 'b', 'Emma Dyer <emma.dyer@dyer.example>', 'Restock?', 'Will Seafoam be back in stock?')
-        one = {'title': 'Plan a Seafoam restock for both orders', 'why': 'Two people want Seafoam.', 'work': 'Plan.', 'sources': [f'E{a}', f'E{b}'],
-               'links': [{'kind': 'item', 'quotes': [{'source': f'E{a}', 'quote': 'skeins of Seafoam'}, {'source': f'E{b}', 'quote': 'Will Seafoam be back'}]}]}
-        named = dict(one, links=one['links'] + [{'kind': 'mention', 'quotes': [{'source': f'E{a}', 'quote': 'Two skeins of Seafoam'}]}])
-        self.answers = [self.answer(one, named)]
-        self.assertEqual((0, []), self.run_once())
-
-    def test_two_independent_signals_make_a_to_do_without_made_up_dates(self):
-        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Carton price', 'From 1 January our mailer boxes cost 12% more.')
-        b = self.mail('w', 'b', 'Ben Cole <ben@birch.example>', 'Quote', 'We can supply mailer boxes at 0.41 each.')
-        p = {'title': 'Compare the mailer box quotes before January', 'why': 'Quarry raises prices from 1 January. Sign by November 30.',
-             'work': 'Ben quoted 0.41. Order before December 15 to save.', 'sources': [f'E{a}', f'E{b}'],
-             'links': [{'kind': 'item', 'quotes': [{'source': f'E{a}', 'quote': 'our mailer boxes cost 12% more'}, {'source': f'E{b}', 'quote': 'mailer boxes at 0.41'}]},
-                       {'kind': 'need_offer', 'quotes': [{'source': f'E{a}', 'quote': 'cost 12% more'}, {'source': f'E{b}', 'quote': 'We can supply mailer boxes'}]}]}
-        self.answers = [self.answer(p)]
+    def test_two_threads_about_one_thing_make_a_to_do_without_made_up_dates(self):
+        a, b = self.boxes()
+        p = self.proposal(a, b, work='Ben quoted 0.41 a box. Order before December 15 to save.')
+        self.verdict = lambda events, sample: p if {a, b} <= events else None
         made, cards = self.run_once()
         self.assertEqual(1, made)
         self.assertIn('1 January', cards[0]['body'])
-        self.assertNotIn('November 30', cards[0]['body'])
-        self.assertNotIn('December 15', cards[0]['body'])
+        self.assertNotIn('December 15', cards[0]['body'])  # a date the messages don't give is taken out
         self.assertEqual(sorted([a, b]), sorted(json.loads(cards[0]['event_ids'])))
-        self.answers = [self.answer(p)]
-        with self.store.connect() as db:
-            db.execute('DELETE FROM opportunity_runs')
-            db.commit()
         self.assertEqual(0, self.run_once()[0])  # the same threads are never joined twice
-        self.assertIn('already proposed together with T', self.prompts[-1])  # and the next turn is told so
-    def test_a_title_with_a_made_up_date_is_dropped(self):
-        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Carton price', 'Our mailer boxes cost 12% more next year.')
-        b = self.mail('w', 'b', 'Ben Cole <ben@birch.example>', 'Quote', 'We can supply mailer boxes at 0.41 each.')
-        p = {'title': 'Switch mailer boxes to Birch by December 1', 'why': 'Cheaper.', 'work': '', 'sources': [f'E{a}', f'E{b}'],
-             'links': [{'kind': 'item', 'quotes': [{'source': f'E{a}', 'quote': 'mailer boxes cost'}, {'source': f'E{b}', 'quote': 'mailer boxes at'}]},
-                       {'kind': 'need_offer', 'quotes': [{'source': f'E{a}', 'quote': 'cost 12% more'}, {'source': f'E{b}', 'quote': 'We can supply'}]}]}
-        self.answers = [self.answer(p)]
+
+    def test_the_ledger_reads_a_thread_again_only_when_it_changes(self):
+        a, b = self.boxes()
+        self.run_once()
+        self.assertEqual(1, sum('Carton price' in p for p in self.prompts if p.startswith('Background task')))
+        self.prompts.clear()
+        self.run_once(NOW + dt.timedelta(days=7))
+        self.assertFalse(any(p.startswith('Background task') for p in self.prompts))  # nothing new: nothing read
+        self.assertFalse(any(p.startswith('Weekly') for p in self.prompts))  # and the group judged before is not asked again
+        self.mail('w', 'b', 'Ben Cole <ben@birch.example>', 'Re: Quote', 'The 0.41 holds until spring.', days=-6)
+        self.prompts.clear()
+        self.run_once(NOW + dt.timedelta(days=7))
+        ledger = [p for p in self.prompts if p.startswith('Background task')]
+        self.assertEqual(1, len(ledger))
+        self.assertIn('Re: Quote', ledger[0])
+        self.assertNotIn('Carton price', ledger[0])
+
+    def test_a_fact_needs_its_quote_and_a_date_its_day(self):
+        a, b = self.boxes()
+        self.facts[a].append({'kind': 'date', 'about': 'price change day', 'date': '2027-01-02', 'source': f'E{a}', 'quote': 'From 1 January'})
+        self.facts[b].append({'kind': 'need', 'about': 'mailer boxes cartons', 'date': '', 'source': f'E{b}', 'quote': 'words nobody wrote'})
+        self.run_once()
+        with self.store.connect() as db:
+            kept = {r['thread']: json.loads(r['facts']) for r in db.execute('SELECT thread,facts FROM opportunity_facts')}
+        self.assertEqual(['price'], [f['kind'] for f in kept['w|a']])  # 2 January is not the day the message gives
+        self.assertEqual(['offer'], [f['kind'] for f in kept['w|b']])
+
+    def test_one_shared_word_or_one_person_makes_no_candidate(self):
+        a = self.mail('w', 'a', 'Emma Clarke <emma@clarke.example>', 'Seafoam order', 'Two skeins of Seafoam please.')
+        b = self.mail('w', 'b', 'Emma Dyer <emma.dyer@dyer.example>', 'Restock?', 'Will the shop be open on Monday?')
+        self.fact(a, 'yarn skeins wool order', 'Two skeins of Seafoam', 'need')
+        self.fact(b, 'shop opening hours order', 'Will the shop be open', 'need')
+        c = self.mail('w', 'c', 'Ana Ruiz <ana@quarry.example>', 'Carton price', 'Our mailer boxes cost 12% more.')
+        d = self.mail('w', 'd', 'Ana Ruiz <ana@quarry.example>', 'Cartons', 'Mailer boxes are back in stock.')
+        self.fact(c, 'mailer boxes cardboard cartons price increase', 'Our mailer boxes cost 12% more', 'price')
+        self.fact(d, 'mailer boxes cardboard cartons stock', 'Mailer boxes are back in stock', 'offer')
+        self.run_once()
+        self.assertEqual([], self.judged)
+        self.assertFalse(any(p.startswith('Weekly') for p in self.prompts))
+
+    def test_one_judging_pair_per_area_never_across_and_bulk_stays_out(self):
+        self.boxes()
+        self.mail('w', 'n', 'news@weekly.example', 'Tips', 'Weekly tips about mailer boxes', bulk=True)
+        c = self.mail('p', 'c', 'Mia <mia@mail.example>', 'Dinner', 'Dinner on Friday 13 November at our place?')
+        d = self.mail('p', 'd', 'Tom <tom@mail.example>', 'Visit', 'We land on Friday 13 November in the evening.')
+        self.fact(c, 'dinner invitation evening', 'Dinner on Friday 13 November', 'date', '2026-11-13')
+        self.fact(d, 'family visit arrival evening', 'We land on Friday 13 November', 'date', '2026-11-13')
+        self.run_once()
+        judging = [p for p in self.prompts if p.startswith('Weekly')]
+        self.assertEqual(4, len(judging))  # two samples per area
+        work = [p for p in judging if 'work mail' in p]
+        self.assertEqual(2, len(work))
+        self.assertTrue(all('Dinner on Friday' not in p and 'Weekly tips' not in p for p in work))
+        self.assertTrue(all('mailer boxes' not in p for p in judging if 'personal mail' in p))
+
+    def test_only_what_both_samples_propose_is_kept(self):
+        a, b = self.boxes()
+        self.verdict = lambda events, sample: self.proposal(a, b) if sample == 0 else None
+        self.assertEqual(0, self.run_once()[0])
+        with self.store.connect() as db:
+            db.execute('DELETE FROM opportunity_asked')
+            db.commit()
+        self.verdict = lambda events, sample: self.proposal(a, b, value=2 if sample else 3)
+        self.assertEqual(1, self.run_once()[0])
+
+    def test_value_one_is_no_proposal(self):
+        a, b = self.boxes()
+        self.verdict = lambda events, sample: self.proposal(a, b, value=1)
         self.assertEqual(0, self.run_once()[0])
 
-    def test_a_thread_number_as_source_counts_as_the_message_quoted(self):
-        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Carton price', 'From 1 January our mailer boxes cost 12% more.')
-        b = self.mail('w', 'b', 'Ben Cole <ben@birch.example>', 'Quote', 'We can supply mailer boxes at 0.41 each.')
-        self.run_once()  # to learn how the turn numbers the threads
-        number = {e: n for n, e in ((int(t), int(x)) for t, x in re.findall(r'^T(\d+) \|.*\n  E(\d+)', self.prompts[-1], re.M))}
-        ta, tb = f'T{number[a]}', f'T{number[b]}'
-        p = {'title': 'Compare the mailer box quotes', 'why': 'Two offers.', 'work': 'Ben quoted 0.41.', 'sources': [ta, tb],
-             'links': [{'kind': 'item', 'quotes': [{'source': ta, 'quote': 'our mailer boxes cost 12% more'}, {'source': tb, 'quote': 'mailer boxes at 0.41'}]},
-                       {'kind': 'need_offer', 'quotes': [{'source': ta, 'quote': 'cost 12% more'}, {'source': tb, 'quote': 'We can supply mailer boxes'}]}]}
-        self.answers = [self.answer(p)]
-        made, cards = self.run_once()
-        self.assertEqual(1, made)
-        self.assertEqual(sorted([a, b]), sorted(json.loads(cards[0]['event_ids'])))
-
-    def test_a_quote_the_message_does_not_have_drops_it(self):
-        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Carton price', 'Our mailer boxes cost 12% more next year.')
-        b = self.mail('w', 'b', 'Ben Cole <ben@birch.example>', 'Quote', 'We can supply mailer boxes at 0.41 each.')
-        p = {'title': 'Compare the two mailer box offers', 'why': 'Cheaper.', 'work': '', 'sources': [f'E{a}', f'E{b}'],
-             'links': [{'kind': 'item', 'quotes': [{'source': f'E{a}', 'quote': 'mailer boxes cost'}, {'source': f'E{b}', 'quote': 'mailer boxes at'}]},
-                       {'kind': 'need_offer', 'quotes': [{'source': f'E{a}', 'quote': 'we need a new supplier'}, {'source': f'E{b}', 'quote': 'We can supply'}]}]}
-        self.answers = [self.answer(p)]
+    def test_a_date_already_over_or_a_title_with_a_made_up_date_is_dropped(self):
+        a = self.mail('w', 'a', 'Leon Hart <leon@brightline.example>', 'Tickets', 'Free tickets for the boat show on October 24, stand 112.', days=20)
+        b = self.mail('w', 'b', 'Victor Lamb <victor@lamb.example>', 'Show?', 'Are you going to the boat show on the 24th? Engines to see.', days=18)
+        self.fact(a, 'boat show trade fair tickets', 'Free tickets for the boat show', 'offer')
+        self.fact(b, 'boat show trade fair visit engines', 'going to the boat show', 'need')
+        shown = {'propose': True, 'value': 3, 'title': 'Offer Victor a boat show ticket', 'why': 'Leon has tickets for October 24.',
+                 'work': 'To Victor: shall we meet at stand 112 on October 24?',
+                 'quotes': [{'source': f'E{a}', 'quote': 'Free tickets for the boat show'}, {'source': f'E{b}', 'quote': 'going to the boat show'}]}
+        self.verdict = lambda events, sample: shown
+        self.assertEqual(0, self.run_once()[0])  # October 24 is over on November 9
+        self.assertTrue(opportunities.all_dates_over('the show on October 24', NOW))
+        self.assertFalse(opportunities.all_dates_over('the show on October 24, the next on November 20', NOW))
+        self.assertFalse(opportunities.all_dates_over('no date at all', NOW))
+        a2, b2 = self.boxes()
+        self.verdict = lambda events, sample: self.proposal(a2, b2, title='Switch mailer boxes to Birch by December 1') if a2 in events else None
         self.assertEqual(0, self.run_once()[0])
 
-    def session(self, work, title='Run one onboarding session for both teams'):
-        a = self.mail('w', 'a', 'Mara Lind <mara@fernhill.example>', 'Training', 'Could you train our team on the planner in the first week of November?', days=20)
-        b = self.mail('w', 'b', 'Liesel Penn <liesel@penrose.example>', 'Onboarding', 'We need onboarding for the new planner tool in the first week of November.', days=19)
-        return {'title': title, 'why': 'Both teams asked for planner training.', 'work': work, 'sources': [f'E{a}', f'E{b}'],
-                'links': [{'kind': 'item', 'quotes': [{'source': f'E{a}', 'quote': 'on the planner'}, {'source': f'E{b}', 'quote': 'the new planner tool'}]},
-                          {'kind': 'need_offer', 'quotes': [{'source': f'E{a}', 'quote': 'Could you train our team'}, {'source': f'E{b}', 'quote': 'We need onboarding'}]}]}
-
-    def test_a_time_already_over_is_history_not_work(self):
-        self.answers = [self.answer(self.session('Hi Mara, shall we hold the session in the first week of November?'))]
+    def test_not_needed_on_every_threads_to_do_drops_it(self):
+        a, b = self.boxes()
+        for n, event in enumerate((a, b)):
+            card = self.store.suggest(f'test:{n}', f'Reply about the boxes {n}', 'Reply.', [event])
+            self.store.decide(card['id'], 'reject', '', f'd-{n}', 'dashboard')
+        self.verdict = lambda events, sample: self.proposal(a, b)
         self.assertEqual(0, self.run_once()[0])
-        self.assertIn('is history: use a newer date', self.prompts[-1])
-        self.assertTrue(opportunities.past_timing('a shared session in the first week of November', NOW))
-        self.assertTrue(opportunities.past_timing('Send it by 30 October.', NOW))
-        self.assertFalse(opportunities.past_timing('the invoice of 3 November shows the old rate', NOW))  # when it happened, not when to act
-        self.assertFalse(opportunities.past_timing('book it for Thursday 10 December', NOW))
-        self.assertFalse(opportunities.past_timing('before November 20', NOW))
-        self.assertFalse(opportunities.past_timing('by the end of November', NOW))
 
     def test_several_organizations_get_one_message_each(self):
-        self.answers = [self.answer(self.session('Draft to all three: Hi all, we run one planner session for your teams.'))]
-        self.assertEqual(0, self.run_once(NOW - dt.timedelta(days=12))[0])  # before that week, so only the group mail drops it
-        self.assertIn('never one message to people of different companies', self.prompts[-1])
+        a, b = self.boxes()
+        self.verdict = lambda events, sample: self.proposal(a, b, work='Hi Ana and Ben, we pick one supplier for the boxes.')
+        self.assertEqual(0, self.run_once()[0])
         people = {'mara@fernhill.example': 'Mara Lind', 'liesel@penrose.example': 'Liesel Penn'}
         self.assertTrue(opportunities.group_mail('Hi Mara and Liesel, we run one session.', people))
         self.assertTrue(opportunities.group_mail('Send it with Liesel in cc.', people))
         self.assertFalse(opportunities.group_mail('Write to each separately. Hi Mara, we run a session.', people))
         self.assertFalse(opportunities.group_mail('Hi Mara and Liesel', {'mara@fernhill.example': 'Mara Lind', 'liesel@fernhill.example': 'Liesel Penn'}))
 
-    def test_separate_messages_to_several_organizations_pass(self):
-        self.answers = [self.answer(self.session('Write to each separately. To Mara: Hi Mara, we can train your team on the planner. '
-                                                 'To Liesel: Hi Liesel, we can run the planner onboarding for you.'))]
-        self.assertEqual(1, self.run_once(NOW - dt.timedelta(days=12))[0])
+    def test_a_title_says_one_message_each(self):
+        a, b = self.boxes()
+        self.verdict = lambda events, sample: self.proposal(a, b, title='Ask Quarry and Birch for box prices together')
+        self.assertEqual(0, self.run_once()[0])
+        self.assertIn('never "together"', next(p for p in self.prompts if p.startswith('Weekly')))
 
-    def build(self, merge=()):
-        """The Graph as the worker builds it; merge: pairs of addresses the owner said are one person."""
+    def test_one_person_on_two_addresses_is_one_once_the_graph_joined_them(self):
+        a, b = self.boxes('Ana Ruiz <ana.ruiz@birch.example>')
         with self.store.connect() as db:
-            for a, b in merge:
-                graph.merge(db, 'email:' + a, 'email:' + b, True, NOW.isoformat(), source='owner')
+            graph.merge(db, 'email:ana@quarry.example', 'email:ana.ruiz@birch.example', True, NOW.isoformat(), source='owner')
             db.commit()
             graph.build(db, self.app.config, NOW.isoformat())
             db.commit()
+        self.verdict = lambda events, sample: self.proposal(a, b)
+        self.assertEqual(0, self.run_once()[0])  # the "two offers" are one person's: no candidate at all
+        self.assertEqual([], self.judged)
 
-    def boxes(self, second='Ben Cole <ben@birch.example>'):
-        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Carton price', 'From 1 January our mailer boxes cost 12% more.')
-        b = self.mail('w', 'b', second, 'Quote', 'We can supply mailer boxes at 0.41 each.')
-        return a, b, {'title': 'Compare the mailer box quotes', 'why': 'Two offers.', 'work': 'Ben quoted 0.41.', 'sources': [f'E{a}', f'E{b}'],
-                      'links': [{'kind': 'item', 'quotes': [{'source': f'E{a}', 'quote': 'our mailer boxes cost 12% more'}, {'source': f'E{b}', 'quote': 'mailer boxes at 0.41'}]},
-                                {'kind': 'need_offer', 'quotes': [{'source': f'E{a}', 'quote': 'cost 12% more'}, {'source': f'E{b}', 'quote': 'We can supply mailer boxes'}]}]}
+    def test_a_quiet_machine_keeps_only_clear_graph_tied_work(self):
+        a, b = self.boxes()
+        self.verdict = lambda events, sample: self.proposal(a, b)
+        with mock.patch.object(opportunities, 'QUIET_LINKED', 12):
+            self.assertEqual(0, self.run_once()[0])  # value 3, but nothing the Graph ties: Quarry and Birch
+        c = self.mail('w', 'c', 'Ana Ruiz <ana@quarry.example>', 'Export bug', 'The export drops the last row of the invoice report.')
+        d = self.mail('w', 'd', 'Ben Cole <ben@quarry.example>', 'Rollout', 'Our second office needs the invoice report export next week.')
+        self.fact(c, 'invoice report export missing rows bug', 'The export drops the last row', 'problem')
+        self.fact(d, 'invoice report export rollout second office', 'needs the invoice report export', 'need')
+        with self.store.connect() as db:
+            graph.build(db, self.app.config, NOW.isoformat())
+            db.commit()
+        quotes = [{'source': f'E{c}', 'quote': 'The export drops the last row'}, {'source': f'E{d}', 'quote': 'needs the invoice report export'}]
+        fix = {'propose': True, 'value': 2, 'title': 'Fix the invoice export before the second office starts', 'why': 'One company, one bug.',
+               'work': 'Plan: fix the last-row bug, then roll out.', 'quotes': quotes}
+        self.verdict = lambda events, sample: fix if c in events else None
+        with mock.patch.object(opportunities, 'QUIET_LINKED', 12):
+            self.assertEqual(0, self.run_once()[0])  # tied, but only useful: not on a quiet Machine
+            with self.store.connect() as db:
+                db.execute('DELETE FROM opportunity_asked')
+                db.commit()
+            fix['value'] = 3
+            self.assertEqual(1, self.run_once()[0])  # clear work, and the same organization as the Graph resolved it
 
-    def test_the_graph_ties_threads_and_says_who_is_one_person(self):
-        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Export bug', 'The export drops the last row since Monday.')
-        b = self.mail('w', 'b', 'Ben Cole <ben@quarry.example>', 'Rollout', 'Can we plan the rollout for our second office?')
-        self.build()
-        p = {'title': 'Fix the export before the second office rollout', 'why': 'One company.', 'work': 'Plan: fix, then roll out.',
-             'sources': [f'E{a}', f'E{b}'], 'links': []}
-        self.answers = [self.answer(p)]
-        self.assertEqual(1, self.run_once()[0])  # one tie the Graph resolved is enough: the same organization
-        self.assertIn('Graph ties: T', self.prompts[-1])
-        self.assertIn('same organization', self.prompts[-1])
-
-    def test_a_shared_full_name_alone_never_ties_threads(self):
-        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Export bug', 'The export drops the last row.')
-        b = self.mail('w', 'b', 'Ana Ruiz <ana@birch.example>', 'Rollout', 'Can we plan the rollout?')
-        self.build()  # at most a "Same person?" suggestion, which never counts
-        self.answers = [self.answer({'title': 'Fix the export before the rollout for Ana', 'why': 'Ana twice.', 'work': 'Plan.',
-                                     'sources': [f'E{a}', f'E{b}'], 'links': []})]
-        self.assertEqual(0, self.run_once()[0])
-        self.assertNotIn('Graph ties: T', self.prompts[-1])
-
-    def test_one_person_on_two_addresses_is_one_once_the_graph_joined_them(self):
-        *_, p = self.boxes('Ana Ruiz <ana.ruiz@birch.example>')
-        self.build([('ana@quarry.example', 'ana.ruiz@birch.example')])
-        self.answers = [self.answer(p)]
-        self.assertEqual(0, self.run_once()[0])  # the "two offers" are one person's
-
-    def test_two_signals_in_the_messages_still_tie_threads_without_the_graph(self):
-        *_, p = self.boxes()
-        self.build()
-        self.answers = [self.answer(p)]
-        self.assertEqual(1, self.run_once()[0])
-
-    def test_the_same_specific_thing_in_several_words_or_a_code_ties_by_itself(self):
-        a = self.mail('w', 'a', 'Ana Ruiz <ana@quarry.example>', 'Freight', 'We need a benchmark of Benelux road freight rates per pallet.')
-        b = self.mail('w', 'b', 'Ben Cole <ben@birch.example>', 'Dataset', 'I have a dataset of Benelux road freight rates from 2025.')
-        p = {'title': 'Offer the freight rate dataset for the benchmark', 'why': 'One needs it, one has it.', 'work': 'Ask Ben to share it.',
-             'sources': [f'E{a}', f'E{b}'],
-             'links': [{'kind': 'item', 'quotes': [{'source': f'E{a}', 'quote': 'Benelux road freight rates'}, {'source': f'E{b}', 'quote': 'Benelux road freight rates'}]}]}
-        self.answers = [self.answer(p)]
-        self.assertEqual(1, self.run_once()[0])
-
-    def test_a_title_says_one_message_each_for_several_organizations(self):
-        work = ('Write to each separately. To Mara: Hi Mara, we can train your team on the planner. '
-                'To Liesel: Hi Liesel, we can run the planner onboarding for you.')
-        self.answers = [self.answer(self.session(work, 'Send the planner training offers to Fernhill and Penrose together'))]
-        self.assertEqual(0, self.run_once(NOW - dt.timedelta(days=12))[0])
-        self.assertIn('never "together"', self.prompts[-1])
-
-    def test_the_best_of_each_area_first_and_two_at_most(self):
-        picked = opportunities.pick({'work': [{'title': 'w1'}, {'title': 'w2'}], 'personal': [{'title': 'p1'}]})
-        self.assertEqual(['w1', 'p1'], [p['title'] for p in picked])
-        self.assertEqual(opportunities.CAP, len(picked))
+    def test_value_first_and_at_most_cap(self):
+        made = [{'title': f't{n}', 'value': v, 'rank': n} for n, v in enumerate((2, 3, 2, 3, 3, 3, 2))]
+        kept = opportunities.keep(made)
+        self.assertEqual(['t1', 't3', 't4', 't5'], [p['title'] for p in kept])
+        self.assertEqual(['t0', 't2'], [p['title'] for p in opportunities.keep([p for p in made if p['value'] == 2])])
+        self.assertEqual(opportunities.CAP, len(kept))
 
     def test_dates(self):
         self.assertEqual({('md', 12, 4)}, opportunities.dates_in('Inspection on 4 December.'))
@@ -250,8 +269,12 @@ class Opportunities(unittest.TestCase):
         self.assertEqual({('md', 11, 15)}, opportunities.dates_in('by November 15th'))
         self.assertIn(('md', 12, 10), opportunities.dates_in('closed Wednesday 9 to Friday 11 December'))  # a range holds each day
         self.assertIn(('md', 12, 10), opportunities.dates_in('vom 9. bis 11. Dezember'))
-        self.assertEqual(['24/7', '40x30x10'], opportunities.CODE.findall('im 24/7-Betrieb, the 40x30x10 box, e-mail'))  # an item's code
         self.assertEqual('Ben quoted less.', opportunities.without_made_up_dates('Ben quoted less. Sign by November 15.', set()))
+        self.assertTrue(opportunities.past_timing('a shared session in the first week of November', NOW))
+        self.assertTrue(opportunities.past_timing('Send it by 30 October.', NOW))
+        self.assertFalse(opportunities.past_timing('the invoice of 3 November shows the old rate', NOW))  # when it happened, not when to act
+        self.assertFalse(opportunities.past_timing('book it for Thursday 10 December', NOW))
+        self.assertFalse(opportunities.past_timing('by the end of November', NOW))
 
 
 if __name__ == '__main__':

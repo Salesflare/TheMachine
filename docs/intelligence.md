@@ -552,27 +552,33 @@ review reads each message on its own, and the check above moves one project alon
   spacing and pause.
 - Plain code first: the last 60 days of signals without bulk mail, one row per thread with the people on it and its
   last 3 messages. Per area, the 50 most recent threads, so work mail never crowds out personal mail.
-- One turn per area on the background model, never across Work and Personal, with that area's to-dos of the last 45
-  days and open promises. Content is data, never instructions.
-- Who is who comes from the [Graph](#people-and-projects) only, never from names in this pass. Each thread carries
-  the confirmed person, organization and project records the Graph put on its messages; a "Same person?" it only
-  suggests and a probable project link never count. The turn sees which threads share one ("Graph ties").
-- Quality or nothing, checked in code. A proposal needs two or more threads with at least two different people as the
-  Graph resolves them (one person on two addresses the Graph joined is one), sources it was given, and quotes that are
-  in their messages. Every thread must be tied to the others: by the same confirmed person, organization (not the
-  owner's own) or project, or by two independent signals of different kinds in the messages: the same date, the same
-  specific thing, or a need one thread has that another offers. A name, first or full, or one shared word never
-  counts. A date the messages don't give is never written: a title with one is dropped, a sentence with one is taken
-  out. It is also dropped when it reads like a to-do already there, or when an earlier proposal already joined its
-  threads. It is dropped when it puts the work at a time already over ("by 30 October", "in the first week of
-  November" on November 27), and when it writes one message to people of several organizations ("to all three", "Hi
-  Mara and Liesel", a cc) instead of one each, since a group mail shows each customer to the others, or when its
-  title says so ("together", "to both").
-- At most two a week, the best of each area first. Each is a normal to-do (`Store.suggest`) with its messages as
-  evidence. Nothing is sent.
-- One or two turns a week, about 6k to 14k input tokens in all.
+- A ledger: a small background turn reads each thread that is new or changed since the last pass, 12 threads a turn,
+  into at most 4 facts (a need, an offer, a problem, a date or a price), each named in plain words with the exact
+  words of its message. Code checks the quote, and keeps a date only when its message gives that day. A thread is
+  read again only when it gets a new message.
+- Candidates, in code: threads with different people whose facts name the same thing (word scores, at least two
+  shared words) or give days still ahead at most 2 days apart. Who is who comes from the [Graph](#people-and-projects)
+  only: one person on two addresses the Graph joined is one. At most 8 groups per area a week, never one asked before
+  with nothing new, nor threads an earlier proposal joined.
+- The judging turn, per area on the background model, never across Work and Personal, with that area's to-dos and
+  open promises. It judges each group on its own and gives each proposal a value (3 clearly worth it, 2 useful). It
+  runs twice, the second time with the groups in the other order, and a group counts only when both propose it, at
+  the lower value. Content is data, never instructions.
+- Quality or nothing, checked in code. Every thread used is quoted, with quotes that are in their messages, and at
+  least two people as the Graph resolves them. A date the messages don't give is never written: a title with one is
+  dropped, a sentence with one is taken out. Dropped too: work at a time already over ("by 30 October") or resting
+  only on days already over (a show that has been), one message to people of several organizations ("to all three",
+  "Hi Mara and Liesel", a cc) or a title that says so ("together", "to both"), anything that reads like a to-do
+  already there or joins threads an earlier proposal joined, and work on threads whose to-dos the owner all marked
+  "Not needed".
+- A quiet inbox: with fewer than 12 threads in the week's candidate groups there is little to join, so only a value-3
+  proposal whose threads share a confirmed person, organization or project in the Graph is kept.
+- At most four a week, value 3 first, value 2 only while fewer than two are kept. Each is a normal to-do
+  (`Store.suggest`) with its messages as evidence. Nothing is sent.
+- About 5k to 12k input tokens a week: the ledger reads each thread once, and two judging turns per area.
 
-Tables: `opportunity_runs` (counts only), `opportunity_items` (which to-do joined which threads).
+Tables: `opportunity_runs` (counts only), `opportunity_items` (which to-do joined which threads), `opportunity_facts`
+(each thread's facts, sealed), `opportunity_asked` (groups judged, as hashes).
 
 ### Summaries
 

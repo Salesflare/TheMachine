@@ -290,35 +290,27 @@ class SummariesApp:
         return run_id
 
     def opportunity_run(self, run_id, current=None):
-        """One run: per area its threads and one turn (none with fewer than two threads), then at most opportunities.CAP
-        to-dos, the best of each area first (Store.suggest). Returns how many were made."""
+        """One run (opportunities.run_pass: the ledger turns, then two judging turns per area with candidates), then at
+        most opportunities.CAP to-dos, value first (Store.suggest). Returns how many were made."""
         import help_chat
         stand_in = getattr(self, 'opportunity_model', None)  # a stand-in in the sandbox, tests and evals: (config, prompt)
         current = current or timeutil.clock()
         accounts = self.config.get('accounts', [])
-        made, error, read, per_area, dropped = 0, None, 0, {}, {}
+        made, error, read = 0, None, 0
+        dropped = getattr(self, 'opportunity_dropped', None)  # evals keep the reasons over a whole run
+        dropped = {} if dropped is None else dropped
+
+        def ask(text):
+            if stand_in:
+                return stand_in(self.config, text)
+            swap = background_model(self.config)
+            return help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=opportunities.TIMEOUT)
         try:
-            with self.store.connect() as db:
-                found = opportunities.threads(db, accounts, current)
-                before = opportunities.earlier(db, current)
-            for area in sorted(found):
-                if len(found[area]) < 2:
-                    continue
-                read += len(found[area])
-                with self.store.connect() as db:
-                    todos, promises = opportunities.context(db, accounts, area, current)
-                text = opportunities.prompt(area, found[area], todos, promises, current, person_summary._language(locale_prefs.language_of(self.config)),
-                                            before)
-                if stand_in:
-                    answer = stand_in(self.config, text)
-                else:
-                    swap = background_model(self.config)
-                    answer = help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=opportunities.TIMEOUT)
-                with self.store.connect() as db:
-                    per_area[area] = opportunities.parse(db, answer, found[area], todos, before, dropped, current)
+            kept, read = opportunities.run_pass(self.store.connect, accounts, current, ask,
+                                                person_summary._language(locale_prefs.language_of(self.config)), dropped)
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
-                for p in opportunities.pick(per_area):
+                for p in kept:
                     db.execute('SAVEPOINT opportunity')
                     try:
                         card = self.store.suggest(opportunities.dedupe(p), p['title'], opportunities.body(p), p['event_ids'], owner_step=True, _db=db)

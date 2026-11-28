@@ -25,7 +25,6 @@ HERE = Path(__file__).resolve().parent
 NOW = dt.datetime(2026, 11, 9, 18, tzinfo=dt.timezone.utc)  # a Monday evening
 WEEKS = (21, 14, 7, 0)  # the weekly runs, in days before NOW
 DROPPED = {}  # {reason: count} of proposals the shipped parse dropped, over the whole run
-VERBOSE = bool(os.environ.get('OPPORTUNITY_EVAL_VERBOSE'))  # also print the links of dropped proposals (development only)
 LABELS = ('match', 'new_valuable', 'duplicate', 'restatement', 'stale', 'false', 'cross_area', 'trap')
 JUDGE = '''You grade proposals of an assistant that reads its owner's mail. Each message was reviewed one by one already, and the
 "existing to-dos" were made from that. A weekly pass then proposes work that only shows by putting separate threads together.
@@ -199,27 +198,11 @@ def discover_week(replay, turn, moment):
         used[0], used[1], used[2] = max(used[0], len(text)), used[1] + i, used[2] + o
         return answer
     replay.app.opportunity_model = model
-    shipped = opportunities.parse
-
-    def parse(db, answer, found, todos, earlier=(), dropped=None, current=None):  # the shipped parse, its drop reasons kept for the log
-        got = shipped(db, answer, found, todos, earlier, DROPPED, current)
-        try:
-            for p in json.loads(answer[answer.find('{'):answer.rfind('}') + 1]).get('proposals') or ():
-                print('   proposed:', str(p.get('title'))[:90], '| links:', ','.join(str(x.get('kind')) for x in p.get('links') or ()),
-                      '| kept' if any(g['title'][:40] == str(p.get('title'))[:40] for g in got) else '', flush=True)
-                if VERBOSE and not any(g['title'][:40] == str(p.get('title'))[:40] for g in got):
-                    print('     sources', p.get('sources'), json.dumps(p.get('links'), ensure_ascii=False)[:900], flush=True)
-        except (ValueError, AttributeError, TypeError):
-            pass
-        return got
-    opportunities.parse = parse
+    replay.app.opportunity_dropped = DROPPED  # the shipped checks' drop reasons, kept over the whole run
     with replay.store.connect() as db:
         run_id = opportunities.begin(db, moment.isoformat(timespec='seconds'))
         before = {r['suggestion_id'] for r in db.execute('SELECT suggestion_id FROM opportunity_items')}
-    try:
-        replay.app.opportunity_run(run_id, moment)
-    finally:
-        opportunities.parse = shipped
+    replay.app.opportunity_run(run_id, moment)
     out = []
     with replay.store.connect() as db:
         read = db.execute('SELECT threads FROM opportunity_runs WHERE id=?', (run_id,)).fetchone()['threads'] or 0
