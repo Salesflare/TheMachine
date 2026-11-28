@@ -59,6 +59,8 @@ $('#ai-official').addEventListener('click',async e=>{
  if(e.target.closest('[data-ai-get]'))aiPairGo();
  else if(e.target.closest('[data-ai-retry]'))try{const r=await aiPost('ai_pair_state',{fresh:true});aiView.reach=r.reach;renderAi()}catch(err){errCaught(err);notice(err.message,true)}});
 async function aiDo(action,args,done){try{const r=await aiPost(action,args);if(r.connections){aiView=r}else await aiLoad();renderAi();if(done)notice(t(done))}catch(e){errCaught(e);notice(e.message,true)}}
+$('#ai-list').addEventListener('change',e=>{const id=e.target.closest('[data-ai]')?.dataset.ai,k=['level','area','expiry'].find(k=>e.target.matches(`[data-ai-${k}]`));
+ if(id&&k&&e.target.value)aiDo('ai_change',{id,[k]:e.target.value},'Saved')});
 $('#ai-list').addEventListener('click',async e=>{const row=e.target.closest('[data-ai]');if(!row)return;const id=row.dataset.ai,name=(aiView?.connections||[]).find(c=>c.id===id)?.name||'';
  if(e.target.closest('[data-ai-edit]')){aiEdit=aiEdit===id?'':id;aiOpen='';renderAi();return}
  const sw=e.target.closest('[data-ai-messages]');if(sw){const on=sw.getAttribute('aria-checked')!=='true';sw.setAttribute('aria-checked',on);aiDo('ai_change',{id,messages:on},on?'Messages on':'Messages off');return}

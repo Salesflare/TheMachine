@@ -1,9 +1,11 @@
 /*@lazy*/
-/* A connected AI's Change panel (settings-ai-edit.js): rows of controls that wrap, the notes under them, and each
-   event's name with its switch */
+/* A connected AI's Change panel (settings-ai-edit.js): rows of controls that wrap, the notes under them, and the
+   Events group: its label on its own line, then the events in a row (on a phone, one per row, switch on the right) */
 .ai-controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ai-controls .ghost{padding-inline:10px}
 .ai-controls select{width:auto;max-width:100%;field-sizing:content}
 .ai-msg-note{color:var(--muted);font-size:var(--fs-xs)}
-.ai-ev-label{font-size:var(--fs-sm);color:var(--muted);margin-inline-end:4px}
-.ai-ev{display:flex;gap:6px;align-items:center;font-size:var(--fs-sm);margin-inline-end:8px}
+.ai-evs{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:var(--fs-sm)}
+.ai-ev-label{flex-basis:100%;color:var(--muted)}
+.ai-ev{display:flex;gap:8px;align-items:center}
+@media(max-width:560px){.ai-evs{align-self:stretch;flex-direction:column}.ai-ev{justify-content:space-between}}

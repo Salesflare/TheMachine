@@ -50,7 +50,7 @@ try{
   assert.deepEqual(await edit.locator('button:not([data-ai-event])').allInnerTexts(),['Activity','Turn off now','Remove']);
   // Events (ai_events.py): one switch per event, all off to start; a click saves the ones on, and only for this AI
   const events=edit.locator('[data-ai-event]');
-  assert.deepEqual(await events.evaluateAll(b=>b.map(x=>[x.dataset.aiEvent,x.getAttribute('aria-checked'),x.getAttribute('aria-label')])),
+  assert.deepEqual(await events.evaluateAll(b=>b.map(x=>[x.dataset.aiEvent,x.getAttribute('aria-checked'),x.labels[0]?.textContent])),
    [['todo.created','false','New to-dos'],['meeting.briefing_ready','false','Meeting briefings'],['promise.due','false','Promises due']]);
   await edit.locator('[data-ai-event="promise.due"]').click();await new Promise(r=>setTimeout(r,200));
   assert.deepEqual(asked.at(-1),['ai_change',{id:'aic_gpt',events:['promise.due']}]);
