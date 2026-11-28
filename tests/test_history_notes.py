@@ -67,11 +67,11 @@ class HistoryNotes(unittest.TestCase):
                 for it in items:
                     found = re.search(r'H(\d+) \|[^\n]*\n<<<[^\n]*' + re.escape(it['quote'][:20]), prompt)
                     if found:
-                        out.append({'message': 'H' + found.group(1), 'area': 'work', 'about': '', **it})
+                        out.append({'message': 'H' + found.group(1), 'area': 'work', 'holds_for': it.get('about') or 'everyone', 'because': it['quote'], **it})
                 return json.dumps({'items': out})
             if prompt.startswith('Below are facts kept'):
                 return json.dumps(check or {})
-            if prompt.startswith('Below are pairs'):
+            if prompt.startswith('Below are notes an assistant keeps'):
                 return json.dumps(twins(prompt) if twins else {})
             return json.dumps(merge or {'notes': []})
         return reply
@@ -159,9 +159,9 @@ class HistoryNotes(unittest.TestCase):
         self.mail(110, 'Walter, we send every report as a PDF attachment.', to='Walter Client <walter@client.example>')
         self.mail(100, 'We waive the setup fee for the Clients only, this year.', to='Pat Colleague <pat@acme.example>')
         self.learn(self.model([
-            {'kind': 'fact', 'text': 'Walter Client is billed quarterly in advance.', 'quote': 'for you we bill quarterly in advance instead of monthly'},
-            {'kind': 'preference', 'text': 'You send every report as a PDF attachment.', 'quote': 'we send every report as a PDF attachment', 'about': 'Walter Client'},
-            {'kind': 'fact', 'text': 'The setup fee is waived for the Clients.', 'quote': 'We waive the setup fee for the Clients only'}]))
+            {'kind': 'fact', 'text': 'Walter Client is billed quarterly in advance.', 'quote': 'for you we bill quarterly in advance instead of monthly', 'holds_for': 'Walter Client'},
+            {'kind': 'preference', 'text': 'You send every report as a PDF attachment.', 'quote': 'we send every report as a PDF attachment', 'because': 'we send every report'},
+            {'kind': 'fact', 'text': 'The setup fee is waived for the Clients.', 'quote': 'We waive the setup fee for the Clients only', 'holds_for': 'the Clients'}]))
         facts = {f['text']: f for f in self.facts()}
         self.assertEqual(facts['Walter Client is billed quarterly in advance.']['scope'], 'with:' + WALTER)
         self.assertEqual(facts['You send every report as a PDF attachment.']['scope'], 'area')  # told to one client: how the owner works
@@ -174,8 +174,8 @@ class HistoryNotes(unittest.TestCase):
         self.mail(90, 'Zed, your reports come as a spreadsheet.', to='Zed Unknown <zed@nowhere.example>')
         self.mail(80, 'Walter, the shared folder link changes each quarter.', to='Walter Client <walter@client.example>, Pat Colleague <pat@acme.example>')
         found = self.learn(self.model([
-            {'kind': 'fact', 'text': 'Invoices go out on the 15th.', 'quote': 'your invoices go out on the 15th'},
-            {'kind': 'fact', 'text': 'Reports come as a spreadsheet.', 'quote': 'your reports come as a spreadsheet'},
+            {'kind': 'fact', 'text': 'Invoices go out on the 15th.', 'quote': 'your invoices go out on the 15th', 'because': 'we do this for every client'},
+            {'kind': 'fact', 'text': 'Reports come as a spreadsheet.', 'quote': 'your reports come as a spreadsheet', 'holds_for': ''},
             {'kind': 'fact', 'text': 'The shared folder link changes each quarter.', 'quote': 'the shared folder link changes each quarter'}]))
         facts = {f['text']: f['scope'] for f in self.facts()}
         self.assertEqual(facts, {'Invoices go out on the 15th.': 'with:' + WALTER, 'The shared folder link changes each quarter.': 'area'})
@@ -201,12 +201,46 @@ class HistoryNotes(unittest.TestCase):
             merge={'notes': [{'text': "You're not available Friday afternoons or Monday evenings.", 'from': ['F1', 'F2']}]}))
         self.assertEqual(len(self.facts()), 2)
 
-    def test_the_owners_words_that_keep_it_to_one(self):
-        self.assertTrue(history_notes.one_party("That arrangement is Gideon's company and nobody else's; if anyone else asks, the binder rules apply"))
-        self.assertFalse(history_notes.one_party("we don't brew under anyone else's label, ever"))
-        self.assertTrue(history_notes.one_party("For Ashgrove we'll skip the deposit and invoice each piece net 30"))
-        self.assertFalse(history_notes.one_party("our hulls are for lessons, and nobody gets taken out just for the ride"))
-        self.assertFalse(history_notes.one_party("For every order we ship within two days"))
+    def test_who_it_holds_for_is_read_by_meaning_and_one_partys_deal_stays_theirs_also_told_to_a_colleague(self):
+        self.mail(100, "For Walter we'll skip the deposit and invoice each piece net 30 once it's delivered.")
+        self.mail(90, 'Please say no: our hulls are for lessons, and nobody gets taken out just for the ride.')
+        self.mail(80, "Walter, that arrangement is yours and nobody else's.", to='Walter Client <walter@client.example>')
+        self.learn(self.model([
+            {'kind': 'fact', 'text': 'You skip the deposit and invoice net 30 after delivery.', 'quote': "we'll skip the deposit and invoice each piece net 30",
+             'holds_for': 'Walter', 'because': "For Walter we'll skip the deposit"},
+            {'kind': 'rule', 'text': 'Your hulls are for lessons, never for rides.', 'quote': 'our hulls are for lessons, and nobody gets taken out just for the ride'},
+            {'kind': 'fact', 'text': 'That arrangement is for Walter only.', 'quote': "that arrangement is yours and nobody else's", 'holds_for': 'everyone', 'because': 'that arrangement is for everyone'}]))
+        facts = {f['text']: f['scope'] for f in self.facts()}
+        self.assertEqual(facts['You skip the deposit and invoice net 30 after delivery.'], 'with:' + WALTER)  # told to a colleague, still Walter's
+        self.assertEqual(facts['Your hulls are for lessons, never for rides.'], 'area')
+        self.assertEqual(facts['That arrangement is for Walter only.'], 'with:' + WALTER)  # "everyone" with words the owner never wrote
+
+    def test_the_owners_own_time_or_firm_is_never_an_arrangement_with_them(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('org:acme.example','org','Acme',1,0,'{}')")
+        self.mail(100, 'Walter, I keep Mondays free, the shop is closed.', to='Walter Client <walter@client.example>')
+        self.mail(90, 'Walter, our crew never works after dark.', to='Walter Client <walter@client.example>')
+        self.learn(self.model([
+            {'kind': 'preference', 'text': 'You keep Mondays free.', 'quote': 'I keep Mondays free, the shop is closed', 'holds_for': 'you'},
+            {'kind': 'rule', 'text': 'Your crew never works after dark.', 'quote': 'our crew never works after dark', 'holds_for': 'Acme'}]))
+        self.assertEqual(sorted(f['scope'] for f in self.facts()), ['area', 'area'])
+
+    def test_the_area_is_why_it_is_so_which_an_older_message_may_tell(self):
+        self.mail(300, 'Hetty, Thursdays are choir, 7 to 9:30, and I never skip it.', to='Hetty Friend <hetty@mail.example>')
+        self.mail(100, "Corwin, Thursday evenings I'm not available. Could we do lunch instead?", to='Corwin Belasco <corwin@downtown.example>, Pat Colleague <pat@acme.example>')
+        seen = []
+        self.learn(self.model([{'kind': 'preference', 'text': "You're not available on Thursday evenings.", 'quote': "Thursday evenings I'm not available"}],
+                              check={'F1': {'verdict': 'keep', 'area': 'personal'}}, seen=seen))
+        self.assertIn('Thursdays are choir', next(p for p in seen if p.startswith('Below are facts kept')))
+        self.assertEqual([f['side'] for f in self.facts()], ['personal'])
+
+    def test_twins_never_drop_one_with_other_numbers_or_for_another_person(self):
+        notes = [{'text': 'Your minimum is $400 per order.', 'quote': 'our minimum is $400 per order', 'about': ''},
+                 {'text': 'Your minimum is $300 per order.', 'quote': 'our minimum is $300 per order', 'about': ''},
+                 {'text': 'Walter pays within 10 days.', 'quote': 'you pay within 10 days', 'about': 'Walter Client'},
+                 {'text': 'Customers pay within 10 days.', 'quote': 'customers pay within 10 days', 'about': ''}]
+        kept, gone = history_notes.twins_dropped(notes, notes, {'covered': [{'note': 'N1', 'by': 'N2'}, {'note': 'N3', 'by': 'N4'}]})
+        self.assertEqual(gone, 0)
 
     def test_over_the_bound_the_richest_messages_are_read_across_all_of_history(self):
         self.mail(600, 'Our minimum fee is 300 for every project, always, unless the board says otherwise.')
@@ -242,14 +276,11 @@ class HistoryNotes(unittest.TestCase):
 
         def twins(prompt):  # one rule twice: the label rule says all of it; the taproom rule is on Learning already
             asked.append(prompt)
-            out = {}
-            for n, block in enumerate(prompt.split('\nP')[1:], 1):
-                a, b = block.split('\n  B: ')
-                if 'Ironbark name' in a + b and 'label' in a + b:
-                    out[f'P{n}'] = {'same': True, 'keep': 'A' if 'label' in a else 'B'}
-                elif 'brewery' in a + b and 'taproom' in a + b:
-                    out[f'P{n}'] = {'same': True, 'keep': 'A'}
-            return out
+            notes = dict(re.findall(r'\n(N\d+)[^:]*: <<<([^\n]*)>>>', prompt))
+            n = {k for k, v in notes.items() if 'Ironbark name' in v}, {k for k, v in notes.items() if 'label' in v}
+            t = {k for k, v in notes.items() if 'taproom' in v}, {k for k, v in notes.items() if 'brewery' in v}
+            m = {k for k, v in notes.items() if '$400' in v}, {k for k, v in notes.items() if 'portal' in v}
+            return {'covered': [{'note': a, 'by': b} for x, y in (n, t, m) for a in x for b in y]}  # the last pair is a model's mistake
         found = self.learn(self.model([
             {'kind': 'rule', 'text': 'Your tanks only ever hold beer with the Ironbark name.', 'quote': 'our tanks only ever hold beer with the Ironbark name on it'},
             {'kind': 'rule', 'text': "You don't brew beer under anyone else's label and point them to Fallow Field.",
@@ -258,9 +289,8 @@ class HistoryNotes(unittest.TestCase):
             {'kind': 'rule', 'text': 'Accounts order online through the portal.', 'quote': 'Accounts order online through the portal, every order'},
             {'kind': 'rule', 'text': 'You meet a new account at your taproom, not at their place.', 'quote': 'I always meet a new account at our taproom, not at their place'}],
             twins=twins))
-        self.assertEqual(len(asked), 1)
-        self.assertIn('the Ironbark name', asked[0])
-        self.assertNotIn('$400', asked[0])  # a note with a number pairs only with one with the same numbers
+        self.assertEqual(len(asked), 2)  # once from each end
+        self.assertIn('(on Learning)', asked[0])
         texts = [f['text'] for f in self.facts()]
         self.assertEqual(sorted(texts), sorted(['You see new customers at the brewery, never at their venue.', "You don't brew beer under anyone else's label and point them to Fallow Field.",
                                                 'Your delivery minimum is $400 per order.', 'Accounts order online through the portal.']))
