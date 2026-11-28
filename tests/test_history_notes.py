@@ -301,6 +301,19 @@ class HistoryNotes(unittest.TestCase):
         kept, gone = history_notes.consolidated(notes, notes, {'rules': [{'text': 'You keep Sundays for family and take no clinic calls.', 'from': ['N1', 'N2']}]})
         self.assertEqual(gone, 0)  # a poorer rewrite never drops the work note into Personal
 
+    def test_a_you_that_means_who_heard_it_becomes_their_name_and_holds_with_them(self):
+        self.mail(100, 'Walter, el recuento semanal de entregas es tuyo a partir de ahora, cada lunes por la mañana sin falta.', to='Walter Client <walter@client.example>')
+        self.mail(90, 'Walter, you keep your own copy of the delivery list.', to='Walter Client <walter@client.example>')
+        found = self.learn(self.model([
+            {'kind': 'responsibility', 'text': 'You send the weekly delivery count.', 'quote': 'el recuento semanal de entregas es tuyo a partir de ahora, cada lunes por la mañana sin falta', 'does_it': 'Walter', 'holds_for': 'everyone'},
+            {'kind': 'responsibility', 'text': 'You keep your own copy of the delivery list.', 'quote': 'you keep your own copy of the delivery list', 'does_it': 'Walter'}]))
+        self.assertEqual(found['dropped'].get('says_you_for_them'), 1, found['dropped'])
+        self.assertEqual([(f['text'], f['scope']) for f in self.facts()], [('Walter sends the weekly delivery count.', 'with:' + WALTER)])
+
+    def test_a_mailbox_of_short_messages_gets_its_turns(self):
+        self.assertEqual([len(b) for b in history_notes.batches([{'text': 'x' * 150}] * 39)], [10, 10, 10, 9])
+        self.assertEqual(len(history_notes.batches([{'text': 'x' * 500}] * 300)), 22)  # a full one: by size, as before
+
     def test_a_removed_note_that_said_more_still_never_comes_back(self):
         with self.store.connect() as db:
             fid = history_fact(db, 'You are in confidential talks to lease the old Hartwell store for a second studio at $4,200 a month on five years.', False, False, 1, '2026-01-01', 'x', 'work')
