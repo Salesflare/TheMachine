@@ -28,8 +28,9 @@ const waitsOnOthers=s=>!closed(s)&&s.status==='prepared'&&!looksDone(s)&&outStat
 const taskActions=s=>{const choices=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);const ready=choices.some(a=>[...SENDS,'email_demo','merge','finish','handoff','calendar','doc_write','linear'].includes(a.kind));return choices.filter(a=>a.kind!=='prepare'||(!ready&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')))};
 // Under way or done, so no Send. An unconfirmed send checked long enough (retry_ok) may be sent again by the owner.
 const sendBusy=a=>['queued','sending','sent','uncertain','local_preparation','paused','undoing','undone'].includes(a?.status)&&!a?.retry_ok;
-// A Daily digest (todos-digest.js) and a meeting briefing (meeting_prep.py) are only for reading: To read, calm, not
-// counted as needing the owner; Done leads, then Snooze and Not needed. A briefing's promises and questions have their own to-dos.
+// A Daily digest (todos-digest.js) and a meeting briefing (meeting_prep.py) are only for reading: To read, calm, yet in
+// every For you count (header, section, To-dos badge), as the section shows them; Done leads, then Snooze and Not
+// needed. A briefing's promises and questions have their own to-dos.
 const toRead=s=>(!!s.digest||!!s.briefing)&&s.status==='pending';
 // A cleanup to-do with every row decided: finished, like a ready result
 const cleanupSettled=s=>!!s.cleanup?.items?.length&&!closed(s)&&s.status==='pending'&&s.cleanup.items.every(i=>!/^(open|working)$/.test(i.state));

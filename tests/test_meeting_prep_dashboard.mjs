@@ -52,12 +52,12 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
   await page.goto(base);const todo=page.locator('#task-'+ID);await todo.locator('.body').waitFor();
   assert.equal(await todo.locator('h3').innerText(),TITLE);
-  // Only for reading, like the Daily digest: To read, Done leads, no Do it or Ask for changes, not counted as needing them
+  // Only for reading, like the Daily digest: To read, Done leads, no Do it or Ask for changes; counted in To-dos as For you counts it
   assert.equal(await todo.locator('.card-badges .chip').first().innerText(),'To read');
   assert.equal(await todo.locator('button.primary[data-choice="complete"]').innerText(),'Done');
   assert.equal(await todo.locator('[data-choice="accept"],[data-choice="change"]').count(),0,'nothing to do it with or change');
   assert.ok(await todo.locator('.actions [data-choice="snooze"]').first().isVisible(),'Snooze in sight');
-  assert.equal(await page.locator('#badge-inbox').textContent(),'','not counted as needing the owner');
+  assert.equal(await page.locator('#badge-inbox').textContent(),'1','To-dos counts it, as For you does');
   // Short by default: the first lines, then Show more opens the whole briefing, each part with its label in bold
   const more=todo.locator('button.more[data-more]');assert.equal(await more.innerText(),'Show more');
   assert.ok(await todo.locator('.body.clamp').count(),'the briefing starts folded');

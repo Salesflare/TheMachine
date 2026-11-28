@@ -80,7 +80,7 @@ try{
   assert.equal(await text(todo.locator('.dg-row').first().locator('.dg-why')),'New field data from towns colder than yours, with running costs.');
   assert.equal(await todo.getByRole('button',{name:'Do it',exact:true}).count(),0,'a digest has no Do it');
   assert.equal(await text(todo.locator('.card-badges .chip').first()),'To read','a digest is calm reading, not Needs you');
-  assert.equal(await page.locator('#badge-inbox').textContent(),'','a digest is not counted as needing the owner');
+  assert.equal(await page.locator('#badge-inbox').textContent(),'1','To-dos counts a digest, as For you does');
   assert.equal(await todo.locator('[data-dg-open]').count(),2,'only a pick with a kept mail opens it');
   assert.equal(await todo.locator('a.dg-out').count(),3,'every pick from a mail links to it');
   assert.equal(await text(todo.locator('button.primary[data-choice="complete"]')),'Done','Done finishes a digest');
