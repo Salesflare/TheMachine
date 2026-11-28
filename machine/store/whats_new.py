@@ -37,9 +37,9 @@ ENTRIES = [
      'text': 'Get the app for Windows, Mac or Linux: your dashboard in its own window, and a small robot in a corner to '
              'add a to-do or ask.',
      'action': {'label': 'Open Apps', 'run': 'go-settings-apps'}, 'art': 'desktop'},
-    {'id': 'ai-learnings', 'date': '2026-11-27', 'weight': 2, 'title': 'Claude learns with The Machine',
-     'text': 'A connected Claude now starts each chat from what The Machine learned about you, and can save what you '
-             'settle there.',
+    {'id': 'ai-learnings', 'date': '2026-11-27', 'weight': 2, 'title': 'Claude and ChatGPT learn with you',
+     'text': 'A connected Claude or ChatGPT now starts each chat from what The Machine learned about you, and can save '
+             'what you settle there.',
      'action': {'label': 'Open Apps', 'run': 'go-settings-apps'}, 'art': 'learn'},
     {'id': 'ask-older-mail', 'date': '2026-11-27', 'weight': 2, 'title': 'Search reaches older mail',
      'text': 'When nothing kept answers a question, Search looks in your mailboxes too, so older emails count.',
