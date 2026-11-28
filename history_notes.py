@@ -445,7 +445,7 @@ def run(store, accounts, account_ids, owner_emails, today, ask):
                 why = 'more_than_quote'
             elif NO_REFERENT.search(item['text']):
                 why = 'not_standalone'  # "the same procedure": it only made sense in that one message
-            elif any(len(_words(item['text']) & _words(r)) >= max(3, len(_words(r)) * 0.6) for r in removed):
+            elif any(len(_words(item['text']) & _words(r)) >= max(3, min(len(_words(r)), len(_words(item['text']))) * 0.6) for r in removed):  # also when the removed one said more
                 why = 'forgotten'
             elif any(same(item['text'], k['text']) or (k['event_id'] == source['id'] and same(quote, k['quote']))
                      or (k['area'] == (item.get('area') or area.get(source['account_id'])) and same_quote(quote, k['quote'])) for k in items) \

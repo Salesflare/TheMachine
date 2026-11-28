@@ -238,6 +238,15 @@ class HistoryNotes(unittest.TestCase):
         self.assertTrue(history_notes.supported('You refund within 30 days.', 'Wir erstatten den vollen Betrag innerhalb von 30 Tagen zurück, ohne Rückfragen und ohne Gebühren für unsere Kunden'))
         self.assertTrue(history_notes.supported('You refund within 30 days.', '30日以内に全額を返金します'))
 
+    def test_a_removed_note_that_said_more_still_never_comes_back(self):
+        with self.store.connect() as db:
+            fid = history_fact(db, 'You are in confidential talks to lease the old Hartwell store for a second studio at $4,200 a month on five years.', False, False, 1, '2026-01-01', 'x', 'work')
+            db.execute("UPDATE facts SET removed_at='2026-02-01' WHERE id=?", (fid,))
+        self.mail(100, "I'm trying to lease the old Hartwell hardware store for a second studio.")
+        found = self.learn(self.model([{'kind': 'priority', 'text': 'You are trying to lease the old Hartwell hardware store for a second studio.',
+                                        'quote': "I'm trying to lease the old Hartwell hardware store for a second studio"}]))
+        self.assertEqual(found['dropped'].get('forgotten'), 1)
+
     def test_the_owners_firm_by_their_address_is_the_owner(self):
         self.mail(100, 'Walter, at Acme we never work after dark.', to='Walter Client <walter@client.example>')
         self.learn(self.model([{'kind': 'rule', 'text': 'You never work after dark.', 'quote': 'at Acme we never work after dark', 'holds_for': 'Acme Plumbing'}]))
