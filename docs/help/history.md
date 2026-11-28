@@ -42,7 +42,8 @@ Once a mailbox's history and its new mail are in, your Machine reads the email y
 - Only your own words count. What someone else asked is not how you work.
 - Something you told one client stays theirs, on their Graph page, unless what you wrote or who you told shows it is how you work for everyone. A deal for one client stays theirs also when you told a colleague.
 - When a newer email of yours changes something, or what your Machine knows now says otherwise, the newer one wins.
-- One rule you wrote twice, in other words or from two sides, is kept once.
+- One rule you wrote twice, in other words or from two sides, or in parts (a goal and its target), is kept once.
+- A note that would only say "him" or "her" names who, from your message, or is left out.
 - Work or Personal by why it is so: an evening kept free for your choir is Personal, also when you told a client. A Personal note stays out of work.
 - Never a to-do, a promise or a reply. What is over stays over.
 

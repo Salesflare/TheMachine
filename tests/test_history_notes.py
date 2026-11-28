@@ -238,6 +238,32 @@ class HistoryNotes(unittest.TestCase):
         self.assertTrue(history_notes.supported('You refund within 30 days.', 'Wir erstatten den vollen Betrag innerhalb von 30 Tagen zurück, ohne Rückfragen und ohne Gebühren für unsere Kunden'))
         self.assertTrue(history_notes.supported('You refund within 30 days.', '30日以内に全額を返金します'))
 
+    def test_a_note_that_says_him_or_her_names_who_from_its_message_or_is_dropped(self):
+        self.mail(300, 'Bertrand needs a ride to the clinic. I go with him on Tuesdays at 15:45.')
+        self.mail(200, 'Lucie and Bertrand both asked. I go with him on Fridays.')
+        self.mail(100, 'Send the signed form back by Friday, it goes to the court.')
+        self.mail(50, 'Marisa, she files all warranty claims from now on.')
+        found = self.learn(self.model([
+            {'kind': 'preference', 'text': 'You go with him every Tuesday at 15:45.', 'quote': 'I go with him on Tuesdays at 15:45'},
+            {'kind': 'preference', 'text': 'You go with him on Fridays.', 'quote': 'I go with him on Fridays'},
+            {'kind': 'rule', 'text': 'It always goes to the court.', 'quote': 'it goes to the court'},
+            {'kind': 'rule', 'text': 'You have Marisa file all warranty claims.', 'quote': 'she files all warranty claims'}]))
+        self.assertEqual(sorted(f['text'] for f in self.facts()), ['You go with Bertrand every Tuesday at 15:45.', 'You have Marisa file all warranty claims.'], found['dropped'])
+        self.assertEqual(found['dropped'].get('no_referent'), 2, found['dropped'])
+
+    def test_parts_of_one_rule_become_one_note_each_clause_from_its_own_quote(self):
+        notes = [{'text': 'You focus on collecting client reviews this year.', 'quote': 'this year we focus on collecting client reviews',
+                  'about': '', 'area': 'work', 'at': '2026-01-01', 'said': 'x\nthis year we focus on collecting client reviews'},
+                 {'text': 'You aim for 120 reviews by year end.', 'quote': 'the target is 120 reviews by year end',
+                  'about': '', 'area': 'work', 'at': '2026-02-01', 'said': 'y\nthe target is 120 reviews by year end'}]
+        kept, gone = history_notes.consolidated(notes, notes, {'rules': [
+            {'text': 'You focus on collecting client reviews this year, and you aim for 120 reviews by year end.', 'from': ['N1', 'N2']}]})
+        self.assertEqual((gone, [k['text'] for k in kept]), (1, ['You focus on collecting client reviews this year, and you aim for 120 reviews by year end.']))
+        self.assertEqual([q for q, _ in kept[0]['parts']], [n['quote'] for n in notes])
+        kept, gone = history_notes.consolidated(notes, notes, {'rules': [
+            {'text': 'You focus on collecting client reviews, and you pay staff a bonus for 120 reviews by year end.', 'from': ['N1', 'N2']}]})
+        self.assertNotIn('bonus', ' '.join(k['text'] for k in kept))  # a clause no quote says: not taken
+
     def test_a_removed_note_that_said_more_still_never_comes_back(self):
         with self.store.connect() as db:
             fid = history_fact(db, 'You are in confidential talks to lease the old Hartwell store for a second studio at $4,200 a month on five years.', False, False, 1, '2026-01-01', 'x', 'work')
