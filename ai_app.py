@@ -385,8 +385,8 @@ class AiApp:
         if isinstance(message, list):
             replies = [r for r in (handle(m) for m in message[:20]) if r]
             return (self.ai_json(200, replies) if replies else (202, {}, b''))
-        reply = handle(message)
-        return self.ai_json(200, reply) if reply else (202, {}, b'')
+        reply = ai_access.header_error(message, headers) or handle(message)
+        return self.ai_json(ai_access.http_status(message, reply), reply) if reply else (202, {}, b'')
 
     @staticmethod
     def ai_json(status, value, cache=False):

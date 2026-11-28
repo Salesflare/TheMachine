@@ -1588,3 +1588,152 @@ class Marked(Base):
         self.assertIn('Here it is.', draft['text'])
         self.assertTrue(draft['text'].endswith('</untrusted>'))
         self.assertEqual(draft['to'], ['sam@client.example'])
+
+
+MODERN_META = {'io.modelcontextprotocol/protocolVersion': '2026-07-28',
+               'io.modelcontextprotocol/clientInfo': {'name': 'openai-mcp', 'version': '1.0.0'},
+               'io.modelcontextprotocol/clientCapabilities': {}}
+
+
+class Eras(Base):
+    """One endpoint for both MCP eras. The plugin scan opens with an MCP 2.0 server/discover, and before this it got
+    Method not found and fell back to initialize; ChatGPT's and Claude's tool calls today are legacy, after initialize.
+    Each sequence is replayed here, and every tool answers the same in both eras."""
+
+    def post(self, bearer, message, headers=None):
+        status, out, data = self.app.ai_http('POST', '/mcp', {'Authorization': 'Bearer ' + bearer, **(headers or {})},
+                                             json.dumps(message).encode(), HOST)
+        return status, (json.loads(data) if data else None)
+
+    def modern(self, bearer, method, params=None, ident=1, headers=None):
+        message = {'jsonrpc': '2.0', 'id': ident, 'method': method, 'params': {**(params or {}), '_meta': dict(MODERN_META)}}
+        return self.post(bearer, message, {'MCP-Protocol-Version': '2026-07-28', 'Mcp-Method': method,
+                                           **({'Mcp-Name': params['name']} if method == 'tools/call' else {}), **(headers or {})})
+
+    def legacy(self, bearer, method, params=None, ident=1):
+        return self.post(bearer, {'jsonrpc': '2.0', 'id': ident, 'method': method, 'params': params or {}},
+                         {'MCP-Protocol-Version': '2025-06-18'} if method != 'initialize' else {})
+
+    def plain(self, reply):
+        """A 2.0 result without what 2.0 adds: resultType and the server's name in _meta."""
+        result = dict(reply['result'])
+        self.assertEqual(result.pop('resultType'), 'complete')
+        self.assertEqual(result.pop('_meta'), {'io.modelcontextprotocol/serverInfo': ai_access.SERVER})
+        return {**reply, 'result': result}
+
+    def test_the_scanner_finds_the_tools_and_events_through_server_discover(self):
+        _, tokens = self.signed_in()
+        bearer = tokens['access_token']
+        status, _, data = self.app.ai_http('GET', '/.well-known/oauth-protected-resource/mcp', {}, b'', HOST)
+        self.assertEqual(status, 200)
+        status, found = self.modern(bearer, 'server/discover', ident='server-discover-1')
+        self.assertEqual(status, 200, found)
+        self.assertEqual(found['id'], 'server-discover-1')
+        result = found['result']
+        self.assertEqual((result['resultType'], result['supportedVersions']), ('complete', ['2026-07-28']))
+        self.assertEqual(result['capabilities'], {'tools': {'listChanged': False}, 'events': {}})
+        self.assertEqual(result['_meta']['io.modelcontextprotocol/serverInfo']['name'], 'the-machine')
+        _, started = self.legacy(bearer, 'initialize', {'protocolVersion': '2025-11-25', 'capabilities': {}})
+        self.assertTrue(result['instructions'].startswith(ai_access.INSTRUCTIONS))  # the brief after it: since the last visit
+        self.assertTrue(started['result']['instructions'].startswith(ai_access.INSTRUCTIONS))
+        self.assertEqual([x['tool'] for x in self.activity()].count('brief'), 1)  # one visit, as with initialize alone
+        status, tools = self.modern(bearer, 'tools/list', ident=2)
+        self.assertEqual(status, 200)
+        self.assertEqual(self.plain(tools)['result'], self.legacy(bearer, 'tools/list', ident=2)[1]['result'])
+        self.assertEqual(len(tools['result']['tools']), 16)  # the 16 the plugin lists
+        status, events = self.modern(bearer, 'events/list', ident=3)
+        self.assertEqual(status, 200)
+        self.assertEqual(self.plain(events)['result'], {'events': ai_access.ai_events.catalog()})
+        self.assertEqual([e['name'] for e in events['result']['events']], list(ai_access.ai_events.EVENTS))
+
+    def test_a_discover_probe_without_a_version_still_answers(self):
+        _, tokens = self.signed_in()
+        for params in ({}, {'_meta': {'io.modelcontextprotocol/clientCapabilities': {}}}):
+            status, found = self.post(tokens['access_token'], {'jsonrpc': '2.0', 'id': 7, 'method': 'server/discover', 'params': params})
+            self.assertEqual(status, 200, found)
+            self.assertEqual(found['result']['capabilities']['events'], {})
+
+    def test_chatgpts_legacy_sequence_answers_as_before(self):
+        _, tokens = self.signed_in()
+        bearer = tokens['access_token']
+        status, started = self.legacy(bearer, 'initialize', {'protocolVersion': '2025-06-18', 'capabilities': {},
+                                                             'clientInfo': {'name': 'openai-mcp', 'version': '1.0.0'}})
+        self.assertEqual(status, 200)
+        self.assertEqual(set(started['result']), {'protocolVersion', 'capabilities', 'serverInfo', 'instructions'})
+        self.assertEqual(started['result']['protocolVersion'], '2025-06-18')
+        self.assertEqual(started['result']['capabilities'], {'tools': {'listChanged': False}, 'events': {}})
+        self.assertEqual(started['result']['serverInfo'], ai_access.SERVER)
+        self.assertEqual(self.post(bearer, {'jsonrpc': '2.0', 'method': 'notifications/initialized'})[0], 202)
+        for method in ('tools/list', 'events/list', 'ping'):
+            status, reply = self.legacy(bearer, method)
+            self.assertEqual(status, 200)
+            self.assertNotIn('resultType', reply['result'])
+            self.assertNotIn('_meta', reply['result'])
+        status, reply = self.legacy(bearer, 'tools/call', {'name': 'list_todos', 'arguments': {}, '_meta': {'openai/userAgent': 'x'}})
+        self.assertEqual(status, 200)
+        self.assertEqual(set(reply['result']) - {'structuredContent'}, {'content', 'isError'})
+        for method in ('resources/list', 'prompts/list'):  # a legacy method it doesn't have: 200 with the error, as before
+            self.assertEqual(self.legacy(bearer, method), (200, {'jsonrpc': '2.0', 'id': 1, 'error': {'code': -32601, 'message': 'Method not found'}}))
+
+    def test_every_tool_answers_the_same_in_both_eras(self):
+        _, tokens = self.signed_in(level='draft')
+        bearer = tokens['access_token']
+        calls = [('list_todos', {}), ('list_todos', {'area': 'personal'}), ('get_todo', {'id': self.work_card}),
+                 ('get_todo', {'id': 'nope'}), ('list_promises', {}), ('search_graph', {'query': 'Sam'}),
+                 ('search_messages', {}), ('get_team_brief', {}), ('list_todos', {'area': 'nowhere'}), ('no_such_tool', {})]
+        for name, args in calls:
+            legacy = self.legacy(bearer, 'tools/call', {'name': name, 'arguments': args})
+            modern = self.modern(bearer, 'tools/call', {'name': name, 'arguments': args})
+            self.assertEqual(legacy[0], modern[0], name)
+            self.assertEqual(legacy[1], self.plain(modern[1]) if 'result' in modern[1] else modern[1], name)
+        made = [self.legacy(bearer, 'tools/call', {'name': 'create_todo', 'arguments': {'text': 'Call Sam back'}})[1],
+                self.plain(self.modern(bearer, 'tools/call', {'name': 'create_todo', 'arguments': {'text': 'Send Sam the deck'}})[1])]
+        self.assertEqual([m['result']['isError'] for m in made], [False, False])
+        self.assertEqual([sorted(json.loads(m['result']['content'][0]['text'])) for m in made][0],
+                         sorted(json.loads(made[1]['result']['content'][0]['text'])))
+        self.assertEqual([x['tool'] for x in self.activity()].count('create_todo'), 2)
+
+    def test_a_turned_off_connection_is_refused_the_same_in_both_eras(self):
+        _, tokens = self.signed_in()
+        with self.db() as db:
+            db.execute("UPDATE ai_connections SET level='off'")
+        for call in (self.legacy, self.modern):
+            status, reply = call(tokens['access_token'], 'tools/call', {'name': 'list_todos', 'arguments': {}})
+            self.assertEqual(status, 200)
+            self.assertTrue(reply['result']['isError'])
+        status, reply = self.modern(tokens['access_token'], 'events/subscribe', {'name': 'todo.created', 'arguments': {},
+                                                                                 'delivery': {'mode': 'webhook', 'url': 'https://hooks.example/x', 'secret': 'whsec_' + 'a' * 32}})
+        self.assertEqual(status, 200)
+        self.assertEqual(reply['error']['code'], ai_access.ai_events.FORBIDDEN)
+
+    def test_a_version_it_does_not_speak_is_400_with_what_it_does(self):
+        _, tokens = self.signed_in()
+        message = {'jsonrpc': '2.0', 'id': 1, 'method': 'tools/list', 'params': {'_meta': {**MODERN_META, 'io.modelcontextprotocol/protocolVersion': '2099-01-01'}}}
+        status, reply = self.post(tokens['access_token'], message)
+        self.assertEqual(status, 400)
+        self.assertEqual(reply['error']['code'], -32022)
+        self.assertEqual(reply['error']['data'], {'supported': ['2026-07-28', *ai_access.PROTOCOLS], 'requested': '2099-01-01'})
+
+    def test_a_20_method_it_does_not_have_is_404(self):
+        _, tokens = self.signed_in()
+        status, reply = self.modern(tokens['access_token'], 'resources/list')
+        self.assertEqual((status, reply['error']['code']), (404, -32601))
+
+    def test_headers_that_disagree_with_the_body_are_refused(self):
+        _, tokens = self.signed_in()
+        bearer = tokens['access_token']
+        for headers in ({'Mcp-Method': 'tools/list'}, {'Mcp-Name': 'get_todo'}, {'MCP-Protocol-Version': '2025-11-25'},
+                        {'Mcp-Name': '=?base64?Z2V0X3RvZG8=?='}, {'Mcp-Name': '=?base64?not base64?='}):
+            status, reply = self.modern(bearer, 'tools/call', {'name': 'list_todos', 'arguments': {}}, headers=headers)
+            self.assertEqual((status, reply['error']['code']), (400, -32020), headers)
+        status, reply = self.post(bearer, {'jsonrpc': '2.0', 'id': 1, 'method': 'tools/call', 'params': {'name': 'list_todos', '_meta': dict(MODERN_META)}},
+                                  {'mcp-method': 'tools/list'})  # header names in any case
+        self.assertEqual((status, reply['error']['code']), (400, -32020))
+        status, reply = self.post(bearer, {'jsonrpc': '2.0', 'id': 1, 'method': 'tools/list'}, {'MCP-Protocol-Version': '2026-07-28'})
+        self.assertEqual((status, reply['error']['code']), (400, -32020))
+        self.assertNotIn('list_todos', [x['tool'] for x in self.activity()])
+        status, reply = self.modern(bearer, 'tools/call', {'name': 'list_todos', 'arguments': {}}, headers={'Mcp-Name': '=?base64?bGlzdF90b2Rvcw==?='})
+        self.assertEqual(status, 200, reply)
+        status, reply = self.post(bearer, {'jsonrpc': '2.0', 'id': 1, 'method': 'tools/call',
+                                           'params': {'name': 'list_todos', 'arguments': {}, '_meta': dict(MODERN_META)}})
+        self.assertEqual(status, 200, reply)  # headers left out: the body decides
