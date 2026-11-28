@@ -1097,7 +1097,7 @@ and its live sync are in (`history_backfill.done_at`, `history.first_import_done
 (`history_notes.py`, `history_notes_app.py`) reads what the owner wrote themselves in it and keeps their standing ways
 of working as notes: how they like things done, what they handle, rates and terms, who their accountant is, how a kind
 of task goes. Once per mailbox (`learning_state` `history_notes:<account>`), on the background model, after
-`background_pause` like all background work, in at most 9 small turns (some 12,000 tokens in). `history_notes: false`
+`background_pause` like all background work, in at most 10 small turns (some 14,000 tokens in). `history_notes: false`
 in config.json turns it off.
 
 - Plain code first: only history rows of mail the owner sent, no bulk mail, only their own lines (quoted mail and a
@@ -1111,7 +1111,11 @@ in config.json turns it off.
   them (scope `with:<node>`, on their Graph page).
 - The newer wins: one turn shows each note with the owner's newer messages that share its words (keep, drop or
   update), and code drops a general note whose number a newer message changes, or that a newer general note on the
-  same thing with other numbers replaces. A last turn merges notes that say the same.
+  same thing with other numbers replaces. A turn merges notes that say the same.
+- One rule said twice in other words is kept once: each note is paired with the notes of its kind (a rule
+  with rules, a fact with facts) and area that share its rarest words (`word_scores`), the ones already on Learning
+  too, and a last turn says which pairs come down to one rule and whose wording says all of it. A pair with other
+  numbers is two things, and one already on Learning stays as the owner sees it.
 - Saved through `machine/store/facts.py` `history_fact`: source `history:email`, the message's day in `decision_id`
   (Learning shows "Your email," that day, and the owner's words), their area as `side` and scope `area`. A
   Personal note stays out of Work prompts and out of the learnings sent to the team. Never a to-do, a promise or a

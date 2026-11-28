@@ -42,6 +42,7 @@ Once a mailbox's history and its new mail are in, your Machine reads the email y
 - Only your own words count. What someone else asked is not how you work.
 - A deal with one client stays theirs, on their Graph page, when your words say so ("for you only", "as agreed").
 - When a newer email of yours changes something, the newer one wins.
+- One rule you wrote twice in other words is kept once.
 - Work or Personal by what it is about. A Personal note stays out of work.
 - Never a to-do, a promise or a reply. What is over stays over.
 

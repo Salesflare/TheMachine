@@ -56,9 +56,9 @@ class HistoryNotes(unittest.TestCase):
             history_store.save(db, 'work', {}, NOW.isoformat(), 10, NOW.isoformat(), done, 365)
             db.execute("INSERT OR IGNORE INTO milestones(name,at) VALUES('first_import:work',?)", (NOW.isoformat(),))
 
-    def model(self, items, check=None, merge=None, seen=None):
+    def model(self, items, check=None, merge=None, seen=None, twins=None):
         """A model: EXTRACT gets items (with "message" filled in from the H-number of the message that has the quote),
-        CHECK gets check, MERGE gets merge."""
+        CHECK gets check, MERGE gets merge, TWINS twins(prompt)."""
         def reply(prompt):
             if seen is not None:
                 seen.append(prompt)
@@ -71,6 +71,8 @@ class HistoryNotes(unittest.TestCase):
                 return json.dumps({'items': out})
             if prompt.startswith('Below are facts kept'):
                 return json.dumps(check or {})
+            if prompt.startswith('Below are pairs'):
+                return json.dumps(twins(prompt) if twins else {})
             return json.dumps(merge or {'notes': []})
         return reply
 
@@ -152,6 +154,43 @@ class HistoryNotes(unittest.TestCase):
             {'kind': 'fact', 'text': 'Your retainer is $1,000 a month for every client.', 'quote': 'Our retainer is $1,000 a month for every client'},
             {'kind': 'preference', 'text': 'You never take meetings on Friday afternoons.', 'quote': 'I never take meetings on Friday afternoons'}]))
         self.assertEqual(self.facts(), [])
+
+    def test_one_rule_said_twice_in_other_words_is_kept_once(self):
+        self.mail(300, 'Lettie, our tanks only ever hold beer with the Ironbark name on it.')
+        self.mail(100, "Barrett, we don't brew under anyone else's label, ever. Point them to Fallow Field.")
+        self.mail(90, 'Our delivery minimum is $400 per order for every account.')
+        self.mail(80, 'Accounts order online through the portal, every order.')
+        with self.store.connect() as db:
+            history_fact(db, 'You see new customers at the brewery, never at their venue.', True, False, 1, '2026-01-01',
+                         'We see new customers at the brewery, never at their venue', 'work')
+        self.mail(70, 'I always meet a new account at our taproom, not at their place.')
+        asked = []
+
+        def twins(prompt):  # one rule twice: the label rule says all of it; the taproom rule is on Learning already
+            asked.append(prompt)
+            out = {}
+            for n, block in enumerate(prompt.split('\nP')[1:], 1):
+                a, b = block.split('\n  B: ')
+                if 'Ironbark name' in a + b and 'label' in a + b:
+                    out[f'P{n}'] = {'same': True, 'keep': 'A' if 'label' in a else 'B'}
+                elif 'brewery' in a + b and 'taproom' in a + b:
+                    out[f'P{n}'] = {'same': True, 'keep': 'A'}
+            return out
+        found = self.learn(self.model([
+            {'kind': 'rule', 'text': 'Your tanks only ever hold beer with the Ironbark name.', 'quote': 'our tanks only ever hold beer with the Ironbark name on it'},
+            {'kind': 'rule', 'text': "You don't brew beer under anyone else's label and point them to Fallow Field.",
+             'quote': "we don't brew under anyone else's label, ever. Point them to Fallow Field"},
+            {'kind': 'rule', 'text': 'Your delivery minimum is $400 per order.', 'quote': 'Our delivery minimum is $400 per order for every account'},
+            {'kind': 'rule', 'text': 'Accounts order online through the portal.', 'quote': 'Accounts order online through the portal, every order'},
+            {'kind': 'rule', 'text': 'You meet a new account at your taproom, not at their place.', 'quote': 'I always meet a new account at our taproom, not at their place'}],
+            twins=twins))
+        self.assertEqual(len(asked), 1)
+        self.assertIn('the Ironbark name', asked[0])
+        self.assertNotIn('$400', asked[0])  # a note with a number pairs only with one with the same numbers
+        texts = [f['text'] for f in self.facts()]
+        self.assertEqual(sorted(texts), sorted(['You see new customers at the brewery, never at their venue.', "You don't brew beer under anyone else's label and point them to Fallow Field.",
+                                                'Your delivery minimum is $400 per order.', 'Accounts order online through the portal.']))
+        self.assertEqual(found['dropped'].get('same_meaning'), 2)  # the one already on Learning stays as the owner sees it
 
     def test_area_by_meaning_and_personal_stays_out_of_the_team(self):
         self.mail(90, 'Wednesday afternoons are for my daughter, I keep them free every week.')
