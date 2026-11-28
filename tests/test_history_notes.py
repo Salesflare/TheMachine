@@ -204,6 +204,9 @@ class HistoryNotes(unittest.TestCase):
     def test_the_owners_words_that_keep_it_to_one(self):
         self.assertTrue(history_notes.one_party("That arrangement is Gideon's company and nobody else's; if anyone else asks, the binder rules apply"))
         self.assertFalse(history_notes.one_party("we don't brew under anyone else's label, ever"))
+        self.assertTrue(history_notes.one_party("For Ashgrove we'll skip the deposit and invoice each piece net 30"))
+        self.assertFalse(history_notes.one_party("our hulls are for lessons, and nobody gets taken out just for the ride"))
+        self.assertFalse(history_notes.one_party("For every order we ship within two days"))
 
     def test_over_the_bound_the_richest_messages_are_read_across_all_of_history(self):
         self.mail(600, 'Our minimum fee is 300 for every project, always, unless the board says otherwise.')

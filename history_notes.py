@@ -190,7 +190,8 @@ def same_quote(a, b):
     return bool(x and y) and len(x & y) >= max(4, min(len(x), len(y)) * 0.5)
 
 
-EXCEPTION = re.compile(r"\b(?:except|only for|just for|for you\b(?! ?r)|special arrangement|that arrangement|as agreed|as we agreed|unlike|other clients|"
+EXCEPTION = re.compile(r"(?:^|[.!?;:]\s+)For (?!(?:the|a|an|every|each|all|any|most|some|now|years|example|instance)\b)[A-Z][\w'’&.-]+[,:]? (?:we|I|you|they)\b|"  # "For Ashgrove we'll skip the deposit"
+                       r"\b(?:except|only for|just for (?!the\b|a\b|fun\b)|for you\b(?! ?r)|special arrangement|that arrangement|as agreed|as we agreed|unlike|other clients|"
                        r"(?:everyone|everybody|nobody|no one|anyone|anybody) else(?!['’]s)|instead of (?:the|my) usual|than usual|your own rate|a different|"
                        r"under (?:the|our|their|your) (?:[\w-]+ ){0,3}(?:agreement|contract|msa))\b", re.I)
 ONLY_FOR = re.compile(r"\bfor (?:the )?([A-Z][\w'’&.-]+(?: [A-Z][\w'’&.-]+){0,2}) only\b")  # "That's for the Pemburys only"
