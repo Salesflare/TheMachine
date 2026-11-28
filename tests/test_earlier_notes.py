@@ -308,8 +308,8 @@ class EarlierNotes(Base):
     # A meeting of the owner's own team -----------------------------------------------------------------------------
 
     def team(self, source, title, people=(KIM, LEE), **meta):
-        """An upcoming meeting of the owner's own team on Tue Nov 10 at 10:00."""
-        self.add({**meeting(source, '10:00', people, **meta), 'title': title, 'body': ''})
+        """An upcoming meeting of the owner's own team on Mon Nov 9 at 10:00: its briefing waits for that morning."""
+        self.add({**meeting(source, '2026-11-09T10:00:00+00:00', people, **meta), 'title': title, 'body': ''})
 
     def test_a_team_meeting_reads_only_its_own_series_even_with_the_same_colleagues(self):
         self.past('d1', 7, (KIM, LEE), title='Design review', notes='Open: whether the import step is optional.', recurring_event_id='dsg')
@@ -317,7 +317,7 @@ class EarlierNotes(Base):
         self.graph()
         self.team('n1', 'Design review (new time)', recurring_event_id='dsg_R20261110T100000')  # the series split at a later date, renamed
         self.assertEqual(self.notes(), [('Design review', 'Open: whether the import step is optional.')])
-        self.answer = {'useful': True, 'who': 'Kim Park and Lee Moss.', 'background': 'Was at Initech.', 'open': [{'text': 'Decide whether the import step is optional', 'source': 'N1'}]}
+        self.answer = {'useful': True, 'who': 'Kim Park and Lee Moss.', 'background': 'Was at Initech.', 'open': [{'text': 'Decide whether the import step is optional', 'source': 'N1', 'for': 'meeting'}]}
         self.run_pass()
         [card] = self.cards()
         self.assertEqual(card['body'].replace(' ', ' '), '**Still open:** Decide whether the import step is optional (Design review, Nov 2)')  # no one introduced
@@ -349,7 +349,7 @@ class EarlierNotes(Base):
         self.past('k1', 20, notes='Agreed: start in January.')
         self.graph()
         self.team('n1', 'All hands', many, recurring_event_id='ah')
-        self.add({**meeting('n2', '09:00', (KIM,), recurring_event_id='dsg'), 'title': 'Design review', 'account_id': 'pcal'})
+        self.add({**meeting('n2', '2026-11-09T10:30:00+00:00', (KIM,), recurring_event_id='dsg'), 'title': 'Design review', 'account_id': 'pcal'})
         self.assertIsNone(self.found())
         self.team('n3', 'Design review', (KIM,), recurring_event_id='dsg')
         self.add(meeting('g1', '11:00'))
@@ -364,6 +364,50 @@ class EarlierNotes(Base):
         self.answer = {'useful': True, 'who': 'Kim Park.', 'bring': 'Ask how the mockups are going.'}
         self.assertIsNone(self.run_pass())
         self.assertEqual((len(self.prompts), self.cards(), self.verdicts()), (1, [], ['nothing']))
+
+    def test_a_team_briefing_needs_something_for_the_owner_not_only_steps_colleagues_owe(self):
+        self.past('d1', 3, (KIM, LEE), title='Stand up', notes='Kim: check the nightly build is green. Lee: look into build caching.', recurring_event_id='su')
+        self.graph()
+        self.team('n1', 'Stand up', recurring_event_id='su')
+        others = [{'text': 'Kim: check the nightly build is green', 'source': 'N1', 'for': 'other'}, {'text': 'Lee: look into build caching', 'source': 'N1'}]
+        self.answer = {'useful': True, 'open': others}  # one says other, one says nothing: neither is the owner's
+        self.assertIsNone(self.run_pass())
+        self.assertEqual((self.cards(), self.verdicts()), ([], ['nothing']))
+        self.assertIn('"for": "owner"', self.prompts[0])
+        with self.store.connect() as db:
+            db.execute('DELETE FROM meeting_preps')
+        self.answer = {'useful': True, 'open': [*others, {'text': 'Send the release notes', 'source': 'N1', 'for': 'Owner'}]}
+        self.run_pass()
+        [card] = self.cards()
+        self.assertIn('Send the release notes', card['body'])
+        self.assertIn('Kim: check', card['body'])  # with the owner's own step, the others' show next to it
+
+    def test_an_open_promise_of_the_owners_from_team_notes_is_something_for_them(self):
+        _, record = self.past('d1', 3, (KIM,), title='Design review', notes='Robin will send the mockups.', recurring_event_id='dsg')
+        self.graph()
+        start = (NOW - dt.timedelta(days=3)).isoformat()
+        with self.store.connect() as db:  # promises read from the notes, as the notes' review stores them
+            mine, theirs = (db.execute("INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,created_at,updated_at) "
+                                       "VALUES(?,'Kim Park',?,?,?,'zoom','open',?,?)", (d, w, start, record, start, start)).lastrowid
+                            for d, w in (('mine', 'Send the mockups'), ('theirs', 'Review the mockups')))
+        self.team('n1', 'Design review', (KIM,), recurring_event_id='dsg')
+        self.answer = {'useful': True, 'promises': [{'id': f'P{theirs}', 'text': 'Kim reviews the mockups'}]}
+        self.assertIsNone(self.run_pass())
+        with self.store.connect() as db:
+            db.execute('DELETE FROM meeting_preps')
+        self.answer = {'useful': True, 'promises': [{'id': f'P{mine}', 'text': 'Promised Kim the mockups'}]}
+        self.run_pass()
+        self.assertIn('Promised Kim the mockups', self.cards()[0]['body'])
+
+    def test_a_team_meetings_briefing_waits_for_its_own_morning_when_it_can(self):
+        at = lambda text: dt.datetime.fromisoformat(text)
+        # A Monday 9:30 stand-up: Monday at 8:00, not the Friday before (a meeting with people from outside keeps Friday)
+        self.assertEqual(meeting_prep.prep_moment(at('2026-11-16T09:30:00+00:00'), team=True), at('2026-11-16T08:00:00+00:00'))
+        self.assertEqual(meeting_prep.prep_moment(at('2026-11-16T09:30:00+00:00')), at('2026-11-13T08:00:00+00:00'))
+        self.assertFalse(meeting_prep.due(at('2026-11-16T09:30:00+00:00'), at('2026-11-13T22:35:00+00:00'), dt.timezone.utc, team=True))
+        # Too close to the morning to be of use then: the work day before
+        self.assertEqual(meeting_prep.prep_moment(at('2026-11-16T08:30:00+00:00'), team=True), at('2026-11-13T08:00:00+00:00'))
+        self.assertEqual(meeting_prep.prep_moment(at('2026-11-17T15:00:00+00:00'), team=True), at('2026-11-17T08:00:00+00:00'))
 
     def test_an_open_briefing_of_the_format_before_is_written_again_only_when_there_are_notes(self):
         asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
