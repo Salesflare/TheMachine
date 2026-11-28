@@ -57,7 +57,7 @@ class HistoryNotes(unittest.TestCase):
             history_store.save(db, 'work', {}, NOW.isoformat(), 10, NOW.isoformat(), done, 365)
             db.execute("INSERT OR IGNORE INTO milestones(name,at) VALUES('first_import:work',?)", (NOW.isoformat(),))
 
-    def model(self, items, check=None, merge=None, seen=None, twins=None):
+    def model(self, items, check=None, merge=None, seen=None, twins=None, consolidate=None):
         """A model: EXTRACT gets items (with "message" filled in from the H-number of the message that has the quote),
         CHECK gets check, MERGE gets merge, TWINS twins(prompt)."""
         def reply(prompt, thinking=None):
@@ -74,6 +74,8 @@ class HistoryNotes(unittest.TestCase):
                 return json.dumps({'items': out})
             if prompt.startswith('Below are facts kept'):
                 return json.dumps(check or {})
+            if 'a set of unique rules' in prompt:
+                return json.dumps(consolidate(prompt) if consolidate else {})
             if prompt.startswith('Below are notes an assistant keeps'):
                 return json.dumps(twins(prompt) if twins else {})
             return json.dumps(merge or {'notes': []})
@@ -236,6 +238,47 @@ class HistoryNotes(unittest.TestCase):
                               check={'F1': {'verdict': 'keep', 'area': 'personal'}}, seen=seen))
         self.assertIn('Thursdays are choir', next(p for p in seen if p.startswith('Below are facts kept')))
         self.assertEqual([f['side'] for f in self.facts()], ['personal'])
+
+    def test_one_rewrite_turn_keeps_each_rule_once_with_one_messages_words(self):
+        self.mail(300, 'We never take a saw or a pry bar to anyone\'s house; a contractor gets that job.')
+        self.mail(200, 'We don\'t do cutouts in walls or roofs; I send homeowners to Lazlo.')
+        self.mail(150, 'Our honey is warmed to 105 at most and only coarsely strained.')
+        self.mail(100, 'We keep it raw: never above 105, never fine-filtered, and every jar is our own bees.')
+        self.mail(90, 'Thursday evenings are choir for me, I never miss it.', to='Hetty Friend <hetty@mail.example>')
+        seen = []
+
+        def consolidate(prompt):
+            notes = dict(re.findall(r'\n?(N\d+) \([^)]*\): <<<([^\n]*)>>>', prompt))
+            ids = lambda *words: [k for k, v in notes.items() if any(w in v for w in words)]
+            return {'rules': [{'text': "You don't do cutouts in walls or roofs and send homeowners to Lazlo.", 'from': ids('pry bar', 'cutouts')},
+                              {'text': 'You keep it raw: never above 105, never fine-filtered, and every jar is your own bees.', 'from': ids('105')},
+                              {'text': 'You never miss choir on Thursday evenings.', 'from': ids('choir')}]}
+        found = self.learn(self.model([
+            {'kind': 'rule', 'text': "You never take a saw or pry bar to anyone's house.", 'quote': "We never take a saw or a pry bar to anyone's house"},
+            {'kind': 'rule', 'text': "You don't do cutouts in walls or roofs and send homeowners to Lazlo.", 'quote': "We don't do cutouts in walls or roofs; I send homeowners to Lazlo"},
+            {'kind': 'rule', 'text': 'Your honey is warmed to 105 at most and only coarsely strained.', 'quote': 'Our honey is warmed to 105 at most and only coarsely strained'},
+            {'kind': 'rule', 'text': 'You keep honey raw, never above 105, never fine-filtered, every jar your own bees.',
+             'quote': 'We keep it raw: never above 105, never fine-filtered, and every jar is our own bees'},
+            {'kind': 'preference', 'text': 'You never miss choir on Thursday evenings.', 'quote': 'Thursday evenings are choir for me, I never miss it', 'area': 'personal'}],
+            consolidate=consolidate, seen=seen))
+        facts = sorted((f['text'], f['quote']) for f in self.facts())
+        self.assertEqual(facts, sorted([
+            ("You don't do cutouts in walls or roofs and send homeowners to Lazlo.", "We don't do cutouts in walls or roofs; I send homeowners to Lazlo"),
+            ('You keep honey raw, never above 105, never fine-filtered, every jar your own bees.', 'We keep it raw: never above 105, never fine-filtered, and every jar is our own bees'),
+            ('You never miss choir on Thursday evenings.', 'Thursday evenings are choir for me, I never miss it')]))
+        self.assertEqual(found['dropped'].get('same_meaning'), 2)  # a rewrite poorer than its richest note: that note stays as it is
+        self.assertFalse(any(p.startswith('Below are notes an assistant keeps') and 'a set of unique rules' not in p for p in seen))  # no pairwise turn
+
+    def test_a_rewrite_that_puts_a_note_in_two_rules_or_joins_areas_or_people_is_not_taken(self):
+        notes = [{'text': 'You keep Mondays free.', 'quote': 'I keep Mondays free', 'about': '', 'area': 'personal', 'at': '1'},
+                 {'text': 'You take no meetings on Mondays.', 'quote': 'no meetings on Mondays', 'about': '', 'area': 'work', 'at': '2'},
+                 {'text': 'Walter pays net 30.', 'quote': 'you pay net 30', 'about': 'Walter', 'area': 'work', 'at': '3'},
+                 {'text': 'Customers pay net 30.', 'quote': 'customers pay net 30', 'about': '', 'area': 'work', 'at': '4'}]
+        self.assertIsNone(history_notes.consolidated(notes, notes, {'rules': [{'text': 'x', 'from': ['N1', 'N2']}, {'text': 'y', 'from': ['N2']}]}))
+        self.assertIsNone(history_notes.consolidated(notes, notes, {'nope': []}))
+        kept, gone = history_notes.consolidated(notes, notes, {'rules': [{'text': 'You keep Mondays free.', 'from': ['N1', 'N2']},
+                                                                          {'text': 'Everyone pays net 30.', 'from': ['N3', 'N4']}]})
+        self.assertEqual(gone, 0)
 
     def test_twins_never_drop_one_with_other_numbers_or_for_another_person(self):
         notes = [{'text': 'Your minimum is $400 per order.', 'quote': 'our minimum is $400 per order', 'about': ''},

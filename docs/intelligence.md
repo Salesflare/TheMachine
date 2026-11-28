@@ -1118,12 +1118,14 @@ in config.json turns it off.
   from). Their older messages that share its rarest words are shown too, for the area only: why they keep Thursday
   evenings free may be in another message. And code drops a general note whose number a newer message changes, or that a newer general note on the
   same thing with other numbers replaces. A turn merges notes that say the same.
-- One rule said twice in other words or from two sides is kept once: a last turn reads all the notes at once, with
-  the closest ones already on Learning (`word_scores`), and says which note another already makes the point of, of any
-  kind and area, also with no word in common. It is asked twice, from each end of the list, at medium effort
-  (`TWINS_THINKING`; the Gateway's thinking level, Claude Code's effort on a Claude sign-in), the other turns at the
-  model's own. Of a pair the one with more details of its own stays; two with other numbers, or for other people, are
-  two things, and one already on Learning stays as the owner sees it.
+- One rule said twice in other words or from two sides is kept once: a last turn, at medium effort (`TWINS_THINKING`;
+  the Gateway's thinking level, Claude Code's effort on a Claude sign-in; the other turns at the model's own), reads all
+  the notes at once, with the closest ones already on Learning (`word_scores`), and rewrites them as a set of unique
+  rules, each with the notes it covers. Code takes a rule over several notes only when they share an area and who
+  they hold for (the owner's own name or firm counts as the owner), it keeps all their numbers, names and as many
+  details as the richest of them, and one note's quote says all of it; its words and day are then that note's. Else
+  the richest note stays as it is. One already on Learning keeps its wording. A note in two rules fails the turn, and
+  a pairwise reading of the same notes runs instead.
 - A note's words and day are always one message's, checked again when it is saved: a merge whose text no single quote
   says is not made.
 - Saved through `machine/store/facts.py` `history_fact`: source `history:email`, the message's day in `decision_id`
