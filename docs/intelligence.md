@@ -1103,7 +1103,7 @@ in config.json turns it off.
 - Plain code first: only history rows of mail the owner sent, no bulk mail, only their own lines (quoted mail and a
   forward cut), at most 300 messages and 60,000 characters: all of it when it fits, else the richest across all of
   history (words that state a way of working, numbers), not only the newest.
-- Extract, one turn per batch: at most 8 notes, each with the owner's exact words from one message, its kind, its area
+- Extract, one turn per batch of at most 20 messages: at most 8 notes, each with the owner's exact words from one message, its kind, its area
   by the meaning of why it is so (family, health and hobbies are personal also when told to a client, time kept free
   for them too) and who it holds for, everyone or one person or company, with the owner's words that show it.
 - Code decides over the model's words: the quote must be in the message and the note says no more than it does
@@ -1113,7 +1113,8 @@ in config.json turns it off.
 - A note holds for everyone only on evidence: the model, reading what the owner means, says so and cites the owner's
   words that show it, which code finds in that message; or they told it to their own colleagues only or to several
   people at once. The owner's own standing way told to one colleague holds for everyone when the note doesn't name
-  them ("I read client mail on Mondays"); their duties stay theirs. A deal for one person or company stays theirs, also when told to a colleague. Else it holds only with
+  them ("I read client mail on Mondays"); their duties stay theirs. A deal for one person or company stays theirs, also when told to a colleague. One the
+  message never names is not who it holds for: who heard it decides. Else it holds only with
   the one it holds for or was said to (scope `with:<node>`, on their Graph page); one the Graph can't place is not kept.
 - The newer wins: one turn shows each note with the owner's newer messages that share its words, history and live
   mail, and the facts on Learning it touches (keep; drop when anything changed, a number, who handles it, a preference;

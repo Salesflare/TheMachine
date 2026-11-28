@@ -9,7 +9,7 @@ their accountant is, how a kind of task goes. Never a to-do, a promise or a repl
 Plain code first, no model:
 - only history rows (events.history=1) of mail the owner sent (their address, or the SENT label), without bulk mail,
   and of each only what they wrote (the quoted mail and a forward's text cut, machine.text.unquoted), newest first;
-- at most MAX_MESSAGES messages and MAX_CHARS characters, each cut to CHARS, in batches of BATCH_CHARS; when there is
+- at most MAX_MESSAGES messages and MAX_CHARS characters, each cut to CHARS, in batches of BATCH_CHARS and BATCH_MESSAGES; when there is
   more, the richest across all of history (richness: words that state a way of working, numbers), not the newest only;
 - the owner's newer live mail (history=0, at most LIVE_MESSAGES) is never learned from, only checked against.
 
@@ -72,6 +72,7 @@ LIVE_MESSAGES = 150  # newer synced mail of theirs a note is checked against
 CHARS = 600
 BATCH_CHARS = 9000
 PER_BATCH = 8
+BATCH_MESSAGES = 20  # a batch of short messages full of rules: more turns, each with room for its notes
 MAX_TURNS = 10
 PAIRS_PER_NOTE = 3  # TWINS: the closest notes on Learning shown with each new one
 MAX_PAIRS = 40  # and at most this many of them
@@ -395,7 +396,7 @@ def own_history(db, account_ids, owner_emails, live=False):
 def batches(rows):
     out, cur, size = [], [], 0
     for r in rows:
-        if cur and size + len(r['text']) > BATCH_CHARS:
+        if cur and (size + len(r['text']) > BATCH_CHARS or len(cur) >= BATCH_MESSAGES):
             out.append(cur)
             cur, size = [], 0
         cur.append(r)
@@ -506,8 +507,10 @@ def run(store, accounts, account_ids, owner_emails, today, ask):
                 continue
             holds = ' '.join(str(item.get('holds_for') or item.get('about') or '').split())
             everyone = holds.casefold() in EVERYONE or is_owner(holds)  # the owner's own time and ways hold wherever they go
+            if holds and not everyone and _names(holds) and not _names(holds) & _names(source['title'] + ' ' + source['said'] + ' ' + source['to']):
+                holds = ''  # one the message never names: who heard it decides
             colleague = told_widely(source['to'], own_domains) and len(re.findall(r'@', source['to'])) == 1
-            if holds and not everyone and colleague and _names(holds) & _names(source['to']) and not _names(holds) & _names(item['text']):
+            if holds and not everyone and colleague and item['kind'] != 'responsibility' and _names(holds) & _names(source['to']) and not _names(holds) & _names(item['text']):
                 about = ''  # the owner's own standing way, told to the one colleague who heard it: it says nothing about them
             elif holds and not everyone:
                 about = holds  # an arrangement with one person or organization, by the model's reading of the owner's words

@@ -269,10 +269,15 @@ class HistoryNotes(unittest.TestCase):
         self.mail(90, 'Pat, from now on you handle all the supplier invoices.')
         found = self.learn(self.model([
             {'kind': 'preference', 'text': 'You read non-urgent client mail on Mondays, not Sundays.', 'quote': "don't forward non-urgent client mail on Sundays. I read it Monday", 'holds_for': 'Pat Colleague'},
-            {'kind': 'responsibility', 'text': 'Pat handles all the supplier invoices.', 'quote': 'you handle all the supplier invoices', 'holds_for': 'Pat Colleague'}]))
+            {'kind': 'responsibility', 'text': 'Pat handles all the supplier invoices.', 'quote': 'you handle all the supplier invoices', 'holds_for': 'Pat Colleague'},
+            {'kind': 'responsibility', 'text': 'You chase all the supplier invoices.', 'quote': 'you handle all the supplier invoices', 'holds_for': 'Pat Colleague'}]))
         facts = {f['text']: f['scope'] for f in self.facts()}
         self.assertEqual(facts['You read non-urgent client mail on Mondays, not Sundays.'], 'area', found['dropped'])
-        self.assertNotEqual(facts.get('Pat handles all the supplier invoices.'), 'area')  # theirs (here no Graph page, so not kept)
+        self.assertNotEqual(facts.get('Pat handles all the supplier invoices.'), 'area')
+        self.assertNotEqual(facts.get('You chase all the supplier invoices.'), 'area')  # a duty told to them: never the owner's for everyone
+        self.mail(80, 'Walter, you get the first look at every new design.', to='Walter Client <walter@client.example>')
+        self.learn(self.model([{'kind': 'fact', 'text': 'Walter gets the first look at every new design.', 'quote': 'you get the first look at every new design', 'holds_for': 'Kasper Jansen'}]))
+        self.assertEqual({f['text']: f['scope'] for f in self.facts()}['Walter gets the first look at every new design.'], 'with:' + WALTER)  # a name the message never says  # theirs (here no Graph page, so not kept)
 
     def test_a_note_that_says_more_than_its_quote_keeps_what_the_quote_says(self):
         self.mail(100, 'Custom cakes need three days notice and we always ask a deposit up front.')
