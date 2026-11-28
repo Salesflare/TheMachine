@@ -5,11 +5,12 @@ const {chromium}=await import('./browser.mjs');
 
 // Settings, Apps, Connected AIs: one row per AI (the server folds an official app's sign-ins into one: ai_access.fold),
 // with its name, its tag and one line (access, area, end date, last use), the Messages switch and Change on the row.
-// Change opens access, area, Extend, Activity, Turn off now and Remove; nothing of that shows before. Fits a phone.
+// Change opens access, area, Extend, Activity, Turn off now, Remove and the Events switches (its lazy part,
+// settings-ai-edit.js); nothing of that shows before. An AI watching events says so on its line. Fits a phone.
 const dashboard=await dashboardPage();
 const soon=new Date(Date.now()+365*86400e3).toISOString(),hour=new Date(Date.now()-20*60e3).toISOString();
 const connections=[{id:'aic_gpt',name:'ChatGPT',kind:'oauth',official:true,level:'draft',area:'both',expires_at:soon,expired:false,used_at:hour,messages:true,calls:6,refused:0},
- {id:'aic_claude',name:'Claude',kind:'oauth',official:true,level:'read',area:'work',expires_at:soon,expired:false,used_at:null,messages:false,calls:0,refused:0}];
+ {id:'aic_claude',name:'Claude',kind:'oauth',official:true,level:'read',area:'work',expires_at:soon,expired:false,used_at:null,messages:false,calls:0,refused:0,events:['todo.created'],watching:['todo.created']}];
 const asked=[];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -34,7 +35,7 @@ try{
   assert.equal(await rows.count(),2);
   const gpt=rows.nth(0);
   assert.match(await gpt.locator('small').innerText(),/^Read & edit · Work and Personal · until .+ · last used 20 minutes ago$/);
-  assert.match(await rows.nth(1).locator('small').innerText(),/^Read · Work only · until .+ · not used yet$/);
+  assert.match(await rows.nth(1).locator('small').innerText(),/^Read · Work only · until .+ · not used yet · watching events$/);
   assert.equal(await gpt.locator('.alpha').innerText().then(s=>s.toLowerCase()),'official app');
   // On the row: the Messages switch and Change, nothing else
   assert.equal(await gpt.locator('[data-ai-messages]').getAttribute('aria-checked'),'true');
@@ -46,7 +47,13 @@ try{
   const edit=page.locator('#ai-list .ai-edit');await edit.waitFor();
   assert.equal(await edit.getAttribute('data-ai'),'aic_gpt');
   assert.equal(await edit.locator('select').count(),3);
-  assert.deepEqual(await edit.locator('button').allInnerTexts(),['Activity','Turn off now','Remove']);
+  assert.deepEqual(await edit.locator('button:not([data-ai-event])').allInnerTexts(),['Activity','Turn off now','Remove']);
+  // Events (ai_events.py): one switch per event, all off to start; a click saves the ones on, and only for this AI
+  const events=edit.locator('[data-ai-event]');
+  assert.deepEqual(await events.evaluateAll(b=>b.map(x=>[x.dataset.aiEvent,x.getAttribute('aria-checked'),x.labels[0]?.textContent])),
+   [['todo.created','false','New to-dos'],['meeting.briefing_ready','false','Meeting briefings'],['promise.due','false','Promises due']]);
+  await edit.locator('[data-ai-event="promise.due"]').click();await new Promise(r=>setTimeout(r,200));
+  assert.deepEqual(asked.at(-1),['ai_change',{id:'aic_gpt',events:['promise.due']}]);
   assert.equal(await page.locator('#ai-list [data-ai-edit][aria-expanded="true"]').count(),1);
   await edit.locator('[data-ai-level]').selectOption('read');
   await new Promise(r=>setTimeout(r,200));

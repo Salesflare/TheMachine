@@ -269,6 +269,54 @@ waiting row in `ai_writes` (`waiting` 1, `changes` the AI's arguments). Its Acti
 
 Read connections are unaffected, and so is a Read & edit one with Messages off.
 
+## Events
+
+MCP Events (webhook delivery, `ai_events.py`): an AI subscribes to an event and the Machine wakes it with a signed
+request when one happens, so ChatGPT (and later any MCP client) can start on new work without being asked. Generic: no
+client is special-cased.
+
+**Off until the owner turns it on.** Each event is a switch per connection, in Settings, Apps, Change (`ai_change` with
+`events`, stored in `ai_connections.events`). A subscribe for an event that is off is refused (`-32012`, "turned off" in
+Activity). Turning one off, Turn off now, Remove, and a sign-in's end all end its subscriptions at once; a fold moves
+them to the kept connection.
+
+| Event | When | Data |
+|---|---|---|
+| `todo.created` | a new to-do that needs the owner: open, not snoozed, visible now, in the connection's area | `todo_id`, `title`, `area`, `why` (280 characters of its body), `link` |
+| `meeting.briefing_ready` | a meeting's briefing is made, from a day before it starts | `todo_id`, `title`, `area`, `starts_at`, `link` |
+| `promise.due` | a promise, the owner's or made to them, is due tomorrow: from the owner's morning hour the day before | `promise_id`, `direction`, `who`, `what`, `due`, `todo_id` |
+
+Only ids and short text the same connection can already read through its tools, inside the same `<untrusted>` marks. An
+event's only argument is `area`, which can narrow the connection's area, never widen it. Nothing that happened before the
+subscription fires.
+
+**Methods.** `initialize` says `events: {}` in its capabilities; `events/list` (each event's description, input and
+payload schemas), `events/subscribe` and `events/unsubscribe`. Subscribe takes `name`, `arguments`, `delivery` (`mode:
+webhook`, `url`, `secret`, `whsec_` and 24 to 64 bytes) and `ttlMs`; the id is a hash of the connection, URL, name and
+canonical arguments, so subscribing again refreshes (and may rotate the secret). It grants 24 hours by default, 1 hour to
+7 days, never past the connection's end, and answers `{id, refreshBefore, cursor: null, truncated: false}`. At most 20
+per connection. Errors: `-32011` unknown event, `-32012` not allowed, `-32014` unsupported delivery, `-32015` callback
+failed (`data.reason`).
+
+**The callback.** HTTPS only, no credentials or fragment, at most 2048 characters. Every address its name resolves to
+must be public: loopback, private, link-local (169.254.169.254 too), shared, multicast, reserved and the IPv6 ranges that
+carry IPv4 (mapped, 6to4, Teredo, NAT64) are refused, and the request goes to the checked address (no second lookup),
+with the certificate checked for the name. No redirects, a 10 second timeout, at most 64 KiB read back. A new URL is
+verified first: a signed `{type: verification, challenge}` it must echo with a 2xx, kept for 24 hours per connection.
+
+**Delivery.** Standard Webhooks: `webhook-id` (the event id, the same on every try), `webhook-timestamp`,
+`webhook-signature` (`v1,` HMAC-SHA256 of `id.timestamp.body`; both keys for 10 minutes after a rotated secret) and
+`X-MCP-Subscription-Id`. One event per request, at most 256 KiB. A worker (`ai_app.ai_events_worker`, every minute,
+idle without subscriptions) queues new events in `ai_event_outbox` and sends them: 6 tries with doubling backoff from a
+minute for a timeout, 408, 429 or 5xx, none after a 413, another 4xx or a redirect, and a 410 ends the subscription. At most 20 a connection an hour (ChatGPT
+runs at most 30 an hour); the rest wait, and an event older than a day is dropped, not sent late. Access is checked again
+before each send. Each send, failure and end is an Activity line.
+
+**Loops.** A to-do an AI added (`ai:` key) never fires, and no tool makes briefings or promises, so an AI's own work
+never wakes it.
+
+**Kept.** Secrets and queued bodies are sealed at rest (`message_seal.DERIVED`); sent and failed rows go after 7 days.
+
 ## Graph changes and Undo
 
 A Graph change applies at once and is a line in Activity (kind `ai`, the AI's name as `where`) with **Undo**. Each change
@@ -331,7 +379,8 @@ now and Activity as any connection.
 ## The endpoint
 
 `POST /mcp` is MCP over Streamable HTTP: JSON-RPC in, JSON out, no sessions and no server-sent events (`GET` and `DELETE`
-answer 405). Methods: `initialize`, `ping`, `tools/list`, `tools/call`.
+answer 405). Methods: `initialize`, `ping`, `tools/list`, `tools/call`, and `events/list`, `events/subscribe`,
+`events/unsubscribe` (Events above).
 
 - Without a valid token it answers 401 with `WWW-Authenticate: Bearer
   resource_metadata="<base>/.well-known/oauth-protected-resource/mcp"`, which is how Claude and ChatGPT find the sign-in.
@@ -425,3 +474,6 @@ with **Download** under Add in Claude, which links the first.
   account signs in and routes, but the Machine still issues and checks every token and holds the data.
 - Self-hosted Machines reach cloud AIs through TLS passthrough, never a proxy that reads the calls.
 - Tools never send. Sending after the owner approves is the owner's Send on the to-do, not a tool.
+- Events wake an AI, they don't widen it: off per event until the owner turns it on, only what the connection can
+  already read, and webhook delivery only. MCP 2.0's `server/discover` waits: advertising 2.0 could change how clients
+  call the tools, and ChatGPT finds events through `initialize`.

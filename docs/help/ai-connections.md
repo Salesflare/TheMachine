@@ -77,6 +77,12 @@ Every read shows in its **Activity** with how many messages and which threads, n
 
 While Messages is on, a **Read & edit** AI's Graph changes wait for your OK. Press **Apply** or **Dismiss** on the change in **Activity**.
 
+## Events
+
+**Events** let an AI like ChatGPT start on its own when something happens: a new to-do, a meeting briefing for tomorrow, or a promise due tomorrow. Each is off until you turn it on under **Change**. The AI then gets its title and a short why, nothing it couldn't already read, and never anything from before.
+
+It still can't send anything, and its changes show in **Activity** with **Undo**. Turning an event off, or turning the AI off, stops it at once.
+
 ## In Settings
 
 Open **Settings**, **Apps** to see each AI that connected, once, with its access, area, end date and last use. **Messages** turns on and off right there. Press **Change** to change its access, its area or how long it lasts. The next call uses it. **Activity** lists every call, refused ones too. **Turn off now** pauses it: every sign-in ends, its history stays. **Remove** takes it away with its history.

@@ -89,7 +89,7 @@ _BY_PART = {
         share_lines share_meta share_out share_people share_private share_rules share_threads team_asks team_blobs
         team_files team_mail team_pending team_records team_sources team_wants team_learnings team_learning_votes
         contact_shares contact_marks family_invite_log family_invite_offers ai_clients ai_codes ai_connections ai_tokens
-        ai_folded ai_writes ai_activity'''),
+        ai_folded ai_writes ai_activity ai_event_subs ai_event_seen ai_event_outbox ai_event_verified'''),
     'activity': _names('''activity_accounts activity_blocks activity_seen load_speed faults fault_versions error_feed retention_runs
         store_fixes plain_key_pass data_stamps profile_runs notify_queue notify_digests notify_app_lines notify_app_devices notify_desks push_subscriptions'''),
     'index': _names('event_search event_vectors event_passages event_vector_skips event_vector_changes fact_vectors fact_search'),
