@@ -29,6 +29,7 @@
  "A merge needs only clone (the fixed copy), summary (what the fix changes) and bug (why it is a bug)",
  "A new doc needs a title",
  "A new post on X is not a kind:x send (that is a reply or a DM): {}",
+ "A note from history is one short sentence with its area and its day",
  "A recipe is 1 to {} steps",
  "A recurring to-do needs name: the to-do itself, in a few words",
  "A reset starts your ChatGPT usage limits over.{}",

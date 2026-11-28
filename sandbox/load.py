@@ -196,6 +196,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
         if not fresh:
             load_learned_facts(store)
             load_home_facts(store, base)
+            load_history_notes(store, base)
         load_recurring(store, config, base)
         if not fresh:  # a fresh Machine has no routines yet: the page's empty state
             load_routines(store, base)
@@ -516,6 +517,32 @@ def load_home_facts(store, base):
         store.remember_fact(text, f'webchat-said:sandbox-home-{n}', said=True, quote=text, said_text=text)
     for n, text in enumerate(('Isla is in class 4B, her teacher is Ms Okafor', 'Isla has hockey practice on Wednesdays until 5') if row else ()):
         store.remember_fact(text, f'webchat-said:sandbox-kids-{n}', said=True, quote=text, said_text=text, about=[row[0]])
+
+
+def load_history_notes(store, base):
+    """Notes from the owner's older email (history_notes.py), kept as its pass keeps them: their words and the day they
+    wrote them, one arrangement with Meridian Robotics on its page. The pass itself has run, so the sandbox never asks
+    a model for it."""
+    import history_notes
+    import learning_loop
+    from machine.store.facts import history_fact
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        org = db.execute("SELECT id FROM graph_nodes WHERE kind='org' AND name='Meridian Robotics'").fetchone()
+        for text, rule, preference, days, quote, side, node in (
+                ('You invoice on the first working day of the month, net 30.', False, False, 200,
+                 'we invoice on the first working day of each month, payment terms are net 30', 'work', None),
+                ('You send quotes as PDF only, never as editable files.', False, True, 160,
+                 'I only send quotes as PDF, never as Word files', 'work', None),
+                ('Meridian Robotics pays quarterly in advance, as agreed.', False, False, 120,
+                 'As agreed, Meridian Robotics pays quarterly in advance', 'work', org[0] if org else None),
+                ('Ask for a call before quoting anything over EUR 20,000.', True, False, 90,
+                 'Anything over EUR 20,000, I always want a call before we quote', 'work', None),
+                ('You keep Wednesday afternoons free for Isla.', False, True, 75,
+                 'Wednesday afternoons are for Isla, I keep them free', 'personal', None)):
+            history_fact(db, text, rule, preference, f'sandbox-{days}', stamp(days * 24 * 60, base)[:10], quote, side, node)
+        for account in ('work-gmail', 'home-gmail'):
+            learning_loop.state_set(db, history_notes.RUN + ':' + account, '{"kept": 5}')
 
 
 def load_share(db):

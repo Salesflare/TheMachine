@@ -6,7 +6,8 @@ assistant.py; Slack reads through its collector's own client, Teams through conn
 When it runs: only after the first look ended, never while a review, a first import or a sync read runs, with room on
 the disk and in memory, at the lowest CPU and disk priority, one small step at a time (STEP_GAP_SECONDS apart), so
 setup, Connected and the first to-dos never wait for it. Every Machine starts it by itself after an update; each step
-saves where it got, so a restart goes on from there. No model reads what it brings in."""
+saves where it got, so a restart goes on from there. No model reads what it brings in here; once a mailbox's history is
+in, history_notes.py reads the owner's own mail in it once, for how they work."""
 import contextlib
 import datetime as dt
 import json

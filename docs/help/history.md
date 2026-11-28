@@ -20,11 +20,12 @@ Your [Graph](graph.md) counts it: how close you are to people, when you last tal
 
 It never makes a to-do or a promise, never counts as new, never starts a check and never adds to a project. Personal history stays personal, like personal mail.
 
-Apart from Search by meaning, your AI model reads it in three places only:
+Apart from Search by meaning, your AI model reads it in four places only:
 
 - what a search finds, like for a question you ask or a to-do being worked on
 - mail with booking details, for [trips and events](calendar.md#trips-and-events)
 - a [meeting briefing](calendar.md#ready-for-your-meetings): notes of earlier meetings and a few older messages with the people you meet
+- once per mailbox, the email you wrote yourself, to learn how you work (see Notes from your older email, below)
 
 ## When it runs
 
@@ -33,6 +34,20 @@ It starts after the first look at your messages, and for each connection only on
 Once a mailbox's history is in, your Machine reads the mail it keeps once more for booking and ticket details, so older bookings show under [trips and events](calendar.md#trips-and-events) too. It goes just as slowly and pauses for the same reasons.
 
 It uses the access each connection already has. Nothing new to approve.
+
+## Notes from your older email
+
+Once a mailbox's history and its new mail are in, your Machine reads the email you wrote yourself in it, once, and keeps how you work: your rates and terms, how you like things done, what you handle. They show under **Learning**, **What I've learned**, each with the day you wrote it and your own words. **Edit** or **Remove** any of them; a removed one never comes back.
+
+- Only your own words count. What someone else asked is not how you work.
+- Something you told one client stays theirs, on their Graph page, unless what you wrote or who you told shows it is how you work for everyone. A deal for one client stays theirs also when you told a colleague.
+- When a newer email of yours changes something, or what your Machine knows now says otherwise, the newer one wins.
+- One rule you wrote twice, in other words or from two sides, or in parts (a goal and its target), is kept once.
+- A note that would only say "him" or "her" names who, from your message, or is left out.
+- Work or Personal by why it is so: an evening kept free for your choir is Personal, also when you told a client. A Personal note stays out of work.
+- Never a to-do, a promise or a reply. What is over stays over.
+
+It runs in the background after the first look, waits for your plan's limits like other background work, and uses a few small turns. `history_notes: false` in the settings file turns it off.
 
 ## How far back
 

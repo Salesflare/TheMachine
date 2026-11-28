@@ -1129,6 +1129,62 @@ Learning, and saves only the ones the owner ticks.
   fact about a Personal person stays out of Work prompts and out of the learnings sent to the team, like any fact about
   them. One entry under Learning, Changes undoes it all.
 
+## Notes from your older email
+
+History brings in a year of older mail after the first look, and on its own no model reads it. Once a mailbox's history
+and its live sync are in (`history_backfill.done_at`, `history.first_import_done`), one bounded pass
+(`history_notes.py`, `history_notes_app.py`) reads what the owner wrote themselves in it and keeps their standing ways
+of working as notes: how they like things done, what they handle, rates and terms, who their accountant is, how a kind
+of task goes. Once per mailbox (`learning_state` `history_notes:<account>`), on the background model, after
+`background_pause` like all background work, in at most 10 small turns (some 17,000 tokens in and 9,000 out per mailbox). `history_notes: false`
+in config.json turns it off.
+
+- Plain code first: only history rows of mail the owner sent, no bulk mail, only their own lines (quoted mail and a
+  forward cut), at most 300 messages and 60,000 characters: all of it when it fits, else the richest across all of
+  history (words that state a way of working, numbers), not only the newest.
+- Extract, one turn per batch (a mailbox of short messages spread over as many turns as allowed, some 10 messages
+  each): at most 8 notes, each with the owner's exact words from one message, its kind, its area
+  by the meaning of why it is so (family, health and hobbies are personal also when told to a client, time kept free
+  for them too) and who it holds for, everyone or one person or company, with the owner's words that show it.
+- Code decides over the model's words: the quote must be in the message and the note says no more than it does
+  (numbers and telling words; a note that says more keeps only the clauses its quote says, and goes when none is left); a note the owner removed never comes back, and one said already is not said twice.
+  A note whose person is only "he", "him" or "her", or that starts with "they", "it" or "this is", gets that person's
+  name when its message names one person only (the owner and days aside), else it is dropped (`no_referent`).
+- A note holds for everyone only on evidence: the model, reading what the owner means, says so and cites the owner's
+  words that show it, which code finds in that message; or they told it to their own colleagues only or to several
+  people at once. The owner's own standing way told to one colleague holds for everyone when the note doesn't name
+  them ("I read client mail on Mondays"); their duties stay theirs. The model says who does it, by meaning in any language: when the owner's "you" means
+  who heard it ("Ravi, the invoices are yours"), the note names them and holds with them, else it is dropped. A deal for one person or company stays theirs, also when told to a colleague. One the
+  message never names is not who it holds for: who heard it decides. Else it holds only with
+  the one it holds for or was said to (scope `with:<node>`, on their Graph page); one the Graph can't place is not kept.
+- The newer wins: one turn shows each note with the owner's newer messages that share its words, history and live
+  mail, and the facts on Learning it touches (keep; drop when anything changed, a number, who handles it, a preference;
+  or update, only with the owner's words from a newer history message: live mail is checked against, never learned
+  from). Their older messages that share its rarest words are shown too, for the area only: why they keep Thursday
+  evenings free may be in another message. And code drops a general note whose number a newer message changes, or that a newer general note on the
+  same thing with other numbers replaces. A turn merges notes that say the same.
+- One rule said twice in other words or from two sides, or said in parts (a goal and its target, one person's duties
+  in two pieces), is kept once: a last turn, at medium effort (`TWINS_THINKING`;
+  the Gateway's thinking level, Claude Code's effort on a Claude sign-in; the other turns at the model's own), reads all
+  the notes at once, with the closest ones already on Learning (`word_scores`), and rewrites them as a set of unique
+  rules, each with the notes it covers. Code takes a rule over several notes only when they share an area and who
+  they hold for (the owner's own name or firm counts as the owner; a general Work rule joins a Personal one, as
+  Personal, when the personal reason is why it is so), it keeps all their numbers, names and as many
+  details as the richest of them, and one note's quote says all of it; its words and day are then that note's. Or each
+  of its clauses is what one of their quotes says: it then keeps the newest message's day and every quote it took,
+  each with its day, all checked again at save. Else the richest note stays as it is. One already on Learning keeps its wording. A second reading of what is left catches a
+  pair the first one missed. A note in two rules fails the turn, and a pairwise reading of the same notes runs instead.
+- A note's words and day are one message's, checked again when it is saved, or, for a rule said in parts, each clause's
+  words are one of its messages'.
+- Saved through `machine/store/facts.py` `history_fact`: source `history:email`, the message's day in `decision_id`
+  (Learning shows "Your email," that day, and the owner's words), their area as `side` and scope `area`. A
+  Personal note stays out of Work prompts and out of the learnings sent to the team. Never a to-do, a promise or a
+  reply.
+
+Measured before it shipped on blind, hashed held-out Machines against a control with nothing learned: answers and
+preparations that used the notes won far more often than the control's own noise, lost no more often than it, with no
+note from after the cutoff, no third-party rule and no old task.
+
 ## Import from another AI
 
 Someone who used ChatGPT, Claude or Gemini has years of context there. Import from another AI (`memory_import.py`,
