@@ -190,8 +190,8 @@ def same_quote(a, b):
     return bool(x and y) and len(x & y) >= max(4, min(len(x), len(y)) * 0.5)
 
 
-EXCEPTION = re.compile(r"\b(?:except|only for|just for|for you\b(?! ?r)|special arrangement|as agreed|as we agreed|unlike|other clients|"
-                       r"everyone else|instead of (?:the|my) usual|than usual|your own rate|a different|"
+EXCEPTION = re.compile(r"\b(?:except|only for|just for|for you\b(?! ?r)|special arrangement|that arrangement|as agreed|as we agreed|unlike|other clients|"
+                       r"(?:everyone|everybody|nobody|no one|anyone|anybody) else(?!['’]s)|instead of (?:the|my) usual|than usual|your own rate|a different|"
                        r"under (?:the|our|their|your) (?:[\w-]+ ){0,3}(?:agreement|contract|msa))\b", re.I)
 ONLY_FOR = re.compile(r"\bfor (?:the )?([A-Z][\w'’&.-]+(?: [A-Z][\w'’&.-]+){0,2}) only\b")  # "That's for the Pemburys only"
 NO_REFERENT = re.compile(r"\b(?:the same (?:procedure|way|thing|process|rule)|this way|that way|like this|like that|as before|as usual)\b", re.I)
@@ -479,7 +479,8 @@ def run(store, accounts, account_ids, owner_emails, today, ask):
                 if not parts or not 5 <= len(text) <= 240 or len({(p['area'], p['about'].casefold()) for p in parts}) > 1 or NO_REFERENT.search(text):
                     continue  # one area, and one person's arrangement never merged into another's or the general way
                 # its words and day stay one message's: the newest whose quote says all of the merged text; else no merge
-                speaks = [p for p in parts if supported(text, p['quote'], p['about'] + ' ' + p['to'])]
+                speaks = [p for p in parts if supported(text, p['quote'], p['about'] + ' ' + p['to'])
+                          and not (_stems(text) - _stems(p['quote'] + ' ' + p['about'] + ' ' + p['to'])) & _stems(' '.join(o['quote'] for o in parts if o is not p))]
                 if not speaks:
                     drop('merge_more_than_a_quote')
                     continue

@@ -192,6 +192,19 @@ class HistoryNotes(unittest.TestCase):
                          [('You charge a 5% late fee.', 'We charge a 5% late fee after 30 days'),
                           ('You invoice monthly on the first.', 'We invoice monthly, always on the first')])
 
+    def test_a_merge_never_carries_another_messages_words(self):
+        self.mail(200, "Friday afternoons I'm not available, sorry.")
+        self.mail(100, "Monday evenings I'm not available either, that's rehearsal.")
+        self.learn(self.model([
+            {'kind': 'preference', 'text': "You're not available Friday afternoons.", 'quote': "Friday afternoons I'm not available"},
+            {'kind': 'preference', 'text': "You're not available Monday evenings.", 'quote': "Monday evenings I'm not available either"}],
+            merge={'notes': [{'text': "You're not available Friday afternoons or Monday evenings.", 'from': ['F1', 'F2']}]}))
+        self.assertEqual(len(self.facts()), 2)
+
+    def test_the_owners_words_that_keep_it_to_one(self):
+        self.assertTrue(history_notes.one_party("That arrangement is Gideon's company and nobody else's; if anyone else asks, the binder rules apply"))
+        self.assertFalse(history_notes.one_party("we don't brew under anyone else's label, ever"))
+
     def test_over_the_bound_the_richest_messages_are_read_across_all_of_history(self):
         self.mail(600, 'Our minimum fee is 300 for every project, always, unless the board says otherwise.')
         for n in range(history_notes.MAX_MESSAGES + 20):
