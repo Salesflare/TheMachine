@@ -13,24 +13,36 @@ const wnR=(c,x,y,w,h,r)=>`<rect class="${c}" x="${x}" y="${y}" width="${w}" heig
 const wnC=(c,x,y,r)=>`<circle class="${c}" cx="${x}" cy="${y}" r="${r}"/>`;
 const wnBar=(x,y,w,c='b',h=6)=>wnR(c,x,y,w,h,h/2);
 const wnTick=(x,y,r=10)=>`${wnC('m',x,y,r)}<path class="k" d="M${x-4.5} ${y+.5}l3.2 3.2 6-6.6"/>`;
-const wnFile=(x,y,w,turn=0)=>`<g transform="rotate(${turn} ${x+24} ${y+28})"><path class="c" d="M${x+4} ${y}h28l12 12v40a4 4 0 0 1-4 4h-36a4 4 0 0 1-4-4v-48a4 4 0 0 1 4-4z"/><path class="q" d="M${x+32} ${y}v12h12"/>`+w.map((n,i)=>wnBar(x+8,y+23+i*9,n,'b',4)).join('')+'</g>';
 const WN_ART={
+ // The desktop app: the dashboard in a window of its own, and the robot beside it with its small box open
+ desktop:()=>wnR('c',24,20,254,140,12)
+  +[0,1,2].map(i=>wnR(i?'c':'f',40,34+i*38,222,32,8)+wnBar(54,43+i*38,[150,120,170][i],'s')+wnBar(54,53+i*38,100)).join('')
+  +wnR('c',292,14,100,74,12)+wnBar(304,30,52,'s')+wnBar(304,46,76)+wnBar(304,62,60)
+  +`<path class="l" d="M342 100v12"/>${wnR('m',318,112,48,38,12)}${wnC('t',332,131,5)}${wnC('t',352,131,5)}`,
+ // Send later: an approved message (its tick), its wait on the clock, then on its way
+ later:()=>wnR('c',40,40,186,100,12)+wnBar(56,58,90,'s')+wnBar(56,80,150)+wnBar(56,94,110)+wnTick(204,118,9)
+  +wnGo(236,90,16)+wnC('f',300,90,30)+`<path class="l" d="M300 72v18l12 8"/>`+wnGo(338,90,16)
+  +`${wnC('m',392,90,20)}<g class="k" transform="translate(383 81) scale(.75)"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/></g>`,
+ // A meeting with its guests, and its briefing: what was agreed earlier (ticked) and what's still open (rings)
+ meeting:()=>wnR('f',30,40,130,100,12)+wnBar(46,58,80,'s')+wnBar(46,74,56)+['m','c','t'].map((c,i)=>wnC(c,54+i*18,112,8)).join('')+wnGo(170,90,16)
+  +wnR('c',210,14,180,152,12)+wnStar(232,35,8)+wnBar(248,32,96,'s',5)
+  +[0,1,2].map(i=>{const y=72+i*34;return (i>1?wnC('q',232,y,7):wnTick(232,y,8))+wnBar(250,y-8,[108,86,120][i],'s',5)+wnBar(250,y+2,124)}).join(''),
+ // Search with a question in it, its answer with the sparkle, from older mail (the lit one, under older ones)
+ mail:()=>wnR('c',40,14,344,40,20)+wnC('q',64,34,6)+`<path class="q" d="M68.5 38.5l5 5"/>`+wnBar(86,31,160,'s')
+  +wnR('c',40,72,214,60,12)+wnStar(62,92,7.5)+wnBar(78,88,150)+wnBar(56,108,180)
+  +[0,1].map(i=>{const x=284+i*24,y=70+i*22,c=i;return wnR(c?'f':'c',x,y,84,60,8)+`<path class="${c?'l':'e'}" d="M${x+6} ${y+10}l36 22 36-22"/>`}).join(''),
+ // A connected AI's chat with The Machine: it starts from the brief (its bookmark), and what the owner settles is kept
+ learn:()=>wnR('f',30,56,68,68,16)+wnStar(64,90,16)+wnGo(108,90,16)
+  +`${wnR('c',150,14,240,152,12)}${wnR('t',166,30,160,34,10)}<g class="l" transform="translate(174 36) scale(.9)"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></g>`
+  +wnBar(200,39,110,'s')+wnBar(200,51,80)+wnR('m',236,82,140,26,12)+wnBar(250,92,100,'t')+wnTick(178,140,8)+wnBar(194,137,150),
  // Routines: three of them, each with its repeat mark, a name and how often; two ran, the third waits for its time
  routines:()=>`${wnR('c',70,18,300,144,12)}<path class="e" d="M70 66h300M70 114h300"/>`+[[112,62],[84,92],[128,54]].map(([a,b],i)=>{const y=18+i*48;
   return `<g class="l" transform="translate(88 ${y+14}) scale(.83)"><path d="m17 2 4 4-4 4M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v1a4 4 0 0 1-4 4H3"/></g>`+wnBar(124,y+15,a,'s')+wnBar(124,y+29,b)+(i<2?wnTick(346,y+24):`${wnC('q',346,y+24,9.5)}<path class="q" d="M346 ${y+18}v6.5l4 2.5"/>`)}).join(''),
- // Search: the box with a question in it (its question mark drawn, not written), the answer under it, and the messages it used
- search:()=>`${wnR('c',60,16,320,40,20)}${wnC('q',84,35,6)}<path class="q" d="M88.5 39.5l5 5"/>`+wnBar(106,33,128,'s')+`<path class="l" stroke-width="2.4" d="M243 30.5a4.5 4.5 0 1 1 6 4.2c-1.1.5-1.5 1.3-1.5 2.5v1"/>${wnC('m',247.5,42.5,1.6)}${wnR('m',260,27,2,18,1)}${wnR('c',60,66,320,98,12)}${wnStar(84,84.5,7.5)}`+wnBar(100,82,236)+wnBar(78,97,284)+wnBar(78,112,176)
-  +[[78,82],[168,96],[272,74]].map(([x,w])=>`${wnR('t',x,130,w,22,11)}<path class="l" d="M${x+9} 136.5h12v9h-12zl6 4.5 6-4.5"/>`+wnBar(x+28,138,w-40,'s')).join(''),
  // A newer model: the old one faded on the left, the new one lit up with its sparkle, and what it does going out fast
  // (speed lines): a chat's answer, and background work ticked off
  sol:()=>wnR('t',44,60,72,60,14)+wnStar(80,90,13,'q')+wnGo(126,90,20)
   +wnR('f',172,44,92,92,20)+wnStar(218,90,24)+`<path class="l" d="M272 66h12M268 90h18M272 114h12"/>`
   +wnR('c',296,44,96,34,14)+wnBar(310,58,66)+wnR('c',296,102,96,34,12)+wnBar(310,116,44)+wnTick(372,119,8),
- // Export: the Machine's folder with files in it, and its files on their way out of it to a download
- export:()=>`<path class="c" d="M44 46a8 8 0 0 1 8-8h30l10 10h68a8 8 0 0 1 8 8v90a8 8 0 0 1-8 8H52a8 8 0 0 1-8-8z"/>`+wnFile(62,34,[26,20,24],-8)+wnFile(108,30,[22,28,16],6)
-  +`<path class="f" d="M44 84h124v62a8 8 0 0 1-8 8H52a8 8 0 0 1-8-8z"/>${wnR('m',96,110,20,6,3)}`
-  +wnGo(184,97,30)+wnFile(244,52,[28,22,26],-10)+wnFile(298,40,[22,28,18],4)+wnFile(346,70,[26,20,28],12)
-  +`${wnC('m',396,138,16)}<path class="k" d="M396 129.5v12m-5-5 5 5 5-5M389.5 146.5h13"/>`,
  // A project's page: its name, then the description in the accent tint with its sparkle and the mark that it renews
  // itself, and the Timeline's lines under it
  project:()=>`${wnR('c',70,14,300,152,12)}${wnR('m',92,32,28,28,7)}`+wnBar(132,36,140,'s',8)+wnBar(132,51,80)

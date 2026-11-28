@@ -33,6 +33,24 @@ import i18n
 from timeutil import local_day, local_tz, now
 
 ENTRIES = [
+    {'id': 'desktop-app', 'date': '2026-11-27', 'weight': 3, 'title': 'The Machine on your desktop',
+     'text': 'Get the app for Windows, Mac or Linux: your dashboard in its own window, and a small robot in a corner to '
+             'add a to-do or ask.',
+     'action': {'label': 'Open Apps', 'run': 'go-settings-apps'}, 'art': 'desktop'},
+    {'id': 'ai-learnings', 'date': '2026-11-27', 'weight': 2, 'title': 'Claude learns with The Machine',
+     'text': 'A connected Claude now starts each chat from what The Machine learned about you, and can save what you '
+             'settle there.',
+     'action': {'label': 'Open Apps', 'run': 'go-settings-apps'}, 'art': 'learn'},
+    {'id': 'ask-older-mail', 'date': '2026-11-27', 'weight': 2, 'title': 'Search reaches older mail',
+     'text': 'When nothing kept answers a question, Search looks in your mailboxes too, so older emails count.',
+     'action': {'label': 'Open Search', 'run': 'search'}, 'art': 'mail'},
+    {'id': 'meeting-briefings', 'date': '2026-11-24', 'weight': 2, 'title': 'Better meeting briefings',
+     'text': 'Briefings bring what was agreed in earlier meetings and what’s still open. A first meeting gets who '
+             'they are and what their company does.',
+     'action': {'label': 'Open Calendar', 'run': 'go-calendar'}, 'art': 'meeting'},
+    {'id': 'send-later', 'date': '2026-11-24', 'weight': 2, 'title': 'Send later',
+     'text': 'Approve a message and pick when it goes. If they write first, it stays unsent and the to-do comes back.',
+     'art': 'later'},
     {'id': 'gpt-6-2-sol', 'date': '2026-11-18', 'weight': 2, 'model': 'gpt-6.2-sol', 'title': 'Faster answers on GPT-6.2 Sol',
      'text': 'The Machine now runs on GPT-6.2 Sol with a ChatGPT sign-in: faster answers at the same price. Background '
              'work uses it too.',
@@ -79,14 +97,6 @@ ENTRIES = [
      'text': 'Tell The Machine what to do and how often, and it does it by itself. Or start from a template, like '
              'Newsletter cleanup or Birthdays.',
      'action': {'label': 'Open Routines', 'run': 'go-routines'}, 'art': 'routines'},
-    {'id': 'ask-from-search', 'date': '2026-11-07', 'weight': 3, 'title': 'Search answers questions',
-     'text': 'Type a question into Search and get a short answer from your own messages, with a link to each message '
-             'it used.',
-     'action': {'label': 'Open Search', 'run': 'search'}, 'art': 'search'},
-    {'id': 'export', 'date': '2026-11-06', 'weight': 2, 'title': 'Take everything with you',
-     'text': 'Export everything your Machine keeps, or what it learned as files any AI can read. It’s in Settings, '
-             'under General.',
-     'action': {'label': 'Open Settings', 'run': 'go-settings-general'}, 'art': 'export'},
 ]
 
 PICKED = 5  # at most this many in one morning's notice; 0 is fine
