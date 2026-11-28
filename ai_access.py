@@ -59,7 +59,10 @@ READ_DETAIL = 600              # characters of an activity line of a message rea
 NAME_MAX = 60
 BODY_MAX = 65536               # bytes of a request to /mcp or /oauth/*
 KEY_PREFIX = 'tm_ai_'
-PROTOCOLS = ('2025-11-25', '2025-06-18', '2025-03-26')
+PROTOCOLS = ('2025-11-25', '2025-06-18', '2025-03-26')  # legacy: initialize first, then the calls
+MODERN = ('2026-07-28',)       # MCP 2.0: no initialize, each request names its version in _meta, server/discover
+META_VERSION, META_SERVER = 'io.modelcontextprotocol/protocolVersion', 'io.modelcontextprotocol/serverInfo'
+SERVER = {'name': 'the-machine', 'title': 'The Machine', 'version': '1'}
 PUBLIC_GET = ('/mcp', '/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp',
               '/.well-known/oauth-authorization-server', '/.well-known/oauth-authorization-server/mcp')
 PUBLIC_POST = ('/mcp', '/oauth/token', '/oauth/register', '/oauth/revoke')
@@ -1139,7 +1142,99 @@ def handle(db_open, message, connection, why, answer, limiter, brief=None, event
     notification). answer(connection, tool, args, again) -> (result, summary) does the tool's work; again: the to-do the
     same add made a moment ago, whose result it gives once more. brief(connection) -> text: the ai_learnings flag is on,
     so initialize's instructions end with the brief and LEARNING_TOOLS are there; None: off. events: the transport for
-    MCP Events' callbacks (ai_events.Transport), so initialize says events and the events/* methods answer."""
+    MCP Events' callbacks (ai_events.Transport), so initialize says events and the events/* methods answer.
+    Both eras on one endpoint: a request naming MCP 2.0 in its _meta (era) gets server/discover, and every other method
+    answers exactly as after initialize, its result marked complete and signed with the server's name."""
+    version = era(message)
+    if version is None:
+        return _handle(db_open, message, connection, why, answer, limiter, brief, events)
+    ident, method = message.get('id'), message.get('method')
+    if ident is None:
+        return None
+    if version not in MODERN:
+        refused = _error(ident, -32022, 'Unsupported protocol version')
+        refused['error']['data'] = {'supported': [*MODERN, *PROTOCOLS], 'requested': version[:40]}
+        return refused
+    if method == 'server/discover':
+        reply = _ok(ident, {'supportedVersions': list(MODERN), 'capabilities': _capabilities(events),
+                            'instructions': _instructions(connection, why, brief)})
+    else:
+        reply = _handle(db_open, message, connection, why, answer, limiter, brief, events)
+    if reply and isinstance(reply.get('result'), dict):
+        result = reply['result']
+        reply['result'] = {'resultType': 'complete', **result, '_meta': {**result.get('_meta', {}), META_SERVER: SERVER}}
+    return reply
+
+
+def era(message):
+    """The MCP 2.0 version a request names in params._meta, or None: a legacy request, initialize included (which
+    always starts the legacy era), and every request ChatGPT and Claude send after it today. server/discover is 2.0's
+    own method, so it is answered as 2.0 even when its _meta names no version."""
+    if not isinstance(message, dict) or message.get('jsonrpc') != '2.0' or message.get('method') == 'initialize':
+        return None
+    params = message.get('params')
+    meta = params.get('_meta') if isinstance(params, dict) else None
+    version = meta.get(META_VERSION) if isinstance(meta, dict) else None
+    if isinstance(version, str) and version:
+        return version
+    return MODERN[0] if message.get('method') == 'server/discover' else None
+
+
+def header_error(message, headers):
+    """MCP 2.0 over HTTP mirrors the version, the method and a tool's name into headers; one that says something else
+    than the body is refused (-32020, HTTP 400), so nothing in between can route on one and run the other. A header
+    left out is let through, and a legacy request is never checked."""
+    version = era(message) if isinstance(message, dict) else None
+    said = lambda name: _header(headers, name)  # noqa: E731
+    if version is None:
+        sent = said('MCP-Protocol-Version')
+        wrong = isinstance(message, dict) and sent in MODERN and message.get('method') != 'initialize' and 'MCP-Protocol-Version'
+    else:
+        params = message.get('params') if isinstance(message.get('params'), dict) else {}
+        checks = (('MCP-Protocol-Version', version), ('Mcp-Method', message.get('method')),
+                  *((('Mcp-Name', params.get('name')),) if message.get('method') == 'tools/call' else ()))
+        wrong = next((name for name, body in checks if said(name) is not None and _decoded(said(name)) != body), None)
+    if not wrong:
+        return None
+    return _error(message.get('id'), -32020, f'Header mismatch: {wrong} does not match the request body')
+
+
+def http_status(message, reply):
+    """200 for every legacy answer, as before. MCP 2.0 says so in the status too: 404 for a method it doesn't have,
+    400 for a header mismatch or a version it doesn't speak, so a client probing for 2.0 knows which era it reached."""
+    error = (reply or {}).get('error') if isinstance(reply, dict) else None
+    if not error or era(message) is None and error.get('code') != -32020:
+        return 200
+    return {-32601: 404, -32020: 400, -32022: 400}.get(error.get('code'), 200)
+
+
+def _header(headers, name):
+    value = headers.get(name) if headers is not None else None
+    if value is None and isinstance(headers, dict):
+        value = next((v for k, v in headers.items() if str(k).lower() == name.lower()), None)
+    return value if value is None else str(value).strip()
+
+
+def _decoded(value):
+    """A header value in MCP's Base64 sentinel form (=?base64?...?=), decoded; any other as sent."""
+    if value.startswith('=?base64?') and value.endswith('?=') and len(value) > 11:
+        try:
+            return base64.b64decode(value[9:-2], validate=True).decode()
+        except (ValueError, UnicodeDecodeError):
+            return None
+    return value
+
+
+def _capabilities(events):
+    return {'tools': {'listChanged': False}, **({'events': {}} if events else {})}
+
+
+def _instructions(connection, why, brief):
+    said = brief(connection) if brief and not why else ''
+    return INSTRUCTIONS + ('\n\n' + said if said else '')
+
+
+def _handle(db_open, message, connection, why, answer, limiter, brief, events):
     if not isinstance(message, dict) or message.get('jsonrpc') != '2.0':
         return _error(None, -32600, 'Invalid request')
     method, ident, params = message.get('method'), message.get('id'), message.get('params')
@@ -1148,11 +1243,9 @@ def handle(db_open, message, connection, why, answer, limiter, brief=None, event
         return None  # notifications/initialized and the like
     if method == 'initialize':
         asked = params.get('protocolVersion')
-        said = brief(connection) if brief and not why else ''
         return _ok(ident, {'protocolVersion': asked if asked in PROTOCOLS else PROTOCOLS[0],
-                           'capabilities': {'tools': {'listChanged': False}, **({'events': {}} if events else {})},
-                           'serverInfo': {'name': 'the-machine', 'title': 'The Machine', 'version': '1'},
-                           'instructions': INSTRUCTIONS + ('\n\n' + said if said else '')})
+                           'capabilities': _capabilities(events), 'serverInfo': dict(SERVER),
+                           'instructions': _instructions(connection, why, brief)})
     if method == 'ping':
         return _ok(ident, {})
     if method == 'tools/list':

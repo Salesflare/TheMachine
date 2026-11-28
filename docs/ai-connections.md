@@ -382,6 +382,17 @@ now and Activity as any connection.
 answer 405). Methods: `initialize`, `ping`, `tools/list`, `tools/call`, and `events/list`, `events/subscribe`,
 `events/unsubscribe` (Events above).
 
+- Both MCP eras on the same endpoint (`ai_access.handle`, `era`). Legacy (2025-03-26 to 2025-11-25): `initialize`
+  first, every answer exactly as before. MCP 2.0 (2026-07-28): a request whose `params._meta` names
+  `io.modelcontextprotocol/protocolVersion`, no `initialize`; `server/discover` gives the versions, the same
+  capabilities (`tools`, `events`) and the same instructions and brief as `initialize`. Every other method runs the
+  same code as in the legacy era; its result only adds `resultType: "complete"` and the server's name in `_meta`.
+  `server/discover` is answered as 2.0 even without a version, since ChatGPT's plugin scan opens with it.
+- A 2.0 request says so in the status too: 404 for a method it doesn't have, 400 for a version it doesn't speak
+  (-32022, with the versions it does) and for a header that disagrees with the body (-32020: `MCP-Protocol-Version`,
+  `Mcp-Method`, and `Mcp-Name` on `tools/call`, Base64 sentinel decoded). A header left out is let through. A legacy
+  answer is always 200, as before.
+
 - Without a valid token it answers 401 with `WWW-Authenticate: Bearer
   resource_metadata="<base>/.well-known/oauth-protected-resource/mcp"`, which is how Claude and ChatGPT find the sign-in.
 - No cookies are read and no CORS headers are sent. The owner's sign-in and the service's own token never count here.
@@ -475,5 +486,7 @@ with **Download** under Add in Claude, which links the first.
 - Self-hosted Machines reach cloud AIs through TLS passthrough, never a proxy that reads the calls.
 - Tools never send. Sending after the owner approves is the owner's Send on the to-do, not a tool.
 - Events wake an AI, they don't widen it: off per event until the owner turns it on, only what the connection can
-  already read, and webhook delivery only. MCP 2.0's `server/discover` waits: advertising 2.0 could change how clients
-  call the tools, and ChatGPT finds events through `initialize`.
+  already read, and webhook delivery only.
+- MCP 2.0 next to the legacy era, not instead of it: ChatGPT's plugin scan asks `server/discover` first, and a
+  Method not found sent it back to `initialize`. A 2.0 call runs the same code as a legacy one, so a tool answers the
+  same in both (`tests/test_ai_access.py`, Eras).
