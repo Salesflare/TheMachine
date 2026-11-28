@@ -305,7 +305,7 @@ class HistoryNotes(unittest.TestCase):
         self.mail(100, 'Walter, el recuento semanal de entregas es tuyo a partir de ahora, cada lunes por la mañana sin falta.', to='Walter Client <walter@client.example>')
         self.mail(90, 'Walter, you keep your own copy of the delivery list.', to='Walter Client <walter@client.example>')
         found = self.learn(self.model([
-            {'kind': 'responsibility', 'text': 'You send the weekly delivery count.', 'quote': 'el recuento semanal de entregas es tuyo a partir de ahora, cada lunes por la mañana sin falta', 'does_it': 'Walter', 'holds_for': 'everyone'},
+            {'kind': 'responsibility', 'text': 'You send the weekly delivery count.', 'quote': 'el recuento semanal de entregas es tuyo a partir de ahora, cada lunes por la mañana sin falta', 'does_it': 'Walter', 'holds_for': 'everyone', 'because': None},
             {'kind': 'responsibility', 'text': 'You keep your own copy of the delivery list.', 'quote': 'you keep your own copy of the delivery list', 'does_it': 'Walter'}]))
         self.assertEqual(found['dropped'].get('says_you_for_them'), 1, found['dropped'])
         self.assertEqual([(f['text'], f['scope']) for f in self.facts()], [('Walter sends the weekly delivery count.', 'with:' + WALTER)])
