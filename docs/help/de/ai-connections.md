@@ -1,91 +1,97 @@
 ---
-title: Andere KI-Systeme verbinden
+title: Andere KIs verbinden
 area: connections
-summary: Lass Claude, ChatGPT, Cursor, Codex oder GBrain deine Aufgaben und deinen Graph lesen. Mit „Lesen und Bearbeiten“ können sie Änderungen vornehmen, die du rückgängig machen kannst.
+summary: Lass Claude, ChatGPT, Cursor, Codex oder GBrain deine Aufgaben und deinen Graph lesen. Mit „Lesen und Bearbeiten“ können sie auch Änderungen vornehmen, die du rückgängig machen kannst.
 covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
-translated: 7681c632f712e93c
+translated: 3a7200b2a076c274
 ---
-## Was andere KI-Systeme tun können
+## Was andere KIs tun können
 
-Claude, ChatGPT, Cursor, Codex, GBrain und andere KI-Systeme können sich mit deiner Machine verbinden. Sie können deine Aufgaben, Versprechen, Team-Briefings sowie die Personen und Unternehmen in deinem Graph lesen.
+Claude, ChatGPT, Cursor, Codex, GBrain und andere KIs können sich mit deiner Machine verbinden. Sie können deine Aufgaben, Versprechen, Team-Briefings und die Personen und Unternehmen in deinem Graph lesen.
 
-Mit **Lesen und Bearbeiten** können sie auch eine Aufgabe oder einen E-Mail-Entwurf hinzufügen und deinen Graph aktualisieren: eine Erkenntnis speichern, Details, Felder und Tags korrigieren oder eine Zeile zur Zusammenfassung einer Person hinzufügen.
+Mit „**Lesen und Bearbeiten**“ können sie auch eine Aufgabe oder einen E-Mail-Entwurf hinzufügen und deinen Graph aktualisieren: eine Tatsache speichern, Angaben, Felder und Tags korrigieren oder eine Zeile zur Zusammenfassung einer Person hinzufügen.
 
-Jede Änderung wird unter **Aktivität** angezeigt und kann mit **Rückgängig** rückgängig gemacht werden. Die KI-Systeme führen niemals Datensätze zusammen, löschen oder teilen sie. Gespeicherte Inhalte sind mit **KI:** und dem Namen der KI gekennzeichnet. Deine Machine behandelt diese Inhalte als Aussagen der KI, niemals als deine Anweisung.
+Jede Änderung erscheint unter „**Aktivität**“ und lässt sich mit „**Rückgängig**“ rückgängig machen. Sie führen niemals Datensätze zusammen, löschen oder teilen sie. Gespeicherte Angaben sind mit „**AI:**“ und ihrem Namen gekennzeichnet. Deine Machine behandelt sie als Behauptung der KI, niemals als deine Anweisung.
 
-Ein Entwurf bleibt liegen, bis du ihn selbst liest und auf „Senden“ drückst. Eine verbundene KI sendet nichts und handelt nie in deinem Namen.
+Ein Entwurf bleibt liegen, bis du ihn selbst gelesen und auf „Senden“ gedrückt hast. Eine verbundene KI sendet nichts und handelt niemals in deinem Namen.
 
 ## Was sie von dir lernt
 
-Wenn ein Chat beginnt, erhält die KI eine kurze Zusammenfassung: wer du bist, deine wichtigsten Regeln und was sich seit dem letzten Besuch geändert hat. Außerdem kann sie lesen, was unter **Lernen** steht: deine Regeln, allgemeine Fakten und wie du in den einzelnen Kanälen schreibst. So schreibt sie wie du.
+Wenn ein Chat beginnt, erhält die KI ein kurzes Briefing: wer du bist, deine wichtigsten Regeln und was sich seit ihrem letzten Besuch geändert hat. Sie kann auch lesen, was unter „**Lernen**“ steht: deine Regeln, allgemeine Fakten und wie du in den einzelnen Kanälen schreibst. So schreibt sie wie du.
 
-Mit **Lesen und Bearbeiten** kann die KI speichern, was ihr im Chat festlegt. Eine Tatsache wird sofort gespeichert und kann unter **Aktivität** mit **Rückgängig** rückgängig gemacht werden. Eine Regel steuert die Arbeit deiner Machine und bleibt deshalb unter **Lernen**, bis du auf **Freigeben** oder **Verwerfen** drückst. Sie ändert niemals, wie du schreibst.
+Mit „**Lesen und Bearbeiten**“ kann sie speichern, was ihr im Chat vereinbart. Eine Tatsache wird sofort gespeichert und lässt sich unter „**Aktivität**“ mit „**Rückgängig**“ rückgängig machen. Eine Regel beeinflusst die Arbeit deiner Machine und wartet deshalb unter „**Lernen**“, bis du auf „**Freigeben**“ oder „**Verwerfen**“ drückst. Sie ändert niemals, wie du schreibst.
 
-Ein Entwurf, in dem noch etwas fehlt, der eine nicht vorhandene Datei erwähnt oder nur deine eigene Adresse enthält, geht zuerst zurück an die KI, damit sie ihn korrigiert. Wenn eine KI zweimal hintereinander dieselbe Aufgabe oder denselben Entwurf anfordert, bekommst du nur einen davon.
+Ein Entwurf, bei dem noch etwas fehlt, eine erwähnte Datei, auf die die KI keinen Zugriff hat, oder ein Entwurf, auf dem nur deine eigene Adresse steht, geht zuerst zurück an die KI, damit sie ihn korrigiert. Fragt eine KI zweimal hintereinander nach derselben Aufgabe oder demselben Entwurf, erhältst du nur einen davon.
 
 ## Eine KI verbinden
 
-Öffne **Einstellungen** und dann **Apps**. Unter **Die Apps von The Machine** findest du **In ChatGPT hinzufügen** und **In Claude hinzufügen**. Unter **Oder per Adresse hinzufügen** findest du die eine Adresse der offiziellen App für jede Machine, `https://mcp.themachine.computer/mcp`, und **Deine Adresse**, `https://<your name>.mcp.themachine.computer/mcp`, jeweils mit **Kopieren**.
+Öffne „**Einstellungen**“ und dann „**Apps**“. Unter „**Die Apps von The Machine**“ findest du „**In ChatGPT hinzufügen**“ und „**In Claude hinzufügen**“. Unter „**Oder per Adresse hinzufügen**“ findest du die offizielle App-Adresse für alle Machines, `https://mcp.themachine.computer/mcp`, und „**Deine Adresse**“, `https://<your name>.mcp.themachine.computer/mcp`. Für beide gibt es die Schaltfläche „**Kopieren**“.
 
-Bei einer Machine auf deinem eigenen Computer drückst du zuerst unter **Adresse holen** auf **Einrichten**. Eine Seite in deinem Konto wird geöffnet. Prüfe, ob dort derselbe Code angezeigt wird, bestätige und wähle einen Namen. Deine Machine wird automatisch gekoppelt, ohne Neustart. Beides ist erforderlich.
+Wenn deine Machine auf deinem eigenen Computer läuft, drücke zuerst unter „**Adresse holen**“ auf „**Einrichten**“. Eine Seite in deinem Konto wird geöffnet. Prüfe, ob dort derselbe Code angezeigt wird, bestätige ihn und wähle einen Namen. Deine Machine wird automatisch gekoppelt, ohne Neustart. Beides ist erforderlich.
 
-Deine Machine richtet dann selbstständig ihre sichere Adresse ein. Das dauert einige Minuten.
+Anschließend richtet deine Machine ihre sichere Adresse selbst ein. Das dauert ein paar Minuten.
 
-Für Claude drückst du auf **In Claude hinzufügen** oder öffnest [The Machine im Claude-Verzeichnis](https://claude.ai/directory/the-machine) und drückst dann auf „Verbinden“. Bei Team- und Enterprise-Konten fügt ein Inhaber sie in den Organisationseinstellungen hinzu.
+Für Claude drückst du auf „**In Claude hinzufügen**“ oder öffnest [The Machine im Claude-Verzeichnis](https://claude.ai/directory/the-machine) und drückst dann auf „Verbinden“. Bei Team- und Enterprise-Konten fügt ein Inhaber die App in den Organisationseinstellungen hinzu.
 
-Der Skill von The Machine erklärt Claude, wann es deine Machine verwenden soll: zuerst die Zusammenfassung, dann deine Regeln und deinen Schreibstil, bevor Claude etwas entwirft. Drücke neben **Claude-Skill** auf **Herunterladen**. Öffne dann in Claude „Anpassen“ und „Skills“ und lade den Skill hoch.
+Der Skill von The Machine teilt Claude mit, wann es deine Machine verwenden soll: zuerst das Briefing, dann deine Regeln und deinen Schreibstil, bevor Claude etwas entwirft. Drücke neben „**Claude-Skill**“ auf „**Herunterladen**“. Öffne dann in Claude „Customize“ und „Skills“ und lade den Skill hoch.
 
-Du kannst stattdessen auch eine Adresse in Claude verwenden. Öffne dazu „Anpassen“ und „Connectors“, drücke auf „+ Hinzufügen“ und dann auf „Benutzerdefinierten Connector hinzufügen“. Nenne ihn The Machine, füge die Adresse ein, drücke auf „Weiter“ und dann auf „Hinzufügen“.
+Wenn du stattdessen in Claude eine Adresse verwenden möchtest, öffne „Customize“ und „Connectors“, drücke auf „+ Add“ und dann auf „Add custom connector“. Nenne den Connector The Machine, füge die Adresse ein, drücke auf „Continue“ und dann auf „Add“.
 
-Für ChatGPT drückst du auf **In ChatGPT hinzufügen** oder öffnest [The Machine in ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4) und drückst dann auf „Plugin installieren“. Bei Business- und Enterprise-Konten muss ein Administrator die App möglicherweise zuerst erlauben.
+Für ChatGPT drückst du auf „**In ChatGPT hinzufügen**“ oder öffnest [The Machine in ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4) und drückst dann auf „Install plugin“. Bei Business- und Enterprise-Konten muss ein Administrator die App möglicherweise zuerst zulassen.
 
-Die offizielle App verbindet sich mit einer gehosteten Machine und auch mit einer Machine auf deinem eigenen Computer, sobald diese ihre Adresse eingerichtet hat.
+Die offizielle App verbindet sich mit einer gehosteten Machine und mit einer Machine auf deinem eigenen Computer, sobald diese ihre Adresse eingerichtet hat.
 
-Für deine private Adresse oder eine Machine, die nicht im Network ist, kannst du stattdessen in ChatGPT einen benutzerdefinierten MCP-Server hinzufügen: Öffne chatgpt.com/plugins, drücke auf „+“ und dann auf „Benutzerdefinierten MCP-Server hinzufügen“. Nenne ihn The Machine, füge die Adresse ein und wähle OAuth. Bestätige die Warnung und drücke auf „Als Plugin erstellen“. Dein Tarif oder Workspace muss benutzerdefinierte MCP-Server zulassen.
+Für deine private Adresse oder eine Machine, die nicht im Network ist, kannst du stattdessen in ChatGPT einen benutzerdefinierten MCP-Server hinzufügen: Öffne chatgpt.com/plugins, drücke auf „+“ und dann auf „Add custom MCP server“. Nenne ihn The Machine, füge die Adresse ein und wähle OAuth. Bestätige den Warnhinweis und drücke auf „Create as a plugin“. Dein Tarif oder Arbeitsbereich muss benutzerdefinierte MCP-Server erlauben.
 
-Bei der offiziellen App fordert die KI dich auf, dich mit deinem Konto bei The Machine anzumelden. Wenn du mehr als eine Machine hast, wähle diese Machine aus und bestätige sie dann auf der eigenen Seite deiner Machine. Mit der privaten Adresse verbindet sich die KI direkt mit deiner Machine.
+Bei Verwendung der offiziellen App fordert die KI dich auf, dich mit deinem The Machine-Konto anzumelden. Wenn du mehrere Machines hast, wähle diese Machine aus und bestätige die Verbindung auf der eigenen Seite deiner Machine. Mit der privaten Adresse verbindet sich die KI direkt mit deiner Machine.
 
-KI-Systeme auf einem Gerät in deinem privaten Netzwerk (Tailscale), etwa Claude Code oder Cursor, können auch die Adresse deines Dashboards verwenden, gefolgt von `/mcp`. Mit **Diese Machine trennen** am Ende von **Einstellungen** und **Konto** entfernst du eine Machine auf deinem eigenen Computer wieder aus deinem Konto.
+KIs auf einem Gerät in deinem privaten Netzwerk (Tailscale), zum Beispiel Claude Code oder Cursor, können auch die Adresse deines Dashboards gefolgt von `/mcp` verwenden. Mit „**Diese Machine trennen**“ ganz unten unter „**Einstellungen**“ und „**Konto**“ entfernst du eine Machine auf deinem eigenen Computer wieder aus deinem Konto.
 
-Deine Machine zeigt dir, welche KI anfragt. Wenn sie das nicht erkennen kann, zeigt sie dir, woher die Anfrage kommt. Verbinde sie nur, wenn du gerade selbst damit begonnen hast.
+Deine Machine zeigt dir, welche KI eine Verbindung anfragt. Wenn sie das nicht feststellen kann, zeigt sie dir, woher die Anfrage kommt. Verbinde sie nur, wenn du den Vorgang gerade selbst gestartet hast.
 
-Wähle aus, was die KI tun darf: **Lesen** oder **Lesen und Bearbeiten**. Wenn du sowohl ein Work- als auch ein Personal-Konto hast, wähle aus, worauf sie zugreifen darf. Lege dann fest, wie lange der Zugriff gelten soll: **1 Tag**, **7 Tage**, **30 Tage** oder **1 Jahr**. Drücke auf **Verbinden** oder auf **Abbrechen**, um die Anfrage abzulehnen.
+Wähle aus, was die KI tun darf: „**Lesen**“ oder „**Lesen und Bearbeiten**“. Wenn du ein Work- und ein Personal-Konto hast, wählst du aus, worauf sie zugreifen darf. Wähle dann aus, wie lange der Zugriff gelten soll: „**1 Tag**“, „**7 Tage**“, „**30 Tage**“ oder „**1 Jahr**“. Drücke auf „**Verbinden**“ oder auf „**Abbrechen**“, um die KI ohne Zugriff zurückzuschicken.
 
 ## Offizielle App oder private Adresse
 
-Die offizielle App ist der einfache Weg: eine Adresse für alle, und dein Konto findet deine Machine. Unsere Cloud leitet Anfragen weiter und speichert niemals deren Inhalt.
+Die offizielle App ist der einfache Weg: eine Adresse für alle, und dein Konto findet deine Machine. Unsere Cloud leitet Anfragen weiter und speichert niemals, was darin steht.
 
-Mit deiner privaten Adresse ist alles durchgehend bis zu deiner Machine verschlüsselt. Die Cloud leitet die Inhalte nur weiter und kann sie nicht lesen.
+Mit deiner privaten Adresse ist alles bis zu deiner Machine durchgehend verschlüsselt. Die Cloud leitet die Anfragen nur weiter und kann sie nicht lesen.
 
-In beiden Fällen entscheidet deine Machine. Nur eine KI, die du auf ihrer Seite freigegeben hast, erhält Zugriff, und zwar mit den von dir gewählten Berechtigungen. Unter **Einstellungen** und **Apps** wird bei einer KI, die über die offizielle App verbunden ist, **Offizielle App** angezeigt.
+In beiden Fällen entscheidet deine Machine. Nur eine KI, die du auf der Seite deiner Machine freigegeben hast, erhält Zugriff, und zwar nur auf das, was du ausgewählt hast. Unter „**Einstellungen**“ und „**Apps**“ ist bei einer KI, die über die offizielle App verbunden ist, „**Offizielle App**“ angegeben.
 
-## Was die KI sehen kann
+## Was sie sehen kann
 
-Eine Verbindung sieht nur ihren jeweiligen Bereich. „Work“ umfasst Aufgaben und Versprechen deiner Arbeitskonten, Kontakte, Unternehmen und Projekte aus dem Arbeitsbereich sowie das Team-Briefing deines Work Fleet. „Personal“ umfasst alles andere. Nachrichtentexte bleiben auf deiner Machine, sofern du **Nachrichten** nicht aktivierst. Ohne diese Option sieht eine KI bei den Quellen einer Aufgabe nur Absender, Betreff und Datum.
+Eine Verbindung sieht nur ihren jeweiligen Bereich. „Work“ umfasst Aufgaben und Versprechen deiner Work-Konten, Personen und Unternehmen aus dem Arbeitsbereich, Projekte und das Team-Briefing deiner Work Fleet. „Personal“ umfasst alles andere. Nachrichtentexte bleiben auf deiner Machine, solange du „**Nachrichten**“ nicht aktivierst. Ohne diese Option sieht eine KI bei den Quellen einer Aufgabe nur Absender, Betreff und Datum.
 
-Datensätze deiner Teammitglieder im Team Graph werden niemals an externe KI-Systeme weitergegeben.
+Datensätze von Teammitgliedern aus dem Team Graph werden niemals an externe KIs weitergegeben.
 
 ## Nachrichten
 
-Mit **Nachrichten** kann eine KI deine E-Mails, Slack-, WhatsApp- und andere Chats durchsuchen und lesen. Die Funktion ist zunächst ausgeschaltet. Du kannst sie beim Verbinden oder später unter **Einstellungen** und **Apps** einschalten. Die KI kann nur lesen: Sie sendet und löscht nichts und markiert auch nichts.
+Mit „**Nachrichten**“ kann eine KI deine E-Mails, Slack-, WhatsApp- und andere Chats durchsuchen und lesen. Die Option ist zunächst ausgeschaltet. Du kannst sie auf der Seite aktivieren, auf der du die Verbindung einrichtest, oder später unter „**Einstellungen**“ und „**Apps**“. Die KI kann nur lesen. Sie sendet nichts, löscht nichts und markiert nichts.
 
-Sie liest nur Nachrichten aus ihrem jeweiligen Bereich. Manche Nachrichten werden niemals weitergegeben: Einmalcodes und Anmeldelinks, Nachrichten aus einem Board oder Projekt mit der Einstellung **Nur du**, Unterhaltungen, die The Machine als sensibel eingestuft hat (Geschäfte, Personal, Rechtliches, Gesundheit, Geld), Unterhaltungen, die du privat gehalten hast, und gelöschte Nachrichten.
+Sie liest nur Nachrichten aus ihrem Bereich. Bestimmte Inhalte werden niemals weitergegeben: Einmalcodes und Anmeldelinks, Nachrichten auf einem Board oder in einem Projekt mit der Einstellung „**Nur du**“, Threads, die The Machine als sensibel einstuft (Geschäfte, Personal, Rechtliches, Gesundheit, Geld), Threads, die du privat gehalten hast, und gelöschte Nachrichten.
 
-Jeder Lesezugriff wird unter **Aktivität** angezeigt, mit der Anzahl der Nachrichten und den jeweiligen Unterhaltungen, aber niemals mit dem Nachrichtentext. Deine Machine übergibt den Text als Daten gekennzeichnet, damit die KI Anweisungen in Nachrichten nicht befolgt.
+Jeder Lesezugriff erscheint unter „**Aktivität**“ mit der Anzahl der Nachrichten und den jeweiligen Threads, aber niemals mit dem Nachrichtentext. Deine Machine übergibt den Text als Daten an die KI. Die KI sollte daher keine Anweisungen befolgen, die in einer Nachricht stehen.
 
-Solange „Nachrichten“ eingeschaltet ist, müssen Änderungen am Graph, die eine KI mit **Lesen und Bearbeiten** vornimmt, von dir bestätigt werden. Drücke bei der Änderung unter **Aktivität** auf **Übernehmen** oder **Verwerfen**.
+Solange „**Nachrichten**“ aktiviert ist, warten Änderungen am Graph durch eine KI mit „**Lesen und Bearbeiten**“ auf deine Bestätigung. Drücke bei der Änderung unter „**Aktivität**“ auf „**Übernehmen**“ oder „**Verwerfen**“.
+
+## Termine
+
+Mit „**Termine**“ kann eine KI wie ChatGPT selbstständig starten, wenn etwas passiert, zum Beispiel wenn eine neue Aufgabe hinzukommt, ein Briefing für ein morgiges Meeting ansteht oder ein Versprechen morgen fällig ist. Jeder Termin ist zunächst ausgeschaltet. Du kannst ihn unter „**Ändern**“ aktivieren. Die KI erhält dann den Titel und eine kurze Begründung. Sie bekommt keine Informationen, die sie nicht bereits lesen konnte, und niemals Informationen von vorher.
+
+Die KI kann weiterhin nichts senden. Ihre Änderungen erscheinen unter „**Aktivität**“ und lassen sich mit „**Rückgängig**“ rückgängig machen. Wenn du einen Termin oder die KI ausschaltest, wird sie sofort gestoppt.
 
 ## In den Einstellungen
 
-Öffne **Einstellungen** und dann **Apps**, um alle KI-Systeme zu sehen, die sich verbunden haben. Jedes wird einmal mit seinen Berechtigungen, seinem Bereich, Ablaufdatum und letzter Nutzung angezeigt. Dort kannst du **Nachrichten** ein- und ausschalten. Drücke auf **Ändern**, um die Berechtigungen, den Bereich oder die Dauer zu ändern. Die Änderung gilt beim nächsten Zugriff. Unter **Aktivität** werden alle Zugriffe aufgeführt, auch abgelehnte. **Jetzt ausschalten** setzt den Zugriff aus: Alle Anmeldungen werden beendet, der Verlauf bleibt erhalten. Mit **Entfernen** entfernst du die Verbindung samt Verlauf.
+Öffne „**Einstellungen**“ und dann „**Apps**“, um alle verbundenen KIs samt Zugriff, Bereich, Ablaufdatum und letzter Verwendung zu sehen. Dort kannst du auch „**Nachrichten**“ ein- und ausschalten. Drücke auf „**Ändern**“, um den Zugriff, den Bereich oder die Laufzeit anzupassen. Die nächste Anfrage verwendet die neuen Einstellungen. Unter „**Aktivität**“ werden alle Anfragen aufgeführt, auch abgelehnte. Mit „**Jetzt ausschalten**“ pausierst du den Zugriff: Alle Anmeldungen werden beendet, der Verlauf bleibt erhalten. Mit „**Entfernen**“ löschst du die Verbindung mitsamt ihrem Verlauf.
 
-Wenn du dich erneut bei derselben KI anmeldest, ersetzt die neue Freigabe die vorherige. Wo du bei dieser KI bereits angemeldet bist, bleibt die Verbindung mit den neuen Berechtigungen bestehen. Eine KI, die du verwendest, bleibt bis zum Ablaufdatum angemeldet. Wenn du eine KI 90 Tage lang nicht verwendest, musst du dich erneut anmelden.
+Wenn du dich erneut bei derselben KI anmeldest, ersetzt die neue Freigabe die vorherige. Wenn du bei dieser KI bereits angemeldet bist, bleibt sie mit dem neuen Zugriff verbunden. Eine KI, die du verwendest, bleibt bis zum Ablaufdatum angemeldet. Eine KI, die du 90 Tage lang nicht verwendet hast, fordert dich zur erneuten Anmeldung auf.
 
-Eine KI, die sich nicht selbst anmelden kann, kann einen Schlüssel verwenden. Gib unter **Schlüssel hinzufügen** einen Namen ein, wähle die Berechtigungen und die Dauer aus und drücke auf **Schlüssel erstellen**. Kopiere den Schlüssel sofort: Er wird nur einmal angezeigt. Die KI sendet ihn als `Authorization: Bearer <key>`.
+Eine KI, die sich nicht selbst anmelden kann, kann einen Schlüssel verwenden. Gib unter „**Schlüssel hinzufügen**“ einen Namen ein, wähle den Zugriff und die Laufzeit und drücke auf „**Schlüssel erstellen**“. Kopiere den Schlüssel sofort, denn er wird nur einmal angezeigt. Die KI sendet ihn als `Authorization: Bearer <key>`.
 
-## Sicherheit
+## Sicher bleiben
 
-Jeder Zugriff wird protokolliert, auch abgelehnte Zugriffe. Eine abgelaufene oder ausgeschaltete Verbindung wird abgelehnt, bis du sie änderst. Deine Machine speichert nur einen Fingerabdruck für jede Anmeldung. Eine Kopie ihrer Daten reicht also nicht aus, um etwas zu öffnen.
+Jede Anfrage wird protokolliert, auch abgelehnte. Anfragen von einer abgelaufenen oder ausgeschalteten Verbindung werden abgelehnt, bis du die Verbindung änderst. Deine Machine speichert nur einen Fingerabdruck für jede Anmeldung. Eine Kopie ihrer Daten reicht daher nicht aus, um etwas zu öffnen.
