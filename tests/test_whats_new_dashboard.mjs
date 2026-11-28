@@ -13,7 +13,7 @@ const {chromium}=await import('./browser.mjs');
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const ROUTINES={id:'routines',title:'Routines run work for you',text:'Tell The Machine what to do and how often.',action:{label:'Open Routines',run:'go-routines'},art:'routines'};
-const SEARCH={id:'ask',title:'Search answers questions',text:'Type a question into Search.',action:{label:'Open Search',run:'search'},art:'search'};
+const SEARCH={id:'ask',title:'Search answers questions',text:'Type a question into Search.',action:{label:'Open Search',run:'search'},art:'mail'};
 const PLAIN={id:'plain',title:'Faster first load',text:'The dashboard opens sooner.',action:null};
 const ID='00000000000000a1';let news=null,greeting=null,seen=0;
 const cards=[{id:ID,title:'Reply to Sam about pricing',body:'Sam asked for pricing.',status:'pending',scope:'work',created_at:now,event_ids:[1]}];

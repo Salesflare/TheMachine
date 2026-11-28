@@ -15,7 +15,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 // The dialogs that have their own opener or title row, as the app draws them. Any other dialog of the page that is
 // drawn from data gets the shared title row with a field right under it, the closest a control ever comes.
 const OPEN={'keys-sheet':()=>keysShow(),'new-card':()=>ncOpen(),'help-panel':()=>helpOpen(),
- 'whats-new':()=>whatsNewOpen({entries:[{art:'search',title:'Ask anything',text:'Find an answer in your messages.'},{title:'Export',text:'Take it with you.'}]}),
+ 'whats-new':()=>whatsNewOpen({entries:[{art:'mail',title:'Ask anything',text:'Find an answer in your messages.'},{title:'Export',text:'Take it with you.'}]}),
  'memory-import':()=>{setHTML(miDialog(),html`${miHead('Bring in what it knows')}<textarea></textarea>`)},
  'crm-dialog':()=>{setHTML(document.querySelector('#crm-form'),html`${crmHead('Import')}<input>`)},
  'project-dialog':()=>{setHTML(document.querySelector('#project-form'),html`${pjHead('New project')}<input>`)},
