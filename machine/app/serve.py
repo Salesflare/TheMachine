@@ -24,7 +24,7 @@ import shared_connectors
 import work_removal
 
 
-PACKED_KEEP = 48  # compressed pages and scripts kept (packed_page): about 0.7 MB for a coding's page and scripts
+PACKED_KEEP = 56  # compressed pages and scripts kept (packed_page): about 0.8 MB for a coding's page and scripts
 
 
 class ServeApp:

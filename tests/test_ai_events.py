@@ -1,4 +1,4 @@
-"""MCP Events for connected AIs (ai_events.py, docs/ai-connections.md, Events): events/list, subscribe and unsubscribe
+"""MCP Events for connected AIs (ai_events.py; Events in the connected-AI doc): events/list, subscribe and unsubscribe
 on the MCP endpoint, the owner's switch per event and connection, the callback's checks (https, public addresses only,
 the verification handshake), signed webhook delivery to a fake subscriber over real HTTPS, retries, the rate limit,
 loops, and subscriptions ending with their connection. Security-critical: nothing reaches a private address, nothing is
