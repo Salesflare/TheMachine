@@ -399,7 +399,9 @@ until it is disconnected there.
 `claude-plugin/skills/the-machine/SKILL.md` tells an AI when to use The Machine: read the brief when a chat starts,
 `get_learnings` before drafting for the owner, `search_graph` before answering about someone, `save_learning` or
 `save_fact` when the owner settles something in the chat, never a claim that it sent. `tests/test_ai_skill.py` keeps it
-true to the server.
+true to the server. A connection can lack the learning tools (`ai_learnings` off, or ChatGPT's app before OpenAI
+approves them: its daily scan, or Rescan in the plugin's MCPs), so each step also names a tool from that shorter list:
+`list_todos` at the start, `get_graph_record` and the message tools for the voice of a draft.
 
 `claude-plugin/` is a Claude Code plugin: the MCP server (`.mcp.json`, the official address) and the skill.
 `.claude-plugin/marketplace.json` at the repository's root lists it. `scripts/skill_package.py` packs the skill twice, and
@@ -415,7 +417,7 @@ with **Download** under Add in Claude, which links the first.
 | OpenClaw | `clawhub publish` of the folder (or `the-machine-clawhub.zip`), with the same frontmatter (name, description). Our published `salesflare` skill is the model | Needs the owner's OK |
 | Codex | The folder in `~/.codex/skills/`, or its text in `AGENTS.md` | Per person |
 | Cursor | The text as a rule (`.cursor/rules/the-machine.mdc`) with the MCP in `mcp.json` | Per person |
-| ChatGPT | ChatGPT has skills on Business, Enterprise and Edu, but we don't ship one for it: the app's tool descriptions, the MCP `initialize` instructions and the brief say the same in short | Built in |
+| ChatGPT | `the-machine-skill.zip` uploaded in ChatGPT's Skills (Business, Enterprise, Edu). Without it, the app's tool descriptions, the MCP `initialize` instructions and the brief say the same in short. The app gets a new tool only once OpenAI approves it | Per person |
 
 ## Decided
 

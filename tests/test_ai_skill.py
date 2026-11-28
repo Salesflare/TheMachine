@@ -30,6 +30,21 @@ class Skill(unittest.TestCase):
         for tool in ('get_brief', 'get_learnings', 'search_graph', 'save_learning', 'save_fact'):
             self.assertIn(tool, named)
 
+    def test_each_step_works_without_the_learning_tools(self):
+        # ChatGPT's app lists a new tool only once OpenAI approves it, and ai_learnings can be off: the list such a
+        # connection gets (no LEARNING_TOOLS) must still give every step of the skill a tool to call
+        listed = {tool['name'] for tool in ai_access.tool_list(learnings=False)}
+        self.assertFalse(listed & set(ai_access.LEARNING_TOOLS))
+        steps = re.split(r'^## ', self.body, flags=re.M)[1:]
+        self.assertGreaterEqual(len(steps), 4)
+        for step in steps:
+            named = set(re.findall(r'`([a-z]+(?:_[a-z]+)+)`', step))
+            if named:
+                self.assertTrue(named & listed, step.splitlines()[0])
+        drafts = next(s for s in steps if s.startswith('Before you draft'))
+        for tool in ('get_graph_record', 'search_messages'):  # who it goes to, and how the owner writes to them
+            self.assertIn(f'`{tool}`', drafts)
+
     def test_the_address_is_the_official_one(self):
         self.assertIn(SHARED_ADDRESS, self.body)
         servers = json.loads((PLUGIN / '.mcp.json').read_text(encoding='utf-8'))['mcpServers']
