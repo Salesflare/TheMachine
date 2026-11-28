@@ -264,6 +264,38 @@ class HistoryNotes(unittest.TestCase):
             {'text': 'You focus on collecting client reviews, and you pay staff a bonus for 120 reviews by year end.', 'from': ['N1', 'N2']}]})
         self.assertNotIn('bonus', ' '.join(k['text'] for k in kept))  # a clause no quote says: not taken
 
+    def test_the_owners_own_way_told_to_one_colleague_holds_for_everyone_and_their_duties_stay_theirs(self):
+        self.mail(100, "Pat, please don't forward non-urgent client mail on Sundays. I read it Monday.")
+        self.mail(90, 'Pat, from now on you handle all the supplier invoices.')
+        found = self.learn(self.model([
+            {'kind': 'preference', 'text': 'You read non-urgent client mail on Mondays, not Sundays.', 'quote': "don't forward non-urgent client mail on Sundays. I read it Monday", 'holds_for': 'Pat Colleague'},
+            {'kind': 'responsibility', 'text': 'Pat handles all the supplier invoices.', 'quote': 'you handle all the supplier invoices', 'holds_for': 'Pat Colleague'}]))
+        facts = {f['text']: f['scope'] for f in self.facts()}
+        self.assertEqual(facts['You read non-urgent client mail on Mondays, not Sundays.'], 'area', found['dropped'])
+        self.assertNotEqual(facts.get('Pat handles all the supplier invoices.'), 'area')  # theirs (here no Graph page, so not kept)
+
+    def test_a_note_that_says_more_than_its_quote_keeps_what_the_quote_says(self):
+        self.mail(100, 'Custom cakes need three days notice and we always ask a deposit up front.')
+        self.mail(90, 'We open at seven sharp.')
+        self.mail(80, 'Thanks for the flowers, they look lovely.')
+        found = self.learn(self.model([
+            {'kind': 'rule', 'text': 'Custom cakes need three days notice, and you never bake on Sundays for weddings.', 'quote': 'Custom cakes need three days notice'},
+            {'kind': 'fact', 'text': 'You open at seven, and the shop sells sourdough rye loaves daily.', 'quote': 'We open at seven sharp'},
+            {'kind': 'preference', 'text': 'You buy peonies for the shop window every Friday.', 'quote': 'Thanks for the flowers, they look lovely'}]))
+        self.assertEqual(sorted(f['text'] for f in self.facts()), ['Custom cakes need three days notice.', 'You open at seven.'])
+        self.assertEqual(found['dropped'].get('more_than_quote'), 1)
+
+    def test_a_work_rule_whose_reason_is_personal_joins_its_personal_sibling_as_personal(self):
+        notes = [{'text': 'You keep Sundays for family and take no clinic calls.', 'quote': 'Sundays are for family, no clinic calls',
+                  'about': '', 'area': 'personal', 'at': '2026-01-01', 'said': 'x\nSundays are for family, no clinic calls'},
+                 {'text': 'You read non-urgent client mail on Mondays, not Sundays.', 'quote': "please don't forward non-urgent client mail on Sundays. I read it Monday",
+                  'about': '', 'area': 'work', 'at': '2026-02-01', 'said': "y\nplease don't forward non-urgent client mail on Sundays. I read it Monday"}]
+        kept, gone = history_notes.consolidated(notes, notes, {'rules': [
+            {'text': 'You keep Sundays for family and take no clinic calls; you read non-urgent client mail on Mondays, not Sundays.', 'from': ['N1', 'N2']}]})
+        self.assertEqual((gone, [(k['area'], len(k['parts'])) for k in kept]), (1, [('personal', 2)]))
+        kept, gone = history_notes.consolidated(notes, notes, {'rules': [{'text': 'You keep Sundays for family and take no clinic calls.', 'from': ['N1', 'N2']}]})
+        self.assertEqual(gone, 0)  # a poorer rewrite never drops the work note into Personal
+
     def test_a_removed_note_that_said_more_still_never_comes_back(self):
         with self.store.connect() as db:
             fid = history_fact(db, 'You are in confidential talks to lease the old Hartwell store for a second studio at $4,200 a month on five years.', False, False, 1, '2026-01-01', 'x', 'work')
