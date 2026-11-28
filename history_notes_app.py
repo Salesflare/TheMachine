@@ -43,8 +43,8 @@ class HistoryNotesApp:
         if ask is None:
             model = (helpers or {})['model'](self.config)
 
-            def ask(prompt):
-                return help_chat.openclaw_model_run(self.config, prompt, '/'.join(model) if model else None, timeout=history_notes.TIMEOUT)
+            def ask(prompt, thinking=None):  # thinking: the Gateway's level, Claude Code's effort on a Claude sign-in
+                return help_chat.openclaw_model_run(self.config, prompt, '/'.join(model) if model else None, thinking=thinking, timeout=history_notes.TIMEOUT)
         today = f'{clock(local_tz()):%B %d, %Y}'
         try:
             found = history_notes.run(self.store, self.config.get('accounts') or [], account_ids, self.owner_emails(), today, ask)

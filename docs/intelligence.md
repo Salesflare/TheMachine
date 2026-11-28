@@ -1097,7 +1097,7 @@ and its live sync are in (`history_backfill.done_at`, `history.first_import_done
 (`history_notes.py`, `history_notes_app.py`) reads what the owner wrote themselves in it and keeps their standing ways
 of working as notes: how they like things done, what they handle, rates and terms, who their accountant is, how a kind
 of task goes. Once per mailbox (`learning_state` `history_notes:<account>`), on the background model, after
-`background_pause` like all background work, in at most 10 small turns (some 14,000 tokens in). `history_notes: false`
+`background_pause` like all background work, in at most 10 small turns (some 17,000 tokens in and 9,000 out per mailbox). `history_notes: false`
 in config.json turns it off.
 
 - Plain code first: only history rows of mail the owner sent, no bulk mail, only their own lines (quoted mail and a
@@ -1118,10 +1118,12 @@ in config.json turns it off.
   from). Their older messages that share its rarest words are shown too, for the area only: why they keep Thursday
   evenings free may be in another message. And code drops a general note whose number a newer message changes, or that a newer general note on the
   same thing with other numbers replaces. A turn merges notes that say the same.
-- One rule said twice in other words or from two sides is kept once: each note is paired with the notes of any kind
-  and area that share its rarest words (`word_scores`), the ones already on Learning too, and a last turn says which
-  pairs come down to one (would following one already do all the other asks?) and whose wording says all of it. A pair with other
-  numbers, or naming other people, is two things, and one already on Learning stays as the owner sees it.
+- One rule said twice in other words or from two sides is kept once: a last turn reads all the notes at once, with
+  the closest ones already on Learning (`word_scores`), and says which note another already makes the point of, of any
+  kind and area, also with no word in common. It is asked twice, from each end of the list, at medium effort
+  (`TWINS_THINKING`; the Gateway's thinking level, Claude Code's effort on a Claude sign-in), the other turns at the
+  model's own. Of a pair the one with more details of its own stays; two with other numbers, or for other people, are
+  two things, and one already on Learning stays as the owner sees it.
 - A note's words and day are always one message's, checked again when it is saved: a merge whose text no single quote
   says is not made.
 - Saved through `machine/store/facts.py` `history_fact`: source `history:email`, the message's day in `decision_id`

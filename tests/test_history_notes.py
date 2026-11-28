@@ -40,6 +40,7 @@ class HistoryNotes(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,'person','Walter Client',1,0,'{}')", (WALTER,))
         self.n = 0
+        self.thinking = []
 
     def mail(self, days, body, to='Pat Colleague <pat@acme.example>', mine=True, history=True, title='Re: work'):
         self.n += 1
@@ -59,9 +60,11 @@ class HistoryNotes(unittest.TestCase):
     def model(self, items, check=None, merge=None, seen=None, twins=None):
         """A model: EXTRACT gets items (with "message" filled in from the H-number of the message that has the quote),
         CHECK gets check, MERGE gets merge, TWINS twins(prompt)."""
-        def reply(prompt):
+        def reply(prompt, thinking=None):
             if seen is not None:
                 seen.append(prompt)
+            if thinking:
+                self.thinking.append((prompt[:40], thinking))
             if prompt.startswith('Below are older messages'):
                 out = []
                 for it in items:
@@ -241,6 +244,10 @@ class HistoryNotes(unittest.TestCase):
                  {'text': 'Customers pay within 10 days.', 'quote': 'customers pay within 10 days', 'about': ''}]
         kept, gone = history_notes.twins_dropped(notes, notes, {'covered': [{'note': 'N1', 'by': 'N2'}, {'note': 'N3', 'by': 'N4'}]})
         self.assertEqual(gone, 0)
+        more = [{'text': 'You keep Wednesday evenings free.', 'quote': 'Wednesday evenings are out', 'about': ''},
+                {'text': 'You are at the clay studio from 6:30 on Wednesdays.', 'quote': 'at the clay studio from 6:30', 'about': ''}]
+        kept, gone = history_notes.twins_dropped(more, more, {'covered': [{'note': 'N2', 'by': 'N1'}]})
+        self.assertEqual([k['text'] for k in kept], [more[1]['text']])  # the model's pick aside, the one with its own details stays
 
     def test_over_the_bound_the_richest_messages_are_read_across_all_of_history(self):
         self.mail(600, 'Our minimum fee is 300 for every project, always, unless the board says otherwise.')
@@ -279,8 +286,7 @@ class HistoryNotes(unittest.TestCase):
             notes = dict(re.findall(r'\n(N\d+)[^:]*: <<<([^\n]*)>>>', prompt))
             n = {k for k, v in notes.items() if 'Ironbark name' in v}, {k for k, v in notes.items() if 'label' in v}
             t = {k for k, v in notes.items() if 'taproom' in v}, {k for k, v in notes.items() if 'brewery' in v}
-            m = {k for k, v in notes.items() if '$400' in v}, {k for k, v in notes.items() if 'portal' in v}
-            return {'covered': [{'note': a, 'by': b} for x, y in (n, t, m) for a in x for b in y]}  # the last pair is a model's mistake
+            return {'covered': [{'note': a, 'by': b} for x, y in (n, t) for a in x for b in y]}
         found = self.learn(self.model([
             {'kind': 'rule', 'text': 'Your tanks only ever hold beer with the Ironbark name.', 'quote': 'our tanks only ever hold beer with the Ironbark name on it'},
             {'kind': 'rule', 'text': "You don't brew beer under anyone else's label and point them to Fallow Field.",
@@ -290,6 +296,8 @@ class HistoryNotes(unittest.TestCase):
             {'kind': 'rule', 'text': 'You meet a new account at your taproom, not at their place.', 'quote': 'I always meet a new account at our taproom, not at their place'}],
             twins=twins))
         self.assertEqual(len(asked), 2)  # once from each end
+        self.assertEqual({t for _, t in self.thinking}, {'medium'})  # only the duplicate turn asks for more effort
+        self.assertTrue(all(p.startswith('Below are notes an assistant keeps') for p, _ in self.thinking))
         self.assertIn('(on Learning)', asked[0])
         texts = [f['text'] for f in self.facts()]
         self.assertEqual(sorted(texts), sorted(['You see new customers at the brewery, never at their venue.', "You don't brew beer under anyone else's label and point them to Fallow Field.",
