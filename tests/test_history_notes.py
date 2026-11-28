@@ -230,6 +230,19 @@ class HistoryNotes(unittest.TestCase):
             {'kind': 'rule', 'text': 'Your crew never works after dark.', 'quote': 'our crew never works after dark', 'holds_for': 'Acme'}]))
         self.assertEqual(sorted(f['scope'] for f in self.facts()), ['area', 'area'])
 
+    def test_a_short_english_quote_gets_the_full_check_and_a_long_foreign_one_its_numbers(self):
+        self.assertFalse(history_notes.supported(
+            'You require everyone to take your belay check with a staff member and a new check after 12 months away.',
+            'No, more than 12 months away means a new check'))
+        self.assertTrue(history_notes.supported('A new check after 12 months away.', 'No, more than 12 months away means a new check'))
+        self.assertTrue(history_notes.supported('You refund within 30 days.', 'Wir erstatten den vollen Betrag innerhalb von 30 Tagen zurück, ohne Rückfragen und ohne Gebühren für unsere Kunden'))
+        self.assertTrue(history_notes.supported('You refund within 30 days.', '30日以内に全額を返金します'))
+
+    def test_the_owners_firm_by_their_address_is_the_owner(self):
+        self.mail(100, 'Walter, at Acme we never work after dark.', to='Walter Client <walter@client.example>')
+        self.learn(self.model([{'kind': 'rule', 'text': 'You never work after dark.', 'quote': 'at Acme we never work after dark', 'holds_for': 'Acme Plumbing'}]))
+        self.assertEqual([f['scope'] for f in self.facts()], ['area'])
+
     def test_the_area_is_why_it_is_so_which_an_older_message_may_tell(self):
         self.mail(300, 'Hetty, Thursdays are choir, 7 to 9:30, and I never skip it.', to='Hetty Friend <hetty@mail.example>')
         self.mail(100, "Corwin, Thursday evenings I'm not available. Could we do lunch instead?", to='Corwin Belasco <corwin@downtown.example>, Pat Colleague <pat@acme.example>')

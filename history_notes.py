@@ -183,15 +183,34 @@ def supported(text, quote, names='', subject=''):
     the quote is English, most of its telling words are (by their first five letters, so 'invoices' meets 'invoicing'),
     leaving out who it is about (names) and what the message's subject says. A quote in another language is held to its
     numbers. An added detail is a reason to drop it, not to trust it."""
-    if len(str(quote or '').split()) < 4:
+    if len(str(quote or '').split()) < 4 and not (len(str(quote or '').strip()) >= 8 and _foreign(quote)):  # a script without spaces counts its letters
         return False  # a span, not a word or two
     if _numbers(text) - _numbers(quote):
         return False
-    words = [w.casefold() for w in re.findall(r"[^\W\d_]+", str(quote))]
-    if sum(w in ENGLISH for w in words) < max(2, len(words) * 0.15):
+    if _foreign(quote):
         return True
     said, mine = _stems(quote) | _stems(subject), _stems(text) - _stems(names)
     return not mine or len(mine & said) / len(mine) >= 0.6
+
+
+LATIN = re.compile(r"[A-Za-z\u00C0-\u024F]")
+
+
+def _foreign(quote):
+    """The quote is in another language, so its words can't be held against an English note's: mostly letters of another
+    script, or long enough to tell (FOREIGN_WORDS words at least) with hardly any everyday English word in it. A short
+    quote never counts as foreign: "No, more than 12 months away means a new check" gets the full check."""
+    letters = re.findall(r"[^\W\d_]", str(quote or ''))
+    if letters and sum(bool(LATIN.match(c)) for c in letters) < len(letters) * 0.5:
+        return True
+    words = [w.casefold() for w in re.findall(r"[^\W\d_]+", str(quote or ''))]
+    return len(words) >= FOREIGN_WORDS and sum(w in COMMON for w in words) < max(2, len(words) * 0.15)
+
+
+FOREIGN_WORDS = 12
+COMMON = ENGLISH | STOP | PLAIN | set('''no yes more less than means mean any here out up down off his her he she they them their was were been has had
+would could should may might one two first last next day days week weeks month months year years time new old good just also
+but not nor than too very can't don't won't isn't it's i'm we're you're that's there's what who how why where which'''.split())
 
 
 def _names(text):
@@ -394,8 +413,11 @@ def run(store, accounts, account_ids, owner_emails, today, ask):
         first = (re.findall(r"[^\W\d_]+", name.casefold()) or [''])[0]
         if len(first) > 2 and any(first in re.split(r'[._+-]', e.lower().split('@')[0]) for e in owner_emails):
             return True  # their own first name, as their address has it
+        word = (re.findall(r"[^\W\d_]+", name.casefold()) or [''])[0]
+        if len(word) > 3 and any(label.startswith(word) for d in own_domains for label in re.split(r'[.-]', d)[:-1]):
+            return True  # their own firm, as their address's domain names it ("Cragline Climbing" at cragline.example)
         with store.connect() as db:
-            return node_of(db, name, '') in own_nodes
+            return node_of(db, name, '') in own_nodes  # or the Graph's record of their firm
     with store.connect() as db:
         rows = own_history(db, account_ids, owner_emails)
         live = [dict(r, live=True) for r in own_history(db, account_ids, owner_emails, live=True)]  # newer than all history: only to check against
