@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import logging
 import re
 import socket
 import sqlite3
@@ -19,6 +20,7 @@ import time
 import urllib.parse
 
 import ai_access
+import ai_events
 import ai_learnings
 import ai_reach
 import crm_fields
@@ -77,6 +79,8 @@ class AiApp:
         'ai_unpair',
     ), 'ai_dashboard_action')
     ai_limiter = ai_access.Limiter()
+    ai_transport = ai_events.Transport()  # callbacks of MCP Events: public HTTPS addresses only
+    AI_EVENTS_EVERY = 60  # seconds between rounds of the events worker
 
     # ------------------------------------------------------------------ Settings, Connected AIs
 
@@ -89,7 +93,7 @@ class AiApp:
         with self.store.connect() as db:
             if name == 'ai_change':
                 ai_access.change(db, cid, level=args.get('level'), area=args.get('area'), expiry=args.get('expiry'),
-                                 messages=args.get('messages'))
+                                 messages=args.get('messages'), events=args.get('events'))
             elif name == 'ai_off':
                 ai_access.turn_off(db, cid)
             elif name == 'ai_remove':
@@ -246,6 +250,37 @@ class AiApp:
         with self.store.connect() as db:
             return self.ai_view(db)
 
+    # ------------------------------------------------------------------ MCP Events (ai_events.py)
+
+    def ai_events_worker(self):
+        """Every AI_EVENTS_EVERY seconds: each live subscription's new events into the outbox, and the outbox out.
+        Nothing to do while nobody subscribed. Never stops the service."""
+        while not self.stop.wait(self.AI_EVENTS_EVERY):
+            try:
+                self.ai_events_round()
+            except Exception as error:  # noqa: BLE001 - the next round tries again
+                logging.getLogger('personal-assistant').error('ai events error=%s', type(error).__name__)
+
+    def ai_events_round(self, transport=None):
+        """One round: {state: how many} of the deliveries it made."""
+        with self.store.connect() as db:
+            if not db.execute("SELECT 1 FROM ai_event_subs UNION ALL SELECT 1 FROM ai_event_outbox WHERE state='wait' LIMIT 1").fetchone():
+                return {}
+            ai_events.prune(db)
+            connections = {r['id']: dict(r) for r in db.execute('SELECT * FROM ai_connections')}
+            ai_events.collect(self, db, connections)
+        return ai_events.deliver(self.store.connect, transport or self.ai_transport, connections, self.ai_event_line)
+
+    @staticmethod
+    def ai_event_line(db, connection_id, state, row, detail):
+        """A delivery's line in the connection's Activity: sent (linking to its to-do), given up, or the AI ended it (410)."""
+        said = i18n.t(ai_events.EVENTS[row['name']][0]) if row['name'] in ai_events.EVENTS else row['name']
+        if state == 'gone':
+            ai_access.log(db, connection_id, 'unsubscribe', 'ok', said)
+        else:
+            ai_access.log(db, connection_id, 'event', 'ok' if state == 'sent' else 'error', said if state == 'sent' else f'{said}: {detail}',
+                          todo=row['todo_id'])
+
     def ai_areas(self):
         """The areas this Machine has accounts in: ['work', 'personal'], or one of them."""
         sides = {graph.account_side(a) for a in self.config.get('accounts', [])}
@@ -345,7 +380,8 @@ class AiApp:
         except ValueError:
             return self.ai_json(400, ai_access._error(None, -32700, 'Parse error'))
         brief = self.ai_brief if ai_learnings.on(self.config) else None
-        handle = lambda m: ai_access.handle(self.store.connect, m, connection, why, self.ai_tool, self.ai_limiter, brief)
+        handle = lambda m: ai_access.handle(self.store.connect, m, connection, why, self.ai_tool, self.ai_limiter, brief,  # noqa: E731
+                                            events=self.ai_transport)
         if isinstance(message, list):
             replies = [r for r in (handle(m) for m in message[:20]) if r]
             return (self.ai_json(200, replies) if replies else (202, {}, b''))

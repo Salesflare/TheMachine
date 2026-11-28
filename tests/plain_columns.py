@@ -16,6 +16,7 @@ CODE_NAME = re.compile(
 CODES = '''
 activity_accounts.service activity_seen.ref agent_jobs.outcome ai_activity.outcome ai_activity.args
 agent_key_pins.slot agent_key_pins.fingerprint ai_clients.auth_method ai_codes.challenge ai_connections.level ai_connections.area
+ai_connections.events ai_event_seen.item ai_event_subs.args ai_event_subs.name
 analyses.items analyses.resumed_from android_feed_health.last_checked android_feed_health.last_recorded android_inbox.payload
 board_backfill_asks.fit board_backfills.ranked board_fits.fit board_suggestions.projects boards.visibility board_suggestions.visibility
 bring_in_lines.line bring_in_items.file bring_in_lines.file calendar_clashes.side calendar_writes.op calendar_writes.payload
@@ -78,6 +79,7 @@ WORDS = {
         review_runs.error review_runs.last_error routine_runs.error sync_activity.error team_learnings.error team_learning_votes.error''',
     'who and where: people, organizations, addresses, sites and labels, which the database has to find a message by': '''
         activity_accounts.label agent_jobs.url ai_clients.name ai_clients.redirect_uris ai_codes.redirect_uri ai_connections.name
+        ai_event_subs.url ai_event_verified.url
         board_backfill_asks.name contact_marks.identifier contact_marks.by_name contact_photo_links.identifier
         contact_photo_links.url contact_shares.name digest_items.address email_bounce_cc.address email_bounce_events.address email_bounces.address
         family_invite_log.person family_invite_log.name family_invite_offers.person family_invite_offers.name fleet_claims.holder_name fleet_in.name

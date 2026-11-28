@@ -1,0 +1,9 @@
+/*@lazy*/
+/* A connected AI's Change panel (settings-ai-edit.js): rows of controls that wrap, the notes under them, and each
+   event's name with its switch */
+.ai-controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ai-controls .ghost{padding-inline:10px}
+.ai-controls select{width:auto;max-width:100%;field-sizing:content}
+.ai-msg-note{color:var(--muted);font-size:var(--fs-xs)}
+.ai-ev-label{font-size:var(--fs-sm);color:var(--muted);margin-inline-end:4px}
+.ai-ev{display:flex;gap:6px;align-items:center;font-size:var(--fs-sm);margin-inline-end:8px}

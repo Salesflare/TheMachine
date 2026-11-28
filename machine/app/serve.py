@@ -115,6 +115,7 @@ class ServeApp:
             self.fleet_stop = threading.Event()  # set by Unpair (fleet_drop) and when the service stops
             threading.Thread(target=self.fleet.run, args=(self.fleet_stop,), daemon=True).start()
             self.ai_reach_start(self.fleet_stop)
+        threading.Thread(target=self.ai_events_worker, name='ai-events', daemon=True).start()  # MCP Events (ai_events.py)
         threading.Thread(target=self.model_usage_worker, daemon=True).start()
         if getattr(self, 'fleet', None):
             threading.Thread(target=self.bug_queue_worker, name='bug-queue', daemon=True).start()

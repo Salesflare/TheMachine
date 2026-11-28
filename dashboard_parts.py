@@ -45,6 +45,7 @@ LAZY = {
     'kept': ('todos-kept.css', 'todos-kept.js'),
     'docwrite': ('todos-send-doc.js',),
     'filewrite': ('todos-filewrite.css', 'todos-filewrite.js'),  # a Sheet or Slides edit (file_writes.py), drawn through fileW
+    'aiedit': ('settings-ai-edit.css', 'settings-ai-edit.js'),  # a connected AI's Change panel, drawn through aiConnection
     'sendlater': ('todos-send-later.js',),
     'keptbox': ('todos-kept-box.js',),
     'signin': ('connections-signin-dialog.js',),
@@ -102,7 +103,7 @@ LAZY_WITH = {
          # a to-do's box: todos-cards.js asks lazyIn(box), box one of these
          'routinetodos', 'digest', 'subs', 'secondhand', 'reorder'),
     # drawn or opened only by that part
-    'digest': ('routines',), 'docwrite': ('compose',), 'fbpeople': ('routinetodos',), 'fleetask': ('fleet',),
+    'aiedit': ('settings',), 'digest': ('routines',), 'docwrite': ('compose',), 'fbpeople': ('routinetodos',), 'fleetask': ('fleet',),
     'logins': ('signin',), 'msgview': ('emailframe',), 'msshare': ('milestone',), 'split': ('graph',),
     'emailframe': ('msgview',),  # emailOpen waits for it
     'fleet': ('settings', 'connections'),  # fleetView waits for Settings', connectAdd for Connections'

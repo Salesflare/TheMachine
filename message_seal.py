@@ -123,6 +123,8 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'team_mail': ('body',), 'team_records': ('body',), 'team_files': ('name', 'data'), 'team_blobs': ('dk',), 'share_lines': ('line',),
            'agent_jobs': ('brief', 'asks', 'progress', 'summary', 'diff', 'files', 'error', 'answers'),
            'ai_activity': ('detail',),  # what a connected AI asked for and got, in short (ai_access.py)
+           'ai_event_outbox': ('body',),  # an event for a connected AI: to-do titles, why, promise text (ai_events.py)
+           'ai_event_subs': ('secret', 'old_secret'),  # the AI's key that signs what it is sent (ai_events.py)
            'ai_writes': ('changes',),  # a connected AI's Graph change, before and after, for its Undo (ai_access.py)
            # a to-do's title while its push, email line or handoff email waits to go, and the line a woken phone shows (notify.py)
            'notify_queue': ('title', 'payload'), 'notify_app_lines': ('line', 'body'),

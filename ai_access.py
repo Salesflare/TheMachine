@@ -31,6 +31,7 @@ import time
 import urllib.parse
 
 import activity_log
+import ai_events
 import fleet
 import i18n
 from machine import todo_states
@@ -100,10 +101,11 @@ CREATE TABLE IF NOT EXISTS ai_folded(id INTEGER PRIMARY KEY,at TEXT NOT NULL,con
 """
 # Added after the tables first shipped: (table, column, its definition)
 COLUMNS = (('ai_connections', 'messages', 'INTEGER NOT NULL DEFAULT 0'), ('ai_writes', 'waiting', 'INTEGER NOT NULL DEFAULT 0'),
-           ('ai_activity', 'todo_id', 'TEXT'), ('ai_activity', 'args', 'TEXT'))
+           ('ai_activity', 'todo_id', 'TEXT'), ('ai_activity', 'args', 'TEXT'), ('ai_connections', 'events', "TEXT NOT NULL DEFAULT ''"))
 # ai_writes.waiting: 0 applied (Undo in Activity), 1 waits for the owner's OK (Apply or Dismiss), -1 dismissed
 # ai_activity.todo_id: the to-do a call read or added (TODO_TOOLS), so its line in Activity links to it
 # ai_activity.args: an add's arguments as a hash, for AGAIN_MINUTES (added_before); nothing else is kept of them
+# ai_connections.events: the events the owner turned on for it, comma separated (ai_events.py; none to start with)
 
 # The tools: name -> (level it needs, description, input schema). The App answers them (ai_app.AiApp.ai_tool).
 _AREA = {'type': 'string', 'enum': ['work', 'personal'], 'description': 'Only Work or only Personal; left out: whatever this connection may see.'}
@@ -360,6 +362,7 @@ def ensure(db):
     for table, column, definition in COLUMNS:
         if column not in {r[1] for r in db.execute(f'PRAGMA table_info({table})')}:
             db.execute(f'ALTER TABLE {table} ADD COLUMN {column} {definition}')
+    ai_events.ensure(db)
     fold_duplicates(db)
 
 
@@ -604,6 +607,7 @@ def fold(db, connection_id, into_id):
     db.execute('UPDATE ai_tokens SET connection_id=? WHERE connection_id=?', (into_id, row['id']))
     ends = db.execute('SELECT expires_at FROM ai_connections WHERE id=?', (into_id,)).fetchone()['expires_at']
     db.execute("UPDATE ai_tokens SET expires_at=? WHERE connection_id=? AND expires_at>?", (ends, into_id, ends))
+    ai_events.moved(db, row['id'], into_id)  # its event subscriptions go with its sign-ins
     for sql in ('DELETE FROM ai_codes WHERE connection_id=?', 'DELETE FROM ai_connections WHERE id=?'):
         db.execute(sql, (row['id'],))
     _drop_unused_clients(db)
@@ -776,7 +780,8 @@ def connections(db):
              'expired': r['expires_at'] <= at, 'created_at': r['created_at'], 'used_at': r['used_at'], 'messages': bool(r['messages']),
              'official': r['kind'] == 'oauth' and any(official(u) for u in json.loads(r['redirect_uris'] or '[]')),
              'calls': db.execute("SELECT count(*) FROM ai_activity WHERE connection_id=? AND tool NOT IN ('connect','settings')", (r['id'],)).fetchone()[0],
-             'refused': db.execute("SELECT count(*) FROM ai_activity WHERE connection_id=? AND outcome='refused'", (r['id'],)).fetchone()[0]}
+             'refused': db.execute("SELECT count(*) FROM ai_activity WHERE connection_id=? AND outcome='refused'", (r['id'],)).fetchone()[0],
+             'events': ai_events.enabled(r), 'watching': ai_events.watching(db, r['id'])}
             for r in rows]
 
 
@@ -788,7 +793,8 @@ TOOL_WORDS = {'list_todos': 'Read the to-dos', 'get_todo': 'Read a to-do', 'list
               'search_messages': 'Searched messages', 'read_thread': 'Read a thread',
               'get_learnings': 'Read the learnings', 'get_brief': 'Read the brief', 'brief': 'Read the brief',
               'save_learning': 'Saved a learning',
-              'settings': 'Access changed', 'sign-in': 'Sign-in'}
+              'settings': 'Access changed', 'sign-in': 'Sign-in',
+              'subscribe': 'Asked to watch', 'unsubscribe': 'Stopped watching', 'event': 'Sent an event'}
 OUTCOMES = {'ok': 'done', 'again': 'done', 'refused': 'refused', 'error': 'failed'}
 # A Graph change that waited for the owner's OK (Messages on), until it is applied
 ASKED_WORDS = {'save_fact': 'Asked to save a fact', 'update_record': 'Asked to change a Graph record',
@@ -851,8 +857,10 @@ def _connection(db, connection_id):
     return row
 
 
-def change(db, connection_id, level=None, area=None, expiry=None, messages=None, at=None):
-    """The owner changes one: its access, its area, a new expiry from today, or Messages. The next call uses it. at: when its line says it was (the sandbox's made-up past)."""
+def change(db, connection_id, level=None, area=None, expiry=None, messages=None, at=None, events=None):
+    """The owner changes one: its access, its area, a new expiry from today, Messages, or the events it may watch
+    (ai_events.NAMES; one turned off ends its subscriptions). The next call uses it. at: when its line says it was (the
+    sandbox's made-up past)."""
     row = _connection(db, connection_id)
     said = []
     if level is not None:
@@ -879,6 +887,13 @@ def change(db, connection_id, level=None, area=None, expiry=None, messages=None,
             raise ValueError('Messages is on or off')
         db.execute('UPDATE ai_connections SET messages=? WHERE id=?', (int(messages), row['id']))
         said.append(i18n.t('Messages: on' if messages else 'Messages: off'))
+    if events is not None:
+        if not isinstance(events, list) or not all(e in ai_events.NAMES for e in events):
+            raise ValueError('Unknown event')
+        events = [e for e in ai_events.NAMES if e in events]
+        db.execute('UPDATE ai_connections SET events=? WHERE id=?', (','.join(events), row['id']))
+        ai_events.end(db, row['id'], keep=events)
+        said.append(i18n.t('Events: {}', ', '.join(i18n.t(ai_events.EVENTS[e][0]) for e in events)) if events else i18n.t('Events: off'))
     if said:
         log(db, row['id'], 'settings', 'ok', ', '.join(said), at=at)
 
@@ -888,6 +903,7 @@ def turn_off(db, connection_id):
     row = _connection(db, connection_id)
     db.execute("UPDATE ai_connections SET level='off',off_at=? WHERE id=?", (stamp(), row['id']))
     db.execute('DELETE FROM ai_tokens WHERE connection_id=?', (row['id'],))
+    ai_events.end(db, row['id'])
     log(db, row['id'], 'settings', 'ok', i18n.t('Turned off now'))
 
 
@@ -901,6 +917,7 @@ def remove(db, connection_id):
     if row['client_id']:
         db.execute('DELETE FROM ai_clients WHERE id=?', (row['client_id'],))
     _drop_unused_clients(db)  # the registrations of what folded into it
+    ai_events.end(db, row['id'])
 
 
 def new_key(db, name, level, area, expiry):
@@ -1012,6 +1029,7 @@ def prune(db):
     db.execute('DELETE FROM ai_codes WHERE expires_at<?', (stamp(at - dt.timedelta(hours=1)),))
     db.execute('DELETE FROM ai_tokens WHERE expires_at<?', (stamp(at),))
     _drop_unused_clients(db)
+    ai_events.prune(db)
     db.execute('DELETE FROM ai_clients WHERE used_at IS NULL AND created_at<? AND id NOT IN (SELECT client_id FROM ai_connections WHERE client_id IS NOT NULL)',
                (stamp(at - dt.timedelta(hours=CLIENT_UNUSED_HOURS)),))
     db.execute('DELETE FROM ai_activity WHERE at<?', (stamp(at - dt.timedelta(days=KEEP_DAYS)),))
@@ -1116,11 +1134,12 @@ def refusal(why, level=None):
     return where
 
 
-def handle(db_open, message, connection, why, answer, limiter, brief=None):
+def handle(db_open, message, connection, why, answer, limiter, brief=None, events=None):
     """One JSON-RPC message from a signed-in connection (why: None, 'off' or 'expired'), its reply out (None for a
     notification). answer(connection, tool, args, again) -> (result, summary) does the tool's work; again: the to-do the
     same add made a moment ago, whose result it gives once more. brief(connection) -> text: the ai_learnings flag is on,
-    so initialize's instructions end with the brief and LEARNING_TOOLS are there; None: off."""
+    so initialize's instructions end with the brief and LEARNING_TOOLS are there; None: off. events: the transport for
+    MCP Events' callbacks (ai_events.Transport), so initialize says events and the events/* methods answer."""
     if not isinstance(message, dict) or message.get('jsonrpc') != '2.0':
         return _error(None, -32600, 'Invalid request')
     method, ident, params = message.get('method'), message.get('id'), message.get('params')
@@ -1131,13 +1150,15 @@ def handle(db_open, message, connection, why, answer, limiter, brief=None):
         asked = params.get('protocolVersion')
         said = brief(connection) if brief and not why else ''
         return _ok(ident, {'protocolVersion': asked if asked in PROTOCOLS else PROTOCOLS[0],
-                           'capabilities': {'tools': {'listChanged': False}},
+                           'capabilities': {'tools': {'listChanged': False}, **({'events': {}} if events else {})},
                            'serverInfo': {'name': 'the-machine', 'title': 'The Machine', 'version': '1'},
                            'instructions': INSTRUCTIONS + ('\n\n' + said if said else '')})
     if method == 'ping':
         return _ok(ident, {})
     if method == 'tools/list':
         return _ok(ident, {'tools': tool_list(learnings=bool(brief))})
+    if events and method in EVENT_METHODS:
+        return _events(db_open, ident, connection, why, method, params, limiter, events)
     if method != 'tools/call':
         return _error(ident, -32601, 'Method not found')
     name = params.get('name')
@@ -1159,6 +1180,39 @@ def handle(db_open, message, connection, why, answer, limiter, brief=None):
         return _ok(ident, {'content': [{'type': 'text', 'text': wrong}], 'isError': True})
     with ADDING if name in ADDS else contextlib.nullcontext():  # a retry waits for the first try, then finds what it made
         return _call(db_open, ident, connection, name, args, refused, answer)
+
+
+EVENT_METHODS = ('events/list', 'events/subscribe', 'events/unsubscribe')
+
+
+def _events(db_open, ident, connection, why, method, params, limiter, transport):
+    """MCP Events (ai_events.py) for a signed-in connection: the list for any; subscribe and unsubscribe as the
+    connection, refused (and logged) when it is off or expired, the event is off for it, or the callback fails."""
+    if method == 'events/list':
+        return _ok(ident, {'events': ai_events.catalog()})
+    cid, name = connection['id'], params.get('name')
+    said = i18n.t(ai_events.EVENTS[name][0]) if name in ai_events.EVENTS else str(name or '')[:60]
+    if method == 'events/unsubscribe':
+        with db_open() as db:
+            if ai_events.unsubscribe(db, connection, params):
+                log(db, cid, 'unsubscribe', 'ok', said)
+        return _ok(ident, {})
+    try:
+        if why:
+            raise ai_events.Refused(ai_events.FORBIDDEN, refusal(why))
+        if not limiter.allow(cid):
+            raise ai_events.Refused(ai_events.EXHAUSTED, refusal('rate'), {'limit': 'rate'})
+        with db_open() as db:
+            result, made = ai_events.subscribe(db, connection, params, transport)
+            if made:
+                log(db, cid, 'subscribe', 'ok', said)
+        return _ok(ident, result)
+    except ai_events.Refused as error:
+        with db_open() as db:
+            off = (error.data or {}).get('reason') == 'event_off'
+            log(db, cid, 'subscribe', 'refused', i18n.t('{}: turned off', said) if off else f'{said}: {error.message}')
+        out = {'code': error.code, 'message': error.message, **({'data': error.data} if error.data else {})}
+        return {'jsonrpc': '2.0', 'id': ident, 'error': out}
 
 
 ADDING = threading.Lock()
